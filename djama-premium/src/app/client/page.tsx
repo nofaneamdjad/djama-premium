@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import jsPDF from "jspdf";
 import { supabase } from "@/lib/supabase";
+import { Upload, Trash2 } from "lucide-react";
 
 type LineItem = {
   description: string;
@@ -11,6 +12,56 @@ type LineItem = {
   vatRate: number;
 };
 
+/* ── Composant upload logo ─────────────────────── */
+function LogoUpload({ preview, onFile }: { preview: string; onFile: (dataUrl: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function read(file: File) {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (e) => onFile(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      className="flex h-[76px] cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed border-[rgba(9,9,11,0.12)] bg-zinc-50 px-4 transition-all hover:border-[rgba(176,141,87,0.5)] hover:bg-[rgba(176,141,87,0.03)]"
+    >
+      {preview ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={preview} alt="logo aperçu" className="h-14 w-14 rounded-xl border border-gray-200 object-contain bg-white p-1" />
+      ) : (
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[rgba(176,141,87,0.25)] bg-[rgba(176,141,87,0.1)]">
+          <Upload size={18} className="text-[#b08d57]" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-zinc-700 truncate">
+          {preview ? "Logo chargé — cliquer pour changer" : "Cliquer pour importer votre logo"}
+        </p>
+        <p className="mt-0.5 text-xs text-zinc-400">PNG, JPG, SVG · Aperçu instantané</p>
+      </div>
+      {preview && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onFile(""); }}
+          className="shrink-0 rounded-lg border border-zinc-200 p-1.5 text-zinc-400 transition hover:border-red-300 hover:bg-red-50 hover:text-red-500"
+        >
+          <Trash2 size={12} />
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) read(f); }}
+      />
+    </div>
+  );
+}
+
 export default function ClientFacturesPage() {
   const [documentType, setDocumentType] = useState<"Facture" | "Devis">("Facture");
   const [primaryColor, setPrimaryColor] = useState("#b08d57");
@@ -18,7 +69,7 @@ export default function ClientFacturesPage() {
   const [loadingSave, setLoadingSave] = useState(false);
 
   const [companyName, setCompanyName] = useState("DJAMA");
-  const [companyLogo, setCompanyLogo] = useState("/logo.png");
+  const [companyLogo, setCompanyLogo] = useState("");
   const [companyAddress, setCompanyAddress] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
   const [companyPhone, setCompanyPhone] = useState("");
@@ -342,12 +393,7 @@ export default function ClientFacturesPage() {
                     placeholder="Nom entreprise"
                     className="rounded-xl border border-luxe px-4 py-3"
                   />
-                  <input
-                    value={companyLogo}
-                    onChange={(e) => setCompanyLogo(e.target.value)}
-                    placeholder="Chemin logo /images/logo.png"
-                    className="rounded-xl border border-luxe px-4 py-3"
-                  />
+                  <LogoUpload preview={companyLogo} onFile={setCompanyLogo} />
                   <input
                     value={companyAddress}
                     onChange={(e) => setCompanyAddress(e.target.value)}
