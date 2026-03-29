@@ -192,6 +192,16 @@ export default function ClientFacturesPage() {
   /* ── États ── */
   const [documentType,    setDocumentType]    = useState<"Facture" | "Devis">("Facture");
   const [primaryColor,    setPrimaryColor]    = useState("#b08d57");
+
+  /* ── Bascule Facture ↔ Devis + mise à jour numéro ── */
+  function switchDocType(type: "Facture" | "Devis") {
+    setDocumentType(type);
+    setDocNumber((prev) => {
+      if (type === "Devis")    return prev.replace(/^FAC-?/i, "DEV-");
+      if (type === "Facture")  return prev.replace(/^DEV-?/i, "FAC-");
+      return prev;
+    });
+  }
   const [companyName,     setCompanyName]     = useState("DJAMA");
   const [companyLogo,     setCompanyLogo]     = useState("");
   const [companyAddress,  setCompanyAddress]  = useState("");
@@ -212,6 +222,7 @@ export default function ClientFacturesPage() {
   ]);
   const [loadingSave, setLoadingSave] = useState(false);
   const [feedback,    setFeedback]    = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [mobileTab,   setMobileTab]   = useState<"form" | "preview">("form");
 
   function showFeedback(type: "ok" | "err", msg: string) {
     setFeedback({ type, msg });
@@ -385,7 +396,7 @@ export default function ClientFacturesPage() {
             {(["Facture", "Devis"] as const).map((t) => (
               <motion.button
                 key={t}
-                onClick={() => setDocumentType(t)}
+                onClick={() => switchDocType(t)}
                 whileTap={{ scale: 0.96 }}
                 className="relative rounded-xl px-6 py-2.5 text-sm font-bold transition-colors"
                 style={{ color: documentType === t ? "#0a0a0a" : "rgba(255,255,255,0.4)" }}
@@ -494,27 +505,65 @@ export default function ClientFacturesPage() {
         )}
       </AnimatePresence>
 
+      {/* ── Tabs sticky mobile/tablette ── */}
+      <div className="sticky top-[57px] z-20 xl:hidden border-b border-[var(--border)] bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1380px] px-4">
+          {([
+            { id: "form",    label: "Formulaire",       icon: FileText },
+            { id: "preview", label: "Aperçu du document", icon: Sparkles },
+          ] as const).map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setMobileTab(id)}
+              className="relative flex flex-1 items-center justify-center gap-2 py-3.5 text-xs font-bold transition-colors"
+              style={{ color: mobileTab === id ? "var(--ink)" : "var(--muted)" }}
+            >
+              <Icon size={13} />
+              {label}
+              {mobileTab === id && (
+                <motion.div
+                  layoutId="tab-underline"
+                  className="absolute bottom-0 left-0 h-[2.5px] w-full rounded-full bg-[#c9a55a]"
+                  transition={{ duration: 0.25, ease }}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ══ CONTENU ══════════════════════════════ */}
-      <div className="mx-auto max-w-[1380px] px-4 py-8 xl:px-6">
-        <div className="grid gap-6 xl:grid-cols-[1fr_440px]">
+      <div className="mx-auto max-w-[1380px] px-4 py-6 xl:py-8 xl:px-6">
+        <div className="grid gap-6 xl:grid-cols-[1fr_460px]">
 
           {/* ════ FORMULAIRE ════ */}
-          <div className="space-y-5">
+          <div className={`space-y-5 ${mobileTab === "form" ? "block" : "hidden xl:block"}`}>
 
             {/* — Document — */}
             <SectionCard delay={0.05}>
-              <SectionLabel icon={Hash} title="Document" />
+              <SectionLabel
+                icon={Hash}
+                title={documentType === "Devis" ? "Devis" : "Facture"}
+              />
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <FieldLabel>Numéro</FieldLabel>
-                  <PInput value={docNumber} onChange={setDocNumber} placeholder="FAC-001" />
+                  <FieldLabel>
+                    {documentType === "Devis" ? "N° de devis" : "N° de facture"}
+                  </FieldLabel>
+                  <PInput
+                    value={docNumber}
+                    onChange={setDocNumber}
+                    placeholder={documentType === "Devis" ? "DEV-001" : "FAC-001"}
+                  />
                 </div>
                 <div>
                   <FieldLabel>Date d&apos;émission</FieldLabel>
                   <PInput type="date" value={issueDate} onChange={setIssueDate} />
                 </div>
                 <div>
-                  <FieldLabel>Date d&apos;échéance</FieldLabel>
+                  <FieldLabel>
+                    {documentType === "Devis" ? "Validité du devis" : "Date d'échéance"}
+                  </FieldLabel>
                   <PInput type="date" value={dueDate} onChange={setDueDate} />
                 </div>
               </div>
@@ -672,16 +721,36 @@ export default function ClientFacturesPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <FieldLabel>Notes / Remarques</FieldLabel>
-                  <PTextarea value={notes} onChange={setNotes} placeholder="Informations complémentaires…" rows={4} />
+                  <PTextarea
+                    value={notes}
+                    onChange={setNotes}
+                    placeholder={
+                      documentType === "Devis"
+                        ? "Précisions sur le devis, remarques…"
+                        : "Informations complémentaires…"
+                    }
+                    rows={4}
+                  />
                 </div>
                 <div>
-                  <FieldLabel>Conditions de paiement</FieldLabel>
-                  <PTextarea value={paymentTerms} onChange={setPaymentTerms} placeholder="Ex : Paiement à 30 jours, virement bancaire." rows={4} />
+                  <FieldLabel>
+                    {documentType === "Devis" ? "Modalités & conditions" : "Conditions de paiement"}
+                  </FieldLabel>
+                  <PTextarea
+                    value={paymentTerms}
+                    onChange={setPaymentTerms}
+                    placeholder={
+                      documentType === "Devis"
+                        ? "Ex : Devis valable 30 jours, acompte 30%."
+                        : "Ex : Paiement à 30 jours, virement bancaire."
+                    }
+                    rows={4}
+                  />
                 </div>
               </div>
             </SectionCard>
 
-            {/* — Boutons d'action (mobile) — */}
+            {/* — Boutons d'action — visible sur mobile/tablette, masqué sur xl (déjà dans le panneau aperçu) — */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -709,8 +778,8 @@ export default function ClientFacturesPage() {
           </div>
 
           {/* ════ APERÇU + ACTIONS ════ */}
-          <div className="hidden xl:block">
-            <div className="sticky top-6 space-y-4">
+          <div className={mobileTab === "preview" ? "block" : "hidden xl:block"}>
+            <div className="xl:sticky xl:top-[65px] space-y-4">
 
               {/* Boutons d'action */}
               <motion.div
@@ -744,10 +813,29 @@ export default function ClientFacturesPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, ease, delay: 0.15 }}
               >
-                <p className="mb-2 flex items-center gap-1.5 text-[0.62rem] font-bold uppercase tracking-widest text-[var(--muted)]">
-                  <Sparkles size={9} className="text-[#c9a55a]" />
-                  Aperçu du document
-                </p>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="flex items-center gap-1.5 text-[0.62rem] font-bold uppercase tracking-widest text-[var(--muted)]">
+                    <Sparkles size={9} className="text-[#c9a55a]" />
+                    Aperçu du document
+                  </p>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={documentType}
+                      initial={{ opacity: 0, scale: 0.85 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.85 }}
+                      transition={{ duration: 0.2 }}
+                      className="rounded-full border px-2.5 py-0.5 text-[0.6rem] font-extrabold uppercase tracking-widest"
+                      style={{
+                        color: primaryColor,
+                        borderColor: `${primaryColor}40`,
+                        background: `${primaryColor}12`,
+                      }}
+                    >
+                      {documentType}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
 
                 <div className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_8px_40px_rgba(9,9,11,0.08)]">
                   {/* Barre de couleur en haut */}
@@ -771,7 +859,10 @@ export default function ClientFacturesPage() {
                       </div>
                       <div className="shrink-0 text-right text-[var(--muted)]">
                         <p>Date : <span className="font-semibold text-[var(--ink)]">{issueDate || "—"}</span></p>
-                        <p className="mt-0.5">Échéance : <span className="font-semibold text-[var(--ink)]">{dueDate || "—"}</span></p>
+                        <p className="mt-0.5">
+                          {documentType === "Devis" ? "Validité" : "Échéance"} :{" "}
+                          <span className="font-semibold text-[var(--ink)]">{dueDate || "—"}</span>
+                        </p>
                       </div>
                     </div>
 
