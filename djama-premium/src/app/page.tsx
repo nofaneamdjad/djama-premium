@@ -2,282 +2,564 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Globe, Palette, Wrench, Mail, MessageCircle, Star, Zap, Users } from "lucide-react";
+import {
+  motion,
+  useInView,
+  useScroll,
+  useTransform,
+} from "framer-motion";
+import { useRef } from "react";
+import {
+  ArrowRight, Globe, Palette, Wrench,
+  Mail, MessageCircle, Star, Zap, Users,
+  CheckCircle2, Sparkles,
+} from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
-import { useScrollReveal } from "@/hooks/useScrollReveal";
+import {
+  fadeUp, fadeIn, textReveal, staggerContainer,
+  staggerContainerFast, cardReveal, slideLeft, slideRight,
+  viewport,
+} from "@/lib/animations";
 
-/* ── Wrapper générique scroll-reveal ── */
-function Reveal({ children, className = "", delay = "" }: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: string;
-}) {
-  const ref = useScrollReveal();
+/* ═══════════════════════════════════════════════
+   COMPOSANTS LOCAUX
+═══════════════════════════════════════════════ */
+
+/* Section qui s'anime quand elle entre dans le viewport */
+function Section({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div ref={ref as React.RefObject<HTMLDivElement>} className={`reveal ${delay} ${className}`}>
+    <motion.section
+      initial="hidden"
+      whileInView="visible"
+      viewport={viewport}
+      variants={staggerContainer}
+      className={className}
+    >
       {children}
-    </div>
+    </motion.section>
   );
 }
 
-/* ── Carte service ── */
-function ServiceCard({ icon: Icon, title, desc, delay }: {
-  icon: React.ElementType; title: string; desc: string; delay: string;
-}) {
-  const ref = useScrollReveal();
+/* Badge animé */
+function Badge({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
   return (
-    <div
-      ref={ref as React.RefObject<HTMLDivElement>}
-      className={`reveal ${delay} hover-lift rounded-3xl border border-luxe bg-white p-6 shadow-luxe-soft group`}
-    >
-      <div className="mb-4 inline-flex rounded-2xl border border-luxe bg-zinc-50 p-3 transition-colors group-hover:border-gold-soft">
-        <Icon size={24} className="text-[rgb(var(--gold))]" />
-      </div>
-      <h3 className="text-xl font-extrabold">{title}</h3>
-      <p className="mt-2 text-zinc-500">{desc}</p>
-    </div>
+    <motion.span variants={fadeIn} className={`badge ${dark ? "badge-gold-dark" : "badge-gold-light"}`}>
+      <Sparkles size={11} />
+      {children}
+    </motion.span>
   );
 }
 
-/* ── Carte offre ── */
-function OfferCard({ href, title, desc, price, delay }: {
-  href: string; title: string; desc: string; price: string; delay: string;
-}) {
-  const ref = useScrollReveal();
+/* Titre de section avec révélation */
+function SectionTitle({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <Link
-      href={href}
-      ref={ref as React.RefObject<HTMLAnchorElement>}
-      className={`reveal ${delay} group hover-lift flex flex-col rounded-3xl border border-luxe bg-white p-6 shadow-luxe-soft`}
-    >
-      <h3 className="text-xl font-extrabold">{title}</h3>
-      <p className="mt-2 flex-1 text-sm text-zinc-500">{desc}</p>
-      <p className="mt-4 text-2xl font-extrabold text-gold-gradient">{price}</p>
-      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-extrabold text-[rgb(var(--gold))]">
-        Accéder <ArrowRight size={14} />
-      </span>
-    </Link>
+    <motion.h2 variants={textReveal} className={`display-section ${className}`}>
+      {children}
+    </motion.h2>
   );
 }
 
-/* ── Carte portfolio ── */
-function PortfolioCard({ title, delay }: { title: string; delay: string }) {
-  const ref = useScrollReveal();
-  return (
-    <div
-      ref={ref as React.RefObject<HTMLDivElement>}
-      className={`reveal ${delay} hover-lift overflow-hidden rounded-3xl border border-luxe bg-white shadow-luxe-soft group`}
-    >
-      <div className="h-48 bg-zinc-100 transition-transform duration-500 group-hover:scale-[1.02]" />
-      <div className="p-5">
-        <h3 className="font-extrabold text-lg">{title}</h3>
-        <p className="mt-1.5 text-sm text-zinc-500">Identité visuelle, support digital ou contenu créatif.</p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Stat card ── */
-function StatCard({ value, label, icon: Icon }: { value: string; label: string; icon: React.ElementType }) {
-  const ref = useScrollReveal();
-  return (
-    <div ref={ref as React.RefObject<HTMLDivElement>} className="reveal card-luxe hover-lift flex flex-col items-center gap-2 p-6 text-center">
-      <Icon size={28} className="text-[rgb(var(--gold))]" />
-      <p className="text-3xl font-extrabold">{value}</p>
-      <p className="text-sm font-medium text-zinc-500">{label}</p>
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   PAGE PRINCIPALE
+═══════════════════════════════════════════════ */
 export default function Home() {
   const data = getSiteData();
+  const heroRef = useRef<HTMLElement>(null);
+
+  /* Parallax léger sur le glow hero */
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const glowY = useTransform(scrollYProgress, [0, 1], ["0%", "40%"]);
 
   return (
-    <main className="bg-white">
+    <div className="bg-white">
 
-      {/* ── HERO ─────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-white">
-        <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute left-[-200px] top-[-200px] h-[520px] w-[520px] rounded-full bg-[rgb(var(--gold))] opacity-[0.08] blur-3xl" />
-          <div className="absolute bottom-[-200px] right-[-200px] h-[520px] w-[520px] rounded-full bg-[rgb(var(--gold))] opacity-[0.06] blur-3xl" />
-        </div>
+      {/* ══════════════════════════════════════
+          HERO — fond sombre + glow doré
+      ══════════════════════════════════════ */}
+      <section ref={heroRef} className="hero-dark hero-grid relative min-h-screen overflow-hidden">
 
-        <div className="mx-auto max-w-6xl px-6 py-24">
-          <div className="grid items-center gap-12 md:grid-cols-2">
-            <div className="fade-up">
-              <div className="mb-5">
-                <Image src={data.media.logo} alt="Logo DJAMA" width={80} height={80} className="rounded-2xl object-contain" />
-              </div>
-              <span className="badge-gold">
-                <Star size={12} />
-                Nouvelle identité visuelle • DJAMA
-              </span>
-              <h1 className="mt-5 text-5xl font-extrabold leading-tight md:text-6xl">
-                DJAMA
-                <span className="block text-gold-gradient">{data.home.title}</span>
-              </h1>
-              <p className="mt-5 max-w-xl text-lg leading-relaxed text-zinc-500">{data.home.subtitle}</p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/services" className="btn-gold inline-flex items-center gap-2">
+        {/* Glow parallax */}
+        <motion.div
+          style={{ y: glowY }}
+          className="pointer-events-none absolute inset-x-0 top-0 -z-0 flex justify-center"
+        >
+          <div className="h-[600px] w-[700px] rounded-full bg-[rgba(176,141,87,0.12)] blur-[120px]" />
+        </motion.div>
+
+        {/* Glow secondaire droit */}
+        <div className="pointer-events-none absolute right-[-150px] top-[30%] -z-0 h-[400px] w-[400px] rounded-full bg-[rgba(176,141,87,0.06)] blur-[80px]" />
+
+        <div className="relative z-10 mx-auto max-w-6xl px-6 pt-36 pb-24">
+          <div className="grid items-center gap-16 lg:grid-cols-2">
+
+            {/* ── Texte héro ── */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainer}
+            >
+              <motion.div variants={fadeIn} className="mb-8">
+                <span className="badge badge-gold-dark">
+                  <Sparkles size={11} />
+                  Services digitaux premium
+                </span>
+              </motion.div>
+
+              <motion.h1
+                variants={staggerContainerFast}
+                className="display-hero text-white"
+              >
+                {["Votre présence", "digitale", "réinventée."].map((word, i) => (
+                  <motion.span
+                    key={i}
+                    variants={textReveal}
+                    className={`block ${i === 1 ? "text-gold" : ""}`}
+                  >
+                    {word}
+                  </motion.span>
+                ))}
+              </motion.h1>
+
+              <motion.p
+                variants={fadeUp}
+                className="mt-7 max-w-lg text-lg leading-relaxed text-white/55"
+              >
+                Sites web, applications, outils pro, coaching IA — une agence qui
+                transforme vos idées en expériences mémorables.
+              </motion.p>
+
+              <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-3">
+                <Link href="/services" className="btn-primary">
                   Découvrir les services <ArrowRight size={16} />
                 </Link>
-                <Link href="/portfolio" className="btn-outline inline-flex items-center gap-2">
-                  Voir nos réalisations
+                <Link href="/portfolio" className="btn-ghost">
+                  Voir les réalisations
                 </Link>
-              </div>
-            </div>
+              </motion.div>
 
-            <div className="fade-in float-soft rounded-[30px] border border-luxe bg-white p-5 shadow-luxe">
-              {data.media.heroVideo ? (
-                <video src={data.media.heroVideo} autoPlay muted loop playsInline
-                  className="max-h-[430px] w-full rounded-2xl object-cover" />
-              ) : (
-                <Image src={data.media.heroImage} alt="DJAMA" width={700} height={450} className="rounded-2xl object-cover" />
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── STATS ────────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-6 pb-8">
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-          <StatCard value="50+"  label="Clients accompagnés"  icon={Users} />
-          <StatCard value="100%" label="Satisfaction client"  icon={Star} />
-          <StatCard value="3×"   label="Plus vite avec l'IA" icon={Zap} />
-          <StatCard value="24h"  label="Réponse garantie"    icon={MessageCircle} />
-        </div>
-      </section>
-
-      {/* ── À PROPOS ─────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
-        <Reveal className="rounded-[32px] border border-luxe bg-white p-8 shadow-luxe-soft hover-lift">
-          <div className="grid gap-8 md:grid-cols-[1.3fr_0.7fr]">
-            <div>
-              <span className="badge-gold mb-4 inline-flex">À propos</span>
-              <h2 className="text-4xl font-extrabold tracking-tight">À propos de DJAMA</h2>
-              <p className="mt-5 text-lg leading-relaxed text-zinc-500">
-                DJAMA est une agence spécialisée dans les services digitaux, les outils professionnels et
-                l&apos;accompagnement. Notre mission est d&apos;aider particuliers et entreprises à développer une
-                image forte, moderne et cohérente.
-              </p>
-              <p className="mt-4 text-lg leading-relaxed text-zinc-500">
-                Nous créons des solutions utiles, élégantes et adaptées aux besoins réels : sites web,
-                applications, supports visuels, outils de gestion, accompagnement administratif et coaching.
-              </p>
-            </div>
-            <div className="grid gap-4">
-              {[
-                { title: "Vision",         desc: "Construire une image premium et durable." },
-                { title: "Qualité",        desc: "Des rendus propres, modernes et professionnels." },
-                { title: "Accompagnement", desc: "Un suivi clair, sérieux et personnalisé." },
-              ].map(({ title, desc }) => (
-                <div key={title} className="hover-lift rounded-2xl border border-luxe bg-white p-4 shadow-luxe-soft">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-[rgb(var(--gold))]" />
-                    <p className="font-extrabold">{title}</p>
-                  </div>
-                  <p className="mt-1.5 text-sm text-zinc-500">{desc}</p>
+              {/* Mini preuves sociales */}
+              <motion.div
+                variants={fadeIn}
+                className="mt-10 flex items-center gap-4 border-t border-white/8 pt-8"
+              >
+                <div className="flex -space-x-2">
+                  {[...Array(4)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-8 w-8 rounded-full border-2 border-[#09090b] bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]"
+                      style={{ zIndex: 4 - i }}
+                    />
+                  ))}
                 </div>
-              ))}
+                <p className="text-sm text-white/45">
+                  <span className="font-bold text-white/80">50+ clients</span> nous font confiance
+                </p>
+              </motion.div>
+            </motion.div>
+
+            {/* ── Glassmorphism card droite ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 48, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.9, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="glass-card p-6 shadow-premium-lg">
+                {/* Header card */}
+                <div className="mb-5 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-white/60">Nos offres</span>
+                  <span className="badge badge-gold-dark">Active</span>
+                </div>
+
+                {/* Liste services */}
+                <div className="space-y-3">
+                  {[
+                    { label: "Sites web & applications",      price: "Sur devis" },
+                    { label: "Outils DJAMA (factures/devis)",  price: data.offers.abonnement },
+                    { label: "Coaching IA",                    price: data.offers.coaching },
+                    { label: "Soutien scolaire",              price: data.offers.soutien },
+                  ].map(({ label, price }, i) => (
+                    <motion.div
+                      key={label}
+                      initial={{ opacity: 0, x: 16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.5, delay: 0.5 + i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                      className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 size={14} className="text-[#c9a55a]" />
+                        <span className="text-sm font-medium text-white/75">{label}</span>
+                      </div>
+                      <span className="text-xs font-bold text-[#c9a55a]">{price}</span>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Divider */}
+                <div className="my-5 divider-gold" />
+
+                {/* CTA card */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.0, duration: 0.5 }}
+                >
+                  <Link href="/contact" className="btn-primary w-full justify-center">
+                    Demander un devis <ArrowRight size={14} />
+                  </Link>
+                </motion.div>
+              </div>
+            </motion.div>
+
+          </div>
+        </div>
+
+        {/* Séparateur bas hero */}
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
+      </section>
+
+      {/* ══════════════════════════════════════
+          STATS
+      ══════════════════════════════════════ */}
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          variants={staggerContainerFast}
+          className="grid grid-cols-2 gap-4 md:grid-cols-4"
+        >
+          {[
+            { icon: Users,         value: "50+",   label: "Clients accompagnés"  },
+            { icon: Star,          value: "100%",  label: "Satisfaction client"   },
+            { icon: Zap,           value: "3×",    label: "Plus rapide avec l'IA" },
+            { icon: MessageCircle, value: "24h",   label: "Délai de réponse"      },
+          ].map(({ icon: Icon, value, label }) => (
+            <motion.div
+              key={label}
+              variants={cardReveal}
+              className="card-premium flex flex-col items-center gap-2 p-6 text-center"
+            >
+              <div className="mb-1 inline-flex rounded-xl bg-[rgba(176,141,87,0.08)] p-2.5">
+                <Icon size={22} className="text-[#c9a55a]" />
+              </div>
+              <p className="text-3xl font-extrabold tracking-tight">{value}</p>
+              <p className="text-sm font-medium text-[var(--muted)]">{label}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════
+          À PROPOS
+      ══════════════════════════════════════ */}
+      <Section className="mx-auto max-w-6xl px-6 py-16">
+        <div className="grid items-start gap-12 lg:grid-cols-2">
+          <div>
+            <Badge>À propos</Badge>
+            <SectionTitle className="mt-4 text-[var(--ink)]">
+              Une agence qui fait<br />
+              <span className="text-gold">la différence.</span>
+            </SectionTitle>
+            <motion.p variants={fadeUp} className="mt-6 text-lg leading-relaxed text-[var(--muted)]">
+              DJAMA est spécialisée dans les services digitaux, les outils professionnels
+              et l&apos;accompagnement sur mesure. Notre mission : vous donner une image
+              forte, moderne et cohérente.
+            </motion.p>
+            <motion.p variants={fadeUp} className="mt-4 text-lg leading-relaxed text-[var(--muted)]">
+              De la création de sites web aux outils de gestion automatisés, nous
+              concevons des solutions utiles, élégantes et adaptées à vos vrais besoins.
+            </motion.p>
+            <motion.div variants={fadeUp} className="mt-8">
+              <Link href="/services" className="btn-primary">
+                Nos services <ArrowRight size={16} />
+              </Link>
+            </motion.div>
+          </div>
+
+          <motion.div variants={staggerContainerFast} className="grid gap-4 sm:grid-cols-1">
+            {[
+              { title: "Vision premium",   desc: "Construire une image durable, forte et cohérente.", icon: Star },
+              { title: "Qualité garantie", desc: "Rendus propres, modernes et professionnels à chaque projet.", icon: CheckCircle2 },
+              { title: "Accompagnement",   desc: "Un suivi clair, sérieux et personnalisé à chaque étape.", icon: Zap },
+            ].map(({ title, desc, icon: Icon }) => (
+              <motion.div
+                key={title}
+                variants={cardReveal}
+                className="card-premium p-5"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="mt-0.5 flex-shrink-0 rounded-lg bg-[rgba(176,141,87,0.1)] p-2">
+                    <Icon size={18} className="text-[#c9a55a]" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-[var(--ink)]">{title}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </Section>
+
+      {/* ══════════════════════════════════════
+          SERVICES — fond dégradé
+      ══════════════════════════════════════ */}
+      <section className="bg-[var(--surface)] py-24">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          variants={staggerContainer}
+          className="mx-auto max-w-6xl px-6"
+        >
+          <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <Badge>Services</Badge>
+              <SectionTitle className="mt-4 text-[var(--ink)]">
+                Ce que nous<br />
+                <span className="text-gold">créons pour vous.</span>
+              </SectionTitle>
             </div>
+            <motion.div variants={fadeIn}>
+              <Link href="/services" className="btn-primary text-sm">
+                Voir tous <ArrowRight size={14} />
+              </Link>
+            </motion.div>
           </div>
-        </Reveal>
+
+          <motion.div
+            variants={staggerContainerFast}
+            className="grid gap-6 md:grid-cols-3"
+          >
+            {[
+              {
+                icon: Globe,
+                title: "Services digitaux",
+                desc: "Sites web, applications, plateformes et outils sur mesure pour booster votre activité.",
+                items: ["Site vitrine", "Application web", "E-commerce"],
+              },
+              {
+                icon: Palette,
+                title: "Création visuelle",
+                desc: "Montage vidéo, retouche photo, visuels publicitaires et identité visuelle de marque.",
+                items: ["Montage vidéo", "Design graphique", "Branding"],
+              },
+              {
+                icon: Wrench,
+                title: "Outils & accompagnement",
+                desc: "Factures, devis, coaching IA, accompagnement administratif et soutien scolaire.",
+                items: ["Factures & devis", "Coaching IA", "Soutien scolaire"],
+              },
+            ].map(({ icon: Icon, title, desc, items }) => (
+              <motion.div
+                key={title}
+                variants={cardReveal}
+                className="card-premium group p-7"
+              >
+                <div className="mb-5 inline-flex rounded-2xl bg-[rgba(176,141,87,0.08)] p-3.5 transition-colors group-hover:bg-[rgba(176,141,87,0.14)]">
+                  <Icon size={26} className="text-[#c9a55a]" />
+                </div>
+                <h3 className="text-xl font-bold text-[var(--ink)]">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
+                <ul className="mt-5 space-y-2">
+                  {items.map((item) => (
+                    <li key={item} className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                      <span className="h-1 w-1 rounded-full bg-[#c9a55a]" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
       </section>
 
-      {/* ── SERVICES ─────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
-        <Reveal className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <span className="badge-gold mb-3 inline-flex">Services</span>
-            <h2 className="text-4xl font-extrabold tracking-tight">Nos services</h2>
-            <p className="mt-2 max-w-xl text-lg text-zinc-500">
-              Une offre complète pour accompagner les projets digitaux, administratifs et créatifs.
-            </p>
-          </div>
-          <Link href="/services" className="btn-gold inline-flex w-fit items-center gap-2 text-sm">
-            Voir tous les services <ArrowRight size={15} />
-          </Link>
-        </Reveal>
-
-        <div className="grid gap-5 md:grid-cols-3">
-          <ServiceCard icon={Globe}   title="Services digitaux"      desc="Sites web, applications, plateformes et outils sur mesure." delay="" />
-          <ServiceCard icon={Palette} title="Création visuelle"      desc="Montage vidéo, retouche photo, visuels publicitaires et branding." delay="reveal-delay-1" />
-          <ServiceCard icon={Wrench}  title="Outils & accompagnement" desc="Factures, devis, coaching IA, administratif et soutien scolaire." delay="reveal-delay-2" />
+      {/* ══════════════════════════════════════
+          OFFRES / PRICING
+      ══════════════════════════════════════ */}
+      <Section className="mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-12 text-center">
+          <Badge>Tarifs</Badge>
+          <SectionTitle className="mt-4 text-[var(--ink)]">
+            Des offres claires,<br />
+            <span className="text-gold">sans surprise.</span>
+          </SectionTitle>
+          <motion.p variants={fadeUp} className="mx-auto mt-4 max-w-xl text-lg text-[var(--muted)]">
+            Des solutions simples et professionnelles adaptées à chaque besoin.
+          </motion.p>
         </div>
-      </section>
 
-      {/* ── OFFRES ───────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
-        <Reveal className="mb-8">
-          <span className="badge-gold mb-3 inline-flex">Offres</span>
-          <h2 className="text-4xl font-extrabold tracking-tight">Nos offres principales</h2>
-          <p className="mt-2 max-w-xl text-lg text-zinc-500">
-            Des solutions simples, professionnelles et adaptées à différents besoins.
-          </p>
-        </Reveal>
+        <motion.div
+          variants={staggerContainerFast}
+          className="grid gap-6 md:grid-cols-3"
+        >
+          {[
+            {
+              href: "/abonnement",
+              title: "Outils DJAMA",
+              desc: "Factures, devis, planning et organisation professionnelle.",
+              price: data.offers.abonnement,
+              features: ["Générateur de factures", "Devis automatiques", "Planning intégré", "Support prioritaire"],
+              featured: false,
+            },
+            {
+              href: "/coaching-ia",
+              title: "Coaching IA",
+              desc: "Maîtrisez l'IA pour automatiser et faire évoluer votre activité.",
+              price: data.offers.coaching,
+              features: ["3 mois d'accompagnement", "Séances individuelles", "Outils IA sélectionnés", "Suivi personnalisé"],
+              featured: true,
+            },
+            {
+              href: "/soutien-scolaire",
+              title: "Soutien scolaire",
+              desc: "Aide aux élèves de la 6e à la Terminale.",
+              price: data.offers.soutien,
+              features: ["Cours à la carte", "Toutes matières", "6e → Terminale", "Flexibilité totale"],
+              featured: false,
+            },
+          ].map(({ href, title, desc, price, features, featured }) => (
+            <motion.div key={href} variants={cardReveal}>
+              <Link
+                href={href}
+                className={`group relative flex h-full flex-col rounded-[var(--radius-lg)] p-7 transition-all duration-300 ${
+                  featured
+                    ? "bg-[var(--ink)] text-white border border-[rgba(201,165,90,0.3)] shadow-premium-lg hover:border-[rgba(201,165,90,0.5)]"
+                    : "card-premium"
+                }`}
+              >
+                {featured && (
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#c9a55a] to-[#e8cc94] px-4 py-1 text-xs font-bold text-[var(--ink)]">
+                    Populaire
+                  </span>
+                )}
+                <div>
+                  <h3 className={`text-xl font-bold ${featured ? "text-white" : "text-[var(--ink)]"}`}>{title}</h3>
+                  <p className={`mt-2 text-sm leading-relaxed ${featured ? "text-white/60" : "text-[var(--muted)]"}`}>{desc}</p>
+                </div>
+                <p className={`mt-6 text-3xl font-extrabold tracking-tight ${featured ? "text-gold" : "text-[var(--ink)]"}`}>{price}</p>
+                <ul className="mt-5 flex-1 space-y-2.5">
+                  {features.map((f) => (
+                    <li key={f} className={`flex items-center gap-2.5 text-sm ${featured ? "text-white/70" : "text-[var(--muted)]"}`}>
+                      <CheckCircle2 size={14} className="flex-shrink-0 text-[#c9a55a]" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <div className={`mt-7 flex items-center gap-1.5 text-sm font-bold transition-gap group-hover:gap-3 ${featured ? "text-[#c9a55a]" : "text-[var(--ink)]"}`}>
+                  Accéder <ArrowRight size={14} />
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
+      </Section>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          <OfferCard href="/abonnement"      title="Outils DJAMA"    desc="Factures, devis, planning et organisation professionnelle." price={data.offers.abonnement} delay="" />
-          <OfferCard href="/coaching-ia"     title="Coaching IA"     desc="Apprendre à utiliser l'IA pour automatiser et améliorer ton activité." price={data.offers.coaching} delay="reveal-delay-1" />
-          <OfferCard href="/soutien-scolaire" title="Soutien scolaire" desc="Aide aux élèves de la 6e à la Terminale." price={data.offers.soutien} delay="reveal-delay-2" />
-        </div>
-      </section>
-
-      {/* ── PORTFOLIO ────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
-        <Reveal className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <span className="badge-gold mb-3 inline-flex">Portfolio</span>
-            <h2 className="text-4xl font-extrabold tracking-tight">Réalisations</h2>
-            <p className="mt-2 max-w-xl text-lg text-zinc-500">
-              Découvrez un aperçu de nos contenus visuels et projets clients.
-            </p>
+      {/* ══════════════════════════════════════
+          PORTFOLIO — fond sombre
+      ══════════════════════════════════════ */}
+      <section className="hero-dark py-24">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          variants={staggerContainer}
+          className="mx-auto max-w-6xl px-6"
+        >
+          <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <motion.span variants={fadeIn} className="badge badge-gold-dark">Portfolio</motion.span>
+              <SectionTitle className="mt-4 text-white">
+                Quelques<br />
+                <span className="text-gold">réalisations.</span>
+              </SectionTitle>
+            </div>
+            <motion.div variants={fadeIn}>
+              <Link href="/portfolio" className="btn-ghost text-sm">
+                Tout voir <ArrowRight size={14} />
+              </Link>
+            </motion.div>
           </div>
-          <Link href="/portfolio" className="btn-outline inline-flex w-fit items-center gap-2 text-sm">
-            Voir tout le portfolio <ArrowRight size={15} />
-          </Link>
-        </Reveal>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          <PortfolioCard title="Projet client 1" delay="" />
-          <PortfolioCard title="Projet client 2" delay="reveal-delay-1" />
-          <PortfolioCard title="Projet client 3" delay="reveal-delay-2" />
-        </div>
+          <motion.div variants={staggerContainerFast} className="grid gap-5 md:grid-cols-3">
+            {["Projet client 1", "Projet client 2", "Projet client 3"].map((item, i) => (
+              <motion.div
+                key={item}
+                variants={cardReveal}
+                className="glass-card group overflow-hidden"
+              >
+                <div className="relative h-52 overflow-hidden rounded-t-[var(--radius-lg)] bg-gradient-to-br from-[rgba(176,141,87,0.1)] to-[rgba(255,255,255,0.03)]">
+                  <div className="absolute inset-0 flex items-center justify-center text-[80px] font-extrabold text-white/5 select-none">
+                    0{i + 1}
+                  </div>
+                  {/* Overlay hover */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-[rgba(176,141,87,0.08)] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    <span className="text-sm font-bold text-white/80">Voir le projet →</span>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-bold text-white/85">{item}</h3>
+                  <p className="mt-1.5 text-sm text-white/45">Identité visuelle, support digital ou contenu créatif.</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
       </section>
 
-      {/* ── CONTACT CTA ──────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-6 pb-24">
-        <Reveal className="hover-lift rounded-3xl border border-gold-soft bg-white p-8 shadow-luxe">
-          <span className="badge-gold mb-4 inline-flex">Contact</span>
-          <h2 className="text-3xl font-extrabold">Parlons de votre projet</h2>
-          <p className="mt-3 max-w-2xl text-lg text-zinc-500">
-            DJAMA vous accompagne dans la mise en place de solutions modernes, utiles et professionnelles.
-          </p>
-          <div className="mt-5 flex flex-col gap-2.5">
-            <a href={`mailto:${data.contact.email}`}
-              className="inline-flex items-center gap-2 text-zinc-600 font-medium hover:text-zinc-900 transition-colors">
-              <Mail size={16} className="text-[rgb(var(--gold))]" />
-              {data.contact.email}
-            </a>
-            <a href={`https://wa.me/${data.contact.whatsapp.replace(/[^0-9]/g, "")}`}
-              target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-zinc-600 font-medium hover:text-zinc-900 transition-colors">
-              <MessageCircle size={16} className="text-[rgb(var(--gold))]" />
-              {data.contact.whatsapp}
-            </a>
+      {/* ══════════════════════════════════════
+          CTA FINAL
+      ══════════════════════════════════════ */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          variants={staggerContainer}
+          className="relative overflow-hidden rounded-[2rem] border border-[rgba(176,141,87,0.2)] bg-[var(--ink)] p-12 text-center shadow-premium-lg"
+        >
+          {/* Glow central */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="h-[300px] w-[500px] rounded-full bg-[rgba(176,141,87,0.1)] blur-[80px]" />
           </div>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/contact" className="btn-gold inline-flex items-center gap-2">
-              Nous contacter <ArrowRight size={16} />
-            </Link>
-            <Link href="/services" className="btn-outline inline-flex items-center gap-2">
-              Explorer les services
-            </Link>
+
+          <div className="relative z-10">
+            <motion.span variants={fadeIn} className="badge badge-gold-dark">Contact</motion.span>
+            <motion.h2 variants={textReveal} className="display-section mt-5 text-white">
+              Parlons de<br />
+              <span className="text-gold">votre projet.</span>
+            </motion.h2>
+            <motion.p variants={fadeUp} className="mx-auto mt-5 max-w-xl text-lg text-white/50">
+              DJAMA vous accompagne dans la mise en place de solutions modernes,
+              utiles et professionnelles.
+            </motion.p>
+
+            <motion.div variants={fadeUp} className="mt-4 flex flex-col items-center gap-2">
+              <a href={`mailto:${data.contact.email}`} className="inline-flex items-center gap-2 text-base font-medium text-white/50 hover:text-white transition-colors">
+                <Mail size={15} className="text-[#c9a55a]" />
+                {data.contact.email}
+              </a>
+              <a href={`https://wa.me/${data.contact.whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-base font-medium text-white/50 hover:text-white transition-colors">
+                <MessageCircle size={15} className="text-[#c9a55a]" />
+                {data.contact.whatsapp}
+              </a>
+            </motion.div>
+
+            <motion.div variants={fadeUp} className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link href="/contact" className="btn-primary">
+                Nous contacter <ArrowRight size={16} />
+              </Link>
+              <Link href="/services" className="btn-ghost">
+                Explorer les services
+              </Link>
+            </motion.div>
           </div>
-        </Reveal>
+        </motion.div>
       </section>
-    </main>
+
+    </div>
   );
 }
