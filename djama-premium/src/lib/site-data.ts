@@ -38,8 +38,8 @@ export const siteData: SiteData = {
   },
 
   media: {
-    logo: "/images/djama-logo.png",
-    heroImage: "/images/djama-logo.png",
+    logo: "/logo.png",
+    heroImage: "/logo.png",
   },
 };
 

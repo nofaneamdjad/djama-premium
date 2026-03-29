@@ -18,7 +18,7 @@ export default function ClientFacturesPage() {
   const [loadingSave, setLoadingSave] = useState(false);
 
   const [companyName, setCompanyName] = useState("DJAMA");
-  const [companyLogo, setCompanyLogo] = useState("/images/djama-logo.png");
+  const [companyLogo, setCompanyLogo] = useState("/logo.png");
   const [companyAddress, setCompanyAddress] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
   const [companyPhone, setCompanyPhone] = useState("");
