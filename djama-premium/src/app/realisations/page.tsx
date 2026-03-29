@@ -35,6 +35,7 @@ interface Project {
   tags: string[];
   icon: React.ElementType;
   highlights?: string[];
+  clients?: string[];
   stats?: { label: string; value: string }[];
   mockLines?: { w: string; h: number; mb: number; opacity: number; radius?: number }[];
 }
@@ -45,29 +46,29 @@ interface Project {
 const PROJECTS: Project[] = [
   /* ─ Application mobile ─ */
   {
-    id: "extenso",
+    id: "wewe",
     kind: "app",
     category: "Application mobile",
-    name: "EXTENSO MAYOTTE",
-    type: "Application mobile",
+    name: "WEWE",
+    type: "Application mobile Android",
     description:
-      "Application mobile complète pour Mayotte — interface intuitive, fonctionnalités avancées et expérience utilisateur pensée pour le terrain.",
+      "Application mobile WEWE disponible sur Google Play — interface moderne, expérience utilisateur fluide et fonctionnalités pensées pour le quotidien.",
+    url: "https://play.google.com/store/apps/details?id=com.wip.wewe.guis",
     gradient: "from-[#1a0d2e] via-[#1e0f3a] to-[#130a24]",
     glow: "rgba(139,92,246,0.28)",
     accent: "#a78bfa",
     accentDim: "rgba(139,92,246,0.13)",
-    tags: ["Mobile", "iOS", "Android", "UX/UI"],
+    tags: ["Android", "Google Play", "Mobile", "UX/UI"],
     icon: Smartphone,
     highlights: [
-      "Interface moderne pensée pour l'usage terrain",
-      "Disponible iOS & Android",
-      "Notifications push & synchronisation temps réel",
+      "Disponible sur Google Play Store",
+      "Interface intuitive et design moderne",
+      "Expérience utilisateur optimisée mobile-first",
     ],
     stats: [
-      { label: "Plateforme", value: "iOS & Android" },
-      { label: "UX", value: "Mobile-first" },
+      { label: "Plateforme", value: "Android" },
+      { label: "Store", value: "Google Play" },
     ],
-    /* Lignes skeleton pour le mockup téléphone */
     mockLines: [
       { w: "70%", h: 14, mb: 6, opacity: 0.85 },
       { w: "50%", h: 9, mb: 16, opacity: 0.4 },
@@ -87,7 +88,7 @@ const PROJECTS: Project[] = [
     type: "Site e-commerce",
     description:
       "Boutique en ligne moderne avec pages produits, panier intuitif et système de paiement sécurisé. Une expérience d'achat fluide, pensée pour convertir.",
-    url: "https://mondouka.com/",
+    url: "https://mondouka.com",
     domain: "mondouka.com",
     gradient: "from-[#0d1a2a] via-[#0f2235] to-[#0a1928]",
     glow: "rgba(56,139,253,0.22)",
@@ -123,7 +124,7 @@ const PROJECTS: Project[] = [
     type: "Site vitrine",
     description:
       "Site vitrine professionnel pour présenter les services et l'identité d'une entreprise. Design épuré, impact immédiat, optimisé pour la confiance.",
-    url: "https://clamac.ae/",
+    url: "https://clamac.ae",
     domain: "clamac.ae",
     gradient: "from-[#0f1a10] via-[#152218] to-[#0d1a10]",
     glow: "rgba(52,211,153,0.2)",
@@ -156,23 +157,24 @@ const PROJECTS: Project[] = [
     kind: "service",
     category: "Assistance administrative",
     name: "Entreprises accompagnées",
-    type: "Assistance administrative",
+    type: "Assistance & démarches",
     description:
-      "Plusieurs entreprises et entrepreneurs nous ont fait confiance pour gérer leurs démarches administratives : rédaction de documents, gestion de dossiers, suivi des courriers et interlocuteurs officiels.",
+      "Gestion des démarches administratives, rédaction de documents officiels, constitution de dossiers et suivi pour le compte d'entreprises locales.",
     gradient: "from-[#1a1208] via-[#201508] to-[#171006]",
     glow: "rgba(249,168,38,0.2)",
     accent: "#f9a826",
     accentDim: "rgba(249,168,38,0.12)",
-    tags: ["Administratif", "Dossiers", "Documents", "Suivi"],
+    tags: ["Administratif", "Dossiers", "Documents", "Marchés"],
     icon: FileText,
+    clients: ["EXTENSO MAYOTTE", "ESPACE PUB", "MYPHONE974"],
     highlights: [
       "Rédaction et mise en forme de documents officiels",
       "Suivi et gestion de dossiers complets",
       "Interface avec les administrations et organismes",
-      "Accompagnement pour marchés publics & privés",
+      "Accompagnement marchés publics & privés",
     ],
     stats: [
-      { label: "Délai", value: "Réactif" },
+      { label: "Entreprises", value: "3 clients" },
       { label: "Confidentialité", value: "Garantie" },
     ],
   },
@@ -181,26 +183,27 @@ const PROJECTS: Project[] = [
   {
     id: "fournisseurs",
     kind: "service",
-    category: "Recherche de fournisseurs",
-    name: "Sourcing international",
+    category: "Sourcing international",
+    name: "Recherche de fournisseurs",
     type: "Chine · Turquie · Dubaï",
     description:
-      "Identification et qualification de fournisseurs en Chine, Turquie, Dubaï et autres marchés internationaux. Négociation, vérification des conditions et mise en relation directe.",
+      "Identification et qualification de fournisseurs en Chine, Turquie, Dubaï et autres marchés. Négociation, vérification des conditions, mise en relation directe.",
     gradient: "from-[#0d1820] via-[#0f1e2a] to-[#0b1520]",
     glow: "rgba(56,189,248,0.2)",
     accent: "#38bdf8",
     accentDim: "rgba(56,189,248,0.11)",
-    tags: ["Chine", "Turquie", "Dubaï", "Import", "Négociation"],
+    tags: ["Chine", "Turquie", "Dubaï", "Import", "Négo"],
     icon: Globe2,
+    clients: ["SCAL", "EXTENSO MAYOTTE", "CLAMAC"],
     highlights: [
-      "Sourcing qualifié en Chine, Turquie, Dubaï et plus",
+      "Sourcing qualifié Chine, Turquie, Dubaï",
       "Vérification et audit des fournisseurs",
-      "Négociation des conditions et prix",
-      "Mise en relation directe et suivi des commandes",
+      "Négociation des prix et conditions",
+      "Suivi des commandes et livraisons",
     ],
     stats: [
-      { label: "Marchés", value: "Asie · Moyen-Orient" },
-      { label: "Réseau", value: "International" },
+      { label: "Marchés", value: "3 pays" },
+      { label: "Entreprises", value: "3 clients" },
     ],
   },
 ];
@@ -323,35 +326,53 @@ function BrowserMockup({ project }: { project: Project }) {
 ══════════════════════════════════════════════════ */
 function ServiceVisual({ project }: { project: Project }) {
   return (
-    <div className={`relative flex h-52 items-center justify-center overflow-hidden bg-gradient-to-br ${project.gradient} transition-transform duration-700 ease-out group-hover:scale-[1.02]`}>
+    <div className={`relative overflow-hidden bg-gradient-to-br ${project.gradient} transition-transform duration-700 ease-out group-hover:scale-[1.02]`}
+      style={{ minHeight: 220 }}>
       {/* Grille */}
       <div className="pointer-events-none absolute inset-0" style={{
         backgroundImage: `linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
                           linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)`,
         backgroundSize: "28px 28px",
       }} />
-      {/* Cercles décoratifs */}
+      {/* Glow ambiance */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="h-48 w-48 rounded-full blur-3xl" style={{ background: project.glow }} />
+      </div>
       <div className="pointer-events-none absolute left-[-60px] top-[-60px] h-[200px] w-[200px] rounded-full border border-white/5"
         style={{ background: `radial-gradient(circle, ${project.glow}, transparent 70%)` }} />
-      <div className="pointer-events-none absolute right-[-40px] bottom-[-40px] h-[150px] w-[150px] rounded-full border border-white/5" />
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full blur-3xl" style={{ background: project.glow }} />
-      </div>
 
-      {/* Icône centrale */}
-      <div className="relative z-10 flex flex-col items-center gap-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 backdrop-blur-sm"
-          style={{ background: project.accentDim }}>
-          <project.icon size={28} style={{ color: project.accent }} />
+      {/* Contenu */}
+      <div className="relative z-10 flex h-full flex-col items-center justify-center gap-5 px-6 py-8">
+        {/* Icône + titre */}
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 backdrop-blur-sm"
+            style={{ background: project.accentDim }}>
+            <project.icon size={26} style={{ color: project.accent }} />
+          </div>
         </div>
-        {/* Stats badges */}
+
+        {/* Badges entreprises clientes */}
+        {project.clients && (
+          <div className="flex flex-wrap justify-center gap-2">
+            {project.clients.map((client) => (
+              <div key={client}
+                className="flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 backdrop-blur-sm"
+                style={{ background: "rgba(0,0,0,0.35)" }}>
+                <div className="h-1.5 w-1.5 rounded-full" style={{ background: project.accent }} />
+                <span className="text-xs font-bold tracking-wide text-white">{client}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Stats */}
         {project.stats && (
           <div className="flex flex-wrap justify-center gap-2">
             {project.stats.map(({ label, value }) => (
               <div key={label}
-                className="rounded-full border border-white/10 px-3 py-1 text-center backdrop-blur-sm"
-                style={{ background: "rgba(0,0,0,0.3)" }}>
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: project.accent }}>{value}</p>
+                className="rounded-xl border border-white/8 px-3 py-1.5 text-center backdrop-blur-sm"
+                style={{ background: "rgba(0,0,0,0.25)" }}>
+                <p className="text-[11px] font-extrabold" style={{ color: project.accent }}>{value}</p>
                 <p className="text-[9px] text-white/40">{label}</p>
               </div>
             ))}
@@ -434,6 +455,29 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
           </ul>
         )}
 
+        {/* Liste des entreprises clientes (pour les services) */}
+        {project.clients && (
+          <div className="mt-5">
+            <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-widest text-[var(--muted)]">
+              Entreprises accompagnées
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {project.clients.map((client) => (
+                <span key={client}
+                  className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold"
+                  style={{
+                    background: project.accentDim,
+                    color: project.accent,
+                    borderColor: `${project.accent}25`,
+                  }}>
+                  <div className="h-1 w-1 rounded-full" style={{ background: project.accent }} />
+                  {client}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Spacer pour coller le CTA au bas */}
         <div className="flex-1" />
 
@@ -443,7 +487,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
             <a href={project.url} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-2xl border px-5 py-2.5 text-sm font-bold transition-all duration-300 hover:gap-3"
               style={{ background: project.accentDim, color: project.accent, borderColor: `${project.accent}30` }}>
-              Voir le site <ExternalLink size={13} />
+              {project.kind === "app" ? "Voir sur Google Play" : "Voir le site"} <ExternalLink size={13} />
             </a>
           ) : (
             <Link href="/contact"
