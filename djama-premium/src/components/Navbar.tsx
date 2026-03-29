@@ -65,12 +65,19 @@ export default function Navbar() {
               style={{ originX: 0.5, originY: 0.5 }}
             >
               <motion.div
-                animate={{ scale: [1, 1.018, 1] }}
+                /* Breathing + rendu blanc sur fond sombre */
+                animate={{
+                  scale: [1, 1.018, 1],
+                  filter: [
+                    "brightness(0) invert(1) drop-shadow(0 0 0px rgba(201,165,90,0))",
+                    "brightness(0) invert(1) drop-shadow(0 0 0px rgba(201,165,90,0))",
+                  ],
+                }}
                 transition={{ duration: 4, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
-                /* 3. Hover premium : légère élévation + glow doré */
+                style={{ filter: "brightness(0) invert(1)" }}
                 whileHover={{
-                  scale: 1.1,
-                  filter: "drop-shadow(0 0 10px rgba(201,165,90,0.45))",
+                  scale: 1.08,
+                  filter: "brightness(0) invert(1) drop-shadow(0 0 12px rgba(201,165,90,0.5))",
                   transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
                 }}
                 whileTap={{ scale: 0.94, transition: { duration: 0.15 } }}
@@ -78,10 +85,10 @@ export default function Navbar() {
                 <Image
                   src={data.media.logo}
                   alt="Logo DJAMA"
-                  width={44}
-                  height={44}
+                  width={120}
+                  height={40}
                   priority
-                  className="h-10 w-10 object-contain"
+                  className="h-9 w-auto object-contain"
                 />
               </motion.div>
             </motion.div>
