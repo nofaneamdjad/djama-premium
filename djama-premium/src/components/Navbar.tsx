@@ -8,11 +8,11 @@ import { Menu, X, ArrowRight } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 
 const NAV_LINKS = [
-  { href: "/",           label: "Accueil"       },
-  { href: "/services",   label: "Services"      },
-  { href: "/portfolio",  label: "Portfolio"     },
-  { href: "/contact",    label: "Contact"       },
-  { href: "/client",     label: "Espace client" },
+  { href: "/",              label: "Accueil"       },
+  { href: "/services",      label: "Services"      },
+  { href: "/realisations",  label: "Réalisations"  },
+  { href: "/contact",       label: "Contact"       },
+  { href: "/client",        label: "Espace client" },
 ];
 
 const ease = [0.22, 1, 0.36, 1] as const;
