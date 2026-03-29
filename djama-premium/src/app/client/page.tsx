@@ -8,6 +8,7 @@ import {
   Upload, Trash2, Plus, X, Download, Save,
   Building2, User, FileText, StickyNote, Hash,
   Sparkles, CheckCircle2, AlertCircle, ReceiptText,
+  Zap, Award, FileDown,
 } from "lucide-react";
 import { FadeReveal } from "@/components/ui/WordReveal";
 
@@ -401,6 +402,69 @@ export default function ClientFacturesPage() {
             ))}
           </motion.div>
         </div>
+
+        {/* ── 3 cartes avantages ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease, delay: 0.42 }}
+          className="relative z-10 mx-auto mt-12 max-w-4xl px-6"
+        >
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              {
+                icon: Zap,
+                title: "Génération rapide",
+                desc: "Remplissez les champs, votre document est prêt en moins de 2 minutes.",
+                glow: "rgba(251,191,36,0.12)",
+                accent: "#f9a826",
+              },
+              {
+                icon: Award,
+                title: "Rendu professionnel",
+                desc: "Mise en page soignée, couleurs personnalisées, logo intégré — impeccable.",
+                glow: "rgba(201,165,90,0.15)",
+                accent: "#c9a55a",
+              },
+              {
+                icon: FileDown,
+                title: "Export PDF propre",
+                desc: "Un clic suffit pour télécharger un PDF prêt à envoyer ou imprimer.",
+                glow: "rgba(52,211,153,0.1)",
+                accent: "#34d399",
+              },
+            ].map(({ icon: Icon, title, desc, glow, accent }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease, delay: 0.48 + i * 0.08 }}
+                className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/5 p-5 backdrop-blur-sm transition-all duration-300 hover:border-white/15 hover:bg-white/8"
+              >
+                {/* Glow de fond */}
+                <div
+                  className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full blur-2xl transition-opacity duration-300 group-hover:opacity-150"
+                  style={{ background: glow }}
+                />
+                {/* Icône */}
+                <div
+                  className="relative mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10"
+                  style={{ background: `${glow}` }}
+                >
+                  <Icon size={18} style={{ color: accent }} />
+                </div>
+                {/* Texte */}
+                <p className="relative text-sm font-bold text-white">{title}</p>
+                <p className="relative mt-1.5 text-xs leading-relaxed text-white/45">{desc}</p>
+                {/* Barre bas */}
+                <div
+                  className="absolute bottom-0 left-0 h-[2px] w-0 transition-all duration-500 group-hover:w-full"
+                  style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
 
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[var(--surface)] to-transparent" />
       </section>
