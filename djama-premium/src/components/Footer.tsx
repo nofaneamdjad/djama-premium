@@ -48,7 +48,6 @@ export default function Footer() {
                   className="rounded-xl object-contain"
                 />
               </motion.div>
-              <span className="text-lg font-extrabold tracking-tight text-[var(--ink)]">DJAMA</span>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-[var(--muted)]">
               Services digitaux et outils professionnels pour particuliers
@@ -113,7 +112,7 @@ export default function Footer() {
       <div className="border-t border-[var(--border)]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <p className="text-xs text-[var(--muted)]">
-            © {new Date().getFullYear()} DJAMA — Tous droits réservés
+            © {new Date().getFullYear()} — Tous droits réservés
           </p>
           <Link href="/contact"
             className="text-xs font-bold text-[#c9a55a] hover:underline underline-offset-2 transition-opacity hover:opacity-80">

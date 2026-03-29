@@ -140,7 +140,7 @@ export default function Home() {
                 <div className="space-y-3">
                   {[
                     { label: "Sites web & applications",      price: "Sur devis"              },
-                    { label: "Outils DJAMA (factures/devis)", price: data.offers.abonnement   },
+                    { label: "Outils pro (factures/devis)",   price: data.offers.abonnement   },
                     { label: "Coaching IA",                   price: data.offers.coaching     },
                     { label: "Soutien scolaire",              price: data.offers.soutien      },
                   ].map(({ label, price }, i) => (
@@ -222,7 +222,7 @@ export default function Home() {
             </h2>
 
             <FadeReveal delay={0.25} as="p" className="mt-6 text-lg leading-relaxed text-[var(--muted)]">
-              DJAMA est spécialisée dans les services digitaux, les outils professionnels
+              Spécialisée dans les services digitaux, les outils professionnels
               et l&apos;accompagnement sur mesure. Notre mission : vous donner une image
               forte, moderne et cohérente.
             </FadeReveal>
@@ -355,7 +355,7 @@ export default function Home() {
         <motion.div variants={staggerContainerFast} className="grid gap-6 md:grid-cols-3">
           {[
             {
-              href: "/abonnement", title: "Outils DJAMA",
+              href: "/abonnement", title: "Outils pro",
               desc: "Factures, devis, planning et organisation professionnelle.",
               price: data.offers.abonnement,
               features: ["Générateur de factures", "Devis automatiques", "Planning intégré", "Support prioritaire"],
@@ -489,7 +489,7 @@ export default function Home() {
             </h2>
 
             <FadeReveal delay={0.3} as="p" className="mx-auto mt-5 max-w-xl text-lg text-white/50">
-              DJAMA vous accompagne dans la mise en place de solutions
+              Nous vous accompagnons dans la mise en place de solutions
               modernes, utiles et professionnelles.
             </FadeReveal>
 
