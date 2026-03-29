@@ -53,18 +53,38 @@ export default function Navbar() {
         }`}
       >
         <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between px-6">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group" onClick={() => setMenuOpen(false)}>
-            <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
-              <Image
-                src={data.media.logo}
-                alt="Logo DJAMA"
-                width={38}
-                height={38}
-                className="h-9 w-9 rounded-xl object-contain"
-              />
+          {/* Logo — texte supprimé, logo seul avec animations premium */}
+          <Link href="/" onClick={() => setMenuOpen(false)} aria-label="DJAMA — Accueil">
+            <motion.div
+              /* 1. Apparition fluide au chargement */
+              initial={{ opacity: 0, scale: 0.88, filter: "blur(6px)" }}
+              animate={{ opacity: 1, scale: 1,   filter: "blur(0px)" }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+              /* 2. Breathing continu très subtil */
+              whileInView={undefined}
+              style={{ originX: 0.5, originY: 0.5 }}
+            >
+              <motion.div
+                animate={{ scale: [1, 1.018, 1] }}
+                transition={{ duration: 4, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
+                /* 3. Hover premium : légère élévation + glow doré */
+                whileHover={{
+                  scale: 1.1,
+                  filter: "drop-shadow(0 0 10px rgba(201,165,90,0.45))",
+                  transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                }}
+                whileTap={{ scale: 0.94, transition: { duration: 0.15 } }}
+              >
+                <Image
+                  src={data.media.logo}
+                  alt="Logo DJAMA"
+                  width={44}
+                  height={44}
+                  priority
+                  className="h-10 w-10 object-contain"
+                />
+              </motion.div>
             </motion.div>
-            <span className="text-lg font-extrabold tracking-tight text-white">DJAMA</span>
           </Link>
 
           {/* Nav desktop */}
