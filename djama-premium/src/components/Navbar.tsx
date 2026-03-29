@@ -53,34 +53,41 @@ export default function Navbar() {
         }`}
       >
         <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between px-6">
-          {/* Logo — texte supprimé, logo seul avec animations premium */}
+          {/* Logo — animations premium */}
           <Link href="/" onClick={() => setMenuOpen(false)} aria-label="DJAMA — Accueil">
+            {/* Couche 1 : entrée au chargement */}
             <motion.div
-              /* 1. Apparition fluide au chargement */
-              initial={{ opacity: 0, scale: 0.88, filter: "blur(6px)" }}
-              animate={{ opacity: 1, scale: 1,   filter: "blur(0px)" }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-              /* 2. Breathing continu très subtil */
-              whileInView={undefined}
-              style={{ originX: 0.5, originY: 0.5 }}
+              initial={{ opacity: 0, x: -14, filter: "blur(8px)" }}
+              animate={{ opacity: 1, x: 0,   filter: "blur(0px)" }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+              style={{ display: "flex", alignItems: "center" }}
             >
+              {/* Couche 2 : shimmer lumineux cyclique (apparaît, brille, disparaît) */}
               <motion.div
-                /* Breathing + rendu blanc sur fond sombre */
                 animate={{
-                  scale: [1, 1.018, 1],
                   filter: [
-                    "brightness(0) invert(1) drop-shadow(0 0 0px rgba(201,165,90,0))",
-                    "brightness(0) invert(1) drop-shadow(0 0 0px rgba(201,165,90,0))",
+                    "brightness(0) invert(1) drop-shadow(0 0 0px rgba(255,255,255,0))",
+                    "brightness(0) invert(1) drop-shadow(0 0 14px rgba(255,255,255,0.35))",
+                    "brightness(0) invert(1) drop-shadow(0 0 0px rgba(255,255,255,0))",
                   ],
                 }}
-                transition={{ duration: 4, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
-                style={{ filter: "brightness(0) invert(1)" }}
-                whileHover={{
-                  scale: 1.08,
-                  filter: "brightness(0) invert(1) drop-shadow(0 0 12px rgba(201,165,90,0.5))",
-                  transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                transition={{
+                  duration: 3.5,
+                  ease: "easeInOut",
+                  repeat: Infinity,
+                  repeatDelay: 4,   // pause de 4s entre chaque shimmer
                 }}
-                whileTap={{ scale: 0.94, transition: { duration: 0.15 } }}
+                style={{ filter: "brightness(0) invert(1)" }}
+                /* Couche 3 : hover micro-animation */
+                whileHover={{
+                  scale: 1.06,
+                  filter: "brightness(0) invert(1) drop-shadow(0 0 16px rgba(201,165,90,0.55))",
+                  transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                }}
+                whileTap={{
+                  scale: 0.93,
+                  transition: { duration: 0.12 },
+                }}
               >
                 <Image
                   src={data.media.logo}
