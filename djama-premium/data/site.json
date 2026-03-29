@@ -1,0 +1,20 @@
+{
+  "home": {
+    "title": "DJAMA — Services digitaux & outils pro",
+    "subtitle": "Sites, apps, montage, factures/devis, accompagnement URSSAF — une solution complète."
+  },
+  "contact": {
+    "email": "contact@djama.com",
+    "whatsapp": "+262693523665"
+  },
+  "offers": {
+    "abonnement": "11,99€ / mois",
+    "coaching": "190€ / 3 mois",
+    "soutien": "14€ / heure"
+  },
+  "media": {
+    "logo": "/images/djama-logo.png",
+    "heroImage": "/images/hero.jpg",
+    "heroVideo": "/videos/hero.mp4"
+  }
+}
