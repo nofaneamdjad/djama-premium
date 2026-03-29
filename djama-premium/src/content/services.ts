@@ -13,6 +13,9 @@ import {
   BadgeCheck,
   Brain,
   GraduationCap,
+  Building2,
+  Globe,
+  Landmark,
 } from "lucide-react";
 
 export type Service = {
@@ -142,6 +145,62 @@ export const services: Service[] = [
     category: "Accompagnement",
     icon: ClipboardList,
     highlights: ["Suivi", "Conseils", "Aide déclaration", "Sérénité"],
+  },
+
+  // ACCOMPAGNEMENT (suite)
+  {
+    slug: "assistance-administrative-entreprises",
+    title: "Assistance administrative entreprises",
+    excerpt:
+      "Gestion documentaire, rédaction professionnelle et organisation interne — on prend en charge votre administratif pour que vous vous concentriez sur l'essentiel.",
+    category: "Accompagnement",
+    icon: Building2,
+    highlights: [
+      "Gestion et classement des documents",
+      "Rédaction de courriers & emails professionnels",
+      "Suivi des échéances légales et fiscales",
+      "Tableaux de bord et reporting interne",
+      "Préparation des dossiers administratifs",
+      "Confidentialité et discrétion garanties",
+    ],
+    ctaLabel: "En savoir plus",
+    ctaHref: "/services/assistance-administrative-entreprises",
+  },
+  {
+    slug: "fournisseurs-internationaux",
+    title: "Recherche de fournisseurs internationaux",
+    excerpt:
+      "Sourcing qualifié en Chine, Turquie, Dubaï et ailleurs — les meilleurs prix, les bons partenaires, sans les mauvaises surprises.",
+    category: "Accompagnement",
+    icon: Globe,
+    highlights: [
+      "Sourcing ciblé : Chine, Turquie, Dubaï, Inde…",
+      "Vérification et qualification des fournisseurs",
+      "Négociation des prix et conditions",
+      "Gestion des commandes et des délais",
+      "Suivi logistique et douanier",
+      "Conseils import-export et réglementation",
+    ],
+    ctaLabel: "En savoir plus",
+    ctaHref: "/services/fournisseurs-internationaux",
+  },
+  {
+    slug: "marches-publics-prives",
+    title: "Marchés publics & privés",
+    excerpt:
+      "Répondez aux appels d'offres avec un dossier solide, clair et convaincant — de la veille jusqu'à la remise du mémoire technique.",
+    category: "Accompagnement",
+    icon: Landmark,
+    highlights: [
+      "Veille et détection des appels d'offres",
+      "Constitution et vérification du dossier",
+      "Rédaction du mémoire technique",
+      "Réponse aux questions du commanditaire",
+      "Marchés publics et marchés privés",
+      "Accompagnement de A à Z",
+    ],
+    ctaLabel: "En savoir plus",
+    ctaHref: "/services/marches-publics-prives",
   },
 
   // COACHING
