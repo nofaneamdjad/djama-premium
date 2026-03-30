@@ -94,14 +94,32 @@ function CardVisual({ icon: Icon, config }: {
 
 /* ─── Carte service premium ──────────────────────── */
 function ServiceCard({ service }: { service: typeof services[0] }) {
-  const config = CAT_CONFIG[service.category];
+  const config    = CAT_CONFIG[service.category];
+  const href      = service.ctaHref ?? "/contact";
+  const clickable = !!service.ctaHref;
 
   return (
     <motion.div
       layout
       variants={cardReveal}
-      className="group relative flex flex-col overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_8px_rgba(9,9,11,0.05)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_24px_56px_rgba(9,9,11,0.12)] hover:border-[rgba(201,165,90,0.2)]"
+      className={`group relative flex flex-col overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_8px_rgba(9,9,11,0.05)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_24px_56px_rgba(9,9,11,0.12)] hover:border-[rgba(201,165,90,0.2)] ${clickable ? "cursor-pointer" : ""}`}
     >
+      {/* ── Overlay de clic sur toute la carte ── */}
+      {clickable && (
+        <Link
+          href={href}
+          className="absolute inset-0 z-10 rounded-[1.5rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(201,165,90,0.6)]"
+          aria-label={`${service.ctaLabel ?? "Voir"} — ${service.title}`}
+        />
+      )}
+
+      {/* Anneau gold au hover (visible seulement si cliquable) */}
+      {clickable && (
+        <motion.div
+          className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 ring-2 ring-[rgba(201,165,90,0.45)] transition-opacity duration-300 group-hover:opacity-100"
+        />
+      )}
+
       {/* Visuel haut */}
       <CardVisual icon={service.icon} config={config} />
 
@@ -139,10 +157,10 @@ function ServiceCard({ service }: { service: typeof services[0] }) {
           ))}
         </ul>
 
-        {/* CTA */}
+        {/* CTA — au-dessus de l'overlay grâce à z-20 */}
         <Link
-          href={service.ctaHref ?? "/contact"}
-          className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold transition-all duration-300 group-hover:gap-3"
+          href={href}
+          className="relative z-20 mt-5 inline-flex items-center gap-1.5 text-sm font-bold transition-all duration-300 group-hover:gap-3"
           style={{ color: config.accent }}
         >
           {service.ctaLabel ?? "En savoir plus"}

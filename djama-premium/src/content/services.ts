@@ -222,6 +222,6 @@ export const services: Service[] = [
     icon: GraduationCap,
     highlights: ["Méthode", "Exercices", "Régularité", "RDV en ligne"],
     ctaLabel: "Prendre RDV",
-    ctaHref: "/rendezvous",
+    ctaHref: "/soutien-scolaire",
   },
 ];
