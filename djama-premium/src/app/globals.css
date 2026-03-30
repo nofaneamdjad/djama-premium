@@ -5,6 +5,7 @@
 ══════════════════════════════════════════════ */
 :root {
   /* Gold palette */
+  --gold: 201, 165, 90;        /* rgb(var(--gold)) = #c9a55a  rgba(var(--gold), x) works too */
   --gold-100: #f5e6c8;
   --gold-200: #e8cc94;
   --gold-400: #c9a55a;

@@ -326,7 +326,7 @@ export default function CoachingIAPage() {
 
         <div className="relative mx-auto max-w-5xl px-6">
           <FadeReveal className="mb-14 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(var(--gold),0.25)] bg-[rgba(var(--gold),0.08)] px-4 py-2 text-xs font-bold uppercase tracking-widest text-[rgb(var(--gold))] mb-5">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)] px-4 py-2 text-xs font-bold uppercase tracking-widest mb-5" style={{ color: "#c9a55a" }}>
               <Users size={12} />
               Accompagnement humain
             </div>
@@ -348,11 +348,11 @@ export default function CoachingIAPage() {
               className="group rounded-3xl border border-white/[0.12] bg-white/[0.07] p-8 backdrop-blur-sm transition-all duration-300 hover:border-[rgba(var(--gold),0.35)] hover:bg-white/[0.10]"
             >
               <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[rgba(var(--gold),0.3)] bg-[rgba(var(--gold),0.12)]">
-                  <Video size={22} className="text-[rgb(var(--gold))]" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.12)]">
+                  <Video size={22} style={{ color: "#c9a55a" }} />
                 </div>
                 <div>
-                  <span className="block text-xs font-bold uppercase tracking-widest text-[rgb(var(--gold))]">Cours théorique</span>
+                  <span className="block text-xs font-bold uppercase tracking-widest" style={{ color: "#c9a55a" }}>Cours théorique</span>
                   <span className="text-2xl font-extrabold text-white">2h de visio</span>
                 </div>
               </div>
@@ -368,7 +368,7 @@ export default function CoachingIAPage() {
                   "Session de questions-réponses",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-xs text-[#e5e7eb]">
-                    <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-[rgb(var(--gold))]" />
+                    <CheckCircle2 size={13} className="mt-0.5 shrink-0" style={{ color: "#c9a55a" }} />
                     {item}
                   </li>
                 ))}
@@ -384,16 +384,16 @@ export default function CoachingIAPage() {
               className="group relative rounded-3xl border border-[rgba(var(--gold),0.35)] bg-[rgba(var(--gold),0.09)] p-8 backdrop-blur-sm transition-all duration-300 hover:border-[rgba(var(--gold),0.55)] hover:bg-[rgba(var(--gold),0.14)]"
             >
               {/* Badge recommandé */}
-              <div className="absolute right-5 top-5 rounded-full bg-[rgba(var(--gold),0.15)] px-2.5 py-1 text-[0.6rem] font-extrabold uppercase tracking-widest text-[rgb(var(--gold))]">
+              <div className="absolute right-5 top-5 rounded-full bg-[rgba(201,165,90,0.15)] px-2.5 py-1 text-[0.6rem] font-extrabold uppercase tracking-widest" style={{ color: "#c9a55a" }}>
                 Cœur du programme
               </div>
 
               <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[rgba(var(--gold),0.35)] bg-[rgba(var(--gold),0.12)]">
-                  <Play size={22} className="text-[rgb(var(--gold))]" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.35)] bg-[rgba(201,165,90,0.12)]">
+                  <Play size={22} style={{ color: "#c9a55a" }} />
                 </div>
                 <div>
-                  <span className="block text-xs font-bold uppercase tracking-widest text-[rgb(var(--gold))]">Pratique avec coach</span>
+                  <span className="block text-xs font-bold uppercase tracking-widest" style={{ color: "#c9a55a" }}>Pratique avec coach</span>
                   <span className="text-2xl font-extrabold text-white">6h d'ateliers</span>
                 </div>
               </div>
@@ -409,7 +409,7 @@ export default function CoachingIAPage() {
                   "Suivi de progression entre les séances",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-xs text-[#e5e7eb]">
-                    <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-[rgb(var(--gold))]" />
+                    <CheckCircle2 size={13} className="mt-0.5 shrink-0" style={{ color: "#c9a55a" }} />
                     {item}
                   </li>
                 ))}
@@ -419,7 +419,7 @@ export default function CoachingIAPage() {
 
           {/* Total heures */}
           <FadeReveal delay={0.2}>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 rounded-2xl border border-white/8 bg-white/[0.03] px-8 py-5">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 rounded-2xl border border-white/[0.12] bg-white/[0.04] px-8 py-5">
               {[
                 { val: "2h",  label: "Cours théorique en visio" },
                 { val: "6h",  label: "Pratique avec coach" },
@@ -427,8 +427,8 @@ export default function CoachingIAPage() {
                 { val: "3",   label: "Mois de suivi inclus" },
               ].map(({ val, label }) => (
                 <div key={label} className="flex flex-col items-center gap-0.5">
-                  <span className="text-xl font-extrabold text-[rgb(var(--gold))]">{val}</span>
-                  <span className="text-xs text-white/65">{label}</span>
+                  <span className="text-xl font-extrabold" style={{ color: "#c9a55a" }}>{val}</span>
+                  <span className="text-xs text-white/70">{label}</span>
                 </div>
               ))}
             </div>
