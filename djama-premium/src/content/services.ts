@@ -119,6 +119,8 @@ export const services: Service[] = [
     category: "Documents & Outils",
     icon: BadgeCheck,
     highlights: ["Rappels", "Organisation", "Simple", "Efficace"],
+    ctaLabel: "En savoir plus",
+    ctaHref: "/planning-agenda",
   },
   {
     slug: "bloc-notes",
