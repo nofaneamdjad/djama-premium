@@ -1,8 +1,8 @@
 /**
  * Script : confirmation + mise à jour de l'utilisateur admin
  *
- * Le compte nofamdjad31@gmail.com a été créé avec l'ID :
- *   6dcee9dc-6136-471a-942f-1d37559d4110
+ * Le compte nofamdjad@gmail.com a été créé avec l'ID :
+ *   4cf716cd-e1b3-4695-aa53-c9694bafa5ec
  *
  * Ce script confirme l'email et définit le rôle admin.
  *
@@ -22,7 +22,7 @@ config({ path: ".env.local" });
 
 const SUPABASE_URL     = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const ADMIN_USER_ID    = "6dcee9dc-6136-471a-942f-1d37559d4110";
+const ADMIN_USER_ID    = "4cf716cd-e1b3-4695-aa53-c9694bafa5ec";
 
 if (!SERVICE_ROLE_KEY || SERVICE_ROLE_KEY === "COLLER_ICI_VOTRE_SERVICE_ROLE_KEY") {
   console.error("\n❌  SUPABASE_SERVICE_ROLE_KEY manquante dans .env.local");
@@ -54,7 +54,7 @@ async function main() {
   console.log("\n✅  Compte confirmé et prêt !");
   console.log("\n─────────────────────────────────────────");
   console.log("  Identifiants de connexion :");
-  console.log("  📧  Email    : nofamdjad31@gmail.com");
+  console.log("  📧  Email    : nofamdjad@gmail.com");
   console.log("  🔑  Password : 12345678");
   console.log("  🔗  Page     : /login → /client");
   console.log("─────────────────────────────────────────\n");

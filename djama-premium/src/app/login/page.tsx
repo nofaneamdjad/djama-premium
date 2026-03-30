@@ -4,7 +4,10 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight } from "lucide-react";
+import {
+  Eye, EyeOff, Lock, Mail, AlertCircle,
+  ArrowRight, RefreshCw, CheckCircle2,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -51,36 +54,82 @@ function AuthField({
 /* ── Page principale ───────────────────────────── */
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [showPwd, setShowPwd]   = useState(false);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
+  const [email,       setEmail]       = useState("");
+  const [password,    setPassword]    = useState("");
+  const [showPwd,     setShowPwd]     = useState(false);
+  const [loading,     setLoading]     = useState(false);
+  const [resending,   setResending]   = useState(false);
+  const [error,       setError]       = useState("");
+  const [errorType,   setErrorType]   = useState<"credentials" | "other" | null>(null);
+  const [resendOk,    setResendOk]    = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setErrorType(null);
+    setResendOk(false);
     setLoading(true);
+
     try {
-      const { error: sbError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+      const { data, error: sbError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
         password,
       });
+
       if (sbError) {
-        if (sbError.message.includes("Invalid login credentials")) {
-          setError("Email ou mot de passe incorrect.");
+        /* Depuis Supabase v2.60+, emails non confirmés retournent
+           "Invalid login credentials" — on détecte les deux cas. */
+        if (
+          sbError.message.includes("Invalid login credentials") ||
+          sbError.message.includes("invalid_credentials")
+        ) {
+          setError(
+            "Email ou mot de passe incorrect — ou adresse email non confirmée."
+          );
+          setErrorType("credentials");
         } else if (sbError.message.includes("Email not confirmed")) {
-          setError("Confirmez votre adresse e-mail avant de vous connecter.");
+          setError("Votre adresse email n'est pas encore confirmée.");
+          setErrorType("credentials");
         } else {
           setError(sbError.message);
+          setErrorType("other");
         }
         setLoading(false);
         return;
       }
+
+      if (!data.session) {
+        setError("Session non créée. Vérifiez votre email de confirmation.");
+        setErrorType("credentials");
+        setLoading(false);
+        return;
+      }
+
       router.push("/client/factures");
     } catch {
       setError("Erreur inattendue. Réessayez.");
+      setErrorType("other");
       setLoading(false);
+    }
+  }
+
+  /* Renvoyer l'email de confirmation */
+  async function handleResend() {
+    if (!email.trim()) {
+      setError("Saisissez votre adresse email ci-dessus avant de renvoyer.");
+      return;
+    }
+    setResending(true);
+    const { error: resendErr } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim().toLowerCase(),
+    });
+    setResending(false);
+    if (resendErr) {
+      setError(`Impossible de renvoyer : ${resendErr.message}`);
+    } else {
+      setResendOk(true);
+      setError("");
     }
   }
 
@@ -162,23 +211,59 @@ export default function LoginPage() {
               }
             />
 
-            {/* Erreur */}
-            <AnimatePresence>
+            {/* Messages d'erreur / succès */}
+            <AnimatePresence mode="wait">
+              {resendOk && (
+                <motion.div
+                  key="resend-ok"
+                  initial={{ opacity: 0, y: -6, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden rounded-2xl border border-green-500/20 bg-green-500/10 px-4 py-3"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-green-400" />
+                    <p className="text-xs leading-relaxed text-green-300">
+                      Email de confirmation renvoyé à <strong>{email}</strong>.
+                      Vérifiez votre boîte mail (et vos spams).
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
               {error && (
                 <motion.div
+                  key="error"
                   initial={{ opacity: 0, y: -6, height: 0 }}
                   animate={{ opacity: 1, y: 0, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.25 }}
-                  className="flex items-start gap-2.5 overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3"
+                  className="overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3"
                 >
-                  <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-400" />
-                  <p className="text-xs leading-relaxed text-red-300">{error}</p>
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-400" />
+                    <div className="flex-1">
+                      <p className="text-xs leading-relaxed text-red-300">{error}</p>
+
+                      {/* Bouton renvoyer la confirmation */}
+                      {errorType === "credentials" && (
+                        <button
+                          type="button"
+                          onClick={handleResend}
+                          disabled={resending}
+                          className="mt-2 flex items-center gap-1.5 text-[0.7rem] font-semibold text-[#c9a55a] underline underline-offset-2 transition hover:text-[#e8cc94] disabled:opacity-50"
+                        >
+                          <RefreshCw size={10} className={resending ? "animate-spin" : ""} />
+                          {resending ? "Envoi en cours…" : "Renvoyer l'email de confirmation"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Bouton */}
+            {/* Bouton connexion */}
             <motion.button
               type="submit"
               whileHover={{ scale: 1.015, y: -1 }}
