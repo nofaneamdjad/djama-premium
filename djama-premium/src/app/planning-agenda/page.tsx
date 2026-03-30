@@ -640,7 +640,7 @@ function MiniCalendar() {
               const dot = EVENTS[day];
               return (
                 <motion.button
-                  key={day}
+                  key={di}
                   type="button"
                   onClick={() => setSelected(day)}
                   whileHover={{ scale: 1.1 }}
