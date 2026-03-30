@@ -70,28 +70,36 @@ export default function LoginPage() {
     setResendOk(false);
     setLoading(true);
 
+    const trimmedEmail = email.trim().toLowerCase();
+    console.log("[Login] Tentative :", trimmedEmail);
+    console.log("[Login] URL Supabase :", process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log("[Login] Clé présente :", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
     try {
       const { data, error: sbError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
+        email: trimmedEmail,
         password,
       });
 
       if (sbError) {
-        /* Depuis Supabase v2.60+, emails non confirmés retournent
-           "Invalid login credentials" — on détecte les deux cas. */
+        console.error("[Login] ❌ Erreur Supabase :", {
+          message: sbError.message,
+          status:  sbError.status,
+          name:    sbError.name,
+          raw:     JSON.stringify(sbError),
+        });
+
         if (
           sbError.message.includes("Invalid login credentials") ||
           sbError.message.includes("invalid_credentials")
         ) {
-          setError(
-            "Email ou mot de passe incorrect — ou adresse email non confirmée."
-          );
+          setError(`Email ou mot de passe incorrect, ou email non confirmé. (${sbError.status ?? sbError.message})`);
           setErrorType("credentials");
         } else if (sbError.message.includes("Email not confirmed")) {
           setError("Votre adresse email n'est pas encore confirmée.");
           setErrorType("credentials");
         } else {
-          setError(sbError.message);
+          setError(`Erreur Supabase : ${sbError.message}`);
           setErrorType("other");
         }
         setLoading(false);
@@ -99,14 +107,17 @@ export default function LoginPage() {
       }
 
       if (!data.session) {
+        console.error("[Login] ❌ Pas de session. data =", JSON.stringify(data));
         setError("Session non créée. Vérifiez votre email de confirmation.");
         setErrorType("credentials");
         setLoading(false);
         return;
       }
 
+      console.log("[Login] ✅ Connecté. user_id =", data.session.user.id);
       router.push("/client/factures");
-    } catch {
+    } catch (err) {
+      console.error("[Login] ❌ Exception :", err);
       setError("Erreur inattendue. Réessayez.");
       setErrorType("other");
       setLoading(false);
