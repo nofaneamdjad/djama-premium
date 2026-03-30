@@ -59,6 +59,7 @@ export default function LoginPage() {
   const [password,    setPassword]    = useState("");
   const [showPwd,     setShowPwd]     = useState(false);
   const [loading,     setLoading]     = useState(false);
+  const [phase,       setPhase]       = useState<"idle" | "auth" | "checking" | "redirecting">("idle");
   const [resending,   setResending]   = useState(false);
   const [error,       setError]       = useState("");
   const [errorType,   setErrorType]   = useState<"credentials" | "other" | null>(null);
@@ -70,19 +71,24 @@ export default function LoginPage() {
     setErrorType(null);
     setResendOk(false);
     setLoading(true);
+    setPhase("auth");
 
     const trimmedEmail = email.trim().toLowerCase();
 
+    /* On track si on part en navigation pour NE PAS
+       rappeler setLoading(false) — sinon le bouton
+       flashe "Se connecter" pendant le chargement. */
+    let willRedirect = false;
+
     try {
+      /* ── 1. Authentification ─────────────────────── */
       const { data, error: sbError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
       });
 
-      /* ── Erreur Supabase ─────────────────────────── */
       if (sbError) {
         console.error("[Login] ❌", sbError.message, "| status:", sbError.status);
-
         if (
           sbError.message.includes("Invalid login credentials") ||
           sbError.message.includes("invalid_credentials")
@@ -90,36 +96,70 @@ export default function LoginPage() {
           setError("Email ou mot de passe incorrect.");
           setErrorType("credentials");
         } else if (sbError.message.includes("Email not confirmed")) {
-          setError("Votre adresse email n'est pas encore confirmée.");
+          setError("Votre adresse email n'est pas encore confirmée. Vérifiez vos spams.");
           setErrorType("credentials");
         } else {
-          setError(`Erreur : ${sbError.message}`);
+          setError(`Erreur de connexion : ${sbError.message}`);
           setErrorType("other");
         }
-        return; // finally appellera setLoading(false)
+        return;
       }
 
-      /* ── Pas de session retournée ────────────────── */
       if (!data.session) {
-        console.error("[Login] ❌ Pas de session :", JSON.stringify(data));
         setError("Session non créée. Vérifiez votre email de confirmation.");
         setErrorType("credentials");
         return;
       }
 
-      /* ── Succès — redirection hard pour que le middleware
-             rélise les cookies Supabase correctement ── */
-      console.log("[Login] ✅ Connecté :", data.session.user.email);
-      window.location.href = "/client";
+      /* ── 2. Vérifier l'abonnement dans la table clients ── */
+      const userId = data.session.user.id;
+
+      /* Voie rapide : user_metadata mis à jour par le webhook Stripe */
+      const paidViaMetadata = data.session.user.user_metadata?.paid === true;
+
+      setPhase("checking");
+
+      let paidViaDB = false;
+      if (!paidViaMetadata) {
+        const { data: clientRow } = await supabase
+          .from("clients")
+          .select("paid, statut, abonnement")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        paidViaDB =
+          clientRow?.paid === true &&
+          clientRow?.statut === "actif";
+      }
+
+      const isSubscribed = paidViaMetadata || paidViaDB;
+
+      console.log("[Login] ✅ Connecté :", data.session.user.email, "| abonné :", isSubscribed);
+
+      /* ── 3. Redirection selon le statut ─────────── */
+      setPhase("redirecting");
+      willRedirect = true;
+
+      if (isSubscribed) {
+        /* Abonné actif → espace client */
+        window.location.href = "/client";
+      } else {
+        /* Non abonné → page d'abonnement avec message */
+        window.location.href = "/espace-client?acces=requis";
+      }
 
     } catch (err) {
       console.error("[Login] ❌ Exception :", err);
-      setError("Erreur inattendue. Réessayez.");
+      setError("Erreur inattendue. Vérifiez votre connexion et réessayez.");
       setErrorType("other");
     } finally {
-      /* Toujours remettre loading à false sauf si on vient
-         de déclencher une redirection (démontera le composant) */
-      setLoading(false);
+      /* Remettre loading à false SEULEMENT s'il n'y a pas de
+         redirection en cours — sinon le spinner reste affiché
+         jusqu'au chargement de la nouvelle page (UX propre). */
+      if (!willRedirect) {
+        setLoading(false);
+        setPhase("idle");
+      }
     }
   }
 
@@ -299,7 +339,10 @@ export default function LoginPage() {
                       transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
                       className="inline-block h-4 w-4 rounded-full border-2 border-black/20 border-t-black/70"
                     />
-                    Connexion…
+                    {phase === "auth"        && "Vérification…"}
+                    {phase === "checking"    && "Chargement du compte…"}
+                    {phase === "redirecting" && "Ouverture de l'espace client…"}
+                    {phase === "idle"        && "Connexion…"}
                   </>
                 ) : (
                   <>
