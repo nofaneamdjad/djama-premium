@@ -4,14 +4,13 @@ import { NextResponse, type NextRequest } from "next/server";
 /**
  * Middleware — Accès aux outils DJAMA
  *
- * Règle unique :
- *   clients.email     = user.email
+ * MODE TEST : vérification abonnement désactivée.
+ * Règle active : utilisateur connecté → accès direct.
+ *
+ * TODO (réactiver) :
+ *   clients.email      = user.email
  *   clients.abonnement = "outils_djama"
  *   clients.statut     = "actif"
- *   ──────────────────────────────────
- *   ✅ accès accordé → continue
- *   ❌ non connecté  → /login?redirect=...
- *   ❌ non abonné    → /espace-client?acces=requis
  */
 
 export async function middleware(request: NextRequest) {
@@ -38,7 +37,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  /* ── 1. Session ─────────────────────────────────────── */
+  /* ── 1. Session — seule vérification active en mode test ── */
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -48,36 +47,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  /* ── 2. Vérification clients table ─────────────────── */
-  const userEmail = user.email ?? "";
-
-  const { data: row, error } = await supabase
-    .from("clients")
-    .select("email, abonnement, statut")
-    .eq("email", userEmail)
-    .maybeSingle();
-
-  console.log(
-    `[Middleware] email: ${userEmail}`,
-    `| ligne trouvée: ${row ? "oui" : "non"}`,
-    `| abonnement: ${row?.abonnement ?? "-"}`,
-    `| statut: ${row?.statut ?? "-"}`,
-    error ? `| erreur DB: ${error.message}` : ""
-  );
-
-  const isActive =
-    row?.abonnement === "outils_djama" && row?.statut === "actif";
-
-  if (isActive) {
-    console.log(`[Middleware] ✅ Accès accordé → ${pathname}`);
-    return response;
-  }
-
-  /* ── 3. Accès refusé ────────────────────────────────── */
-  console.log(`[Middleware] ⛔ Abonnement inactif | email: ${userEmail} → /espace-client`);
-  const url = new URL("/espace-client", request.url);
-  url.searchParams.set("acces", "requis");
-  return NextResponse.redirect(url);
+  /* ── 2. Accès accordé (mode test — abonnement non vérifié) ── */
+  console.log(`[Middleware] ✅ Connecté: ${user.email} → ${pathname}`);
+  return response;
 }
 
 export const config = {

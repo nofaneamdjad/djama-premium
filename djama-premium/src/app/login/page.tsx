@@ -111,47 +111,14 @@ export default function LoginPage() {
         return;
       }
 
-      /* ── 2. Vérifier l'abonnement — table clients uniquement ── */
-      const userEmail = data.session.user.email ?? "";
+      /* ── 2. MODE TEST : redirection directe sans vérif abonnement
+         TODO: réactiver le check clients table quand prêt           */
+      console.log("[Login] ✅ Connecté (mode test) :", data.session.user.email, "→ /client");
 
-      setPhase("checking");
-
-      const { data: clientRow, error: dbErr } = await supabase
-        .from("clients")
-        .select("email, abonnement, statut")
-        .eq("email", userEmail)
-        .maybeSingle();
-
-      console.log(
-        "[Login] 🔍 clients table",
-        "| email:", userEmail,
-        "| ligne trouvée:", clientRow ? "oui" : "non",
-        "| abonnement:", clientRow?.abonnement ?? "-",
-        "| statut:", clientRow?.statut ?? "-",
-        dbErr ? `| erreur DB: ${dbErr.message}` : ""
-      );
-
-      const isSubscribed =
-        clientRow?.abonnement === "outils_djama" &&
-        clientRow?.statut     === "actif";
-
-      console.log(
-        "[Login] →",
-        isSubscribed ? "✅ abonné actif" : "⛔ non abonné",
-        "| destination:", isSubscribed ? "/client" : "/espace-client"
-      );
-
-      /* ── 3. Redirection selon le statut ─────────── */
+      /* ── 3. Redirection ─────────────────────────── */
       setPhase("redirecting");
       willRedirect = true;
-
-      if (isSubscribed) {
-        /* Abonné actif → espace client */
-        window.location.href = "/client";
-      } else {
-        /* Non abonné → page d'abonnement avec message */
-        window.location.href = "/espace-client?acces=requis";
-      }
+      window.location.href = "/client";
 
     } catch (err) {
       console.error("[Login] ❌ Exception :", err);
