@@ -6,21 +6,21 @@ import { NextResponse, type NextRequest } from "next/server";
  *
  * Règles :
  *  1. Non connecté                              → /login?redirect=...
- *  2. Connecté mais non autorisé                → /espace-client?acces=requis
- *  3. Connecté + autorisé                       → accès accordé
+ *  2. Connecté mais non abonné                  → /espace-client?acces=requis
+ *  3. Connecté + abonné actif                   → accès accordé
  *
  * Un utilisateur est autorisé si l'UNE des conditions est vraie :
- *   A. user_metadata.paid === true  (mis à jour par le webhook Stripe)
- *   B. Table clients : paid = true ET statut = 'actif'
- *      (utilisé pour les comptes test / admin sans paiement réel)
+ *   A. user_metadata.abonnement = "outils_djama" ET statut = "actif"
+ *      (mis à jour par le webhook Stripe — accès sans requête DB)
+ *   B. Table clients : abonnement = "outils_djama" ET statut = "actif"
+ *      (comptes test / admin activés manuellement)
+ *
+ * Lookup basé sur : clients.email = user.email (pas de user_id)
  *
  * Routes protégées :
  *   /client              → Dashboard
- *   /client/notes        → Bloc-notes
- *   /client/planning     → Planning & Agenda
- *   /client/factures     → Factures & Devis
- *   /client/bloc-notes   → alias notes
- *   /planning-agenda     → Planning (accès direct)
+ *   /client/*            → Tous les outils
+ *   /planning-agenda     → Planning public (accès direct)
  */
 
 export async function middleware(request: NextRequest) {
@@ -53,37 +53,55 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
+    console.log(`[Middleware] ❌ Non connecté → /login (path: ${pathname})`);
     const url = new URL("/login", request.url);
     url.searchParams.set("redirect", pathname);
     return NextResponse.redirect(url);
   }
 
-  /* ── 2. Vérifier l'autorisation ─────────────────────────── */
+  /* ── 2. Vérifier l'abonnement ───────────────────────────── */
 
-  /* A — Voie rapide : user_metadata (pas de requête DB) */
-  const isPaidViaMetadata = user.user_metadata?.paid === true;
+  /* A — Voie rapide : user_metadata (zéro requête DB)
+       Mis à jour par le webhook Stripe dès le paiement.        */
+  const meta = user.user_metadata ?? {};
+  const isActiveViaMetadata =
+    meta.abonnement === "outils_djama" && meta.statut === "actif";
 
-  /* B — Fallback : table clients (comptes test / admin) */
-  let isPaidViaDB = false;
-  if (!isPaidViaMetadata) {
-    const { data: client } = await supabase
-      .from("clients")
-      .select("paid, statut")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    isPaidViaDB =
-      client?.paid === true && client?.statut === "actif";
+  if (isActiveViaMetadata) {
+    console.log(`[Middleware] ✅ Accès via metadata | email: ${user.email} | path: ${pathname}`);
+    return response;
   }
 
-  if (!isPaidViaMetadata && !isPaidViaDB) {
-    const url = new URL("/espace-client", request.url);
-    url.searchParams.set("acces", "requis");
-    return NextResponse.redirect(url);
+  /* B — Fallback : table clients par email (comptes test/admin) */
+  const { data: clientRow, error: dbErr } = await supabase
+    .from("clients")
+    .select("abonnement, statut")
+    .eq("email", user.email!)
+    .maybeSingle();
+
+  if (dbErr) {
+    console.error("[Middleware] ⚠️ Erreur DB clients:", dbErr.message);
   }
 
-  /* ── 3. Accès accordé ───────────────────────────────────── */
-  return response;
+  console.log(
+    `[Middleware] DB clients | email: ${user.email}`,
+    `| abonnement: ${clientRow?.abonnement ?? "non trouvé"}`,
+    `| statut: ${clientRow?.statut ?? "non trouvé"}`
+  );
+
+  const isActiveViaDB =
+    clientRow?.abonnement === "outils_djama" && clientRow?.statut === "actif";
+
+  if (isActiveViaDB) {
+    console.log(`[Middleware] ✅ Accès via clients table | path: ${pathname}`);
+    return response;
+  }
+
+  /* ── 3. Accès refusé ────────────────────────────────────── */
+  console.log(`[Middleware] ⛔ Abonnement inactif | email: ${user.email} → /espace-client`);
+  const url = new URL("/espace-client", request.url);
+  url.searchParams.set("acces", "requis");
+  return NextResponse.redirect(url);
 }
 
 export const config = {

@@ -64,38 +64,39 @@ export async function GET(request: Request) {
   /* ── Activer le compte test ─────────────────────────────── */
   const errors: string[] = [];
 
-  /* 1. Mettre à jour user_metadata (rend l'accès immédiat via JWT) */
+  /* 1. Mettre à jour user_metadata (accès immédiat via JWT, sans requête DB) */
   const { error: metaErr } = await supabaseAdmin.auth.admin.updateUserById(
     TEST_ACCOUNT.userId,
     {
       user_metadata: {
-        paid:        true,
-        abonnement:  "outils_djama",
-        statut:      "actif",
-        is_admin:    true,
+        abonnement:   "outils_djama",
+        statut:       "actif",
+        is_admin:     true,
         test_account: true,
       },
     }
   );
   if (metaErr) {
     errors.push(`user_metadata: ${metaErr.message}`);
+    console.error("[activate-test] user_metadata error:", metaErr.message);
+  } else {
+    console.log("[activate-test] ✅ user_metadata mis à jour pour:", TEST_ACCOUNT.email);
   }
 
-  /* 2. Upsert dans la table clients */
+  /* 2. Upsert dans la table clients (colonnes réelles : email, abonnement, statut) */
   const { error: dbErr } = await supabaseAdmin.from("clients").upsert(
     {
-      user_id:      TEST_ACCOUNT.userId,
-      email:        TEST_ACCOUNT.email,
-      nom:          TEST_ACCOUNT.nom,
-      abonnement:   "outils_djama",
-      statut:       "actif",
-      paid:         true,
-      subscribed_at: new Date().toISOString(),
+      email:       TEST_ACCOUNT.email,
+      abonnement:  "outils_djama",
+      statut:      "actif",
     },
-    { onConflict: "user_id" }
+    { onConflict: "email" }
   );
   if (dbErr) {
     errors.push(`clients table: ${dbErr.message}`);
+    console.error("[activate-test] clients upsert error:", dbErr.message);
+  } else {
+    console.log("[activate-test] ✅ clients table mis à jour pour:", TEST_ACCOUNT.email);
   }
 
   if (errors.length > 0) {
@@ -103,7 +104,7 @@ export async function GET(request: Request) {
       {
         success: false,
         errors,
-        hint: "Vérifiez que la table `clients` existe avec les colonnes : user_id, email, nom, abonnement, statut, paid, subscribed_at",
+        hint: "Vérifiez que la table `clients` existe avec les colonnes : email (unique), abonnement, statut",
       },
       { status: 500 }
     );
@@ -113,10 +114,9 @@ export async function GET(request: Request) {
     success: true,
     message: "✅ Compte test activé avec succès.",
     account: {
-      email:       TEST_ACCOUNT.email,
-      abonnement:  "outils_djama",
-      statut:      "actif",
-      paid:        true,
+      email:      TEST_ACCOUNT.email,
+      abonnement: "outils_djama",
+      statut:     "actif",
     },
     nextStep: "Reconnectez-vous sur /login → vous serez redirigé vers /client",
   });

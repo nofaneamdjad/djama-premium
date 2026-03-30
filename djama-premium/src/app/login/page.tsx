@@ -111,30 +111,47 @@ export default function LoginPage() {
         return;
       }
 
-      /* ── 2. Vérifier l'abonnement dans la table clients ── */
-      const userId = data.session.user.id;
+      /* ── 2. Vérifier l'abonnement ──────────────────────── */
+      const userEmail = data.session.user.email ?? "";
+      const meta      = data.session.user.user_metadata ?? {};
 
-      /* Voie rapide : user_metadata mis à jour par le webhook Stripe */
-      const paidViaMetadata = data.session.user.user_metadata?.paid === true;
+      /* Voie rapide : user_metadata mis à jour par le webhook Stripe
+         (aucune requête DB nécessaire)                             */
+      const activeViaMetadata =
+        meta.abonnement === "outils_djama" && meta.statut === "actif";
 
       setPhase("checking");
 
-      let paidViaDB = false;
-      if (!paidViaMetadata) {
-        const { data: clientRow } = await supabase
+      let activeViaDB = false;
+      if (!activeViaMetadata) {
+        /* Fallback : table clients — lookup par email */
+        const { data: clientRow, error: dbErr } = await supabase
           .from("clients")
-          .select("paid, statut, abonnement")
-          .eq("user_id", userId)
+          .select("abonnement, statut")
+          .eq("email", userEmail)
           .maybeSingle();
 
-        paidViaDB =
-          clientRow?.paid === true &&
-          clientRow?.statut === "actif";
+        console.log(
+          "[Login] 🔍 clients table |",
+          "email:", userEmail,
+          "| abonnement:", clientRow?.abonnement ?? "non trouvé",
+          "| statut:", clientRow?.statut ?? "non trouvé",
+          dbErr ? `| erreur DB: ${dbErr.message}` : ""
+        );
+
+        activeViaDB =
+          clientRow?.abonnement === "outils_djama" &&
+          clientRow?.statut     === "actif";
       }
 
-      const isSubscribed = paidViaMetadata || paidViaDB;
+      const isSubscribed = activeViaMetadata || activeViaDB;
 
-      console.log("[Login] ✅ Connecté :", data.session.user.email, "| abonné :", isSubscribed);
+      console.log(
+        "[Login] ✅ Connecté :", userEmail,
+        "| abonné :", isSubscribed,
+        "| via metadata :", activeViaMetadata,
+        "| via DB :", activeViaDB
+      );
 
       /* ── 3. Redirection selon le statut ─────────── */
       setPhase("redirecting");

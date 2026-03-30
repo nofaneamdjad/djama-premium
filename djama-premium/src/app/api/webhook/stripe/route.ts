@@ -41,62 +41,62 @@ async function activateSubscription(
 ) {
   const supabase = getSupabaseAdmin();
 
-  const metadata = {
-    paid:                   true,
-    abonnement:             "outils_djama",
-    statut:                 "actif",
-    stripe_customer_id:     stripeCustomerId,
-    stripe_subscription_id: stripeSubscriptionId,
-  };
-
-  /* 1. Mettre à jour le user_metadata Supabase (lu par le middleware via JWT) */
+  /* 1. user_metadata — lu par le middleware via JWT (sans requête DB) */
   const { error: authErr } = await supabase.auth.admin.updateUserById(userId, {
-    user_metadata: metadata,
+    user_metadata: {
+      abonnement:             "outils_djama",
+      statut:                 "actif",
+      stripe_customer_id:     stripeCustomerId,
+      stripe_subscription_id: stripeSubscriptionId,
+    },
   });
   if (authErr) console.error("[Webhook] updateUserById error:", authErr.message);
 
-  /* 2. Mettre à jour / créer la ligne dans la table clients */
-  const { error: dbErr } = await supabase.from("clients").upsert(
-    {
-      user_id:                userId,
-      email:                  email ?? null,
-      abonnement:             "outils_djama",
-      statut:                 "actif",
-      paid:                   true,
-      stripe_customer_id:     stripeCustomerId,
-      stripe_subscription_id: stripeSubscriptionId,
-      subscribed_at:          new Date().toISOString(),
-    },
-    { onConflict: "user_id" }
-  );
-  if (dbErr) console.error("[Webhook] clients upsert error:", dbErr.message);
+  /* 2. Table clients — colonnes réelles : email, abonnement, statut
+     (+ stripe_customer_id si la colonne existe — ignoré sinon)       */
+  if (email) {
+    const { error: dbErr } = await supabase.from("clients").upsert(
+      {
+        email:      email,
+        abonnement: "outils_djama",
+        statut:     "actif",
+      },
+      { onConflict: "email" }
+    );
+    if (dbErr) console.error("[Webhook] clients upsert error:", dbErr.message);
+    else console.log("[Webhook] ✅ clients table mis à jour pour:", email);
+  }
 }
 
 /* ── Désactiver l'abonnement ───────────────────────────── */
 async function deactivateSubscription(stripeCustomerId: string) {
   const supabase = getSupabaseAdmin();
 
-  /* Trouver l'utilisateur par stripe_customer_id */
-  const { data: rows } = await supabase
-    .from("clients")
-    .select("user_id")
-    .eq("stripe_customer_id", stripeCustomerId)
-    .limit(1);
+  /* Chercher l'utilisateur Supabase Auth via Stripe customer ID
+     (stocké dans user_metadata)                                 */
+  const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  const target = users.find(
+    (u) => u.user_metadata?.stripe_customer_id === stripeCustomerId
+  );
 
-  const userId = rows?.[0]?.user_id;
-  if (!userId) {
-    console.warn("[Webhook] No user found for customer:", stripeCustomerId);
+  if (!target) {
+    console.warn("[Webhook] No user found for stripe_customer_id:", stripeCustomerId);
     return;
   }
 
-  await supabase.auth.admin.updateUserById(userId, {
-    user_metadata: { paid: false, statut: "inactif" },
+  /* Mettre à jour user_metadata */
+  await supabase.auth.admin.updateUserById(target.id, {
+    user_metadata: { abonnement: null, statut: "inactif" },
   });
 
-  await supabase
-    .from("clients")
-    .update({ paid: false, statut: "inactif" })
-    .eq("user_id", userId);
+  /* Mettre à jour la table clients par email */
+  if (target.email) {
+    await supabase
+      .from("clients")
+      .update({ statut: "inactif" })
+      .eq("email", target.email);
+    console.log("[Webhook] 🔴 Abonnement désactivé pour:", target.email);
+  }
 }
 
 /* ── Handler principal ──────────────────────────────────── */
@@ -151,16 +151,12 @@ export async function POST(req: Request) {
         await supabaseAdmin.from("clients").upsert(
           {
             email,
-            abonnement:             "outils_djama",
-            statut:                 "actif",
-            paid:                   true,
-            stripe_customer_id:     stripeCustomerId,
-            stripe_subscription_id: stripeSubId,
-            subscribed_at:          new Date().toISOString(),
+            abonnement: "outils_djama",
+            statut:     "actif",
           },
           { onConflict: "email" }
         );
-        console.log("[Webhook] ⚠️ Email enregistré, compte à créer:", email);
+        console.log("[Webhook] ⚠️ Email enregistré (sans compte), à créer:", email);
       }
     }
   }
