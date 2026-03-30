@@ -9,9 +9,16 @@ import { NextResponse, type NextRequest } from "next/server";
  *  2. Connecté, non payant → /espace-client?acces=requis
  *  3. Connecté + payant    → accès accordé
  *
- * Le statut payant est lu depuis user.user_metadata.paid
- * (stocké dans le JWT Supabase, pas de requête DB supplémentaire).
- * Il est mis à jour par le webhook Stripe après chaque paiement.
+ * Routes protégées :
+ *   /client              → Dashboard espace client
+ *   /client/notes        → Bloc-notes
+ *   /client/planning     → Planning & Agenda
+ *   /client/factures     → Factures & Devis
+ *   /client/bloc-notes   → alias /client/notes
+ *   /planning-agenda     → Planning (accès direct)
+ *
+ * Le statut payant est lu depuis user.user_metadata.paid (JWT Supabase).
+ * Il est mis à jour par le webhook Stripe après chaque paiement confirmé.
  */
 
 export async function middleware(request: NextRequest) {
@@ -63,13 +70,13 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  /*
-   * Protège :
-   *   /client           (et tous ses sous-chemins)
-   *   /planning-agenda  (et tous ses sous-chemins)
-   *   /client/factures, /client/devis, /client/dashboard, etc.
-   */
   matcher: [
+    /*
+     * /client         → dashboard (racine, sans trailing slash)
+     * /client/:path*  → tous les sous-outils (notes, planning, factures…)
+     * /planning-agenda et ses sous-chemins
+     */
+    "/client",
     "/client/:path*",
     "/planning-agenda",
     "/planning-agenda/:path*",

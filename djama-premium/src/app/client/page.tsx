@@ -1,960 +1,302 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import jsPDF from "jspdf";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import {
-  Upload, Trash2, Plus, X, Download, Save,
-  Building2, User, FileText, StickyNote, Hash,
-  Sparkles, CheckCircle2, AlertCircle, ReceiptText,
-  Zap, Award, FileDown,
+  StickyNote, Calendar, ReceiptText, LogOut,
+  Sparkles, ArrowRight, Shield, LayoutDashboard,
+  ChevronRight,
 } from "lucide-react";
-import { FadeReveal } from "@/components/ui/WordReveal";
+import { supabase } from "@/lib/supabase";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const PRESET_COLORS = ["#b08d57", "#0f172a", "#0f4c75", "#1b4332", "#6d28d9", "#be123c"];
-
-type LineItem = { description: string; quantity: number; unitPrice: number; vatRate: number };
 
 /* ═══════════════════════════════════════════════
-   SOUS-COMPOSANTS UI
+   OUTILS
 ═══════════════════════════════════════════════ */
+const TOOLS = [
+  {
+    id: "notes",
+    href: "/client/notes",
+    icon: StickyNote,
+    label: "Bloc-notes",
+    desc: "Créez, organisez et exportez vos notes professionnelles par catégorie.",
+    color: "#c9a55a",
+    bg: "rgba(201,165,90,0.07)",
+    border: "rgba(201,165,90,0.16)",
+    hoverBorder: "rgba(201,165,90,0.45)",
+    glow: "rgba(201,165,90,0.14)",
+    tags: ["Réunion", "Idées", "Tâches", "Export PDF"],
+  },
+  {
+    id: "planning",
+    href: "/client/planning",
+    icon: Calendar,
+    label: "Planning & Agenda",
+    desc: "Visualisez et gérez votre agenda client semaine par semaine.",
+    color: "#60a5fa",
+    bg: "rgba(59,130,246,0.07)",
+    border: "rgba(59,130,246,0.16)",
+    hoverBorder: "rgba(59,130,246,0.45)",
+    glow: "rgba(59,130,246,0.12)",
+    tags: ["Semaine", "Rendez-vous", "Calendrier"],
+  },
+  {
+    id: "factures",
+    href: "/client/factures",
+    icon: ReceiptText,
+    label: "Factures & Devis",
+    desc: "Générez des factures et devis professionnels en PDF en quelques secondes.",
+    color: "#4ade80",
+    bg: "rgba(34,197,94,0.07)",
+    border: "rgba(34,197,94,0.16)",
+    hoverBorder: "rgba(34,197,94,0.45)",
+    glow: "rgba(34,197,94,0.12)",
+    tags: ["PDF", "TVA", "Logo", "Devis"],
+  },
+] as const;
 
-function SectionCard({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+/* ═══════════════════════════════════════════════
+   CARTE OUTIL
+═══════════════════════════════════════════════ */
+function ToolCard({
+  tool,
+  delay,
+}: {
+  tool: (typeof TOOLS)[number];
+  delay: number;
+}) {
+  const Icon = tool.icon;
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease, delay }}
-      className="rounded-[1.5rem] border border-[var(--border)] bg-white p-6 shadow-[0_2px_12px_rgba(9,9,11,0.05)]"
+      initial={{ opacity: 0, y: 28, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.55, ease, delay }}
+      whileHover={{ y: -4, transition: { duration: 0.22, ease } }}
     >
-      {children}
+      <Link href={tool.href} className="group block h-full">
+        <div
+          className="relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border p-7 transition-all duration-300"
+          style={{ background: tool.bg, borderColor: tool.border }}
+          onMouseEnter={(e) => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.borderColor = tool.hoverBorder;
+            el.style.boxShadow = `0 16px 56px ${tool.glow}`;
+          }}
+          onMouseLeave={(e) => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.borderColor = tool.border;
+            el.style.boxShadow = "none";
+          }}
+        >
+          {/* Coin glow */}
+          <div
+            className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full opacity-30 blur-[60px]"
+            style={{ background: tool.color }}
+          />
+
+          {/* Icône */}
+          <div
+            className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border"
+            style={{
+              color: tool.color,
+              background: tool.bg,
+              borderColor: tool.border,
+            }}
+          >
+            <Icon size={22} />
+          </div>
+
+          <h3 className="mb-2 text-xl font-extrabold text-white">
+            {tool.label}
+          </h3>
+          <p className="mb-6 flex-1 text-sm leading-relaxed text-white/40">
+            {tool.desc}
+          </p>
+
+          {/* Tags */}
+          <div className="mb-7 flex flex-wrap gap-1.5">
+            {tool.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
+                style={{
+                  color: tool.color,
+                  background: tool.bg,
+                  border: `1px solid ${tool.border}`,
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div
+            className="flex items-center gap-2 text-sm font-bold transition-all duration-200 group-hover:gap-3"
+            style={{ color: tool.color }}
+          >
+            Ouvrir l&apos;outil
+            <ArrowRight
+              size={15}
+              className="transition-transform group-hover:translate-x-1"
+            />
+          </div>
+        </div>
+      </Link>
     </motion.div>
   );
 }
 
-function SectionLabel({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
-  return (
-    <div className="mb-5 flex items-center gap-2.5 border-b border-[var(--border)] pb-4">
-      <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.1)]">
-        <Icon size={13} className="text-[#c9a55a]" />
-      </div>
-      <h2 className="text-xs font-extrabold uppercase tracking-widest text-[var(--ink)]">{title}</h2>
-    </div>
-  );
-}
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <label className="mb-1.5 block text-[0.62rem] font-bold uppercase tracking-widest text-[var(--muted)]">
-      {children}
-    </label>
-  );
-}
-
-function PInput({
-  value, onChange, placeholder, type = "text", col2,
-}: {
-  value: string; onChange: (v: string) => void;
-  placeholder?: string; type?: string; col2?: boolean;
-}) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <div className={`relative ${col2 ? "sm:col-span-2" : ""}`}>
-      <motion.div
-        animate={{ opacity: focused ? 1 : 0 }}
-        transition={{ duration: 0.15 }}
-        className="pointer-events-none absolute inset-0 rounded-xl"
-        style={{ boxShadow: "0 0 0 2px rgba(201,165,90,0.45)" }}
-      />
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder={placeholder}
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--ink)] placeholder:text-[var(--muted)] outline-none transition-colors duration-200 hover:border-[rgba(201,165,90,0.4)] focus:bg-white"
-      />
-    </div>
-  );
-}
-
-function PTextarea({ value, onChange, placeholder, rows = 3 }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; rows?: number;
-}) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <div className="relative">
-      <motion.div
-        animate={{ opacity: focused ? 1 : 0 }}
-        transition={{ duration: 0.15 }}
-        className="pointer-events-none absolute inset-0 rounded-xl"
-        style={{ boxShadow: "0 0 0 2px rgba(201,165,90,0.45)" }}
-      />
-      <textarea
-        rows={rows}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder={placeholder}
-        className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--ink)] placeholder:text-[var(--muted)] outline-none transition-colors duration-200 hover:border-[rgba(201,165,90,0.4)] focus:bg-white"
-      />
-    </div>
-  );
-}
-
-/* ── Upload logo premium ── */
-function LogoUpload({ preview, onFile }: { preview: string; onFile: (v: string) => void }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [drag, setDrag] = useState(false);
-
-  function read(file: File) {
-    if (!file.type.startsWith("image/")) return;
-    const r = new FileReader();
-    r.onload = (e) => onFile(e.target?.result as string);
-    r.readAsDataURL(file);
-  }
-
-  return (
-    <div className="sm:col-span-2">
-      <FieldLabel>Logo de l&apos;entreprise</FieldLabel>
-      <motion.div
-        animate={{
-          borderColor: drag ? "rgba(201,165,90,0.7)" : "rgba(9,9,11,0.1)",
-          backgroundColor: drag ? "rgba(201,165,90,0.04)" : "var(--surface)",
-        }}
-        whileHover={{ borderColor: "rgba(201,165,90,0.5)", backgroundColor: "rgba(201,165,90,0.025)" }}
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) read(f); }}
-        className="flex h-20 cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed px-4 transition-all"
-      >
-        <AnimatePresence mode="wait">
-          {preview ? (
-            <motion.img
-              key="preview"
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              transition={{ duration: 0.2 }}
-              src={preview}
-              alt="logo"
-              // eslint-disable-next-line @next/next/no-img-element
-              className="h-14 w-14 shrink-0 rounded-xl border border-[var(--border)] bg-white object-contain p-1.5 shadow-sm"
-            />
-          ) : (
-            <motion.div
-              key="icon"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)]"
-            >
-              <Upload size={17} className="text-[#c9a55a]" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[var(--ink)] truncate">
-            {preview ? "Logo chargé — cliquer pour changer" : "Importer le logo"}
-          </p>
-          <p className="mt-0.5 text-xs text-[var(--muted)]">
-            {preview ? "PNG, JPG, SVG acceptés" : "Glisser ou cliquer · PNG, JPG, SVG"}
-          </p>
-        </div>
-
-        {preview && (
-          <motion.button
-            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onFile(""); }}
-            className="shrink-0 rounded-lg border border-[var(--border)] p-1.5 text-[var(--muted)] transition hover:border-red-300 hover:bg-red-50 hover:text-red-500"
-          >
-            <Trash2 size={12} />
-          </motion.button>
-        )}
-      </motion.div>
-      <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp"
-        className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) read(f); }} />
-    </div>
-  );
-}
-
 /* ═══════════════════════════════════════════════
-   PAGE PRINCIPALE
+   PAGE DASHBOARD
 ═══════════════════════════════════════════════ */
-export default function ClientFacturesPage() {
-  /* ── États ── */
-  const [documentType,    setDocumentType]    = useState<"Facture" | "Devis">("Facture");
-  const [primaryColor,    setPrimaryColor]    = useState("#b08d57");
+export default function ClientDashboard() {
+  const [email,    setEmail]    = useState<string | null>(null);
+  const [initials, setInitials] = useState("?");
 
-  /* ── Bascule Facture ↔ Devis + mise à jour numéro ── */
-  function switchDocType(type: "Facture" | "Devis") {
-    setDocumentType(type);
-    setDocNumber((prev) => {
-      if (type === "Devis")    return prev.replace(/^FAC-?/i, "DEV-");
-      if (type === "Facture")  return prev.replace(/^DEV-?/i, "FAC-");
-      return prev;
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        setEmail(user.email);
+        const parts = user.email.split("@")[0].split(/[._-]/);
+        setInitials(
+          parts.length >= 2
+            ? (parts[0][0] + parts[1][0]).toUpperCase()
+            : user.email.slice(0, 2).toUpperCase()
+        );
+      }
     });
-  }
-  const [companyName,     setCompanyName]     = useState("DJAMA");
-  const [companyLogo,     setCompanyLogo]     = useState("");
-  const [companyAddress,  setCompanyAddress]  = useState("");
-  const [companyEmail,    setCompanyEmail]    = useState("");
-  const [companyPhone,    setCompanyPhone]    = useState("");
-  const [companySiret,    setCompanySiret]    = useState("");
-  const [companyVatNumber,setCompanyVatNumber]= useState("");
-  const [clientName,      setClientName]      = useState("");
-  const [clientAddress,   setClientAddress]   = useState("");
-  const [clientEmail,     setClientEmail]     = useState("");
-  const [docNumber,       setDocNumber]       = useState("FAC-001");
-  const [issueDate,       setIssueDate]       = useState("");
-  const [dueDate,         setDueDate]         = useState("");
-  const [notes,           setNotes]           = useState("");
-  const [paymentTerms,    setPaymentTerms]    = useState("");
-  const [items,           setItems]           = useState<LineItem[]>([
-    { description: "", quantity: 1, unitPrice: 0, vatRate: 20 },
-  ]);
-  const [loadingSave, setLoadingSave] = useState(false);
-  const [feedback,    setFeedback]    = useState<{ type: "ok" | "err"; msg: string } | null>(null);
-  const [mobileTab,   setMobileTab]   = useState<"form" | "preview">("form");
+  }, []);
 
-  function showFeedback(type: "ok" | "err", msg: string) {
-    setFeedback({ type, msg });
-    setTimeout(() => setFeedback(null), 4000);
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
   }
 
-  /* ── Lignes ── */
-  function updateItem(idx: number, key: keyof LineItem, val: string | number) {
-    const c = [...items]; c[idx] = { ...c[idx], [key]: val }; setItems(c);
-  }
-  const addItem    = () => setItems([...items, { description: "", quantity: 1, unitPrice: 0, vatRate: 20 }]);
-  const removeItem = (i: number) => { if (items.length > 1) setItems(items.filter((_, idx) => idx !== i)); };
-
-  /* ── Totaux ── */
-  const totals = useMemo(() => {
-    let ht = 0, vat = 0;
-    for (const it of items) { const h = it.quantity * it.unitPrice; ht += h; vat += h * (it.vatRate / 100); }
-    return { ht, vat, ttc: ht + vat };
-  }, [items]);
-
-  /* ── Utilitaires ── */
-  function hexToRgb(hex: string) {
-    const n = parseInt(hex.replace("#", ""), 16);
-    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-  }
-
-  /* ── Télécharger PDF ── */
-  async function downloadPDF() {
-    const pdf = new jsPDF("p", "mm", "a4");
-    const { r, g, b } = hexToRgb(primaryColor);
-    let y = 20;
-
-    pdf.setFont("helvetica", "bold"); pdf.setFontSize(26); pdf.setTextColor(r, g, b);
-    pdf.text(documentType, 15, y);
-    pdf.setFontSize(11); pdf.setTextColor(100, 100, 100); pdf.setFont("helvetica", "normal");
-    pdf.text(docNumber || "—", 15, y + 8);
-    pdf.text(`Date : ${issueDate || "—"}`, 148, y);
-    pdf.text(`Échéance : ${dueDate || "—"}`, 148, y + 7);
-    y += 20;
-
-    if (companyLogo) {
-      try {
-        const img = new window.Image();
-        img.crossOrigin = "anonymous"; img.src = companyLogo;
-        await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(); });
-        const cvs = document.createElement("canvas");
-        cvs.width = img.width; cvs.height = img.height;
-        cvs.getContext("2d")?.drawImage(img, 0, 0);
-        pdf.addImage(cvs.toDataURL("image/png"), "PNG", 155, 14, 36, 36);
-      } catch { /* ignore */ }
-    }
-
-    pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(r, g, b);
-    pdf.text("ÉMETTEUR", 15, y); y += 5;
-    pdf.setFont("helvetica", "normal"); pdf.setTextColor(0, 0, 0); pdf.setFontSize(10);
-    [companyName, companyAddress, companyPhone, companyEmail, companySiret, companyVatNumber]
-      .filter(Boolean).forEach(l => { pdf.text(String(l), 15, y); y += 5; });
-
-    let ry = 42;
-    pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(r, g, b);
-    pdf.text("CLIENT", 110, ry); ry += 5;
-    pdf.setFont("helvetica", "normal"); pdf.setTextColor(0, 0, 0); pdf.setFontSize(10);
-    [clientName, clientAddress, clientEmail].filter(Boolean).forEach(l => { pdf.text(String(l), 110, ry); ry += 5; });
-    y = Math.max(y, ry) + 8;
-
-    pdf.setFillColor(r, g, b); pdf.setTextColor(255, 255, 255);
-    pdf.rect(15, y, 180, 9, "F");
-    pdf.setFont("helvetica", "bold"); pdf.setFontSize(9);
-    ["Description", "Qté", "PU HT", "TVA", "Total TTC"].forEach((h, i) => {
-      pdf.text(h, [18, 105, 122, 147, 165][i], y + 6);
-    });
-    y += 13; pdf.setTextColor(0, 0, 0); pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
-    items.forEach((it, i) => {
-      if (y > 265) { pdf.addPage(); y = 20; }
-      if (i % 2 === 0) { pdf.setFillColor(249, 249, 249); pdf.rect(15, y - 3, 180, 8, "F"); }
-      const ttc = it.quantity * it.unitPrice * (1 + it.vatRate / 100);
-      pdf.text(it.description || "—", 18, y); pdf.text(String(it.quantity), 105, y);
-      pdf.text(`${it.unitPrice.toFixed(2)} €`, 122, y); pdf.text(`${it.vatRate}%`, 147, y);
-      pdf.text(`${ttc.toFixed(2)} €`, 165, y);
-      pdf.setDrawColor(235, 235, 235); pdf.line(15, y + 4, 195, y + 4); y += 9;
-    });
-    y += 6;
-    pdf.setFontSize(10); pdf.setFont("helvetica", "normal");
-    pdf.text("Total HT :", 138, y); pdf.text(`${totals.ht.toFixed(2)} €`, 193, y, { align: "right" }); y += 6;
-    pdf.text("Total TVA :", 138, y); pdf.text(`${totals.vat.toFixed(2)} €`, 193, y, { align: "right" }); y += 7;
-    pdf.setFont("helvetica", "bold"); pdf.setFontSize(12); pdf.setTextColor(r, g, b);
-    pdf.text("Total TTC :", 136, y); pdf.text(`${totals.ttc.toFixed(2)} €`, 193, y, { align: "right" });
-    pdf.setTextColor(0, 0, 0);
-    y += 14; pdf.setFontSize(9); pdf.setFont("helvetica", "bold"); pdf.text("Notes :", 15, y);
-    pdf.setFont("helvetica", "normal"); y += 5; pdf.text(notes || "—", 15, y, { maxWidth: 180 }); y += 10;
-    pdf.setFont("helvetica", "bold"); pdf.text("Conditions de paiement :", 15, y);
-    pdf.setFont("helvetica", "normal"); y += 5; pdf.text(paymentTerms || "—", 15, y, { maxWidth: 180 });
-    pdf.save(`${documentType}-${docNumber || "document"}.pdf`);
-  }
-
-  /* ── Enregistrer ── */
-  async function saveInvoice() {
-    setLoadingSave(true);
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      showFeedback("err", "Vous devez être connecté pour enregistrer.");
-      setLoadingSave(false); return;
-    }
-    const { error } = await supabase.from("factures").insert({
-      user_id: user.id, numero: docNumber, type_document: documentType,
-      client_nom: clientName, client_email: clientEmail, client_adresse: clientAddress,
-      entreprise_nom: companyName, entreprise_email: companyEmail,
-      entreprise_adresse: companyAddress, entreprise_telephone: companyPhone,
-      entreprise_siret: companySiret, entreprise_tva: companyVatNumber,
-      date_emission: issueDate || null, date_echeance: dueDate || null,
-      notes, conditions_paiement: paymentTerms,
-      total_ht: totals.ht, total_tva: totals.vat, total_ttc: totals.ttc,
-      couleur: primaryColor, logo_url: companyLogo,
-    });
-    setLoadingSave(false);
-    error
-      ? showFeedback("err", error.message)
-      : showFeedback("ok", "Document enregistré avec succès !");
-  }
-
-  /* ═══════════════════════════════════════════════
-     RENDU
-  ═══════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[var(--surface)]">
+    <div className="min-h-screen bg-[#080a0f]">
 
-      {/* ══ HERO ══════════════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden pb-16 pt-28">
-        {/* Glows */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[400px] w-[600px] rounded-full bg-[rgba(176,141,87,0.07)] blur-[100px]" />
-        </div>
-        <div className="pointer-events-none absolute right-[10%] top-[20%] h-[250px] w-[250px] rounded-full bg-[rgba(59,157,255,0.05)] blur-[80px]" />
+      {/* ── Glows + grille ───────────────────────── */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute left-[25%] top-[8%] h-[650px] w-[650px] rounded-full bg-[rgba(176,141,87,0.05)] blur-[160px]" />
+        <div className="absolute bottom-[5%] right-[15%] h-[450px] w-[450px] rounded-full bg-[rgba(59,130,246,0.04)] blur-[130px]" />
+        <div className="absolute bottom-[30%] left-[5%] h-[350px] w-[350px] rounded-full bg-[rgba(139,92,246,0.03)] blur-[100px]" />
+        <div
+          className="absolute inset-0 opacity-[0.013]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
+            backgroundSize: "40px 40px",
+          }}
+        />
+      </div>
 
-        <div className="relative z-10 mx-auto max-w-4xl px-6">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease }}
-            className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.1)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#c9a55a]"
-          >
-            <ReceiptText size={11} />
-            Outil professionnel
-          </motion.div>
+      {/* ── Header ───────────────────────────────── */}
+      <header className="relative z-10 border-b border-white/6 bg-[rgba(8,10,15,0.85)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
 
-          {/* Titre */}
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease, delay: 0.08 }}
-            className="text-4xl font-extrabold leading-tight text-white md:text-5xl"
-          >
-            Générateur de{" "}
-            <span className="text-[#c9a55a]">factures</span>
-            {" "}&amp;{" "}
-            <span className="text-[#c9a55a]">devis</span>
-          </motion.h1>
-
-          <FadeReveal delay={0.22} as="p" className="mt-4 max-w-xl text-base leading-relaxed text-white/50">
-            Créez des documents professionnels en quelques minutes — votre logo, vos couleurs, calculs automatiques, export PDF.
-          </FadeReveal>
-
-          {/* Toggle Facture / Devis */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease, delay: 0.3 }}
-            className="mt-8 inline-flex rounded-2xl border border-white/10 bg-white/5 p-1 backdrop-blur-sm"
-          >
-            {(["Facture", "Devis"] as const).map((t) => (
-              <motion.button
-                key={t}
-                onClick={() => switchDocType(t)}
-                whileTap={{ scale: 0.96 }}
-                className="relative rounded-xl px-6 py-2.5 text-sm font-bold transition-colors"
-                style={{ color: documentType === t ? "#0a0a0a" : "rgba(255,255,255,0.4)" }}
-              >
-                {documentType === t && (
-                  <motion.div
-                    layoutId="type-pill"
-                    className="absolute inset-0 rounded-xl bg-[#c9a55a]"
-                    transition={{ duration: 0.25, ease }}
-                  />
-                )}
-                <span className="relative">{t}</span>
-              </motion.button>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* ── 3 cartes avantages ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease, delay: 0.42 }}
-          className="relative z-10 mx-auto mt-12 max-w-4xl px-6"
-        >
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              {
-                icon: Zap,
-                title: "Génération rapide",
-                desc: "Remplissez les champs, votre document est prêt en moins de 2 minutes.",
-                glow: "rgba(251,191,36,0.12)",
-                accent: "#f9a826",
-              },
-              {
-                icon: Award,
-                title: "Rendu professionnel",
-                desc: "Mise en page soignée, couleurs personnalisées, logo intégré — impeccable.",
-                glow: "rgba(201,165,90,0.15)",
-                accent: "#c9a55a",
-              },
-              {
-                icon: FileDown,
-                title: "Export PDF propre",
-                desc: "Un clic suffit pour télécharger un PDF prêt à envoyer ou imprimer.",
-                glow: "rgba(52,211,153,0.1)",
-                accent: "#34d399",
-              },
-            ].map(({ icon: Icon, title, desc, glow, accent }, i) => (
-              <motion.div
-                key={title}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, ease, delay: 0.48 + i * 0.08 }}
-                className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/5 p-5 backdrop-blur-sm transition-all duration-300 hover:border-white/15 hover:bg-white/8"
-              >
-                {/* Glow de fond */}
-                <div
-                  className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full blur-2xl transition-opacity duration-300 group-hover:opacity-150"
-                  style={{ background: glow }}
-                />
-                {/* Icône */}
-                <div
-                  className="relative mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10"
-                  style={{ background: `${glow}` }}
-                >
-                  <Icon size={18} style={{ color: accent }} />
-                </div>
-                {/* Texte */}
-                <p className="relative text-sm font-bold text-white">{title}</p>
-                <p className="relative mt-1.5 text-xs leading-relaxed text-white/45">{desc}</p>
-                {/* Barre bas */}
-                <div
-                  className="absolute bottom-0 left-0 h-[2px] w-0 transition-all duration-500 group-hover:w-full"
-                  style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
-                />
-              </motion.div>
-            ))}
+          {/* Logo + titre */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.09)]">
+              <LayoutDashboard size={16} style={{ color: "#c9a55a" }} />
+            </div>
+            <div>
+              <span className="text-sm font-extrabold text-white">Espace client</span>
+              <p className="text-[0.58rem] uppercase tracking-widest text-white/25">DJAMA</p>
+            </div>
           </div>
+
+          {/* Droite */}
+          <div className="flex items-center gap-3">
+
+            {/* Badge abonné */}
+            <span className="hidden items-center gap-1.5 rounded-full border border-[rgba(74,222,128,0.25)] bg-[rgba(34,197,94,0.08)] px-3 py-1 text-[0.6rem] font-bold uppercase tracking-widest text-green-400 sm:inline-flex">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
+              Abonné · Actif
+            </span>
+
+            {/* Avatar */}
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.12)] text-[0.65rem] font-extrabold text-[#c9a55a]">
+                {initials}
+              </div>
+              {email && (
+                <span className="hidden max-w-[160px] truncate text-xs text-white/30 sm:block">
+                  {email}
+                </span>
+              )}
+            </div>
+
+            {/* Déconnexion */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 rounded-xl border border-white/8 px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/18 hover:text-white/70"
+            >
+              <LogOut size={12} />
+              <span className="hidden sm:inline">Déconnexion</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Contenu ──────────────────────────────── */}
+      <main className="relative z-10 mx-auto max-w-6xl px-6 py-14">
+
+        {/* Welcome */}
+        <motion.div
+          initial={{ opacity: 0, y: 22 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, ease }}
+          className="mb-14"
+        >
+          {/* Badge */}
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] px-4 py-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-[#c9a55a]">
+            <Sparkles size={9} />
+            Tableau de bord
+          </div>
+
+          <h2 className="text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">
+            Bonjour, bienvenue 👋
+          </h2>
+          <p className="mt-3 max-w-lg text-base text-white/35">
+            Vos{" "}
+            <span className="font-semibold text-white/60">3 outils professionnels</span>{" "}
+            sont disponibles ci-dessous. Cliquez sur un outil pour commencer.
+          </p>
         </motion.div>
 
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[var(--surface)] to-transparent" />
-      </section>
-
-      {/* ── Toast ── */}
-      <AnimatePresence>
-        {feedback && (
-          <motion.div
-            initial={{ opacity: 0, y: -14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -14 }}
-            transition={{ duration: 0.3 }}
-            className="fixed left-1/2 top-6 z-50 -translate-x-1/2"
-          >
-            <div className={`flex items-center gap-2.5 rounded-2xl border px-5 py-3 text-sm font-semibold shadow-2xl backdrop-blur-xl ${
-              feedback.type === "ok"
-                ? "border-green-300/20 bg-green-950/90 text-green-200"
-                : "border-red-300/20 bg-red-950/90 text-red-200"
-            }`}>
-              {feedback.type === "ok"
-                ? <CheckCircle2 size={15} className="text-green-400" />
-                : <AlertCircle size={15} className="text-red-400" />
-              }
-              {feedback.msg}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Tabs sticky mobile/tablette ── */}
-      <div className="sticky top-[57px] z-20 xl:hidden border-b border-[var(--border)] bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1380px] px-4">
-          {([
-            { id: "form",    label: "Formulaire",       icon: FileText },
-            { id: "preview", label: "Aperçu du document", icon: Sparkles },
-          ] as const).map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setMobileTab(id)}
-              className="relative flex flex-1 items-center justify-center gap-2 py-3.5 text-xs font-bold transition-colors"
-              style={{ color: mobileTab === id ? "var(--ink)" : "var(--muted)" }}
-            >
-              <Icon size={13} />
-              {label}
-              {mobileTab === id && (
-                <motion.div
-                  layoutId="tab-underline"
-                  className="absolute bottom-0 left-0 h-[2.5px] w-full rounded-full bg-[#c9a55a]"
-                  transition={{ duration: 0.25, ease }}
-                />
-              )}
-            </button>
+        {/* ── 3 cartes outils ──────────────────── */}
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {TOOLS.map((tool, i) => (
+            <ToolCard key={tool.id} tool={tool} delay={0.08 + i * 0.1} />
           ))}
         </div>
-      </div>
 
-      {/* ══ CONTENU ══════════════════════════════ */}
-      <div className="mx-auto max-w-[1380px] px-4 py-6 xl:py-8 xl:px-6">
-        <div className="grid gap-6 xl:grid-cols-[1fr_460px]">
-
-          {/* ════ FORMULAIRE ════ */}
-          <div className={`space-y-5 ${mobileTab === "form" ? "block" : "hidden xl:block"}`}>
-
-            {/* — Document — */}
-            <SectionCard delay={0.05}>
-              <SectionLabel
-                icon={Hash}
-                title={documentType === "Devis" ? "Devis" : "Facture"}
-              />
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <FieldLabel>
-                    {documentType === "Devis" ? "N° de devis" : "N° de facture"}
-                  </FieldLabel>
-                  <PInput
-                    value={docNumber}
-                    onChange={setDocNumber}
-                    placeholder={documentType === "Devis" ? "DEV-001" : "FAC-001"}
-                  />
-                </div>
-                <div>
-                  <FieldLabel>Date d&apos;émission</FieldLabel>
-                  <PInput type="date" value={issueDate} onChange={setIssueDate} />
-                </div>
-                <div>
-                  <FieldLabel>
-                    {documentType === "Devis" ? "Validité du devis" : "Date d'échéance"}
-                  </FieldLabel>
-                  <PInput type="date" value={dueDate} onChange={setDueDate} />
-                </div>
-              </div>
-
-              {/* Couleur */}
-              <div className="mt-5">
-                <FieldLabel>Couleur du document</FieldLabel>
-                <div className="flex flex-wrap items-center gap-3">
-                  <input
-                    type="color" value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="h-9 w-12 cursor-pointer rounded-lg border border-[var(--border)] p-0.5"
-                  />
-                  <div className="flex gap-2 flex-wrap">
-                    {PRESET_COLORS.map((c) => (
-                      <motion.button
-                        key={c} whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
-                        onClick={() => setPrimaryColor(c)}
-                        className="h-7 w-7 rounded-full transition-all"
-                        style={{
-                          background: c,
-                          boxShadow: primaryColor === c ? `0 0 0 2px white, 0 0 0 4px ${c}` : "none",
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span className="font-mono text-xs text-[var(--muted)]">{primaryColor}</span>
-                </div>
-              </div>
-            </SectionCard>
-
-            {/* — Entreprise — */}
-            <SectionCard delay={0.1}>
-              <SectionLabel icon={Building2} title="Votre entreprise" />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <FieldLabel>Nom de l&apos;entreprise</FieldLabel>
-                  <PInput value={companyName} onChange={setCompanyName} placeholder="DJAMA" />
-                </div>
-                <div>
-                  <FieldLabel>E-mail</FieldLabel>
-                  <PInput type="email" value={companyEmail} onChange={setCompanyEmail} placeholder="contact@djama.fr" />
-                </div>
-                <div className="sm:col-span-2">
-                  <FieldLabel>Adresse complète</FieldLabel>
-                  <PInput value={companyAddress} onChange={setCompanyAddress} placeholder="12 rue de la Paix, 75001 Paris" />
-                </div>
-                <div>
-                  <FieldLabel>Téléphone</FieldLabel>
-                  <PInput value={companyPhone} onChange={setCompanyPhone} placeholder="+33 6 00 00 00 00" />
-                </div>
-                <div>
-                  <FieldLabel>SIRET / SIREN</FieldLabel>
-                  <PInput value={companySiret} onChange={setCompanySiret} placeholder="XXX XXX XXX XXXXX" />
-                </div>
-                <div>
-                  <FieldLabel>N° TVA intracommunautaire</FieldLabel>
-                  <PInput value={companyVatNumber} onChange={setCompanyVatNumber} placeholder="FR XX XXX XXX XXX" />
-                </div>
-                <LogoUpload preview={companyLogo} onFile={setCompanyLogo} />
-              </div>
-            </SectionCard>
-
-            {/* — Client — */}
-            <SectionCard delay={0.15}>
-              <SectionLabel icon={User} title="Client / Destinataire" />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <FieldLabel>Nom ou raison sociale</FieldLabel>
-                  <PInput value={clientName} onChange={setClientName} placeholder="Nom ou société" />
-                </div>
-                <div className="sm:col-span-2">
-                  <FieldLabel>Adresse</FieldLabel>
-                  <PInput value={clientAddress} onChange={setClientAddress} placeholder="Adresse complète du client" />
-                </div>
-                <div>
-                  <FieldLabel>E-mail</FieldLabel>
-                  <PInput type="email" value={clientEmail} onChange={setClientEmail} placeholder="client@exemple.com" />
-                </div>
-              </div>
-            </SectionCard>
-
-            {/* — Prestations — */}
-            <SectionCard delay={0.2}>
-              <div className="mb-5 flex items-center justify-between border-b border-[var(--border)] pb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.1)]">
-                    <FileText size={13} className="text-[#c9a55a]" />
-                  </div>
-                  <h2 className="text-xs font-extrabold uppercase tracking-widest text-[var(--ink)]">Prestations</h2>
-                </div>
-                <motion.button
-                  onClick={addItem} whileHover={{ scale: 1.03, y: -1 }} whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)] px-3 py-1.5 text-xs font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.15)]"
-                >
-                  <Plus size={12} /> Ajouter une ligne
-                </motion.button>
-              </div>
-
-              {/* En-têtes */}
-              <div className="mb-2 hidden grid-cols-[1fr_60px_90px_60px_36px] gap-2 px-1 sm:grid">
-                {["Description", "Qté", "Prix HT €", "TVA %", ""].map((h) => (
-                  <p key={h} className="text-[0.58rem] font-bold uppercase tracking-wider text-[var(--muted)]">{h}</p>
-                ))}
-              </div>
-
-              <AnimatePresence>
-                {items.map((item, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="mb-2 grid grid-cols-1 gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 sm:grid-cols-[1fr_60px_90px_60px_36px] sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0"
-                  >
-                    <PInput value={item.description} onChange={(v) => updateItem(i, "description", v)} placeholder="Description de la prestation" />
-                    <PInput type="number" value={String(item.quantity)} onChange={(v) => updateItem(i, "quantity", Number(v))} placeholder="1" />
-                    <PInput type="number" value={String(item.unitPrice)} onChange={(v) => updateItem(i, "unitPrice", Number(v))} placeholder="0.00" />
-                    <PInput type="number" value={String(item.vatRate)} onChange={(v) => updateItem(i, "vatRate", Number(v))} placeholder="20" />
-                    <motion.button
-                      whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                      onClick={() => removeItem(i)}
-                      className="flex h-10 w-9 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--muted)] transition hover:border-red-300 hover:bg-red-50 hover:text-red-500"
-                    >
-                      <X size={13} />
-                    </motion.button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-
-              {/* Totaux */}
-              <div className="mt-5 flex justify-end">
-                <div className="w-56 space-y-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-5 py-4">
-                  {[
-                    { label: "Total HT", val: totals.ht },
-                    { label: "Total TVA", val: totals.vat },
-                  ].map(({ label, val }) => (
-                    <div key={label} className="flex justify-between text-sm">
-                      <span className="text-[var(--muted)]">{label}</span>
-                      <span className="font-semibold text-[var(--ink)]">{val.toFixed(2)} €</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between border-t border-[var(--border)] pt-2 text-sm font-extrabold">
-                    <span className="text-[var(--ink)]">Total TTC</span>
-                    <span style={{ color: primaryColor }}>{totals.ttc.toFixed(2)} €</span>
-                  </div>
-                </div>
-              </div>
-            </SectionCard>
-
-            {/* — Notes — */}
-            <SectionCard delay={0.25}>
-              <SectionLabel icon={StickyNote} title="Notes &amp; conditions" />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <FieldLabel>Notes / Remarques</FieldLabel>
-                  <PTextarea
-                    value={notes}
-                    onChange={setNotes}
-                    placeholder={
-                      documentType === "Devis"
-                        ? "Précisions sur le devis, remarques…"
-                        : "Informations complémentaires…"
-                    }
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <FieldLabel>
-                    {documentType === "Devis" ? "Modalités & conditions" : "Conditions de paiement"}
-                  </FieldLabel>
-                  <PTextarea
-                    value={paymentTerms}
-                    onChange={setPaymentTerms}
-                    placeholder={
-                      documentType === "Devis"
-                        ? "Ex : Devis valable 30 jours, acompte 30%."
-                        : "Ex : Paiement à 30 jours, virement bancaire."
-                    }
-                    rows={4}
-                  />
-                </div>
-              </div>
-            </SectionCard>
-
-            {/* — Boutons d'action — visible sur mobile/tablette, masqué sur xl (déjà dans le panneau aperçu) — */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3, ease }}
-              className="flex flex-wrap gap-3 xl:hidden"
-            >
-              <motion.button
-                onClick={saveInvoice} disabled={loadingSave}
-                whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.1)] py-3.5 text-sm font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.18)] disabled:opacity-60"
-              >
-                <Save size={14} />
-                {loadingSave ? "Enregistrement…" : "Enregistrer"}
-              </motion.button>
-              <motion.button
-                onClick={downloadPDF}
-                whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
-                className="group relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-2xl bg-[var(--ink)] py-3.5 text-sm font-extrabold text-white shadow-[0_4px_16px_rgba(9,9,11,0.2)]"
-              >
-                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/8 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                <Download size={14} />
-                Télécharger PDF
-              </motion.button>
-            </motion.div>
+        {/* ── Barre info bas ───────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.55, ease }}
+          className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/6 bg-[rgba(15,17,23,0.5)] px-6 py-4"
+        >
+          <div className="flex items-center gap-3">
+            <Shield size={14} className="shrink-0 text-white/20" />
+            <p className="text-xs text-white/35">
+              Accès sécurisé · abonnement{" "}
+              <span className="font-semibold text-[#c9a55a]">11,90 €/mois</span> · outils exclusifs DJAMA
+            </p>
           </div>
+          <Link
+            href="/"
+            className="flex items-center gap-1 text-xs text-white/25 transition hover:text-white/50"
+          >
+            Retour au site <ChevronRight size={11} />
+          </Link>
+        </motion.div>
 
-          {/* ════ APERÇU + ACTIONS ════ */}
-          <div className={mobileTab === "preview" ? "block" : "hidden xl:block"}>
-            <div className="xl:sticky xl:top-[65px] space-y-4">
-
-              {/* Boutons d'action */}
-              <motion.div
-                initial={{ opacity: 0, x: 14 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, ease, delay: 0.1 }}
-                className="flex gap-3"
-              >
-                <motion.button
-                  onClick={saveInvoice} disabled={loadingSave}
-                  whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[rgba(201,165,90,0.3)] bg-white py-3 text-sm font-bold text-[#c9a55a] shadow-sm transition hover:border-[rgba(201,165,90,0.5)] hover:bg-[rgba(201,165,90,0.06)] disabled:opacity-60"
-                >
-                  <Save size={14} />
-                  {loadingSave ? "Enregistrement…" : "Enregistrer"}
-                </motion.button>
-                <motion.button
-                  onClick={downloadPDF}
-                  whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
-                  className="group relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-2xl bg-[var(--ink)] py-3 text-sm font-extrabold text-white shadow-[0_4px_16px_rgba(9,9,11,0.2)] hover:shadow-[0_8px_28px_rgba(9,9,11,0.3)]"
-                >
-                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/8 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                  <Download size={14} />
-                  PDF
-                </motion.button>
-              </motion.div>
-
-              {/* Aperçu facture */}
-              <motion.div
-                initial={{ opacity: 0, x: 14 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, ease, delay: 0.15 }}
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="flex items-center gap-1.5 text-[0.62rem] font-bold uppercase tracking-widest text-[var(--muted)]">
-                    <Sparkles size={9} className="text-[#c9a55a]" />
-                    Aperçu du document
-                  </p>
-                  <AnimatePresence mode="wait">
-                    <motion.span
-                      key={documentType}
-                      initial={{ opacity: 0, scale: 0.85 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.85 }}
-                      transition={{ duration: 0.2 }}
-                      className="rounded-full border px-2.5 py-0.5 text-[0.6rem] font-extrabold uppercase tracking-widest"
-                      style={{
-                        color: primaryColor,
-                        borderColor: `${primaryColor}40`,
-                        background: `${primaryColor}12`,
-                      }}
-                    >
-                      {documentType}
-                    </motion.span>
-                  </AnimatePresence>
-                </div>
-
-                <div className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_8px_40px_rgba(9,9,11,0.08)]">
-                  {/* Barre de couleur en haut */}
-                  <div className="h-1.5 w-full" style={{ background: primaryColor }} />
-
-                  <div className="p-6 text-[10.5px] leading-relaxed">
-
-                    {/* En-tête facture */}
-                    <div className="flex items-start justify-between gap-3 pb-5" style={{ borderBottom: `1.5px solid ${primaryColor}30` }}>
-                      <div className="flex items-start gap-3">
-                        {companyLogo && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={companyLogo} alt="logo" className="h-12 w-12 rounded-xl border border-gray-100 bg-white object-contain p-1 shadow-sm" />
-                        )}
-                        <div>
-                          <p className="text-xl font-extrabold leading-none" style={{ color: primaryColor }}>
-                            {documentType}
-                          </p>
-                          <p className="mt-1 text-[var(--muted)]">{docNumber || "—"}</p>
-                        </div>
-                      </div>
-                      <div className="shrink-0 text-right text-[var(--muted)]">
-                        <p>Date : <span className="font-semibold text-[var(--ink)]">{issueDate || "—"}</span></p>
-                        <p className="mt-0.5">
-                          {documentType === "Devis" ? "Validité" : "Échéance"} :{" "}
-                          <span className="font-semibold text-[var(--ink)]">{dueDate || "—"}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Émetteur / Client */}
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-[0.5rem] font-extrabold uppercase tracking-widest" style={{ color: primaryColor }}>Émetteur</p>
-                        <p className="mt-1 font-bold text-[var(--ink)]">{companyName || "—"}</p>
-                        <p className="mt-0.5 whitespace-pre-line text-[var(--muted)]">
-                          {[companyAddress, companyPhone, companyEmail, companySiret, companyVatNumber].filter(Boolean).join("\n") || "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[0.5rem] font-extrabold uppercase tracking-widest" style={{ color: primaryColor }}>Client</p>
-                        <p className="mt-1 font-bold text-[var(--ink)]">{clientName || "—"}</p>
-                        <p className="mt-0.5 whitespace-pre-line text-[var(--muted)]">
-                          {[clientAddress, clientEmail].filter(Boolean).join("\n") || "—"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Tableau prestations */}
-                    <div className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
-                      <table className="w-full">
-                        <thead>
-                          <tr style={{ backgroundColor: primaryColor }}>
-                            {["Description", "Qté", "HT", "TVA", "TTC"].map((h) => (
-                              <th key={h} className="px-2.5 py-2 text-left text-[0.5rem] font-extrabold uppercase tracking-wider text-white">{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {items.map((it, i) => {
-                            const ttc = it.quantity * it.unitPrice * (1 + it.vatRate / 100);
-                            return (
-                              <tr key={i} className="border-t border-[var(--border)]" style={{ background: i % 2 === 1 ? "var(--surface)" : "white" }}>
-                                <td className="px-2.5 py-2 text-[var(--ink)]">{it.description || "—"}</td>
-                                <td className="px-2.5 py-2 text-[var(--muted)]">{it.quantity}</td>
-                                <td className="px-2.5 py-2 text-[var(--muted)]">{it.unitPrice.toFixed(2)} €</td>
-                                <td className="px-2.5 py-2 text-[var(--muted)]">{it.vatRate}%</td>
-                                <td className="px-2.5 py-2 font-semibold text-[var(--ink)]">{ttc.toFixed(2)} €</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Totaux */}
-                    <div className="mt-4 flex justify-end">
-                      <div className="space-y-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-[10px]">
-                        {[
-                          { label: "Total HT", val: totals.ht },
-                          { label: "Total TVA", val: totals.vat },
-                        ].map(({ label, val }) => (
-                          <div key={label} className="flex justify-between gap-8">
-                            <span className="text-[var(--muted)]">{label}</span>
-                            <span className="font-semibold">{val.toFixed(2)} €</span>
-                          </div>
-                        ))}
-                        <div className="flex justify-between gap-8 border-t border-[var(--border)] pt-1.5 font-extrabold">
-                          <span>Total TTC</span>
-                          <span style={{ color: primaryColor }}>{totals.ttc.toFixed(2)} €</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Notes */}
-                    {(notes || paymentTerms) && (
-                      <div className="mt-4 space-y-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
-                        {notes && (
-                          <div>
-                            <p className="text-[0.5rem] font-extrabold uppercase tracking-widest text-[var(--muted)]">Notes</p>
-                            <p className="mt-1 text-[var(--ink)]">{notes}</p>
-                          </div>
-                        )}
-                        {paymentTerms && (
-                          <div>
-                            <p className="text-[0.5rem] font-extrabold uppercase tracking-widest text-[var(--muted)]">Conditions</p>
-                            <p className="mt-1 text-[var(--ink)]">{paymentTerms}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }

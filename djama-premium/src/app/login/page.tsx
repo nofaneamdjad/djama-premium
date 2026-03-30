@@ -110,7 +110,7 @@ export default function LoginPage() {
       /* ── Succès — redirection hard pour que le middleware
              rélise les cookies Supabase correctement ── */
       console.log("[Login] ✅ Connecté :", data.session.user.email);
-      window.location.href = "/client/factures";
+      window.location.href = "/client";
 
     } catch (err) {
       console.error("[Login] ❌ Exception :", err);
