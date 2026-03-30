@@ -12,7 +12,7 @@ const NAV_LINKS = [
   { href: "/services",      label: "Services"      },
   { href: "/realisations",  label: "Réalisations"  },
   { href: "/contact",       label: "Contact"       },
-  { href: "/client",        label: "Espace client" },
+  { href: "/espace-client",  label: "Espace client" },
 ];
 
 const ease = [0.22, 1, 0.36, 1] as const;
