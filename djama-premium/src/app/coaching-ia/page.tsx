@@ -333,7 +333,7 @@ export default function CoachingIAPage() {
             <h2 className="text-3xl font-extrabold text-white md:text-4xl">
               8h avec un coach dédié
             </h2>
-            <p className="mt-4 text-sm text-white/40 max-w-xl mx-auto">
+            <p className="mt-4 text-sm text-white/70 max-w-xl mx-auto">
               L'IA s'apprend mieux avec quelqu'un qui vous guide. Chaque heure est pensée pour avancer concrètement.
             </p>
           </FadeReveal>
@@ -345,10 +345,10 @@ export default function CoachingIAPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={viewport}
               transition={{ duration: 0.6, ease }}
-              className="group rounded-3xl border border-white/8 bg-white/[0.04] p-8 backdrop-blur-sm transition-all duration-300 hover:border-[rgba(var(--gold),0.25)] hover:bg-white/[0.07]"
+              className="group rounded-3xl border border-white/[0.12] bg-white/[0.07] p-8 backdrop-blur-sm transition-all duration-300 hover:border-[rgba(var(--gold),0.35)] hover:bg-white/[0.10]"
             >
               <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[rgba(var(--gold),0.2)] bg-[rgba(var(--gold),0.08)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[rgba(var(--gold),0.3)] bg-[rgba(var(--gold),0.12)]">
                   <Video size={22} className="text-[rgb(var(--gold))]" />
                 </div>
                 <div>
@@ -356,7 +356,7 @@ export default function CoachingIAPage() {
                   <span className="text-2xl font-extrabold text-white">2h de visio</span>
                 </div>
               </div>
-              <p className="mb-6 text-sm leading-relaxed text-white/45">
+              <p className="mb-6 text-sm leading-relaxed text-[#d1d5db]">
                 Deux heures de cours en visioconférence pour poser les bases solides de l'IA
                 — explications claires, exemples concrets, questions-réponses en direct.
               </p>
@@ -367,7 +367,7 @@ export default function CoachingIAPage() {
                   "Démonstrations en temps réel",
                   "Session de questions-réponses",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-xs text-white/55">
+                  <li key={item} className="flex items-start gap-2.5 text-xs text-[#e5e7eb]">
                     <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-[rgb(var(--gold))]" />
                     {item}
                   </li>
@@ -381,7 +381,7 @@ export default function CoachingIAPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={viewport}
               transition={{ duration: 0.6, ease, delay: 0.1 }}
-              className="group relative rounded-3xl border border-[rgba(var(--gold),0.25)] bg-[rgba(var(--gold),0.05)] p-8 backdrop-blur-sm transition-all duration-300 hover:border-[rgba(var(--gold),0.45)] hover:bg-[rgba(var(--gold),0.09)]"
+              className="group relative rounded-3xl border border-[rgba(var(--gold),0.35)] bg-[rgba(var(--gold),0.09)] p-8 backdrop-blur-sm transition-all duration-300 hover:border-[rgba(var(--gold),0.55)] hover:bg-[rgba(var(--gold),0.14)]"
             >
               {/* Badge recommandé */}
               <div className="absolute right-5 top-5 rounded-full bg-[rgba(var(--gold),0.15)] px-2.5 py-1 text-[0.6rem] font-extrabold uppercase tracking-widest text-[rgb(var(--gold))]">
@@ -397,7 +397,7 @@ export default function CoachingIAPage() {
                   <span className="text-2xl font-extrabold text-white">6h d'ateliers</span>
                 </div>
               </div>
-              <p className="mb-6 text-sm leading-relaxed text-white/45">
+              <p className="mb-6 text-sm leading-relaxed text-[#d1d5db]">
                 Six heures d'ateliers pratiques en coaching individuel — vous apprenez en faisant,
                 sur vos propres projets, avec un accompagnement personnalisé à chaque étape.
               </p>
@@ -408,7 +408,7 @@ export default function CoachingIAPage() {
                   "Accompagnement personnalisé",
                   "Suivi de progression entre les séances",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-xs text-white/55">
+                  <li key={item} className="flex items-start gap-2.5 text-xs text-[#e5e7eb]">
                     <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-[rgb(var(--gold))]" />
                     {item}
                   </li>
@@ -428,7 +428,7 @@ export default function CoachingIAPage() {
               ].map(({ val, label }) => (
                 <div key={label} className="flex flex-col items-center gap-0.5">
                   <span className="text-xl font-extrabold text-[rgb(var(--gold))]">{val}</span>
-                  <span className="text-xs text-white/35">{label}</span>
+                  <span className="text-xs text-white/65">{label}</span>
                 </div>
               ))}
             </div>
@@ -507,7 +507,7 @@ export default function CoachingIAPage() {
                 </div>
                 <div className="mt-2 flex items-end justify-center gap-2">
                   <span className="text-6xl font-extrabold text-white">190€</span>
-                  <span className="mb-2 text-sm text-white/40">/ 3 mois</span>
+                  <span className="mb-2 text-sm text-white/65">/ 3 mois</span>
                 </div>
                 <p className="mt-2 text-xs text-white/30">Paiement unique — PayPal ou virement</p>
               </div>
