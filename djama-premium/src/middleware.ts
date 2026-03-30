@@ -2,29 +2,26 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Middleware — Protection des routes /client/*
+ * Middleware — Accès aux outils DJAMA
  *
- * Lit la session Supabase depuis les cookies (set par createBrowserClient
- * ou par le SDK lors du login) et redirige vers /login si absente.
+ * Règles :
+ *  1. Non connecté         → /login?redirect=...
+ *  2. Connecté, non payant → /espace-client?acces=requis
+ *  3. Connecté + payant    → accès accordé
  *
- * Note : le client navigateur utilise createClient (localStorage) ET
- * synchronise aussi les cookies auth via detectSessionInUrl.
- * Le middleware récupère la session depuis les cookies Supabase.
+ * Le statut payant est lu depuis user.user_metadata.paid
+ * (stocké dans le JWT Supabase, pas de requête DB supplémentaire).
+ * Il est mis à jour par le webhook Stripe après chaque paiement.
  */
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  /* Laisser passer les routes non protégées */
-  if (!pathname.startsWith("/client")) {
-    return NextResponse.next();
-  }
-
   const response = NextResponse.next({
     request: { headers: request.headers },
   });
 
-  /* Créer un client serveur qui lit les cookies de la requête */
+  /* ── Client Supabase serveur (lit les cookies) ─── */
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -41,18 +38,40 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  /* Récupérer l'utilisateur (plus fiable que getSession côté serveur) */
-  const { data: { user } } = await supabase.auth.getUser();
+  /* ── Vérifier la session ─────────────────────── */
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
+  /* 1. Non connecté → login */
   if (!user) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
+    const url = new URL("/login", request.url);
+    url.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(url);
   }
 
+  /* 2. Connecté mais pas abonné → page d'abonnement */
+  const isPaid = user.user_metadata?.paid === true;
+  if (!isPaid) {
+    const url = new URL("/espace-client", request.url);
+    url.searchParams.set("acces", "requis");
+    return NextResponse.redirect(url);
+  }
+
+  /* 3. Connecté + abonné → accès accordé */
   return response;
 }
 
 export const config = {
-  matcher: ["/client/:path*"],
+  /*
+   * Protège :
+   *   /client           (et tous ses sous-chemins)
+   *   /planning-agenda  (et tous ses sous-chemins)
+   *   /client/factures, /client/devis, /client/dashboard, etc.
+   */
+  matcher: [
+    "/client/:path*",
+    "/planning-agenda",
+    "/planning-agenda/:path*",
+  ],
 };

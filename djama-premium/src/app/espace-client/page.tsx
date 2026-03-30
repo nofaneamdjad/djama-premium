@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
   CalendarDays,
@@ -17,10 +19,43 @@ import {
   Bell,
   ListChecks,
   LayoutDashboard,
+  AlertTriangle,
 } from "lucide-react";
 import StripeButton from "@/components/ui/StripeButton";
 import { FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainerFast, cardReveal, viewport } from "@/lib/animations";
+
+/* ─── Banner accès requis ─────────────────────────────── */
+function AccessBanner() {
+  const params = useSearchParams();
+  const show = params.get("acces") === "requis";
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -16 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 border-b border-[rgba(201,165,90,0.25)] bg-[rgba(15,17,23,0.97)] px-4 py-3.5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-xl"
+        >
+          <AlertTriangle size={15} style={{ color: "#c9a55a", flexShrink: 0 }} />
+          <p className="text-sm font-semibold text-white">
+            Cet outil est réservé aux abonnés.{" "}
+            <span className="text-[#c9a55a]">Abonnez-vous ci-dessous pour y accéder.</span>
+          </p>
+          <Link
+            href="#abonnement"
+            className="ml-2 rounded-full border border-[rgba(201,165,90,0.4)] bg-[rgba(201,165,90,0.12)] px-3 py-1 text-xs font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.2)]"
+          >
+            Voir l&apos;offre ↓
+          </Link>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -74,6 +109,9 @@ const REASSURANCES = [
 export default function EspaceClientPage() {
   return (
     <div className="bg-white">
+      <Suspense>
+        <AccessBanner />
+      </Suspense>
 
       {/* ══ HERO MINIMAL ══════════════════════════════ */}
       <section className="hero-dark hero-grid relative overflow-hidden pb-28 pt-36">

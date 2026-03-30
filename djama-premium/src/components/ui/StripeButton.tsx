@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { Wallet, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 /* ─────────────────────────────────────────────────────────────
    Bouton d'abonnement Stripe
-   Appelle POST /api/checkout → redirige vers Stripe Checkout
+   - Récupère l'ID et l'email de l'utilisateur connecté (si dispo)
+   - Les envoie à /api/checkout pour lier le paiement au compte
+   - Redirige vers Stripe Checkout
 ───────────────────────────────────────────────────────────── */
 
 interface StripeButtonProps {
@@ -18,16 +21,26 @@ export default function StripeButton({
   className = "",
 }: StripeButtonProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
 
   async function handleClick() {
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch("/api/checkout", { method: "POST" });
-      const data = await res.json();
+      /* Récupérer l'utilisateur connecté (optionnel) */
+      const { data: { user } } = await supabase.auth.getUser();
 
+      const res = await fetch("/api/checkout", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId:    user?.id    ?? null,
+          userEmail: user?.email ?? null,
+        }),
+      });
+
+      const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur de paiement");
       if (data.url) window.location.href = data.url;
     } catch (err: unknown) {

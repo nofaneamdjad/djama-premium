@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -71,9 +72,6 @@ export default function LoginPage() {
     setLoading(true);
 
     const trimmedEmail = email.trim().toLowerCase();
-    console.log("[Login] Tentative :", trimmedEmail);
-    console.log("[Login] URL Supabase :", process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log("[Login] Clé présente :", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
     try {
       const { data, error: sbError } = await supabase.auth.signInWithPassword({
@@ -81,45 +79,46 @@ export default function LoginPage() {
         password,
       });
 
+      /* ── Erreur Supabase ─────────────────────────── */
       if (sbError) {
-        console.error("[Login] ❌ Erreur Supabase :", {
-          message: sbError.message,
-          status:  sbError.status,
-          name:    sbError.name,
-          raw:     JSON.stringify(sbError),
-        });
+        console.error("[Login] ❌", sbError.message, "| status:", sbError.status);
 
         if (
           sbError.message.includes("Invalid login credentials") ||
           sbError.message.includes("invalid_credentials")
         ) {
-          setError(`Email ou mot de passe incorrect, ou email non confirmé. (${sbError.status ?? sbError.message})`);
+          setError("Email ou mot de passe incorrect.");
           setErrorType("credentials");
         } else if (sbError.message.includes("Email not confirmed")) {
           setError("Votre adresse email n'est pas encore confirmée.");
           setErrorType("credentials");
         } else {
-          setError(`Erreur Supabase : ${sbError.message}`);
+          setError(`Erreur : ${sbError.message}`);
           setErrorType("other");
         }
-        setLoading(false);
-        return;
+        return; // finally appellera setLoading(false)
       }
 
+      /* ── Pas de session retournée ────────────────── */
       if (!data.session) {
-        console.error("[Login] ❌ Pas de session. data =", JSON.stringify(data));
+        console.error("[Login] ❌ Pas de session :", JSON.stringify(data));
         setError("Session non créée. Vérifiez votre email de confirmation.");
         setErrorType("credentials");
-        setLoading(false);
         return;
       }
 
-      console.log("[Login] ✅ Connecté. user_id =", data.session.user.id);
-      router.push("/client/factures");
+      /* ── Succès — redirection hard pour que le middleware
+             rélise les cookies Supabase correctement ── */
+      console.log("[Login] ✅ Connecté :", data.session.user.email);
+      window.location.href = "/client/factures";
+
     } catch (err) {
       console.error("[Login] ❌ Exception :", err);
       setError("Erreur inattendue. Réessayez.");
       setErrorType("other");
+    } finally {
+      /* Toujours remettre loading à false sauf si on vient
+         de déclencher une redirection (démontera le composant) */
       setLoading(false);
     }
   }
@@ -222,6 +221,15 @@ export default function LoginPage() {
               }
             />
 
+            <div className="flex justify-end">
+              <Link
+                href="/forgot-password"
+                className="text-[0.7rem] text-white/30 transition hover:text-[#c9a55a]"
+              >
+                Mot de passe oublié ?
+              </Link>
+            </div>
+
             {/* Messages d'erreur / succès */}
             <AnimatePresence mode="wait">
               {resendOk && (
@@ -303,14 +311,25 @@ export default function LoginPage() {
             </motion.button>
           </motion.form>
 
-          <motion.p
+          {/* Lien abonnement */}
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.4 }}
-            className="mt-6 text-center text-xs text-white/20"
+            className="mt-6 space-y-3 text-center"
           >
-            Accès réservé aux clients DJAMA.
-          </motion.p>
+            <p className="text-xs text-white/20">Accès réservé aux clients DJAMA.</p>
+            <div className="h-px bg-white/5" />
+            <p className="text-xs text-white/35">
+              Pas encore d&apos;accès ?{" "}
+              <Link
+                href="/espace-client"
+                className="font-semibold text-[#c9a55a] underline underline-offset-2 transition hover:text-[#e8cc94]"
+              >
+                Activez votre abonnement 11,90€&nbsp;/&nbsp;mois
+              </Link>
+            </p>
+          </motion.div>
         </div>
       </motion.div>
     </div>
