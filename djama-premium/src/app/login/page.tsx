@@ -111,46 +111,34 @@ export default function LoginPage() {
         return;
       }
 
-      /* ── 2. Vérifier l'abonnement ──────────────────────── */
+      /* ── 2. Vérifier l'abonnement — table clients uniquement ── */
       const userEmail = data.session.user.email ?? "";
-      const meta      = data.session.user.user_metadata ?? {};
-
-      /* Voie rapide : user_metadata mis à jour par le webhook Stripe
-         (aucune requête DB nécessaire)                             */
-      const activeViaMetadata =
-        meta.abonnement === "outils_djama" && meta.statut === "actif";
 
       setPhase("checking");
 
-      let activeViaDB = false;
-      if (!activeViaMetadata) {
-        /* Fallback : table clients — lookup par email */
-        const { data: clientRow, error: dbErr } = await supabase
-          .from("clients")
-          .select("abonnement, statut")
-          .eq("email", userEmail)
-          .maybeSingle();
-
-        console.log(
-          "[Login] 🔍 clients table |",
-          "email:", userEmail,
-          "| abonnement:", clientRow?.abonnement ?? "non trouvé",
-          "| statut:", clientRow?.statut ?? "non trouvé",
-          dbErr ? `| erreur DB: ${dbErr.message}` : ""
-        );
-
-        activeViaDB =
-          clientRow?.abonnement === "outils_djama" &&
-          clientRow?.statut     === "actif";
-      }
-
-      const isSubscribed = activeViaMetadata || activeViaDB;
+      const { data: clientRow, error: dbErr } = await supabase
+        .from("clients")
+        .select("email, abonnement, statut")
+        .eq("email", userEmail)
+        .maybeSingle();
 
       console.log(
-        "[Login] ✅ Connecté :", userEmail,
-        "| abonné :", isSubscribed,
-        "| via metadata :", activeViaMetadata,
-        "| via DB :", activeViaDB
+        "[Login] 🔍 clients table",
+        "| email:", userEmail,
+        "| ligne trouvée:", clientRow ? "oui" : "non",
+        "| abonnement:", clientRow?.abonnement ?? "-",
+        "| statut:", clientRow?.statut ?? "-",
+        dbErr ? `| erreur DB: ${dbErr.message}` : ""
+      );
+
+      const isSubscribed =
+        clientRow?.abonnement === "outils_djama" &&
+        clientRow?.statut     === "actif";
+
+      console.log(
+        "[Login] →",
+        isSubscribed ? "✅ abonné actif" : "⛔ non abonné",
+        "| destination:", isSubscribed ? "/client" : "/espace-client"
       );
 
       /* ── 3. Redirection selon le statut ─────────── */

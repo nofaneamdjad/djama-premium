@@ -4,23 +4,14 @@ import { NextResponse, type NextRequest } from "next/server";
 /**
  * Middleware — Accès aux outils DJAMA
  *
- * Règles :
- *  1. Non connecté                              → /login?redirect=...
- *  2. Connecté mais non abonné                  → /espace-client?acces=requis
- *  3. Connecté + abonné actif                   → accès accordé
- *
- * Un utilisateur est autorisé si l'UNE des conditions est vraie :
- *   A. user_metadata.abonnement = "outils_djama" ET statut = "actif"
- *      (mis à jour par le webhook Stripe — accès sans requête DB)
- *   B. Table clients : abonnement = "outils_djama" ET statut = "actif"
- *      (comptes test / admin activés manuellement)
- *
- * Lookup basé sur : clients.email = user.email (pas de user_id)
- *
- * Routes protégées :
- *   /client              → Dashboard
- *   /client/*            → Tous les outils
- *   /planning-agenda     → Planning public (accès direct)
+ * Règle unique :
+ *   clients.email     = user.email
+ *   clients.abonnement = "outils_djama"
+ *   clients.statut     = "actif"
+ *   ──────────────────────────────────
+ *   ✅ accès accordé → continue
+ *   ❌ non connecté  → /login?redirect=...
+ *   ❌ non abonné    → /espace-client?acces=requis
  */
 
 export async function middleware(request: NextRequest) {
@@ -30,7 +21,7 @@ export async function middleware(request: NextRequest) {
     request: { headers: request.headers },
   });
 
-  /* ── Client Supabase serveur (lit les cookies de session) ── */
+  /* ── Client Supabase (lecture des cookies de session) ─── */
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -47,58 +38,43 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  /* ── 1. Vérifier la session ─────────────────────────────── */
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  /* ── 1. Session ─────────────────────────────────────── */
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    console.log(`[Middleware] ❌ Non connecté → /login (path: ${pathname})`);
+    console.log(`[Middleware] ❌ Non connecté → /login  (path: ${pathname})`);
     const url = new URL("/login", request.url);
     url.searchParams.set("redirect", pathname);
     return NextResponse.redirect(url);
   }
 
-  /* ── 2. Vérifier l'abonnement ───────────────────────────── */
+  /* ── 2. Vérification clients table ─────────────────── */
+  const userEmail = user.email ?? "";
 
-  /* A — Voie rapide : user_metadata (zéro requête DB)
-       Mis à jour par le webhook Stripe dès le paiement.        */
-  const meta = user.user_metadata ?? {};
-  const isActiveViaMetadata =
-    meta.abonnement === "outils_djama" && meta.statut === "actif";
-
-  if (isActiveViaMetadata) {
-    console.log(`[Middleware] ✅ Accès via metadata | email: ${user.email} | path: ${pathname}`);
-    return response;
-  }
-
-  /* B — Fallback : table clients par email (comptes test/admin) */
-  const { data: clientRow, error: dbErr } = await supabase
+  const { data: row, error } = await supabase
     .from("clients")
-    .select("abonnement, statut")
-    .eq("email", user.email!)
+    .select("email, abonnement, statut")
+    .eq("email", userEmail)
     .maybeSingle();
 
-  if (dbErr) {
-    console.error("[Middleware] ⚠️ Erreur DB clients:", dbErr.message);
-  }
-
   console.log(
-    `[Middleware] DB clients | email: ${user.email}`,
-    `| abonnement: ${clientRow?.abonnement ?? "non trouvé"}`,
-    `| statut: ${clientRow?.statut ?? "non trouvé"}`
+    `[Middleware] email: ${userEmail}`,
+    `| ligne trouvée: ${row ? "oui" : "non"}`,
+    `| abonnement: ${row?.abonnement ?? "-"}`,
+    `| statut: ${row?.statut ?? "-"}`,
+    error ? `| erreur DB: ${error.message}` : ""
   );
 
-  const isActiveViaDB =
-    clientRow?.abonnement === "outils_djama" && clientRow?.statut === "actif";
+  const isActive =
+    row?.abonnement === "outils_djama" && row?.statut === "actif";
 
-  if (isActiveViaDB) {
-    console.log(`[Middleware] ✅ Accès via clients table | path: ${pathname}`);
+  if (isActive) {
+    console.log(`[Middleware] ✅ Accès accordé → ${pathname}`);
     return response;
   }
 
-  /* ── 3. Accès refusé ────────────────────────────────────── */
-  console.log(`[Middleware] ⛔ Abonnement inactif | email: ${user.email} → /espace-client`);
+  /* ── 3. Accès refusé ────────────────────────────────── */
+  console.log(`[Middleware] ⛔ Abonnement inactif | email: ${userEmail} → /espace-client`);
   const url = new URL("/espace-client", request.url);
   url.searchParams.set("acces", "requis");
   return NextResponse.redirect(url);
