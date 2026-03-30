@@ -5,20 +5,22 @@ import { NextResponse, type NextRequest } from "next/server";
  * Middleware — Accès aux outils DJAMA
  *
  * Règles :
- *  1. Non connecté         → /login?redirect=...
- *  2. Connecté, non payant → /espace-client?acces=requis
- *  3. Connecté + payant    → accès accordé
+ *  1. Non connecté                              → /login?redirect=...
+ *  2. Connecté mais non autorisé                → /espace-client?acces=requis
+ *  3. Connecté + autorisé                       → accès accordé
+ *
+ * Un utilisateur est autorisé si l'UNE des conditions est vraie :
+ *   A. user_metadata.paid === true  (mis à jour par le webhook Stripe)
+ *   B. Table clients : paid = true ET statut = 'actif'
+ *      (utilisé pour les comptes test / admin sans paiement réel)
  *
  * Routes protégées :
- *   /client              → Dashboard espace client
+ *   /client              → Dashboard
  *   /client/notes        → Bloc-notes
  *   /client/planning     → Planning & Agenda
  *   /client/factures     → Factures & Devis
- *   /client/bloc-notes   → alias /client/notes
+ *   /client/bloc-notes   → alias notes
  *   /planning-agenda     → Planning (accès direct)
- *
- * Le statut payant est lu depuis user.user_metadata.paid (JWT Supabase).
- * Il est mis à jour par le webhook Stripe après chaque paiement confirmé.
  */
 
 export async function middleware(request: NextRequest) {
@@ -28,7 +30,7 @@ export async function middleware(request: NextRequest) {
     request: { headers: request.headers },
   });
 
-  /* ── Client Supabase serveur (lit les cookies) ─── */
+  /* ── Client Supabase serveur (lit les cookies de session) ── */
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -45,37 +47,47 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  /* ── Vérifier la session ─────────────────────── */
+  /* ── 1. Vérifier la session ─────────────────────────────── */
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  /* 1. Non connecté → login */
   if (!user) {
     const url = new URL("/login", request.url);
     url.searchParams.set("redirect", pathname);
     return NextResponse.redirect(url);
   }
 
-  /* 2. Connecté mais pas abonné → page d'abonnement */
-  const isPaid = user.user_metadata?.paid === true;
-  if (!isPaid) {
+  /* ── 2. Vérifier l'autorisation ─────────────────────────── */
+
+  /* A — Voie rapide : user_metadata (pas de requête DB) */
+  const isPaidViaMetadata = user.user_metadata?.paid === true;
+
+  /* B — Fallback : table clients (comptes test / admin) */
+  let isPaidViaDB = false;
+  if (!isPaidViaMetadata) {
+    const { data: client } = await supabase
+      .from("clients")
+      .select("paid, statut")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    isPaidViaDB =
+      client?.paid === true && client?.statut === "actif";
+  }
+
+  if (!isPaidViaMetadata && !isPaidViaDB) {
     const url = new URL("/espace-client", request.url);
     url.searchParams.set("acces", "requis");
     return NextResponse.redirect(url);
   }
 
-  /* 3. Connecté + abonné → accès accordé */
+  /* ── 3. Accès accordé ───────────────────────────────────── */
   return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * /client         → dashboard (racine, sans trailing slash)
-     * /client/:path*  → tous les sous-outils (notes, planning, factures…)
-     * /planning-agenda et ses sous-chemins
-     */
     "/client",
     "/client/:path*",
     "/planning-agenda",
