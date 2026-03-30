@@ -1,55 +1,23 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Middleware — Accès aux outils DJAMA
  *
- * MODE TEST : vérification abonnement désactivée.
- * Règle active : utilisateur connecté → accès direct.
+ * MODE TEST : middleware entièrement bypassé.
+ * La protection auth est gérée côté client dans chaque page.
  *
- * TODO (réactiver) :
- *   clients.email      = user.email
- *   clients.abonnement = "outils_djama"
- *   clients.statut     = "actif"
+ * TODO (réactiver après tests) :
+ *   Utiliser @supabase/supabase-js côté serveur pour lire la session,
+ *   puis vérifier : clients.email + clients.abonnement + clients.statut.
+ *
+ * NOTE : @supabase/ssr v0.9.0 est incompatible avec les clés
+ *        sb_publishable_* — c'est pourquoi on bypasse ici.
  */
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  const response = NextResponse.next({
-    request: { headers: request.headers },
-  });
-
-  /* ── Client Supabase (lecture des cookies de session) ─── */
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value);
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-
-  /* ── 1. Session — seule vérification active en mode test ── */
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    console.log(`[Middleware] ❌ Non connecté → /login  (path: ${pathname})`);
-    const url = new URL("/login", request.url);
-    url.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  /* ── 2. Accès accordé (mode test — abonnement non vérifié) ── */
-  console.log(`[Middleware] ✅ Connecté: ${user.email} → ${pathname}`);
-  return response;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function middleware(_request: NextRequest) {
+  /* Accès libre — la page /client protège elle-même via supabase.auth.getUser() côté client */
+  return NextResponse.next();
 }
 
 export const config = {

@@ -155,10 +155,16 @@ function ToolCard({
 export default function ClientDashboard() {
   const [email,    setEmail]    = useState<string | null>(null);
   const [initials, setInitials] = useState("?");
+  const [ready,    setReady]    = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) {
+      if (!user) {
+        /* Non connecté → login */
+        window.location.href = "/login?redirect=/client";
+        return;
+      }
+      if (user.email) {
         setEmail(user.email);
         const parts = user.email.split("@")[0].split(/[._-]/);
         setInitials(
@@ -167,8 +173,18 @@ export default function ClientDashboard() {
             : user.email.slice(0, 2).toUpperCase()
         );
       }
+      setReady(true);
     });
   }, []);
+
+  /* Écran de chargement pendant la vérification auth */
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#080a0f]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
+      </div>
+    );
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
