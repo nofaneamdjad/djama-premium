@@ -6,7 +6,7 @@ import {
   Calendar, Clock, Plus, Trash2, Edit3, Save, X,
   ChevronLeft, ChevronRight, Sun, Sunset, Moon,
   CheckCircle2, AlertCircle, Loader2, AlignLeft,
-  StickyNote, LayoutGrid, ArrowLeft,
+  StickyNote, LayoutGrid,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -452,7 +452,7 @@ export default function PlanningAgendaPage() {
      RENDER
   ═══════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#080a0f]">
+    <div className="bg-[#080a0f]">
 
       {/* Glows */}
       <div className="pointer-events-none fixed inset-0 z-0">
@@ -460,58 +460,38 @@ export default function PlanningAgendaPage() {
         <div className="absolute bottom-[10%] right-[10%] h-[400px] w-[400px] rounded-full bg-[rgba(59,130,246,0.04)] blur-[120px]"/>
       </div>
 
-      {/* ── Header ─────────────────────────────────────── */}
-      <header className="relative z-10 border-b border-white/6 bg-[rgba(8,10,15,0.9)] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
+      {/* ── Sub-header : tabs + horloge + bouton ── */}
+      <div className="relative z-10 border-b border-white/6 bg-[rgba(8,10,15,0.9)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
 
-          <div className="flex items-center gap-3">
-            <a href="/client" className="flex items-center gap-1.5 text-xs text-white/30 transition hover:text-white/60 sm:hidden">
-              <ArrowLeft size={13}/>
-            </a>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.09)]">
-              <Calendar size={16} style={{ color:"#c9a55a" }}/>
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-sm font-extrabold text-white">Planning & Agenda</p>
-              <p className="text-[0.6rem] text-white/25">{events.length} événement{events.length !== 1 ? "s" : ""} cette année</p>
-            </div>
+          {/* Tabs */}
+          <div className="flex gap-0">
+            {(["today","week","month"] as View[]).map(v => (
+              <button key={v} onClick={() => setView(v)}
+                className={`relative px-4 py-3.5 text-xs font-bold uppercase tracking-wider transition ${
+                  view === v ? "text-[#c9a55a]" : "text-white/30 hover:text-white/60"}`}>
+                {v==="today" ? "Aujourd'hui" : v==="week" ? "Semaine" : "Mois"}
+                {view === v && (
+                  <motion.div layoutId="tab-indicator"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#c9a55a]"/>
+                )}
+              </button>
+            ))}
           </div>
 
-          {/* Horloge */}
-          <div className="hidden items-center sm:flex">
-            <div className="text-center">
-              <p className="text-lg font-mono font-black tabular-nums text-white leading-none">{timeStr}</p>
+          {/* Horloge + bouton */}
+          <div className="flex items-center gap-3">
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-mono font-black tabular-nums text-white leading-none">{timeStr}</p>
               <p className="text-[0.6rem] capitalize text-white/30 leading-tight">{dateStr}</p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <a href="/client"
-              className="hidden items-center gap-1.5 rounded-xl border border-white/8 px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/20 hover:text-white/70 sm:flex">
-              <ArrowLeft size={12}/> Espace client
-            </a>
             <button onClick={() => openModal(todayStr)}
               className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:shadow-[0_6px_24px_rgba(201,165,90,0.45)]">
               <Plus size={14}/> Ajouter
             </button>
           </div>
         </div>
-
-        {/* Tabs */}
-        <div className="relative z-10 flex gap-0 border-t border-white/6 px-5 sm:px-8">
-          {(["today","week","month"] as View[]).map(v => (
-            <button key={v} onClick={() => setView(v)}
-              className={`relative px-5 py-3 text-xs font-bold uppercase tracking-wider transition ${
-                view === v ? "text-[#c9a55a]" : "text-white/30 hover:text-white/60"}`}>
-              {v==="today" ? "Aujourd'hui" : v==="week" ? "Semaine" : "Mois"}
-              {view === v && (
-                <motion.div layoutId="tab-indicator"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#c9a55a]"/>
-              )}
-            </button>
-          ))}
-        </div>
-      </header>
+      </div>
 
       {/* ── Corps ──────────────────────────────────────── */}
       <main className="relative z-10 mx-auto max-w-7xl px-5 py-6 sm:px-8">

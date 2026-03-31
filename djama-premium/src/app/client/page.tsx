@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  StickyNote, Calendar, ReceiptText, LogOut,
-  Sparkles, ArrowRight, Shield, LayoutDashboard,
-  ChevronRight,
+  StickyNote, Calendar, ReceiptText,
+  Sparkles, ArrowRight, Shield, ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -60,13 +59,7 @@ const TOOLS = [
 /* ═══════════════════════════════════════════════
    CARTE OUTIL
 ═══════════════════════════════════════════════ */
-function ToolCard({
-  tool,
-  delay,
-}: {
-  tool: (typeof TOOLS)[number];
-  delay: number;
-}) {
+function ToolCard({ tool, delay }: { tool: (typeof TOOLS)[number]; delay: number }) {
   const Icon = tool.icon;
   return (
     <motion.div
@@ -99,21 +92,13 @@ function ToolCard({
           {/* Icône */}
           <div
             className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border"
-            style={{
-              color: tool.color,
-              background: tool.bg,
-              borderColor: tool.border,
-            }}
+            style={{ color: tool.color, background: tool.bg, borderColor: tool.border }}
           >
             <Icon size={22} />
           </div>
 
-          <h3 className="mb-2 text-xl font-extrabold text-white">
-            {tool.label}
-          </h3>
-          <p className="mb-6 flex-1 text-sm leading-relaxed text-white/40">
-            {tool.desc}
-          </p>
+          <h3 className="mb-2 text-xl font-extrabold text-white">{tool.label}</h3>
+          <p className="mb-6 flex-1 text-sm leading-relaxed text-white/40">{tool.desc}</p>
 
           {/* Tags */}
           <div className="mb-7 flex flex-wrap gap-1.5">
@@ -121,11 +106,7 @@ function ToolCard({
               <span
                 key={tag}
                 className="rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
-                style={{
-                  color: tool.color,
-                  background: tool.bg,
-                  border: `1px solid ${tool.border}`,
-                }}
+                style={{ color: tool.color, background: tool.bg, border: `1px solid ${tool.border}` }}
               >
                 {tag}
               </span>
@@ -138,10 +119,7 @@ function ToolCard({
             style={{ color: tool.color }}
           >
             Ouvrir l&apos;outil
-            <ArrowRight
-              size={15}
-              className="transition-transform group-hover:translate-x-1"
-            />
+            <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
           </div>
         </div>
       </Link>
@@ -153,46 +131,28 @@ function ToolCard({
    PAGE DASHBOARD
 ═══════════════════════════════════════════════ */
 export default function ClientDashboard() {
-  const [email,    setEmail]    = useState<string | null>(null);
-  const [initials, setInitials] = useState("?");
-  const [ready,    setReady]    = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) {
-        /* Non connecté → login */
         window.location.href = "/login?redirect=/client";
         return;
-      }
-      if (user.email) {
-        setEmail(user.email);
-        const parts = user.email.split("@")[0].split(/[._-]/);
-        setInitials(
-          parts.length >= 2
-            ? (parts[0][0] + parts[1][0]).toUpperCase()
-            : user.email.slice(0, 2).toUpperCase()
-        );
       }
       setReady(true);
     });
   }, []);
 
-  /* Écran de chargement pendant la vérification auth */
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#080a0f]">
+      <div className="flex flex-1 items-center justify-center py-32">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
       </div>
     );
   }
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  }
-
   return (
-    <div className="min-h-screen bg-[#080a0f]">
+    <div className="relative min-h-full bg-[#080a0f]">
 
       {/* ── Glows + grille ───────────────────────── */}
       <div className="pointer-events-none fixed inset-0 z-0">
@@ -209,54 +169,6 @@ export default function ClientDashboard() {
         />
       </div>
 
-      {/* ── Header ───────────────────────────────── */}
-      <header className="relative z-10 border-b border-white/6 bg-[rgba(8,10,15,0.85)] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-
-          {/* Logo + titre */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.09)]">
-              <LayoutDashboard size={16} style={{ color: "#c9a55a" }} />
-            </div>
-            <div>
-              <span className="text-sm font-extrabold text-white">Espace client</span>
-              <p className="text-[0.58rem] uppercase tracking-widest text-white/25">DJAMA</p>
-            </div>
-          </div>
-
-          {/* Droite */}
-          <div className="flex items-center gap-3">
-
-            {/* Badge abonné */}
-            <span className="hidden items-center gap-1.5 rounded-full border border-[rgba(74,222,128,0.25)] bg-[rgba(34,197,94,0.08)] px-3 py-1 text-[0.6rem] font-bold uppercase tracking-widest text-green-400 sm:inline-flex">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
-              Abonné · Actif
-            </span>
-
-            {/* Avatar */}
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.12)] text-[0.65rem] font-extrabold text-[#c9a55a]">
-                {initials}
-              </div>
-              {email && (
-                <span className="hidden max-w-[160px] truncate text-xs text-white/30 sm:block">
-                  {email}
-                </span>
-              )}
-            </div>
-
-            {/* Déconnexion */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 rounded-xl border border-white/8 px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/18 hover:text-white/70"
-            >
-              <LogOut size={12} />
-              <span className="hidden sm:inline">Déconnexion</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* ── Contenu ──────────────────────────────── */}
       <main className="relative z-10 mx-auto max-w-6xl px-6 py-14">
 
@@ -267,7 +179,6 @@ export default function ClientDashboard() {
           transition={{ duration: 0.65, ease }}
           className="mb-14"
         >
-          {/* Badge */}
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] px-4 py-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-[#c9a55a]">
             <Sparkles size={9} />
             Tableau de bord

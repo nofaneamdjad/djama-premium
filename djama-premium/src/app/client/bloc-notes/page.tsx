@@ -389,7 +389,7 @@ export default function BlocNotesPage() {
 
   /* ── Render ──────────────────────────────────────────────── */
   return (
-    <div className="flex min-h-screen flex-col bg-[#080a0f]">
+    <div className="flex flex-col bg-[#080a0f]">
 
       {/* Glow de fond */}
       <div className="pointer-events-none fixed inset-0 z-0">

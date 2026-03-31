@@ -1,6 +1,5 @@
 /**
  * /client/planning — Outil Planning & Agenda (espace client).
- * Re-exporte la page outil qui vit dans /app/planning-agenda/page.tsx.
- * La page marketing a été déplacée vers /planning-presentation.
+ * Re-exporte la page outil depuis le route group (public).
  */
-export { default } from "@/app/planning-agenda/page";
+export { default } from "@/app/(public)/planning-agenda/page";
