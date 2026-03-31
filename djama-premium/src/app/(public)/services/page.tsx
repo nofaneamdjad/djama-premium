@@ -4,209 +4,280 @@ import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Code2, ShoppingCart, Smartphone, LayoutDashboard,
-  Video, ImageIcon, Megaphone, FileText, ClipboardList,
-  BadgeCheck, NotebookPen, Briefcase, Brain, GraduationCap,
-  ArrowRight, Sparkles, CheckCircle2,
+  ArrowRight, Sparkles, CheckCircle2, Zap, Users, TrendingUp,
+  Shield, Clock, Settings2, MessageSquare, Star, BadgeCheck,
+  Code2, LayoutGrid, Layers, ChevronRight,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
-import { staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
+import {
+  staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport,
+} from "@/lib/animations";
 import { services } from "@/content/services";
 
-/* ─── Config visuelle par catégorie ─────────────── */
-const CAT_CONFIG: Record<string, {
-  gradient: string; glow: string; accent: string; label: string;
-}> = {
+/* ─────────────────────────────────────────────────────────
+   DESIGN SYSTEM PAR CATÉGORIE
+───────────────────────────────────────────────────────── */
+const CAT_CONFIG = {
   "Digital": {
-    gradient: "from-[#0d0d1a] via-[#111132] to-[#1a1040]",
-    glow: "rgba(124,111,205,0.25)",
-    accent: "#7c6fcd",
-    label: "Digital",
+    bg:       "from-[#080814] via-[#0d0d26] to-[#101030]",
+    glow:     "rgba(124,111,205,0.30)",
+    glowDark: "rgba(124,111,205,0.15)",
+    accent:   "#7c6fcd",
+    accentRgb:"124,111,205",
+    border:   "rgba(124,111,205,0.28)",
+    hoverShadow: "0 28px 64px rgba(124,111,205,0.20)",
+    label:    "Digital",
+    emoji:    "⚡",
   },
   "Création de contenu": {
-    gradient: "from-[#1a0a14] via-[#2a0f22] to-[#1e0e1a]",
-    glow: "rgba(220,80,120,0.22)",
-    accent: "#dc5078",
-    label: "Création",
+    bg:       "from-[#160810] via-[#220c1c] to-[#1c0a16]",
+    glow:     "rgba(220,80,120,0.28)",
+    glowDark: "rgba(220,80,120,0.14)",
+    accent:   "#dc5078",
+    accentRgb:"220,80,120",
+    border:   "rgba(220,80,120,0.28)",
+    hoverShadow: "0 28px 64px rgba(220,80,120,0.18)",
+    label:    "Création",
+    emoji:    "✦",
   },
   "Documents & Outils": {
-    gradient: "from-[#001a14] via-[#002a20] to-[#001e18]",
-    glow: "rgba(52,211,153,0.2)",
-    accent: "#34d399",
-    label: "Outils",
+    bg:       "from-[#001412] via-[#001f1a] to-[#001815]",
+    glow:     "rgba(52,211,153,0.26)",
+    glowDark: "rgba(52,211,153,0.12)",
+    accent:   "#34d399",
+    accentRgb:"52,211,153",
+    border:   "rgba(52,211,153,0.28)",
+    hoverShadow: "0 28px 64px rgba(52,211,153,0.16)",
+    label:    "Outils",
+    emoji:    "◈",
   },
   "Accompagnement": {
-    gradient: "from-[#1a1000] via-[#2a1a00] to-[#1e1200]",
-    glow: "rgba(249,168,38,0.22)",
-    accent: "#f9a826",
-    label: "Accompagnement",
+    bg:       "from-[#160c00] via-[#221400] to-[#1c1000]",
+    glow:     "rgba(249,168,38,0.26)",
+    glowDark: "rgba(249,168,38,0.12)",
+    accent:   "#f9a826",
+    accentRgb:"249,168,38",
+    border:   "rgba(249,168,38,0.28)",
+    hoverShadow: "0 28px 64px rgba(249,168,38,0.16)",
+    label:    "Accompagnement",
+    emoji:    "◎",
   },
   "Coaching": {
-    gradient: "from-[#0a0a0f] via-[#14100a] to-[#1a1408]",
-    glow: "rgba(201,165,90,0.22)",
-    accent: "#c9a55a",
-    label: "Coaching",
+    bg:       "from-[#0e0a02] via-[#160e04] to-[#1a1206]",
+    glow:     "rgba(201,165,90,0.28)",
+    glowDark: "rgba(201,165,90,0.13)",
+    accent:   "#c9a55a",
+    accentRgb:"201,165,90",
+    border:   "rgba(201,165,90,0.28)",
+    hoverShadow: "0 28px 64px rgba(201,165,90,0.18)",
+    label:    "Coaching",
+    emoji:    "◉",
   },
-};
+} as const;
 
-const CATEGORIES = ["Tous", ...Object.keys(CAT_CONFIG)];
+type CatKey = keyof typeof CAT_CONFIG;
+const CATEGORIES: ("Tous" | CatKey)[] = [
+  "Tous", "Digital", "Création de contenu", "Documents & Outils", "Accompagnement", "Coaching",
+];
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-/* ─── Visuel de carte (gradient + icône géante) ── */
+/* ─────────────────────────────────────────────────────────
+   CARD VISUEL — dark, halo, icône géante
+───────────────────────────────────────────────────────── */
 function CardVisual({ icon: Icon, config }: {
   icon: React.ElementType;
-  config: typeof CAT_CONFIG[string];
+  config: typeof CAT_CONFIG[CatKey];
 }) {
   return (
-    <div className={`relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br ${config.gradient}`}>
-      {/* Grille subtile */}
-      <div className="absolute inset-0"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)`,
-          backgroundSize: "28px 28px",
-        }}
-      />
-      {/* Glow central */}
+    <div className={`relative flex h-[200px] items-center justify-center overflow-hidden bg-gradient-to-br ${config.bg}`}>
+      {/* Grille dots */}
+      <div className="absolute inset-0" style={{
+        backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.05) 1.5px, transparent 0)",
+        backgroundSize: "28px 28px",
+      }} />
+      {/* Glow principal */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div
-          className="h-28 w-28 rounded-full blur-2xl"
-          style={{ background: config.glow }}
-        />
+        <div className="h-40 w-40 rounded-full blur-3xl" style={{ background: config.glow }} />
       </div>
+      {/* Second glow décalé */}
+      <div className="absolute right-6 top-4 h-20 w-20 rounded-full blur-2xl" style={{ background: config.glowDark }} />
       {/* Icône */}
-      <div className="relative z-10 flex flex-col items-center gap-3">
+      <div className="relative z-10">
         <div
-          className="flex h-16 w-16 items-center justify-center rounded-2xl border"
+          className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl border"
           style={{
-            background: `${config.glow}`,
-            borderColor: `${config.accent}30`,
-            boxShadow: `0 0 24px ${config.glow}`,
+            background: `rgba(${config.accentRgb}, 0.12)`,
+            borderColor: config.border,
+            boxShadow: `0 0 32px rgba(${config.accentRgb}, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)`,
           }}
         >
-          <Icon size={32} style={{ color: config.accent }} />
+          <Icon size={34} style={{ color: config.accent }} />
         </div>
       </div>
+      {/* Ligne du bas */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-px"
+        style={{ background: `linear-gradient(90deg, transparent, ${config.border}, transparent)` }}
+      />
     </div>
   );
 }
 
-/* ─── Carte service premium ──────────────────────── */
+/* ─────────────────────────────────────────────────────────
+   SERVICE CARD — dark premium
+───────────────────────────────────────────────────────── */
 function ServiceCard({ service }: { service: typeof services[0] }) {
-  const config    = CAT_CONFIG[service.category];
-  const href      = service.ctaHref ?? "/contact";
-  const clickable = !!service.ctaHref;
+  const config  = CAT_CONFIG[service.category as CatKey];
+  const href    = service.ctaHref ?? "/contact";
 
   return (
     <motion.div
       layout
       variants={cardReveal}
-      className={`group relative flex flex-col overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_8px_rgba(9,9,11,0.05)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_24px_56px_rgba(9,9,11,0.12)] hover:border-[rgba(201,165,90,0.2)] ${clickable ? "cursor-pointer" : ""}`}
+      className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border bg-[#09090b] transition-all duration-500"
+      style={{
+        borderColor: "rgba(255,255,255,0.07)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+      }}
+      whileHover={{
+        y: -8,
+        boxShadow: config.hoverShadow,
+        borderColor: config.border,
+      }}
+      transition={{ duration: 0.35, ease }}
     >
-      {/* ── Overlay de clic sur toute la carte ── */}
-      {clickable && (
-        <Link
-          href={href}
-          className="absolute inset-0 z-10 rounded-[1.5rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(201,165,90,0.6)]"
-          aria-label={`${service.ctaLabel ?? "Voir"} — ${service.title}`}
-        />
-      )}
-
-      {/* Anneau gold au hover (visible seulement si cliquable) */}
-      {clickable && (
-        <motion.div
-          className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 ring-2 ring-[rgba(201,165,90,0.45)] transition-opacity duration-300 group-hover:opacity-100"
-        />
-      )}
-
-      {/* Visuel haut */}
+      {/* Visuel */}
       <CardVisual icon={service.icon} config={config} />
 
       {/* Contenu */}
-      <div className="flex flex-1 flex-col p-6">
+      <div className="flex flex-1 flex-col p-7">
         {/* Badge catégorie */}
-        <span
-          className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-widest"
-          style={{
-            background: `${config.glow}`,
-            color: config.accent,
-            border: `1px solid ${config.accent}30`,
-          }}
-        >
-          {config.label}
-        </span>
+        <div className="mb-4 flex items-center justify-between">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-[0.14em]"
+            style={{
+              background: `rgba(${config.accentRgb}, 0.1)`,
+              color: config.accent,
+              border: `1px solid rgba(${config.accentRgb}, 0.22)`,
+            }}
+          >
+            <span className="h-1 w-1 rounded-full" style={{ background: config.accent }} />
+            {config.label}
+          </span>
+          {/* Prix si applicable */}
+          {(service.slug === "coaching-ia" || service.slug === "soutien-scolaire") && (
+            <span className="text-[0.65rem] font-bold text-white/35">
+              {service.slug === "coaching-ia" ? "190€ / 3 mois" : "14€/h"}
+            </span>
+          )}
+          {(service.slug === "site-vitrine" || service.slug === "site-ecommerce" ||
+            service.slug === "plateforme-web" || service.slug === "application-mobile") && (
+            <span className="text-[0.65rem] font-bold text-white/35">Sur devis</span>
+          )}
+        </div>
 
         {/* Titre */}
-        <h2 className="text-lg font-extrabold leading-tight text-[var(--ink)]">
+        <h2 className="text-[1.05rem] font-extrabold leading-snug text-white/90 transition-colors duration-300 group-hover:text-white">
           {service.title}
         </h2>
 
         {/* Excerpt */}
-        <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--muted)]">
+        <p className="mt-2.5 flex-1 text-sm leading-relaxed text-white/40">
           {service.excerpt}
         </p>
 
         {/* Highlights */}
-        <ul className="mt-4 space-y-1.5">
+        <ul className="mt-5 space-y-2">
           {service.highlights.slice(0, 3).map((h) => (
-            <li key={h} className="flex items-center gap-2 text-xs text-[var(--muted)]">
-              <CheckCircle2 size={12} className="flex-shrink-0" style={{ color: config.accent }} />
+            <li key={h} className="flex items-start gap-2 text-xs text-white/50">
+              <CheckCircle2
+                size={12}
+                className="mt-0.5 shrink-0"
+                style={{ color: config.accent }}
+              />
               {h}
             </li>
           ))}
         </ul>
 
-        {/* CTA — au-dessus de l'overlay grâce à z-20 */}
+        {/* CTA */}
         <Link
           href={href}
-          className="relative z-20 mt-5 inline-flex items-center gap-1.5 text-sm font-bold transition-all duration-300 group-hover:gap-3"
-          style={{ color: config.accent }}
+          className="group/cta relative mt-6 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300"
+          style={{
+            background: `rgba(${config.accentRgb}, 0.08)`,
+            border: `1px solid rgba(${config.accentRgb}, 0.18)`,
+            color: config.accent,
+          }}
         >
-          {service.ctaLabel ?? "En savoir plus"}
-          <ArrowRight size={14} />
+          <span>{service.ctaLabel ?? "En savoir plus"}</span>
+          <ChevronRight size={16} className="transition-transform duration-300 group-hover/cta:translate-x-1" />
+          {/* Hover fill */}
+          <span
+            className="absolute inset-0 -translate-x-full rounded-xl transition-transform duration-400 group-hover/cta:translate-x-0"
+            style={{ background: `rgba(${config.accentRgb}, 0.10)` }}
+          />
         </Link>
       </div>
-
-      {/* Bordure du bas colorée au hover */}
-      <div
-        className="absolute inset-x-0 bottom-0 h-[2px] scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
-        style={{ background: `linear-gradient(90deg, transparent, ${config.accent}, transparent)` }}
-      />
     </motion.div>
   );
 }
 
-/* ─── Filtre catégories ──────────────────────────── */
-function CategoryFilter({ active, onChange }: { active: string; onChange: (c: string) => void }) {
+/* ─────────────────────────────────────────────────────────
+   FILTRE CATÉGORIES
+───────────────────────────────────────────────────────── */
+function CategoryFilter({
+  active,
+  onChange,
+  counts,
+}: {
+  active: string;
+  onChange: (c: string) => void;
+  counts: Record<string, number>;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease, delay: 0.5 }}
+      transition={{ duration: 0.6, ease, delay: 0.4 }}
       className="flex flex-wrap justify-center gap-2"
     >
       {CATEGORIES.map((cat) => {
         const isActive = active === cat;
-        const config = cat !== "Tous" ? CAT_CONFIG[cat] : null;
+        const config   = cat !== "Tous" ? CAT_CONFIG[cat as CatKey] : null;
+        const count    = cat === "Tous" ? services.length : (counts[cat] ?? 0);
         return (
           <button
             key={cat}
             onClick={() => onChange(cat)}
-            className="relative rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300"
+            className="relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300"
             style={{
               background: isActive
-                ? config ? config.glow : "rgba(201,165,90,0.12)"
-                : "transparent",
+                ? config ? `rgba(${config.accentRgb}, 0.12)` : "rgba(201,165,90,0.12)"
+                : "rgba(255,255,255,0.03)",
               color: isActive
                 ? config ? config.accent : "#c9a55a"
-                : "var(--muted)",
+                : "rgba(255,255,255,0.35)",
               border: isActive
-                ? `1px solid ${config ? config.accent + "40" : "rgba(201,165,90,0.3)"}`
-                : "1px solid transparent",
+                ? `1px solid ${config ? config.border : "rgba(201,165,90,0.3)"}`
+                : "1px solid rgba(255,255,255,0.07)",
             }}
           >
-            {cat === "Tous" ? "Tous les services" : cat}
+            <span>{cat === "Tous" ? "Tous" : config!.label}</span>
+            <span
+              className="inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.55rem] font-black"
+              style={{
+                background: isActive
+                  ? config ? `rgba(${config.accentRgb}, 0.2)` : "rgba(201,165,90,0.2)"
+                  : "rgba(255,255,255,0.07)",
+                color: isActive
+                  ? config ? config.accent : "#c9a55a"
+                  : "rgba(255,255,255,0.3)",
+              }}
+            >
+              {count}
+            </span>
           </button>
         );
       })}
@@ -214,7 +285,9 @@ function CategoryFilter({ active, onChange }: { active: string; onChange: (c: st
   );
 }
 
-/* ─── PAGE ───────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────
+   PAGE
+───────────────────────────────────────────────────────── */
 export default function ServicesPage() {
   const [activeCategory, setActiveCategory] = useState("Tous");
 
@@ -222,32 +295,45 @@ export default function ServicesPage() {
     ? services
     : services.filter((s) => s.category === activeCategory);
 
-  return (
-    <div className="bg-white">
+  const counts = CATEGORIES.reduce((acc, cat) => {
+    if (cat !== "Tous") acc[cat] = services.filter((s) => s.category === cat).length;
+    return acc;
+  }, {} as Record<string, number>);
 
-      {/* ══ HERO ══════════════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden pb-24 pt-32">
-        {/* Glow */}
+  return (
+    <div className="bg-[#09090b]">
+
+      {/* ══════════════════════════════════════════════════
+          HERO — dark, ultra premium
+      ══════════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden pb-32 pt-40">
+
+        {/* Background layers */}
+        <div className="hero-grid absolute inset-0 opacity-60" />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[500px] w-[600px] rounded-full bg-[rgba(176,141,87,0.1)] blur-[100px]" />
+          <div className="h-[700px] w-[900px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[140px]" />
         </div>
-        <div className="pointer-events-none absolute right-[-100px] top-[20%] h-[350px] w-[350px] rounded-full bg-[rgba(124,111,205,0.08)] blur-[80px]" />
+        <div className="pointer-events-none absolute left-[10%] top-[30%] h-[300px] w-[300px] rounded-full bg-[rgba(124,111,205,0.07)] blur-[100px]" />
+        <div className="pointer-events-none absolute right-[8%] top-[20%] h-[250px] w-[250px] rounded-full bg-[rgba(52,211,153,0.06)] blur-[90px]" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
+
+          {/* Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease }}
-            className="mb-7 inline-flex items-center gap-2 rounded-full border border-[rgba(176,141,87,0.25)] bg-[rgba(176,141,87,0.1)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#c9a55a]"
+            transition={{ duration: 0.55, ease }}
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]"
           >
             <Sparkles size={11} />
-            Services professionnels
+            Offre complète DJAMA
           </motion.div>
 
+          {/* Titre */}
           <h1 className="display-hero text-white">
             <MultiLineReveal
-              lines={["Ce que nous", "faisons, mieux", "que personne."]}
-              highlight={2}
+              lines={["Ce que nous faisons,", "mieux que personne."]}
+              highlight={1}
               stagger={0.18}
               wordStagger={0.07}
               delay={0.1}
@@ -255,84 +341,369 @@ export default function ServicesPage() {
             />
           </h1>
 
-          <FadeReveal delay={0.6} as="p" className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-white/55">
+          <FadeReveal
+            delay={0.65}
+            as="p"
+            className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-white/45"
+          >
             Une offre complète — du digital à l&apos;accompagnement — pensée pour les
             indépendants, entrepreneurs et entreprises qui veulent aller plus loin.
           </FadeReveal>
 
-          <FadeReveal delay={0.75} className="mt-10 flex flex-wrap justify-center gap-3">
+          {/* CTAs */}
+          <FadeReveal delay={0.8} className="mt-10 flex flex-wrap justify-center gap-3">
             <Link href="/contact" className="btn-primary">
               Démarrer un projet <ArrowRight size={16} />
             </Link>
-            <Link href="#services" className="btn-ghost">
+            <Link
+              href="#services"
+              className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.05] px-7 py-[0.875rem] text-sm font-bold text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+            >
               Explorer les services
             </Link>
           </FadeReveal>
 
-          {/* Stats inline */}
-          <FadeReveal delay={0.9} className="mt-12 flex flex-wrap justify-center gap-8 border-t border-white/8 pt-10">
+          {/* Stats */}
+          <FadeReveal delay={0.95} className="mt-14 flex flex-wrap justify-center gap-10 border-t border-white/[0.06] pt-12">
             {[
               { value: `${services.length}`, label: "services disponibles" },
-              { value: "5",                   label: "catégories" },
+              { value: "5",                   label: "pôles d'expertise" },
               { value: "50+",                 label: "clients accompagnés" },
+              { value: "24h",                 label: "délai de réponse" },
             ].map(({ value, label }) => (
               <div key={label} className="text-center">
-                <p className="text-2xl font-extrabold text-white">{value}</p>
-                <p className="mt-0.5 text-xs text-white/40">{label}</p>
+                <p className="text-2xl font-black tracking-tight text-white">{value}</p>
+                <p className="mt-0.5 text-xs text-white/30">{label}</p>
               </div>
             ))}
           </FadeReveal>
+
+          {/* Chips catégories en bas du hero */}
+          <FadeReveal delay={1.05} className="mt-10 flex flex-wrap justify-center gap-2">
+            {(Object.keys(CAT_CONFIG) as CatKey[]).map((cat) => {
+              const c = CAT_CONFIG[cat];
+              return (
+                <span
+                  key={cat}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.62rem] font-bold"
+                  style={{
+                    background: `rgba(${c.accentRgb}, 0.08)`,
+                    border: `1px solid rgba(${c.accentRgb}, 0.20)`,
+                    color: c.accent,
+                  }}
+                >
+                  {c.emoji} {c.label}
+                </span>
+              );
+            })}
+          </FadeReveal>
         </div>
-
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent" />
       </section>
 
-      {/* ══ FILTRES + GRILLE ══════════════════════ */}
-      <section id="services" className="mx-auto max-w-6xl px-6 py-20">
+      {/* ══════════════════════════════════════════════════
+          FILTRES + GRILLE SERVICES
+      ══════════════════════════════════════════════════ */}
+      <section id="services" className="border-t border-white/[0.05] px-6 py-20">
+        <div className="mx-auto max-w-6xl">
 
-        <CategoryFilter active={activeCategory} onChange={setActiveCategory} />
-
-        <AnimatePresence mode="wait">
+          {/* En-tête section */}
           <motion.div
-            key={activeCategory}
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainerFast}
-            className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.6, ease }}
+            className="mb-12 text-center"
           >
-            {filtered.map((service) => (
-              <ServiceCard key={service.slug} service={service} />
-            ))}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* CTA bas de page */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport}
-          transition={{ duration: 0.7, ease }}
-          className="mt-20 overflow-hidden rounded-[2rem] border border-[rgba(176,141,87,0.2)] bg-[var(--ink)] p-10 text-center"
-        >
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="h-[200px] w-[400px] rounded-full bg-[rgba(176,141,87,0.08)] blur-[60px]" />
-          </div>
-          <div className="relative">
-            <p className="text-sm font-bold uppercase tracking-widest text-[#c9a55a]">
-              Besoin d&apos;un service sur mesure ?
+            <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-white/30">
+              Catalogue complet
             </p>
-            <h2 className="mt-3 text-3xl font-extrabold text-white">
-              Discutons de votre projet.
+            <h2 className="mt-2 text-2xl font-extrabold text-white/80">
+              Filtrez par catégorie
             </h2>
-            <p className="mx-auto mt-3 max-w-md text-base text-white/50">
-              Chaque projet est unique. Prenons le temps d&apos;en discuter ensemble.
-            </p>
-            <Link href="/contact" className="btn-primary mt-6 inline-flex">
-              Nous contacter <ArrowRight size={16} />
-            </Link>
-          </div>
-        </motion.div>
+          </motion.div>
+
+          <CategoryFilter active={activeCategory} onChange={setActiveCategory} counts={counts} />
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeCategory}
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainerFast}
+              className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+            >
+              {filtered.map((service) => (
+                <ServiceCard key={service.slug} service={service} />
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </section>
+
+      {/* ══════════════════════════════════════════════════
+          POURQUOI DJAMA
+      ══════════════════════════════════════════════════ */}
+      <section className="border-t border-white/[0.05] px-6 py-28">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            variants={staggerContainer}
+          >
+            {/* Header */}
+            <div className="mb-16 text-center">
+              <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
+                <Star size={10} /> Nos engagements
+              </motion.span>
+              <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">
+                Pourquoi nous choisir.
+              </motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-base text-white/40">
+                Ce qui nous différencie, au-delà des mots.
+              </motion.p>
+            </div>
+
+            {/* Grille 3×2 */}
+            <motion.div
+              variants={staggerContainerFast}
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {[
+                {
+                  icon: Zap,
+                  color: "#c9a55a", rgb: "201,165,90",
+                  title: "Exécution rapide",
+                  desc: "Processus IA-augmenté : nous livrons plus vite que les agences traditionnelles, sans sacrifier la qualité.",
+                },
+                {
+                  icon: TrendingUp,
+                  color: "#60a5fa", rgb: "96,165,250",
+                  title: "Résultats mesurables",
+                  desc: "Chaque prestation est orientée objectif. Pas du beau pour le beau — du beau qui performe.",
+                },
+                {
+                  icon: Users,
+                  color: "#4ade80", rgb: "74,222,128",
+                  title: "Accompagnement humain",
+                  desc: "Une équipe disponible, pas un ticket support. Vous avez une vraie relation avec les personnes qui travaillent pour vous.",
+                },
+                {
+                  icon: Settings2,
+                  color: "#f9a826", rgb: "249,168,38",
+                  title: "Outils concrets inclus",
+                  desc: "Factures, planning, notes — vous repartez avec des outils opérationnels, pas juste une livraison.",
+                },
+                {
+                  icon: Shield,
+                  color: "#a78bfa", rgb: "167,139,250",
+                  title: "Solutions sur mesure",
+                  desc: "Rien de générique. Chaque projet est analysé, pensé et construit pour votre réalité spécifique.",
+                },
+                {
+                  icon: Clock,
+                  color: "#f87171", rgb: "248,113,113",
+                  title: "Gain de temps réel",
+                  desc: "On prend en charge l'administratif, le technique, la création — pour que vous vous concentriez sur ce qui compte.",
+                },
+              ].map(({ icon: Icon, color, rgb, title, desc }) => (
+                <motion.div
+                  key={title}
+                  variants={cardReveal}
+                  className="group rounded-[1.5rem] border border-white/[0.07] bg-white/[0.03] p-7 transition-all duration-400 hover:border-white/[0.13] hover:bg-white/[0.05]"
+                >
+                  <div
+                    className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl border"
+                    style={{
+                      background: `rgba(${rgb}, 0.10)`,
+                      borderColor: `rgba(${rgb}, 0.22)`,
+                    }}
+                  >
+                    <Icon size={22} style={{ color }} />
+                  </div>
+                  <h3 className="text-[0.95rem] font-extrabold text-white/85">{title}</h3>
+                  <p className="mt-2.5 text-sm leading-relaxed text-white/40">{desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          LE SYSTÈME DJAMA
+      ══════════════════════════════════════════════════ */}
+      <section className="border-t border-white/[0.05] px-6 py-28">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            variants={staggerContainer}
+          >
+            <div className="grid items-center gap-16 lg:grid-cols-[1fr_480px]">
+
+              {/* Texte gauche */}
+              <div>
+                <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
+                  <Layers size={10} /> L'approche DJAMA
+                </motion.span>
+                <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">
+                  Plus qu&apos;un service.<br />
+                  <span className="text-gold">Un système complet.</span>
+                </motion.h2>
+                <motion.p variants={fadeIn} className="mt-5 max-w-md text-base leading-relaxed text-white/45">
+                  Chez DJAMA, vous ne commandez pas une prestation isolée.
+                  Vous accédez à un écosystème : image, outils, accompagnement, performance.
+                </motion.p>
+
+                <motion.div variants={staggerContainerFast} className="mt-8 space-y-3">
+                  {[
+                    { label: "Création & Design", desc: "Site, app, visuels — une image premium qui convertit." },
+                    { label: "Outils professionnels", desc: "Factures, planning, bloc-notes — intégrés à votre workflow." },
+                    { label: "Accompagnement", desc: "Administratif, fournisseurs, marchés — on gère à votre place." },
+                    { label: "Coaching & montée en compétence", desc: "IA, scolaire, numérique — vous progressez vraiment." },
+                  ].map(({ label, desc }, i) => (
+                    <motion.div
+                      key={label}
+                      variants={cardReveal}
+                      className="flex items-start gap-4 rounded-[1.25rem] border border-white/[0.07] bg-white/[0.03] p-4 transition-all duration-300 hover:border-[rgba(201,165,90,0.22)] hover:bg-[rgba(201,165,90,0.04)]"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.1)] text-xs font-black text-[#c9a55a]">
+                        {i + 1}
+                      </div>
+                      <div>
+                        <p className="text-sm font-extrabold text-white/80">{label}</p>
+                        <p className="mt-0.5 text-xs text-white/35">{desc}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                <motion.div variants={fadeIn} className="mt-8">
+                  <Link href="/contact" className="btn-primary">
+                    Parlons de votre projet <ArrowRight size={16} />
+                  </Link>
+                </motion.div>
+              </div>
+
+              {/* Visual droite — carte système */}
+              <motion.div variants={cardReveal}>
+                <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.09] bg-gradient-to-b from-white/[0.05] to-transparent p-8">
+                  {/* Glow */}
+                  <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[rgba(201,165,90,0.08)] blur-[80px]" />
+
+                  <div className="relative">
+                    <p className="text-[0.65rem] font-black uppercase tracking-[0.18em] text-white/25">
+                      Ce que vous obtenez
+                    </p>
+
+                    <div className="mt-6 space-y-4">
+                      {[
+                        { icon: Code2,         color: "#7c6fcd", rgb: "124,111,205", label: "Présence digitale",     value: "Site · App · E-commerce"                },
+                        { icon: LayoutGrid,    color: "#34d399", rgb: "52,211,153",  label: "Outils opérationnels",  value: "Factures · Planning · Notes"             },
+                        { icon: MessageSquare, color: "#f9a826", rgb: "249,168,38",  label: "Accompagnement",        value: "Admin · Fournisseurs · Marchés"           },
+                        { icon: Sparkles,      color: "#c9a55a", rgb: "201,165,90",  label: "Coaching",              value: "IA · Scolaire · Numérique"               },
+                        { icon: TrendingUp,    color: "#f87171", rgb: "248,113,113", label: "Résultats",             value: "Performance · Croissance · Clarté"       },
+                      ].map(({ icon: Icon, color, rgb, label, value }) => (
+                        <div
+                          key={label}
+                          className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 transition-colors hover:border-white/[0.1]"
+                        >
+                          <div
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                            style={{ background: `rgba(${rgb}, 0.12)`, border: `1px solid rgba(${rgb}, 0.22)` }}
+                          >
+                            <Icon size={15} style={{ color }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[0.7rem] font-bold text-white/70">{label}</p>
+                            <p className="text-[0.6rem] text-white/30 truncate">{value}</p>
+                          </div>
+                          <CheckCircle2 size={14} className="shrink-0 text-[#c9a55a]" />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Barre du bas */}
+                    <div className="mt-6 rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.06)] px-4 py-3 text-center">
+                      <p className="text-xs font-bold text-[#c9a55a]">
+                        Devis gratuit · Réponse sous 24h · Sans engagement
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          CTA FINAL
+      ══════════════════════════════════════════════════ */}
+      <section className="border-t border-white/[0.05] px-6 py-20">
+        <div className="mx-auto max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.8, ease }}
+            className="relative overflow-hidden rounded-[2.5rem] border border-[rgba(201,165,90,0.18)] bg-gradient-to-br from-[rgba(201,165,90,0.07)] via-transparent to-[rgba(124,111,205,0.06)] p-12 text-center"
+          >
+            {/* Glows */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="h-64 w-96 rounded-full bg-[rgba(201,165,90,0.06)] blur-[80px]" />
+            </div>
+            <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full bg-[rgba(124,111,205,0.08)] blur-[60px]" />
+            <div className="pointer-events-none absolute bottom-0 right-0 h-40 w-40 rounded-full bg-[rgba(52,211,153,0.06)] blur-[60px]" />
+
+            <div className="relative">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
+                <Sparkles size={10} /> On vous attend
+              </span>
+
+              <h2 className="display-section mt-5 text-white">
+                Parlons de votre projet.
+              </h2>
+
+              <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/45">
+                Que vous ayez besoin d&apos;un site, d&apos;outils professionnels ou
+                d&apos;accompagnement — DJAMA vous aide à construire des solutions digitales modernes.
+              </p>
+
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Link href="/contact" className="btn-primary px-8 py-4 text-base">
+                  Demander un devis <ArrowRight size={17} />
+                </Link>
+                <Link
+                  href="/abonnement"
+                  className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.05] px-8 py-4 text-base font-bold text-white/65 backdrop-blur-sm transition-all duration-300 hover:border-[rgba(201,165,90,0.25)] hover:bg-[rgba(201,165,90,0.07)] hover:text-white/90"
+                >
+                  Voir nos outils <ChevronRight size={17} />
+                </Link>
+              </div>
+
+              {/* Signaux de confiance */}
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
+                {[
+                  { icon: Shield,       label: "Devis gratuit"       },
+                  { icon: Clock,        label: "Réponse sous 24h"    },
+                  { icon: BadgeCheck,   label: "Sans engagement"      },
+                  { icon: Star,         label: "50+ clients satisfaits"},
+                ].map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex items-center gap-1.5 text-xs text-white/30">
+                    <Icon size={12} className="text-[#c9a55a]" />
+                    {label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
     </div>
   );
 }
