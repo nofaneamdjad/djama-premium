@@ -6,7 +6,7 @@ import {
   ArrowRight, Mail, Star, Zap, Users, Shield,
   CheckCircle2, Sparkles, StickyNote, Calendar, ReceiptText,
   TrendingUp, FileText, Search, Wrench, HeartHandshake,
-  Globe, Layers, Brain, GraduationCap, Lock, MessageSquare,
+  Globe, Brain, Lock, MessageCircle,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import { fadeIn, staggerContainer, staggerContainerFast, cardReveal, viewport } from "@/lib/animations";
@@ -366,111 +366,133 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          4. RÉALISATIONS
+          4. ASSISTANT DJAMA
       ══════════════════════════════════════════════════ */}
       <section className="mx-auto max-w-6xl px-6 py-28">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
         >
-          <div className="mb-14 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="grid items-center gap-16 lg:grid-cols-[1fr_420px]">
+
+            {/* Texte */}
             <div>
               <motion.span variants={fadeIn} className="badge badge-gold-light">
-                <Sparkles size={10} /> Réalisations
+                <Sparkles size={10} /> Intelligence artificielle
               </motion.span>
               <h2 className="display-section mt-4 text-[var(--ink)]">
                 <MultiLineReveal
-                  lines={["Des projets concrets,", "des livrables irréprochables."]}
+                  lines={["Une question ?", "L'assistant DJAMA", "vous répond."]}
                   highlight={1}
                   stagger={0.13}
                   wordStagger={0.06}
                 />
               </h2>
-              <FadeReveal delay={0.2} as="p" className="mt-4 max-w-md text-base text-[var(--muted)]">
-                Du brief initial au livrable final, chaque projet est traité avec rigueur et exigence.
+              <FadeReveal delay={0.25} as="p" className="mt-5 text-base leading-[1.8] text-[var(--muted)]">
+                Posez vos questions sur nos services, nos outils ou votre projet.
+                Notre assistant intelligent vous guide instantanément, à toute heure.
+              </FadeReveal>
+
+              {/* Questions exemples */}
+              <FadeReveal delay={0.35} className="mt-8 flex flex-wrap gap-2.5">
+                {[
+                  "Quels services proposez-vous ?",
+                  "Comment créer une auto-entreprise ?",
+                  "Proposez-vous du coaching IA ?",
+                  "Comment fonctionne l'espace client ?",
+                ].map((q) => (
+                  <span
+                    key={q}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3.5 py-1.5 text-xs font-medium text-[var(--muted)] transition hover:border-[rgba(201,165,90,0.35)] hover:text-[var(--ink)]"
+                  >
+                    <MessageCircle size={10} className="text-[#c9a55a]" />
+                    {q}
+                  </span>
+                ))}
+              </FadeReveal>
+
+              <FadeReveal delay={0.5} className="mt-8">
+                <button
+                  onClick={() => {
+                    const btn = document.querySelector<HTMLButtonElement>("[aria-label=\"Ouvrir l'assistant DJAMA\"]");
+                    btn?.click();
+                  }}
+                  className="btn-primary text-sm"
+                >
+                  <MessageCircle size={15} />
+                  Discuter avec l&apos;assistant
+                </button>
               </FadeReveal>
             </div>
-            <motion.div variants={fadeIn}>
-              <Link href="/realisations" className="btn-primary text-sm">
-                Voir toutes les réalisations <ArrowRight size={14} />
-              </Link>
-            </motion.div>
-          </div>
 
-          <motion.div variants={staggerContainerFast} className="grid gap-5 md:grid-cols-3">
-            {[
-              {
-                num: "01",
-                tag: "Projet client",
-                tagColor: "#c9a55a",
-                title: "MONDOUKA",
-                desc: "Développement d'une solution digitale complète avec interface moderne, outils de gestion et organisation de services. Expérience utilisateur soignée, du brief au déploiement.",
-                accent: "#c9a55a",
-              },
-              {
-                num: "02",
-                tag: "Projet client",
-                tagColor: "#60a5fa",
-                title: "CLAMAC",
-                desc: "Plateforme facilitant la recherche de fournisseurs internationaux et le développement d'activités professionnelles. Gestion de projets, mise en relation et suivi de partenariats.",
-                accent: "#60a5fa",
-              },
-              {
-                num: "03",
-                tag: "Application mobile",
-                tagColor: "#4ade80",
-                title: "WEWE",
-                desc: "Application mobile disponible sur le Play Store, conçue pour simplifier l'accès à des services du quotidien et offrir une expérience utilisateur fluide et intuitive.",
-                accent: "#4ade80",
-              },
-            ].map(({ num, tag, tagColor, title, desc, accent }) => (
-              <motion.div
-                key={num}
-                variants={cardReveal}
-                className="group relative overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-transparent hover:shadow-[0_24px_60px_rgba(0,0,0,0.10)]"
-              >
-                <div
-                  className="relative h-52 overflow-hidden"
-                  style={{ background: `linear-gradient(135deg, ${accent}0d 0%, #fafafa 100%)` }}
-                >
-                  <span
-                    className="absolute left-4 top-4 rounded-full px-3 py-1 text-[0.6rem] font-bold uppercase tracking-wider"
-                    style={{ color: tagColor, background: `${tagColor}16`, border: `1px solid ${tagColor}30` }}
-                  >
-                    {tag}
-                  </span>
-                  <div
-                    className="absolute bottom-3 right-4 select-none text-[90px] font-black leading-none opacity-[0.06]"
-                    style={{ color: accent }}
-                  >
-                    {num}
+            {/* Card visuelle assistant */}
+            <motion.div variants={cardReveal}>
+              <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.18)] bg-[var(--ink)] p-0 shadow-[0_24px_64px_rgba(0,0,0,0.2)]">
+
+                <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[rgba(201,165,90,0.08)] blur-[70px]" />
+
+                {/* Header fausse fenêtre */}
+                <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
+                  <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]">
+                    <Sparkles size={13} className="text-[#09090b]" />
+                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#09090b] bg-green-400" />
                   </div>
-                  <div
-                    className="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100"
-                    style={{ background: `${accent}0b` }}
-                  >
-                    <Link
-                      href="/realisations"
-                      className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold backdrop-blur-md"
-                      style={{ color: accent, background: `${accent}18`, border: `1px solid ${accent}40` }}
-                    >
-                      Voir le projet <ArrowRight size={12} />
-                    </Link>
+                  <div>
+                    <p className="text-sm font-bold text-white">Assistant DJAMA</p>
+                    <p className="text-[0.6rem] text-white/30">En ligne · Répond instantanément</p>
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="font-extrabold text-[var(--ink)]">{title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
-                  <div
-                    className="mt-4 flex items-center gap-1.5 text-xs font-bold transition-all duration-300 group-hover:gap-3"
-                    style={{ color: accent }}
-                  >
-                    Voir le projet <ArrowRight size={11} />
+
+                {/* Faux messages */}
+                <div className="space-y-3 p-5">
+                  {/* Message assistant */}
+                  <div className="flex gap-2.5">
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]">
+                      <Sparkles size={10} className="text-[#09090b]" />
+                    </div>
+                    <div className="rounded-2xl rounded-tl-sm bg-white/[0.06] px-4 py-2.5 text-sm leading-relaxed text-white/75">
+                      Bonjour 👋 Je suis l&apos;assistant DJAMA.<br />
+                      Je peux répondre à vos questions sur nos services.
+                    </div>
+                  </div>
+
+                  {/* Message utilisateur */}
+                  <div className="flex flex-row-reverse gap-2.5">
+                    <div className="max-w-[75%] rounded-2xl rounded-tr-sm bg-[#c9a55a] px-4 py-2.5 text-sm font-medium text-[#09090b]">
+                      Quels services proposez-vous ?
+                    </div>
+                  </div>
+
+                  {/* Réponse assistant */}
+                  <div className="flex gap-2.5">
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]">
+                      <Sparkles size={10} className="text-[#09090b]" />
+                    </div>
+                    <div className="rounded-2xl rounded-tl-sm bg-white/[0.06] px-4 py-2.5 text-sm leading-relaxed text-white/75">
+                      DJAMA propose 4 pôles : création digitale, outils pro, accompagnement administratif et coaching. Quel aspect vous intéresse ?
+                    </div>
                   </div>
                 </div>
-              </motion.div>
-            ))}
-          </motion.div>
+
+                {/* Fausse zone input */}
+                <div className="border-t border-white/[0.07] bg-white/[0.02] px-5 py-3.5 flex items-center gap-2">
+                  <div className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2 text-xs text-white/20">
+                    Posez votre question…
+                  </div>
+                  <button
+                    onClick={() => {
+                      const btn = document.querySelector<HTMLButtonElement>("[aria-label=\"Ouvrir l'assistant DJAMA\"]");
+                      btn?.click();
+                    }}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#c9a55a] to-[#b08d57] text-[#09090b] transition hover:brightness-110"
+                  >
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+
+          </div>
         </motion.div>
       </section>
 
