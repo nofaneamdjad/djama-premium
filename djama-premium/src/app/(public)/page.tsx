@@ -1,94 +1,55 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { useRef } from "react";
 import {
-  ArrowRight, Globe, Palette, Wrench,
-  Mail, MessageCircle, Star, Zap, Users,
-  CheckCircle2, Sparkles,
+  ArrowRight, Globe, Brain, GraduationCap, Wrench,
+  Mail, Star, Zap, Users, Shield,
+  CheckCircle2, Sparkles, StickyNote, Calendar, ReceiptText,
+  Code2, Layers, TrendingUp, Clock,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
-import {
-  fadeIn, staggerContainer, staggerContainerFast,
-  cardReveal, viewport,
-} from "@/lib/animations";
+import { fadeIn, staggerContainer, staggerContainerFast, cardReveal, viewport } from "@/lib/animations";
 import { WordReveal, MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 
-/* ─── Section wrapper ────────────────────────── */
-function Section({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <motion.section
-      initial="hidden"
-      whileInView="visible"
-      viewport={viewport}
-      variants={staggerContainer}
-      className={className}
-    >
-      {children}
-    </motion.section>
-  );
-}
+const ease = [0.16, 1, 0.3, 1] as const;
 
-/* ─── Badge animé ────────────────────────────── */
-function Badge({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
-  return (
-    <motion.span variants={fadeIn} className={`badge ${dark ? "badge-gold-dark" : "badge-gold-light"}`}>
-      <Sparkles size={11} />
-      {children}
-    </motion.span>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   PAGE
-═══════════════════════════════════════════════ */
 export default function Home() {
   const data = getSiteData();
-  const heroRef = useRef<HTMLElement>(null);
-
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const glowY = useTransform(scrollYProgress, [0, 1], ["0%", "35%"]);
 
   return (
     <div className="bg-white">
 
-      {/* ══════════════════════════════════════
-          HERO
-      ══════════════════════════════════════ */}
-      <section ref={heroRef} className="hero-dark hero-grid relative min-h-screen overflow-hidden">
+      {/* ══════════════════════════════════════════════════
+          1. HERO
+      ══════════════════════════════════════════════════ */}
+      <section className="hero-dark hero-grid relative overflow-hidden">
 
-        {/* Glow parallax */}
-        <motion.div style={{ y: glowY }}
-          className="pointer-events-none absolute inset-x-0 top-0 -z-0 flex justify-center">
-          <div className="h-[600px] w-[700px] rounded-full bg-[rgba(176,141,87,0.12)] blur-[120px]" />
-        </motion.div>
-        <div className="pointer-events-none absolute right-[-150px] top-[30%] -z-0 h-[400px] w-[400px] rounded-full bg-[rgba(176,141,87,0.06)] blur-[80px]" />
+        {/* Glows */}
+        <div className="pointer-events-none absolute left-[10%] top-[15%] h-[600px] w-[600px] rounded-full bg-[rgba(201,165,90,0.09)] blur-[130px]" />
+        <div className="pointer-events-none absolute right-[-80px] bottom-[10%] h-[350px] w-[350px] rounded-full bg-[rgba(59,130,246,0.06)] blur-[100px]" />
 
-        <div className="relative z-10 mx-auto max-w-6xl px-6 pt-36 pb-24">
-          <div className="grid items-center gap-16 lg:grid-cols-2">
+        <div className="relative z-10 mx-auto max-w-6xl px-6 pb-28 pt-36">
+          <div className="grid items-center gap-14 lg:grid-cols-2">
 
-            {/* ── Texte ── */}
+            {/* Texte gauche */}
             <div>
-              {/* Badge */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-8"
+                transition={{ duration: 0.55, ease }}
+                className="mb-7"
               >
                 <span className="badge badge-gold-dark">
-                  <Sparkles size={11} />
-                  Services digitaux premium
+                  <Sparkles size={10} /> Agence digitale & SaaS — La Réunion
                 </span>
               </motion.div>
 
-              {/* Titre hero — 3 lignes, chaque mot glisse depuis son masque */}
               <h1 className="display-hero text-white">
                 <MultiLineReveal
-                  lines={["Votre présence", "digitale", "réinventée."]}
-                  highlight={1}
+                  lines={["Agence digitale.", "Outils SaaS.", "Résultats réels."]}
+                  highlight={2}
                   stagger={0.18}
                   wordStagger={0.07}
                   delay={0.1}
@@ -96,363 +57,410 @@ export default function Home() {
                 />
               </h1>
 
-              {/* Sous-titre */}
-              <FadeReveal delay={0.55} as="p" className="mt-7 max-w-lg text-lg leading-relaxed text-white/55">
-                Sites web, applications, outils pro, coaching IA — une agence qui
-                transforme vos idées en expériences mémorables.
+              <FadeReveal delay={0.6} as="p" className="mt-6 max-w-md text-lg leading-relaxed text-white/55">
+                Sites web, applications sur mesure, outils de gestion pro et coaching IA.
+                Tout ce dont votre activité a besoin — dans un seul endroit.
               </FadeReveal>
 
-              {/* CTAs */}
-              <FadeReveal delay={0.7} className="mt-10 flex flex-wrap gap-3">
-                <Link href="/services" className="btn-primary">
-                  Découvrir les services <ArrowRight size={16} />
+              <FadeReveal delay={0.75} className="mt-9 flex flex-wrap gap-3">
+                <Link href="/contact" className="btn-primary">
+                  Demander un devis <ArrowRight size={15} />
                 </Link>
-                <Link href="/portfolio" className="btn-ghost">
-                  Voir les réalisations
+                <Link href="/services" className="btn-ghost">
+                  Découvrir les services
                 </Link>
               </FadeReveal>
 
               {/* Preuves sociales */}
-              <FadeReveal delay={0.85} className="mt-10 flex items-center gap-4 border-t border-white/8 pt-8">
+              <FadeReveal delay={0.9} className="mt-10 flex items-center gap-5 border-t border-white/8 pt-8">
                 <div className="flex -space-x-2">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} style={{ zIndex: 4 - i }}
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} style={{ zIndex: 5 - i }}
                       className="h-8 w-8 rounded-full border-2 border-[#09090b] bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]" />
                   ))}
                 </div>
-                <p className="text-sm text-white/45">
-                  <span className="font-bold text-white/80">50+ clients</span> nous font confiance
-                </p>
+                <div>
+                  <div className="flex items-center gap-1 mb-0.5">
+                    {[...Array(5)].map((_, i) => <Star key={i} size={11} className="fill-[#c9a55a] text-[#c9a55a]"/>)}
+                  </div>
+                  <p className="text-sm text-white/45">
+                    <span className="font-bold text-white/75">+50 clients</span> accompagnés depuis 2022
+                  </p>
+                </div>
               </FadeReveal>
             </div>
 
-            {/* ── Glassmorphism card ── */}
+            {/* Card droite */}
             <motion.div
-              initial={{ opacity: 0, y: 48, scale: 0.96 }}
+              initial={{ opacity: 0, y: 44, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 1, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.95, delay: 0.4, ease }}
             >
-              <div className="glass-card p-6 shadow-premium-lg">
-                <div className="mb-5 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-white/60">Nos offres</span>
-                  <span className="badge badge-gold-dark">Active</span>
+              <div className="glass-card overflow-hidden p-0 shadow-premium-lg">
+                {/* Header card */}
+                <div className="border-b border-white/8 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2.5 w-2.5 rounded-full bg-red-400/70"/>
+                    <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/70"/>
+                    <div className="h-2.5 w-2.5 rounded-full bg-green-400/70"/>
+                  </div>
+                  <span className="text-[0.65rem] font-medium text-white/30 tracking-wider uppercase">espace client DJAMA</span>
+                  <span className="badge badge-gold-dark text-[0.58rem]">Pro</span>
                 </div>
-                <div className="space-y-3">
+
+                {/* Outils liste */}
+                <div className="p-6 space-y-3">
                   {[
-                    { label: "Sites web & applications",      price: "Sur devis"              },
-                    { label: "Outils pro (factures/devis)",   price: data.offers.abonnement   },
-                    { label: "Coaching IA",                   price: data.offers.coaching     },
-                    { label: "Soutien scolaire",              price: data.offers.soutien      },
-                  ].map(({ label, price }, i) => (
+                    { icon: ReceiptText, label: "Factures & Devis",   sub: "PDF, TVA, logo, statuts",         color: "#4ade80"  },
+                    { icon: Calendar,    label: "Planning & Agenda",   sub: "Aujourd'hui · Semaine · Mois",    color: "#60a5fa"  },
+                    { icon: StickyNote,  label: "Bloc-notes pro",      sub: "Catégories, export PDF",          color: "#c9a55a"  },
+                  ].map(({ icon: Icon, label, sub, color }, i) => (
                     <motion.div key={label}
-                      initial={{ opacity: 0, x: 14 }}
+                      initial={{ opacity: 0, x: 18 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.55, delay: 0.55 + i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                      className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-3"
+                      transition={{ duration: 0.5, delay: 0.6 + i * 0.1, ease }}
+                      className="flex items-center gap-4 rounded-xl border border-white/6 bg-white/4 px-4 py-3 transition hover:bg-white/7"
                     >
-                      <div className="flex items-center gap-3">
-                        <CheckCircle2 size={14} className="text-[#c9a55a]" />
-                        <span className="text-sm font-medium text-white/75">{label}</span>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/8"
+                        style={{ background: `${color}18` }}>
+                        <Icon size={15} style={{ color }} />
                       </div>
-                      <span className="text-xs font-bold text-[#c9a55a]">{price}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white/85">{label}</p>
+                        <p className="text-[0.65rem] text-white/35 truncate">{sub}</p>
+                      </div>
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-400/70 shrink-0" />
                     </motion.div>
                   ))}
                 </div>
-                <div className="my-5 divider-gold" />
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.05, duration: 0.5 }}
-                >
-                  <Link href="/contact" className="btn-primary w-full justify-center">
-                    Demander un devis <ArrowRight size={14} />
+
+                <div className="border-t border-white/8 px-6 py-4">
+                  <Link href="/abonnement"
+                    className="flex items-center justify-between text-sm font-semibold text-[#c9a55a] transition hover:opacity-75">
+                    <span>Accéder à l&apos;espace client</span>
+                    <ArrowRight size={14}/>
                   </Link>
-                </motion.div>
+                </div>
               </div>
             </motion.div>
 
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white to-transparent" />
       </section>
 
-      {/* ══════════════════════════════════════
-          STATS
-      ══════════════════════════════════════ */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      {/* ══════════════════════════════════════════════════
+          2. CHIFFRES / CONFIANCE
+      ══════════════════════════════════════════════════ */}
+      <section className="mx-auto max-w-6xl px-6 py-20">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainerFast}
           className="grid grid-cols-2 gap-4 md:grid-cols-4"
         >
           {[
-            { icon: Users,         value: "50+",  label: "Clients accompagnés"  },
-            { icon: Star,          value: "100%", label: "Satisfaction client"   },
-            { icon: Zap,           value: "3×",   label: "Plus rapide avec l'IA" },
-            { icon: MessageCircle, value: "24h",  label: "Délai de réponse"      },
-          ].map(({ icon: Icon, value, label }) => (
+            { icon: Users,      value: "50+",   label: "Clients accompagnés",   sub: "depuis 2022"           },
+            { icon: Code2,      value: "30+",   label: "Projets livrés",        sub: "sites, apps, outils"   },
+            { icon: Zap,        value: "3×",    label: "Plus rapide avec l'IA", sub: "automatisation réelle" },
+            { icon: Clock,      value: "24h",   label: "Délai de réponse",      sub: "garanti en semaine"    },
+          ].map(({ icon: Icon, value, label, sub }) => (
             <motion.div key={label} variants={cardReveal}
-              className="card-premium flex flex-col items-center gap-2 p-6 text-center">
-              <div className="mb-1 inline-flex rounded-xl bg-[rgba(176,141,87,0.08)] p-2.5">
-                <Icon size={22} className="text-[#c9a55a]" />
+              className="card-premium flex flex-col items-center gap-1.5 p-6 text-center">
+              <div className="mb-2 inline-flex rounded-xl bg-[rgba(201,165,90,0.08)] p-2.5">
+                <Icon size={20} className="text-[#c9a55a]" />
               </div>
-              <p className="text-3xl font-extrabold tracking-tight">{value}</p>
-              <p className="text-sm font-medium text-[var(--muted)]">{label}</p>
+              <p className="text-3xl font-black tracking-tight text-[var(--ink)]">{value}</p>
+              <p className="text-sm font-bold text-[var(--ink)]">{label}</p>
+              <p className="text-xs text-[var(--muted)]">{sub}</p>
             </motion.div>
           ))}
         </motion.div>
       </section>
 
-      {/* ══════════════════════════════════════
-          À PROPOS
-      ══════════════════════════════════════ */}
-      <Section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid items-start gap-12 lg:grid-cols-2">
-          <div>
-            <Badge>À propos</Badge>
-
-            <h2 className="display-section mt-5 text-[var(--ink)]">
-              <MultiLineReveal
-                lines={["Une agence qui fait", "la différence."]}
-                highlight={1}
-                stagger={0.16}
-                wordStagger={0.075}
-              />
-            </h2>
-
-            <FadeReveal delay={0.25} as="p" className="mt-6 text-lg leading-relaxed text-[var(--muted)]">
-              Spécialisée dans les services digitaux, les outils professionnels
-              et l&apos;accompagnement sur mesure. Notre mission : vous donner une image
-              forte, moderne et cohérente.
-            </FadeReveal>
-
-            <FadeReveal delay={0.38} as="p" className="mt-4 text-lg leading-relaxed text-[var(--muted)]">
-              De la création de sites web aux outils de gestion automatisés, nous
-              concevons des solutions utiles, élégantes et adaptées à vos vrais besoins.
-            </FadeReveal>
-
-            <FadeReveal delay={0.5} className="mt-8">
-              <Link href="/services" className="btn-primary">
-                Nos services <ArrowRight size={16} />
-              </Link>
-            </FadeReveal>
-          </div>
-
-          <motion.div variants={staggerContainerFast} className="grid gap-4">
-            {[
-              { title: "Vision premium",   desc: "Construire une image durable, forte et cohérente.", icon: Star },
-              { title: "Qualité garantie", desc: "Rendus propres, modernes et professionnels à chaque projet.", icon: CheckCircle2 },
-              { title: "Accompagnement",   desc: "Un suivi clair, sérieux et personnalisé à chaque étape.", icon: Zap },
-            ].map(({ title, desc, icon: Icon }) => (
-              <motion.div key={title} variants={cardReveal} className="card-premium p-5">
-                <div className="flex items-start gap-4">
-                  <div className="mt-0.5 flex-shrink-0 rounded-lg bg-[rgba(176,141,87,0.1)] p-2">
-                    <Icon size={18} className="text-[#c9a55a]" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-[var(--ink)]">{title}</p>
-                    <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </Section>
-
-      {/* ══════════════════════════════════════
-          SERVICES
-      ══════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════
+          3. SERVICES
+      ══════════════════════════════════════════════════ */}
       <section className="bg-[var(--surface)] py-24">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
           className="mx-auto max-w-6xl px-6"
         >
-          <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="mb-14 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div>
               <motion.span variants={fadeIn} className="badge badge-gold-light">
-                <Sparkles size={11} /> Services
+                <Sparkles size={10} /> Ce que nous faisons
               </motion.span>
-
-              <h2 className="display-section mt-5 text-[var(--ink)]">
+              <h2 className="display-section mt-4 text-[var(--ink)]">
                 <MultiLineReveal
-                  lines={["Ce que nous", "créons pour vous."]}
+                  lines={["Des services digitaux", "qui génèrent des résultats."]}
                   highlight={1}
-                  stagger={0.15}
-                  wordStagger={0.07}
+                  stagger={0.14}
+                  wordStagger={0.065}
                 />
               </h2>
             </div>
             <motion.div variants={fadeIn}>
               <Link href="/services" className="btn-primary text-sm">
-                Voir tous <ArrowRight size={14} />
+                Voir tous les services <ArrowRight size={14} />
               </Link>
             </motion.div>
           </div>
 
-          <motion.div variants={staggerContainerFast} className="grid gap-6 md:grid-cols-3">
+          <motion.div variants={staggerContainerFast} className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                icon: Globe, title: "Services digitaux",
-                desc: "Sites web, applications, plateformes et outils sur mesure pour booster votre activité.",
-                items: ["Site vitrine", "Application web", "E-commerce"],
+                icon: Globe,
+                color: "#60a5fa",
+                title: "Sites web & Applications",
+                desc: "Sites vitrines, e-commerce, applications web sur mesure. Design moderne et performances au premier plan.",
+                items: ["Site vitrine premium", "Application web", "E-commerce", "Refonte & optimisation"],
+                href: "/services",
               },
               {
-                icon: Palette, title: "Création visuelle",
-                desc: "Montage vidéo, retouche photo, visuels publicitaires et identité visuelle de marque.",
-                items: ["Montage vidéo", "Design graphique", "Branding"],
+                icon: Layers,
+                color: "#a78bfa",
+                title: "Création & Design",
+                desc: "Montage vidéo, retouche photo, visuels pour les réseaux. Votre image, enfin à la hauteur de votre ambition.",
+                items: ["Montage vidéo", "Design graphique", "Visuels sociaux", "Branding"],
+                href: "/services",
               },
               {
-                icon: Wrench, title: "Outils & accompagnement",
-                desc: "Factures, devis, coaching IA, accompagnement administratif et soutien scolaire.",
-                items: ["Factures & devis", "Coaching IA", "Soutien scolaire"],
+                icon: Brain,
+                color: "#c9a55a",
+                title: "Coaching IA",
+                desc: "Apprenez à utiliser l'IA pour automatiser vos tâches, gagner du temps et faire évoluer votre activité.",
+                items: ["3 mois d'accompagnement", "Séances individuelles", "Outils sélectionnés", "Suivi personnalisé"],
+                href: "/coaching-ia",
               },
-            ].map(({ icon: Icon, title, desc, items }) => (
-              <motion.div key={title} variants={cardReveal} className="card-premium group p-7">
-                <div className="mb-5 inline-flex rounded-2xl bg-[rgba(176,141,87,0.08)] p-3.5 transition-colors group-hover:bg-[rgba(176,141,87,0.14)]">
-                  <Icon size={26} className="text-[#c9a55a]" />
-                </div>
-                <h3 className="text-xl font-bold text-[var(--ink)]">{title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
-                <ul className="mt-5 space-y-2">
-                  {items.map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                      <span className="h-1 w-1 rounded-full bg-[#c9a55a]" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+              {
+                icon: GraduationCap,
+                color: "#4ade80",
+                title: "Soutien scolaire",
+                desc: "Cours particuliers pour les élèves de la 6e à la Terminale, toutes matières, à votre rythme.",
+                items: ["6e → Terminale", "Toutes matières", "Cours à la carte", "Flexibilité totale"],
+                href: "/soutien-scolaire",
+              },
+            ].map(({ icon: Icon, color, title, desc, items, href }) => (
+              <motion.div key={title} variants={cardReveal}>
+                <Link href={href} className="group card-premium flex h-full flex-col p-6 transition-all duration-300 hover:-translate-y-1">
+                  <div className="mb-5 inline-flex rounded-2xl p-3 transition-colors"
+                    style={{ background: `${color}14` }}>
+                    <Icon size={22} style={{ color }} />
+                  </div>
+                  <h3 className="text-base font-bold text-[var(--ink)]">{title}</h3>
+                  <p className="mt-2.5 flex-1 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
+                  <ul className="mt-4 space-y-1.5">
+                    {items.map((item) => (
+                      <li key={item} className="flex items-center gap-2 text-xs text-[var(--muted)]">
+                        <span className="h-1 w-1 shrink-0 rounded-full" style={{ background: color }} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-5 flex items-center gap-1.5 text-xs font-bold transition-all group-hover:gap-2.5"
+                    style={{ color }}>
+                    En savoir plus <ArrowRight size={12} />
+                  </div>
+                </Link>
               </motion.div>
             ))}
           </motion.div>
         </motion.div>
       </section>
 
-      {/* ══════════════════════════════════════
-          OFFRES
-      ══════════════════════════════════════ */}
-      <Section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-12 text-center">
-          <Badge>Tarifs</Badge>
+      {/* ══════════════════════════════════════════════════
+          4. OUTILS PRO DJAMA
+      ══════════════════════════════════════════════════ */}
+      <section className="hero-dark relative overflow-hidden py-28">
+        <div className="pointer-events-none absolute left-[30%] top-0 h-[500px] w-[500px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[120px]" />
+        <div className="pointer-events-none absolute right-[10%] bottom-0 h-[350px] w-[350px] rounded-full bg-[rgba(96,165,250,0.06)] blur-[100px]" />
 
-          <h2 className="display-section mt-5 text-[var(--ink)]">
-            <MultiLineReveal
-              lines={["Des offres claires,", "sans surprise."]}
-              highlight={1}
-              stagger={0.16}
-              wordStagger={0.07}
-              lineClassName="justify-center"
-            />
-          </h2>
-
-          <FadeReveal delay={0.3} as="p" className="mx-auto mt-4 max-w-xl text-lg text-[var(--muted)]">
-            Des solutions simples et professionnelles adaptées à chaque besoin.
-          </FadeReveal>
-        </div>
-
-        <motion.div variants={staggerContainerFast} className="grid gap-6 md:grid-cols-3">
-          {[
-            {
-              href: "/abonnement", title: "Outils pro",
-              desc: "Factures, devis, planning et organisation professionnelle.",
-              price: data.offers.abonnement,
-              features: ["Générateur de factures", "Devis automatiques", "Planning intégré", "Support prioritaire"],
-              featured: false,
-            },
-            {
-              href: "/coaching-ia", title: "Coaching IA",
-              desc: "Maîtrisez l'IA pour automatiser et faire évoluer votre activité.",
-              price: data.offers.coaching,
-              features: ["3 mois d'accompagnement", "Séances individuelles", "Outils IA sélectionnés", "Suivi personnalisé"],
-              featured: true,
-            },
-            {
-              href: "/soutien-scolaire", title: "Soutien scolaire",
-              desc: "Aide aux élèves de la 6e à la Terminale.",
-              price: data.offers.soutien,
-              features: ["Cours à la carte", "Toutes matières", "6e → Terminale", "Flexibilité totale"],
-              featured: false,
-            },
-          ].map(({ href, title, desc, price, features, featured }) => (
-            <motion.div key={href} variants={cardReveal}>
-              <Link href={href} className={`group relative flex h-full flex-col rounded-[var(--radius-lg)] p-7 transition-all duration-300 ${
-                featured
-                  ? "bg-[var(--ink)] text-white border border-[rgba(201,165,90,0.3)] shadow-premium-lg hover:border-[rgba(201,165,90,0.5)]"
-                  : "card-premium"
-              }`}>
-                {featured && (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#c9a55a] to-[#e8cc94] px-4 py-1 text-xs font-bold text-[var(--ink)]">
-                    Populaire
-                  </span>
-                )}
-                <h3 className={`text-xl font-bold ${featured ? "text-white" : "text-[var(--ink)]"}`}>{title}</h3>
-                <p className={`mt-2 text-sm leading-relaxed ${featured ? "text-white/60" : "text-[var(--muted)]"}`}>{desc}</p>
-                <p className={`mt-6 text-3xl font-extrabold tracking-tight ${featured ? "text-gold" : "text-[var(--ink)]"}`}>{price}</p>
-                <ul className="mt-5 flex-1 space-y-2.5">
-                  {features.map((f) => (
-                    <li key={f} className={`flex items-center gap-2.5 text-sm ${featured ? "text-white/70" : "text-[var(--muted)]"}`}>
-                      <CheckCircle2 size={14} className="flex-shrink-0 text-[#c9a55a]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <div className={`mt-7 flex items-center gap-1.5 text-sm font-bold transition-all group-hover:gap-3 ${featured ? "text-[#c9a55a]" : "text-[var(--ink)]"}`}>
-                  Accéder <ArrowRight size={14} />
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
-      </Section>
-
-      {/* ══════════════════════════════════════
-          PORTFOLIO
-      ══════════════════════════════════════ */}
-      <section className="hero-dark py-24">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
-          className="mx-auto max-w-6xl px-6"
+          className="relative z-10 mx-auto max-w-6xl px-6"
         >
-          <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          {/* Header */}
+          <div className="mb-14 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div>
               <motion.span variants={fadeIn} className="badge badge-gold-dark">
-                <Sparkles size={11} /> Portfolio
+                <Sparkles size={10} /> Espace client
               </motion.span>
-
-              <h2 className="display-section mt-5 text-white">
+              <h2 className="display-section mt-4 text-white">
                 <MultiLineReveal
-                  lines={["Quelques", "réalisations."]}
-                  highlight={1}
-                  stagger={0.16}
+                  lines={["Trois outils pro.", "Un seul abonnement."]}
+                  highlight={0}
+                  stagger={0.15}
                   wordStagger={0.07}
                   lineClassName="text-white"
                 />
               </h2>
+              <FadeReveal delay={0.3} as="p" className="mt-4 max-w-md text-base text-white/50">
+                Accédez à votre espace client DJAMA et gérez votre activité avec des outils pensés pour les pros.
+              </FadeReveal>
             </div>
             <motion.div variants={fadeIn}>
-              <Link href="/portfolio" className="btn-ghost text-sm">
-                Tout voir <ArrowRight size={14} />
+              <Link href="/abonnement" className="btn-primary text-sm">
+                Voir l&apos;abonnement — {data.offers.abonnement} <ArrowRight size={14} />
+              </Link>
+            </motion.div>
+          </div>
+
+          {/* 3 outil cards */}
+          <motion.div variants={staggerContainerFast} className="grid gap-5 md:grid-cols-3">
+            {[
+              {
+                icon: ReceiptText,
+                label: "Factures & Devis",
+                color: "#4ade80",
+                bg: "rgba(34,197,94,0.08)",
+                border: "rgba(34,197,94,0.2)",
+                desc: "Créez des factures et devis professionnels en quelques secondes. Logo, couleurs, TVA, RIB, export PDF.",
+                features: ["Numérotation automatique", "Export PDF premium", "Suivi des statuts", "Coordonnées bancaires"],
+              },
+              {
+                icon: Calendar,
+                label: "Planning & Agenda",
+                color: "#60a5fa",
+                bg: "rgba(59,130,246,0.08)",
+                border: "rgba(59,130,246,0.2)",
+                desc: "Visualisez et organisez votre agenda en vue Jour, Semaine ou Mois. Ajoutez des événements en un clic.",
+                features: ["Vue Aujourd'hui / Semaine / Mois", "Catégories par couleur", "Note rapide intégrée", "Horloge en temps réel"],
+              },
+              {
+                icon: StickyNote,
+                label: "Bloc-notes pro",
+                color: "#c9a55a",
+                bg: "rgba(201,165,90,0.08)",
+                border: "rgba(201,165,90,0.2)",
+                desc: "Rédigez, organisez et retrouvez vos notes professionnelles par catégorie. Exportez en PDF en un clic.",
+                features: ["Catégories : Réunion, Tâches, Idées", "Recherche instantanée", "Export PDF", "Sauvegarde automatique"],
+              },
+            ].map(({ icon: Icon, label, color, bg, border, desc, features }) => (
+              <motion.div key={label} variants={cardReveal}
+                className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border p-6 transition-all duration-300"
+                style={{ background: bg, borderColor: border }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 60px ${color}22`; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
+              >
+                {/* Glow coin */}
+                <div className="pointer-events-none absolute right-0 top-0 h-28 w-28 rounded-full opacity-25 blur-[50px]"
+                  style={{ background: color }} />
+
+                <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl border"
+                  style={{ color, background: bg, borderColor: border }}>
+                  <Icon size={20} />
+                </div>
+                <h3 className="text-lg font-extrabold text-white">{label}</h3>
+                <p className="mt-2.5 flex-1 text-sm leading-relaxed text-white/45">{desc}</p>
+
+                <ul className="mt-5 space-y-2">
+                  {features.map(f => (
+                    <li key={f} className="flex items-center gap-2.5 text-xs text-white/55">
+                      <CheckCircle2 size={11} style={{ color }} className="shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Accès CTA */}
+          <FadeReveal delay={0.4} className="mt-10 text-center">
+            <Link href="/login"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white">
+              Déjà client ? Se connecter à l&apos;espace pro <ArrowRight size={14} />
+            </Link>
+          </FadeReveal>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          5. RÉALISATIONS
+      ══════════════════════════════════════════════════ */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+        >
+          <div className="mb-14 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div>
+              <motion.span variants={fadeIn} className="badge badge-gold-light">
+                <Sparkles size={10} /> Réalisations
+              </motion.span>
+              <h2 className="display-section mt-4 text-[var(--ink)]">
+                <MultiLineReveal
+                  lines={["Des projets concrets,", "des livrables irréprochables."]}
+                  highlight={1}
+                  stagger={0.14}
+                  wordStagger={0.065}
+                />
+              </h2>
+              <FadeReveal delay={0.25} as="p" className="mt-4 max-w-md text-base text-[var(--muted)]">
+                Chaque projet est traité avec rigueur, du brief initial au livrable final.
+              </FadeReveal>
+            </div>
+            <motion.div variants={fadeIn}>
+              <Link href="/realisations" className="btn-primary text-sm">
+                Voir toutes les réalisations <ArrowRight size={14} />
               </Link>
             </motion.div>
           </div>
 
           <motion.div variants={staggerContainerFast} className="grid gap-5 md:grid-cols-3">
-            {["Projet client 1", "Projet client 2", "Projet client 3"].map((item, i) => (
-              <motion.div key={item} variants={cardReveal} className="glass-card group overflow-hidden">
-                <div className="relative h-52 overflow-hidden rounded-t-[var(--radius-lg)] bg-gradient-to-br from-[rgba(176,141,87,0.1)] to-[rgba(255,255,255,0.03)]">
-                  <div className="absolute inset-0 flex items-center justify-center text-[80px] font-extrabold text-white/5 select-none">
-                    0{i + 1}
+            {[
+              {
+                num: "01",
+                tag: "Site web",
+                title: "Site vitrine professionnel",
+                desc: "Design sur mesure, optimisation SEO, performances mobile-first. Livré en moins de 2 semaines.",
+                color: "#c9a55a",
+              },
+              {
+                num: "02",
+                tag: "Application",
+                title: "Plateforme de gestion métier",
+                desc: "Interface SaaS complète avec tableau de bord, authentification, base de données sécurisée.",
+                color: "#60a5fa",
+              },
+              {
+                num: "03",
+                tag: "Création visuelle",
+                title: "Identité de marque & visuels",
+                desc: "Logo, charte graphique, déclinaisons réseaux sociaux. Une image cohérente sur tous les supports.",
+                color: "#a78bfa",
+              },
+            ].map(({ num, tag, title, desc, color }) => (
+              <motion.div key={num} variants={cardReveal}
+                className="group card-premium overflow-hidden transition-all duration-300 hover:-translate-y-1">
+                {/* Image zone */}
+                <div className="relative h-48 overflow-hidden"
+                  style={{ background: `linear-gradient(135deg, ${color}12 0%, rgba(8,10,15,0.04) 100%)` }}>
+                  <div className="absolute left-5 top-5">
+                    <span className="rounded-full border px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-wider"
+                      style={{ color, borderColor: `${color}40`, background: `${color}14` }}>
+                      {tag}
+                    </span>
                   </div>
-                  <div className="absolute inset-0 flex items-center justify-center bg-[rgba(176,141,87,0.08)] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                    <span className="text-sm font-bold text-white/80">Voir le projet →</span>
+                  <div className="absolute bottom-4 right-5 text-[72px] font-black leading-none select-none opacity-[0.07]"
+                    style={{ color }}>
+                    {num}
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    style={{ background: `${color}0d` }}>
+                    <Link href="/realisations"
+                      className="flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition"
+                      style={{ color, borderColor: `${color}50`, background: `${color}14` }}>
+                      Voir le projet <ArrowRight size={12}/>
+                    </Link>
                   </div>
                 </div>
                 <div className="p-5">
-                  <h3 className="font-bold text-white/85">{item}</h3>
-                  <p className="mt-1.5 text-sm text-white/45">Identité visuelle, support digital ou contenu créatif.</p>
+                  <h3 className="font-bold text-[var(--ink)]">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -460,27 +468,94 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ══════════════════════════════════════
-          CTA FINAL
-      ══════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════
+          6. POURQUOI DJAMA
+      ══════════════════════════════════════════════════ */}
+      <section className="bg-[var(--surface)] py-24">
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+          className="mx-auto max-w-6xl px-6"
+        >
+          <div className="mb-14 text-center">
+            <motion.span variants={fadeIn} className="badge badge-gold-light">
+              <Sparkles size={10} /> Pourquoi nous choisir
+            </motion.span>
+            <h2 className="display-section mt-4 text-[var(--ink)]">
+              <MultiLineReveal
+                lines={["Ce qui nous distingue", "vraiment."]}
+                highlight={1}
+                stagger={0.15}
+                wordStagger={0.07}
+                lineClassName="justify-center"
+              />
+            </h2>
+          </div>
+
+          <motion.div variants={staggerContainerFast} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                icon: Shield,
+                color: "#c9a55a",
+                title: "Fiabilité totale",
+                desc: "Délais respectés, livrables propres, communication claire. Aucune mauvaise surprise.",
+              },
+              {
+                icon: Zap,
+                color: "#60a5fa",
+                title: "Rapidité d'exécution",
+                desc: "Grâce à l'IA et nos process rodés, nous livrons 3× plus vite sans jamais sacrifier la qualité.",
+              },
+              {
+                icon: TrendingUp,
+                color: "#4ade80",
+                title: "Orienté résultats",
+                desc: "Chaque décision de design ou de code est guidée par un seul objectif : votre performance.",
+              },
+              {
+                icon: Users,
+                color: "#a78bfa",
+                title: "Accompagnement humain",
+                desc: "Un interlocuteur unique, disponible, qui comprend votre secteur et vos contraintes.",
+              },
+            ].map(({ icon: Icon, color, title, desc }) => (
+              <motion.div key={title} variants={cardReveal}
+                className="card-premium flex flex-col gap-4 p-6">
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl"
+                  style={{ background: `${color}14` }}>
+                  <Icon size={20} style={{ color }} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-[var(--ink)]">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          7. CTA FINAL
+      ══════════════════════════════════════════════════ */}
       <section className="mx-auto max-w-6xl px-6 py-24">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
-          className="relative overflow-hidden rounded-[2rem] border border-[rgba(176,141,87,0.2)] bg-[var(--ink)] p-12 text-center shadow-premium-lg"
+          className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.2)] bg-[var(--ink)] px-8 py-16 text-center shadow-premium-lg md:px-16"
         >
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="h-[300px] w-[500px] rounded-full bg-[rgba(176,141,87,0.1)] blur-[80px]" />
-          </div>
+          {/* Glows */}
+          <div className="pointer-events-none absolute left-[20%] top-0 h-[300px] w-[400px] rounded-full bg-[rgba(201,165,90,0.09)] blur-[90px]" />
+          <div className="pointer-events-none absolute bottom-0 right-[15%] h-[250px] w-[300px] rounded-full bg-[rgba(96,165,250,0.06)] blur-[80px]" />
 
           <div className="relative z-10">
             <motion.span variants={fadeIn} className="badge badge-gold-dark">
-              <Sparkles size={11} /> Contact
+              <Sparkles size={10} /> Parlons de votre projet
             </motion.span>
 
-            <h2 className="display-section mt-5 text-white">
+            <h2 className="display-section mt-6 text-white">
               <MultiLineReveal
-                lines={["Parlons de", "votre projet."]}
+                lines={["Prêt à passer à", "la vitesse supérieure ?"]}
                 highlight={1}
                 stagger={0.16}
                 wordStagger={0.08}
@@ -488,32 +563,31 @@ export default function Home() {
               />
             </h2>
 
-            <FadeReveal delay={0.3} as="p" className="mx-auto mt-5 max-w-xl text-lg text-white/50">
-              Nous vous accompagnons dans la mise en place de solutions
-              modernes, utiles et professionnelles.
+            <FadeReveal delay={0.3} as="p" className="mx-auto mt-5 max-w-lg text-lg text-white/50">
+              Devis gratuit, réponse sous 24h. On étudie votre projet sérieusement
+              et on vous propose la meilleure solution.
             </FadeReveal>
 
-            <FadeReveal delay={0.42} className="mt-5 flex flex-col items-center gap-2">
+            <FadeReveal delay={0.45} className="mt-9 flex flex-wrap justify-center gap-3">
+              <Link href="/contact" className="btn-primary px-8 py-3.5 text-base">
+                Demander un devis gratuit <ArrowRight size={16} />
+              </Link>
+              <Link href="/abonnement" className="btn-ghost px-8 py-3.5 text-base">
+                Voir les offres
+              </Link>
+            </FadeReveal>
+
+            <FadeReveal delay={0.55} className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-6">
               <a href={`mailto:${data.contact.email}`}
-                className="inline-flex items-center gap-2 text-base font-medium text-white/50 hover:text-white transition-colors">
-                <Mail size={15} className="text-[#c9a55a]" />
+                className="flex items-center gap-2 text-sm text-white/40 transition hover:text-white/70">
+                <Mail size={13} className="text-[#c9a55a]" />
                 {data.contact.email}
               </a>
-              <a href={`https://wa.me/${data.contact.whatsapp.replace(/[^0-9]/g, "")}`}
-                target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-base font-medium text-white/50 hover:text-white transition-colors">
-                <MessageCircle size={15} className="text-[#c9a55a]" />
-                {data.contact.whatsapp}
-              </a>
-            </FadeReveal>
-
-            <FadeReveal delay={0.55} className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link href="/contact" className="btn-primary">
-                Nous contacter <ArrowRight size={16} />
-              </Link>
-              <Link href="/services" className="btn-ghost">
-                Explorer les services
-              </Link>
+              <span className="hidden text-white/15 sm:inline">·</span>
+              <span className="flex items-center gap-2 text-sm text-white/40">
+                <CheckCircle2 size={13} className="text-[#c9a55a]" />
+                Sans engagement · Réponse garantie 24h
+              </span>
             </FadeReveal>
           </div>
         </motion.div>
