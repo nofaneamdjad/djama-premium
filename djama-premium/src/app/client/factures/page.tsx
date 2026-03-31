@@ -591,7 +591,12 @@ export default function FacturesPage(){
       total_ttc:        totals.ttc,
     };
 
-    console.log("[handleSave] payload →", payload);
+    /* ── Log complet du payload avant envoi ── */
+    console.group("[handleSave] PAYLOAD COMPLET");
+    console.log("Colonnes envoyées :", Object.keys(payload));
+    console.log("Valeurs :", JSON.stringify(payload, null, 2));
+    console.log("Mode :", selected ? `UPDATE id=${selected.id}` : "INSERT");
+    console.groupEnd();
 
     let docId = selected?.id;
 
@@ -599,19 +604,29 @@ export default function FacturesPage(){
     if(selected){
       const{error}=await supabase.from("documents").update(payload).eq("id",selected.id);
       if(error){
-        console.error("[handleSave] UPDATE error:", error);
-        showToast("error",`Erreur : ${error.message}${error.details?` — ${error.details}`:""}`);
+        console.error("[handleSave] UPDATE error — code:", error.code);
+        console.error("[handleSave] UPDATE error — message:", error.message);
+        console.error("[handleSave] UPDATE error — details:", error.details);
+        console.error("[handleSave] UPDATE error — hint:", error.hint);
+        const msg = [error.message, error.details, error.hint].filter(Boolean).join(" | ");
+        showToast("error", `Erreur UPDATE : ${msg}`);
         setSaving(false); return;
       }
     } else {
+      const insertPayload = { ...payload, user_id: user.id };
+      console.log("[handleSave] INSERT payload colonnes :", Object.keys(insertPayload));
       const{data,error}=await supabase
         .from("documents")
-        .insert({...payload, user_id:user.id})
+        .insert(insertPayload)
         .select()
         .single();
       if(error){
-        console.error("[handleSave] INSERT error:", error);
-        showToast("error",`Erreur : ${error.message}${error.details?` — ${error.details}`:""}`);
+        console.error("[handleSave] INSERT error — code:", error.code);
+        console.error("[handleSave] INSERT error — message:", error.message);
+        console.error("[handleSave] INSERT error — details:", error.details);
+        console.error("[handleSave] INSERT error — hint:", error.hint);
+        const msg = [error.message, error.details, error.hint].filter(Boolean).join(" | ");
+        showToast("error", `Erreur INSERT : ${msg}`);
         setSaving(false); return;
       }
       docId=(data as Document).id;
