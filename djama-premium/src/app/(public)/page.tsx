@@ -401,27 +401,27 @@ export default function Home() {
             {[
               {
                 num: "01",
-                tag: "Site web",
+                tag: "Projet client",
                 tagColor: "#c9a55a",
-                title: "Site vitrine professionnel",
-                desc: "Design sur mesure, performances mobile-first, SEO optimisé. Livré en moins de 2 semaines.",
+                title: "MONDOUKA",
+                desc: "Développement d'une solution digitale complète avec interface moderne, outils de gestion et organisation de services. Expérience utilisateur soignée, du brief au déploiement.",
                 accent: "#c9a55a",
               },
               {
                 num: "02",
-                tag: "Application SaaS",
+                tag: "Projet client",
                 tagColor: "#60a5fa",
-                title: "Plateforme de gestion métier",
-                desc: "Interface SaaS avec tableau de bord, authentification sécurisée et base de données cloud.",
+                title: "CLAMAC",
+                desc: "Plateforme facilitant la recherche de fournisseurs internationaux et le développement d'activités professionnelles. Gestion de projets, mise en relation et suivi de partenariats.",
                 accent: "#60a5fa",
               },
               {
                 num: "03",
-                tag: "Identité visuelle",
-                tagColor: "#a78bfa",
-                title: "Branding & design visuel",
-                desc: "Logo, charte graphique, déclinaisons réseaux. Une image cohérente sur tous les supports.",
-                accent: "#a78bfa",
+                tag: "Application mobile",
+                tagColor: "#4ade80",
+                title: "WEWE",
+                desc: "Application mobile disponible sur le Play Store, conçue pour simplifier l'accès à des services du quotidien et offrir une expérience utilisateur fluide et intuitive.",
+                accent: "#4ade80",
               },
             ].map(({ num, tag, tagColor, title, desc, accent }) => (
               <motion.div
