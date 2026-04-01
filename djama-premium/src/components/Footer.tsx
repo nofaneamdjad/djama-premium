@@ -120,13 +120,21 @@ export default function Footer() {
           {/* Brand */}
           <motion.div variants={fadeUp}>
             <Link href="/" className="mb-6 inline-block">
-              <Image
-                src={data.media.logo}
-                alt="DJAMA"
-                width={44}
-                height={44}
-                className="rounded-xl object-contain"
-              />
+              <div
+                className="relative"
+                style={{
+                  filter: "drop-shadow(0 0 10px rgba(201,165,90,0.25))",
+                }}
+              >
+                <Image
+                  src={data.media.logo}
+                  alt="DJAMA"
+                  width={44}
+                  height={44}
+                  className="rounded-xl object-contain"
+                  style={{ filter: "brightness(0) invert(1)" }}
+                />
+              </div>
             </Link>
 
             <p className="max-w-xs text-sm leading-relaxed text-white/35">
