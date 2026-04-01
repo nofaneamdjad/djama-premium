@@ -12,6 +12,7 @@ import { useState } from "react";
 import { getSiteData } from "@/lib/site-data";
 import { staggerContainer, fadeUp, viewport } from "@/lib/animations";
 import { useLanguage } from "@/lib/language-context";
+import { UnderlineDraw } from "@/components/ui/HoverText";
 
 /* ── Liens services / compte (hrefs) ─────────── */
 const SERVICES_HREFS = [
@@ -167,7 +168,7 @@ export default function Footer() {
                     href={href}
                     className="group inline-flex items-center gap-1 text-sm text-white/40 transition-colors duration-200 hover:text-white/75"
                   >
-                    {label}
+                    <UnderlineDraw lineColor="rgba(201,165,90,0.55)" thickness={1}>{label}</UnderlineDraw>
                     <ArrowUpRight size={11} className="opacity-0 transition-opacity group-hover:opacity-60" />
                   </Link>
                 </li>
@@ -187,7 +188,7 @@ export default function Footer() {
                     href={href}
                     className="group inline-flex items-center gap-1 text-sm text-white/40 transition-colors duration-200 hover:text-white/75"
                   >
-                    {label}
+                    <UnderlineDraw lineColor="rgba(201,165,90,0.55)" thickness={1}>{label}</UnderlineDraw>
                     <ArrowUpRight size={11} className="opacity-0 transition-opacity group-hover:opacity-60" />
                   </Link>
                 </li>

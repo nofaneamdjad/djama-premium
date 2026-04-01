@@ -14,6 +14,7 @@ import {
 } from "@/lib/animations";
 import { services } from "@/content/services";
 import { useLanguage } from "@/lib/language-context";
+import { WordLift } from "@/components/ui/HoverText";
 
 /* ─────────────────────────────────────────────────────────
    DESIGN SYSTEM PAR CATÉGORIE
@@ -170,8 +171,8 @@ function ServiceCard({ service, lang }: { service: typeof services[0]; lang: "fr
           )}
         </div>
 
-        <h2 className="text-[1.05rem] font-extrabold leading-snug text-white/90 transition-colors duration-300 group-hover:text-white">
-          {title}
+        <h2 className="text-[1.05rem] font-extrabold leading-snug text-white/90">
+          <WordLift text={title} yOffset={4} stagger={25} hoverColor="rgba(255,255,255,1)" />
         </h2>
 
         <p className="mt-2.5 flex-1 text-sm leading-relaxed text-white/40">

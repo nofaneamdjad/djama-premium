@@ -7,6 +7,7 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-
 import { Menu, X, ArrowRight } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import { useLanguage } from "@/lib/language-context";
+import { ShimmerText } from "@/components/ui/HoverText";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -106,7 +107,7 @@ export default function Navbar() {
           <nav className="hidden items-center gap-1 md:flex">
             {NAV_LINKS.map(({ href, label }) => (
               <Link key={href} href={href} className="group relative px-3.5 py-2 text-sm font-medium text-white/70 transition-colors hover:text-white">
-                {label}
+                <ShimmerText variant="white" className="font-medium">{label}</ShimmerText>
                 <span className="absolute inset-x-3.5 -bottom-px h-px scale-x-0 rounded-full bg-gradient-to-r from-[#c9a55a] to-[#e8cc94] transition-transform duration-300 group-hover:scale-x-100" />
               </Link>
             ))}

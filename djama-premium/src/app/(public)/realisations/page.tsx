@@ -15,6 +15,7 @@ import {
   staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport,
 } from "@/lib/animations";
 import { useLanguage } from "@/lib/language-context";
+import { WordLift, GlowReveal } from "@/components/ui/HoverText";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -437,8 +438,13 @@ function ProjectCard({ project }: { project: Project }) {
       <div className="flex flex-1 flex-col gap-4 p-6">
         {/* Nom + type */}
         <div>
-          <h3 className="text-xl font-extrabold text-white/90 transition-colors group-hover:text-white">
-            {project.name}
+          <h3 className="text-xl font-extrabold text-white/90">
+            <WordLift
+              text={project.name}
+              yOffset={4}
+              stagger={22}
+              hoverColor="rgba(255,255,255,1)"
+            />
           </h3>
           <p className="mt-0.5 text-xs font-semibold" style={{ color: project.accent }}>
             {project.type}
@@ -540,7 +546,7 @@ export default function RealisationsPage() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease }}
-            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]"
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a] hover-glow-gold cursor-default"
           >
             <Sparkles size={11} /> Portfolio & réalisations
           </motion.div>
