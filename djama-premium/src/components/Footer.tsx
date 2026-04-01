@@ -119,15 +119,14 @@ export default function Footer() {
 
           {/* Brand */}
           <motion.div variants={fadeUp}>
-            <Link href="/" className="mb-6 inline-flex items-center gap-3">
+            <Link href="/" className="mb-6 inline-block">
               <Image
                 src={data.media.logo}
                 alt="DJAMA"
-                width={36}
-                height={36}
+                width={44}
+                height={44}
                 className="rounded-xl object-contain"
               />
-              <span className="text-base font-black tracking-tight text-white">DJAMA</span>
             </Link>
 
             <p className="max-w-xs text-sm leading-relaxed text-white/35">
