@@ -60,9 +60,23 @@ export interface Translations {
         desc: string;
       }>;
     };
+    servicesSection: {
+      badge: string;
+      titleLines: string[];
+      subtitle: string;
+      cta: string;
+      items: Array<{ title: string; desc: string }>;
+    };
+    realisationsSection: {
+      badge: string;
+      titleLines: string[];
+      subtitle: string;
+      cta: string;
+      projects: Array<{ name: string; category: string; desc: string; tag: string }>;
+    };
     cta: {
       label: string;
-      title: string;
+      titleLines: string[];
       subtitle: string;
       cta1: string;
       cta2: string;

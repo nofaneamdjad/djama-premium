@@ -32,6 +32,12 @@ const TOOL_COLORS = ["#4ade80", "#60a5fa", "#c9a55a"] as const;
 const APPROACH_ICONS = [Search, Wrench, HeartHandshake] as const;
 const APPROACH_COLORS = ["#c9a55a", "#60a5fa", "#4ade80"] as const;
 
+const REAL_PROJECTS = [
+  { accent: "#c9a55a" },
+  { accent: "#60a5fa" },
+  { accent: "#a78bfa" },
+] as const;
+
 export default function Home() {
   const data = getSiteData();
   const { dict } = useLanguage();
@@ -81,7 +87,7 @@ export default function Home() {
               </FadeReveal>
 
               <FadeReveal delay={0.8} className="mt-10 flex flex-wrap gap-3">
-                <Link href="/realisations" className="btn-primary px-7 py-4 text-base">
+                <Link href="/contact" className="btn-primary px-7 py-4 text-base">
                   {h.hero.cta1} <ArrowRight size={16} />
                 </Link>
                 <Link href="/services" className="btn-ghost px-7 py-4 text-base">
@@ -256,9 +262,79 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          3. PRÉSENTATION DJAMA
+          3. SERVICES SYNTHÉTIQUE
       ══════════════════════════════════════════════════ */}
-      <section className="bg-[var(--surface)] py-28">
+      <section className="bg-[var(--surface)] py-24">
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+          className="mx-auto max-w-6xl px-6"
+        >
+          {/* Header */}
+          <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <motion.span variants={fadeIn} className="badge badge-gold-light">
+                <Sparkles size={10} /> {h.servicesSection.badge}
+              </motion.span>
+              <h2 className="display-section mt-4 text-[var(--ink)]">
+                <MultiLineReveal
+                  lines={h.servicesSection.titleLines}
+                  highlight={1}
+                  stagger={0.13}
+                  wordStagger={0.06}
+                />
+              </h2>
+              <FadeReveal delay={0.2} as="p" className="mt-3 max-w-md text-base leading-relaxed text-[var(--muted)]">
+                {h.servicesSection.subtitle}
+              </FadeReveal>
+            </div>
+            <FadeReveal delay={0.25} className="shrink-0">
+              <Link href="/services" className="btn-primary text-sm whitespace-nowrap">
+                {h.servicesSection.cta} <ArrowRight size={14} />
+              </Link>
+            </FadeReveal>
+          </div>
+
+          {/* Cards 4 cols */}
+          <motion.div
+            variants={staggerContainerFast}
+            className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {h.servicesSection.items.map(({ title, desc }, i) => {
+              const Icon = OVERVIEW_ICONS[i];
+              const { color, bg, border } = OVERVIEW_COLORS[i];
+              return (
+                <motion.div key={title} variants={cardReveal}>
+                  <Link
+                    href="/services"
+                    className="group flex h-full flex-col rounded-[1.5rem] border border-[var(--border)] bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_16px_48px_rgba(0,0,0,0.08)]"
+                  >
+                    <div
+                      className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border transition-transform duration-300 group-hover:scale-110"
+                      style={{ background: bg, borderColor: border }}
+                    >
+                      <Icon size={20} style={{ color }} />
+                    </div>
+                    <h3 className="font-extrabold text-[var(--ink)]">{title}</h3>
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
+                    <div
+                      className="mt-5 flex items-center gap-1.5 text-xs font-bold transition-gap duration-200"
+                      style={{ color }}
+                    >
+                      Explorer <ArrowRight size={11} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          4. PRÉSENTATION DJAMA
+      ══════════════════════════════════════════════════ */}
+      <section className="py-28">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
@@ -321,7 +397,93 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          4. ASSISTANT DJAMA
+          5. RÉALISATIONS APERÇU
+      ══════════════════════════════════════════════════ */}
+      <section className="bg-[var(--surface)] py-24">
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+          className="mx-auto max-w-6xl px-6"
+        >
+          {/* Header */}
+          <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <motion.span variants={fadeIn} className="badge badge-gold-light">
+                <Sparkles size={10} /> {h.realisationsSection.badge}
+              </motion.span>
+              <h2 className="display-section mt-4 text-[var(--ink)]">
+                <MultiLineReveal
+                  lines={h.realisationsSection.titleLines}
+                  highlight={1}
+                  stagger={0.13}
+                  wordStagger={0.07}
+                />
+              </h2>
+              <FadeReveal delay={0.2} as="p" className="mt-3 max-w-md text-base leading-relaxed text-[var(--muted)]">
+                {h.realisationsSection.subtitle}
+              </FadeReveal>
+            </div>
+            <FadeReveal delay={0.25} className="shrink-0">
+              <Link href="/realisations" className="btn-ghost text-sm whitespace-nowrap">
+                {h.realisationsSection.cta} <ArrowRight size={14} />
+              </Link>
+            </FadeReveal>
+          </div>
+
+          {/* 3 project cards */}
+          <motion.div
+            variants={staggerContainerFast}
+            className="grid gap-6 md:grid-cols-3"
+          >
+            {h.realisationsSection.projects.map(({ name, category, desc, tag }, i) => {
+              const { accent } = REAL_PROJECTS[i];
+              return (
+                <motion.div key={name} variants={cardReveal}>
+                  <Link
+                    href="/realisations"
+                    className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_20px_56px_rgba(0,0,0,0.1)]"
+                  >
+                    {/* Accent bar */}
+                    <div
+                      className="h-1 w-full transition-all duration-300 group-hover:h-1.5"
+                      style={{ background: `linear-gradient(90deg, ${accent}, ${accent}66)` }}
+                    />
+
+                    <div className="flex flex-1 flex-col p-6">
+                      {/* Tag */}
+                      <span
+                        className="mb-4 self-start rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider"
+                        style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}28` }}
+                      >
+                        {tag}
+                      </span>
+
+                      {/* Name + category */}
+                      <h3 className="text-xl font-black tracking-tight text-[var(--ink)]">{name}</h3>
+                      <p className="mt-0.5 text-xs font-semibold text-[var(--muted)]">{category}</p>
+
+                      {/* Description */}
+                      <p className="mt-4 flex-1 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
+
+                      {/* Link */}
+                      <div
+                        className="mt-5 flex items-center gap-1.5 text-xs font-bold"
+                        style={{ color: accent }}
+                      >
+                        Voir le projet
+                        <ArrowRight size={11} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          6. ASSISTANT DJAMA
       ══════════════════════════════════════════════════ */}
       <section className="mx-auto max-w-6xl px-6 py-28">
         <motion.div
@@ -443,7 +605,7 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          5. OUTILS DJAMA
+          7. OUTILS DJAMA
       ══════════════════════════════════════════════════ */}
       <section className="hero-dark relative overflow-hidden py-28">
         <div className="pointer-events-none absolute left-[20%] top-0 h-[300px] w-[350px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[70px]" />
@@ -515,7 +677,7 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          6. APPROCHE
+          8. APPROCHE
       ══════════════════════════════════════════════════ */}
       <section className="bg-[var(--surface)] py-28">
         <motion.div
@@ -575,7 +737,7 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          7. CTA FINAL
+          9. CTA FINAL
       ══════════════════════════════════════════════════ */}
       <section className="mx-auto max-w-6xl px-6 py-28">
         <motion.div
@@ -583,7 +745,9 @@ export default function Home() {
           variants={staggerContainer}
           className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.2)] bg-[var(--ink)] px-8 py-20 text-center shadow-premium-lg md:px-16"
         >
+          {/* Glow */}
           <div className="pointer-events-none absolute left-[12%] top-[-50px] h-[200px] w-[280px] rounded-full bg-[rgba(201,165,90,0.08)] blur-[55px]" />
+          <div className="pointer-events-none absolute bottom-[-30px] right-[10%] h-[160px] w-[200px] rounded-full bg-[rgba(96,165,250,0.05)] blur-[50px]" />
 
           <div className="relative z-10">
             <motion.span variants={fadeIn} className="badge badge-gold-dark">
@@ -592,7 +756,7 @@ export default function Home() {
 
             <h2 className="display-section mt-6 text-white">
               <MultiLineReveal
-                lines={["Parlons de", "votre projet."]}
+                lines={h.cta.titleLines}
                 highlight={1}
                 stagger={0.15}
                 wordStagger={0.08}
@@ -608,7 +772,7 @@ export default function Home() {
               <Link href="/contact" className="btn-primary px-8 py-4 text-base">
                 {h.cta.cta1} <ArrowRight size={16} />
               </Link>
-              <Link href="/services" className="btn-ghost px-8 py-4 text-base">
+              <Link href="/contact" className="btn-ghost px-8 py-4 text-base">
                 {h.cta.cta2}
               </Link>
             </FadeReveal>

@@ -16,8 +16,8 @@ export const fr: Translations = {
       badge: "Création digitale & outils professionnels",
       titleLines: ["Votre présence", "digitale,", "simplifiée."],
       subtitle:
-        "DJAMA accompagne particuliers, entrepreneurs et entreprises dans la création de leur présence digitale, leurs outils professionnels et leurs projets numériques.",
-      cta1: "Découvrir les réalisations",
+        "De la création de site à la gestion de votre activité, DJAMA vous accompagne avec des solutions digitales modernes, efficaces et accessibles.",
+      cta1: "Démarrer un projet",
       cta2: "Nos services",
       socialProof: "+50 clients font confiance à DJAMA",
     },
@@ -84,13 +84,53 @@ export const fr: Translations = {
         },
       ],
     },
+    servicesSection: {
+      badge: "Ce que nous faisons",
+      titleLines: ["Tous vos besoins", "digitaux, couverts."],
+      subtitle:
+        "Du site web au coaching, en passant par les outils professionnels — une seule équipe pour tout gérer.",
+      cta: "Voir tous les services",
+      items: [
+        { title: "Création digitale",      desc: "Sites web, applications, e-commerce et design sur mesure." },
+        { title: "Outils professionnels",  desc: "Factures, planning, bloc-notes et espace client sécurisé." },
+        { title: "Accompagnement",         desc: "Admin, URSSAF, fournisseurs, marchés publics et privés." },
+        { title: "Coaching",               desc: "Coaching IA, soutien scolaire et accompagnement numérique." },
+      ],
+    },
+    realisationsSection: {
+      badge: "Nos réalisations",
+      titleLines: ["Des projets", "qui parlent."],
+      subtitle:
+        "Quelques exemples concrets de ce que nous construisons pour nos clients, partout dans le monde.",
+      cta: "Voir toutes les réalisations",
+      projects: [
+        {
+          name: "MONDOUKA",
+          category: "E-commerce & Sourcing",
+          desc: "Plateforme e-commerce avec gestion de sourcing, catalogue produit et intégration paiement international.",
+          tag: "E-commerce",
+        },
+        {
+          name: "CLAMAC",
+          category: "Site vitrine & SEO",
+          desc: "Site professionnel pour une entreprise de travaux, optimisé SEO avec formulaire de devis intégré.",
+          tag: "Web",
+        },
+        {
+          name: "WEWE",
+          category: "Web App SaaS",
+          desc: "Application web sur mesure avec espace utilisateur, tableau de bord et gestion de données avancée.",
+          tag: "Application",
+        },
+      ],
+    },
     cta: {
       label: "Prêt à démarrer ?",
-      title: "Parlons de votre projet.",
+      titleLines: ["Votre projet", "mérite mieux."],
       subtitle:
-        "Que vous ayez besoin d'un site, d'outils professionnels ou d'accompagnement, DJAMA vous aide à construire des solutions digitales modernes.",
+        "Prenez contact aujourd'hui — nous vous répondons sous 24h avec une proposition claire et adaptée à vos besoins.",
       cta1: "Demander un devis",
-      cta2: "Voir nos services",
+      cta2: "Nous contacter",
     },
   },
 

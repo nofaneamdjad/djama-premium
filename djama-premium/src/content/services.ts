@@ -28,17 +28,21 @@ export type Service = {
     | "Documents & Outils"
     | "Accompagnement"
     | "Coaching";
+  /** "outil" = inclus dans l'abonnement → CTA vers /abonnement
+   *  "prestation" = sur devis / contact → CTA vers /contact */
+  serviceType: "outil" | "prestation";
   icon: React.ElementType;
   highlights: string[];
   titleEn?: string;
   excerptEn?: string;
   highlightsEn?: string[];
   ctaLabel?: string;
+  ctaLabelEn?: string;
   ctaHref?: string;
 };
 
 export const services: Service[] = [
-  // DIGITAL
+  // ── DIGITAL (prestations sur devis) ──────────────────────
   {
     slug: "site-vitrine",
     title: "Site vitrine / portfolio",
@@ -46,9 +50,13 @@ export const services: Service[] = [
     titleEn: "Showcase website / portfolio",
     excerptEn: "Premium design, fast, built for conversion — professional and clean.",
     category: "Digital",
+    serviceType: "prestation",
     icon: Code2,
     highlights: ["UX premium", "Responsive", "SEO de base", "Sections sur mesure"],
     highlightsEn: ["Premium UX", "Responsive", "Basic SEO", "Custom sections"],
+    ctaLabel: "Demander un devis",
+    ctaLabelEn: "Request a quote",
+    ctaHref: "/contact",
   },
   {
     slug: "site-ecommerce",
@@ -57,9 +65,13 @@ export const services: Service[] = [
     titleEn: "E-commerce website",
     excerptEn: "Modern shop + product pages + seamless checkout journey.",
     category: "Digital",
+    serviceType: "prestation",
     icon: ShoppingCart,
     highlights: ["Pages produit", "Panier", "Paiements PayPal/virement", "Optimisation confiance"],
     highlightsEn: ["Product pages", "Cart", "PayPal/bank transfer payments", "Trust optimisation"],
+    ctaLabel: "Demander un devis",
+    ctaLabelEn: "Request a quote",
+    ctaHref: "/contact",
   },
   {
     slug: "application-mobile",
@@ -68,9 +80,13 @@ export const services: Service[] = [
     titleEn: "Mobile application",
     excerptEn: "Clean & scalable application — great UX, solid performance.",
     category: "Digital",
+    serviceType: "prestation",
     icon: Smartphone,
     highlights: ["UX moderne", "Fonctionnalités utiles", "Évolutif", "Accompagnement"],
     highlightsEn: ["Modern UX", "Useful features", "Scalable", "Expert guidance"],
+    ctaLabel: "Demander un devis",
+    ctaLabelEn: "Request a quote",
+    ctaHref: "/contact",
   },
   {
     slug: "plateforme-web",
@@ -79,12 +95,16 @@ export const services: Service[] = [
     titleEn: "Custom web platform / tool",
     excerptEn: "Dashboard, accounts, internal tools — like a mini-SaaS.",
     category: "Digital",
+    serviceType: "prestation",
     icon: LayoutDashboard,
     highlights: ["Espace client", "Gestion simple", "Branding", "Scalable"],
     highlightsEn: ["Client area", "Simple management", "Branding", "Scalable"],
+    ctaLabel: "Démarrer un projet",
+    ctaLabelEn: "Start a project",
+    ctaHref: "/contact",
   },
 
-  // CRÉATION DE CONTENU
+  // ── CRÉATION DE CONTENU (prestations sur devis) ──────────
   {
     slug: "montage-video",
     title: "Montage vidéo pro",
@@ -92,9 +112,13 @@ export const services: Service[] = [
     titleEn: "Professional video editing",
     excerptEn: "Reels, ads, Instagram formats — clean and premium style.",
     category: "Création de contenu",
+    serviceType: "prestation",
     icon: Video,
     highlights: ["Sous-titres", "Rythme pro", "Branding", "Formats réseaux sociaux"],
     highlightsEn: ["Subtitles", "Professional pacing", "Branding", "Social media formats"],
+    ctaLabel: "Demander un devis",
+    ctaLabelEn: "Request a quote",
+    ctaHref: "/contact",
   },
   {
     slug: "retouche-photo",
@@ -103,9 +127,13 @@ export const services: Service[] = [
     titleEn: "Photo retouching / editing",
     excerptEn: "Clean visuals, professional retouching, brand consistency.",
     category: "Création de contenu",
+    serviceType: "prestation",
     icon: ImageIcon,
     highlights: ["Qualité pro", "Branding", "Posts", "Bannières"],
     highlightsEn: ["Professional quality", "Branding", "Posts", "Banners"],
+    ctaLabel: "Demander un devis",
+    ctaLabelEn: "Request a quote",
+    ctaHref: "/contact",
   },
   {
     slug: "visuels-publicitaires",
@@ -114,12 +142,16 @@ export const services: Service[] = [
     titleEn: "Advertising visuals",
     excerptEn: "Posts & ads: professional design, impact and brand consistency.",
     category: "Création de contenu",
+    serviceType: "prestation",
     icon: Megaphone,
     highlights: ["Ads", "Posts", "Kits réseaux", "Cohérence visuelle"],
     highlightsEn: ["Ads", "Posts", "Social media kits", "Visual consistency"],
+    ctaLabel: "Demander un devis",
+    ctaLabelEn: "Request a quote",
+    ctaHref: "/contact",
   },
 
-  // DOCUMENTS & OUTILS
+  // ── DOCUMENTS & OUTILS (inclus abonnement → /abonnement) ─
   {
     slug: "factures-automatiques",
     title: "Factures automatiques",
@@ -127,9 +159,13 @@ export const services: Service[] = [
     titleEn: "Automated invoices",
     excerptEn: "Logo + company info + export: professional in 1 minute.",
     category: "Documents & Outils",
+    serviceType: "outil",
     icon: FileText,
-    highlights: ["Templates", "Branding", "Export", "Simple & rapide"],
-    highlightsEn: ["Templates", "Branding", "Export", "Simple & fast"],
+    highlights: ["Templates", "Branding", "Export PDF", "Simple & rapide"],
+    highlightsEn: ["Templates", "Branding", "PDF export", "Simple & fast"],
+    ctaLabel: "Accéder à l'espace client",
+    ctaLabelEn: "Access client area",
+    ctaHref: "/abonnement",
   },
   {
     slug: "devis-automatiques",
@@ -138,9 +174,13 @@ export const services: Service[] = [
     titleEn: "Automated quotes",
     excerptEn: "Premium quotes: clear, professional, fast.",
     category: "Documents & Outils",
+    serviceType: "outil",
     icon: ClipboardList,
-    highlights: ["Templates", "Calcul simple", "Export", "Envoi client"],
-    highlightsEn: ["Templates", "Simple calculation", "Export", "Client delivery"],
+    highlights: ["Templates", "Calcul simple", "Export PDF", "Envoi client"],
+    highlightsEn: ["Templates", "Simple calculation", "PDF export", "Client delivery"],
+    ctaLabel: "Découvrir l'abonnement",
+    ctaLabelEn: "Discover the plan",
+    ctaHref: "/abonnement",
   },
   {
     slug: "planning-agenda",
@@ -149,11 +189,13 @@ export const services: Service[] = [
     titleEn: "Scheduling / calendar",
     excerptEn: "Clear and efficient organisation.",
     category: "Documents & Outils",
+    serviceType: "outil",
     icon: BadgeCheck,
-    highlights: ["Rappels", "Organisation", "Simple", "Efficace"],
-    highlightsEn: ["Reminders", "Organisation", "Simple", "Efficient"],
-    ctaLabel: "En savoir plus",
-    ctaHref: "/planning-agenda",
+    highlights: ["Vue Jour / Semaine / Mois", "Organisation", "Rappels", "Efficace"],
+    highlightsEn: ["Day / Week / Month view", "Organisation", "Reminders", "Efficient"],
+    ctaLabel: "Commencer maintenant",
+    ctaLabelEn: "Get started now",
+    ctaHref: "/abonnement",
   },
   {
     slug: "bloc-notes",
@@ -162,12 +204,16 @@ export const services: Service[] = [
     titleEn: "Professional notepad",
     excerptEn: "Quick notes + organisation (export available).",
     category: "Documents & Outils",
+    serviceType: "outil",
     icon: NotebookPen,
-    highlights: ["Notes", "Classement", "Téléchargement plus tard", "Propre"],
-    highlightsEn: ["Notes", "Filing", "Download later", "Clean"],
+    highlights: ["Notes par catégorie", "Classement", "Export disponible", "Interface propre"],
+    highlightsEn: ["Notes by category", "Filing", "Export available", "Clean interface"],
+    ctaLabel: "Voir l'offre pro",
+    ctaLabelEn: "View pro plan",
+    ctaHref: "/abonnement",
   },
 
-  // ACCOMPAGNEMENT
+  // ── ACCOMPAGNEMENT (prestations → contact) ───────────────
   {
     slug: "creation-auto-entrepreneur",
     title: "Création auto-entrepreneur",
@@ -175,9 +221,13 @@ export const services: Service[] = [
     titleEn: "Sole trader registration",
     excerptEn: "Simple, fast, clear business setup.",
     category: "Accompagnement",
+    serviceType: "prestation",
     icon: Briefcase,
     highlights: ["Guidage", "Dossiers", "Étapes claires", "Soutien"],
     highlightsEn: ["Guidance", "Documents", "Clear steps", "Support"],
+    ctaLabel: "Prendre contact",
+    ctaLabelEn: "Get in touch",
+    ctaHref: "/contact",
   },
   {
     slug: "declarations-urssaf",
@@ -186,9 +236,13 @@ export const services: Service[] = [
     titleEn: "URSSAF declarations",
     excerptEn: "Personalised administrative assistance.",
     category: "Accompagnement",
+    serviceType: "prestation",
     icon: ClipboardList,
     highlights: ["Suivi", "Conseils", "Aide déclaration", "Sérénité"],
     highlightsEn: ["Follow-up", "Advice", "Declaration assistance", "Peace of mind"],
+    ctaLabel: "Prendre contact",
+    ctaLabelEn: "Get in touch",
+    ctaHref: "/contact",
   },
   {
     slug: "assistance-administrative-entreprises",
@@ -199,6 +253,7 @@ export const services: Service[] = [
     excerptEn:
       "Document management, professional writing and internal organisation — we handle your admin so you can focus on what matters.",
     category: "Accompagnement",
+    serviceType: "prestation",
     icon: Building2,
     highlights: [
       "Gestion et classement des documents",
@@ -216,8 +271,9 @@ export const services: Service[] = [
       "Administrative file preparation",
       "Guaranteed confidentiality and discretion",
     ],
-    ctaLabel: "En savoir plus",
-    ctaHref: "/services/assistance-administrative-entreprises",
+    ctaLabel: "Demander un devis",
+    ctaLabelEn: "Request a quote",
+    ctaHref: "/contact",
   },
   {
     slug: "fournisseurs-internationaux",
@@ -228,6 +284,7 @@ export const services: Service[] = [
     excerptEn:
       "Qualified sourcing in China, Turkey, Dubai and beyond — best prices, trusted partners, no bad surprises.",
     category: "Accompagnement",
+    serviceType: "prestation",
     icon: Globe,
     highlights: [
       "Sourcing ciblé : Chine, Turquie, Dubaï, Inde…",
@@ -245,8 +302,9 @@ export const services: Service[] = [
       "Logistics and customs monitoring",
       "Import-export advice and regulations",
     ],
-    ctaLabel: "En savoir plus",
-    ctaHref: "/services/fournisseurs-internationaux",
+    ctaLabel: "Demander un devis",
+    ctaLabelEn: "Request a quote",
+    ctaHref: "/contact",
   },
   {
     slug: "marches-publics-prives",
@@ -257,6 +315,7 @@ export const services: Service[] = [
     excerptEn:
       "Respond to tenders with a solid, clear and compelling application — from monitoring through to technical submission.",
     category: "Accompagnement",
+    serviceType: "prestation",
     icon: Landmark,
     highlights: [
       "Veille et détection des appels d'offres",
@@ -274,11 +333,12 @@ export const services: Service[] = [
       "Public and private tenders",
       "End-to-end support",
     ],
-    ctaLabel: "En savoir plus",
-    ctaHref: "/services/marches-publics-prives",
+    ctaLabel: "Demander un devis",
+    ctaLabelEn: "Request a quote",
+    ctaHref: "/contact",
   },
 
-  // COACHING
+  // ── COACHING ──────────────────────────────────────────────
   {
     slug: "coaching-ia",
     title: "Coaching IA",
@@ -286,11 +346,13 @@ export const services: Service[] = [
     titleEn: "AI Coaching",
     excerptEn: "€190 / 3 months — strategy + automation + support.",
     category: "Coaching",
+    serviceType: "prestation",
     icon: Brain,
     highlights: ["Plan d'action", "Outils IA", "Suivi 3 mois", "Objectifs clairs"],
     highlightsEn: ["Action plan", "AI tools", "3-month follow-up", "Clear objectives"],
     ctaLabel: "Voir l'offre",
-    ctaHref: "/coaching-ia",
+    ctaLabelEn: "View offer",
+    ctaHref: "/contact",
   },
   {
     slug: "soutien-scolaire",
@@ -299,10 +361,12 @@ export const services: Service[] = [
     titleEn: "Academic tutoring",
     excerptEn: "€14/h — from Year 7 to A-Level — online sessions.",
     category: "Coaching",
+    serviceType: "prestation",
     icon: GraduationCap,
     highlights: ["Méthode", "Exercices", "Régularité", "RDV en ligne"],
     highlightsEn: ["Methodology", "Exercises", "Consistency", "Online sessions"],
     ctaLabel: "Prendre RDV",
-    ctaHref: "/soutien-scolaire",
+    ctaLabelEn: "Book a session",
+    ctaHref: "/contact",
   },
 ];

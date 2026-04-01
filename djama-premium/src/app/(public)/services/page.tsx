@@ -122,11 +122,24 @@ function CardVisual({ icon: Icon, config }: {
    SERVICE CARD
 ───────────────────────────────────────────────────────── */
 function ServiceCard({ service, lang }: { service: typeof services[0]; lang: "fr" | "en" }) {
-  const config  = CAT_CONFIG[service.category as CatKey];
-  const href    = service.ctaHref ?? "/contact";
-  const title   = lang === "en" && service.titleEn     ? service.titleEn     : service.title;
-  const excerpt = lang === "en" && service.excerptEn   ? service.excerptEn   : service.excerpt;
+  const config     = CAT_CONFIG[service.category as CatKey];
+  const isOutil    = service.serviceType === "outil";
+  const href       = service.ctaHref ?? (isOutil ? "/abonnement" : "/contact");
+  const title      = lang === "en" && service.titleEn      ? service.titleEn      : service.title;
+  const excerpt    = lang === "en" && service.excerptEn    ? service.excerptEn    : service.excerpt;
   const highlights = lang === "en" && service.highlightsEn ? service.highlightsEn : service.highlights;
+  const ctaLabel   = lang === "en" && service.ctaLabelEn   ? service.ctaLabelEn   : service.ctaLabel
+                     ?? (isOutil ? (lang === "en" ? "Get started" : "Commencer maintenant")
+                                 : (lang === "en" ? "Request a quote" : "Demander un devis"));
+
+  /* Prix affiché en haut à droite */
+  const priceTag = (() => {
+    if (service.slug === "coaching-ia")     return lang === "en" ? "€190 / 3 mo." : "190€ / 3 mois";
+    if (service.slug === "soutien-scolaire") return lang === "en" ? "€14 / h" : "14€ / h";
+    if (isOutil)                            return lang === "en" ? "€11.90 / mo." : "11,90€ / mois";
+    if (service.category === "Digital")     return lang === "en" ? "On quote" : "Sur devis";
+    return null;
+  })();
 
   return (
     <motion.div
@@ -134,8 +147,10 @@ function ServiceCard({ service, lang }: { service: typeof services[0]; lang: "fr
       variants={cardReveal}
       className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border bg-[#09090b] transition-all duration-500"
       style={{
-        borderColor: "rgba(255,255,255,0.07)",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+        borderColor: isOutil ? config.border : "rgba(255,255,255,0.07)",
+        boxShadow: isOutil
+          ? `0 4px 24px rgba(${config.accentRgb}, 0.12), 0 1px 0 rgba(255,255,255,0.04) inset`
+          : "0 4px 16px rgba(0,0,0,0.4)",
       }}
       whileHover={{
         y: -8,
@@ -146,9 +161,24 @@ function ServiceCard({ service, lang }: { service: typeof services[0]; lang: "fr
     >
       <CardVisual icon={service.icon} config={config} />
 
+      {/* Bandeau "Espace client" pour les outils */}
+      {isOutil && (
+        <div
+          className="flex items-center justify-center gap-1.5 py-1.5 text-[0.6rem] font-black uppercase tracking-[0.15em]"
+          style={{
+            background: `rgba(${config.accentRgb}, 0.1)`,
+            color: config.accent,
+            borderBottom: `1px solid rgba(${config.accentRgb}, 0.15)`,
+          }}
+        >
+          <span className="h-1 w-1 rounded-full" style={{ background: config.accent }} />
+          {lang === "en" ? "Included in subscription" : "Inclus dans l'abonnement"}
+        </div>
+      )}
+
       <div className="flex flex-1 flex-col p-7">
-        {/* Badge catégorie */}
-        <div className="mb-4 flex items-center justify-between">
+        {/* Badge catégorie + prix */}
+        <div className="mb-4 flex items-center justify-between gap-2">
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-[0.14em]"
             style={{
@@ -160,14 +190,17 @@ function ServiceCard({ service, lang }: { service: typeof services[0]; lang: "fr
             <span className="h-1 w-1 rounded-full" style={{ background: config.accent }} />
             {config.label}
           </span>
-          {(service.slug === "coaching-ia" || service.slug === "soutien-scolaire") && (
-            <span className="text-[0.65rem] font-bold text-white/35">
-              {service.slug === "coaching-ia" ? (lang === "en" ? "€190 / 3 months" : "190€ / 3 mois") : (lang === "en" ? "€14/h" : "14€/h")}
+          {priceTag && (
+            <span
+              className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold"
+              style={{
+                background: isOutil ? `rgba(${config.accentRgb}, 0.12)` : "transparent",
+                color: isOutil ? config.accent : "rgba(255,255,255,0.3)",
+                border: isOutil ? `1px solid rgba(${config.accentRgb}, 0.22)` : "none",
+              }}
+            >
+              {priceTag}
             </span>
-          )}
-          {(service.slug === "site-vitrine" || service.slug === "site-ecommerce" ||
-            service.slug === "plateforme-web" || service.slug === "application-mobile") && (
-            <span className="text-[0.65rem] font-bold text-white/35">{lang === "en" ? "On quote" : "Sur devis"}</span>
           )}
         </div>
 
@@ -180,34 +213,51 @@ function ServiceCard({ service, lang }: { service: typeof services[0]; lang: "fr
         </p>
 
         <ul className="mt-5 space-y-2">
-          {highlights.slice(0, 3).map((h) => (
-            <li key={h} className="flex items-start gap-2 text-xs text-white/50">
+          {highlights.slice(0, 3).map((hl) => (
+            <li key={hl} className="flex items-start gap-2 text-xs text-white/50">
               <CheckCircle2
                 size={12}
                 className="mt-0.5 shrink-0"
                 style={{ color: config.accent }}
               />
-              {h}
+              {hl}
             </li>
           ))}
         </ul>
 
-        <Link
-          href={href}
-          className="group/cta relative mt-6 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300"
-          style={{
-            background: `rgba(${config.accentRgb}, 0.08)`,
-            border: `1px solid rgba(${config.accentRgb}, 0.18)`,
-            color: config.accent,
-          }}
-        >
-          <span>{service.ctaLabel ?? (lang === "en" ? "Learn more" : "En savoir plus")}</span>
-          <ChevronRight size={16} className="transition-transform duration-300 group-hover/cta:translate-x-1" />
-          <span
-            className="absolute inset-0 -translate-x-full rounded-xl transition-transform duration-400 group-hover/cta:translate-x-0"
-            style={{ background: `rgba(${config.accentRgb}, 0.10)` }}
-          />
-        </Link>
+        {/* ── CTA — deux styles selon serviceType ── */}
+        {isOutil ? (
+          /* CTA solid pour les outils → conversion abonnement */
+          <Link
+            href={href}
+            className="group/cta mt-6 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
+            style={{
+              background: config.accent,
+              color: "#09090b",
+            }}
+          >
+            <span>{ctaLabel}</span>
+            <ChevronRight size={16} className="transition-transform duration-300 group-hover/cta:translate-x-1" />
+          </Link>
+        ) : (
+          /* CTA ghost pour les prestations */
+          <Link
+            href={href}
+            className="group/cta relative mt-6 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300"
+            style={{
+              background: `rgba(${config.accentRgb}, 0.08)`,
+              border: `1px solid rgba(${config.accentRgb}, 0.18)`,
+              color: config.accent,
+            }}
+          >
+            <span>{ctaLabel}</span>
+            <ChevronRight size={16} className="transition-transform duration-300 group-hover/cta:translate-x-1" />
+            <span
+              className="absolute inset-0 -translate-x-full rounded-xl transition-transform duration-400 group-hover/cta:translate-x-0"
+              style={{ background: `rgba(${config.accentRgb}, 0.10)` }}
+            />
+          </Link>
+        )}
       </div>
     </motion.div>
   );

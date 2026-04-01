@@ -16,8 +16,8 @@ export const en: Translations = {
       badge: "Digital creation & professional tools",
       titleLines: ["Your digital", "presence,", "simplified."],
       subtitle:
-        "DJAMA helps individuals, entrepreneurs and businesses build their digital presence, professional tools and digital projects.",
-      cta1: "Explore our work",
+        "From website design to business management, DJAMA supports you with modern, effective and accessible digital solutions.",
+      cta1: "Start a project",
       cta2: "Our services",
       socialProof: "+50 clients trust DJAMA",
     },
@@ -84,13 +84,53 @@ export const en: Translations = {
         },
       ],
     },
+    servicesSection: {
+      badge: "What we do",
+      titleLines: ["All your digital", "needs, covered."],
+      subtitle:
+        "From website to coaching, via professional tools — one team to handle everything.",
+      cta: "View all services",
+      items: [
+        { title: "Digital Creation",      desc: "Websites, applications, e-commerce and custom design." },
+        { title: "Professional Tools",    desc: "Invoices, scheduling, notes and a secure client area." },
+        { title: "Business Support",      desc: "Admin, URSSAF, suppliers, public and private tenders." },
+        { title: "Coaching",              desc: "AI coaching, academic tutoring and digital onboarding." },
+      ],
+    },
+    realisationsSection: {
+      badge: "Our work",
+      titleLines: ["Projects that", "speak for themselves."],
+      subtitle:
+        "A few concrete examples of what we build for our clients, all around the world.",
+      cta: "View all projects",
+      projects: [
+        {
+          name: "MONDOUKA",
+          category: "E-commerce & Sourcing",
+          desc: "E-commerce platform with supplier sourcing, product catalogue and international payment integration.",
+          tag: "E-commerce",
+        },
+        {
+          name: "CLAMAC",
+          category: "Website & SEO",
+          desc: "Professional website for a construction company, SEO-optimised with an integrated quote request form.",
+          tag: "Web",
+        },
+        {
+          name: "WEWE",
+          category: "Web App SaaS",
+          desc: "Custom web application with user area, dashboard and advanced data management.",
+          tag: "Application",
+        },
+      ],
+    },
     cta: {
       label: "Ready to start?",
-      title: "Let's talk about your project.",
+      titleLines: ["Your project", "deserves better."],
       subtitle:
-        "Whether you need a website, professional tools or expert guidance, DJAMA helps you build modern digital solutions.",
+        "Get in touch today — we'll reply within 24h with a clear proposal tailored to your needs.",
       cta1: "Request a quote",
-      cta2: "View our services",
+      cta2: "Contact us",
     },
   },
 
