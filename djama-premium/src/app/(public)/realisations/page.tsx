@@ -536,10 +536,8 @@ export default function RealisationsPage() {
       <section className="relative overflow-hidden pb-24 pt-40">
         <div className="hero-grid absolute inset-0 opacity-40" />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[600px] w-[900px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[140px]" />
+          <div className="h-[350px] w-[500px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[75px]" />
         </div>
-        <div className="pointer-events-none absolute left-[8%] top-[40%] h-[300px] w-[300px] rounded-full bg-[rgba(96,165,250,0.05)] blur-[100px]" />
-        <div className="pointer-events-none absolute right-[5%] top-[20%] h-[250px] w-[250px] rounded-full bg-[rgba(52,211,153,0.04)] blur-[90px]" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
           <motion.div
@@ -673,8 +671,7 @@ export default function RealisationsPage() {
             className="relative overflow-hidden rounded-[2rem] border border-white/[0.07] bg-[#111113] px-8 py-14 text-center md:px-14"
           >
             {/* Glows */}
-            <div className="pointer-events-none absolute left-[-60px] top-[-40px] h-[300px] w-[400px] rounded-full bg-[rgba(201,165,90,0.05)] blur-[100px]" />
-            <div className="pointer-events-none absolute bottom-[-40px] right-[-40px] h-[250px] w-[350px] rounded-full bg-[rgba(96,165,250,0.04)] blur-[90px]" />
+            <div className="pointer-events-none absolute left-[-60px] top-[-40px] h-[180px] w-[240px] rounded-full bg-[rgba(201,165,90,0.05)] blur-[55px]" />
 
             <div className="relative z-10">
               <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]">
@@ -829,8 +826,7 @@ export default function RealisationsPage() {
             transition={{ duration: 0.7, ease }}
             className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.18)] bg-[#111113] px-8 py-20 text-center md:px-16"
           >
-            <div className="pointer-events-none absolute left-[10%] top-[-40px] h-[300px] w-[400px] rounded-full bg-[rgba(201,165,90,0.08)] blur-[100px]" />
-            <div className="pointer-events-none absolute bottom-[-30px] right-[8%] h-[250px] w-[300px] rounded-full bg-[rgba(96,165,250,0.05)] blur-[80px]" />
+            <div className="pointer-events-none absolute left-[10%] top-[-40px] h-[180px] w-[240px] rounded-full bg-[rgba(201,165,90,0.08)] blur-[55px]" />
 
             <div className="relative z-10">
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">

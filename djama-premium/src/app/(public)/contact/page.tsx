@@ -195,10 +195,8 @@ export default function ContactPage() {
         {/* Backgrounds */}
         <div className="hero-grid absolute inset-0 opacity-50" />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[600px] w-[800px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[130px]" />
+          <div className="h-[350px] w-[500px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[70px]" />
         </div>
-        <div className="pointer-events-none absolute left-[5%] top-[40%] h-[280px] w-[280px] rounded-full bg-[rgba(52,211,153,0.05)] blur-[90px]" />
-        <div className="pointer-events-none absolute right-[5%] top-[25%] h-[280px] w-[280px] rounded-full bg-[rgba(96,165,250,0.05)] blur-[90px]" />
 
         <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
 

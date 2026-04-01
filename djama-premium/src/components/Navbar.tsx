@@ -66,37 +66,24 @@ export default function Navbar() {
               style={{ display: "flex", alignItems: "center" }}
             >
               <motion.div
-                animate={{
-                  filter: [
-                    "brightness(0) invert(1) drop-shadow(0 0 0px rgba(255,255,255,0))",
-                    "brightness(0) invert(1) drop-shadow(0 0 14px rgba(255,255,255,0.35))",
-                    "brightness(0) invert(1) drop-shadow(0 0 0px rgba(255,255,255,0))",
-                  ],
-                }}
-                transition={{
-                  duration: 3.5,
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                  repeatDelay: 4,
-                }}
                 style={{ filter: "brightness(0) invert(1)" }}
                 whileHover={{
-                  scale: 1.06,
-                  filter: "brightness(0) invert(1) drop-shadow(0 0 16px rgba(201,165,90,0.55))",
-                  transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                  scale: 1.05,
+                  filter: "brightness(0) invert(1) drop-shadow(0 0 12px rgba(201,165,90,0.45))",
+                  transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
                 }}
                 whileTap={{
-                  scale: 0.93,
+                  scale: 0.95,
                   transition: { duration: 0.12 },
                 }}
               >
                 <Image
                   src={data.media.logo}
                   alt="Logo DJAMA"
-                  width={120}
-                  height={40}
+                  width={160}
+                  height={52}
                   priority
-                  className="h-9 w-auto object-contain"
+                  className="h-11 w-auto object-contain"
                   style={{ filter: "brightness(0) invert(1)" }}
                 />
               </motion.div>

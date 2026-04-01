@@ -319,10 +319,8 @@ export default function ServicesPage() {
 
         <div className="hero-grid absolute inset-0 opacity-60" />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[700px] w-[900px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[140px]" />
+          <div className="h-[350px] w-[500px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[75px]" />
         </div>
-        <div className="pointer-events-none absolute left-[10%] top-[30%] h-[300px] w-[300px] rounded-full bg-[rgba(124,111,205,0.07)] blur-[100px]" />
-        <div className="pointer-events-none absolute right-[8%] top-[20%] h-[250px] w-[250px] rounded-full bg-[rgba(52,211,153,0.06)] blur-[90px]" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
 
@@ -643,8 +641,6 @@ export default function ServicesPage() {
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="h-64 w-96 rounded-full bg-[rgba(201,165,90,0.06)] blur-[80px]" />
             </div>
-            <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full bg-[rgba(124,111,205,0.08)] blur-[60px]" />
-            <div className="pointer-events-none absolute bottom-0 right-0 h-40 w-40 rounded-full bg-[rgba(52,211,153,0.06)] blur-[60px]" />
 
             <div className="relative">
               <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">

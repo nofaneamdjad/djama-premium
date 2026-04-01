@@ -47,8 +47,7 @@ export default function Home() {
       <section className="hero-dark hero-grid relative overflow-hidden">
 
         {/* Glows */}
-        <div className="pointer-events-none absolute left-[-100px] top-[-80px] h-[700px] w-[700px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[150px]" />
-        <div className="pointer-events-none absolute right-[5%] bottom-[5%] h-[400px] w-[400px] rounded-full bg-[rgba(59,130,246,0.05)] blur-[110px]" />
+        <div className="pointer-events-none absolute left-[-100px] top-[-80px] h-[240px] w-[240px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[80px]" />
 
         <div className="relative z-10 mx-auto max-w-6xl px-6 pb-32 pt-40">
           <div className="grid items-center gap-14 lg:grid-cols-[1fr_560px]">
@@ -224,7 +223,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
       </section>
 
       {/* ══════════════════════════════════════════════════
@@ -447,8 +446,7 @@ export default function Home() {
           5. OUTILS DJAMA
       ══════════════════════════════════════════════════ */}
       <section className="hero-dark relative overflow-hidden py-28">
-        <div className="pointer-events-none absolute left-[20%] top-0 h-[500px] w-[600px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[130px]" />
-        <div className="pointer-events-none absolute right-[5%] bottom-0 h-[350px] w-[350px] rounded-full bg-[rgba(96,165,250,0.05)] blur-[100px]" />
+        <div className="pointer-events-none absolute left-[20%] top-0 h-[300px] w-[350px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[70px]" />
 
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
@@ -585,8 +583,7 @@ export default function Home() {
           variants={staggerContainer}
           className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.2)] bg-[var(--ink)] px-8 py-20 text-center shadow-premium-lg md:px-16"
         >
-          <div className="pointer-events-none absolute left-[12%] top-[-50px] h-[350px] w-[450px] rounded-full bg-[rgba(201,165,90,0.08)] blur-[100px]" />
-          <div className="pointer-events-none absolute bottom-[-40px] right-[8%] h-[280px] w-[350px] rounded-full bg-[rgba(96,165,250,0.05)] blur-[90px]" />
+          <div className="pointer-events-none absolute left-[12%] top-[-50px] h-[200px] w-[280px] rounded-full bg-[rgba(201,165,90,0.08)] blur-[55px]" />
 
           <div className="relative z-10">
             <motion.span variants={fadeIn} className="badge badge-gold-dark">

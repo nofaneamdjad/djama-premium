@@ -354,3 +354,36 @@ body {
   .hover-glow-white:hover { text-shadow: none; }
   .underline-draw::after { display: none; }
 }
+
+/* ══════════════════════════════════════════════
+   PERFORMANCE — GPU & PAINT ISOLATION
+══════════════════════════════════════════════ */
+
+/* Promote glow/blur decoratives to own GPU layer — use sparingly */
+.gpu-layer {
+  transform: translateZ(0);
+  will-change: auto;
+}
+
+/* Section paint isolation — prevents layout recalculation propagation */
+.section-contain {
+  contain: layout style;
+}
+
+/* Cards with whileHover: pre-promote to GPU */
+.card-gpu {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Reduced motion — accessibility + performance */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .shimmer-gold:hover,
+  .shimmer-white:hover { background-position: 100% center !important; }
+}
