@@ -4,19 +4,22 @@ import { createClient } from "@supabase/supabase-js";
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/webhook/stripe
-   Reçoit les événements Stripe et active l'abonnement.
+   Reçoit les événements Stripe et gère l'état de l'abonnement.
 
    Événements gérés :
-     - checkout.session.completed  → active l'abonnement
-     - customer.subscription.deleted → désactive l'abonnement
+     checkout.session.completed      → Active l'abonnement après premier paiement
+     invoice.paid                    → Confirme l'abonnement actif à chaque renouvellement
+     customer.subscription.updated   → Synchronise le statut (pause, reprise, changement)
+     customer.subscription.deleted   → Désactive l'abonnement après résiliation
 
-   Configuration requise dans Stripe Dashboard :
-     Developers → Webhooks → Add endpoint
-     URL : https://votre-domaine.com/api/webhook/stripe
-          (ou via `stripe listen --forward-to localhost:3000/api/webhook/stripe`)
-     Events : checkout.session.completed, customer.subscription.deleted
+   Configuration Stripe Dashboard :
+     Développeurs → Webhooks → Add endpoint
+     URL prod : https://votre-domaine.com/api/webhook/stripe
+     Events   : cocher les 4 événements ci-dessus
+     → Coller le whsec_... dans STRIPE_WEBHOOK_SECRET
 
-   Variable d'env requise : STRIPE_WEBHOOK_SECRET (whsec_...)
+   En développement local :
+     stripe listen --forward-to localhost:3000/api/webhook/stripe
 ───────────────────────────────────────────────────────────── */
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -32,7 +35,20 @@ function getSupabaseAdmin() {
   );
 }
 
-/* ── Activer l'abonnement pour un utilisateur ───────────── */
+/* ── Trouver un utilisateur Supabase par son Stripe customer ID ── */
+async function findUserByStripeCustomerId(stripeCustomerId: string) {
+  const supabase = getSupabaseAdmin();
+  const {
+    data: { users },
+  } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  return (
+    users.find(
+      (u) => u.user_metadata?.stripe_customer_id === stripeCustomerId
+    ) ?? null
+  );
+}
+
+/* ── Activer l'abonnement ────────────────────────────────────── */
 async function activateSubscription(
   userId: string,
   email: string | null | undefined,
@@ -41,7 +57,7 @@ async function activateSubscription(
 ) {
   const supabase = getSupabaseAdmin();
 
-  /* 1. user_metadata — lu par le middleware via JWT (sans requête DB) */
+  /* 1. user_metadata — lu instantanément côté client sans requête DB */
   const { error: authErr } = await supabase.auth.admin.updateUserById(userId, {
     user_metadata: {
       abonnement:             "outils_djama",
@@ -50,62 +66,117 @@ async function activateSubscription(
       stripe_subscription_id: stripeSubscriptionId,
     },
   });
-  if (authErr) console.error("[Webhook] updateUserById error:", authErr.message);
+  if (authErr)
+    console.error("[Webhook] updateUserById error:", authErr.message);
 
-  /* 2. Table clients — colonnes réelles : email, abonnement, statut
-     (+ stripe_customer_id si la colonne existe — ignoré sinon)       */
+  /* 2. Table clients — source de vérité DB */
   if (email) {
     const { error: dbErr } = await supabase.from("clients").upsert(
       {
-        email:      email,
+        email,
         abonnement: "outils_djama",
         statut:     "actif",
       },
       { onConflict: "email" }
     );
-    if (dbErr) console.error("[Webhook] clients upsert error:", dbErr.message);
-    else console.log("[Webhook] ✅ clients table mis à jour pour:", email);
+    if (dbErr)
+      console.error("[Webhook] clients upsert error:", dbErr.message);
+    else
+      console.log("[Webhook] ✅ Abonnement activé pour:", email);
   }
 }
 
-/* ── Désactiver l'abonnement ───────────────────────────── */
-async function deactivateSubscription(stripeCustomerId: string) {
-  const supabase = getSupabaseAdmin();
-
-  /* Chercher l'utilisateur Supabase Auth via Stripe customer ID
-     (stocké dans user_metadata)                                 */
-  const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-  const target = users.find(
-    (u) => u.user_metadata?.stripe_customer_id === stripeCustomerId
-  );
-
-  if (!target) {
-    console.warn("[Webhook] No user found for stripe_customer_id:", stripeCustomerId);
+/* ── Confirmer l'abonnement (renouvellement mensuel) ─────────── */
+async function confirmSubscriptionActive(stripeCustomerId: string) {
+  const user = await findUserByStripeCustomerId(stripeCustomerId);
+  if (!user) {
+    console.warn(
+      "[Webhook] renewSubscription: user not found for customer:",
+      stripeCustomerId
+    );
     return;
   }
 
-  /* Mettre à jour user_metadata */
-  await supabase.auth.admin.updateUserById(target.id, {
-    user_metadata: { abonnement: null, statut: "inactif" },
+  const supabase = getSupabaseAdmin();
+
+  /* S'assurer que le statut est bien actif */
+  await supabase.auth.admin.updateUserById(user.id, {
+    user_metadata: {
+      ...user.user_metadata,
+      abonnement: "outils_djama",
+      statut:     "actif",
+    },
   });
 
-  /* Mettre à jour la table clients par email */
-  if (target.email) {
+  if (user.email) {
     await supabase
       .from("clients")
-      .update({ statut: "inactif" })
-      .eq("email", target.email);
-    console.log("[Webhook] 🔴 Abonnement désactivé pour:", target.email);
+      .update({ abonnement: "outils_djama", statut: "actif" })
+      .eq("email", user.email);
+    console.log("[Webhook] ✅ Renouvellement confirmé pour:", user.email);
   }
 }
 
-/* ── Handler principal ──────────────────────────────────── */
+/* ── Désactiver l'abonnement ─────────────────────────────────── */
+async function deactivateSubscription(stripeCustomerId: string) {
+  const user = await findUserByStripeCustomerId(stripeCustomerId);
+
+  if (!user) {
+    console.warn(
+      "[Webhook] deactivateSubscription: user not found for customer:",
+      stripeCustomerId
+    );
+    return;
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  await supabase.auth.admin.updateUserById(user.id, {
+    user_metadata: {
+      ...user.user_metadata,
+      abonnement: null,
+      statut:     "inactif",
+    },
+  });
+
+  if (user.email) {
+    await supabase
+      .from("clients")
+      .update({ statut: "inactif" })
+      .eq("email", user.email);
+    console.log("[Webhook] 🔴 Abonnement désactivé pour:", user.email);
+  }
+}
+
+/* ── Synchroniser selon le statut Stripe ─────────────────────── */
+async function syncSubscriptionStatus(
+  stripeCustomerId: string,
+  status: Stripe.Subscription.Status
+) {
+  const ACTIVE_STATUSES: Stripe.Subscription.Status[] = ["active", "trialing"];
+
+  if (ACTIVE_STATUSES.includes(status)) {
+    await confirmSubscriptionActive(stripeCustomerId);
+  } else {
+    // canceled, past_due, unpaid, incomplete_expired, paused…
+    await deactivateSubscription(stripeCustomerId);
+    console.log(
+      `[Webhook] ⚠️ Statut "${status}" → accès désactivé pour customer:`,
+      stripeCustomerId
+    );
+  }
+}
+
+/* ── Handler principal ──────────────────────────────────────── */
 export async function POST(req: Request) {
   const body = await req.text();
   const sig  = req.headers.get("stripe-signature");
 
   if (!sig) {
-    return NextResponse.json({ error: "Missing stripe-signature" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing stripe-signature header" },
+      { status: 400 }
+    );
   }
 
   let event: Stripe.Event;
@@ -123,49 +194,94 @@ export async function POST(req: Request) {
 
   console.log("[Webhook] Event:", event.type);
 
-  /* ── checkout.session.completed ──────────────────────── */
+  /* ── checkout.session.completed ─────────────────────────── */
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
-    const userId             = session.client_reference_id ?? null;
-    const email              = session.customer_details?.email ?? null;
-    const stripeCustomerId   = session.customer as string;
-    const stripeSubId        = session.subscription as string;
+    const userId           = session.client_reference_id ?? null;
+    const email            = session.customer_details?.email ?? null;
+    const stripeCustomerId = session.customer as string;
+    const stripeSubId      = session.subscription as string;
 
     if (userId) {
-      /* Utilisateur déjà connecté lors du paiement */
+      /* Utilisateur connecté lors du paiement → activation directe */
       await activateSubscription(userId, email, stripeCustomerId, stripeSubId);
-      console.log("[Webhook] ✅ Abonnement activé pour user:", userId);
+      console.log("[Webhook] ✅ Abonnement activé (user ID):", userId);
     } else if (email) {
       /* Utilisateur non connecté → chercher par email */
       const supabase = getSupabaseAdmin();
-      const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      const {
+        data: { users },
+      } = await supabase.auth.admin.listUsers({ perPage: 1000 });
       const existing = users.find((u) => u.email === email);
 
       if (existing) {
-        await activateSubscription(existing.id, email, stripeCustomerId, stripeSubId);
-        console.log("[Webhook] ✅ Abonnement activé pour:", email);
-      } else {
-        /* Aucun compte → stocker l'email pour activation manuelle */
-        const supabaseAdmin = getSupabaseAdmin();
-        await supabaseAdmin.from("clients").upsert(
-          {
-            email,
-            abonnement: "outils_djama",
-            statut:     "actif",
-          },
-          { onConflict: "email" }
+        await activateSubscription(
+          existing.id,
+          email,
+          stripeCustomerId,
+          stripeSubId
         );
-        console.log("[Webhook] ⚠️ Email enregistré (sans compte), à créer:", email);
+        console.log("[Webhook] ✅ Abonnement activé (par email):", email);
+      } else {
+        /* Aucun compte Supabase → stocker pour activation manuelle */
+        await getSupabaseAdmin()
+          .from("clients")
+          .upsert(
+            { email, abonnement: "outils_djama", statut: "actif" },
+            { onConflict: "email" }
+          );
+        console.log(
+          "[Webhook] ⚠️ Paiement reçu sans compte — email enregistré:",
+          email
+        );
       }
     }
   }
 
-  /* ── customer.subscription.deleted ───────────────────── */
+  /* ── invoice.paid ────────────────────────────────────────── */
+  /*    Déclenché à chaque renouvellement mensuel réussi.      */
+  if (event.type === "invoice.paid") {
+    const invoice = event.data.object as Stripe.Invoice;
+
+    /* Ne traiter que les factures de renouvellement d'abonnement */
+    const isSubscriptionInvoice = (
+      invoice.billing_reason === "subscription_cycle" ||
+      invoice.billing_reason === "subscription_create" ||
+      invoice.billing_reason === "subscription_update"
+    );
+    if (!isSubscriptionInvoice) {
+      return NextResponse.json({ received: true });
+    }
+
+    await confirmSubscriptionActive(invoice.customer as string);
+  }
+
+  /* ── customer.subscription.updated ──────────────────────── */
+  /*    Déclenché lors de tout changement de statut :          */
+  /*    reprise, suspension, mise à jour de plan, etc.         */
+  if (event.type === "customer.subscription.updated") {
+    const sub = event.data.object as Stripe.Subscription;
+    await syncSubscriptionStatus(
+      sub.customer as string,
+      sub.status
+    );
+    console.log(
+      `[Webhook] 🔄 Subscription updated — statut: ${sub.status} — customer:`,
+      sub.customer
+    );
+  }
+
+  /* ── customer.subscription.deleted ──────────────────────── */
+  /*    Déclenché à la fin de la période de facturation        */
+  /*    après résiliation (ou immédiatement si cancel_now).    */
   if (event.type === "customer.subscription.deleted") {
     const sub = event.data.object as Stripe.Subscription;
     await deactivateSubscription(sub.customer as string);
-    console.log("[Webhook] 🔴 Abonnement résilié pour customer:", sub.customer);
+    console.log(
+      "[Webhook] 🔴 Subscription deleted — customer:",
+      sub.customer
+    );
   }
 
   return NextResponse.json({ received: true });
