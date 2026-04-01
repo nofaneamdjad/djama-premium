@@ -28,8 +28,11 @@ export type Service = {
     | "Documents & Outils"
     | "Accompagnement"
     | "Coaching";
-  icon: any;
+  icon: React.ElementType;
   highlights: string[];
+  titleEn?: string;
+  excerptEn?: string;
+  highlightsEn?: string[];
   ctaLabel?: string;
   ctaHref?: string;
 };
@@ -40,33 +43,45 @@ export const services: Service[] = [
     slug: "site-vitrine",
     title: "Site vitrine / portfolio",
     excerpt: "Design premium, rapide, pensé conversion (pro & clean).",
+    titleEn: "Showcase website / portfolio",
+    excerptEn: "Premium design, fast, built for conversion — professional and clean.",
     category: "Digital",
     icon: Code2,
     highlights: ["UX premium", "Responsive", "SEO de base", "Sections sur mesure"],
+    highlightsEn: ["Premium UX", "Responsive", "Basic SEO", "Custom sections"],
   },
   {
     slug: "site-ecommerce",
     title: "Site e-commerce",
     excerpt: "Boutique moderne + pages produit + parcours simple.",
+    titleEn: "E-commerce website",
+    excerptEn: "Modern shop + product pages + seamless checkout journey.",
     category: "Digital",
     icon: ShoppingCart,
     highlights: ["Pages produit", "Panier", "Paiements PayPal/virement", "Optimisation confiance"],
+    highlightsEn: ["Product pages", "Cart", "PayPal/bank transfer payments", "Trust optimisation"],
   },
   {
     slug: "application-mobile",
     title: "Application mobile",
     excerpt: "Application propre & évolutive (UX, performance).",
+    titleEn: "Mobile application",
+    excerptEn: "Clean & scalable application — great UX, solid performance.",
     category: "Digital",
     icon: Smartphone,
     highlights: ["UX moderne", "Fonctionnalités utiles", "Évolutif", "Accompagnement"],
+    highlightsEn: ["Modern UX", "Useful features", "Scalable", "Expert guidance"],
   },
   {
     slug: "plateforme-web",
     title: "Plateforme / outil web sur mesure",
     excerpt: "Dashboard, comptes, outils internes — comme un mini-SaaS.",
+    titleEn: "Custom web platform / tool",
+    excerptEn: "Dashboard, accounts, internal tools — like a mini-SaaS.",
     category: "Digital",
     icon: LayoutDashboard,
     highlights: ["Espace client", "Gestion simple", "Branding", "Scalable"],
+    highlightsEn: ["Client area", "Simple management", "Branding", "Scalable"],
   },
 
   // CRÉATION DE CONTENU
@@ -74,25 +89,34 @@ export const services: Service[] = [
     slug: "montage-video",
     title: "Montage vidéo pro",
     excerpt: "Reels, pubs, formats Instagram — style propre & premium.",
+    titleEn: "Professional video editing",
+    excerptEn: "Reels, ads, Instagram formats — clean and premium style.",
     category: "Création de contenu",
     icon: Video,
     highlights: ["Sous-titres", "Rythme pro", "Branding", "Formats réseaux sociaux"],
+    highlightsEn: ["Subtitles", "Professional pacing", "Branding", "Social media formats"],
   },
   {
     slug: "retouche-photo",
     title: "Retouche / montage photo",
     excerpt: "Visuels clean, retouche pro, cohérence de marque.",
+    titleEn: "Photo retouching / editing",
+    excerptEn: "Clean visuals, professional retouching, brand consistency.",
     category: "Création de contenu",
     icon: ImageIcon,
     highlights: ["Qualité pro", "Branding", "Posts", "Bannières"],
+    highlightsEn: ["Professional quality", "Branding", "Posts", "Banners"],
   },
   {
     slug: "visuels-publicitaires",
     title: "Visuels publicitaires",
     excerpt: "Posts & ads : design pro, impact et cohérence.",
+    titleEn: "Advertising visuals",
+    excerptEn: "Posts & ads: professional design, impact and brand consistency.",
     category: "Création de contenu",
     icon: Megaphone,
     highlights: ["Ads", "Posts", "Kits réseaux", "Cohérence visuelle"],
+    highlightsEn: ["Ads", "Posts", "Social media kits", "Visual consistency"],
   },
 
   // DOCUMENTS & OUTILS
@@ -100,25 +124,34 @@ export const services: Service[] = [
     slug: "factures-automatiques",
     title: "Factures automatiques",
     excerpt: "Logo + infos société + export : pro en 1 minute.",
+    titleEn: "Automated invoices",
+    excerptEn: "Logo + company info + export: professional in 1 minute.",
     category: "Documents & Outils",
     icon: FileText,
     highlights: ["Templates", "Branding", "Export", "Simple & rapide"],
+    highlightsEn: ["Templates", "Branding", "Export", "Simple & fast"],
   },
   {
     slug: "devis-automatiques",
     title: "Devis automatiques",
     excerpt: "Devis premium : clair, pro, rapide.",
+    titleEn: "Automated quotes",
+    excerptEn: "Premium quotes: clear, professional, fast.",
     category: "Documents & Outils",
     icon: ClipboardList,
     highlights: ["Templates", "Calcul simple", "Export", "Envoi client"],
+    highlightsEn: ["Templates", "Simple calculation", "Export", "Client delivery"],
   },
   {
     slug: "planning-agenda",
     title: "Planning / agenda",
     excerpt: "Organisation claire et efficace.",
+    titleEn: "Scheduling / calendar",
+    excerptEn: "Clear and efficient organisation.",
     category: "Documents & Outils",
     icon: BadgeCheck,
     highlights: ["Rappels", "Organisation", "Simple", "Efficace"],
+    highlightsEn: ["Reminders", "Organisation", "Simple", "Efficient"],
     ctaLabel: "En savoir plus",
     ctaHref: "/planning-agenda",
   },
@@ -126,9 +159,12 @@ export const services: Service[] = [
     slug: "bloc-notes",
     title: "Bloc-notes",
     excerpt: "Notes rapides + organisation (export possible ensuite).",
+    titleEn: "Professional notepad",
+    excerptEn: "Quick notes + organisation (export available).",
     category: "Documents & Outils",
     icon: NotebookPen,
     highlights: ["Notes", "Classement", "Téléchargement plus tard", "Propre"],
+    highlightsEn: ["Notes", "Filing", "Download later", "Clean"],
   },
 
   // ACCOMPAGNEMENT
@@ -136,25 +172,32 @@ export const services: Service[] = [
     slug: "creation-auto-entrepreneur",
     title: "Création auto-entrepreneur",
     excerpt: "Démarrage simple, rapide, clair.",
+    titleEn: "Sole trader registration",
+    excerptEn: "Simple, fast, clear business setup.",
     category: "Accompagnement",
     icon: Briefcase,
     highlights: ["Guidage", "Dossiers", "Étapes claires", "Soutien"],
+    highlightsEn: ["Guidance", "Documents", "Clear steps", "Support"],
   },
   {
     slug: "declarations-urssaf",
     title: "Déclarations URSSAF",
     excerpt: "Assistance administrative personnalisée.",
+    titleEn: "URSSAF declarations",
+    excerptEn: "Personalised administrative assistance.",
     category: "Accompagnement",
     icon: ClipboardList,
     highlights: ["Suivi", "Conseils", "Aide déclaration", "Sérénité"],
+    highlightsEn: ["Follow-up", "Advice", "Declaration assistance", "Peace of mind"],
   },
-
-  // ACCOMPAGNEMENT (suite)
   {
     slug: "assistance-administrative-entreprises",
     title: "Assistance administrative entreprises",
     excerpt:
       "Gestion documentaire, rédaction professionnelle et organisation interne — on prend en charge votre administratif pour que vous vous concentriez sur l'essentiel.",
+    titleEn: "Business administrative assistance",
+    excerptEn:
+      "Document management, professional writing and internal organisation — we handle your admin so you can focus on what matters.",
     category: "Accompagnement",
     icon: Building2,
     highlights: [
@@ -165,6 +208,14 @@ export const services: Service[] = [
       "Préparation des dossiers administratifs",
       "Confidentialité et discrétion garanties",
     ],
+    highlightsEn: [
+      "Document management and filing",
+      "Professional letters & email drafting",
+      "Legal and tax deadline monitoring",
+      "Internal dashboards and reporting",
+      "Administrative file preparation",
+      "Guaranteed confidentiality and discretion",
+    ],
     ctaLabel: "En savoir plus",
     ctaHref: "/services/assistance-administrative-entreprises",
   },
@@ -173,6 +224,9 @@ export const services: Service[] = [
     title: "Recherche de fournisseurs internationaux",
     excerpt:
       "Sourcing qualifié en Chine, Turquie, Dubaï et ailleurs — les meilleurs prix, les bons partenaires, sans les mauvaises surprises.",
+    titleEn: "International supplier sourcing",
+    excerptEn:
+      "Qualified sourcing in China, Turkey, Dubai and beyond — best prices, trusted partners, no bad surprises.",
     category: "Accompagnement",
     icon: Globe,
     highlights: [
@@ -183,6 +237,14 @@ export const services: Service[] = [
       "Suivi logistique et douanier",
       "Conseils import-export et réglementation",
     ],
+    highlightsEn: [
+      "Targeted sourcing: China, Turkey, Dubai, India…",
+      "Supplier verification and qualification",
+      "Price and terms negotiation",
+      "Order and timeline management",
+      "Logistics and customs monitoring",
+      "Import-export advice and regulations",
+    ],
     ctaLabel: "En savoir plus",
     ctaHref: "/services/fournisseurs-internationaux",
   },
@@ -191,6 +253,9 @@ export const services: Service[] = [
     title: "Marchés publics & privés",
     excerpt:
       "Répondez aux appels d'offres avec un dossier solide, clair et convaincant — de la veille jusqu'à la remise du mémoire technique.",
+    titleEn: "Public & private tenders",
+    excerptEn:
+      "Respond to tenders with a solid, clear and compelling application — from monitoring through to technical submission.",
     category: "Accompagnement",
     icon: Landmark,
     highlights: [
@@ -201,6 +266,14 @@ export const services: Service[] = [
       "Marchés publics et marchés privés",
       "Accompagnement de A à Z",
     ],
+    highlightsEn: [
+      "Tender monitoring and detection",
+      "Application compilation and review",
+      "Technical memorandum drafting",
+      "Responding to client queries",
+      "Public and private tenders",
+      "End-to-end support",
+    ],
     ctaLabel: "En savoir plus",
     ctaHref: "/services/marches-publics-prives",
   },
@@ -210,19 +283,25 @@ export const services: Service[] = [
     slug: "coaching-ia",
     title: "Coaching IA",
     excerpt: "190€ / 3 mois — stratégie + automatisation + support.",
+    titleEn: "AI Coaching",
+    excerptEn: "€190 / 3 months — strategy + automation + support.",
     category: "Coaching",
     icon: Brain,
-    highlights: ["Plan d’action", "Outils IA", "Suivi 3 mois", "Objectifs clairs"],
-    ctaLabel: "Voir l’offre",
+    highlights: ["Plan d'action", "Outils IA", "Suivi 3 mois", "Objectifs clairs"],
+    highlightsEn: ["Action plan", "AI tools", "3-month follow-up", "Clear objectives"],
+    ctaLabel: "Voir l'offre",
     ctaHref: "/coaching-ia",
   },
   {
     slug: "soutien-scolaire",
     title: "Soutien scolaire",
     excerpt: "14€/h — de la 6e à la Terminale — RDV en ligne.",
+    titleEn: "Academic tutoring",
+    excerptEn: "€14/h — from Year 7 to A-Level — online sessions.",
     category: "Coaching",
     icon: GraduationCap,
     highlights: ["Méthode", "Exercices", "Régularité", "RDV en ligne"],
+    highlightsEn: ["Methodology", "Exercises", "Consistency", "Online sessions"],
     ctaLabel: "Prendre RDV",
     ctaHref: "/soutien-scolaire",
   },

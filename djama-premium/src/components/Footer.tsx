@@ -13,41 +13,28 @@ import { getSiteData } from "@/lib/site-data";
 import { staggerContainer, fadeUp, viewport } from "@/lib/animations";
 import { useLanguage } from "@/lib/language-context";
 
-/* ── Données nav ─────────────────────────────── */
-const SERVICES_LINKS_FR = [
-  { href: "/services",         label: "Tous les services"      },
-  { href: "/realisations",     label: "Réalisations"           },
-  { href: "/abonnement",       label: "Outils professionnels"  },
-  { href: "/coaching-ia",      label: "Coaching IA"            },
-  { href: "/soutien-scolaire", label: "Soutien scolaire"       },
-];
-const SERVICES_LINKS_EN = [
-  { href: "/services",         label: "All services"           },
-  { href: "/realisations",     label: "Projects"               },
-  { href: "/abonnement",       label: "Pro tools"              },
-  { href: "/coaching-ia",      label: "AI Coaching"            },
-  { href: "/soutien-scolaire", label: "Tutoring"               },
+/* ── Liens services / compte (hrefs) ─────────── */
+const SERVICES_HREFS = [
+  "/services",
+  "/realisations",
+  "/abonnement",
+  "/coaching-ia",
+  "/soutien-scolaire",
 ];
 
-const ACCOUNT_LINKS_FR = [
-  { href: "/client",   label: "Espace client" },
-  { href: "/login",    label: "Connexion"      },
-  { href: "/register", label: "Inscription"    },
-  { href: "/contact",  label: "Contact"        },
-];
-const ACCOUNT_LINKS_EN = [
-  { href: "/client",   label: "Client area"  },
-  { href: "/login",    label: "Sign in"       },
-  { href: "/register", label: "Sign up"       },
-  { href: "/contact",  label: "Contact"       },
+const ACCOUNT_HREFS = [
+  "/client",
+  "/login",
+  "/register",
+  "/contact",
 ];
 
 const LEGAL_LINKS = [
-  { href: "/legal/mentions-legales",          label: "Mentions légales",           labelEn: "Legal notice"      },
-  { href: "/legal/cgu",                       label: "CGU",                        labelEn: "Terms of service"  },
-  { href: "/legal/confidentialite",           label: "Politique de confidentialité", labelEn: "Privacy policy"  },
-  { href: "/legal/cookies",                   label: "Cookies",                    labelEn: "Cookies"           },
-  { href: "/legal/securite",                  label: "Sécurité",                   labelEn: "Security"          },
+  { href: "/legal/mentions-legales",  label: "Mentions légales",              labelEn: "Legal notice"      },
+  { href: "/legal/cgu",               label: "CGU",                           labelEn: "Terms of service"  },
+  { href: "/legal/confidentialite",   label: "Politique de confidentialité",  labelEn: "Privacy policy"    },
+  { href: "/legal/cookies",           label: "Cookies",                       labelEn: "Cookies"           },
+  { href: "/legal/securite",          label: "Sécurité",                      labelEn: "Security"          },
 ];
 
 /* ── Réseaux sociaux ─────────────────────────── */
@@ -99,10 +86,18 @@ function LangSwitcher() {
 /* ── Footer ──────────────────────────────────── */
 export default function Footer() {
   const data = getSiteData();
-  const { lang, t } = useLanguage();
+  const { lang, dict } = useLanguage();
+  const f = dict.footer;
 
-  const servicesLinks = lang === "en" ? SERVICES_LINKS_EN : SERVICES_LINKS_FR;
-  const accountLinks  = lang === "en" ? ACCOUNT_LINKS_EN  : ACCOUNT_LINKS_FR;
+  const servicesLinks = SERVICES_HREFS.map((href, i) => ({
+    href,
+    label: f.services.links[i]?.label ?? "",
+  }));
+
+  const accountLinks = ACCOUNT_HREFS.map((href, i) => ({
+    href,
+    label: f.account.links[i]?.label ?? "",
+  }));
 
   return (
     <footer className="border-t border-white/[0.07] bg-[#09090b]">
@@ -138,10 +133,7 @@ export default function Footer() {
             </Link>
 
             <p className="max-w-xs text-sm leading-relaxed text-white/35">
-              {t(
-                "Création digitale, outils professionnels et accompagnement pour entrepreneurs, particuliers et entreprises.",
-                "Digital creation, professional tools and support for entrepreneurs, individuals and businesses.",
-              )}
+              {f.tagline}
             </p>
 
             <div className="mt-6 flex flex-col gap-2.5">
@@ -166,7 +158,7 @@ export default function Footer() {
           {/* Services */}
           <motion.div variants={fadeUp}>
             <h4 className="mb-5 text-[0.65rem] font-black uppercase tracking-[0.15em] text-white/25">
-              {t("Services", "Services")}
+              {f.services.title}
             </h4>
             <ul className="flex flex-col gap-3">
               {servicesLinks.map(({ href, label }) => (
@@ -186,7 +178,7 @@ export default function Footer() {
           {/* Compte */}
           <motion.div variants={fadeUp}>
             <h4 className="mb-5 text-[0.65rem] font-black uppercase tracking-[0.15em] text-white/25">
-              {t("Mon compte", "My account")}
+              {f.account.title}
             </h4>
             <ul className="flex flex-col gap-3">
               {accountLinks.map(({ href, label }) => (
@@ -215,7 +207,7 @@ export default function Footer() {
           {/* Socials */}
           <div className="flex flex-col items-center gap-3 sm:items-start">
             <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/25">
-              {t("DJAMA sur les réseaux", "Follow DJAMA")}
+              {f.social.title}
             </p>
             <div className="flex items-center gap-2">
               {SOCIALS.map(({ Icon, label, href }) => (
@@ -239,7 +231,7 @@ export default function Footer() {
           {/* Langue */}
           <div className="flex flex-col items-center gap-2 sm:items-end">
             <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/25">
-              {t("Langue", "Language")}
+              {f.language.title}
             </p>
             <LangSwitcher />
           </div>
@@ -265,8 +257,7 @@ export default function Footer() {
 
           {/* Copyright */}
           <p className="text-center text-[0.68rem] text-white/20">
-            © {new Date().getFullYear()} DJAMA —{" "}
-            {t("Tous droits réservés", "All rights reserved")}
+            © {new Date().getFullYear()} DJAMA — {f.copyright}
           </p>
         </div>
       </div>

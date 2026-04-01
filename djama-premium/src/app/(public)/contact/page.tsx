@@ -12,31 +12,10 @@ import {
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
 import { getSiteData } from "@/lib/site-data";
+import { useLanguage } from "@/lib/language-context";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const siteData = getSiteData();
-
-/* ── Sujets ───────────────────────────────────── */
-const SUBJECTS = [
-  "Création de site web",
-  "Application mobile",
-  "Design & identité visuelle",
-  "Assistance administrative",
-  "Recherche de fournisseurs",
-  "Marchés publics & privés",
-  "Coaching IA",
-  "Soutien scolaire",
-  "Outils professionnels",
-  "Autre demande",
-];
-
-const BUDGETS = [
-  { value: "under500",    label: "Moins de 500€"       },
-  { value: "500_2000",    label: "500€ – 2 000€"        },
-  { value: "2000_10000",  label: "2 000€ – 10 000€"     },
-  { value: "over10000",   label: "Plus de 10 000€"      },
-  { value: "unknown",     label: "Je ne sais pas encore" },
-];
 
 /* ── Validation ───────────────────────────────── */
 function isEmailValid(v: string) {
@@ -165,6 +144,12 @@ function PremiumSelect({
    PAGE
 ════════════════════════════════════════════════ */
 export default function ContactPage() {
+  const { dict } = useLanguage();
+  const c = dict.contact;
+
+  const SUBJECTS = c.form.subjects.map((s) => ({ value: s, label: s }));
+  const BUDGETS  = c.form.budgets;
+
   const [name,    setName]    = useState("");
   const [email,   setEmail]   = useState("");
   const [subject, setSubject] = useState("");
@@ -181,6 +166,24 @@ export default function ContactPage() {
   }
 
   const canSubmit = name.trim() && isEmailValid(email) && subject && message.trim().length > 10;
+
+  const TRUST_ICONS = [Zap, Users, CheckCircle2, TrendingUp, Star, Shield] as const;
+  const TRUST_COLORS = [
+    { color: "#c9a55a", rgb: "201,165,90"  },
+    { color: "#60a5fa", rgb: "96,165,250"  },
+    { color: "#4ade80", rgb: "74,222,128"  },
+    { color: "#f9a826", rgb: "249,168,38"  },
+    { color: "#a78bfa", rgb: "167,139,250" },
+    { color: "#f87171", rgb: "248,113,113" },
+  ] as const;
+
+  const PROCESS_ICONS = [Send, Search, MessageSquare, TrendingUp] as const;
+  const PROCESS_COLORS = [
+    { color: "#c9a55a", rgb: "201,165,90"  },
+    { color: "#60a5fa", rgb: "96,165,250"  },
+    { color: "#4ade80", rgb: "74,222,128"  },
+    { color: "#a78bfa", rgb: "167,139,250" },
+  ] as const;
 
   return (
     <div className="bg-[#09090b]">
@@ -206,13 +209,12 @@ export default function ContactPage() {
             transition={{ duration: 0.55, ease }}
             className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]"
           >
-            <Sparkles size={11} /> Discutons de votre projet
+            <Sparkles size={11} /> {c.hero.badge}
           </motion.div>
 
-          {/* Titre avec halo sur "projet" */}
           <h1 className="display-hero text-white">
             <MultiLineReveal
-              lines={["Parlons de votre", "projet."]}
+              lines={c.hero.titleLines}
               highlight={1}
               stagger={0.18}
               wordStagger={0.07}
@@ -221,21 +223,15 @@ export default function ContactPage() {
             />
           </h1>
 
-          {/* Halo derrière "projet" */}
           <div className="pointer-events-none absolute left-1/2 top-[55%] -translate-x-1/2 -translate-y-1/2 h-24 w-64 rounded-full bg-[rgba(201,165,90,0.15)] blur-[40px]" />
 
           <FadeReveal delay={0.65} as="p" className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-white/45">
-            Une idée, un besoin, une question ? Décrivez-nous votre projet —
-            nous vous répondons rapidement avec une solution claire et adaptée.
+            {c.hero.subtitle}
           </FadeReveal>
 
           {/* Badges animés */}
           <FadeReveal delay={0.82} className="mt-10 flex flex-wrap justify-center gap-3">
-            {[
-              { icon: Clock,         text: "Réponse sous 24h",        color: "#c9a55a", rgb: "201,165,90"  },
-              { icon: Users,         text: "Accompagnement sur mesure", color: "#60a5fa", rgb: "96,165,250" },
-              { icon: MessageCircle, text: "WhatsApp disponible",       color: "#25d366", rgb: "37,211,102" },
-            ].map(({ icon: Icon, text, color, rgb }, i) => (
+            {c.hero.badges.map(({ text, color, rgb }, i) => (
               <motion.div
                 key={text}
                 initial={{ opacity: 0, scale: 0.85 }}
@@ -248,7 +244,9 @@ export default function ContactPage() {
                   color,
                 }}
               >
-                <Icon size={12} />
+                {i === 0 && <Clock size={12} />}
+                {i === 1 && <Users size={12} />}
+                {i === 2 && <MessageCircle size={12} />}
                 {text}
               </motion.div>
             ))}
@@ -282,10 +280,10 @@ export default function ContactPage() {
                         </div>
                         <div>
                           <p className="text-[0.65rem] font-black uppercase tracking-[0.15em] text-[#c9a55a]">
-                            Formulaire de contact
+                            {c.form.subtitle}
                           </p>
                           <p className="text-base font-extrabold text-white">
-                            Envoyez-nous un message
+                            {c.form.title}
                           </p>
                         </div>
                       </div>
@@ -301,7 +299,7 @@ export default function ContactPage() {
                           </label>
                           <PremiumInput
                             icon={User}
-                            placeholder="Jean Dupont"
+                            placeholder={c.form.namePlaceholder}
                             value={name}
                             onChange={setName}
                             required
@@ -314,7 +312,7 @@ export default function ContactPage() {
                           <PremiumInput
                             icon={Mail}
                             type="email"
-                            placeholder="vous@exemple.com"
+                            placeholder={c.form.emailPlaceholder}
                             value={email}
                             onChange={setEmail}
                             required
@@ -330,10 +328,10 @@ export default function ContactPage() {
                         </label>
                         <PremiumSelect
                           icon={Search}
-                          placeholder="Sélectionner un sujet…"
+                          placeholder={c.form.subjectPlaceholder}
                           value={subject}
                           onChange={setSubject}
-                          options={SUBJECTS.map((s) => ({ value: s, label: s }))}
+                          options={SUBJECTS}
                         />
                       </div>
 
@@ -344,7 +342,7 @@ export default function ContactPage() {
                         </label>
                         <PremiumSelect
                           icon={Wallet}
-                          placeholder="Votre budget approximatif…"
+                          placeholder={c.form.budgetPlaceholder}
                           value={budget}
                           onChange={setBudget}
                           options={BUDGETS}
@@ -357,7 +355,7 @@ export default function ContactPage() {
                           Décrivez votre projet *
                         </label>
                         <PremiumTextarea
-                          placeholder="Décrivez votre projet, vos besoins, vos contraintes… Plus c'est précis, mieux nous pouvons vous aider."
+                          placeholder={c.form.messagePlaceholder}
                           value={message}
                           onChange={setMessage}
                           rows={5}
@@ -388,11 +386,11 @@ export default function ContactPage() {
                                 transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
                                 className="inline-block h-4 w-4 rounded-full border-2 border-[#09090b]/30 border-t-[#09090b]"
                               />
-                              Envoi en cours…
+                              {c.form.sending}
                             </>
                           ) : (
                             <>
-                              Envoyer le message
+                              {c.form.submit}
                               <Send size={15} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                             </>
                           )}
@@ -400,7 +398,7 @@ export default function ContactPage() {
                       </motion.button>
 
                       <p className="text-center text-[0.68rem] text-white/20">
-                        Paiement accepté après accord : PayPal ou virement bancaire · Sans engagement
+                        {c.form.disclaimer}
                       </p>
                     </form>
                   </motion.div>
@@ -427,7 +425,7 @@ export default function ContactPage() {
                       transition={{ delay: 0.3 }}
                       className="text-2xl font-extrabold text-white"
                     >
-                      Message envoyé ! 🎉
+                      {c.form.successTitle}
                     </motion.h3>
                     <motion.p
                       initial={{ opacity: 0, y: 8 }}
@@ -435,8 +433,7 @@ export default function ContactPage() {
                       transition={{ delay: 0.4 }}
                       className="mt-3 max-w-xs text-sm leading-relaxed text-white/45"
                     >
-                      Merci pour votre message. Nous vous répondons sous 24h —
-                      surveillez votre boîte e-mail.
+                      {c.form.successText}
                     </motion.p>
                     <motion.div
                       initial={{ opacity: 0 }}
@@ -445,7 +442,7 @@ export default function ContactPage() {
                       className="mt-6 flex items-center gap-2 rounded-full border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.06)] px-4 py-2"
                     >
                       <Clock size={12} className="text-[#34d399]" />
-                      <span className="text-xs font-bold text-[#34d399]">Réponse attendue sous 24h</span>
+                      <span className="text-xs font-bold text-[#34d399]">{c.form.successBadge}</span>
                     </motion.div>
                     <button
                       onClick={() => {
@@ -454,7 +451,7 @@ export default function ContactPage() {
                       }}
                       className="mt-8 text-sm font-bold text-white/30 transition hover:text-white/60"
                     >
-                      Envoyer un autre message →
+                      {c.form.newMessage}
                     </button>
                   </motion.div>
                 )}
@@ -478,12 +475,12 @@ export default function ContactPage() {
                   <div className="mb-5 flex items-center gap-2">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
                     <p className="text-[0.65rem] font-black uppercase tracking-[0.15em] text-white/30">
-                      Contact direct
+                      {c.contactBlock.title}
                     </p>
                   </div>
-                  <h3 className="text-xl font-extrabold text-white">On est là pour vous</h3>
+                  <h3 className="text-xl font-extrabold text-white">{c.contactBlock.title}</h3>
                   <p className="mt-1.5 text-sm text-white/35">
-                    Choisissez le canal qui vous convient.
+                    {c.contactBlock.subtitle}
                   </p>
 
                   {/* Canaux */}
@@ -497,7 +494,7 @@ export default function ContactPage() {
                         <Mail size={15} className="text-[#c9a55a]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">E-mail</p>
+                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{c.contactBlock.emailLabel}</p>
                         <p className="truncate text-sm font-semibold text-white/75">{siteData.contact.email}</p>
                       </div>
                       <ArrowRight size={13} className="shrink-0 text-white/20 transition-transform group-hover:translate-x-0.5 group-hover:text-[#c9a55a]" />
@@ -513,7 +510,7 @@ export default function ContactPage() {
                         <MessageCircle size={15} className="text-[#25d366]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">WhatsApp</p>
+                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{c.contactBlock.whatsappLabel}</p>
                         <p className="text-sm font-semibold text-white/75">{siteData.contact.whatsapp}</p>
                       </div>
                       <span className="shrink-0 rounded-full bg-[rgba(37,211,102,0.15)] px-2 py-0.5 text-[0.55rem] font-black text-[#25d366]">
@@ -527,7 +524,7 @@ export default function ContactPage() {
                         <Phone size={15} className="text-[#60a5fa]" />
                       </div>
                       <div>
-                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Téléphone</p>
+                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{c.contactBlock.phoneLabel}</p>
                         <p className="text-sm font-semibold text-white/75">{siteData.contact.whatsapp}</p>
                       </div>
                     </div>
@@ -538,8 +535,8 @@ export default function ContactPage() {
                         <Clock size={15} className="text-[#34d399]" />
                       </div>
                       <div>
-                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Délai de réponse</p>
-                        <p className="text-sm font-semibold text-white/75">Sous 24 heures</p>
+                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{c.contactBlock.delayLabel}</p>
+                        <p className="text-sm font-semibold text-white/75">{c.contactBlock.delayValue}</p>
                       </div>
                     </div>
                   </div>
@@ -551,7 +548,7 @@ export default function ContactPage() {
                     className="group mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)] py-3 text-sm font-bold text-[#c9a55a] transition-all duration-200 hover:bg-[rgba(201,165,90,0.14)] hover:border-[rgba(201,165,90,0.4)]"
                   >
                     <Calendar size={14} />
-                    Réserver un appel découverte
+                    {c.contactBlock.bookBtn}
                     <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
                   </a>
                 </div>
@@ -602,13 +599,13 @@ export default function ContactPage() {
           >
             <div className="mb-16 text-center">
               <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
-                <Zap size={10} /> Processus simple
+                <Zap size={10} /> {c.process.badge}
               </motion.span>
               <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">
-                Comment ça se passe.
+                {c.process.title}
               </motion.h2>
               <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-base text-white/35">
-                De votre demande au lancement, un processus clair en 4 étapes.
+                {c.process.subtitle}
               </motion.p>
             </div>
 
@@ -616,67 +613,50 @@ export default function ContactPage() {
               variants={staggerContainerFast}
               className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
             >
-              {[
-                {
-                  step: "01", icon: Send,          color: "#c9a55a", rgb: "201,165,90",
-                  title: "Votre demande",
-                  desc: "Remplissez le formulaire ou écrivez-nous directement. Décrivez votre projet en quelques lignes.",
-                },
-                {
-                  step: "02", icon: Search,        color: "#60a5fa", rgb: "96,165,250",
-                  title: "Analyse",
-                  desc: "Nous étudions votre besoin, définissons la meilleure approche et préparons notre réponse.",
-                },
-                {
-                  step: "03", icon: MessageSquare, color: "#4ade80", rgb: "74,222,128",
-                  title: "Proposition",
-                  desc: "Vous recevez une proposition claire : solution, délai, tarif. Pas de surprise, tout est transparent.",
-                },
-                {
-                  step: "04", icon: TrendingUp,    color: "#a78bfa", rgb: "167,139,250",
-                  title: "Lancement",
-                  desc: "Après validation, nous démarrons. Vous êtes tenu informé à chaque étape jusqu'à la livraison.",
-                },
-              ].map(({ step, icon: Icon, color, rgb, title, desc }) => (
-                <motion.div
-                  key={step}
-                  variants={cardReveal}
-                  className="group relative flex flex-col gap-5 overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[#111113] p-6 transition-all duration-400 hover:border-white/[0.13] hover:-translate-y-1"
-                  style={{ "--step-color": color } as React.CSSProperties}
-                >
-                  {/* Numéro en fond */}
-                  <div
-                    className="pointer-events-none absolute right-4 top-2 text-[4rem] font-black leading-none opacity-[0.04] select-none"
-                    style={{ color }}
+              {c.process.steps.map(({ step, title, desc }, i) => {
+                const Icon = PROCESS_ICONS[i];
+                const { color, rgb } = PROCESS_COLORS[i];
+                return (
+                  <motion.div
+                    key={step}
+                    variants={cardReveal}
+                    className="group relative flex flex-col gap-5 overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[#111113] p-6 transition-all duration-400 hover:border-white/[0.13] hover:-translate-y-1"
+                    style={{ "--step-color": color } as React.CSSProperties}
                   >
-                    {step}
-                  </div>
-
-                  {/* Icône */}
-                  <div
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-xl border"
-                    style={{
-                      background: `rgba(${rgb}, 0.10)`,
-                      borderColor: `rgba(${rgb}, 0.22)`,
-                    }}
-                  >
-                    <Icon size={22} style={{ color }} />
-                  </div>
-
-                  {/* Numéro badge */}
-                  <div>
-                    <span
-                      className="text-[0.6rem] font-black uppercase tracking-[0.18em]"
+                    {/* Numéro en fond */}
+                    <div
+                      className="pointer-events-none absolute right-4 top-2 text-[4rem] font-black leading-none opacity-[0.04] select-none"
                       style={{ color }}
                     >
-                      Étape {step}
-                    </span>
-                    <h3 className="mt-1 text-[0.95rem] font-extrabold text-white/85">{title}</h3>
-                  </div>
+                      {step}
+                    </div>
 
-                  <p className="text-xs leading-relaxed text-white/40">{desc}</p>
-                </motion.div>
-              ))}
+                    {/* Icône */}
+                    <div
+                      className="inline-flex h-12 w-12 items-center justify-center rounded-xl border"
+                      style={{
+                        background: `rgba(${rgb}, 0.10)`,
+                        borderColor: `rgba(${rgb}, 0.22)`,
+                      }}
+                    >
+                      <Icon size={22} style={{ color }} />
+                    </div>
+
+                    {/* Numéro badge */}
+                    <div>
+                      <span
+                        className="text-[0.6rem] font-black uppercase tracking-[0.18em]"
+                        style={{ color }}
+                      >
+                        Étape {step}
+                      </span>
+                      <h3 className="mt-1 text-[0.95rem] font-extrabold text-white/85">{title}</h3>
+                    </div>
+
+                    <p className="text-xs leading-relaxed text-white/40">{desc}</p>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           </motion.div>
         </div>
@@ -693,37 +673,34 @@ export default function ContactPage() {
           >
             <div className="mb-14 text-center">
               <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
-                <Shield size={10} /> Nos engagements
+                <Shield size={10} /> {c.trust.badge}
               </motion.span>
               <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">
-                Pourquoi travailler avec DJAMA.
+                {c.trust.title}
               </motion.h2>
             </div>
 
             <motion.div variants={staggerContainerFast} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                { icon: Zap,          color: "#c9a55a", rgb: "201,165,90", title: "Approche moderne", desc: "IA augmentée, process optimisés, outils récents. Nous travaillons avec les meilleures technologies disponibles." },
-                { icon: Users,        color: "#60a5fa", rgb: "96,165,250", title: "Accompagnement humain", desc: "Pas de ticket de support anonyme. Vous avez une vraie relation directe avec l'équipe qui travaille pour vous." },
-                { icon: CheckCircle2, color: "#4ade80", rgb: "74,222,128", title: "Solutions claires", desc: "Chaque proposition est simple, lisible et sans jargon. Vous savez exactement ce que vous payez et ce que vous recevez." },
-                { icon: TrendingUp,   color: "#f9a826", rgb: "249,168,38", title: "Rapidité d'exécution", desc: "Grâce à nos workflows optimisés, nous livrons plus vite que les agences traditionnelles, sans sacrifier la qualité." },
-                { icon: Star,         color: "#a78bfa", rgb: "167,139,250", title: "Qualité premium", desc: "Chaque livrable est soigné, pensé dans les détails. L'image que vous projetez mérite le meilleur." },
-                { icon: Shield,       color: "#f87171", rgb: "248,113,113", title: "Fiabilité totale", desc: "Délais respectés, communication transparente, suivi rigoureux. Vous pouvez compter sur nous à chaque étape." },
-              ].map(({ icon: Icon, color, rgb, title, desc }) => (
-                <motion.div
-                  key={title}
-                  variants={cardReveal}
-                  className="group rounded-[1.5rem] border border-white/[0.07] bg-[#111113] p-6 transition-all duration-300 hover:border-white/[0.13] hover:bg-white/[0.04]"
-                >
-                  <div
-                    className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl border"
-                    style={{ background: `rgba(${rgb}, 0.10)`, borderColor: `rgba(${rgb}, 0.22)` }}
+              {c.trust.items.map(({ title, desc }, i) => {
+                const Icon = TRUST_ICONS[i];
+                const { color, rgb } = TRUST_COLORS[i];
+                return (
+                  <motion.div
+                    key={title}
+                    variants={cardReveal}
+                    className="group rounded-[1.5rem] border border-white/[0.07] bg-[#111113] p-6 transition-all duration-300 hover:border-white/[0.13] hover:bg-white/[0.04]"
                   >
-                    <Icon size={20} style={{ color }} />
-                  </div>
-                  <h3 className="text-[0.9rem] font-extrabold text-white/85">{title}</h3>
-                  <p className="mt-2 text-xs leading-relaxed text-white/38">{desc}</p>
-                </motion.div>
-              ))}
+                    <div
+                      className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl border"
+                      style={{ background: `rgba(${rgb}, 0.10)`, borderColor: `rgba(${rgb}, 0.22)` }}
+                    >
+                      <Icon size={20} style={{ color }} />
+                    </div>
+                    <h3 className="text-[0.9rem] font-extrabold text-white/85">{title}</h3>
+                    <p className="mt-2 text-xs leading-relaxed text-white/38">{desc}</p>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           </motion.div>
         </div>
@@ -740,25 +717,25 @@ export default function ContactPage() {
             viewport={viewport}
             transition={{ duration: 0.7, ease }}
           >
-            <p className="text-[0.7rem] font-black uppercase tracking-[0.18em] text-[#c9a55a]">Devis gratuit</p>
-            <h2 className="display-section mt-3 text-white">Prêt à démarrer ?</h2>
+            <p className="text-[0.7rem] font-black uppercase tracking-[0.18em] text-[#c9a55a]">{c.finalCta.label}</p>
+            <h2 className="display-section mt-3 text-white">{c.finalCta.title}</h2>
             <p className="mx-auto mt-4 max-w-md text-base text-white/35">
               Envoyez votre demande maintenant — nous vous répondons sous 24h avec une proposition adaptée.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <a
-                href="#services"
+                href="#"
                 onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 className="btn-primary px-8 py-4"
               >
-                Envoyer ma demande <ArrowRight size={16} />
+                {c.finalCta.btn1} <ArrowRight size={16} />
               </a>
               <a
                 href={`https://wa.me/${siteData.contact.whatsapp.replace(/\D/g, "")}`}
                 target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-[1.25rem] border border-[rgba(37,211,102,0.25)] bg-[rgba(37,211,102,0.07)] px-8 py-4 text-sm font-bold text-[#25d366] transition-all hover:bg-[rgba(37,211,102,0.12)]"
               >
-                <MessageCircle size={16} /> WhatsApp direct
+                <MessageCircle size={16} /> {c.finalCta.btn2}
               </a>
             </div>
           </motion.div>
