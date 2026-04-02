@@ -540,15 +540,14 @@ export default function ContactPage() {
                   </div>
 
                   {/* Bouton Réserver un appel */}
-                  <a
-                    href={`https://wa.me/${siteData.contact.whatsapp.replace(/\D/g, "")}?text=Bonjour%2C%20je%20souhaite%20r%C3%A9server%20un%20appel%20d%C3%A9couverte.`}
-                    target="_blank" rel="noopener noreferrer"
+                  <Link
+                    href="/reserver-appel"
                     className="group mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)] py-3 text-sm font-bold text-[#c9a55a] transition-all duration-200 hover:bg-[rgba(201,165,90,0.14)] hover:border-[rgba(201,165,90,0.4)]"
                   >
                     <Calendar size={14} />
                     {c.contactBlock.bookBtn}
                     <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
-                  </a>
+                  </Link>
                 </div>
               </motion.div>
 
