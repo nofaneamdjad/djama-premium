@@ -367,6 +367,6 @@ export const services: Service[] = [
     highlightsEn: ["Methodology", "Exercises", "Consistency", "Online sessions"],
     ctaLabel: "Prendre RDV",
     ctaLabelEn: "Book a session",
-    ctaHref: "/contact",
+    ctaHref: "/services/soutien-scolaire",
   },
 ];
