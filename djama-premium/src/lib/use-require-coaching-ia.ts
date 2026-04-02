@@ -118,6 +118,21 @@ export function useCoachingIAAccess() {
         name:  meta.full_name ?? meta.name ?? authUser.email,
       };
 
+      /* ── Whitelist dev (NEXT_PUBLIC_COACHING_DEV_EMAILS) ──
+         Liste d'emails séparés par des virgules — accès complet
+         sans paiement, pour tests visuels uniquement.
+         Exemple : NEXT_PUBLIC_COACHING_DEV_EMAILS=dev@djama.fr,test@djama.fr
+      ────────────────────────────────────────────────────── */
+      const devEmails = (process.env.NEXT_PUBLIC_COACHING_DEV_EMAILS ?? "")
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (devEmails.includes((authUser.email ?? "").toLowerCase())) {
+        if (!cancelled) { setUser(userObj); setAccess("full"); }
+        return;
+      }
+
       if (meta.coaching_ia_active === true) {
         if (!cancelled) { setUser(userObj); setAccess("full"); }
         return;
