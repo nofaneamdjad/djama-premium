@@ -8,9 +8,10 @@ import { supabase } from "@/lib/supabase";
  * Hook de protection — espace client DJAMA
  *
  * Vérifie dans cet ordre :
- *  1. Utilisateur authentifié (sinon → /login)
- *  2. Abonnement actif dans user_metadata (posé par le webhook Stripe)
- *  3. Fallback sur la table clients (email + abonnement + statut)
+ *  1. Utilisateur authentifié          (sinon → /login)
+ *  2. subscription_active === true     dans user_metadata  (booléen posé par le webhook)
+ *  3. Fallback abonnement + statut     dans user_metadata  (rétrocompatibilité)
+ *  4. Fallback table clients           (au cas où metadata pas encore rafraîchi)
  *
  * Si aucune condition n'est remplie → /espace-client?acces=requis
  */
@@ -28,33 +29,40 @@ export function useRequireSubscription() {
 
       if (cancelled) return;
 
-      // 1. Non authentifié → page de connexion
+      /* 1. Non authentifié → page de connexion */
       if (!user) {
         router.replace("/login?redirect=/client");
         return;
       }
 
-      // 2. Vérifier user_metadata (mis à jour par webhook Stripe)
       const meta = user.user_metadata ?? {};
-      const metaActive =
-        meta.abonnement === "outils_djama" && meta.statut === "actif";
 
-      if (metaActive) {
+      /* 2. Vérification principale : subscription_active (booléen Stripe webhook) */
+      if (meta.subscription_active === true) {
         if (!cancelled) setReady(true);
         return;
       }
 
-      // 3. Fallback — table clients (au cas où metadata pas encore rafraîchi)
+      /* 3. Fallback metadata legacy (abonnement + statut) */
+      const metaLegacyActive =
+        meta.abonnement === "outils_djama" && meta.statut === "actif";
+      if (metaLegacyActive) {
+        if (!cancelled) setReady(true);
+        return;
+      }
+
+      /* 4. Fallback DB — table clients */
       const { data: client } = await supabase
         .from("clients")
-        .select("abonnement, statut")
+        .select("subscription_active, abonnement, statut")
         .eq("email", user.email ?? "")
         .maybeSingle();
 
       if (cancelled) return;
 
       const dbActive =
-        client?.abonnement === "outils_djama" && client?.statut === "actif";
+        client?.subscription_active === true ||
+        (client?.abonnement === "outils_djama" && client?.statut === "actif");
 
       if (!dbActive) {
         router.replace("/espace-client?acces=requis");

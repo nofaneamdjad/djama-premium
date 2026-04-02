@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import {
   FileText, CalendarDays, StickyNote, LayoutDashboard, FolderOpen,
@@ -133,12 +134,37 @@ const TRUST = [
 ] as const;
 
 /* ─────────────────────────────────────────────────────────
+   Redirection automatique si déjà abonné
+───────────────────────────────────────────────────────── */
+function AlreadySubscribedRedirect() {
+  const params = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    /* Ne pas rediriger si paiement annulé ou accès refusé */
+    if (params.get("annule") === "1" || params.get("acces") === "requis") return;
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const meta = user.user_metadata ?? {};
+      const active =
+        meta.subscription_active === true ||
+        (meta.abonnement === "outils_djama" && meta.statut === "actif");
+      if (active) router.replace("/client");
+    });
+  }, [params, router]);
+
+  return null;
+}
+
+/* ─────────────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────────────── */
 export default function EspaceClientPage() {
   return (
     <div className="bg-white">
       <Suspense>
+        <AlreadySubscribedRedirect />
         <AccessBanner />
       </Suspense>
 
