@@ -97,6 +97,101 @@ async function upsertClientRecord(opts: {
    checkout.session.completed
    → Flux principal : créer compte + activer + envoyer email
 ───────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   Activer Coaching IA (paiement unique 190€)
+───────────────────────────────────────────────────────────── */
+async function activateCoachingIA(session: Stripe.Checkout.Session) {
+  const email          = session.customer_details?.email ?? null;
+  const fullName       = session.customer_details?.name  ?? null;
+  const providedUserId = session.client_reference_id     ?? null;
+
+  if (!email) {
+    console.warn("[Webhook] ⚠️ coaching_ia : pas d'email");
+    return;
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  /* Trouver ou créer le compte */
+  let user = providedUserId
+    ? (await supabase.auth.admin.getUserById(providedUserId)).data?.user ?? null
+    : await findUserByEmail(email);
+
+  /* Expiry : 90 jours */
+  const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+
+  let isNewUser = false;
+  let userId: string;
+
+  if (!user) {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email,
+      email_confirm: true,
+      user_metadata: {
+        full_name:           fullName,
+        coaching_ia_active:  true,
+        coaching_ia_expires: expiresAt,
+      },
+    });
+    if (error || !data.user) {
+      console.error("[Webhook] ❌ coaching_ia createUser:", error?.message);
+      return;
+    }
+    user      = data.user;
+    userId    = data.user.id;
+    isNewUser = true;
+  } else {
+    userId = providedUserId ?? user.id;
+    await supabase.auth.admin.updateUserById(user.id, {
+      user_metadata: {
+        ...user.user_metadata,
+        full_name:           fullName ?? user.user_metadata?.full_name,
+        coaching_ia_active:  true,
+        coaching_ia_expires: expiresAt,
+      },
+    });
+  }
+
+  /* Upsert clients */
+  await supabase.from("clients").upsert(
+    {
+      user_id:             userId,
+      email,
+      full_name:           fullName,
+      coaching_ia_active:  true,
+      coaching_ia_expires: expiresAt,
+      updated_at:          new Date().toISOString(),
+    },
+    { onConflict: "email" }
+  );
+
+  /* Générer le lien d'accès */
+  let accessLink = `${SITE_URL}/coaching-ia/espace`;
+  try {
+    const { data: linkData } = await supabase.auth.admin.generateLink({
+      type: isNewUser ? "invite" : "magiclink",
+      email,
+      options: { redirectTo: `${SITE_URL}/coaching-ia/espace` },
+    });
+    if (linkData?.properties?.action_link) {
+      accessLink = linkData.properties.action_link;
+    }
+  } catch { /* fallback URL */ }
+
+  /* Email de bienvenue coaching IA */
+  await sendWelcomeEmail({
+    email,
+    fullName,
+    accessLink,
+    isNewUser,
+  });
+
+  console.log("[Webhook] ✅ Coaching IA activé →", email, `(expires: ${expiresAt})`);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   checkout.session.completed — abonnement outils
+───────────────────────────────────────────────────────────── */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const email            = session.customer_details?.email ?? null;
   const fullName         = session.customer_details?.name  ?? null;
@@ -314,7 +409,13 @@ export async function POST(req: Request) {
 
   /* ── checkout.session.completed ─────────────────────────── */
   if (event.type === "checkout.session.completed") {
-    await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+    const session = event.data.object as Stripe.Checkout.Session;
+    /* Router selon le produit */
+    if (session.metadata?.product === "coaching_ia") {
+      await activateCoachingIA(session);
+    } else {
+      await handleCheckoutCompleted(session);
+    }
   }
 
   /* ── invoice.paid ────────────────────────────────────────── */
