@@ -1027,7 +1027,10 @@ export default function EspaceCoachingIA() {
 
   /* ── Access gate early returns ──────────────────────────── */
   if (access === "loading") return null;
-  if (access === "preview") return <PreviewGate user={user} />;
+
+  /* DEV bypass — NEXT_PUBLIC_DEV_BYPASS_COACHING=true dans .env.local */
+  const devBypass = process.env.NEXT_PUBLIC_DEV_BYPASS_COACHING === "true";
+  if (access === "preview" && !devBypass) return <PreviewGate user={user} />;
 
   return (
     <div className="flex h-[calc(100vh-56px)] overflow-hidden">
