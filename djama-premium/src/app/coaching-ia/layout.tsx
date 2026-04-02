@@ -4,25 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Lock, BookOpen, Bot, Calendar, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useRequireCoachingIA } from "@/lib/use-require-coaching-ia";
+import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
 
 const NAV = [
-  { href: "/coaching-ia/espace",             label: "Tableau de bord",  icon: LayoutDashboard },
-  { href: "/coaching-ia/espace#cours",       label: "Mes cours",        icon: BookOpen },
-  { href: "/coaching-ia/espace#assistant",   label: "Assistant IA",     icon: Bot },
-  { href: "/coaching-ia/espace#reserver",    label: "Réserver",         icon: Calendar },
+  { href: "/coaching-ia/espace",           label: "Tableau de bord", icon: LayoutDashboard },
+  { href: "/coaching-ia/espace#cours",     label: "Mes cours",       icon: BookOpen },
+  { href: "/coaching-ia/espace#assistant", label: "Assistant IA",    icon: Bot },
+  { href: "/coaching-ia/espace#reserver",  label: "Réserver",        icon: Calendar },
 ];
 
 export default function CoachingIALayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { ready, user } = useRequireCoachingIA();
+  const { access, user } = useCoachingIAAccess();
 
   async function handleLogout() {
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
 
-  if (!ready) {
+  /* ── Écran de chargement ─────────────────────────────── */
+  if (access === "loading") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[#07080e]">
         <div className="relative">
@@ -40,8 +41,9 @@ export default function CoachingIALayout({ children }: { children: React.ReactNo
 
   return (
     <div className="flex min-h-screen flex-col bg-[#07080e]">
-      {/* ── Top bar ── */}
+      {/* ── Top bar ────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-white/[0.06] bg-[#07080e]/95 px-4 backdrop-blur-xl">
+
         {/* Logo + badge */}
         <Link href="/coaching-ia/espace" className="group mr-4 flex items-center gap-2">
           <span className="text-base font-bold tracking-widest text-[#a78bfa] transition-opacity group-hover:opacity-80">
@@ -52,26 +54,39 @@ export default function CoachingIALayout({ children }: { children: React.ReactNo
           </span>
         </Link>
 
-        {/* Navigation */}
-        <nav className="flex flex-1 items-center gap-1">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || (href.includes("#") && pathname === href.split("#")[0]);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
-                  active
-                    ? "border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
-                    : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
-                }`}
-              >
-                <Icon size={14} />
-                <span className="hidden sm:inline">{label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        {/* Navigation — visible uniquement en accès complet */}
+        {access === "full" && (
+          <nav className="flex flex-1 items-center gap-1">
+            {NAV.map(({ href, label, icon: Icon }) => {
+              const active =
+                pathname === href ||
+                (href.includes("#") && pathname === href.split("#")[0]);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                    active
+                      ? "border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
+                      : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
+                  }`}
+                >
+                  <Icon size={14} />
+                  <span className="hidden sm:inline">{label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        )}
+
+        {/* Badge aperçu si mode preview */}
+        {access === "preview" && (
+          <div className="flex flex-1 items-center gap-2">
+            <span className="rounded-full border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-[#c9a55a]">
+              Aperçu gratuit
+            </span>
+          </div>
+        )}
 
         {/* User + déconnexion */}
         <div className="ml-auto flex items-center gap-3">
@@ -91,7 +106,7 @@ export default function CoachingIALayout({ children }: { children: React.ReactNo
         </div>
       </header>
 
-      {/* ── Contenu ── */}
+      {/* ── Contenu ─────────────────────────────────────────── */}
       <div className="flex-1 overflow-auto">{children}</div>
     </div>
   );

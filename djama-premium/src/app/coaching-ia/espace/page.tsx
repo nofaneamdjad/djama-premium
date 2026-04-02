@@ -7,8 +7,10 @@ import {
   Bot, Send, Loader2, User, Sparkles, Calendar, Mail,
   Clock, Award, Target, TrendingUp, MessageSquare,
   ArrowRight, Lock, Play, RotateCcw, ChevronLeft,
+  CreditCard, Landmark,
 } from "lucide-react";
 import { COACHING_MODULES, getNextChapter, type Module, type Chapter } from "@/lib/coaching-content";
+import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -632,9 +634,334 @@ function BookingPanel() {
 }
 
 /* ─────────────────────────────────────────────────────────
+   COMPOSANT : PREVIEW GATE
+───────────────────────────────────────────────────────── */
+type PaymentTab = "carte" | "paypal" | "virement";
+
+function PreviewGate({ user }: {
+  user: { id: string; email: string | undefined; name: string | undefined } | null;
+}) {
+  const [payTab,       setPayTab]       = useState<PaymentTab>("carte");
+  const [loadingPay,   setLoadingPay]   = useState(false);
+  const [virEmail,     setVirEmail]     = useState(user?.email ?? "");
+  const [virName,      setVirName]      = useState(user?.name ?? "");
+  const [virSent,      setVirSent]      = useState(false);
+  const [virSending,   setVirSending]   = useState(false);
+
+  const firstModule  = COACHING_MODULES[0];
+  const freeChapter  = firstModule.chapters[0];
+  const lockedModules = COACHING_MODULES.slice(1);
+
+  async function handleStripe() {
+    setLoadingPay(true);
+    try {
+      const res = await fetch("/api/checkout/coaching-ia", { method: "POST" });
+      const data = await res.json() as { url?: string };
+      if (data.url) window.location.href = data.url;
+    } finally {
+      setLoadingPay(false);
+    }
+  }
+
+  async function handlePayPal() {
+    setLoadingPay(true);
+    try {
+      const res = await fetch("/api/checkout/coaching-ia/paypal", { method: "POST" });
+      const data = await res.json() as { url?: string };
+      if (data.url) window.location.href = data.url;
+    } finally {
+      setLoadingPay(false);
+    }
+  }
+
+  async function handleVirement(e: React.FormEvent) {
+    e.preventDefault();
+    if (!virEmail.trim() || !virName.trim()) return;
+    setVirSending(true);
+    try {
+      await fetch("/api/checkout/coaching-ia/virement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: virEmail.trim(), name: virName.trim() }),
+      });
+      setVirSent(true);
+    } finally {
+      setVirSending(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#07080e] px-4 py-10 md:px-8">
+      {/* Header */}
+      <div className="mx-auto mb-10 max-w-5xl text-center">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.07)] px-4 py-1.5 text-xs font-bold tracking-widest text-[#a78bfa] uppercase">
+          <Lock size={11} /> Accès restreint
+        </div>
+        <h1 className="mt-3 text-3xl font-bold text-white md:text-4xl">
+          Coaching IA DJAMA
+        </h1>
+        <p className="mt-3 text-sm text-white/45 max-w-md mx-auto">
+          Débloquez les 5 modules complets, l&apos;assistant pédagogique IA et les sessions de coaching individuel.
+        </p>
+      </div>
+
+      <div className="mx-auto max-w-5xl flex flex-col gap-8 lg:flex-row lg:items-start">
+
+        {/* ── LEFT : Preview contenu ─────────────────── */}
+        <div className="flex-1 min-w-0 space-y-4">
+
+          {/* Module 1 Chapitre 1 — aperçu gratuit */}
+          <div className="rounded-2xl border border-[rgba(96,165,250,0.2)] bg-white/[0.03] overflow-hidden">
+            <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
+              <span className="text-lg">{firstModule.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[0.65rem] font-bold uppercase tracking-widest text-[#60a5fa]">
+                  Module 1 · {firstModule.title}
+                </p>
+                <p className="truncate text-sm font-semibold text-white mt-0.5">
+                  {freeChapter.title}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.08)] px-2.5 py-1 text-[0.6rem] font-bold text-[#34d399]">
+                Aperçu gratuit
+              </span>
+            </div>
+            <div className="px-5 py-5">
+              <p className="text-sm leading-relaxed text-white/60 italic">
+                {freeChapter.intro}
+              </p>
+              <div className="mt-4 flex items-center gap-2 text-[0.65rem] text-white/25">
+                <Clock size={10} /> {freeChapter.duration}
+                <span className="mx-1">·</span>
+                <BookOpen size={10} /> Leçon
+              </div>
+            </div>
+          </div>
+
+          {/* Modules 2–5 verrouillés */}
+          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/25 px-1">
+            Modules inclus dans l&apos;accès complet
+          </p>
+          {lockedModules.map((mod) => (
+            <div key={mod.id} className="relative rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
+              {/* Lock overlay */}
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[#07080e]/60 backdrop-blur-[2px]">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.06]">
+                  <Lock size={14} className="text-white/40" />
+                </div>
+                <span className="text-[0.65rem] font-semibold text-white/35">Accès complet requis</span>
+              </div>
+              {/* Blurred content */}
+              <div className="pointer-events-none select-none opacity-40 blur-[2px] px-5 py-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-xl">{mod.emoji}</span>
+                  <div>
+                    <p className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: mod.color }}>
+                      Module {mod.id}
+                    </p>
+                    <p className="text-sm font-semibold text-white">{mod.title}</p>
+                  </div>
+                  <span className="ml-auto text-[0.6rem] text-white/30">{mod.duration}</span>
+                </div>
+                <p className="text-xs text-white/40 leading-relaxed">{mod.tagline}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {mod.chapters.slice(0, 3).map((ch) => (
+                    <span key={ch.id} className="rounded-lg bg-white/[0.04] px-2.5 py-1 text-[0.6rem] text-white/30">
+                      {ch.title}
+                    </span>
+                  ))}
+                  {mod.chapters.length > 3 && (
+                    <span className="rounded-lg bg-white/[0.04] px-2.5 py-1 text-[0.6rem] text-white/25">
+                      +{mod.chapters.length - 3} chapitres
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── RIGHT : Panneau paiement ───────────────── */}
+        <div className="lg:sticky lg:top-10 lg:w-[340px] shrink-0">
+          <div className="rounded-2xl border border-white/[0.09] bg-white/[0.03] overflow-hidden">
+
+            {/* En-tête */}
+            <div className="border-b border-white/[0.07] px-6 py-5">
+              <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.07)] px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-widest text-[#a78bfa]">
+                <Sparkles size={9} /> Accès à vie
+              </div>
+              <h2 className="mt-2 text-lg font-bold text-white">Débloquer l&apos;accès complet</h2>
+              <div className="mt-3 flex items-end gap-2">
+                <span className="text-4xl font-extrabold text-white">190€</span>
+                <span className="mb-1 text-xs text-white/35">paiement unique</span>
+              </div>
+              <ul className="mt-4 space-y-1.5">
+                {[
+                  "5 modules · 17 chapitres",
+                  "Assistant pédagogique IA",
+                  "Sessions de coaching individuel",
+                  "Accès à vie + mises à jour",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-xs text-white/55">
+                    <CheckCircle2 size={11} className="shrink-0 text-[#34d399]" /> {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Onglets méthode de paiement */}
+            <div className="px-6 pt-5">
+              <div className="mb-4 flex gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
+                {([
+                  { key: "carte",    icon: <CreditCard size={12} />, label: "Carte"   },
+                  { key: "paypal",   icon: <span className="text-[0.65rem] font-extrabold text-[#0070BA]">PP</span>, label: "PayPal" },
+                  { key: "virement", icon: <Landmark size={12} />,   label: "Virement" },
+                ] as { key: PaymentTab; icon: React.ReactNode; label: string }[]).map(({ key, icon, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setPayTab(key)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[0.65rem] font-semibold transition-all ${
+                      payTab === key
+                        ? "bg-[rgba(167,139,250,0.15)] text-[#a78bfa] border border-[rgba(167,139,250,0.25)]"
+                        : "text-white/35 hover:text-white/65"
+                    }`}
+                  >
+                    {icon} {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab : Carte (Stripe) */}
+              {payTab === "carte" && (
+                <div className="pb-6">
+                  <p className="mb-4 text-xs text-white/40 leading-relaxed">
+                    Paiement sécurisé via Stripe. CB, Visa, Mastercard — vos données ne nous parviennent jamais.
+                  </p>
+                  <button
+                    onClick={handleStripe}
+                    disabled={loadingPay}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(167,139,250,0.25)] transition hover:shadow-[0_4px_32px_rgba(167,139,250,0.4)] disabled:opacity-60"
+                  >
+                    {loadingPay
+                      ? <Loader2 size={15} className="animate-spin" />
+                      : <CreditCard size={15} />
+                    }
+                    {loadingPay ? "Redirection…" : "Payer par carte — 190€"}
+                  </button>
+                </div>
+              )}
+
+              {/* Tab : PayPal */}
+              {payTab === "paypal" && (
+                <div className="pb-6">
+                  <p className="mb-4 text-xs text-white/40 leading-relaxed">
+                    Vous serez redirigé vers PayPal pour finaliser votre paiement de 190€.
+                  </p>
+                  <button
+                    onClick={handlePayPal}
+                    disabled={loadingPay}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0070BA] py-3.5 text-sm font-bold text-white shadow-[0_4px_20px_rgba(0,112,186,0.3)] transition hover:bg-[#005ea6] hover:shadow-[0_4px_28px_rgba(0,112,186,0.4)] disabled:opacity-60"
+                  >
+                    {loadingPay
+                      ? <Loader2 size={15} className="animate-spin" />
+                      : <span className="text-base font-black leading-none">PayPal</span>
+                    }
+                    {loadingPay ? "Redirection…" : "Payer via PayPal — 190€"}
+                  </button>
+                </div>
+              )}
+
+              {/* Tab : Virement */}
+              {payTab === "virement" && (
+                <div className="pb-6">
+                  <AnimatePresence mode="wait">
+                    {virSent ? (
+                      <motion.div
+                        key="sent"
+                        initial={{ opacity: 0, scale: 0.97 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="rounded-2xl border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.06)] px-5 py-6 text-center"
+                      >
+                        <CheckCircle2 size={32} className="mx-auto mb-3 text-[#34d399]" />
+                        <p className="text-sm font-semibold text-white">Demande enregistrée</p>
+                        <p className="mt-1.5 text-xs leading-relaxed text-white/45">
+                          Nous activons votre accès sous 24h à réception du virement.
+                        </p>
+                      </motion.div>
+                    ) : (
+                      <motion.form key="form" onSubmit={handleVirement} className="space-y-3">
+                        {/* IBAN info */}
+                        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[0.65rem] text-white/45 leading-relaxed space-y-0.5">
+                          <p>Virement de <span className="font-bold text-white/70">190€</span></p>
+                          <p>IBAN : <span className="font-mono text-white/65">FR76 3000 6000 0112 3456 7890 189</span></p>
+                          <p>BIC : <span className="font-mono text-white/65">AGRIFRPP</span></p>
+                          <p>Référence : <span className="font-semibold text-[#a78bfa]">Coaching IA [votre email]</span></p>
+                        </div>
+
+                        {/* Email */}
+                        <div>
+                          <label className="mb-1 block text-[0.6rem] font-semibold uppercase tracking-widest text-white/30">
+                            Votre email
+                          </label>
+                          <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
+                            <Mail size={12} className="text-white/25" />
+                            <input
+                              type="email"
+                              required
+                              placeholder="votre@email.fr"
+                              value={virEmail}
+                              onChange={(e) => setVirEmail(e.target.value)}
+                              className="flex-1 bg-transparent text-xs text-white placeholder-white/20 outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Nom complet */}
+                        <div>
+                          <label className="mb-1 block text-[0.6rem] font-semibold uppercase tracking-widest text-white/30">
+                            Nom complet
+                          </label>
+                          <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
+                            <User size={12} className="text-white/25" />
+                            <input
+                              type="text"
+                              required
+                              placeholder="Prénom Nom"
+                              value={virName}
+                              onChange={(e) => setVirName(e.target.value)}
+                              className="flex-1 bg-transparent text-xs text-white placeholder-white/20 outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={!virEmail.trim() || !virName.trim() || virSending}
+                          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.1)] py-3 text-xs font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.18)] disabled:opacity-50"
+                        >
+                          {virSending ? <Loader2 size={13} className="animate-spin" /> : <Landmark size={13} />}
+                          {virSending ? "Envoi…" : "Confirmer ma demande de virement"}
+                        </button>
+                      </motion.form>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    PAGE PRINCIPALE
 ───────────────────────────────────────────────────────── */
 export default function EspaceCoachingIA() {
+  /* ── Access gate ────────────────────────────────────────── */
+  const { access, user } = useCoachingIAAccess();
+
   /* ── State ─────────────────────────────────────────────── */
   const [completed,          setCompleted]         = useState<Set<string>>(new Set());
   const [selectedModuleId,   setSelectedModuleId]  = useState<string>("1");
@@ -697,6 +1024,10 @@ export default function EspaceCoachingIA() {
   const currentContext = currentChapter
     ? `Module ${selectedModuleId} "${currentModule?.title}" — Chapitre "${currentChapter.title}"`
     : undefined;
+
+  /* ── Access gate early returns ──────────────────────────── */
+  if (access === "loading") return null;
+  if (access === "preview") return <PreviewGate user={user} />;
 
   return (
     <div className="flex h-[calc(100vh-56px)] overflow-hidden">

@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain, ArrowRight, CheckCircle2, Sparkles, ChevronDown,
   Wallet, Loader2, Users, Building2, TrendingUp,
   Zap, Shield, Award, Target, Clock, BookOpen,
   Bot, Calendar, Star, Lock, Globe, BarChart3, MessageSquare,
+  CreditCard, Landmark, Banknote,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
@@ -195,11 +196,225 @@ function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean
 }
 
 /* ─────────────────────────────────────────────────────────
+   COMPOSANT — Sélecteur de paiement (Stripe / PayPal / Virement)
+───────────────────────────────────────────────────────── */
+function PaymentSelector({ user }: { user?: { id?: string; email?: string } | null }) {
+  const [tab, setTab] = useState<"stripe" | "paypal" | "virement">("stripe");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // virement form state
+  const [vEmail, setVEmail] = useState(user?.email ?? "");
+  const [vName, setVName] = useState("");
+  const [vSent, setVSent] = useState(false);
+  const [vSending, setVSending] = useState(false);
+
+  async function handleStripe() {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch("/api/checkout/coaching-ia", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user?.id, userEmail: user?.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erreur");
+      if (data.url) window.location.href = data.url;
+    } catch (err) { setError(err instanceof Error ? err.message : "Erreur"); setLoading(false); }
+  }
+
+  async function handlePayPal() {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch("/api/checkout/coaching-ia/paypal", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userEmail: user?.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erreur PayPal");
+      if (data.url) window.location.href = data.url;
+    } catch (err) { setError(err instanceof Error ? err.message : "Erreur"); setLoading(false); }
+  }
+
+  async function handleVirement(e: React.FormEvent) {
+    e.preventDefault();
+    if (!vEmail.trim()) return;
+    setVSending(true);
+    try {
+      await fetch("/api/checkout/coaching-ia/virement", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: vEmail.trim(), fullName: vName.trim() || null }),
+      });
+      setVSent(true);
+    } finally { setVSending(false); }
+  }
+
+  const TABS = [
+    { id: "stripe",   label: "💳 Carte bancaire", icon: CreditCard },
+    { id: "paypal",   label: "PayPal",             icon: Wallet     },
+    { id: "virement", label: "🏦 Virement",        icon: Landmark   },
+  ] as const;
+
+  return (
+    <div className="w-full">
+      {/* Tab row */}
+      <div className="mb-4 flex gap-2">
+        {TABS.map(({ id, label }) => {
+          const active = tab === id;
+          return (
+            <button
+              key={id}
+              onClick={() => { setTab(id); setError(null); }}
+              className="flex-1 rounded-xl border px-2 py-2.5 text-[0.72rem] font-semibold transition-all"
+              style={{
+                borderColor: active ? `rgba(${ACCENT_RGB},0.5)` : "rgba(255,255,255,0.08)",
+                background:  active ? `rgba(${ACCENT_RGB},0.12)` : "rgba(255,255,255,0.03)",
+                color:       active ? ACCENT : "rgba(255,255,255,0.4)",
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Stripe tab */}
+      {tab === "stripe" && (
+        <button
+          onClick={handleStripe}
+          disabled={loading}
+          className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-4 text-base font-bold text-white shadow-[0_8px_32px_rgba(167,139,250,0.3)] transition-all hover:shadow-[0_8px_48px_rgba(167,139,250,0.5)] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <div className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
+          {loading ? (
+            <><Loader2 size={18} className="animate-spin" /> Redirection…</>
+          ) : (
+            <><CreditCard size={18} /> Payer par carte — 190€</>
+          )}
+        </button>
+      )}
+
+      {/* PayPal tab */}
+      {tab === "paypal" && (
+        <button
+          onClick={handlePayPal}
+          disabled={loading}
+          className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl py-4 text-base font-bold transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{ background: "#FFD140", color: "#07080e", boxShadow: "0 8px 32px rgba(255,209,64,0.25)" }}
+        >
+          {loading ? (
+            <><Loader2 size={18} className="animate-spin" /> Redirection…</>
+          ) : (
+            <><span className="font-black tracking-tight">Pay</span><span className="font-black tracking-tight" style={{ color: "#003087" }}>Pal</span>&nbsp;— 190€</>
+          )}
+        </button>
+      )}
+
+      {/* Virement tab */}
+      {tab === "virement" && (
+        <div className="space-y-4">
+          {/* Bank details box */}
+          <div
+            className="rounded-2xl border p-4 text-xs space-y-2"
+            style={{ borderColor: `rgba(${ACCENT_RGB},0.2)`, background: `rgba(${ACCENT_RGB},0.05)` }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Landmark size={14} style={{ color: ACCENT }} />
+              <span className="font-bold text-white/70 text-[0.72rem] uppercase tracking-widest">Coordonnées bancaires</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/35">Bénéficiaire</span>
+              <span className="font-semibold text-white/80">DJAMA</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/35">IBAN</span>
+              <span className="font-mono font-semibold text-white/80">FR76 XXXX XXXX XXXX XXXX XXXX XXX</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/35">BIC</span>
+              <span className="font-mono font-semibold text-white/80">XXXXXXXX</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/35">Montant</span>
+              <span className="font-bold text-white/80">190,00 €</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/35">Référence</span>
+              <span className="font-mono font-semibold" style={{ color: ACCENT }}>COACHING-IA</span>
+            </div>
+          </div>
+
+          {/* Confirmation form */}
+          {vSent ? (
+            <div
+              className="rounded-2xl border p-4 text-center text-sm"
+              style={{ borderColor: "rgba(74,222,128,0.25)", background: "rgba(74,222,128,0.07)", color: "#4ade80" }}
+            >
+              ✅ Confirmation reçue ! Votre accès sera activé dès réception du virement (1–2 jours ouvrés).
+            </div>
+          ) : (
+            <form onSubmit={handleVirement} className="space-y-3">
+              <p className="text-[0.72rem] text-white/35 leading-relaxed">
+                Effectuez le virement puis confirmez ci-dessous — votre accès sera activé sous 1–2 jours ouvrés.
+              </p>
+              <input
+                type="email"
+                required
+                placeholder="Votre adresse e-mail"
+                value={vEmail}
+                onChange={(e) => setVEmail(e.target.value)}
+                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[rgba(167,139,250,0.4)] transition-colors"
+              />
+              <input
+                type="text"
+                placeholder="Votre nom complet (optionnel)"
+                value={vName}
+                onChange={(e) => setVName(e.target.value)}
+                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[rgba(167,139,250,0.4)] transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={vSending || !vEmail.trim()}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border py-3.5 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                style={{
+                  borderColor: `rgba(${ACCENT_RGB},0.4)`,
+                  background:  `rgba(${ACCENT_RGB},0.1)`,
+                  color:       ACCENT,
+                }}
+              >
+                {vSending ? (
+                  <><Loader2 size={15} className="animate-spin" /> Envoi…</>
+                ) : (
+                  <><Banknote size={15} /> Confirmer mon virement</>
+                )}
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* Error display */}
+      {error && (
+        <p className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-xs text-red-400">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────────────── */
 export default function CoachingIAPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [openMod, setOpenMod] = useState<string | null>("1");
+  const [user, setUser] = useState<{ id?: string; email?: string } | null>(null);
+
+  // Fetch current user on mount (best-effort, not required)
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) setUser({ id: data.user.id, email: data.user.email ?? undefined });
+    });
+  }, []);
 
   return (
     <div className="bg-[#07080e]">
@@ -515,10 +730,10 @@ export default function CoachingIAPage() {
                 ))}
               </ul>
 
-              <CoachingCheckoutButton />
+              <PaymentSelector user={user} />
 
               <p className="mt-4 text-center text-[0.7rem] text-white/20">
-                🔒 Paiement sécurisé via Stripe · Accès immédiat après paiement
+                🔒 Paiement sécurisé · Accès immédiat après paiement
               </p>
 
               {/* Badges */}
@@ -648,7 +863,7 @@ export default function CoachingIAPage() {
             Moins que 2 heures de travail économisées en une semaine.
           </p>
           <div className="mt-10">
-            <CoachingCheckoutButton label="Accéder au coaching — 190€" />
+            <PaymentSelector user={user} />
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-5 text-xs text-white/20">
             <span>✓ Accès immédiat</span>

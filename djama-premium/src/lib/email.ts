@@ -223,3 +223,186 @@ export async function sendWelcomeEmail(opts: WelcomeEmailOptions): Promise<boole
     return false;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   EMAIL COACHING IA — template spécifique formation
+═══════════════════════════════════════════════════════════ */
+
+function buildCoachingIAHtml(opts: {
+  firstName: string;
+  accessLink: string;
+  isNewUser:  boolean;
+}): string {
+  const { firstName, accessLink, isNewUser } = opts;
+  const PURPLE = "#a78bfa";
+
+  const headline = isNewUser
+    ? `Bienvenue, ${firstName}&nbsp;! Votre formation est prête.`
+    : `Votre accès Coaching IA est actif, ${firstName}&nbsp;!`;
+
+  const ctaLabel = isNewUser
+    ? "Créer mon mot de passe & accéder à la formation"
+    : "Accéder à mon espace de formation";
+
+  const bodyText = isNewUser
+    ? `Merci pour votre achat&nbsp;! Votre accès au Coaching IA DJAMA vient d'être créé. Cliquez sur le bouton ci-dessous pour définir votre mot de passe et accéder immédiatement à vos 5 modules de formation.`
+    : `Votre accès au Coaching IA DJAMA est confirmé et actif. Retrouvez vos 5 modules, l'assistant pédagogique IA et votre session de coaching individuel.`;
+
+  const modules = [
+    ["🧠", "Module 1", "Comprendre l'IA"],
+    ["✍️", "Module 2", "Prompt Engineering"],
+    ["⚡", "Module 3", "Automatisation"],
+    ["🛠️", "Module 4", "Outils IA"],
+    ["📈", "Module 5", "IA pour le Business"],
+  ];
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Coaching IA DJAMA</title>
+</head>
+<body style="margin:0;padding:0;background:${BG};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:48px 16px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0"
+      style="background:${CARD};border-radius:16px;border:1px solid rgba(255,255,255,0.07);overflow:hidden;max-width:100%;">
+
+      <!-- Header -->
+      <tr>
+        <td style="background:linear-gradient(135deg,#0a070f 0%,#120c1f 100%);padding:40px 40px 32px;border-bottom:1px solid rgba(167,139,250,0.15);">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td>
+                <span style="font-size:22px;font-weight:800;letter-spacing:0.15em;color:${PURPLE};">DJAMA</span>
+                <span style="display:inline-block;margin-left:8px;font-size:9px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.3);border:1px solid rgba(167,139,250,0.25);border-radius:4px;padding:2px 6px;">Coaching IA</span>
+              </td>
+              <td align="right">
+                <span style="font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:0.05em;">Formation · 3 mois</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding:40px 40px 32px;">
+          <div style="display:inline-block;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);border-radius:100px;padding:6px 14px;margin-bottom:24px;">
+            <span style="font-size:11px;font-weight:700;color:#4ade80;letter-spacing:0.08em;">✓ Accès confirmé</span>
+          </div>
+          <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#fff;line-height:1.3;">${headline}</h1>
+          <p style="margin:0 0 32px;font-size:15px;line-height:1.7;color:${MUTED};">${bodyText}</p>
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="border-radius:10px;background:${PURPLE};">
+                <a href="${accessLink}" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:700;color:#fff;text-decoration:none;letter-spacing:0.03em;border-radius:10px;">
+                  ${ctaLabel} →
+                </a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:16px 0 0;font-size:12px;color:rgba(255,255,255,0.2);">
+            Ce lien est valable 24&nbsp;h. Votre accès reste actif 3 mois complets.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Modules inclus -->
+      <tr>
+        <td style="padding:0 40px 32px;">
+          <p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${PURPLE};">Programme inclus — 5 modules</p>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${modules.map(([emoji, mod, title]) => `
+            <tr>
+              <td style="padding:5px 0;font-size:13px;color:${TEXT};">
+                <span style="margin-right:8px;">${emoji}</span><strong style="color:rgba(255,255,255,0.5);font-size:11px;">${mod}</strong> — ${title}
+              </td>
+              <td align="right" style="font-size:11px;color:#4ade80;">✓</td>
+            </tr>`).join("")}
+          </table>
+        </td>
+      </tr>
+
+      <!-- Bonus -->
+      <tr>
+        <td style="padding:20px 40px;background:rgba(167,139,250,0.05);border-top:1px solid rgba(167,139,250,0.1);border-bottom:1px solid rgba(167,139,250,0.1);">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-size:13px;color:${MUTED};">Session coaching individuel incluse</td>
+              <td align="right" style="font-size:13px;font-weight:700;color:${PURPLE};">60 min avec un expert</td>
+            </tr>
+            <tr>
+              <td style="font-size:13px;color:${MUTED};padding-top:8px;">Assistant IA pédagogique</td>
+              <td align="right" style="font-size:13px;font-weight:700;color:${PURPLE};padding-top:8px;">24h/7j</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style="padding:28px 40px;text-align:center;">
+          <p style="margin:0 0 8px;font-size:12px;color:rgba(255,255,255,0.2);">
+            Questions ? <a href="mailto:contact@djama.fr" style="color:${PURPLE};text-decoration:none;">contact@djama.fr</a>
+          </p>
+          <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.12);">
+            DJAMA — Formation IA pour professionnels<br/>
+            <a href="${SITE}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${SITE}</a>
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+}
+
+export interface CoachingIAEmailOptions {
+  email:      string;
+  fullName:   string | null;
+  accessLink: string;
+  isNewUser:  boolean;
+}
+
+/**
+ * Envoie l'email de bienvenue spécifique au Coaching IA DJAMA.
+ */
+export async function sendCoachingIAEmail(opts: CoachingIAEmailOptions): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("[Email] ⚠️ RESEND_API_KEY manquant — email coaching IA non envoyé.");
+    return false;
+  }
+
+  const firstName = opts.fullName?.split(" ")[0] ?? "là";
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from:    FROM,
+      to:      opts.email,
+      subject: opts.isNewUser
+        ? "Bienvenue — Votre Coaching IA DJAMA est prêt 🎓"
+        : "Votre accès Coaching IA DJAMA est actif ✓",
+      html: buildCoachingIAHtml({
+        firstName,
+        accessLink: opts.accessLink,
+        isNewUser:  opts.isNewUser,
+      }),
+    });
+
+    if (error) {
+      console.error("[Email Coaching IA] ❌ Resend error:", error.message);
+      return false;
+    }
+
+    console.log("[Email Coaching IA] ✅ Email envoyé →", opts.email, "| id:", data?.id);
+    return true;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Email Coaching IA] ❌ Exception:", msg);
+    return false;
+  }
+}

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendCoachingIAEmail } from "@/lib/email";
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/webhook/stripe
@@ -155,12 +155,14 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
   /* Upsert clients */
   await supabase.from("clients").upsert(
     {
-      user_id:             userId,
+      user_id:                      userId,
       email,
-      full_name:           fullName,
-      coaching_ia_active:  true,
-      coaching_ia_expires: expiresAt,
-      updated_at:          new Date().toISOString(),
+      full_name:                    fullName,
+      coaching_ia_active:           true,
+      coaching_ia_expires:          expiresAt,
+      coaching_ia_payment_method:   "stripe",
+      coaching_ia_pending_transfer: false,
+      updated_at:                   new Date().toISOString(),
     },
     { onConflict: "email" }
   );
@@ -179,7 +181,7 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
   } catch { /* fallback URL */ }
 
   /* Email de bienvenue coaching IA */
-  await sendWelcomeEmail({
+  await sendCoachingIAEmail({
     email,
     fullName,
     accessLink,

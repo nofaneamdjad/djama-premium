@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { verifyPayPalWebhook } from "@/lib/paypal";
 import {
   activateOrCreateUser,
   deactivateUserByPayPalSubId,
   confirmActiveByPayPalSubId,
 } from "@/lib/subscription-helpers";
+import { sendCoachingIAEmail } from "@/lib/email";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/webhook/paypal
@@ -67,6 +79,64 @@ export async function POST(req: Request) {
   const subscriptionId = resource.id;
 
   console.log("[Webhook PayPal] 📨 Event:", event_type, "| Sub:", subscriptionId);
+
+  /* ── PAYMENT.CAPTURE.COMPLETED — Coaching IA paiement unique ── */
+  if (event_type === "PAYMENT.CAPTURE.COMPLETED") {
+    const capture = resource as unknown as {
+      payer?: {
+        email_address?: string;
+        name?: { given_name?: string; surname?: string };
+      };
+      custom_id?: string;
+    };
+    const email    = capture.payer?.email_address ?? null;
+    const fullName = capture.payer?.name
+      ? `${capture.payer.name.given_name ?? ""} ${capture.payer.name.surname ?? ""}`.trim() || null
+      : null;
+
+    if (email) {
+      const supabase   = getSupabaseAdmin();
+      const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      let user = users.find((u) => u.email === email) ?? null;
+      let isNewUser = false;
+      const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+
+      if (!user) {
+        const { data, error } = await supabase.auth.admin.createUser({
+          email, email_confirm: true,
+          user_metadata: { full_name: fullName, coaching_ia_active: true, coaching_ia_expires: expiresAt },
+        });
+        if (error || !data.user) {
+          console.error("[PayPal Webhook] ❌ coaching_ia createUser:", error?.message);
+          return NextResponse.json({ received: true });
+        }
+        user = data.user; isNewUser = true;
+      } else {
+        await supabase.auth.admin.updateUserById(user.id, {
+          user_metadata: { ...user.user_metadata, full_name: fullName ?? user.user_metadata?.full_name, coaching_ia_active: true, coaching_ia_expires: expiresAt },
+        });
+      }
+
+      await supabase.from("clients").upsert(
+        { user_id: user.id, email, full_name: fullName, coaching_ia_active: true, coaching_ia_expires: expiresAt, coaching_ia_payment_method: "paypal", coaching_ia_pending_transfer: false, updated_at: new Date().toISOString() },
+        { onConflict: "email" }
+      );
+
+      let accessLink = `${SITE_URL}/coaching-ia/espace`;
+      try {
+        const { data: linkData } = await supabase.auth.admin.generateLink({
+          type: isNewUser ? "invite" : "magiclink", email,
+          options: { redirectTo: `${SITE_URL}/coaching-ia/espace` },
+        });
+        if (linkData?.properties?.action_link) accessLink = linkData.properties.action_link;
+      } catch { /* fallback */ }
+
+      await sendCoachingIAEmail({ email, fullName, accessLink, isNewUser });
+      console.log("[PayPal Webhook] ✅ Coaching IA activé (PayPal) →", email);
+    } else {
+      console.warn("[PayPal Webhook] ⚠️ PAYMENT.CAPTURE.COMPLETED : pas d'email");
+    }
+  }
 
   /* ── BILLING.SUBSCRIPTION.ACTIVATED ─────────────────────── */
   /* Déclenché quand PayPal confirme l'abonnement côté serveur  */
