@@ -159,6 +159,8 @@ function ServiceCard({ service, lang }: { service: typeof services[0]; lang: "fr
       }}
       transition={{ duration: 0.35, ease }}
     >
+      {/* Overlay — toute la carte est cliquable */}
+      <Link href={href} className="absolute inset-0 z-0" aria-label={title} tabIndex={-1} />
       <CardVisual icon={service.icon} config={config} />
 
       {/* Bandeau "Espace client" pour les outils */}
@@ -230,7 +232,7 @@ function ServiceCard({ service, lang }: { service: typeof services[0]; lang: "fr
           /* CTA solid pour les outils → conversion abonnement */
           <Link
             href={href}
-            className="group/cta mt-6 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
+            className="group/cta relative z-[1] mt-6 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
             style={{
               background: config.accent,
               color: "#09090b",
@@ -243,7 +245,7 @@ function ServiceCard({ service, lang }: { service: typeof services[0]; lang: "fr
           /* CTA ghost pour les prestations */
           <Link
             href={href}
-            className="group/cta relative mt-6 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300"
+            className="group/cta relative z-[1] mt-6 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300"
             style={{
               background: `rgba(${config.accentRgb}, 0.08)`,
               border: `1px solid rgba(${config.accentRgb}, 0.18)`,

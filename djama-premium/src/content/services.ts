@@ -352,7 +352,7 @@ export const services: Service[] = [
     highlightsEn: ["Action plan", "AI tools", "3-month follow-up", "Clear objectives"],
     ctaLabel: "Voir l'offre",
     ctaLabelEn: "View offer",
-    ctaHref: "/contact",
+    ctaHref: "/services/coaching-ia",
   },
   {
     slug: "soutien-scolaire",
