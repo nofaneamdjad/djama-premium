@@ -7,7 +7,7 @@ import {
   Brain, ArrowRight, CheckCircle2, Sparkles, ChevronDown,
   Wallet, Loader2, Users, Building2, TrendingUp,
   Zap, Shield, Award, Target, Clock, BookOpen,
-  Bot, Calendar, Star, Lock, Globe, BarChart3,
+  Bot, Calendar, Star, Lock, Globe, BarChart3, MessageSquare,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
