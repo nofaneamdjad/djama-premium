@@ -4,62 +4,141 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowRight, Mail, Star, Zap, Users, Shield,
-  CheckCircle2, Sparkles, StickyNote, Calendar, ReceiptText,
-  TrendingUp, FileText, Search, Wrench, HeartHandshake,
-  Globe, Brain, Lock, MessageCircle,
+  CheckCircle2, Sparkles,
+  TrendingUp, HeartHandshake, Globe, Brain,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
-import { fadeIn, staggerContainer, staggerContainerFast, cardReveal, viewport } from "@/lib/animations";
+import {
+  fadeIn, staggerContainer, staggerContainerFast, cardReveal, viewport,
+} from "@/lib/animations";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { useLanguage } from "@/lib/language-context";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-const OVERVIEW_ICONS = [Globe, ReceiptText, HeartHandshake, Brain] as const;
-const OVERVIEW_COLORS = [
-  { color: "#c9a55a", bg: "rgba(201,165,90,0.10)",  border: "rgba(201,165,90,0.22)"  },
-  { color: "#60a5fa", bg: "rgba(96,165,250,0.10)",  border: "rgba(96,165,250,0.22)"  },
-  { color: "#4ade80", bg: "rgba(74,222,128,0.08)",  border: "rgba(74,222,128,0.20)"  },
-  { color: "#a78bfa", bg: "rgba(167,139,250,0.08)", border: "rgba(167,139,250,0.20)" },
+/* ── 4 services principaux ─────────────────────────────────── */
+const MAIN_SERVICES = [
+  {
+    icon: Globe,
+    color: "#c9a55a",
+    bg: "rgba(201,165,90,0.10)",
+    border: "rgba(201,165,90,0.22)",
+    title: "Création de sites web",
+    excerpt: "Sites vitrine, e-commerce et applications web sur mesure.",
+    benefits: [
+      "Site vitrine ou e-commerce complet",
+      "Design premium responsive",
+      "SEO technique inclus",
+    ],
+    href: "/services",
+    cta: "Voir les offres",
+  },
+  {
+    icon: Zap,
+    color: "#60a5fa",
+    bg: "rgba(96,165,250,0.10)",
+    border: "rgba(96,165,250,0.22)",
+    title: "Automatisation & IA",
+    excerpt: "Optimisez vos processus avec des outils intelligents.",
+    benefits: [
+      "Workflows automatisés par l'IA",
+      "Outils sur mesure intégrés",
+      "Gain de temps immédiat",
+    ],
+    href: "/services",
+    cta: "Voir les offres",
+  },
+  {
+    icon: Brain,
+    color: "#a78bfa",
+    bg: "rgba(167,139,250,0.08)",
+    border: "rgba(167,139,250,0.20)",
+    title: "Coaching IA",
+    excerpt: "Formation intensive pour maîtriser l'IA dans votre activité.",
+    benefits: [
+      "5 modules vidéo + exercices",
+      "Assistant IA personnel inclus",
+      "Accès complet 3 mois",
+    ],
+    href: "/services/coaching-ia",
+    cta: "Découvrir la formation",
+  },
+  {
+    icon: Users,
+    color: "#4ade80",
+    bg: "rgba(74,222,128,0.08)",
+    border: "rgba(74,222,128,0.20)",
+    title: "Soutien scolaire",
+    excerpt: "Accompagnement personnalisé pour progresser sereinement.",
+    benefits: [
+      "Toutes matières & niveaux",
+      "Suivi régulier et progressif",
+      "14€ / heure seulement",
+    ],
+    href: "/services/soutien-scolaire",
+    cta: "En savoir plus",
+  },
 ] as const;
 
-const VALUE_ICONS = [Shield, Zap, TrendingUp, Users] as const;
-const VALUE_COLORS = ["#c9a55a", "#60a5fa", "#4ade80", "#a78bfa"] as const;
-
-const TOOL_ICONS = [ReceiptText, Calendar, StickyNote] as const;
-const TOOL_COLORS = ["#4ade80", "#60a5fa", "#c9a55a"] as const;
-
-const APPROACH_ICONS = [Search, Wrench, HeartHandshake] as const;
-const APPROACH_COLORS = ["#c9a55a", "#60a5fa", "#4ade80"] as const;
-
-const REAL_PROJECTS = [
-  { accent: "#c9a55a" },
-  { accent: "#60a5fa" },
-  { accent: "#a78bfa" },
+/* ── Pourquoi DJAMA ─────────────────────────────────────────── */
+const WHY_ITEMS = [
+  {
+    icon: Zap,
+    color: "#c9a55a",
+    title: "Exécution rapide",
+    desc: "Processus IA-augmenté : nous livrons plus vite que les agences traditionnelles, sans sacrifier la qualité.",
+  },
+  {
+    icon: Shield,
+    color: "#60a5fa",
+    title: "Qualité premium",
+    desc: "Chaque livrable est soigné dans les détails. L'image que vous projetez mérite le meilleur.",
+  },
+  {
+    icon: HeartHandshake,
+    color: "#4ade80",
+    title: "Accompagnement humain",
+    desc: "Pas de ticket anonyme — une vraie relation directe avec l'équipe qui travaille pour vous.",
+  },
+  {
+    icon: Brain,
+    color: "#a78bfa",
+    title: "Vision IA & business",
+    desc: "Nous comprenons les enjeux business et techniques pour créer des solutions vraiment efficaces.",
+  },
 ] as const;
 
+/* ── Constantes ─────────────────────────────────────────────── */
+const REAL_ACCENTS  = ["#c9a55a", "#60a5fa", "#a78bfa"] as const;
+const STAT_ICONS    = [Users, TrendingUp, Zap, HeartHandshake] as const;
+const STAT_COLORS   = ["#c9a55a", "#60a5fa", "#4ade80", "#a78bfa"] as const;
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE
+═══════════════════════════════════════════════════════════ */
 export default function Home() {
-  const data = getSiteData();
+  const data  = getSiteData();
   const { dict } = useLanguage();
   const h = dict.home;
-  const ov = dict.overview;
 
   return (
     <div className="bg-white">
 
-      {/* ══════════════════════════════════════════════════
+      {/* ══════════════════════════════════════════
           1. HERO
-      ══════════════════════════════════════════════════ */}
+      ══════════════════════════════════════════ */}
       <section className="hero-dark hero-grid relative overflow-hidden">
+        {/* Glows ambiants */}
+        <div className="pointer-events-none absolute -left-20 -top-16 h-80 w-80 rounded-full bg-[rgba(201,165,90,0.07)] blur-[100px]" />
+        <div className="pointer-events-none absolute right-0 top-1/4 h-64 w-64 rounded-full bg-[rgba(167,139,250,0.05)] blur-[80px]" />
 
-        {/* Glows */}
-        <div className="pointer-events-none absolute left-[-100px] top-[-80px] h-[240px] w-[240px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[80px]" />
+        <div className="relative z-10 mx-auto max-w-6xl px-6 pb-40 pt-48">
+          <div className="grid items-center gap-12 lg:grid-cols-[1fr_auto]">
 
-        <div className="relative z-10 mx-auto max-w-6xl px-6 pb-32 pt-40">
-          <div className="grid items-center gap-14 lg:grid-cols-[1fr_560px]">
+            {/* Texte principal */}
+            <div className="max-w-2xl">
 
-            {/* ── Texte gauche ── */}
-            <div>
+              {/* Badge */}
               <motion.div
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -71,10 +150,11 @@ export default function Home() {
                 </span>
               </motion.div>
 
+              {/* Titre principal */}
               <h1 className="display-hero text-white">
                 <MultiLineReveal
                   lines={h.hero.titleLines}
-                  highlight={2}
+                  highlight={1}
                   stagger={0.16}
                   wordStagger={0.065}
                   delay={0.1}
@@ -82,10 +162,16 @@ export default function Home() {
                 />
               </h1>
 
-              <FadeReveal delay={0.65} as="p" className="mt-7 max-w-lg text-lg leading-[1.75] text-white/50">
+              {/* Sous-titre */}
+              <FadeReveal
+                delay={0.65}
+                as="p"
+                className="mt-6 max-w-lg text-lg leading-[1.8] text-white/50"
+              >
                 {h.hero.subtitle}
               </FadeReveal>
 
+              {/* CTAs */}
               <FadeReveal delay={0.8} className="mt-10 flex flex-wrap gap-3">
                 <Link href="/contact" className="btn-primary px-7 py-4 text-base">
                   {h.hero.cta1} <ArrowRight size={16} />
@@ -96,7 +182,10 @@ export default function Home() {
               </FadeReveal>
 
               {/* Preuve sociale */}
-              <FadeReveal delay={0.95} className="mt-12 flex items-center gap-5 border-t border-white/[0.07] pt-10">
+              <FadeReveal
+                delay={0.95}
+                className="mt-12 flex items-center gap-5 border-t border-white/[0.07] pt-10"
+              >
                 <div className="flex -space-x-2.5">
                   {[...Array(5)].map((_, i) => (
                     <div
@@ -107,7 +196,7 @@ export default function Home() {
                   ))}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1 mb-1">
+                  <div className="mb-1 flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} size={11} className="fill-[#c9a55a] text-[#c9a55a]" />
                     ))}
@@ -119,159 +208,94 @@ export default function Home() {
               </FadeReveal>
             </div>
 
-            {/* ── Panneau DJAMA en un regard ── */}
+            {/* Panneau visuel droit — desktop uniquement */}
             <motion.div
-              initial={{ opacity: 0, y: 44, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 1, delay: 0.35, ease }}
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.5, ease }}
+              className="hidden lg:flex flex-col gap-3 w-64"
             >
-              {/* Carte principale */}
-              <div className="relative overflow-hidden rounded-[1.75rem] border border-white/[0.09] bg-[rgba(255,255,255,0.04)] shadow-[0_32px_80px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-
-                {/* Glow top-right */}
-                <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-[rgba(201,165,90,0.12)] blur-[60px]" />
-
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                    </div>
-                  </div>
-                  <p className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-white/30">
-                    {ov.title}
-                  </p>
-                  <span className="badge badge-gold-dark text-[0.55rem] py-0.5 px-2">2025</span>
-                </div>
-
-                {/* Colonnes */}
-                <div className="grid grid-cols-2 divide-x divide-white/[0.06] sm:grid-cols-4 p-0 [&>*:nth-child(n+3)]:border-t [&>*:nth-child(n+3)]:border-white/[0.06] sm:[&>*:nth-child(n+3)]:border-t-0">
-                  {ov.cols.map((col, ci) => {
-                    const Icon = OVERVIEW_ICONS[ci];
-                    const { color, bg, border } = OVERVIEW_COLORS[ci];
-                    return (
-                      <motion.div
-                        key={col.title}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.55, delay: 0.55 + ci * 0.1, ease }}
-                        className="group flex flex-col gap-3 p-3.5 transition-colors duration-300 hover:bg-white/[0.03]"
-                      >
-                        {/* Icône + titre catégorie */}
-                        <div className="flex flex-col gap-2">
-                          <div
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border"
-                            style={{ background: bg, borderColor: border }}
-                          >
-                            <Icon size={14} style={{ color }} />
-                          </div>
-                          <div>
-                            <p className="text-[0.67rem] font-extrabold uppercase tracking-widest" style={{ color }}>
-                              {col.title}
-                            </p>
-                            <span
-                              className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-wider"
-                              style={{ background: bg, color, border: `1px solid ${border}` }}
-                            >
-                              {col.badge}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Séparateur */}
-                        <div className="h-px w-full rounded-full" style={{ background: border }} />
-
-                        {/* Items */}
-                        <ul className="flex flex-col gap-2">
-                          {col.items.map(({ label, badge: itemBadge }) => (
-                            <li key={label} className="flex flex-col gap-0.5">
-                              <span className="flex items-start gap-1.5 text-[0.65rem] leading-snug text-white/55">
-                                <span
-                                  className="mt-1 h-1 w-1 shrink-0 rounded-full"
-                                  style={{ background: color }}
-                                />
-                                {label}
-                              </span>
-                              {itemBadge && (
-                                <span
-                                  className="ml-2.5 self-start rounded-full px-1.5 py-0.5 text-[0.48rem] font-bold uppercase tracking-wider"
-                                  style={{ background: `${color}18`, color, border: `1px solid ${color}28` }}
-                                >
-                                  {itemBadge}
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-
-                {/* Footer */}
-                <div className="border-t border-white/[0.07] bg-white/[0.02] px-5 py-3.5 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Lock size={11} className="text-[#c9a55a]" />
-                    <p className="text-[0.6rem] text-white/35">Espace client sécurisé · {data.offers.abonnement}</p>
-                  </div>
-                  <Link
-                    href="/abonnement"
-                    className="flex items-center gap-1 rounded-xl bg-[#c9a55a] px-3 py-1.5 text-[0.65rem] font-bold text-[#09090b] transition hover:brightness-110"
+              {[
+                { icon: Globe,  color: "#c9a55a", label: "Sites web sur mesure" },
+                { icon: Zap,    color: "#60a5fa", label: "Automatisation & IA" },
+                { icon: Brain,  color: "#a78bfa", label: "Coaching IA" },
+                { icon: Users,  color: "#4ade80", label: "Soutien scolaire" },
+              ].map(({ icon: Icon, color, label }) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 backdrop-blur-sm"
+                >
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: `${color}1a` }}
                   >
-                    Commencer <ArrowRight size={10} />
-                  </Link>
+                    <Icon size={16} style={{ color }} />
+                  </div>
+                  <span className="text-sm font-medium text-white/75">{label}</span>
+                  <div className="ml-auto h-1.5 w-1.5 rounded-full" style={{ background: color }} />
                 </div>
+              ))}
+              <div className="mt-2 rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.06)] px-4 py-4 text-center">
+                <p className="text-2xl font-black text-[#c9a55a]">50+</p>
+                <p className="mt-0.5 text-xs text-white/40">clients accompagnés</p>
               </div>
             </motion.div>
 
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
+        {/* Fondu vers le blanc */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent" />
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          2. CRÉDIBILITÉ
-      ══════════════════════════════════════════════════ */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
+      {/* ══════════════════════════════════════════
+          2. STATS — CRÉDIBILITÉ
+      ══════════════════════════════════════════ */}
+      <section className="py-16 border-b border-[var(--border)]">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainerFast}
-          className="grid grid-cols-2 gap-4 md:grid-cols-4"
+          className="mx-auto max-w-6xl px-6"
         >
-          {h.stats.map(({ value, label, sub }, i) => {
-            const Icon = [Users, TrendingUp, Zap, HeartHandshake][i];
-            return (
-              <motion.div
-                key={label}
-                variants={cardReveal}
-                className="group overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(201,165,90,0.3)] hover:shadow-[0_12px_40px_rgba(201,165,90,0.09)]"
-              >
-                <div className="mb-3 inline-flex rounded-xl bg-[rgba(201,165,90,0.08)] p-3">
-                  <Icon size={20} className="text-[#c9a55a]" />
-                </div>
-                <p className="text-3xl font-black tracking-tight text-[var(--ink)]">{value}</p>
-                <p className="mt-1.5 text-sm font-bold leading-snug text-[var(--ink)]">{label}</p>
-                <p className="mt-0.5 text-xs text-[var(--muted)]">{sub}</p>
-              </motion.div>
-            );
-          })}
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {h.stats.map(({ value, label, sub }, i) => {
+              const Icon  = STAT_ICONS[i];
+              const color = STAT_COLORS[i];
+              return (
+                <motion.div
+                  key={label}
+                  variants={cardReveal}
+                  className="group flex flex-col items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_16px_40px_rgba(0,0,0,0.07)]"
+                >
+                  <div
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+                    style={{ background: `${color}14` }}
+                  >
+                    <Icon size={18} style={{ color }} />
+                  </div>
+                  <p className="text-3xl font-black tracking-tight text-[var(--ink)]">{value}</p>
+                  <div>
+                    <p className="text-sm font-bold leading-snug text-[var(--ink)]">{label}</p>
+                    <p className="mt-0.5 text-xs text-[var(--muted)]">{sub}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </motion.div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          3. SERVICES SYNTHÉTIQUE
-      ══════════════════════════════════════════════════ */}
-      <section className="bg-[var(--surface)] py-24">
+      {/* ══════════════════════════════════════════
+          3. SERVICES PRINCIPAUX
+      ══════════════════════════════════════════ */}
+      <section className="py-24">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
           className="mx-auto max-w-6xl px-6"
         >
-          {/* Header */}
-          <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          {/* Header section */}
+          <div className="mb-14 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <motion.span variants={fadeIn} className="badge badge-gold-light">
                 <Sparkles size={10} /> {h.servicesSection.badge}
@@ -284,128 +308,85 @@ export default function Home() {
                   wordStagger={0.06}
                 />
               </h2>
-              <FadeReveal delay={0.2} as="p" className="mt-3 max-w-md text-base leading-relaxed text-[var(--muted)]">
+              <FadeReveal
+                delay={0.2}
+                as="p"
+                className="mt-3 max-w-md text-base leading-relaxed text-[var(--muted)]"
+              >
                 {h.servicesSection.subtitle}
               </FadeReveal>
             </div>
             <FadeReveal delay={0.25} className="shrink-0">
-              <Link href="/services" className="btn-primary text-sm whitespace-nowrap">
+              <Link href="/services" className="btn-light text-sm whitespace-nowrap">
                 {h.servicesSection.cta} <ArrowRight size={14} />
               </Link>
             </FadeReveal>
           </div>
 
-          {/* Cards 4 cols */}
+          {/* 4 cartes services */}
           <motion.div
             variants={staggerContainerFast}
             className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
           >
-            {h.servicesSection.items.map(({ title, desc }, i) => {
-              const Icon = OVERVIEW_ICONS[i];
-              const { color, bg, border } = OVERVIEW_COLORS[i];
-              return (
-                <motion.div key={title} variants={cardReveal}>
-                  <Link
-                    href="/services"
-                    className="group flex h-full flex-col rounded-[1.5rem] border border-[var(--border)] bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_16px_48px_rgba(0,0,0,0.08)]"
+            {MAIN_SERVICES.map(({ icon: Icon, color, bg, border, title, excerpt, benefits, href, cta }) => (
+              <motion.div key={title} variants={cardReveal}>
+                <Link
+                  href={href}
+                  className="group flex h-full flex-col rounded-[1.5rem] border border-[var(--border)] bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-transparent hover:shadow-[0_20px_56px_rgba(0,0,0,0.10)]"
+                >
+                  {/* Icône */}
+                  <div
+                    className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl border transition-transform duration-300 group-hover:scale-110"
+                    style={{ background: bg, borderColor: border }}
                   >
-                    <div
-                      className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border transition-transform duration-300 group-hover:scale-110"
-                      style={{ background: bg, borderColor: border }}
-                    >
-                      <Icon size={20} style={{ color }} />
-                    </div>
-                    <h3 className="font-extrabold text-[var(--ink)]">{title}</h3>
-                    <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
-                    <div
-                      className="mt-5 flex items-center gap-1.5 text-xs font-bold transition-gap duration-200"
-                      style={{ color }}
-                    >
-                      Explorer <ArrowRight size={11} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-                    </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
+                    <Icon size={22} style={{ color }} />
+                  </div>
+
+                  {/* Titre + accroche */}
+                  <h3 className="text-base font-extrabold text-[var(--ink)]">{title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted)]">{excerpt}</p>
+
+                  {/* 3 bénéfices */}
+                  <ul className="mt-5 flex flex-col gap-2.5">
+                    {benefits.map((b) => (
+                      <li key={b} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                        <CheckCircle2
+                          size={13}
+                          className="mt-0.5 shrink-0"
+                          style={{ color }}
+                        />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Lien CTA */}
+                  <div
+                    className="mt-6 flex items-center gap-1.5 text-xs font-bold"
+                    style={{ color }}
+                  >
+                    {cta}
+                    <ArrowRight
+                      size={11}
+                      className="transition-transform duration-200 group-hover:translate-x-0.5"
+                    />
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
           </motion.div>
         </motion.div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          4. PRÉSENTATION DJAMA
-      ══════════════════════════════════════════════════ */}
-      <section className="py-28">
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={staggerContainer}
-          className="mx-auto max-w-6xl px-6"
-        >
-          <div className="grid items-center gap-16 lg:grid-cols-2">
-
-            {/* Texte */}
-            <div>
-              <motion.span variants={fadeIn} className="badge badge-gold-light">
-                <Sparkles size={10} /> {h.presentation.badge}
-              </motion.span>
-              <h2 className="display-section mt-4 text-[var(--ink)]">
-                <MultiLineReveal
-                  lines={h.presentation.titleLines}
-                  highlight={1}
-                  stagger={0.14}
-                  wordStagger={0.065}
-                />
-              </h2>
-              <FadeReveal delay={0.2} as="p" className="mt-5 text-base leading-[1.8] text-[var(--muted)]">
-                {h.presentation.text1}
-              </FadeReveal>
-              <FadeReveal delay={0.3} as="p" className="mt-4 text-base leading-[1.8] text-[var(--muted)]">
-                {h.presentation.text2}
-              </FadeReveal>
-              <FadeReveal delay={0.45} className="mt-8 flex flex-wrap gap-3">
-                <Link href="/services" className="btn-primary text-sm">
-                  {h.presentation.cta1} <ArrowRight size={14} />
-                </Link>
-                <Link href="/contact" className="btn-ghost text-sm">
-                  {h.presentation.cta2}
-                </Link>
-              </FadeReveal>
-            </div>
-
-            {/* 4 mini-cartes valeurs */}
-            <motion.div variants={staggerContainerFast} className="grid gap-4 sm:grid-cols-2">
-              {h.presentation.values.map(({ title, desc }, i) => {
-                const Icon = VALUE_ICONS[i];
-                const color = VALUE_COLORS[i];
-                return (
-                  <motion.div
-                    key={title}
-                    variants={cardReveal}
-                    className="rounded-[1.25rem] border border-[var(--border)] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <div className="mb-3 inline-flex rounded-xl p-2.5" style={{ background: `${color}12` }}>
-                      <Icon size={18} style={{ color }} />
-                    </div>
-                    <h3 className="text-sm font-extrabold text-[var(--ink)]">{title}</h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">{desc}</p>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════
-          5. RÉALISATIONS APERÇU
-      ══════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════
+          4. RÉALISATIONS
+      ══════════════════════════════════════════ */}
       <section className="bg-[var(--surface)] py-24">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
           className="mx-auto max-w-6xl px-6"
         >
-          {/* Header */}
           <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <motion.span variants={fadeIn} className="badge badge-gold-light">
@@ -419,333 +400,148 @@ export default function Home() {
                   wordStagger={0.07}
                 />
               </h2>
-              <FadeReveal delay={0.2} as="p" className="mt-3 max-w-md text-base leading-relaxed text-[var(--muted)]">
+              <FadeReveal
+                delay={0.2}
+                as="p"
+                className="mt-3 max-w-md text-base leading-relaxed text-[var(--muted)]"
+              >
                 {h.realisationsSection.subtitle}
               </FadeReveal>
             </div>
             <FadeReveal delay={0.25} className="shrink-0">
-              <Link href="/realisations" className="btn-ghost text-sm whitespace-nowrap">
+              <Link href="/realisations" className="btn-light text-sm whitespace-nowrap">
                 {h.realisationsSection.cta} <ArrowRight size={14} />
               </Link>
             </FadeReveal>
           </div>
 
-          {/* 3 project cards */}
-          <motion.div
-            variants={staggerContainerFast}
-            className="grid gap-6 md:grid-cols-3"
-          >
-            {h.realisationsSection.projects.map(({ name, category, desc, tag }, i) => {
-              const { accent } = REAL_PROJECTS[i];
-              return (
-                <motion.div key={name} variants={cardReveal}>
-                  <Link
-                    href="/realisations"
-                    className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_20px_56px_rgba(0,0,0,0.1)]"
+          <motion.div variants={staggerContainerFast} className="grid gap-6 md:grid-cols-3">
+            {h.realisationsSection.projects.map(({ name, category, desc, tag }, i) => (
+              <motion.div key={name} variants={cardReveal}>
+                <Link
+                  href="/realisations"
+                  className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_20px_56px_rgba(0,0,0,0.10)]"
+                >
+                  {/* Aperçu coloré */}
+                  <div
+                    className="relative h-32 w-full overflow-hidden"
+                    style={{
+                      background: `linear-gradient(135deg, ${REAL_ACCENTS[i]}1a 0%, ${REAL_ACCENTS[i]}06 100%)`,
+                    }}
                   >
-                    {/* Accent bar */}
                     <div
-                      className="h-1 w-full transition-all duration-300 group-hover:h-1.5"
-                      style={{ background: `linear-gradient(90deg, ${accent}, ${accent}66)` }}
+                      className="absolute inset-0 opacity-50 transition-opacity duration-300 group-hover:opacity-80"
+                      style={{
+                        background: `radial-gradient(ellipse 70% 70% at 25% 35%, ${REAL_ACCENTS[i]}38 0%, transparent 70%)`,
+                      }}
                     />
+                    {/* Barre accent top */}
+                    <div
+                      className="absolute top-0 h-1 w-full"
+                      style={{ background: `linear-gradient(90deg, ${REAL_ACCENTS[i]}, ${REAL_ACCENTS[i]}55)` }}
+                    />
+                  </div>
 
-                    <div className="flex flex-1 flex-col p-6">
-                      {/* Tag */}
-                      <span
-                        className="mb-4 self-start rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider"
-                        style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}28` }}
-                      >
-                        {tag}
-                      </span>
+                  <div className="flex flex-1 flex-col p-6">
+                    {/* Tag */}
+                    <span
+                      className="mb-4 self-start rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider"
+                      style={{
+                        background: `${REAL_ACCENTS[i]}14`,
+                        color: REAL_ACCENTS[i],
+                        border: `1px solid ${REAL_ACCENTS[i]}28`,
+                      }}
+                    >
+                      {tag}
+                    </span>
 
-                      {/* Name + category */}
-                      <h3 className="text-xl font-black tracking-tight text-[var(--ink)]">{name}</h3>
-                      <p className="mt-0.5 text-xs font-semibold text-[var(--muted)]">{category}</p>
+                    <h3 className="text-xl font-black tracking-tight text-[var(--ink)]">{name}</h3>
+                    <p className="mt-0.5 text-xs font-semibold text-[var(--muted)]">{category}</p>
+                    <p className="mt-4 flex-1 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
 
-                      {/* Description */}
-                      <p className="mt-4 flex-1 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
-
-                      {/* Link */}
-                      <div
-                        className="mt-5 flex items-center gap-1.5 text-xs font-bold"
-                        style={{ color: accent }}
-                      >
-                        Voir le projet
-                        <ArrowRight size={11} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-                      </div>
+                    <div
+                      className="mt-5 flex items-center gap-1.5 text-xs font-bold"
+                      style={{ color: REAL_ACCENTS[i] }}
+                    >
+                      Voir le projet
+                      <ArrowRight
+                        size={11}
+                        className="transition-transform duration-200 group-hover:translate-x-0.5"
+                      />
                     </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
           </motion.div>
         </motion.div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          6. ASSISTANT DJAMA
-      ══════════════════════════════════════════════════ */}
-      <section className="mx-auto max-w-6xl px-6 py-28">
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={staggerContainer}
-        >
-          <div className="grid items-center gap-16 lg:grid-cols-[1fr_420px]">
-
-            {/* Texte */}
-            <div>
-              <motion.span variants={fadeIn} className="badge badge-gold-light">
-                <Sparkles size={10} /> {h.assistant.badge}
-              </motion.span>
-              <h2 className="display-section mt-4 text-[var(--ink)]">
-                <MultiLineReveal
-                  lines={h.assistant.titleLines}
-                  highlight={1}
-                  stagger={0.13}
-                  wordStagger={0.06}
-                />
-              </h2>
-              <FadeReveal delay={0.25} as="p" className="mt-5 text-base leading-[1.8] text-[var(--muted)]">
-                {h.assistant.subtitle}
-              </FadeReveal>
-
-              {/* Questions exemples */}
-              <FadeReveal delay={0.35} className="mt-8 flex flex-wrap gap-2.5">
-                {h.assistant.questions.map((q) => (
-                  <span
-                    key={q}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3.5 py-1.5 text-xs font-medium text-[var(--muted)] transition hover:border-[rgba(201,165,90,0.35)] hover:text-[var(--ink)]"
-                  >
-                    <MessageCircle size={10} className="text-[#c9a55a]" />
-                    {q}
-                  </span>
-                ))}
-              </FadeReveal>
-
-              <FadeReveal delay={0.5} className="mt-8">
-                <button
-                  onClick={() => {
-                    const btn = document.querySelector<HTMLButtonElement>("[aria-label=\"Ouvrir l'assistant DJAMA\"]");
-                    btn?.click();
-                  }}
-                  className="btn-primary text-sm"
-                >
-                  <MessageCircle size={15} />
-                  {h.assistant.cta}
-                </button>
-              </FadeReveal>
-            </div>
-
-            {/* Card visuelle assistant */}
-            <motion.div variants={cardReveal}>
-              <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.18)] bg-[var(--ink)] p-0 shadow-[0_24px_64px_rgba(0,0,0,0.2)]">
-
-                <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[rgba(201,165,90,0.08)] blur-[70px]" />
-
-                {/* Header fausse fenêtre */}
-                <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
-                  <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]">
-                    <Sparkles size={13} className="text-[#09090b]" />
-                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#09090b] bg-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">Assistant DJAMA</p>
-                    <p className="text-[0.6rem] text-white/30">En ligne · Répond instantanément</p>
-                  </div>
-                </div>
-
-                {/* Faux messages */}
-                <div className="space-y-3 p-5">
-                  <div className="flex gap-2.5">
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]">
-                      <Sparkles size={10} className="text-[#09090b]" />
-                    </div>
-                    <div className="rounded-2xl rounded-tl-sm bg-white/[0.06] px-4 py-2.5 text-sm leading-relaxed text-white/75">
-                      Bonjour 👋 Je suis l&apos;assistant DJAMA.<br />
-                      Je peux répondre à vos questions sur nos services.
-                    </div>
-                  </div>
-
-                  <div className="flex flex-row-reverse gap-2.5">
-                    <div className="max-w-[75%] rounded-2xl rounded-tr-sm bg-[#c9a55a] px-4 py-2.5 text-sm font-medium text-[#09090b]">
-                      {h.assistant.questions[0]}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2.5">
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]">
-                      <Sparkles size={10} className="text-[#09090b]" />
-                    </div>
-                    <div className="rounded-2xl rounded-tl-sm bg-white/[0.06] px-4 py-2.5 text-sm leading-relaxed text-white/75">
-                      DJAMA propose 4 pôles : création digitale, outils pro, accompagnement administratif et coaching. Quel aspect vous intéresse ?
-                    </div>
-                  </div>
-                </div>
-
-                {/* Fausse zone input */}
-                <div className="border-t border-white/[0.07] bg-white/[0.02] px-5 py-3.5 flex items-center gap-2">
-                  <div className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2 text-xs text-white/20">
-                    Posez votre question…
-                  </div>
-                  <button
-                    onClick={() => {
-                      const btn = document.querySelector<HTMLButtonElement>("[aria-label=\"Ouvrir l'assistant DJAMA\"]");
-                      btn?.click();
-                    }}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#c9a55a] to-[#b08d57] text-[#09090b] transition hover:brightness-110"
-                  >
-                    <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════
-          7. OUTILS DJAMA
-      ══════════════════════════════════════════════════ */}
-      <section className="hero-dark relative overflow-hidden py-28">
-        <div className="pointer-events-none absolute left-[20%] top-0 h-[300px] w-[350px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[70px]" />
-
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={staggerContainer}
-          className="relative z-10 mx-auto max-w-6xl px-6"
-        >
-          <div className="grid items-center gap-16 lg:grid-cols-2">
-
-            <div>
-              <motion.span variants={fadeIn} className="badge badge-gold-dark">
-                <Wrench size={10} /> {h.tools.badge}
-              </motion.span>
-              <h2 className="display-section mt-4 text-white">
-                <MultiLineReveal
-                  lines={h.tools.titleLines}
-                  highlight={0}
-                  stagger={0.14}
-                  wordStagger={0.06}
-                  lineClassName="text-white"
-                />
-              </h2>
-              <FadeReveal delay={0.25} as="p" className="mt-5 text-base leading-[1.8] text-white/45">
-                {h.tools.subtitle}
-              </FadeReveal>
-              <FadeReveal delay={0.4} className="mt-8 flex flex-wrap gap-3">
-                <Link href="/abonnement" className="btn-primary text-sm">
-                  {h.tools.cta} — {data.offers.abonnement} <ArrowRight size={14} />
-                </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-white/15 px-5 py-3 text-sm font-semibold text-white/60 transition hover:bg-white/[0.06] hover:text-white"
-                >
-                  Déjà client ? Se connecter
-                </Link>
-              </FadeReveal>
-            </div>
-
-            <motion.div variants={staggerContainerFast} className="flex flex-col gap-3">
-              {h.tools.items.map(({ label, sub }, i) => {
-                const Icon = TOOL_ICONS[i];
-                const color = TOOL_COLORS[i];
-                return (
-                  <motion.div
-                    key={label}
-                    variants={cardReveal}
-                    className="flex items-start gap-4 rounded-[1.25rem] border border-white/[0.07] bg-white/[0.04] p-5 transition-all duration-300 hover:bg-white/[0.07]"
-                    style={{ transitionDelay: `${i * 0.05}s` }}
-                  >
-                    <div
-                      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08]"
-                      style={{ background: `${color}18` }}
-                    >
-                      <Icon size={16} style={{ color }} />
-                    </div>
-                    <div>
-                      <p className="font-bold text-white/90">{label}</p>
-                      <p className="mt-1 text-sm leading-relaxed text-white/40">{sub}</p>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════
-          8. APPROCHE
-      ══════════════════════════════════════════════════ */}
-      <section className="bg-[var(--surface)] py-28">
+      {/* ══════════════════════════════════════════
+          5. POURQUOI DJAMA
+      ══════════════════════════════════════════ */}
+      <section className="py-24">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
           className="mx-auto max-w-6xl px-6"
         >
-          <div className="mb-16 text-center">
+          <div className="mb-14 text-center">
             <motion.span variants={fadeIn} className="badge badge-gold-light">
-              <Sparkles size={10} /> {h.approach.badge}
+              <Sparkles size={10} /> Nos avantages
             </motion.span>
             <h2 className="display-section mt-4 text-[var(--ink)]">
               <MultiLineReveal
-                lines={h.approach.titleLines}
+                lines={["Pourquoi choisir", "DJAMA ?"]}
                 highlight={1}
-                stagger={0.14}
+                stagger={0.13}
                 wordStagger={0.07}
                 lineClassName="justify-center"
               />
             </h2>
+            <FadeReveal
+              delay={0.2}
+              as="p"
+              className="mx-auto mt-3 max-w-md text-base text-[var(--muted)]"
+            >
+              Une seule équipe, tous vos besoins digitaux couverts.
+            </FadeReveal>
           </div>
 
-          <motion.div variants={staggerContainerFast} className="grid gap-5 md:grid-cols-3">
-            {h.approach.steps.map(({ title, desc }, i) => {
-              const Icon = APPROACH_ICONS[i];
-              const color = APPROACH_COLORS[i];
-              const step = String(i + 1).padStart(2, "0");
-              return (
-                <motion.div
-                  key={step}
-                  variants={cardReveal}
-                  className="group relative flex flex-col overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_20px_56px_rgba(0,0,0,0.09)]"
+          <motion.div
+            variants={staggerContainerFast}
+            className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {WHY_ITEMS.map(({ icon: Icon, color, title, desc }) => (
+              <motion.div
+                key={title}
+                variants={cardReveal}
+                className="group flex flex-col rounded-[1.5rem] border border-[var(--border)] bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_16px_48px_rgba(0,0,0,0.08)]"
+              >
+                <div
+                  className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-300 group-hover:scale-110"
+                  style={{ background: `${color}12` }}
                 >
-                  <div
-                    className="absolute right-5 top-4 select-none text-6xl font-black leading-none opacity-[0.05]"
-                    style={{ color }}
-                  >
-                    {step}
-                  </div>
-                  <div
-                    className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-300 group-hover:scale-110"
-                    style={{ background: `${color}12` }}
-                  >
-                    <Icon size={22} style={{ color }} />
-                  </div>
-                  <h3 className="text-base font-extrabold text-[var(--ink)]">{title}</h3>
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
-                  <div
-                    className="mt-5 h-0.5 w-8 rounded-full transition-all duration-300 group-hover:w-14"
-                    style={{ background: color }}
-                  />
-                </motion.div>
-              );
-            })}
+                  <Icon size={22} style={{ color }} />
+                </div>
+                <h3 className="text-sm font-extrabold text-[var(--ink)]">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">{desc}</p>
+              </motion.div>
+            ))}
           </motion.div>
         </motion.div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          9. CTA FINAL
-      ══════════════════════════════════════════════════ */}
-      <section className="mx-auto max-w-6xl px-6 py-28">
+      {/* ══════════════════════════════════════════
+          6. CTA FINAL
+      ══════════════════════════════════════════ */}
+      <section className="mx-auto max-w-6xl px-6 pb-28 pt-4">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
-          className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.2)] bg-[var(--ink)] px-8 py-20 text-center shadow-premium-lg md:px-16"
+          className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.2)] bg-[var(--ink)] px-8 py-24 text-center shadow-premium-lg md:px-16"
         >
-          {/* Glow */}
+          {/* Glows déco */}
           <div className="pointer-events-none absolute left-[12%] top-[-50px] h-[200px] w-[280px] rounded-full bg-[rgba(201,165,90,0.08)] blur-[55px]" />
           <div className="pointer-events-none absolute bottom-[-30px] right-[10%] h-[160px] w-[200px] rounded-full bg-[rgba(96,165,250,0.05)] blur-[50px]" />
 
@@ -764,7 +560,11 @@ export default function Home() {
               />
             </h2>
 
-            <FadeReveal delay={0.3} as="p" className="mx-auto mt-6 max-w-xl text-lg leading-[1.8] text-white/45">
+            <FadeReveal
+              delay={0.3}
+              as="p"
+              className="mx-auto mt-6 max-w-xl text-lg leading-[1.8] text-white/45"
+            >
               {h.cta.subtitle}
             </FadeReveal>
 
@@ -772,12 +572,15 @@ export default function Home() {
               <Link href="/contact" className="btn-primary px-8 py-4 text-base">
                 {h.cta.cta1} <ArrowRight size={16} />
               </Link>
-              <Link href="/contact" className="btn-ghost px-8 py-4 text-base">
+              <Link href="/reserver-appel" className="btn-ghost px-8 py-4 text-base">
                 {h.cta.cta2}
               </Link>
             </FadeReveal>
 
-            <FadeReveal delay={0.55} className="mt-9 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-8">
+            <FadeReveal
+              delay={0.55}
+              className="mt-9 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-8"
+            >
               <a
                 href={`mailto:${data.contact.email}`}
                 className="flex items-center gap-2 text-sm text-white/35 transition hover:text-white/65"
@@ -792,8 +595,8 @@ export default function Home() {
               </span>
               <span className="hidden text-white/15 sm:inline">·</span>
               <span className="flex items-center gap-2 text-sm text-white/35">
-                <FileText size={13} className="text-[#c9a55a]" />
-                Devis gratuit &amp; détaillé
+                <CheckCircle2 size={13} className="text-[#c9a55a]" />
+                Appel découverte gratuit · 30 min
               </span>
             </FadeReveal>
           </div>

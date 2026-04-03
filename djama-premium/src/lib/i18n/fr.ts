@@ -14,9 +14,9 @@ export const fr: Translations = {
   home: {
     hero: {
       badge: "Création digitale & outils professionnels",
-      titleLines: ["Votre présence", "digitale,", "simplifiée."],
+      titleLines: ["Votre présence digitale,", "enfin à la hauteur."],
       subtitle:
-        "De la création de site à la gestion de votre activité, DJAMA vous accompagne avec des solutions digitales modernes, efficaces et accessibles.",
+        "Sites web, automatisation, coaching IA — tout ce dont votre activité a besoin, conçu sur mesure et livré avec soin.",
       cta1: "Démarrer un projet",
       cta2: "Nos services",
       socialProof: "+50 clients font confiance à DJAMA",

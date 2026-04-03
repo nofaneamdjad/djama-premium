@@ -14,9 +14,9 @@ export const en: Translations = {
   home: {
     hero: {
       badge: "Digital creation & professional tools",
-      titleLines: ["Your digital", "presence,", "simplified."],
+      titleLines: ["Your digital presence,", "finally at its best."],
       subtitle:
-        "From website design to business management, DJAMA supports you with modern, effective and accessible digital solutions.",
+        "Websites, automation, AI coaching — everything your business needs, built to measure and delivered with care.",
       cta1: "Start a project",
       cta2: "Our services",
       socialProof: "+50 clients trust DJAMA",
