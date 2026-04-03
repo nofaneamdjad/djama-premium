@@ -243,3 +243,147 @@ body {
   background: rgba(176,141,87,0.25);
   color: var(--ink);
 }
+
+/* ══════════════════════════════════════════════
+   HOVER TEXT — micro-interactions premium
+══════════════════════════════════════════════ */
+
+/* Shimmer gold — balayage lumineux doré
+   Usage : ajouter la classe, l'effet est auto sur hover
+   Compatible GPU : uniquement background-position animé */
+.shimmer-gold {
+  background-image: linear-gradient(
+    90deg,
+    currentColor 0%,
+    currentColor 35%,
+    #e8cc94 46%,
+    #fffbf0 50%,
+    #e8cc94 54%,
+    currentColor 65%,
+    currentColor 100%
+  );
+  background-size: 250% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-position: 100% center;
+  transition: background-position 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.shimmer-gold:hover { background-position: -100% center; }
+
+/* Shimmer white — version claire pour fond sombre */
+.shimmer-white {
+  background-image: linear-gradient(
+    90deg,
+    currentColor 0%,
+    currentColor 35%,
+    rgba(255,255,255,0.95) 46%,
+    rgba(255,255,255,1) 50%,
+    rgba(255,255,255,0.95) 54%,
+    currentColor 65%,
+    currentColor 100%
+  );
+  background-size: 250% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-position: 100% center;
+  transition: background-position 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.shimmer-white:hover { background-position: -100% center; }
+
+/* Lift text — translation Y subtile au hover */
+.hover-lift {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.3s ease;
+  will-change: transform;
+}
+.hover-lift:hover { transform: translateY(-3px); }
+
+/* Glow text — halo doré au hover (fond sombre) */
+.hover-glow-gold {
+  transition: text-shadow 0.35s ease, color 0.35s ease;
+}
+.hover-glow-gold:hover {
+  text-shadow: 0 0 18px rgba(201,165,90,0.55), 0 0 36px rgba(201,165,90,0.28);
+}
+
+/* Glow text — halo blanc au hover */
+.hover-glow-white {
+  transition: text-shadow 0.35s ease;
+}
+.hover-glow-white:hover {
+  text-shadow: 0 0 20px rgba(255,255,255,0.4), 0 0 40px rgba(255,255,255,0.18);
+}
+
+/* Underline draw — trait qui se dessine de gauche à droite
+   Utiliser sur un élément position:relative */
+.underline-draw {
+  position: relative;
+}
+.underline-draw::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: #c9a55a;
+  border-radius: 99px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.underline-draw:hover::after { transform: scaleX(1); }
+
+/* Underline draw — version blanche */
+.underline-draw-white::after { background: rgba(255,255,255,0.65); }
+
+/* Disable all hover animations on touch devices */
+@media (hover: none) {
+  .shimmer-gold,
+  .shimmer-white {
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    background-clip: unset;
+    -webkit-background-clip: unset;
+  }
+  .hover-lift:hover { transform: none; }
+  .hover-glow-gold:hover,
+  .hover-glow-white:hover { text-shadow: none; }
+  .underline-draw::after { display: none; }
+}
+
+/* ══════════════════════════════════════════════
+   PERFORMANCE — GPU & PAINT ISOLATION
+══════════════════════════════════════════════ */
+
+/* Promote glow/blur decoratives to own GPU layer — use sparingly */
+.gpu-layer {
+  transform: translateZ(0);
+  will-change: auto;
+}
+
+/* Section paint isolation — prevents layout recalculation propagation */
+.section-contain {
+  contain: layout style;
+}
+
+/* Cards with whileHover: pre-promote to GPU */
+.card-gpu {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Reduced motion — accessibility + performance */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .shimmer-gold:hover,
+  .shimmer-white:hover { background-position: 100% center !important; }
+}

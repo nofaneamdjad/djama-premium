@@ -5,6 +5,13 @@ import Stripe from "stripe";
    POST /api/checkout
    Crée une Stripe Checkout Session pour l'abonnement mensuel
    Espace Client DJAMA — 11,90 € / mois
+
+   Body (optionnel) :
+     { userId?: string, userEmail?: string }
+
+   Si userId est fourni, il est stocké comme client_reference_id
+   pour que le webhook puisse activer l'abonnement sans chercher
+   l'utilisateur par email.
 ───────────────────────────────────────────────────────────── */
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -12,7 +19,21 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: Request) {
-  const origin = req.headers.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const origin =
+    req.headers.get("origin") ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "http://localhost:3000";
+
+  /* Récupérer l'ID/email utilisateur si déjà connecté */
+  let userId: string | undefined;
+  let userEmail: string | undefined;
+  try {
+    const body = await req.json();
+    userId    = body.userId    ?? undefined;
+    userEmail = body.userEmail ?? undefined;
+  } catch {
+    /* body absent ou non-JSON → pas grave, on continue sans */
+  }
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -24,18 +45,21 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      /* Après paiement réussi → espace client */
-      success_url: `${origin}/paiement-confirme?session_id={CHECKOUT_SESSION_ID}`,
-      /* Annulation → retour à la page abonnement */
-      cancel_url: `${origin}/espace-client?annule=1`,
 
-      /* Pré-remplir la langue */
+      /* Lier le paiement au compte utilisateur existant */
+      ...(userId    && { client_reference_id: userId }),
+      ...(userEmail && { customer_email: userEmail }),
+
+      /* Redirections */
+      success_url: `${origin}/paiement-confirme?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:  `${origin}/espace-client?annule=1`,
+
       locale: "fr",
 
-      /* Personnalisation du bloc de facturation */
       custom_text: {
         submit: {
-          message: "Vous serez débité de 11,90 € chaque mois. Sans engagement, résiliable à tout moment.",
+          message:
+            "Vous serez débité de 11,90 € chaque mois. Sans engagement, résiliable à tout moment.",
         },
       },
     });
