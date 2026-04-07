@@ -14,7 +14,6 @@ import {
 } from "@/lib/animations";
 import type { ServiceRow } from "@/types/db";
 import { useLanguage } from "@/lib/language-context";
-import { fetchActiveServices } from "@/lib/db/services";
 import { WordLift } from "@/components/ui/HoverText";
 
 /* ─────────────────────────────────────────────────────────
@@ -361,11 +360,20 @@ export default function ServicesPage() {
   const [fetchErr, setFetchErr] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchActiveServices()
+    // Appel à la route SERVEUR — lit les env vars au RUNTIME, pas au build.
+    // Résout le problème "0 services en prod" causé par les NEXT_PUBLIC_* gravées vides.
+    fetch("/api/services")
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body?.error ?? `HTTP ${res.status}`);
+        }
+        return res.json() as Promise<ServiceRow[]>;
+      })
       .then((d) => { setRows(d); setFetchErr(null); })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
-        console.error("[ServicesPage] fetchActiveServices échoué :", msg);
+        console.error("[ServicesPage] /api/services échoué :", msg);
         setFetchErr(msg);
         setRows([]);
       })

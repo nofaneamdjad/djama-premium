@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "@/lib/supabase";
-import {
-  updateMessageStatus,
-  deleteMessage,
-} from "@/lib/db/messages";
+// Toutes les opérations Supabase passent par les routes serveur (runtime, pas build-time)
 import type { ContactMessageRow, MessageStatus, MessageSource } from "@/types/db";
 import {
   MessageSquare,
@@ -483,18 +479,15 @@ export default function AdminMessages() {
     else setRefreshing(true);
 
     try {
-      const { data, error } = await supabase
-        .from("contact_messages")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("[AdminMessages] Erreur Supabase:", error.code, error.message);
-        throw new Error(error.message);
+      const res = await fetch("/api/admin/messages", { cache: "no-store" });
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}));
+        throw new Error(b?.error ?? `HTTP ${res.status}`);
       }
+      const data: ContactMessageRow[] = await res.json();
 
-      console.log(`[AdminMessages] ${data?.length ?? 0} message(s) reçu(s) de Supabase`);
-      setMessages((data ?? []) as ContactMessageRow[]);
+      console.log(`[AdminMessages] ${data.length} message(s) chargé(s) via route serveur`);
+      setMessages(data);
       setLoadError(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erreur inconnue";
@@ -528,7 +521,8 @@ export default function AdminMessages() {
   const handleMarkLu = async (id: string) => {
     setActionLoading(prev => ({ ...prev, [id]: "lu" }));
     try {
-      await updateMessageStatus(id, "lu");
+      const r1 = await fetch(`/api/admin/messages?id=${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "lu" }) });
+      if (!r1.ok) { const b = await r1.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r1.status}`); }
       setMessages(prev => prev.map(m => m.id === id ? { ...m, status: "lu" as MessageStatus } : m));
       if (selected?.id === id) setSelected(prev => prev ? { ...prev, status: "lu" as MessageStatus } : null);
       addToast("Message marqué comme lu.");
@@ -542,7 +536,8 @@ export default function AdminMessages() {
   const handleMarkTraite = async (id: string) => {
     setActionLoading(prev => ({ ...prev, [id]: "traite" }));
     try {
-      await updateMessageStatus(id, "traité");
+      const r2 = await fetch(`/api/admin/messages?id=${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "traité" }) });
+      if (!r2.ok) { const b = await r2.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r2.status}`); }
       setMessages(prev => prev.map(m => m.id === id ? { ...m, status: "traité" as MessageStatus } : m));
       if (selected?.id === id) setSelected(prev => prev ? { ...prev, status: "traité" as MessageStatus } : null);
       addToast("Message marqué comme traité.");
@@ -561,7 +556,8 @@ export default function AdminMessages() {
     if (!confirm) return;
     setConfirmLoad(true);
     try {
-      await deleteMessage(confirm.id);
+      const r3 = await fetch(`/api/admin/messages?id=${confirm.id}`, { method: "DELETE" });
+      if (!r3.ok) { const b = await r3.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r3.status}`); }
       setMessages(prev => prev.filter(m => m.id !== confirm.id));
       if (selected?.id === confirm.id) setSelected(null);
       addToast("Message supprimé.");

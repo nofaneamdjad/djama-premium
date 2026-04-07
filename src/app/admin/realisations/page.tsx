@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Star, Plus, Pencil, Trash2, X, Loader2, Check, ToggleLeft, ToggleRight, Image, Video } from "lucide-react";
-import {
-  fetchRealisations,
-  createRealisation,
-  updateRealisation,
-  deleteRealisation,
-} from "@/lib/db/realisations";
+// Toutes les opérations passent par les routes serveur (lues au runtime, pas au build)
 import type { RealisationRow, RealisationStatus, RealisationMediaType } from "@/types/db";
 import { MediaUploader } from "@/components/admin/MediaUploader";
 
@@ -60,9 +55,12 @@ export default function AdminRealisations() {
   async function load() {
     setLoading(true);
     try {
-      setProjects(await fetchRealisations());
-    } catch {
-      toast("Erreur lors du chargement", false);
+      const res = await fetch("/api/admin/realisations", { cache: "no-store" });
+      if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${res.status}`); }
+      setProjects(await res.json());
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast(`Erreur chargement : ${msg.slice(0, 100)}`, false);
     } finally {
       setLoading(false);
     }
@@ -126,11 +124,15 @@ export default function AdminRealisations() {
         thumbnail_url: form.thumbnail_url || null,
       };
       if (modal === "add") {
-        const created = await createRealisation(payload);
+        const r = await fetch("/api/admin/realisations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r.status}`); }
+        const created: RealisationRow = await r.json();
         setProjects(prev => [created, ...prev]);
         toast("Projet créé", true);
       } else if (editing) {
-        const updated = await updateRealisation(editing.id, payload);
+        const r = await fetch(`/api/admin/realisations?id=${editing.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r.status}`); }
+        const updated: RealisationRow = await r.json();
         setProjects(prev => prev.map(p => p.id === editing.id ? updated : p));
         toast("Projet mis à jour", true);
       }
@@ -145,20 +147,23 @@ export default function AdminRealisations() {
   async function toggleStatus(p: RealisationRow) {
     const newStatus: RealisationStatus = p.status === "publié" ? "brouillon" : "publié";
     try {
-      const updated = await updateRealisation(p.id, { status: newStatus });
+      const r = await fetch(`/api/admin/realisations?id=${p.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }) });
+      if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r.status}`); }
+      const updated: RealisationRow = await r.json();
       setProjects(prev => prev.map(x => x.id === p.id ? updated : x));
-    } catch {
-      toast("Erreur lors de la mise à jour", false);
+    } catch (err) {
+      toast(`Erreur : ${err instanceof Error ? err.message : String(err)}`.slice(0, 100), false);
     }
   }
 
   async function handleDelete(id: string) {
     try {
-      await deleteRealisation(id);
+      const r = await fetch(`/api/admin/realisations?id=${id}`, { method: "DELETE" });
+      if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r.status}`); }
       setProjects(prev => prev.filter(p => p.id !== id));
       toast("Projet supprimé", true);
-    } catch {
-      toast("Erreur lors de la suppression", false);
+    } catch (err) {
+      toast(`Erreur : ${err instanceof Error ? err.message : String(err)}`.slice(0, 100), false);
     } finally {
       setConfirmDel(null);
     }

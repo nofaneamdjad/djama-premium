@@ -5,7 +5,7 @@ import {
   Award, Plus, Pencil, Trash2, X, Loader2, Check,
   RefreshCw, ToggleLeft, ToggleRight, GripVertical,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+// Toutes les opérations passent par les routes serveur (lues au runtime, pas au build)
 import type { PartnerLogoRow } from "@/types/db";
 import { MediaUploader } from "@/components/admin/MediaUploader";
 
@@ -43,16 +43,15 @@ export default function AdminPartenaires() {
 
   async function load(silent = false) {
     if (!silent) setLoading(true);
-    const { data, error } = await supabase
-      .from("partner_logos")
-      .select("*")
-      .order("sort_order", { ascending: true });
-    if (error) {
-      addToast("Impossible de charger les logos.", false);
-    } else {
-      setLogos((data ?? []) as PartnerLogoRow[]);
+    try {
+      const res = await fetch("/api/admin/partenaires", { cache: "no-store" });
+      if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${res.status}`); }
+      setLogos(await res.json());
+    } catch (err) {
+      addToast(`Impossible de charger les logos : ${err instanceof Error ? err.message : String(err)}`, false);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -105,23 +104,16 @@ export default function AdminPartenaires() {
 
     try {
       if (modal === "add") {
-        const { data, error } = await supabase
-          .from("partner_logos")
-          .insert([payload])
-          .select()
-          .single();
-        if (error) throw error;
-        setLogos(p => [...p, data as PartnerLogoRow]);
+        const r = await fetch("/api/admin/partenaires", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r.status}`); }
+        const data: PartnerLogoRow = await r.json();
+        setLogos(p => [...p, data]);
         addToast("Logo ajouté.", true);
       } else if (editing) {
-        const { data, error } = await supabase
-          .from("partner_logos")
-          .update(payload)
-          .eq("id", editing.id)
-          .select()
-          .single();
-        if (error) throw error;
-        setLogos(p => p.map(l => l.id === editing.id ? (data as PartnerLogoRow) : l));
+        const r = await fetch(`/api/admin/partenaires?id=${editing.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r.status}`); }
+        const data: PartnerLogoRow = await r.json();
+        setLogos(p => p.map(l => l.id === editing.id ? data : l));
         addToast("Logo mis à jour.", true);
       }
       setModal(null);
@@ -137,28 +129,28 @@ export default function AdminPartenaires() {
 
   async function toggleActive(l: PartnerLogoRow) {
     const newVal = !l.is_active;
-    const { error } = await supabase
-      .from("partner_logos")
-      .update({ is_active: newVal })
-      .eq("id", l.id);
-    if (error) {
-      addToast("Erreur lors de la mise à jour.", false);
-    } else {
+    try {
+      const r = await fetch(`/api/admin/partenaires?id=${l.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_active: newVal }) });
+      if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r.status}`); }
       setLogos(p => p.map(x => x.id === l.id ? { ...x, is_active: newVal } : x));
+    } catch (err) {
+      addToast(`Erreur mise à jour : ${err instanceof Error ? err.message : String(err)}`, false);
     }
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
 
   async function handleDelete(id: string) {
-    const { error } = await supabase.from("partner_logos").delete().eq("id", id);
-    if (error) {
-      addToast("Erreur lors de la suppression.", false);
-    } else {
+    try {
+      const r = await fetch(`/api/admin/partenaires?id=${id}`, { method: "DELETE" });
+      if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b?.error ?? `HTTP ${r.status}`); }
       setLogos(p => p.filter(l => l.id !== id));
       addToast("Logo supprimé.", true);
+    } catch (err) {
+      addToast(`Erreur suppression : ${err instanceof Error ? err.message : String(err)}`, false);
+    } finally {
+      setConfirmDel(null);
     }
-    setConfirmDel(null);
   }
 
   // ── Order up/down ─────────────────────────────────────────────────────────
@@ -172,10 +164,10 @@ export default function AdminPartenaires() {
     [updated[idx], updated[swapIdx]] = [updated[swapIdx], updated[idx]];
     const reordered = updated.map((l, i) => ({ ...l, sort_order: i }));
     setLogos(reordered);
-    // Persist to DB
+    // Persist to DB via routes serveur
     await Promise.all(
       reordered.map(l =>
-        supabase.from("partner_logos").update({ sort_order: l.sort_order }).eq("id", l.id)
+        fetch(`/api/admin/partenaires?id=${l.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sort_order: l.sort_order }) })
       )
     );
   }

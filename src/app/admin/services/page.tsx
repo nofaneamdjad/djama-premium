@@ -2,13 +2,51 @@
 
 import { useState, useEffect } from "react";
 import { Briefcase, ToggleLeft, ToggleRight, Plus, Pencil, Trash2, X, Loader2, Check } from "lucide-react";
-import {
-  fetchServices,
-  createService,
-  updateService,
-  deleteService,
-} from "@/lib/db/services";
 import type { ServiceRow, ServiceCategory } from "@/types/db";
+
+// ── Appels via routes serveur (lues au runtime, pas au build) ──────────────────
+async function apiFetchServices(): Promise<ServiceRow[]> {
+  const res = await fetch("/api/admin/services", { cache: "no-store" });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({}));
+    throw new Error(b?.error ?? `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function apiCreateService(payload: Omit<ServiceRow, "id" | "created_at">): Promise<ServiceRow> {
+  const res = await fetch("/api/admin/services", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({}));
+    throw new Error(b?.error ?? `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function apiUpdateService(id: string, payload: Partial<Omit<ServiceRow, "id" | "created_at">>): Promise<ServiceRow> {
+  const res = await fetch(`/api/admin/services?id=${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({}));
+    throw new Error(b?.error ?? `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function apiDeleteService(id: string): Promise<void> {
+  const res = await fetch(`/api/admin/services?id=${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({}));
+    throw new Error(b?.error ?? `HTTP ${res.status}`);
+  }
+}
 
 const CATEGORIES: ServiceCategory[] = [
   "Digital",
@@ -53,11 +91,11 @@ export default function AdminServices() {
   async function load() {
     setLoading(true);
     try {
-      setServices(await fetchServices());
+      setServices(await apiFetchServices());
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[AdminServices] fetchServices échoué :", msg);
-      toast(`Erreur : ${msg.slice(0, 120)}`, false);
+      console.error("[AdminServices] apiFetchServices échoué :", msg);
+      toast(`Erreur chargement : ${msg.slice(0, 120)}`, false);
     } finally {
       setLoading(false);
     }
@@ -94,11 +132,11 @@ export default function AdminServices() {
     setSaving(true);
     try {
       if (modal === "add") {
-        const created = await createService(form);
+        const created = await apiCreateService(form);
         setServices(prev => [...prev, created].sort((a, b) => a.sort_order - b.sort_order));
         toast("Service créé", true);
       } else if (editing) {
-        const updated = await updateService(editing.id, form);
+        const updated = await apiUpdateService(editing.id, form);
         setServices(prev =>
           prev.map(s => s.id === editing.id ? updated : s).sort((a, b) => a.sort_order - b.sort_order)
         );
@@ -115,16 +153,17 @@ export default function AdminServices() {
 
   async function toggleActive(s: ServiceRow) {
     try {
-      const updated = await updateService(s.id, { active: !s.active });
+      const updated = await apiUpdateService(s.id, { active: !s.active });
       setServices(prev => prev.map(x => x.id === s.id ? updated : x));
-    } catch {
-      toast("Erreur lors de la mise à jour", false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast(`Erreur toggle : ${msg.slice(0, 80)}`, false);
     }
   }
 
   async function handleDelete(id: string) {
     try {
-      await deleteService(id);
+      await apiDeleteService(id);
       setServices(prev => prev.filter(s => s.id !== id));
       toast("Service supprimé", true);
     } catch {
