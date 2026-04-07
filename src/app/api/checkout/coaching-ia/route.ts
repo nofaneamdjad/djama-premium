@@ -4,17 +4,26 @@ import Stripe from "stripe";
 /* ─────────────────────────────────────────────────────────────
    POST /api/checkout/coaching-ia
    Crée une Stripe Checkout Session pour le Coaching IA DJAMA
-   190 € — accès 3 mois
+   190 € — accès 3 mois (paiement unique)
 
-   Variables requises :
-     STRIPE_SECRET_KEY
-     STRIPE_COACHING_IA_PRICE_ID   (one-time price de 190€)
-     NEXT_PUBLIC_SITE_URL
-─────────────────────────────────────────────────────────────── */
+   ── Connexion Stripe Dashboard ─────────────────────────────
+   1. Créer un product "Coaching IA DJAMA" → price one-time 190€
+      https://dashboard.stripe.com/products
+      → STRIPE_COACHING_IA_PRICE_ID  (price_…)
+   2. Le webhook /api/webhook/stripe détecte metadata.product === "coaching_ia"
+      et active l'accès automatiquement.
+   Voir guide complet : src/lib/payments/index.ts
+───────────────────────────────────────────────────────────── */
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-03-25.dahlia",
-});
+// Instanciation paresseuse — jamais au niveau module
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY manquante — définissez-la dans les variables Vercel.");
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2026-03-25.dahlia",
+  });
+}
 
 export async function POST(req: Request) {
   const origin =
@@ -31,6 +40,7 @@ export async function POST(req: Request) {
   } catch { /* body absent → ok */ }
 
   try {
+    const stripe  = getStripe();
     const session = await stripe.checkout.sessions.create({
       mode: "payment",        /* Paiement unique 190€ */
       payment_method_types: ["card"],

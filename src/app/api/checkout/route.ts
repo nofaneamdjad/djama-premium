@@ -12,11 +12,32 @@ import Stripe from "stripe";
    Si userId est fourni, il est stocké comme client_reference_id
    pour que le webhook puisse activer l'abonnement sans chercher
    l'utilisateur par email.
+
+   ── Connexion Stripe Dashboard ─────────────────────────────
+   1. Clés API : https://dashboard.stripe.com/apikeys
+      → STRIPE_SECRET_KEY           (sk_live_… ou sk_test_…)
+      → NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY  (pk_live_…)
+   2. Price abonnement : https://dashboard.stripe.com/products
+      Créer un product "DJAMA Outils" → price récurrent 11,90€/mois
+      → STRIPE_PRICE_ID  (price_…)
+   3. Webhook : https://dashboard.stripe.com/webhooks → Add endpoint
+      URL    : <NEXT_PUBLIC_SITE_URL>/api/webhook/stripe
+      Events : checkout.session.completed, invoice.paid,
+               customer.subscription.updated,
+               customer.subscription.deleted
+      → STRIPE_WEBHOOK_SECRET  (whsec_…)
 ───────────────────────────────────────────────────────────── */
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-03-25.dahlia",
-});
+// Instanciation paresseuse — jamais au niveau module pour éviter
+// un crash si STRIPE_SECRET_KEY n'est pas encore définie au démarrage.
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY manquante — définissez-la dans les variables Vercel.");
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2026-03-25.dahlia",
+  });
+}
 
 export async function POST(req: Request) {
   const origin =
@@ -36,6 +57,7 @@ export async function POST(req: Request) {
   }
 
   try {
+    const stripe  = getStripe();
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
