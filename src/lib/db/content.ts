@@ -1,8 +1,8 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import type { ContentRow } from "@/types/db";
 
 export async function fetchAllContent(): Promise<ContentRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("site_content")
     .select("*")
     .order("key", { ascending: true });
@@ -11,7 +11,7 @@ export async function fetchAllContent(): Promise<ContentRow[]> {
 }
 
 export async function fetchContentByKey(key: string): Promise<string | null> {
-  const { data } = await supabase
+  const { data } = await getSupabase()
     .from("site_content")
     .select("value")
     .eq("key", key)
@@ -20,7 +20,7 @@ export async function fetchContentByKey(key: string): Promise<string | null> {
 }
 
 export async function upsertContent(key: string, value: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("site_content")
     .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
   if (error) throw error;
@@ -34,7 +34,7 @@ export async function upsertManyContent(
     value: e.value,
     updated_at: new Date().toISOString(),
   }));
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("site_content")
     .upsert(rows, { onConflict: "key" });
   if (error) throw error;

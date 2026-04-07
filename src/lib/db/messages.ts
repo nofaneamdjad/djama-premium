@@ -1,11 +1,11 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import type { ContactMessageRow, ContactMessagePayload, MessageStatus } from "@/types/db";
 
 // ── Lecture (admin) ───────────────────────────────────────────────
 
 /** Tous les messages, du plus récent au plus ancien */
 export async function fetchMessages(): Promise<ContactMessageRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("contact_messages")
     .select("id, name, email, phone, source, subject, message, status, metadata, created_at")
     .order("created_at", { ascending: false });
@@ -21,7 +21,7 @@ export async function fetchMessages(): Promise<ContactMessageRow[]> {
 
 /** Messages par statut */
 export async function fetchMessagesByStatus(status: MessageStatus): Promise<ContactMessageRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("contact_messages")
     .select("*")
     .eq("status", status)
@@ -32,7 +32,7 @@ export async function fetchMessagesByStatus(status: MessageStatus): Promise<Cont
 
 /** Compteurs par statut (pour le dashboard) */
 export async function fetchMessageCounts(): Promise<Record<MessageStatus | "total", number>> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("contact_messages")
     .select("status");
   if (error) throw error;
@@ -49,7 +49,7 @@ export async function fetchMessageCounts(): Promise<Record<MessageStatus | "tota
 
 /** Enregistre un nouveau message depuis le site public */
 export async function sendMessage(payload: ContactMessagePayload): Promise<ContactMessageRow> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("contact_messages")
     .insert({
       ...payload,
@@ -67,7 +67,7 @@ export async function updateMessageStatus(
   id: string,
   status: MessageStatus
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("contact_messages")
     .update({ status })
     .eq("id", id);
@@ -76,7 +76,7 @@ export async function updateMessageStatus(
 
 /** Supprime un message (admin) */
 export async function deleteMessage(id: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("contact_messages")
     .delete()
     .eq("id", id);

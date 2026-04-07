@@ -54,8 +54,10 @@ export default function AdminServices() {
     setLoading(true);
     try {
       setServices(await fetchServices());
-    } catch {
-      toast("Erreur lors du chargement", false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[AdminServices] fetchServices échoué :", msg);
+      toast(`Erreur : ${msg.slice(0, 120)}`, false);
     } finally {
       setLoading(false);
     }
@@ -103,8 +105,9 @@ export default function AdminServices() {
         toast("Service mis à jour", true);
       }
       setModal(null);
-    } catch {
-      toast("Erreur lors de la sauvegarde", false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast(`Erreur sauvegarde : ${msg.slice(0, 100)}`, false);
     } finally {
       setSaving(false);
     }

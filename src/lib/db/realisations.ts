@@ -1,8 +1,8 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import type { RealisationRow } from "@/types/db";
 
 export async function fetchRealisations(): Promise<RealisationRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("realisations")
     .select("*")
     .order("created_at", { ascending: false });
@@ -11,7 +11,7 @@ export async function fetchRealisations(): Promise<RealisationRow[]> {
 }
 
 export async function fetchPublishedRealisations(): Promise<RealisationRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("realisations")
     .select("*")
     .eq("status", "publié")
@@ -23,7 +23,7 @@ export async function fetchPublishedRealisations(): Promise<RealisationRow[]> {
 export async function createRealisation(
   payload: Omit<RealisationRow, "id" | "created_at">
 ): Promise<RealisationRow> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("realisations")
     .insert(payload)
     .select()
@@ -36,7 +36,7 @@ export async function updateRealisation(
   id: string,
   payload: Partial<Omit<RealisationRow, "id" | "created_at">>
 ): Promise<RealisationRow> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("realisations")
     .update(payload)
     .eq("id", id)
@@ -47,6 +47,6 @@ export async function updateRealisation(
 }
 
 export async function deleteRealisation(id: string): Promise<void> {
-  const { error } = await supabase.from("realisations").delete().eq("id", id);
+  const { error } = await getSupabase().from("realisations").delete().eq("id", id);
   if (error) throw error;
 }

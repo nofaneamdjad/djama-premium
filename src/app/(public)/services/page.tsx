@@ -356,13 +356,19 @@ export default function ServicesPage() {
 
   const [activeCategory, setActiveCategory] = useState("all");
 
-  const [rows, setRows] = useState<ServiceRow[]>([]);
+  const [rows, setRows]       = useState<ServiceRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchErr, setFetchErr] = useState<string | null>(null);
 
   useEffect(() => {
     fetchActiveServices()
-      .then((d) => setRows(d))
-      .catch(() => setRows([]))
+      .then((d) => { setRows(d); setFetchErr(null); })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("[ServicesPage] fetchActiveServices échoué :", msg);
+        setFetchErr(msg);
+        setRows([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -515,6 +521,11 @@ export default function ServicesPage() {
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-[380px] animate-pulse rounded-[1.75rem] border border-white/[0.06] bg-white/[0.02]" />
               ))}
+            </div>
+          ) : fetchErr ? (
+            <div className="mt-10 rounded-2xl border border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.07)] px-6 py-8 text-center">
+              <p className="text-sm font-bold text-[#f87171]">Impossible de charger les services</p>
+              <p className="mt-1 text-xs text-white/35">{fetchErr}</p>
             </div>
           ) : (
             <AnimatePresence mode="wait">

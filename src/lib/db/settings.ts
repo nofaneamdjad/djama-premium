@@ -1,11 +1,11 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import type { SiteSettingRow, SiteSettings } from "@/types/db";
 
 // ── Lecture ───────────────────────────────────────────────────────
 
 /** Toutes les entrées (pour la page admin) */
 export async function fetchAllSettings(): Promise<SiteSettingRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("site_settings")
     .select("*")
     .order("section")
@@ -22,7 +22,7 @@ export async function fetchSettingsMap(): Promise<SiteSettings> {
 
 /** Lecture d'une seule clé, avec fallback */
 export async function fetchSetting(key: string, fallback = ""): Promise<string> {
-  const { data } = await supabase
+  const { data } = await getSupabase()
     .from("site_settings")
     .select("value")
     .eq("key", key)
@@ -32,7 +32,7 @@ export async function fetchSetting(key: string, fallback = ""): Promise<string> 
 
 /** Lecture par section (ex: 'contact', 'cta', 'branding') */
 export async function fetchSettingsBySection(section: string): Promise<SiteSettingRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("site_settings")
     .select("*")
     .eq("section", section)
@@ -45,7 +45,7 @@ export async function fetchSettingsBySection(section: string): Promise<SiteSetti
 
 /** Met à jour une seule valeur */
 export async function updateSetting(key: string, value: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("site_settings")
     .update({ value, updated_at: new Date().toISOString() })
     .eq("key", key);
@@ -54,8 +54,9 @@ export async function updateSetting(key: string, value: string): Promise<void> {
 
 /** Met à jour plusieurs valeurs en une seule opération */
 export async function updateManySettings(map: Record<string, string>): Promise<void> {
+  const sb = getSupabase();
   const updates = Object.entries(map).map(([key, value]) =>
-    supabase
+    sb
       .from("site_settings")
       .update({ value, updated_at: new Date().toISOString() })
       .eq("key", key)
@@ -70,7 +71,7 @@ export async function upsertSetting(
   label?: string,
   section?: string
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("site_settings")
     .upsert({
       key,
