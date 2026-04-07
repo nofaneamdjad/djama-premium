@@ -15,7 +15,7 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     setTimeout(() => {
-      if (password === "djama2024") {
+      if (password === (process.env.NEXT_PUBLIC_ADMIN_PASS ?? "djama2024")) {
         localStorage.setItem("djama_admin", "ok");
         router.replace("/admin");
       } else {
