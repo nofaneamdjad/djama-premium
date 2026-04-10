@@ -109,11 +109,12 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const ok = !anonError && (anonResult as { total?: number })?.total > 0;
+  const anonTotal = (anonResult as { total?: number } | null)?.total ?? 0;
+  const ok = !anonError && anonTotal > 0;
 
   return NextResponse.json({
     status: ok
-      ? `✅ CONNEXION OK — ${(anonResult as { total?: number })?.total} services trouvés`
+      ? `✅ CONNEXION OK — ${anonTotal} services trouvés`
       : anonError
         ? "❌ REQUÊTE ANON ÉCHOUÉE — voir anon_query.error"
         : "⚠️ CONNEXION OK mais 0 services — RLS ou tables vides",
