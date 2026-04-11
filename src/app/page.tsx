@@ -8,7 +8,7 @@ import { LanguageProvider } from "@/lib/language-context";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight, Mail, Star, Zap, Users, Shield,
   CheckCircle2, Sparkles, TrendingUp, HeartHandshake,
@@ -226,62 +226,10 @@ const AI_POINTS = [
   "Préparer un projet solide et réaliste",
 ] as const;
 
-/* ── Conversation IA ───────────────────────────────────────── */
-const CHAT_MSGS = [
-  { role: "user" as const, text: "Pourquoi choisir DJAMA ?" },
-  { role: "ai"   as const, text: "DJAMA est une plateforme qui regroupe plusieurs services digitaux au même endroit : création de sites, automatisation, outils, IA et accompagnement." },
-  { role: "user" as const, text: "Et si je veux créer un projet ?" },
-  { role: "ai"   as const, text: "Nous analysons votre besoin et proposons une solution adaptée : site web, outil personnalisé ou automatisation." },
-  { role: "user" as const, text: "Est-ce que vous utilisez l'IA ?" },
-  { role: "ai"   as const, text: "Oui. DJAMA utilise l'intelligence artificielle pour automatiser certaines tâches et accélérer votre travail." },
-  { role: "user" as const, text: "Donc je peux gagner du temps ?" },
-  { role: "ai"   as const, text: "Exactement. L'objectif est de simplifier votre activité et vous permettre de vous concentrer sur l'essentiel." },
-  { role: "user" as const, text: "Parfait. Je vais contacter DJAMA. Merci !" },
-  { role: "ai"   as const, text: "Avec plaisir. Notre équipe est prête à vous accompagner." },
-];
-
+/* ── Maquette statique IA ───────────────────────────────────── */
 function ChatSection() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const chatEndRef  = useRef<HTMLDivElement>(null);
-  const started     = useRef(false);
-  const [visible,   setVisible]   = useState(0);
-  const [isTyping,  setIsTyping]  = useState(false);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [visible, isTyping]);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (!e.isIntersecting || started.current) return;
-        started.current = true;
-        let idx = 0;
-        function next() {
-          if (idx >= CHAT_MSGS.length) return;
-          const msg = CHAT_MSGS[idx];
-          const cur = idx++;
-          if (msg.role === "user") {
-            setTimeout(() => { setVisible(cur + 1); next(); }, cur === 0 ? 600 : 450);
-          } else {
-            setTimeout(() => {
-              setIsTyping(true);
-              setTimeout(() => { setIsTyping(false); setVisible(cur + 1); next(); }, 750);
-            }, 450);
-          }
-        }
-        next();
-      },
-      { threshold: 0.25 },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
   return (
-    <section ref={sectionRef} className="bg-[var(--surface)] py-24">
+    <section className="bg-[var(--surface)] py-24">
       <div className="mx-auto max-w-2xl px-6">
 
         {/* En-tête */}
@@ -298,7 +246,7 @@ function ChatSection() {
           </h2>
         </div>
 
-        {/* Carte chat */}
+        {/* Carte chat — 100 % statique, zéro interaction */}
         <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d10] shadow-[0_32px_80px_rgba(0,0,0,0.45)]">
 
           {/* Barre de titre */}
@@ -320,65 +268,63 @@ function ChatSection() {
             </div>
           </div>
 
-          {/* Zone messages */}
-          <div className="flex flex-col gap-3 overflow-y-auto px-5 py-5" style={{ maxHeight: "390px" }}>
+          {/* Messages figés */}
+          <div className="flex flex-col gap-3 px-5 py-5">
 
-            {CHAT_MSGS.slice(0, visible).map((msg, i) => (
-              <div key={i} className={`flex items-end gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                {msg.role === "ai" && (
-                  <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgba(167,139,250,0.15)]">
-                    <Brain size={12} className="text-[#a78bfa]" />
-                  </div>
-                )}
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                  className={
-                    msg.role === "user"
-                      ? "max-w-[72%] rounded-2xl rounded-br-sm bg-[#c9a55a] px-4 py-2.5 text-[0.82rem] font-semibold leading-relaxed text-[#1a1308]"
-                      : "max-w-[78%] rounded-2xl rounded-bl-sm border border-white/[0.06] bg-[#18181c] px-4 py-2.5 text-[0.82rem] leading-relaxed text-white/72"
-                  }
-                >
-                  {msg.text}
-                </motion.div>
+            {/* user */}
+            <div className="flex items-end justify-end gap-2.5">
+              <div className="max-w-[72%] rounded-2xl rounded-br-sm bg-[#c9a55a] px-4 py-2.5 text-[0.82rem] font-semibold leading-relaxed text-[#1a1308]">
+                Pourquoi choisir DJAMA ?
               </div>
-            ))}
+            </div>
 
-            {/* Indicateur de frappe */}
-            <AnimatePresence>
-              {isTyping && (
-                <motion.div
-                  key="typing"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18 }}
-                  className="flex items-end gap-2.5"
-                >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgba(167,139,250,0.15)]">
-                    <Brain size={12} className="text-[#a78bfa]" />
-                  </div>
-                  <div className="rounded-2xl rounded-bl-sm border border-white/[0.06] bg-[#18181c] px-4 py-3">
-                    <div className="flex items-center gap-1">
-                      {[0, 1, 2].map((i) => (
-                        <motion.div
-                          key={i}
-                          className="h-2 w-2 rounded-full bg-white/28"
-                          animate={{ y: [0, -4, 0] }}
-                          transition={{ duration: 0.55, repeat: Infinity, delay: i * 0.14, ease: "easeInOut" }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* ai */}
+            <div className="flex items-end justify-start gap-2.5">
+              <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgba(167,139,250,0.15)]">
+                <Brain size={12} className="text-[#a78bfa]" />
+              </div>
+              <div className="max-w-[78%] rounded-2xl rounded-bl-sm border border-white/[0.06] bg-[#18181c] px-4 py-2.5 text-[0.82rem] leading-relaxed text-white/72">
+                DJAMA regroupe tous vos services digitaux en un seul endroit : création web, automatisation, outils IA et accompagnement.
+              </div>
+            </div>
 
-            <div ref={chatEndRef} />
+            {/* user */}
+            <div className="flex items-end justify-end gap-2.5">
+              <div className="max-w-[72%] rounded-2xl rounded-br-sm bg-[#c9a55a] px-4 py-2.5 text-[0.82rem] font-semibold leading-relaxed text-[#1a1308]">
+                Est-ce que vous utilisez l&apos;IA ?
+              </div>
+            </div>
+
+            {/* ai */}
+            <div className="flex items-end justify-start gap-2.5">
+              <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgba(167,139,250,0.15)]">
+                <Brain size={12} className="text-[#a78bfa]" />
+              </div>
+              <div className="max-w-[78%] rounded-2xl rounded-bl-sm border border-white/[0.06] bg-[#18181c] px-4 py-2.5 text-[0.82rem] leading-relaxed text-white/72">
+                Oui. L&apos;IA automatise certaines tâches et accélère votre travail pour que vous vous concentriez sur l&apos;essentiel.
+              </div>
+            </div>
+
+            {/* user */}
+            <div className="flex items-end justify-end gap-2.5">
+              <div className="max-w-[72%] rounded-2xl rounded-br-sm bg-[#c9a55a] px-4 py-2.5 text-[0.82rem] font-semibold leading-relaxed text-[#1a1308]">
+                Parfait. Je vais contacter DJAMA. Merci !
+              </div>
+            </div>
+
+            {/* ai */}
+            <div className="flex items-end justify-start gap-2.5">
+              <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgba(167,139,250,0.15)]">
+                <Brain size={12} className="text-[#a78bfa]" />
+              </div>
+              <div className="max-w-[78%] rounded-2xl rounded-bl-sm border border-white/[0.06] bg-[#18181c] px-4 py-2.5 text-[0.82rem] leading-relaxed text-white/72">
+                Avec plaisir. Notre équipe est prête à vous accompagner.
+              </div>
+            </div>
+
           </div>
 
-          {/* Fausse barre de saisie */}
+          {/* Barre de saisie décorative */}
           <div className="flex items-center gap-3 border-t border-white/[0.06] bg-[#111114] px-4 py-3.5">
             <div className="flex-1 rounded-xl bg-white/[0.04] px-4 py-2.5">
               <p className="text-[0.78rem] text-white/18">Écrivez votre message…</p>
