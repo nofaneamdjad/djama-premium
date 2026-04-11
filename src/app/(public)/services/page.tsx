@@ -134,11 +134,14 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
   const isOutil = service.category === "Documents & Outils";
   const Icon    = CAT_ICONS[service.category] ?? Code2;
 
+  const isCoachingIA    = service.slug === "coaching-ia"    || service.title === "Coaching IA";
+  const isSoutienScolaire = service.slug === "soutien-scolaire" || service.title === "Soutien scolaire";
+
   const href = isOutil
     ? "/abonnement"
-    : service.slug === "coaching-ia"
+    : isCoachingIA
       ? "/services/coaching-ia"
-      : service.slug === "soutien-scolaire"
+      : isSoutienScolaire
         ? "/services/soutien-scolaire"
         : "/contact";
 
@@ -150,7 +153,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
 
   const ctaLabel = isOutil
     ? (lang === "en" ? "Get started" : "Commencer maintenant")
-    : service.slug === "coaching-ia"
+    : isCoachingIA
       ? (lang === "en" ? "Book your AI Coaching" : "Réserver votre Coaching IA")
       : (lang === "en" ? "Request a quote" : "Demander un devis");
 
