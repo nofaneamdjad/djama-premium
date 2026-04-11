@@ -150,7 +150,9 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
 
   const ctaLabel = isOutil
     ? (lang === "en" ? "Get started" : "Commencer maintenant")
-    : (lang === "en" ? "Request a quote" : "Demander un devis");
+    : service.slug === "coaching-ia"
+      ? (lang === "en" ? "Book your AI Coaching" : "Réserver votre Coaching IA")
+      : (lang === "en" ? "Request a quote" : "Demander un devis");
 
   return (
     <motion.div
