@@ -134,14 +134,17 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
   const isOutil = service.category === "Documents & Outils";
   const Icon    = CAT_ICONS[service.category] ?? Code2;
 
-  const isCoachingIA      = service.slug === "coaching-ia"                      || service.title === "Coaching IA";
-  const isSoutienScolaire = service.slug === "soutien-scolaire"                 || service.title === "Soutien scolaire";
-  const isMarchesPublics  = service.slug === "marches-publics-prives"           || service.title === "Marchés publics & privés";
-  const isAssistanceAdmin = service.slug === "assistance-administrative-entreprises"
-                         || service.slug === "declarations-urssaf"
-                         || service.title === "Assistance administrative entreprises"
-                         || service.title === "Assistance administrative"
-                         || service.title === "Déclarations URSSAF";
+  const isCoachingIA        = service.slug === "coaching-ia"                      || service.title === "Coaching IA";
+  const isSoutienScolaire   = service.slug === "soutien-scolaire"                 || service.title === "Soutien scolaire";
+  const isMarchesPublics    = service.slug === "marches-publics-prives"           || service.title === "Marchés publics & privés";
+  const isAssistanceAdmin   = service.slug === "assistance-administrative-entreprises"
+                           || service.slug === "declarations-urssaf"
+                           || service.title === "Assistance administrative entreprises"
+                           || service.title === "Assistance administrative"
+                           || service.title === "Déclarations URSSAF";
+  const isFournisseurs      = service.slug === "fournisseurs-internationaux"
+                           || service.title === "Recherche de fournisseurs internationaux"
+                           || service.title === "Recherche fournisseurs";
 
   const href = isOutil
     ? "/abonnement"
@@ -153,7 +156,9 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
           ? "/services/marches-publics"
           : isAssistanceAdmin
             ? "/services/assistance-administrative"
-            : "/contact";
+            : isFournisseurs
+              ? "/services/recherche-fournisseurs"
+              : "/contact";
 
   const priceTag = service.price || null;
 
