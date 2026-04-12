@@ -134,9 +134,14 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
   const isOutil = service.category === "Documents & Outils";
   const Icon    = CAT_ICONS[service.category] ?? Code2;
 
-  const isCoachingIA      = service.slug === "coaching-ia"           || service.title === "Coaching IA";
-  const isSoutienScolaire = service.slug === "soutien-scolaire"      || service.title === "Soutien scolaire";
-  const isMarchesPublics  = service.slug === "marches-publics-prives" || service.title === "Marchés publics & privés";
+  const isCoachingIA      = service.slug === "coaching-ia"                      || service.title === "Coaching IA";
+  const isSoutienScolaire = service.slug === "soutien-scolaire"                 || service.title === "Soutien scolaire";
+  const isMarchesPublics  = service.slug === "marches-publics-prives"           || service.title === "Marchés publics & privés";
+  const isAssistanceAdmin = service.slug === "assistance-administrative-entreprises"
+                         || service.slug === "declarations-urssaf"
+                         || service.title === "Assistance administrative entreprises"
+                         || service.title === "Assistance administrative"
+                         || service.title === "Déclarations URSSAF";
 
   const href = isOutil
     ? "/abonnement"
@@ -146,7 +151,9 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
         ? "/services/soutien-scolaire"
         : isMarchesPublics
           ? "/services/marches-publics"
-          : "/contact";
+          : isAssistanceAdmin
+            ? "/services/assistance-administrative"
+            : "/contact";
 
   const priceTag = service.price || null;
 
