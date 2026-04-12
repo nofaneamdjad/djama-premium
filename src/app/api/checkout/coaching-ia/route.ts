@@ -6,14 +6,15 @@ import Stripe from "stripe";
    Crée une Stripe Checkout Session pour le Coaching IA DJAMA
    190 € — accès 3 mois (paiement unique)
 
-   ── Connexion Stripe Dashboard ─────────────────────────────
-   1. Créer un product "Coaching IA DJAMA" → price one-time 190€
-      https://dashboard.stripe.com/products
-      → STRIPE_COACHING_IA_PRICE_ID  (price_…)
-   2. Le webhook /api/webhook/stripe détecte metadata.product === "coaching_ia"
-      et active l'accès automatiquement.
-   Voir guide complet : src/lib/payments/index.ts
+   Price ID Stripe (one-time 190€) : price_1TLSS8BVPLJRI48ZYEBj2YlE
+   Variable Vercel optionnelle : STRIPE_COACHING_IA_PRICE_ID (override)
+
+   Le webhook /api/webhook/stripe détecte metadata.product === "coaching_ia"
+   et active l'accès automatiquement.
 ───────────────────────────────────────────────────────────── */
+
+const COACHING_IA_PRICE_ID =
+  process.env.STRIPE_COACHING_IA_PRICE_ID ?? "price_1TLSS8BVPLJRI48ZYEBj2YlE";
 
 // Instanciation paresseuse — jamais au niveau module
 function getStripe() {
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       payment_method_types: ["card"],
       line_items: [
         {
-          price:    process.env.STRIPE_COACHING_IA_PRICE_ID!,
+          price:    COACHING_IA_PRICE_ID,
           quantity: 1,
         },
       ],
