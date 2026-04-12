@@ -140,11 +140,14 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
   const isAssistanceAdmin   = service.slug === "assistance-administrative-entreprises"
                            || service.title === "Assistance administrative entreprises"
                            || service.title === "Assistance administrative";
-  const isDeclarationsUrssaf = service.slug === "declarations-urssaf"
-                           || service.title === "Déclarations URSSAF";
-  const isFournisseurs      = service.slug === "fournisseurs-internationaux"
-                           || service.title === "Recherche de fournisseurs internationaux"
-                           || service.title === "Recherche fournisseurs";
+  const isDeclarationsUrssaf   = service.slug === "declarations-urssaf"
+                             || service.title === "Déclarations URSSAF";
+  const isCreationAutoEntre    = service.slug === "creation-auto-entrepreneur"
+                             || service.title === "Création auto-entrepreneur"
+                             || service.title === "Création auto entrepreneur";
+  const isFournisseurs         = service.slug === "fournisseurs-internationaux"
+                             || service.title === "Recherche de fournisseurs internationaux"
+                             || service.title === "Recherche fournisseurs";
 
   const href = isOutil
     ? "/abonnement"
@@ -158,9 +161,11 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
             ? "/services/assistance-administrative"
             : isDeclarationsUrssaf
               ? "/services/declarations-urssaf"
-              : isFournisseurs
-                ? "/services/recherche-fournisseurs"
-                : "/contact";
+              : isCreationAutoEntre
+                ? "/services/creation-auto-entrepreneur"
+                : isFournisseurs
+                  ? "/services/recherche-fournisseurs"
+                  : "/contact";
 
   const priceTag = service.price || null;
 
