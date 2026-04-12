@@ -101,6 +101,49 @@ const ATOUTS = [
   },
 ];
 
+const PROFS = [
+  {
+    initial: "S",
+    color: "#60a5fa",
+    rgb:   "96,165,250",
+    name:  "Sophie",
+    niveau: "Lycée · 1ère & Terminale",
+    specialite: "Mathématiques & Physique-Chimie",
+    methode: "Cours structurés, exercices progressifs, fiches de révision personnalisées.",
+    tags: ["Maths", "Physique-Chimie", "Terminale", "Bac"],
+  },
+  {
+    initial: "T",
+    color: "#c9a55a",
+    rgb:   "201,165,90",
+    name:  "Thomas",
+    niveau: "Collège & Lycée",
+    specialite: "Français & Histoire-Géographie",
+    methode: "Analyse de textes, rédaction guidée, chronologie claire et mémos visuels.",
+    tags: ["Français", "Histoire-Géo", "Brevet", "Bac"],
+  },
+  {
+    initial: "L",
+    color: "#4ade80",
+    rgb:   "74,222,128",
+    name:  "Lucas",
+    niveau: "6ème → Terminale",
+    specialite: "Anglais & NSI / Informatique",
+    methode: "Conversation en contexte, grammaire active, projets concrets en programmation.",
+    tags: ["Anglais", "NSI", "Lycée", "Collège"],
+  },
+  {
+    initial: "M",
+    color: "#a78bfa",
+    rgb:   "167,139,250",
+    name:  "Marie",
+    niveau: "Lycée général & technologique",
+    specialite: "SVT & Sciences de la vie",
+    methode: "Schémas, mémos visuels, mots-clés essentiels. L'élève comprend, pas seulement mémorise.",
+    tags: ["SVT", "Sciences", "Bac", "Lycée"],
+  },
+];
+
 const STATS = [
   { value: "14€",    label: "de l'heure",          color: "#c9a55a" },
   { value: "7",      label: "niveaux couverts",     color: "#60a5fa" },
@@ -779,6 +822,94 @@ export default function SoutienScolairePage() {
               </motion.div>
             ))}
           </motion.div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════
+          6.5. NOS PROFESSEURS
+      ════════════════════════════════════════════════════ */}
+      <section className="bg-white py-24">
+        <div className="mx-auto max-w-5xl px-6">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            variants={staggerContainer}
+            className="mb-14 text-center"
+          >
+            <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
+              <Users size={10} /> Notre équipe pédagogique
+            </motion.span>
+            <h2 className="display-section text-[#09090b]">
+              Des professeurs{" "}
+              <span className="text-[#c9a55a]">dédiés à votre réussite</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-[#6b7280]">
+              Chaque élève est accompagné par un professeur spécialisé dans sa matière
+              et son niveau. Bienveillance, clarté et méthode — les trois piliers de notre équipe.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            variants={staggerContainerFast}
+            className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {PROFS.map(({ initial, color, rgb, name, niveau, specialite, methode, tags }) => (
+              <motion.div
+                key={name}
+                variants={cardReveal}
+                className="group relative flex flex-col overflow-hidden rounded-[1.5rem] border border-[#e5e7eb] bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_12px_40px_rgba(0,0,0,0.10)]"
+              >
+                {/* Avatar */}
+                <div
+                  className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black text-white shadow-sm"
+                  style={{ background: `linear-gradient(135deg, rgba(${rgb},0.85), rgba(${rgb},0.55))` }}
+                >
+                  {initial}
+                </div>
+
+                {/* Identité */}
+                <p className="text-base font-extrabold text-[#09090b]">{name}</p>
+                <p className="mt-0.5 text-xs font-semibold text-[#c9a55a]">{specialite}</p>
+                <p className="mt-1 text-[0.72rem] text-[#9ca3af]">{niveau}</p>
+
+                {/* Méthode */}
+                <p className="mt-4 flex-1 text-xs leading-relaxed text-[#6b7280]">{methode}</p>
+
+                {/* Tags */}
+                <div className="mt-5 flex flex-wrap gap-1.5">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold"
+                      style={{
+                        background: `rgba(${rgb},0.09)`,
+                        color,
+                        border: `1px solid rgba(${rgb},0.2)`,
+                      }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Note rassurante */}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-10 text-center text-sm text-[#9ca3af]"
+          >
+            Le professeur est sélectionné en fonction de la matière, du niveau et des objectifs de l&apos;élève.
+            Un remplaçant est toujours disponible en cas d&apos;indisponibilité.
+          </motion.p>
         </div>
       </section>
 

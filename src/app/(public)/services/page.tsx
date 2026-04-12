@@ -155,7 +155,9 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
     ? (lang === "en" ? "Get started" : "Commencer maintenant")
     : isCoachingIA
       ? (lang === "en" ? "Book your AI Coaching" : "Réserver votre Coaching IA")
-      : (lang === "en" ? "Request a quote" : "Demander un devis");
+      : isSoutienScolaire
+        ? (lang === "en" ? "Book a trial lesson" : "Réserver votre cours d'essai")
+        : (lang === "en" ? "Request a quote" : "Demander un devis");
 
   return (
     <motion.div
