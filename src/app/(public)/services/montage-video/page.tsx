@@ -82,14 +82,14 @@ function FieldInput({ icon: Icon, type = "text", placeholder, value, onChange, v
   const showErr = touched && value && validate && !isValid;
   const border  = showErr ? "rgba(248,113,113,0.5)" : showOk ? "rgba(52,211,153,0.45)" : focused ? `rgba(${ACCENT_RGB},0.5)` : "rgba(255,255,255,0.09)";
   return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200"
+    <div className="flex items-center gap-3 rounded-2xl border bg-white/[0.09] px-4 py-3.5 transition-all duration-200"
       style={{ borderColor: border, boxShadow: focused ? `0 0 0 3px rgba(${ACCENT_RGB},0.08)` : "none" }}>
       <Icon size={15} className="shrink-0" style={{ color: focused || value ? ACCENT : "rgba(255,255,255,0.25)" }} />
       <input type={type} placeholder={placeholder} value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); setTouched(true); }}
         required={required}
-        className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none" />
+        className="flex-1 bg-transparent text-sm text-white placeholder-white/40 outline-none" />
       <AnimatePresence>
         {showOk && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><CheckCircle2 size={14} className="text-[#34d399]" /></motion.div>}
       </AnimatePresence>
@@ -104,7 +104,7 @@ function FieldSelect({ icon: Icon, placeholder, value, onChange, options }: {
   const [focused, setFocused] = useState(false);
   const border = value ? "rgba(52,211,153,0.35)" : focused ? `rgba(${ACCENT_RGB},0.45)` : "rgba(255,255,255,0.09)";
   return (
-    <div className="relative flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200" style={{ borderColor: border }}>
+    <div className="relative flex items-center gap-3 rounded-2xl border bg-white/[0.09] px-4 py-3.5 transition-all duration-200" style={{ borderColor: border }}>
       <Icon size={15} className="shrink-0" style={{ color: value || focused ? ACCENT : "rgba(255,255,255,0.25)" }} />
       <select value={value} onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
@@ -121,7 +121,7 @@ function FieldSelect({ icon: Icon, placeholder, value, onChange, options }: {
 
 function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
   return (
-    <div className="cursor-pointer rounded-2xl border border-white/[0.07] bg-white transition-all duration-200 hover:border-[rgba(232,121,249,0.25)] hover:shadow-sm" onClick={onToggle}>
+    <div className="cursor-pointer rounded-2xl border border-[rgba(255,255,255,0.12)] bg-white transition-all duration-200 hover:border-[rgba(232,121,249,0.4)] hover:shadow-md" onClick={onToggle}>
       <div className="flex items-center justify-between gap-4 px-6 py-5">
         <p className="text-sm font-semibold text-[#09090b] leading-relaxed">{q}</p>
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all duration-300"
@@ -195,13 +195,13 @@ function DevisForm() {
         <FieldSelect icon={Film} placeholder="Type de vidéo" value={typeVideo} onChange={setTypeVideo} options={TYPE_VIDEO_OPTIONS} />
       </div>
       <FieldSelect icon={Monitor} placeholder="Plateforme de diffusion" value={plateforme} onChange={setPlateforme} options={PLATEFORME_OPTIONS} />
-      <div className="rounded-2xl border bg-white/[0.04] transition-all duration-200"
+      <div className="rounded-2xl border bg-white/[0.09] transition-all duration-200"
         style={{ borderColor: message.length > 5 ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.09)" }}>
         <div className="flex items-start gap-3 px-4 pt-4">
           <MessageSquare size={15} className="mt-0.5 shrink-0" style={{ color: message ? ACCENT : "rgba(255,255,255,0.25)" }} />
           <textarea placeholder="Décrivez votre besoin (durée souhaitée, style, références, contexte…)" value={message}
             onChange={(e) => setMessage(e.target.value)} rows={5} required
-            className="flex-1 resize-none bg-transparent pb-4 text-sm text-white placeholder-white/25 outline-none" />
+            className="flex-1 resize-none bg-transparent pb-4 text-sm text-white placeholder-white/40 outline-none" />
         </div>
         <div className="border-t border-white/[0.05] px-4 py-2 text-right">
           <span className="text-[0.6rem] text-white/20">{message.length} caractères</span>
@@ -229,9 +229,9 @@ export default function MontageVideoPage() {
       <main>
 
         {/* HERO */}
-        <section className="relative overflow-hidden bg-[#09090b] pb-24 pt-32">
+        <section className="relative overflow-hidden bg-[#09090b] pb-14 pt-24 sm:pb-24 sm:pt-32">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/4 rounded-full opacity-20"
+            <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/4 rounded-full opacity-30"
               style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.35) 0%, transparent 70%)` }} />
           </div>
           <div className="relative mx-auto max-w-4xl px-6 text-center">
@@ -269,21 +269,21 @@ export default function MontageVideoPage() {
         </section>
 
         {/* FORMATS */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#0e0b18] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Formats pris en charge</motion.p>
               <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Pour quels formats ?</motion.h2>
-              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/45 max-w-xl mx-auto">Reels, TikTok, YouTube, pub, corporate — on maîtrise tous les formats vidéo du moment.</motion.p>
+              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/60 max-w-xl mx-auto">Reels, TikTok, YouTube, pub, corporate — on maîtrise tous les formats vidéo du moment.</motion.p>
             </motion.div>
             <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {FORMATS.map(({ icon: Icon, color, rgb, title, desc }) => (
-                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}>
                     <Icon size={20} style={{ color }} />
                   </div>
                   <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/45">{desc}</p>
+                  <p className="text-xs leading-relaxed text-white/60">{desc}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -291,7 +291,7 @@ export default function MontageVideoPage() {
         </section>
 
         {/* CE QUE COMPREND LE SERVICE */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans le service</motion.p>
@@ -299,12 +299,12 @@ export default function MontageVideoPage() {
             </motion.div>
             <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {INCLUS.map(({ icon: Icon, color, rgb, title, desc }) => (
-                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}>
                     <Icon size={20} style={{ color }} />
                   </div>
                   <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/45">{desc}</p>
+                  <p className="text-xs leading-relaxed text-white/60">{desc}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -312,7 +312,7 @@ export default function MontageVideoPage() {
         </section>
 
         {/* POUR QUI */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#0e0b18] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Profils</motion.p>
@@ -320,12 +320,12 @@ export default function MontageVideoPage() {
             </motion.div>
             <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {POUR_QUI.map(({ icon: Icon, color, rgb, who, desc, tags }) => (
-                <motion.div key={who} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                <motion.div key={who} variants={cardReveal} className="group rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}>
                     <Icon size={20} style={{ color }} />
                   </div>
                   <h3 className="mb-2 text-sm font-bold text-white">{who}</h3>
-                  <p className="mb-4 text-xs leading-relaxed text-white/45">{desc}</p>
+                  <p className="mb-4 text-xs leading-relaxed text-white/60">{desc}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {tags.map((t) => (
                       <span key={t} className="rounded-full border px-2.5 py-1 text-[0.6rem] font-medium"
@@ -339,7 +339,7 @@ export default function MontageVideoPage() {
         </section>
 
         {/* ÉTAPES */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre méthode</motion.p>
@@ -348,7 +348,7 @@ export default function MontageVideoPage() {
             <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="space-y-6">
               {ETAPES.map(({ num, icon: Icon, color, rgb, title, desc }) => (
                 <motion.div key={num} variants={cardReveal}
-                  className="group relative flex gap-6 rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                  className="group relative flex gap-6 rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
                   <div className="relative z-10 flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border"
                     style={{ background: `rgba(${rgb},0.1)`, borderColor: `rgba(${rgb},0.25)` }}>
                     <span className="text-[0.6rem] font-bold" style={{ color: `rgba(${rgb},0.7)` }}>{num}</span>
@@ -356,7 +356,7 @@ export default function MontageVideoPage() {
                   </div>
                   <div className="flex-1 pt-1">
                     <h3 className="mb-1.5 text-sm font-bold text-white">{title}</h3>
-                    <p className="text-xs leading-relaxed text-white/45">{desc}</p>
+                    <p className="text-xs leading-relaxed text-white/60">{desc}</p>
                   </div>
                   <span className="pointer-events-none absolute right-6 top-4 text-5xl font-black opacity-[0.04] select-none" style={{ color }}>{num}</span>
                 </motion.div>
@@ -366,19 +366,21 @@ export default function MontageVideoPage() {
         </section>
 
         {/* FORMULAIRE */}
-        <section id="devis" className="bg-[#0c0c0e] py-24">
+        <section id="devis" className="bg-[#0e0b18] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
               <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Demandez votre devis</motion.h2>
-              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/45">Décrivez votre projet en quelques mots — on revient vers vous sous 24h.</motion.p>
+              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/60">Décrivez votre projet en quelques mots — on revient vers vous sous 24h.</motion.p>
             </motion.div>
-            <DevisForm />
+            <div className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-5 sm:p-8 shadow-2xl">
+              <DevisForm />
+            </div>
           </div>
         </section>
 
         {/* FAQ */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
@@ -393,7 +395,7 @@ export default function MontageVideoPage() {
         </section>
 
         {/* CTA FINAL */}
-        <section className="relative overflow-hidden bg-[#0c0c0e] pb-24 pt-20">
+        <section className="relative overflow-hidden bg-[#0e0b18] pb-14 pt-14 sm:pb-24 sm:pt-20">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-15"
               style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, transparent 70%)` }} />

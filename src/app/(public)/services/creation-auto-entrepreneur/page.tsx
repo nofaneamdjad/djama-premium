@@ -150,7 +150,7 @@ function FieldInput({
                 : focused ? `rgba(${ACCENT_RGB},0.5)`
                 : "rgba(255,255,255,0.09)";
   return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200"
+    <div className="flex items-center gap-3 rounded-2xl border bg-white/[0.09] px-4 py-3.5 transition-all duration-200"
       style={{ borderColor: border, boxShadow: focused ? `0 0 0 3px rgba(${ACCENT_RGB},0.08)` : "none" }}>
       <Icon size={15} className="shrink-0" style={{ color: focused || value ? ACCENT : "rgba(255,255,255,0.25)" }} />
       <input type={type} placeholder={placeholder} value={value}
@@ -158,7 +158,7 @@ function FieldInput({
         onFocus={() => setFocused(true)}
         onBlur={() => { setFocused(false); setTouched(true); }}
         required={required}
-        className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none"
+        className="flex-1 bg-transparent text-sm text-white placeholder-white/40 outline-none"
       />
       <AnimatePresence>
         {showOk && (
@@ -180,7 +180,7 @@ function FieldSelect({
   const [focused, setFocused] = useState(false);
   const border = value ? "rgba(52,211,153,0.35)" : focused ? `rgba(${ACCENT_RGB},0.45)` : "rgba(255,255,255,0.09)";
   return (
-    <div className="relative flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200" style={{ borderColor: border }}>
+    <div className="relative flex items-center gap-3 rounded-2xl border bg-white/[0.09] px-4 py-3.5 transition-all duration-200" style={{ borderColor: border }}>
       <Icon size={15} className="shrink-0" style={{ color: value || focused ? ACCENT : "rgba(255,255,255,0.25)" }} />
       <select value={value} onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
@@ -197,7 +197,7 @@ function FieldSelect({
 
 function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
   return (
-    <div className="cursor-pointer rounded-2xl border border-white/[0.07] bg-white transition-all duration-200 hover:border-[rgba(251,146,60,0.25)] hover:shadow-sm" onClick={onToggle}>
+    <div className="cursor-pointer rounded-2xl border border-[rgba(255,255,255,0.12)] bg-white transition-all duration-200 hover:border-[rgba(251,146,60,0.4)] hover:shadow-md" onClick={onToggle}>
       <div className="flex items-center justify-between gap-4 px-6 py-5">
         <p className="text-sm font-semibold text-[#09090b] leading-relaxed">{q}</p>
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all duration-300"
@@ -283,13 +283,13 @@ function DevisForm() {
         <FieldInput icon={Phone} type="tel" placeholder="Téléphone (optionnel)" value={tel} onChange={setTel} />
         <FieldSelect icon={Briefcase} placeholder="Type d'activité" value={activite} onChange={setActivite} options={ACTIVITE_OPTIONS} />
       </div>
-      <div className="rounded-2xl border bg-white/[0.04] transition-all duration-200"
+      <div className="rounded-2xl border bg-white/[0.09] transition-all duration-200"
         style={{ borderColor: message.length > 5 ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.09)" }}>
         <div className="flex items-start gap-3 px-4 pt-4">
           <MessageSquare size={15} className="mt-0.5 shrink-0" style={{ color: message ? ACCENT : "rgba(255,255,255,0.25)" }} />
           <textarea placeholder="Décrivez votre projet ou votre besoin (activité, questions, contexte…)" value={message}
             onChange={(e) => setMessage(e.target.value)} rows={5} required
-            className="flex-1 resize-none bg-transparent pb-4 text-sm text-white placeholder-white/25 outline-none" />
+            className="flex-1 resize-none bg-transparent pb-4 text-sm text-white placeholder-white/40 outline-none" />
         </div>
         <div className="border-t border-white/[0.05] px-4 py-2 text-right">
           <span className="text-[0.6rem] text-white/20">{message.length} caractères</span>
@@ -327,10 +327,10 @@ export default function CreationAutoEntrepreneurPage() {
         {/* ════════════════════════════════════════════════════
             HERO
         ════════════════════════════════════════════════════ */}
-        <section className="relative overflow-hidden bg-[#09090b] pb-24 pt-32">
+        <section className="relative overflow-hidden bg-[#09090b] pb-14 pt-24 sm:pb-24 sm:pt-32">
           {/* Ambient glow */}
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/4 rounded-full opacity-20"
+            <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/4 rounded-full opacity-30"
               style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.35) 0%, transparent 70%)` }} />
           </div>
 
@@ -406,7 +406,7 @@ export default function CreationAutoEntrepreneurPage() {
         {/* ════════════════════════════════════════════════════
             POURQUOI SE LANCER EN AUTO-ENTREPRENEUR
         ════════════════════════════════════════════════════ */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#150e01] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport}
               className="mb-14 text-center">
@@ -419,7 +419,7 @@ export default function CreationAutoEntrepreneurPage() {
                 className="text-3xl font-extrabold text-white sm:text-4xl">
                 Pourquoi se lancer en auto-entrepreneur
               </motion.h2>
-              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/45 max-w-xl mx-auto">
+              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/60 max-w-xl mx-auto">
                 Un statut simple, flexible et accessible — conçu pour ceux qui veulent démarrer vite.
               </motion.p>
             </motion.div>
@@ -428,13 +428,13 @@ export default function CreationAutoEntrepreneurPage() {
               className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {POURQUOI.map(({ icon: Icon, color, rgb, title, desc }) => (
                 <motion.div key={title} variants={cardReveal}
-                  className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                  className="group rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl"
                     style={{ background: `rgba(${rgb},0.1)` }}>
                     <Icon size={20} style={{ color }} />
                   </div>
                   <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/45">{desc}</p>
+                  <p className="text-xs leading-relaxed text-white/60">{desc}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -444,7 +444,7 @@ export default function CreationAutoEntrepreneurPage() {
         {/* ════════════════════════════════════════════════════
             CE QUE DJAMA FAIT POUR VOUS
         ════════════════════════════════════════════════════ */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport}
               className="mb-14 text-center">
@@ -457,7 +457,7 @@ export default function CreationAutoEntrepreneurPage() {
                 className="text-3xl font-extrabold text-white sm:text-4xl">
                 Ce que DJAMA fait pour vous
               </motion.h2>
-              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/45 max-w-xl mx-auto">
+              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/60 max-w-xl mx-auto">
                 De la première question à la validation officielle de votre statut — on vous guide à chaque étape.
               </motion.p>
             </motion.div>
@@ -466,13 +466,13 @@ export default function CreationAutoEntrepreneurPage() {
               className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {ACCOMPAGNEMENT.map(({ icon: Icon, color, rgb, title, desc }) => (
                 <motion.div key={title} variants={cardReveal}
-                  className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                  className="group rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl"
                     style={{ background: `rgba(${rgb},0.1)` }}>
                     <Icon size={20} style={{ color }} />
                   </div>
                   <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/45">{desc}</p>
+                  <p className="text-xs leading-relaxed text-white/60">{desc}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -482,7 +482,7 @@ export default function CreationAutoEntrepreneurPage() {
         {/* ════════════════════════════════════════════════════
             POUR QUI
         ════════════════════════════════════════════════════ */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#150e01] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport}
               className="mb-14 text-center">
@@ -501,13 +501,13 @@ export default function CreationAutoEntrepreneurPage() {
               className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {POUR_QUI.map(({ icon: Icon, color, rgb, who, desc, tags }) => (
                 <motion.div key={who} variants={cardReveal}
-                  className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                  className="group rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl"
                     style={{ background: `rgba(${rgb},0.1)` }}>
                     <Icon size={20} style={{ color }} />
                   </div>
                   <h3 className="mb-2 text-sm font-bold text-white">{who}</h3>
-                  <p className="mb-4 text-xs leading-relaxed text-white/45">{desc}</p>
+                  <p className="mb-4 text-xs leading-relaxed text-white/60">{desc}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {tags.map((t) => (
                       <span key={t} className="rounded-full border px-2.5 py-1 text-[0.6rem] font-medium"
@@ -525,7 +525,7 @@ export default function CreationAutoEntrepreneurPage() {
         {/* ════════════════════════════════════════════════════
             LES ÉTAPES
         ════════════════════════════════════════════════════ */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport}
               className="mb-14 text-center">
@@ -548,7 +548,7 @@ export default function CreationAutoEntrepreneurPage() {
                 className="space-y-6">
                 {ETAPES.map(({ num, icon: Icon, color, rgb, title, desc }) => (
                   <motion.div key={num} variants={cardReveal}
-                    className="group relative flex gap-6 rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                    className="group relative flex gap-6 rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
                     {/* Step bubble */}
                     <div className="relative z-10 flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border"
                       style={{ background: `rgba(${rgb},0.1)`, borderColor: `rgba(${rgb},0.25)` }}>
@@ -557,7 +557,7 @@ export default function CreationAutoEntrepreneurPage() {
                     </div>
                     <div className="flex-1 pt-1">
                       <h3 className="mb-1.5 text-sm font-bold text-white">{title}</h3>
-                      <p className="text-xs leading-relaxed text-white/45">{desc}</p>
+                      <p className="text-xs leading-relaxed text-white/60">{desc}</p>
                     </div>
                     {/* Number watermark */}
                     <span className="pointer-events-none absolute right-6 top-4 text-5xl font-black opacity-[0.04] select-none"
@@ -572,7 +572,7 @@ export default function CreationAutoEntrepreneurPage() {
         {/* ════════════════════════════════════════════════════
             TRANSPARENCE
         ════════════════════════════════════════════════════ */}
-        <section className="bg-[#0c0c0e] py-20">
+        <section className="bg-[#150e01] py-20">
           <div className="mx-auto max-w-3xl px-6">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport}
               transition={{ duration: 0.55, ease }}
@@ -601,7 +601,7 @@ export default function CreationAutoEntrepreneurPage() {
         {/* ════════════════════════════════════════════════════
             FORMULAIRE
         ════════════════════════════════════════════════════ */}
-        <section id="devis" className="bg-[#09090b] py-24">
+        <section id="devis" className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport}
               className="mb-10 text-center">
@@ -614,19 +614,21 @@ export default function CreationAutoEntrepreneurPage() {
                 className="text-3xl font-extrabold text-white sm:text-4xl">
                 Demandez votre devis
               </motion.h2>
-              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/45">
+              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/60">
                 Dites-nous en quelques mots ce que vous souhaitez créer — on revient vers vous sous 24h.
               </motion.p>
             </motion.div>
 
-            <DevisForm />
+            <div className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-5 sm:p-8 shadow-2xl">
+              <DevisForm />
+            </div>
           </div>
         </section>
 
         {/* ════════════════════════════════════════════════════
             FAQ
         ════════════════════════════════════════════════════ */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#150e01] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport}
               className="mb-10 text-center">
@@ -652,7 +654,7 @@ export default function CreationAutoEntrepreneurPage() {
         {/* ════════════════════════════════════════════════════
             CTA FINAL
         ════════════════════════════════════════════════════ */}
-        <section className="relative overflow-hidden bg-[#09090b] pb-24 pt-20">
+        <section className="relative overflow-hidden bg-[#09090b] pb-14 pt-14 sm:pb-24 sm:pt-20">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-15"
               style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, transparent 70%)` }} />
