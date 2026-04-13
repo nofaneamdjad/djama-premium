@@ -8,6 +8,7 @@ import {
   Zap, User, Mail, Phone, MessageSquare, Loader2, Send, ArrowLeft,
   ShoppingCart, Truck, Users, Settings, Bell, Shield, Star,
   LayoutDashboard, Code2, Briefcase, TrendingUp, Lock, Palette,
+  Quote, Globe, Database, WifiOff, CreditCard, CheckSquare,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
@@ -65,12 +66,38 @@ const EXEMPLES_PROJETS = [
   { icon: Users,        color: "#4ade80", rgb: "74,222,128",  titre: "Réseau social de niche", desc: "Plateforme communautaire pour passionnés de sport — profils, fil d'actualité, événements et messagerie privée.",   resultat: "2 000 membres actifs en 3 mois" },
 ];
 
+const PROCESSUS_STEPS = [
+  { num: "01", icon: MessageSquare, color: "#c9a55a", rgb: "201,165,90",  label: "Analyse",        desc: "Cadrage du projet" },
+  { num: "02", icon: Palette,       color: "#60a5fa", rgb: "96,165,250",  label: "Prototype UX",   desc: "Maquettes validées" },
+  { num: "03", icon: Code2,         color: ACCENT,    rgb: ACCENT_RGB,    label: "Développement",  desc: "Sprints agiles" },
+  { num: "04", icon: CheckSquare,   color: "#4ade80", rgb: "74,222,128",  label: "Tests",          desc: "QA multi-devices" },
+  { num: "05", icon: Globe,         color: "#a78bfa", rgb: "167,139,250", label: "Publication",    desc: "App Store & Play" },
+];
+
+const TABLE_INCLUS = [
+  { label: "Application iOS (App Store)",          icon: Smartphone,   color: "251,113,133" },
+  { label: "Application Android (Google Play)",    icon: Smartphone,   color: "96,165,250"  },
+  { label: "Design UX/UI mobile complet",          icon: Palette,      color: "74,222,128"  },
+  { label: "Backend & API sur mesure",             icon: Database,     color: "249,168,38"  },
+  { label: "Notifications push",                   icon: Bell,         color: "244,114,182" },
+  { label: "Authentification utilisateurs",        icon: Lock,         color: "167,139,250" },
+  { label: "Mode hors ligne (cache local)",        icon: WifiOff,      color: "52,211,153"  },
+  { label: "Maintenance & support post-lancement", icon: Shield,       color: "201,165,90"  },
+];
+
+const TEMOIGNAGES = [
+  { name: "Julien F.",  activite: "Fondateur d'une app de réservation", note: 5, avis: "DJAMA a transformé mon idée en application fonctionnelle en moins de 3 mois. Design soigné, performances excellentes, et un accompagnement au top du début à la fin." },
+  { name: "Sarah K.",  activite: "Directrice marketplace locale",       note: 5, avis: "Notre marketplace est en ligne sur iOS et Android. L'équipe a géré tout le processus — du design à la publication. On a 400 utilisateurs actifs le premier mois." },
+  { name: "Marc D.",   activite: "Gérant d'une chaîne de restaurants",  note: 5, avis: "L'app de réservation a réduit nos no-shows de 30%. Les notifications push automatiques ont changé la donne. Je recommande sans hésitation." },
+];
+
 const FAQ_ITEMS = [
-  { q: "Développez-vous pour iOS et Android ?", a: "Oui. Nous utilisons React Native ou Flutter pour livrer une application disponible sur les deux plateformes à partir d'une seule base de code, ce qui réduit les coûts et les délais." },
-  { q: "Combien de temps faut-il pour développer une app mobile ?", a: "Un MVP fonctionnel est généralement livrable en 6 à 16 semaines selon la complexité. Nous découpons le projet en sprints pour livrer rapidement." },
-  { q: "Pouvez-vous vous connecter à mon système existant ?", a: "Oui. Nous développons ou connectons des APIs pour intégrer votre app à vos outils actuels : CRM, ERP, base de données, paiement, etc." },
-  { q: "Qui gère la publication sur les stores ?", a: "Nous gérons l'ensemble du processus de soumission sur l'App Store (Apple) et le Google Play Store, y compris les assets requis et la conformité aux guidelines." },
-  { q: "Quel est le budget pour une application mobile ?", a: "Cela dépend de la complexité et du nombre de fonctionnalités. Contactez-nous pour une estimation personnalisée et transparente." },
+  { q: "Combien de temps pour développer une application ?", a: "Un MVP fonctionnel est généralement livrable en 6 à 16 semaines selon la complexité. Nous découpons le projet en sprints pour vous livrer rapidement et valider au fur et à mesure." },
+  { q: "Est-elle disponible sur iOS et Android ?", a: "Oui. Nous utilisons React Native ou Flutter pour livrer une application disponible sur les deux plateformes à partir d'une seule base de code, ce qui réduit les coûts et les délais." },
+  { q: "Puis-je modifier l'application après la livraison ?", a: "Oui. Toutes nos apps sont documentées et conçues pour évoluer. Nous pouvons ajouter des fonctionnalités, corriger des bugs ou adapter l'interface selon vos retours utilisateurs." },
+  { q: "La maintenance est-elle incluse ?", a: "Un suivi post-lancement est inclus. Pour une maintenance longue durée (mises à jour OS, nouvelles fonctionnalités, monitoring), nous proposons des contrats de maintenance dédiés." },
+  { q: "Puis-je connecter mon application à mon site ou mon CRM ?", a: "Oui. Nous développons ou connectons des APIs pour intégrer votre app à vos outils existants : site web, CRM, ERP, base de données, paiement, analytics, etc." },
+  { q: "Quel est le budget pour une application mobile ?", a: "Cela dépend de la complexité et du nombre de fonctionnalités. Contactez-nous pour une estimation transparente et personnalisée, sans engagement." },
 ];
 
 const TYPE_APP_OPTIONS = ["Application de réservation", "Application de livraison", "Application communautaire", "App de marque / fidélité", "Outil de gestion interne", "Marketplace", "Autre"];
@@ -221,41 +248,150 @@ export default function ApplicationMobilePage() {
       <Navbar />
       <main>
         {/* HERO */}
-        <section className="relative overflow-hidden bg-[#09090b] pb-24 pt-32">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/4 rounded-full opacity-20"
-              style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.35) 0%, transparent 70%)` }} />
-          </div>
-          <div className="relative mx-auto max-w-4xl px-6 text-center">
-            <motion.div {...fadeIn} className="mb-8">
-              <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/50 transition-colors hover:text-white">
-                <ArrowLeft size={13} /> Tous les services
-              </Link>
-            </motion.div>
-            <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium"
-              style={{ borderColor: `rgba(${ACCENT_RGB},0.3)`, background: `rgba(${ACCENT_RGB},0.08)`, color: ACCENT }}>
-              <Smartphone size={13} /> Développement mobile
-            </motion.div>
-            <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-              <MultiLineReveal lines={["Application mobile", "sur mesure"]}
-                highlight={1} stagger={0.12} wordStagger={0.055} delay={0.08} lineClassName="justify-center" />
-            </h1>
-            <FadeReveal delay={0.2}>
-              <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-white/55 sm:text-lg">
-                Nous concevons des applications mobiles modernes, utiles et pensées pour l'expérience utilisateur sur iOS et Android.
-              </p>
-            </FadeReveal>
-            <motion.div variants={staggerContainerFast} initial="hidden" animate="show" className="mb-10 flex flex-wrap justify-center gap-4">
-              {[{ label: "iOS & Android", sub: "une seule codebase" }, { label: "MVP en 6–16 sem.", sub: "livraison rapide" }, { label: "UX soignée", sub: "pensée utilisateur" }].map(({ label, sub }) => (
-                <motion.div key={label} variants={cardReveal} className="rounded-2xl border border-white/[0.07] bg-white/[0.04] px-6 py-3.5 text-center">
-                  <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{label}</p>
-                  <p className="text-[0.65rem] text-white/35">{sub}</p>
+        <section className="relative overflow-hidden"
+          style={{
+            background: "radial-gradient(ellipse at 30% 50%, #1a0810 0%, #0e0409 40%, #090306 70%, #050205 100%)",
+            minHeight: "min(80vh, 720px)",
+          }}>
+          <div className="pointer-events-none absolute inset-0"
+            style={{ backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(251,113,133,0.04) 1.5px, transparent 0)", backgroundSize: "32px 32px" }} />
+          <div className="pointer-events-none absolute left-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full blur-[100px]"
+            style={{ background: "radial-gradient(circle, rgba(251,113,133,0.10) 0%, transparent 70%)" }} />
+          <div className="pointer-events-none absolute right-0 top-1/4 h-[400px] w-[400px] rounded-full blur-[80px]"
+            style={{ background: "radial-gradient(circle, rgba(244,114,182,0.07) 0%, transparent 70%)" }} />
+
+          <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-12 px-6 pb-16 pt-28 lg:flex-row lg:gap-16 lg:pb-0 lg:pt-0" style={{ minHeight: "min(80vh, 720px)" }}>
+
+            {/* GAUCHE */}
+            <div className="flex flex-1 flex-col items-start lg:py-16">
+              <motion.div {...fadeIn} className="mb-7">
+                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/50 transition-colors hover:text-white">
+                  <ArrowLeft size={13} /> Tous les services
+                </Link>
+              </motion.div>
+              <motion.div {...fadeIn} transition={{ delay: 0.05 }}
+                className="mb-5 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[0.7rem] font-semibold"
+                style={{ borderColor: `rgba(${ACCENT_RGB},0.3)`, background: `rgba(${ACCENT_RGB},0.07)`, color: ACCENT }}>
+                <Smartphone size={12} /> Application mobile
+              </motion.div>
+              <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.5rem]">
+                <MultiLineReveal lines={["Créez votre application", "mobile"]}
+                  highlight={1} stagger={0.12} wordStagger={0.055} delay={0.08} lineClassName="justify-start" />
+              </h1>
+              <FadeReveal delay={0.2}>
+                <p className="mb-8 max-w-lg text-base leading-relaxed text-white/55 sm:text-lg">
+                  Application iOS et Android sur mesure pour digitaliser votre activité et améliorer l'expérience de vos utilisateurs.
+                </p>
+              </FadeReveal>
+              <FadeReveal delay={0.3}>
+                <div className="mb-8 flex flex-wrap gap-3">
+                  <Link href="#devis" className="btn-primary px-7 py-3.5 text-sm">Parler de mon application <ArrowRight size={15} /></Link>
+                  <Link href="#exemples" className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white/65 transition-all hover:border-white/20 hover:bg-white/[0.07] hover:text-white">Voir des exemples</Link>
+                </div>
+              </FadeReveal>
+              <FadeReveal delay={0.42}>
+                <div className="flex flex-wrap gap-2.5">
+                  {[{ emoji: "📱", label: "iOS & Android" }, { emoji: "⚡", label: "Performances optimisées" }, { emoji: "🔒", label: "Sécurité des données" }].map(({ emoji, label }) => (
+                    <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.09] bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/60">{emoji} {label}</span>
+                  ))}
+                </div>
+              </FadeReveal>
+            </div>
+
+            {/* DROITE — mockup smartphone */}
+            <div className="w-full flex-shrink-0 lg:w-[46%] lg:py-12">
+              <motion.div initial={{ opacity: 0, y: 28, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
+                className="relative mx-auto w-full max-w-[300px]">
+                <div className="pointer-events-none absolute -inset-8 rounded-3xl blur-3xl"
+                  style={{ background: "radial-gradient(ellipse, rgba(251,113,133,0.12) 0%, rgba(244,114,182,0.07) 50%, transparent 70%)" }} />
+
+                {/* Smartphone shell */}
+                <div className="relative mx-auto overflow-hidden rounded-[2.5rem] border-[6px] border-white/[0.12] shadow-[0_40px_100px_rgba(0,0,0,0.7)]"
+                  style={{ background: "#0d0d0f", aspectRatio: "9/19" }}>
+                  {/* Notch */}
+                  <div className="absolute left-1/2 top-2 z-20 h-5 w-20 -translate-x-1/2 rounded-full" style={{ background: "#0d0d0f", border: "2px solid rgba(255,255,255,0.06)" }} />
+
+                  {/* Status bar */}
+                  <div className="flex items-center justify-between px-4 pb-1 pt-3" style={{ background: "#111115" }}>
+                    <span className="text-[0.5rem] font-bold text-white/40">9:41</span>
+                    <div className="flex gap-1">
+                      {[3, 4, 5].map(n => <div key={n} className="rounded-sm bg-white/40" style={{ width: 3, height: n }} />)}
+                      <div className="ml-0.5 h-2 w-3 rounded-sm border border-white/30">
+                        <div className="h-full rounded-sm bg-white/60" style={{ width: "70%" }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Header app */}
+                  <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-2.5" style={{ background: "#111115" }}>
+                    <div className="flex items-center gap-2">
+                      <div className="h-6 w-6 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.25)` }} />
+                      <div className="h-2 w-14 rounded-full bg-white/30" />
+                    </div>
+                    <Bell size={12} style={{ color: ACCENT }} />
+                  </div>
+
+                  {/* Content */}
+                  <div className="space-y-2 p-3" style={{ background: "#0d0d0f" }}>
+                    {/* Bannière */}
+                    <div className="rounded-2xl p-3" style={{ background: `rgba(${ACCENT_RGB},0.08)` }}>
+                      <div className="mb-1.5 h-1.5 w-16 rounded-full" style={{ background: `rgba(${ACCENT_RGB},0.5)` }} />
+                      <div className="mb-1 h-3 w-4/5 rounded-full bg-white/40" />
+                      <div className="mb-2.5 h-2 w-3/5 rounded-full bg-white/20" />
+                      <div className="h-6 w-20 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.4)` }} />
+                    </div>
+                    {/* Cards stat */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {[{ c: ACCENT_RGB, label: "Utilisateurs", val: "2.4k" }, { c: "96,165,250", label: "Sessions", val: "8.1k" }].map(({ c, label, val }) => (
+                        <div key={label} className="rounded-2xl border border-white/[0.07] p-2.5" style={{ background: "#111115" }}>
+                          <p className="mb-0.5 text-[0.55rem] text-white/35">{label}</p>
+                          <p className="text-sm font-black" style={{ color: `rgb(${c})` }}>{val}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Liste items */}
+                    {[1, 2, 3].map((n) => (
+                      <div key={n} className="flex items-center gap-2.5 rounded-2xl border border-white/[0.06] p-2.5" style={{ background: "#111115" }}>
+                        <div className="h-8 w-8 shrink-0 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.1)` }} />
+                        <div className="flex-1 space-y-1">
+                          <div className="h-1.5 w-3/4 rounded-full bg-white/25" />
+                          <div className="h-1 w-1/2 rounded-full bg-white/12" />
+                        </div>
+                        <div className="h-5 w-10 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.2)` }} />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bottom nav */}
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-around border-t border-white/[0.07] px-4 py-2.5" style={{ background: "#111115" }}>
+                    {[LayoutDashboard, Users, Bell, Settings].map((Icon, i) => (
+                      <div key={i} className={`flex h-7 w-7 items-center justify-center rounded-xl transition-all ${i === 0 ? "" : ""}`}
+                        style={{ background: i === 0 ? `rgba(${ACCENT_RGB},0.15)` : "transparent" }}>
+                        <Icon size={13} style={{ color: i === 0 ? ACCENT : "rgba(255,255,255,0.3)" }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Badge iOS */}
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
+                  className="absolute -right-4 top-16 hidden rounded-2xl border border-white/[0.12] px-3 py-2 shadow-xl lg:block" style={{ background: "#141418" }}>
+                  <div className="flex items-center gap-2">
+                    <Smartphone size={12} style={{ color: ACCENT }} />
+                    <div><p className="text-[0.6rem] font-bold text-white">iOS & Android</p><p className="text-[0.55rem] text-white/35">Une seule codebase</p></div>
+                  </div>
                 </motion.div>
-              ))}
-            </motion.div>
-            <motion.div {...fadeIn} transition={{ delay: 0.35 }}>
-              <Link href="#devis" className="btn-primary px-8 py-4 text-base">Parler de mon application <ArrowRight size={16} /></Link>
-            </motion.div>
+                {/* Badge performances */}
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.85, duration: 0.5 }}
+                  className="absolute -left-4 bottom-20 hidden rounded-2xl border border-white/[0.12] px-3 py-2 shadow-xl lg:block" style={{ background: "#141418" }}>
+                  <div className="flex items-center gap-2">
+                    <Zap size={12} style={{ color: "#f9a826" }} />
+                    <div><p className="text-[0.6rem] font-bold text-white">MVP en 6–16 sem.</p><p className="text-[0.55rem] text-white/35">Livraison rapide</p></div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
           </div>
         </section>
 
@@ -319,75 +455,182 @@ export default function ApplicationMobilePage() {
           </div>
         </section>
 
-        {/* PROCESSUS */}
+        {/* PROCESSUS — TIMELINE */}
         <section className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-5xl px-6">
+          <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre processus</motion.p>
               <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">De l'idée à la publication</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-sm text-white/45">5 étapes claires pour aller de votre concept à une application publiée sur les stores.</motion.p>
             </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="space-y-6">
-              {PROCESSUS.map(({ num, icon: Icon, color, rgb, title, desc }) => (
-                <motion.div key={num} variants={cardReveal} className="group relative flex gap-6 rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
-                  <div className="relative z-10 flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border"
-                    style={{ background: `rgba(${rgb},0.1)`, borderColor: `rgba(${rgb},0.25)` }}>
-                    <span className="text-[0.6rem] font-bold" style={{ color: `rgba(${rgb},0.7)` }}>{num}</span>
-                    <Icon size={18} style={{ color }} />
-                  </div>
-                  <div className="flex-1 pt-1">
-                    <h3 className="mb-1.5 text-sm font-bold text-white">{title}</h3>
-                    <p className="text-xs leading-relaxed text-white/45">{desc}</p>
-                  </div>
-                  <span className="pointer-events-none absolute right-6 top-4 text-5xl font-black opacity-[0.04] select-none" style={{ color }}>{num}</span>
-                </motion.div>
-              ))}
-            </motion.div>
+            {/* Desktop horizontal */}
+            <div className="hidden sm:block">
+              <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="relative grid grid-cols-5 gap-0">
+                <div className="absolute left-[10%] right-[10%] top-[28px] h-px"
+                  style={{ background: `linear-gradient(90deg, rgba(${ACCENT_RGB},0.15), rgba(${ACCENT_RGB},0.4), rgba(${ACCENT_RGB},0.15))` }} />
+                {PROCESSUS_STEPS.map(({ num, icon: Icon, color, rgb, label, desc }) => (
+                  <motion.div key={num} variants={cardReveal} className="group flex flex-col items-center px-3 text-center">
+                    <div className="relative z-10 mb-4 flex h-14 w-14 items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-110"
+                      style={{ background: `rgba(${rgb},0.12)`, borderColor: `rgba(${rgb},0.45)`, boxShadow: `0 0 20px rgba(${rgb},0.18)` }}>
+                      <Icon size={18} style={{ color }} />
+                    </div>
+                    <span className="mb-1 text-[0.6rem] font-black uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>{num}</span>
+                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
+                    <p className="text-[0.7rem] leading-relaxed text-white/40">{desc}</p>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+            {/* Mobile vertical */}
+            <div className="sm:hidden">
+              <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="space-y-0">
+                {PROCESSUS_STEPS.map(({ num, icon: Icon, color, rgb, label, desc }, i) => (
+                  <motion.div key={num} variants={cardReveal} className="relative flex gap-4">
+                    {i < PROCESSUS_STEPS.length - 1 && (
+                      <div className="absolute left-[19px] top-[48px] h-full w-px" style={{ background: `rgba(${rgb},0.2)` }} />
+                    )}
+                    <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2"
+                      style={{ background: `rgba(${rgb},0.12)`, borderColor: `rgba(${rgb},0.4)` }}>
+                      <Icon size={15} style={{ color }} />
+                    </div>
+                    <div className="flex-1 pb-6 pt-1">
+                      <p className="mb-0.5 text-[0.6rem] font-black uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>{num} · {label}</p>
+                      <p className="text-xs leading-relaxed text-white/50">{desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
           </div>
         </section>
 
-        {/* CE QUE VOUS OBTENEZ */}
+        {/* TABLEAU DES FONCTIONNALITÉS */}
         <section className="bg-[#160a0d] py-14 sm:py-24">
-          <div className="mx-auto max-w-4xl px-6">
+          <div className="mx-auto max-w-3xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
               <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-md text-sm text-white/45">Tout ce qui est compris dans chaque application mobile livrée par DJAMA.</motion.p>
             </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="overflow-hidden rounded-3xl border border-white/[0.10]">
-              {CE_QUE_VOUS_OBTENEZ.map(({ label, desc, icon: Icon, color }, i) => (
-                <motion.div key={label} variants={cardReveal}
-                  className={`flex items-start gap-5 p-5 sm:p-6 transition-all duration-200 hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.07]" : ""}`}>
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
-                    <Icon size={18} style={{ color: `rgb(${color})` }} />
+            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport} transition={{ duration: 0.5, ease }}
+              className="overflow-hidden rounded-3xl border border-white/[0.10]">
+              <div className="grid grid-cols-[1fr_80px] items-center border-b border-white/[0.10] px-5 py-3.5"
+                style={{ background: "rgba(251,113,133,0.05)" }}>
+                <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/35">Fonctionnalité</p>
+                <p className="text-center text-[0.65rem] font-black uppercase tracking-widest text-white/35">Inclus</p>
+              </div>
+              {TABLE_INCLUS.map(({ label, icon: Icon, color }, i) => (
+                <motion.div key={label}
+                  initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={viewport}
+                  transition={{ duration: 0.35, delay: i * 0.06, ease }}
+                  className={`grid grid-cols-[1fr_80px] items-center px-5 py-4 transition-all hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.06]" : ""}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
+                      <Icon size={14} style={{ color: `rgb(${color})` }} />
+                    </div>
+                    <p className="text-sm text-white/80">{label}</p>
                   </div>
-                  <div>
-                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
-                    <p className="text-xs leading-relaxed text-white/50">{desc}</p>
+                  <div className="flex items-center justify-center">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full"
+                      style={{ background: "rgba(251,113,133,0.12)", border: "1px solid rgba(251,113,133,0.3)" }}>
+                      <CheckCircle2 size={13} style={{ color: ACCENT }} />
+                    </div>
                   </div>
-                  <CheckCircle2 size={16} className="ml-auto mt-1 shrink-0 text-[#34d399]" />
                 </motion.div>
               ))}
             </motion.div>
           </div>
         </section>
 
-        {/* EXEMPLES DE PROJETS */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
+        {/* EXEMPLES D'APPLICATIONS */}
+        <section id="exemples" className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de projets réalisés</motion.h2>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples d'applications créées</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-sm text-white/45">Quelques applications réalisées pour nos clients, de différents secteurs.</motion.p>
             </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
-              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }) => (
-                <motion.div key={titre} variants={cardReveal} className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.12)` }}>
-                    <Icon size={20} style={{ color }} />
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid items-start gap-6 sm:grid-cols-3">
+              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }, idx) => (
+                <motion.div key={titre} variants={cardReveal}
+                  className="overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.03] transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.06]">
+                  {/* Mini smartphone mockup */}
+                  <div className="flex items-center justify-center py-6" style={{ background: "#111115" }}>
+                    <div className="relative overflow-hidden rounded-[1.5rem] border-[4px] border-white/[0.10] shadow-xl"
+                      style={{ background: "#0d0d0f", width: 100, aspectRatio: "9/19" }}>
+                      {/* Header */}
+                      <div className="border-b border-white/[0.08] px-2 py-1.5" style={{ background: "#111115" }}>
+                        <div className="h-1 w-8 rounded-full bg-white/20 mx-auto" />
+                      </div>
+                      {/* App content */}
+                      <div className="p-2 space-y-1.5">
+                        <div className="rounded-lg p-2" style={{ background: `rgba(${rgb},0.1)` }}>
+                          <div className="mb-1 h-1.5 w-full rounded-full" style={{ background: `rgba(${rgb},0.4)` }} />
+                          <div className="h-1 w-3/4 rounded-full bg-white/20" />
+                        </div>
+                        {[1, 2, 3].map(n => (
+                          <div key={n} className="flex items-center gap-1.5 rounded-lg p-1.5" style={{ background: "rgba(255,255,255,0.04)" }}>
+                            <div className="h-5 w-5 shrink-0 rounded-lg" style={{ background: `rgba(${rgb},0.15)` }} />
+                            <div className="flex-1 space-y-0.5">
+                              <div className="h-1 w-full rounded-full bg-white/20" />
+                              <div className="h-1 w-2/3 rounded-full bg-white/10" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Bottom nav */}
+                      <div className="absolute bottom-0 left-0 right-0 flex justify-around border-t border-white/[0.07] py-1.5" style={{ background: "#111115" }}>
+                        {[0, 1, 2, 3].map(i => (
+                          <div key={i} className="h-3 w-3 rounded-full" style={{ background: i === 0 ? `rgba(${rgb},0.5)` : "rgba(255,255,255,0.1)" }} />
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{titre}</h3>
-                  <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
-                  <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
-                    <TrendingUp size={12} style={{ color }} />
-                    <p className="text-[0.68rem] font-semibold" style={{ color }}>{resultat}</p>
+                  {/* Texte */}
+                  <div className="p-5">
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${rgb},0.12)` }}>
+                        <Icon size={16} style={{ color }} />
+                      </div>
+                      <h3 className="text-sm font-bold text-white">{titre}</h3>
+                    </div>
+                    <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
+                    <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
+                      <TrendingUp size={11} style={{ color }} />
+                      <p className="text-[0.65rem] font-semibold leading-tight" style={{ color }}>{resultat}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* TÉMOIGNAGES */}
+        <section className="bg-[#160a0d] py-14 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Avis clients</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que disent nos clients</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid items-start gap-5 sm:grid-cols-3">
+              {TEMOIGNAGES.map(({ name, activite, note, avis }) => (
+                <motion.div key={name} variants={cardReveal}
+                  className="flex flex-col rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
+                  <div className="mb-4 flex gap-1">
+                    {Array.from({ length: note }).map((_, i) => <Star key={i} size={13} fill="#f9a826" style={{ color: "#f9a826" }} />)}
+                  </div>
+                  <Quote size={20} className="mb-3 opacity-20" style={{ color: ACCENT }} />
+                  <p className="mb-5 flex-1 text-sm leading-relaxed text-white/65">{avis}</p>
+                  <div className="flex items-center gap-3 border-t border-white/[0.07] pt-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-[0.65rem] font-black"
+                      style={{ background: `rgba(${ACCENT_RGB},0.15)`, color: ACCENT }}>
+                      {name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{name}</p>
+                      <p className="text-[0.65rem] text-white/35">{activite}</p>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -396,7 +639,7 @@ export default function ApplicationMobilePage() {
         </section>
 
         {/* FORMULAIRE */}
-        <section id="devis" className="bg-[#160a0d] py-14 sm:py-24">
+        <section id="devis" className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
@@ -408,7 +651,7 @@ export default function ApplicationMobilePage() {
         </section>
 
         {/* FAQ */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
+        <section className="bg-[#160a0d] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
@@ -431,8 +674,8 @@ export default function ApplicationMobilePage() {
               <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: `rgba(${ACCENT_RGB},0.12)` }}>
                 <Sparkles size={26} style={{ color: ACCENT }} />
               </div>
-              <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Votre app, sur iOS & Android</h2>
-              <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Partagez votre concept — on le transforme en application mobile professionnelle, utile et agréable à utiliser.</p>
+              <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Lancez votre application mobile</h2>
+              <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Partagez votre concept — on le transforme en application iOS & Android professionnelle, utile et agréable à utiliser.</p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link href="#devis" className="btn-primary px-8 py-4 text-base">Parler de mon application <ArrowRight size={16} /></Link>
                 <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-semibold text-white/70 transition-all hover:bg-white/[0.07] hover:text-white">Voir tous nos services</Link>
