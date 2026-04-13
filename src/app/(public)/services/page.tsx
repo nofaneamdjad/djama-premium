@@ -97,7 +97,7 @@ function CardVisual({ icon: Icon, config }: {
   config: typeof CAT_CONFIG[CatKey];
 }) {
   return (
-    <div className={`relative flex h-[200px] items-center justify-center overflow-hidden bg-gradient-to-br ${config.bg}`}>
+    <div className={`relative flex h-[160px] sm:h-[200px] items-center justify-center overflow-hidden bg-gradient-to-br ${config.bg}`}>
       <div className="absolute inset-0" style={{
         backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.05) 1.5px, transparent 0)",
         backgroundSize: "28px 28px",
@@ -235,7 +235,6 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
 
   return (
     <motion.div
-      layout
       variants={cardReveal}
       className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border bg-[#09090b] transition-all duration-500"
       style={{
@@ -270,7 +269,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
         </div>
       )}
 
-      <div className="flex flex-1 flex-col p-7">
+      <div className="flex flex-col p-5 sm:p-7">
         {/* Badge catégorie + prix */}
         <div className="mb-4 flex items-center justify-between gap-2">
           <span
@@ -302,7 +301,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
           <WordLift text={service.title} yOffset={4} stagger={25} hoverColor="rgba(255,255,255,1)" />
         </h2>
 
-        <p className="mt-2.5 flex-1 text-sm leading-relaxed text-white/40">
+        <p className="mt-2.5 text-sm leading-relaxed text-white/40">
           {excerpt}
         </p>
 
@@ -326,7 +325,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
           /* CTA solid pour les outils → conversion abonnement */
           <Link
             href={href}
-            className="group/cta relative z-[1] mt-6 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
+            className="group/cta relative z-[1] mt-5 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
             style={{
               background: config.accent,
               color: "#09090b",
@@ -339,7 +338,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
           /* CTA ghost pour les prestations */
           <Link
             href={href}
-            className="group/cta relative z-[1] mt-6 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300"
+            className="group/cta relative z-[1] mt-5 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300"
             style={{
               background: `rgba(${config.accentRgb}, 0.08)`,
               border: `1px solid rgba(${config.accentRgb}, 0.18)`,
@@ -606,9 +605,9 @@ export default function ServicesPage() {
           />
 
           {loading ? (
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-10 grid items-start gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-[380px] animate-pulse rounded-[1.75rem] border border-white/[0.06] bg-white/[0.02]" />
+                <div key={i} className="h-[320px] sm:h-[380px] animate-pulse rounded-[1.75rem] border border-white/[0.06] bg-white/[0.02]" />
               ))}
             </div>
           ) : fetchErr ? (
@@ -623,7 +622,7 @@ export default function ServicesPage() {
                 initial="hidden"
                 animate="visible"
                 variants={staggerContainerFast}
-                className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                className="mt-10 grid items-start gap-5 sm:grid-cols-2 xl:grid-cols-3"
               >
                 {filtered.map((service) => (
                   <ServiceCard key={service.id} service={service} lang={lang} />
