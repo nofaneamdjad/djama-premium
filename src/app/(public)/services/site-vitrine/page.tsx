@@ -220,41 +220,212 @@ export default function SiteVitrinePage() {
       <Navbar />
       <main>
         {/* HERO */}
-        <section className="relative overflow-hidden bg-[#09090b] pb-24 pt-32">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/4 rounded-full opacity-20"
-              style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.35) 0%, transparent 70%)` }} />
-          </div>
-          <div className="relative mx-auto max-w-4xl px-6 text-center">
-            <motion.div {...fadeIn} className="mb-8">
-              <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/50 transition-colors hover:text-white">
-                <ArrowLeft size={13} /> Tous les services
-              </Link>
-            </motion.div>
-            <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium"
-              style={{ borderColor: `rgba(${ACCENT_RGB},0.3)`, background: `rgba(${ACCENT_RGB},0.08)`, color: ACCENT }}>
-              <Monitor size={13} /> Site vitrine
-            </motion.div>
-            <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-              <MultiLineReveal lines={["Site vitrine", "professionnel"]}
-                highlight={1} stagger={0.12} wordStagger={0.055} delay={0.08} lineClassName="justify-center" />
-            </h1>
-            <FadeReveal delay={0.2}>
-              <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-white/55 sm:text-lg">
-                Un site propre, rapide et crédible pour présenter votre activité, rassurer vos clients et générer des contacts.
-              </p>
-            </FadeReveal>
-            <motion.div variants={staggerContainerFast} initial="hidden" animate="show" className="mb-10 flex flex-wrap justify-center gap-4">
-              {[{ label: "À partir de 490€", sub: "site vitrine complet" }, { label: "2–4 semaines", sub: "délai de livraison" }, { label: "Responsive", sub: "mobile + desktop" }].map(({ label, sub }) => (
-                <motion.div key={label} variants={cardReveal} className="rounded-2xl border border-white/[0.07] bg-white/[0.04] px-6 py-3.5 text-center">
-                  <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{label}</p>
-                  <p className="text-[0.65rem] text-white/35">{sub}</p>
+        <section
+          className="relative overflow-hidden"
+          style={{
+            background: "radial-gradient(ellipse at 30% 50%, #0d1a10 0%, #060d08 40%, #03080a 70%, #020508 100%)",
+            minHeight: "min(80vh, 720px)",
+          }}
+        >
+          {/* Grille de fond subtile */}
+          <div className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(74,222,128,0.04) 1.5px, transparent 0)",
+              backgroundSize: "32px 32px",
+            }}
+          />
+          {/* Glow gauche */}
+          <div className="pointer-events-none absolute left-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full blur-[100px]"
+            style={{ background: "radial-gradient(circle, rgba(74,222,128,0.12) 0%, transparent 70%)" }} />
+          {/* Glow droite */}
+          <div className="pointer-events-none absolute right-0 top-1/4 h-[400px] w-[400px] rounded-full blur-[80px]"
+            style={{ background: "radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%)" }} />
+
+          <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-12 px-6 pb-16 pt-28 lg:flex-row lg:gap-16 lg:pb-0 lg:pt-0" style={{ minHeight: "min(80vh, 720px)" }}>
+
+            {/* ── GAUCHE : texte ── */}
+            <div className="flex flex-1 flex-col items-start lg:py-16">
+              {/* Retour */}
+              <motion.div {...fadeIn} className="mb-7">
+                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/50 transition-colors hover:text-white">
+                  <ArrowLeft size={13} /> Tous les services
+                </Link>
+              </motion.div>
+
+              {/* Badge */}
+              <motion.div {...fadeIn} transition={{ delay: 0.05 }}
+                className="mb-5 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[0.7rem] font-semibold"
+                style={{ borderColor: `rgba(${ACCENT_RGB},0.3)`, background: `rgba(${ACCENT_RGB},0.07)`, color: ACCENT }}>
+                <Monitor size={12} /> Site vitrine professionnel
+              </motion.div>
+
+              {/* Titre */}
+              <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.5rem]">
+                <MultiLineReveal
+                  lines={["Site vitrine", "professionnel"]}
+                  highlight={1} stagger={0.12} wordStagger={0.055} delay={0.08}
+                  lineClassName="justify-start"
+                />
+              </h1>
+
+              {/* Sous-titre */}
+              <FadeReveal delay={0.2}>
+                <p className="mb-8 max-w-lg text-base leading-relaxed text-white/55 sm:text-lg">
+                  Un site rapide, crédible et optimisé SEO pour présenter votre activité et générer des contacts qualifiés.
+                </p>
+              </FadeReveal>
+
+              {/* Boutons CTA */}
+              <FadeReveal delay={0.3}>
+                <div className="mb-8 flex flex-wrap gap-3">
+                  <Link href="#devis" className="btn-primary px-7 py-3.5 text-sm">
+                    Créer mon site vitrine <ArrowRight size={15} />
+                  </Link>
+                  <Link href="#exemples"
+                    className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white/65 transition-all hover:border-white/20 hover:bg-white/[0.07] hover:text-white">
+                    Voir des exemples
+                  </Link>
+                </div>
+              </FadeReveal>
+
+              {/* Badges */}
+              <FadeReveal delay={0.42}>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { emoji: "⚡", label: "Livraison rapide" },
+                    { emoji: "📈", label: "SEO optimisé" },
+                    { emoji: "📱", label: "Mobile first" },
+                  ].map(({ emoji, label }) => (
+                    <span key={label}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.09] bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/60">
+                      {emoji} {label}
+                    </span>
+                  ))}
+                </div>
+              </FadeReveal>
+            </div>
+
+            {/* ── DROITE : mockup navigateur ── */}
+            <div className="w-full flex-shrink-0 lg:w-[52%] lg:py-12">
+              <motion.div
+                initial={{ opacity: 0, y: 28, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
+                className="relative mx-auto w-full max-w-[560px]"
+              >
+                {/* Halo derrière le mockup */}
+                <div className="pointer-events-none absolute -inset-6 rounded-3xl blur-3xl"
+                  style={{ background: "radial-gradient(ellipse, rgba(74,222,128,0.10) 0%, rgba(56,189,248,0.06) 50%, transparent 70%)" }} />
+
+                {/* Fenêtre navigateur */}
+                <div className="relative overflow-hidden rounded-2xl border border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
+                  style={{ background: "#0d0d0f" }}>
+
+                  {/* Barre de navigation du navigateur */}
+                  <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3"
+                    style={{ background: "#111115" }}>
+                    <div className="flex gap-1.5">
+                      <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+                      <div className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
+                      <div className="h-3 w-3 rounded-full bg-[#28c840]" />
+                    </div>
+                    <div className="flex flex-1 items-center gap-2 rounded-md border border-white/[0.07] bg-white/[0.04] px-3 py-1">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#4ade80]" />
+                      <span className="flex-1 text-[0.6rem] text-white/30">www.votre-site.fr</span>
+                      <Globe size={10} className="text-white/20" />
+                    </div>
+                  </div>
+
+                  {/* Contenu du site mockup */}
+                  <div className="p-0">
+
+                    {/* Nav mockup */}
+                    <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3"
+                      style={{ background: "#0a0a0c" }}>
+                      <div className="flex items-center gap-2">
+                        <div className="h-5 w-5 rounded-md" style={{ background: `rgba(${ACCENT_RGB},0.25)` }} />
+                        <div className="h-2 w-16 rounded-full bg-white/20" />
+                      </div>
+                      <div className="hidden items-center gap-4 sm:flex">
+                        {["Services", "À propos", "Contact"].map((t) => (
+                          <div key={t} className="h-1.5 rounded-full bg-white/15" style={{ width: `${t.length * 5}px` }} />
+                        ))}
+                      </div>
+                      <div className="h-6 w-16 rounded-full" style={{ background: `rgba(${ACCENT_RGB},0.2)` }} />
+                    </div>
+
+                    {/* Hero mockup */}
+                    <div className="px-5 py-6" style={{ background: "linear-gradient(135deg, #0e160f 0%, #0a1214 100%)" }}>
+                      <div className="mb-2 h-2 w-20 rounded-full" style={{ background: `rgba(${ACCENT_RGB},0.35)` }} />
+                      <div className="mb-1.5 h-4 w-3/4 rounded-full bg-white/50" />
+                      <div className="mb-1 h-4 w-1/2 rounded-full bg-white/30" />
+                      <div className="mb-4 mt-3 space-y-1.5">
+                        <div className="h-2 w-full rounded-full bg-white/10" />
+                        <div className="h-2 w-4/5 rounded-full bg-white/10" />
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="h-7 w-24 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.35)` }} />
+                        <div className="h-7 w-20 rounded-xl border border-white/10" />
+                      </div>
+                    </div>
+
+                    {/* Cards mockup */}
+                    <div className="grid grid-cols-3 gap-2 p-4" style={{ background: "#0d0d0f" }}>
+                      {[ACCENT, "#60a5fa", "#f9a826"].map((c, i) => (
+                        <div key={i} className="rounded-xl border border-white/[0.07] p-3" style={{ background: "#111115" }}>
+                          <div className="mb-2 h-6 w-6 rounded-lg" style={{ background: `rgba(${i === 0 ? ACCENT_RGB : i === 1 ? "96,165,250" : "249,168,38"},0.15)` }} />
+                          <div className="mb-1 h-1.5 w-full rounded-full bg-white/25" />
+                          <div className="h-1.5 w-2/3 rounded-full bg-white/12" />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Footer mockup */}
+                    <div className="flex items-center justify-between border-t border-white/[0.06] px-5 py-3"
+                      style={{ background: "#090909" }}>
+                      <div className="h-1.5 w-24 rounded-full bg-white/10" />
+                      <div className="flex gap-3">
+                        {[1, 2, 3].map((n) => <div key={n} className="h-5 w-5 rounded-full bg-white/[0.07]" />)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Badge flottant SEO */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.7, duration: 0.5 }}
+                  className="absolute -right-3 top-16 hidden rounded-2xl border border-white/[0.12] px-3.5 py-2.5 shadow-xl lg:block"
+                  style={{ background: "#141418" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Search size={13} style={{ color: ACCENT }} />
+                    <div>
+                      <p className="text-[0.6rem] font-bold text-white">SEO optimisé</p>
+                      <p className="text-[0.55rem] text-white/35">Top 3 Google en 2 mois</p>
+                    </div>
+                  </div>
                 </motion.div>
-              ))}
-            </motion.div>
-            <motion.div {...fadeIn} transition={{ delay: 0.35 }}>
-              <Link href="#devis" className="btn-primary px-8 py-4 text-base">Créer mon site vitrine <ArrowRight size={16} /></Link>
-            </motion.div>
+
+                {/* Badge flottant mobile */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.85, duration: 0.5 }}
+                  className="absolute -left-3 bottom-16 hidden rounded-2xl border border-white/[0.12] px-3.5 py-2.5 shadow-xl lg:block"
+                  style={{ background: "#141418" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Smartphone size={13} style={{ color: "#60a5fa" }} />
+                    <div>
+                      <p className="text-[0.6rem] font-bold text-white">Mobile first</p>
+                      <p className="text-[0.55rem] text-white/35">100% responsive</p>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
           </div>
         </section>
 
@@ -370,7 +541,7 @@ export default function SiteVitrinePage() {
         </section>
 
         {/* EXEMPLES DE PROJETS */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
+        <section id="exemples" className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
