@@ -50,6 +50,21 @@ const PROCESSUS = [
   { num: "04", icon: CheckCircle2,  color: "#4ade80", rgb: "74,222,128", title: "Tests & publication",       desc: "Tests complets, corrections, publication sur l'App Store et Google Play, suivi post-lancement." },
 ];
 
+const CE_QUE_VOUS_OBTENEZ = [
+  { label: "Cadrage & vision produit",    desc: "Définition des fonctionnalités clés, utilisateurs cibles, parcours et MVP.",                   icon: Briefcase,    color: "251,113,133" },
+  { label: "Design UX/UI mobile",         desc: "Maquettes interactives, design system, prototypage validé avant développement.",                icon: Palette,      color: "96,165,250"  },
+  { label: "Développement iOS & Android", desc: "Application native ou React Native — une base de code pour les deux plateformes.",              icon: Smartphone,   color: "74,222,128"  },
+  { label: "Backend & API",               desc: "Serveur, base de données, authentification, notifications push — tout l'écosystème.",           icon: Code2,        color: "249,168,38"  },
+  { label: "Tests & publication stores",  desc: "Tests complets, soumission App Store et Google Play, conformité aux guidelines.",               icon: CheckCircle2, color: "244,114,182" },
+  { label: "Support post-lancement",      desc: "Suivi des crashes, mises à jour, nouvelles fonctionnalités selon les retours utilisateurs.",     icon: Shield,       color: "167,139,250" },
+];
+
+const EXEMPLES_PROJETS = [
+  { icon: ShoppingCart, color: "#fb7185", rgb: "251,113,133", titre: "App de réservation",     desc: "Application iOS/Android pour un réseau de salons de coiffure — réservation, fidélité et notifications push.",   resultat: "30% de no-show en moins grâce aux rappels auto" },
+  { icon: Truck,        color: "#60a5fa", rgb: "96,165,250",  titre: "App de livraison",       desc: "Interface client + interface livreur avec tracking GPS en temps réel et gestion des statuts de commande.",         resultat: "4.8/5 sur l'App Store dès la 1ère semaine" },
+  { icon: Users,        color: "#4ade80", rgb: "74,222,128",  titre: "Réseau social de niche", desc: "Plateforme communautaire pour passionnés de sport — profils, fil d'actualité, événements et messagerie privée.",   resultat: "2 000 membres actifs en 3 mois" },
+];
+
 const FAQ_ITEMS = [
   { q: "Développez-vous pour iOS et Android ?", a: "Oui. Nous utilisons React Native ou Flutter pour livrer une application disponible sur les deux plateformes à partir d'une seule base de code, ce qui réduit les coûts et les délais." },
   { q: "Combien de temps faut-il pour développer une app mobile ?", a: "Un MVP fonctionnel est généralement livrable en 6 à 16 semaines selon la complexité. Nous découpons le projet en sprints pour livrer rapidement." },
@@ -245,7 +260,7 @@ export default function ApplicationMobilePage() {
         </section>
 
         {/* TYPES D'APPS */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#160a0d] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Applications que nous créons</motion.p>
@@ -264,7 +279,7 @@ export default function ApplicationMobilePage() {
         </section>
 
         {/* CE QUE NOUS TRAVAILLONS */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre approche</motion.p>
@@ -283,7 +298,7 @@ export default function ApplicationMobilePage() {
         </section>
 
         {/* POUR QUI */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#160a0d] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Profils</motion.p>
@@ -305,7 +320,7 @@ export default function ApplicationMobilePage() {
         </section>
 
         {/* PROCESSUS */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre processus</motion.p>
@@ -330,8 +345,58 @@ export default function ApplicationMobilePage() {
           </div>
         </section>
 
+        {/* CE QUE VOUS OBTENEZ */}
+        <section className="bg-[#160a0d] py-14 sm:py-24">
+          <div className="mx-auto max-w-4xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="overflow-hidden rounded-3xl border border-white/[0.10]">
+              {CE_QUE_VOUS_OBTENEZ.map(({ label, desc, icon: Icon, color }, i) => (
+                <motion.div key={label} variants={cardReveal}
+                  className={`flex items-start gap-5 p-5 sm:p-6 transition-all duration-200 hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.07]" : ""}`}>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
+                    <Icon size={18} style={{ color: `rgb(${color})` }} />
+                  </div>
+                  <div>
+                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
+                    <p className="text-xs leading-relaxed text-white/50">{desc}</p>
+                  </div>
+                  <CheckCircle2 size={16} className="ml-auto mt-1 shrink-0 text-[#34d399]" />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* EXEMPLES DE PROJETS */}
+        <section className="bg-[#09090b] py-14 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de projets réalisés</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
+              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }) => (
+                <motion.div key={titre} variants={cardReveal} className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.12)` }}>
+                    <Icon size={20} style={{ color }} />
+                  </div>
+                  <h3 className="mb-2 text-sm font-bold text-white">{titre}</h3>
+                  <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
+                  <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
+                    <TrendingUp size={12} style={{ color }} />
+                    <p className="text-[0.68rem] font-semibold" style={{ color }}>{resultat}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
         {/* FORMULAIRE */}
-        <section id="devis" className="bg-[#0c0c0e] py-24">
+        <section id="devis" className="bg-[#160a0d] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
@@ -343,7 +408,7 @@ export default function ApplicationMobilePage() {
         </section>
 
         {/* FAQ */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
@@ -356,7 +421,7 @@ export default function ApplicationMobilePage() {
         </section>
 
         {/* CTA */}
-        <section className="relative overflow-hidden bg-[#0c0c0e] pb-24 pt-20">
+        <section className="relative overflow-hidden bg-[#160a0d] pb-14 pt-14 sm:pb-24 sm:pt-20">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-15"
               style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, transparent 70%)` }} />

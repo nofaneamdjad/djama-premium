@@ -48,6 +48,20 @@ const POURQUOI = [
   { icon: Shield,     color: "#f9a826", rgb: "249,168,38", title: "Solutions sur mesure",        desc: "Pas de logiciel générique : on construit ce qui correspond exactement à votre activité." },
 ];
 
+const CE_QUE_VOUS_OBTENEZ = [
+  { label: "Audit des processus",         desc: "Analyse complète de vos flux de travail pour identifier les points automatisables.",           icon: Settings,     color: "129,140,248" },
+  { label: "Conception sur mesure",       desc: "Architecture de la solution adaptée à vos outils existants (CRM, formulaires, email…).",       icon: Lightbulb,    color: "96,165,250"  },
+  { label: "Développement & déploiement", desc: "Mise en place complète, tests et intégration dans votre environnement de travail.",             icon: BrainCircuit, color: "74,222,128"  },
+  { label: "Documentation",               desc: "Guide d'utilisation clair pour que vous puissiez comprendre et piloter la solution.",           icon: FileText,     color: "249,168,38"  },
+  { label: "Support & évolutions",        desc: "Suivi post-déploiement, corrections et adaptation de la solution selon vos retours.",           icon: Shield,       color: "244,114,182" },
+];
+
+const EXEMPLES_PROJETS = [
+  { icon: MessageSquare, color: "#818cf8", rgb: "129,140,248", titre: "Chatbot de qualification",    desc: "Bot conversationnel qui qualifie automatiquement les leads entrants et planifie des RDV dans le calendrier.",       resultat: "+40% de leads traités sans effort humain" },
+  { icon: FileText,      color: "#60a5fa", rgb: "96,165,250",  titre: "Génération auto de devis",    desc: "Formulaire intelligent qui génère un devis PDF personnalisé et l'envoie par email en moins de 2 minutes.",          resultat: "Devis envoyé en 2 min au lieu de 30" },
+  { icon: BarChart3,     color: "#4ade80", rgb: "74,222,128",  titre: "Reporting hebdomadaire auto", desc: "Collecte et synthèse automatique des données de vente, envoi d'un rapport Slack chaque lundi matin à l'équipe.",    resultat: "3h/semaine économisées sur les reportings" },
+];
+
 const FAQ_ITEMS = [
   { q: "Dois-je être technique pour utiliser ces solutions ?", a: "Non. Nous concevons des outils accessibles, avec interface simple. Vous n'avez pas besoin de compétences techniques pour utiliser ce que nous livrons." },
   { q: "Quels outils utilisez-vous pour automatiser ?", a: "Nous travaillons avec des outils comme Make (Integromat), Zapier, n8n, des APIs, et des modèles de langage (LLM) selon les besoins du projet." },
@@ -239,7 +253,7 @@ export default function AutomatisationIAPage() {
         </section>
 
         {/* CE QUE NOUS AUTOMATISONS */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#0d0d1a] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Nos domaines</motion.p>
@@ -259,7 +273,7 @@ export default function AutomatisationIAPage() {
         </section>
 
         {/* CAS D'USAGE */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Exemples concrets</motion.p>
@@ -278,7 +292,7 @@ export default function AutomatisationIAPage() {
         </section>
 
         {/* ACCOMPAGNEMENT */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#0d0d1a] py-14 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre méthode</motion.p>
@@ -304,7 +318,7 @@ export default function AutomatisationIAPage() {
         </section>
 
         {/* POURQUOI */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Les bénéfices</motion.p>
@@ -322,8 +336,58 @@ export default function AutomatisationIAPage() {
           </div>
         </section>
 
+        {/* CE QUE VOUS OBTENEZ */}
+        <section className="bg-[#0d0d1a] py-14 sm:py-24">
+          <div className="mx-auto max-w-4xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="overflow-hidden rounded-3xl border border-white/[0.10]">
+              {CE_QUE_VOUS_OBTENEZ.map(({ label, desc, icon: Icon, color }, i) => (
+                <motion.div key={label} variants={cardReveal}
+                  className={`flex items-start gap-5 p-5 sm:p-6 transition-all duration-200 hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.07]" : ""}`}>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
+                    <Icon size={18} style={{ color: `rgb(${color})` }} />
+                  </div>
+                  <div>
+                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
+                    <p className="text-xs leading-relaxed text-white/50">{desc}</p>
+                  </div>
+                  <CheckCircle2 size={16} className="ml-auto mt-1 shrink-0 text-[#34d399]" />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* EXEMPLES DE PROJETS */}
+        <section className="bg-[#09090b] py-14 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de projets réalisés</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
+              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }) => (
+                <motion.div key={titre} variants={cardReveal} className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.12)` }}>
+                    <Icon size={20} style={{ color }} />
+                  </div>
+                  <h3 className="mb-2 text-sm font-bold text-white">{titre}</h3>
+                  <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
+                  <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
+                    <TrendingUp size={12} style={{ color }} />
+                    <p className="text-[0.68rem] font-semibold" style={{ color }}>{resultat}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
         {/* FORMULAIRE */}
-        <section id="devis" className="bg-[#0c0c0e] py-24">
+        <section id="devis" className="bg-[#0d0d1a] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
@@ -335,7 +399,7 @@ export default function AutomatisationIAPage() {
         </section>
 
         {/* FAQ */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
@@ -350,7 +414,7 @@ export default function AutomatisationIAPage() {
         </section>
 
         {/* CTA */}
-        <section className="relative overflow-hidden bg-[#0c0c0e] pb-24 pt-20">
+        <section className="relative overflow-hidden bg-[#0d0d1a] pb-14 pt-14 sm:pb-24 sm:pt-20">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-15"
               style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, transparent 70%)` }} />

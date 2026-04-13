@@ -9,6 +9,7 @@ import {
   MessageSquare, Loader2, Send, ArrowLeft,
   Image, Layout, FileImage, Monitor, ShoppingBag,
   Briefcase, Star, TrendingUp, Instagram, Hash,
+  Palette, Settings, FileText, LayoutGrid,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
@@ -44,6 +45,20 @@ const POUR_QUI = [
   { icon: ShoppingBag, color: ACCENT,    rgb: ACCENT_RGB,   who: "Commerces & e-commerce",desc: "Promos, nouveautés, soldes — des visuels conçus pour vendre et générer du trafic vers votre boutique.",      tags: ["Soldes", "Produit", "Vente"] },
   { icon: TrendingUp,  color: "#4ade80", rgb: "74,222,128", who: "Marques",               desc: "Visuels alignés sur votre identité de marque pour maintenir une présence forte et cohérente sur les réseaux.", tags: ["Identité", "Branding", "Feed"] },
   { icon: Star,        color: "#f472b6", rgb: "244,114,182",who: "Entrepreneurs",         desc: "Vous lancez une offre, un service ou un événement — on vous crée des visuels prêts à diffuser.",            tags: ["Lancement", "Offre", "Promo"] },
+];
+
+const CE_QUE_VOUS_OBTENEZ = [
+  { label: "Brief & direction artistique", desc: "On analyse vos objectifs, votre audience et votre charte graphique pour cadrer les visuels.",   icon: Palette,    color: "249,168,38"  },
+  { label: "Création des visuels",         desc: "Conception des visuels dans les formats demandés — 1 à 30 déclinaisons selon le pack.",          icon: Sparkles,   color: "96,165,250"  },
+  { label: "2 séries de retouches",        desc: "Deux allers-retours inclus pour ajuster les visuels selon vos retours.",                         icon: Settings,   color: "74,222,128"  },
+  { label: "Fichiers sources + exports",   desc: "Vous recevez les fichiers PNG/JPG haute résolution + les sources éditables (AI, PSD ou Figma).", icon: FileText,   color: "249,168,38"  },
+  { label: "Déclinaisons multi-formats",   desc: "Adaptation automatique au format Stories, Post carré, bannière web et format print si besoin.",  icon: LayoutGrid, color: "244,114,182" },
+];
+
+const EXEMPLES_PROJETS = [
+  { icon: Megaphone, color: "#f9a826", rgb: "249,168,38", titre: "Campagne Instagram",      desc: "Pack de 10 visuels pour une boutique mode — stories + posts + bannière pour le lancement d'une collection.",          resultat: "+2 400 clics sur la campagne Meta Ads" },
+  { icon: Star,      color: "#60a5fa", rgb: "96,165,250", titre: "Identité pub restaurant", desc: "Visuels menu du jour, promotions hebdomadaires et stories pour un restaurant gastronomique parisien.",                  resultat: "Taux d'engagement stories multiplié par 3" },
+  { icon: Zap,       color: "#4ade80", rgb: "74,222,128", titre: "Visuels Google Ads",      desc: "Bannières display en 5 formats pour une campagne de notoriété — avec variantes A/B pour les tests.",                   resultat: "CTR de 4.2% vs 1.1% en moyenne secteur" },
 ];
 
 const FAQ_ITEMS = [
@@ -323,6 +338,56 @@ export default function VisuelsPublicitairesPage() {
                       <span key={t} className="rounded-full border px-2.5 py-1 text-[0.6rem] font-medium"
                         style={{ borderColor: `rgba(${rgb},0.25)`, color, background: `rgba(${rgb},0.07)` }}>{t}</span>
                     ))}
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* CE QUE VOUS OBTENEZ */}
+        <section className="bg-[#130e01] py-14 sm:py-24">
+          <div className="mx-auto max-w-4xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="overflow-hidden rounded-3xl border border-white/[0.10]">
+              {CE_QUE_VOUS_OBTENEZ.map(({ label, desc, icon: Icon, color }, i) => (
+                <motion.div key={label} variants={cardReveal}
+                  className={`flex items-start gap-5 p-5 sm:p-6 transition-all duration-200 hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.07]" : ""}`}>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
+                    <Icon size={18} style={{ color: `rgb(${color})` }} />
+                  </div>
+                  <div>
+                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
+                    <p className="text-xs leading-relaxed text-white/50">{desc}</p>
+                  </div>
+                  <CheckCircle2 size={16} className="ml-auto mt-1 shrink-0 text-[#34d399]" />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* EXEMPLES DE PROJETS */}
+        <section className="bg-[#09090b] py-14 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de projets réalisés</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
+              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }) => (
+                <motion.div key={titre} variants={cardReveal} className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.12)` }}>
+                    <Icon size={20} style={{ color }} />
+                  </div>
+                  <h3 className="mb-2 text-sm font-bold text-white">{titre}</h3>
+                  <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
+                  <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
+                    <TrendingUp size={12} style={{ color }} />
+                    <p className="text-[0.68rem] font-semibold" style={{ color }}>{resultat}</p>
                   </div>
                 </motion.div>
               ))}

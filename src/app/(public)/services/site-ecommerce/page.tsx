@@ -48,6 +48,21 @@ const ETAPES = [
   { num: "04", icon: CheckCircle2,  color: "#4ade80", rgb: "74,222,128",  title: "Lancement & formation",   desc: "Mise en ligne, tests complets, formation à l'administration de la boutique et suivi post-lancement." },
 ];
 
+const CE_QUE_VOUS_OBTENEZ = [
+  { label: "Design boutique",    desc: "Charte graphique, pages produits, page panier, tunnel d'achat — optimisés conversion.",          icon: Star,       color: "249,115,22"  },
+  { label: "Catalogue produits", desc: "Intégration de votre catalogue, variantes, descriptions, photos et gestion des stocks.",          icon: Package,    color: "96,165,250"  },
+  { label: "Paiement sécurisé",  desc: "Stripe, PayPal, carte bancaire — intégration complète avec gestion des remboursements.",          icon: CreditCard, color: "74,222,128"  },
+  { label: "Espace client",      desc: "Compte client, suivi des commandes, historique d'achats, adresses de livraison.",                 icon: Users,      color: "249,168,38"  },
+  { label: "Mobile-first",       desc: "Boutique optimisée pour mobile — plus de 60% des achats se font sur smartphone.",                 icon: Smartphone, color: "244,114,182" },
+  { label: "Formation & support",desc: "Formation à l'administration de la boutique, ajout de produits, gestion des commandes.",          icon: Shield,     color: "167,139,250" },
+];
+
+const EXEMPLES_PROJETS = [
+  { icon: Package, color: "#f97316", rgb: "249,115,22",  titre: "Boutique de cosmétiques",    desc: "Boutique DTC avec 80 produits, programme de fidélité, abonnements mensuels et intégration Stripe.",                  resultat: "12K€ de CA le 1er mois d'ouverture" },
+  { icon: Truck,   color: "#60a5fa", rgb: "96,165,250",  titre: "Marketplace multi-vendeurs", desc: "Plateforme mettant en relation artisans et acheteurs — espace vendeur dédié, commissions automatisées.",             resultat: "40 vendeurs actifs en 6 mois" },
+  { icon: Globe,   color: "#4ade80", rgb: "74,222,128",  titre: "Boutique digitale",          desc: "Vente de formations en ligne et produits téléchargeables avec accès sécurisé et livraison instantanée.",             resultat: "0 retour client, 4.9/5 de satisfaction" },
+];
+
 const FAQ_ITEMS = [
   { q: "Quelle plateforme utilisez-vous ?", a: "Selon votre besoin, nous travaillons avec Next.js/Stripe pour des boutiques sur mesure, ou Shopify pour des solutions rapides à déployer. Nous vous conseillons la meilleure option." },
   { q: "Les paiements sont-ils sécurisés ?", a: "Oui. Nous intégrons Stripe ou PayPal — des solutions conformes PCI DSS avec protection anti-fraude intégrée et certificat SSL." },
@@ -243,7 +258,7 @@ export default function SiteEcommercePage() {
         </section>
 
         {/* CE QUE COMPREND LA BOUTIQUE */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#150900] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans le service</motion.p>
@@ -262,7 +277,7 @@ export default function SiteEcommercePage() {
         </section>
 
         {/* POUR QUI */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Profils concernés</motion.p>
@@ -284,7 +299,7 @@ export default function SiteEcommercePage() {
         </section>
 
         {/* POURQUOI VENDRE EN LIGNE */}
-        <section className="bg-[#0c0c0e] py-24">
+        <section className="bg-[#150900] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Les bénéfices</motion.p>
@@ -303,7 +318,7 @@ export default function SiteEcommercePage() {
         </section>
 
         {/* ÉTAPES */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre méthode</motion.p>
@@ -328,8 +343,58 @@ export default function SiteEcommercePage() {
           </div>
         </section>
 
+        {/* CE QUE VOUS OBTENEZ */}
+        <section className="bg-[#150900] py-14 sm:py-24">
+          <div className="mx-auto max-w-4xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="overflow-hidden rounded-3xl border border-white/[0.10]">
+              {CE_QUE_VOUS_OBTENEZ.map(({ label, desc, icon: Icon, color }, i) => (
+                <motion.div key={label} variants={cardReveal}
+                  className={`flex items-start gap-5 p-5 sm:p-6 transition-all duration-200 hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.07]" : ""}`}>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
+                    <Icon size={18} style={{ color: `rgb(${color})` }} />
+                  </div>
+                  <div>
+                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
+                    <p className="text-xs leading-relaxed text-white/50">{desc}</p>
+                  </div>
+                  <CheckCircle2 size={16} className="ml-auto mt-1 shrink-0 text-[#34d399]" />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* EXEMPLES DE PROJETS */}
+        <section className="bg-[#09090b] py-14 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de projets réalisés</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
+              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }) => (
+                <motion.div key={titre} variants={cardReveal} className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.12)` }}>
+                    <Icon size={20} style={{ color }} />
+                  </div>
+                  <h3 className="mb-2 text-sm font-bold text-white">{titre}</h3>
+                  <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
+                  <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
+                    <TrendingUp size={12} style={{ color }} />
+                    <p className="text-[0.68rem] font-semibold" style={{ color }}>{resultat}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
         {/* FORMULAIRE */}
-        <section id="devis" className="bg-[#0c0c0e] py-24">
+        <section id="devis" className="bg-[#150900] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
@@ -341,7 +406,7 @@ export default function SiteEcommercePage() {
         </section>
 
         {/* FAQ */}
-        <section className="bg-[#09090b] py-24">
+        <section className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
@@ -354,7 +419,7 @@ export default function SiteEcommercePage() {
         </section>
 
         {/* CTA */}
-        <section className="relative overflow-hidden bg-[#0c0c0e] pb-24 pt-20">
+        <section className="relative overflow-hidden bg-[#150900] pb-14 pt-14 sm:pb-24 sm:pt-20">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-15"
               style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, transparent 70%)` }} />

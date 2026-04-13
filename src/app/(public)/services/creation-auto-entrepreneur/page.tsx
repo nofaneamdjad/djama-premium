@@ -8,7 +8,7 @@ import {
   Shield, Zap, Clock, User, Mail, Phone,
   MessageSquare, Loader2, Send, ArrowLeft, Building2,
   ClipboardList, BookOpen, TrendingUp, UserCheck, Briefcase,
-  ShoppingBag, Star, FileText, Search,
+  ShoppingBag, Star, FileText, Search, BarChart3, Camera, Wrench,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
@@ -92,6 +92,20 @@ const ETAPES = [
   { num: "02", icon: Search,        color: "#60a5fa", rgb: "96,165,250",  title: "Analyse de votre activité",       desc: "On identifie le bon code d'activité, le régime fiscal adapté et on lève les doutes sur votre situation personnelle." },
   { num: "03", icon: FileText,      color: ACCENT,    rgb: ACCENT_RGB,    title: "Préparation du dossier",          desc: "On rassemble toutes les informations nécessaires et on vous guide dans le remplissage du formulaire officiel." },
   { num: "04", icon: CheckCircle2,  color: "#4ade80", rgb: "74,222,128",  title: "Accompagnement jusqu'à la création", desc: "On reste disponible jusqu'à la réception de votre SIRET et la confirmation officielle de votre statut. Bienvenue dans l'entrepreneuriat !" },
+];
+
+const CE_QUE_VOUS_OBTENEZ = [
+  { label: "Formulaire de déclaration", desc: "Formulaire URSSAF pour création de micro-entreprise — rempli et vérifié avec vous.",            icon: FileText,     color: "251,146,60"  },
+  { label: "Choix du régime fiscal",    desc: "On vous explique versement libératoire, TVA, franchise en base — et on choisit ensemble.",      icon: BarChart3,    color: "96,165,250"  },
+  { label: "Kbis / extrait SIRENE",     desc: "Confirmation de création, numéro SIRET, inscription au répertoire des entreprises.",            icon: CheckCircle2, color: "74,222,128"  },
+  { label: "Ouverture compte bancaire", desc: "Conseils sur le compte bancaire dédié et les obligations comptables de l'auto-entrepreneur.",    icon: Shield,       color: "249,168,38"  },
+  { label: "Premier chiffre d'affaires",desc: "On vous explique comment déclarer votre CA chaque mois ou trimestre sur le site URSSAF.",        icon: TrendingUp,   color: "244,114,182" },
+];
+
+const EXEMPLES_PROJETS = [
+  { icon: Briefcase, color: "#fb923c", rgb: "251,146,60", titre: "Développeur freelance",   desc: "Création de l'auto-entreprise, choix du régime micro-BNC, ouverture compte pro et premier devis émis.",             resultat: "Actif en 48h, 1er client signé la semaine suivante" },
+  { icon: Camera,    color: "#60a5fa", rgb: "96,165,250", titre: "Photographe indépendant", desc: "Accompagnement complet pour créer son statut, comprendre la TVA et facturer ses 1ères missions.",                    resultat: "3 missions facturées en 1 mois" },
+  { icon: Wrench,    color: "#4ade80", rgb: "74,222,128", titre: "Artisan / rénovation",    desc: "Création du statut artisan avec affiliation à la chambre des métiers, assurance décennale et 1ère facture.",         resultat: "Régularisé et assuré en 5 jours" },
 ];
 
 const FAQ_ITEMS = [
@@ -594,6 +608,56 @@ export default function CreationAutoEntrepreneurPage() {
                   </span>
                 ))}
               </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* CE QUE VOUS OBTENEZ */}
+        <section className="bg-[#150e01] py-14 sm:py-24">
+          <div className="mx-auto max-w-4xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="overflow-hidden rounded-3xl border border-white/[0.10]">
+              {CE_QUE_VOUS_OBTENEZ.map(({ label, desc, icon: Icon, color }, i) => (
+                <motion.div key={label} variants={cardReveal}
+                  className={`flex items-start gap-5 p-5 sm:p-6 transition-all duration-200 hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.07]" : ""}`}>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
+                    <Icon size={18} style={{ color: `rgb(${color})` }} />
+                  </div>
+                  <div>
+                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
+                    <p className="text-xs leading-relaxed text-white/50">{desc}</p>
+                  </div>
+                  <CheckCircle2 size={16} className="ml-auto mt-1 shrink-0 text-[#34d399]" />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* EXEMPLES DE PROJETS */}
+        <section className="bg-[#09090b] py-14 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de projets réalisés</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
+              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }) => (
+                <motion.div key={titre} variants={cardReveal} className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.12)` }}>
+                    <Icon size={20} style={{ color }} />
+                  </div>
+                  <h3 className="mb-2 text-sm font-bold text-white">{titre}</h3>
+                  <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
+                  <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
+                    <TrendingUp size={12} style={{ color }} />
+                    <p className="text-[0.68rem] font-semibold" style={{ color }}>{resultat}</p>
+                  </div>
+                </motion.div>
+              ))}
             </motion.div>
           </div>
         </section>
