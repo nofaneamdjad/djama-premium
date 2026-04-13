@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Monitor, ArrowRight, CheckCircle2, Sparkles, ChevronDown,
   Zap, User, Mail, Phone, MessageSquare, Loader2, Send, ArrowLeft,
-  Globe, Search, Smartphone, Shield, TrendingUp, Star,
-  Briefcase, ShoppingBag, Users, Building2, Code2, Palette,
+  Globe, Search, Smartphone, Shield, TrendingUp, Star, Quote, Clock,
+  Briefcase, ShoppingBag, Users, Building2, Code2, Palette, CheckSquare,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
@@ -62,6 +62,29 @@ const EXEMPLES_PROJETS = [
   { icon: Briefcase,  color: "#4ade80", rgb: "74,222,128",  titre: "Cabinet d'avocat",        desc: "Site 5 pages sobre et professionnel avec système de prise de RDV et formulaire de premier contact.",               resultat: "+60% de contacts entrants vs. avant" },
   { icon: ShoppingBag,color: "#60a5fa", rgb: "96,165,250",  titre: "Artisan électricien",     desc: "Site vitrine local avec galerie de réalisations, zones d'intervention et devis en ligne — bien référencé localement.", resultat: "Top 3 Google sur sa zone en 2 mois" },
   { icon: Star,       color: "#f9a826", rgb: "249,168,38",  titre: "Coach sportif freelance", desc: "Portfolio avec programmes, tarifs, témoignages clients et agenda de réservation pour séances individuelles.",          resultat: "Complet sur 3 mois après lancement" },
+];
+
+const TABLE_INCLUS = [
+  { label: "Design professionnel sur mesure",  icon: Palette,       color: "74,222,128"  },
+  { label: "Responsive mobile & desktop",       icon: Smartphone,    color: "96,165,250"  },
+  { label: "Optimisation SEO de base",          icon: Search,        color: "249,168,38"  },
+  { label: "Formulaire de contact fonctionnel", icon: MessageSquare, color: "244,114,182" },
+  { label: "Certificat SSL + HTTPS",            icon: Shield,        color: "167,139,250" },
+  { label: "Formation & support post-livraison",icon: Users,         color: "52,211,153"  },
+];
+
+const PROCESSUS_STEPS = [
+  { num: "01", icon: MessageSquare, color: "#c9a55a", rgb: "201,165,90", label: "Brief",         desc: "Analyse des besoins" },
+  { num: "02", icon: Palette,       color: "#60a5fa", rgb: "96,165,250", label: "Design",        desc: "Maquette validée" },
+  { num: "03", icon: Code2,         color: ACCENT,    rgb: ACCENT_RGB,   label: "Développement", desc: "Code clean & rapide" },
+  { num: "04", icon: CheckSquare,   color: "#f9a826", rgb: "249,168,38", label: "Tests",         desc: "Multi-supports" },
+  { num: "05", icon: Globe,         color: "#a78bfa", rgb: "167,139,250",label: "Mise en ligne", desc: "Déploiement & suivi" },
+];
+
+const TEMOIGNAGES = [
+  { name: "Marie L.", activite: "Sophrologue", note: 5, avis: "DJAMA a créé mon site en 10 jours. Résultat bluffant, très professionnel. J'ai eu mes 3 premiers contacts en moins d'une semaine après la mise en ligne." },
+  { name: "Thomas B.", activite: "Artisan menuisier", note: 5, avis: "Je n'y connaissais rien au web. L'équipe a tout géré, m'a expliqué chaque étape et livré un site que mes clients adorent. Vraiment top." },
+  { name: "Camille D.", activite: "Coach business", note: 5, avis: "Site clean, rapide et bien positionné sur Google en quelques semaines. Exactement ce que je voulais. Je recommande sans hésiter." },
 ];
 
 const FAQ_ITEMS = [
@@ -489,75 +512,203 @@ export default function SiteVitrinePage() {
           </div>
         </section>
 
-        {/* ÉTAPES */}
+        {/* PROCESSUS — TIMELINE HORIZONTALE */}
         <section className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-5xl px-6">
+          <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre méthode</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">4 étapes pour votre site</motion.h2>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Processus de création</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-sm text-white/45">De la première discussion à la mise en ligne — voici comment on travaille avec vous.</motion.p>
             </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="space-y-6">
-              {ETAPES.map(({ num, icon: Icon, color, rgb, title, desc }) => (
-                <motion.div key={num} variants={cardReveal} className="group relative flex gap-6 rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
-                  <div className="relative z-10 flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border"
-                    style={{ background: `rgba(${rgb},0.1)`, borderColor: `rgba(${rgb},0.25)` }}>
-                    <span className="text-[0.6rem] font-bold" style={{ color: `rgba(${rgb},0.7)` }}>{num}</span>
-                    <Icon size={18} style={{ color }} />
-                  </div>
-                  <div className="flex-1 pt-1">
-                    <h3 className="mb-1.5 text-sm font-bold text-white">{title}</h3>
-                    <p className="text-xs leading-relaxed text-white/45">{desc}</p>
-                  </div>
-                  <span className="pointer-events-none absolute right-6 top-4 text-5xl font-black opacity-[0.04] select-none" style={{ color }}>{num}</span>
-                </motion.div>
-              ))}
-            </motion.div>
+
+            {/* Timeline desktop — horizontal */}
+            <div className="hidden sm:block">
+              <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport}
+                className="relative grid grid-cols-5 gap-0">
+                {/* Ligne de connexion */}
+                <div className="absolute left-[10%] right-[10%] top-[28px] h-px"
+                  style={{ background: `linear-gradient(90deg, rgba(${ACCENT_RGB},0.15), rgba(${ACCENT_RGB},0.35), rgba(${ACCENT_RGB},0.15))` }} />
+
+                {PROCESSUS_STEPS.map(({ num, icon: Icon, color, rgb, label, desc }, i) => (
+                  <motion.div key={num} variants={cardReveal} className="group flex flex-col items-center px-3 text-center">
+                    {/* Cercle */}
+                    <div className="relative z-10 mb-4 flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-110"
+                      style={{ background: `rgba(${rgb},0.12)`, borderColor: `rgba(${rgb},0.4)`, boxShadow: `0 0 20px rgba(${rgb},0.15)` }}>
+                      <Icon size={18} style={{ color }} />
+                    </div>
+                    <span className="mb-1 text-[0.6rem] font-black uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>{num}</span>
+                    <p className="mb-1.5 text-sm font-bold text-white">{label}</p>
+                    <p className="text-[0.7rem] leading-relaxed text-white/40">{desc}</p>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Timeline mobile — verticale */}
+            <div className="sm:hidden">
+              <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="relative space-y-0">
+                {PROCESSUS_STEPS.map(({ num, icon: Icon, color, rgb, label, desc }, i) => (
+                  <motion.div key={num} variants={cardReveal} className="relative flex gap-4">
+                    {/* Ligne verticale */}
+                    {i < PROCESSUS_STEPS.length - 1 && (
+                      <div className="absolute left-[19px] top-[48px] h-full w-px" style={{ background: `rgba(${rgb},0.2)` }} />
+                    )}
+                    <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2"
+                      style={{ background: `rgba(${rgb},0.12)`, borderColor: `rgba(${rgb},0.4)` }}>
+                      <Icon size={15} style={{ color }} />
+                    </div>
+                    <div className="flex-1 pb-6 pt-1">
+                      <p className="mb-0.5 text-[0.6rem] font-black uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>{num} · {label}</p>
+                      <p className="text-xs leading-relaxed text-white/50">{desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
           </div>
         </section>
 
-        {/* CE QUE VOUS OBTENEZ */}
+        {/* CE QUE VOUS OBTENEZ — TABLEAU */}
         <section className="bg-[#030f08] py-14 sm:py-24">
-          <div className="mx-auto max-w-4xl px-6">
+          <div className="mx-auto max-w-3xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
               <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-md text-sm text-white/45">Tout ce qui est compris dans chaque site vitrine livré par DJAMA.</motion.p>
             </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="overflow-hidden rounded-3xl border border-white/[0.10]">
-              {CE_QUE_VOUS_OBTENEZ.map(({ label, desc, icon: Icon, color }, i) => (
-                <motion.div key={label} variants={cardReveal}
-                  className={`flex items-start gap-5 p-5 sm:p-6 transition-all duration-200 hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.07]" : ""}`}>
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
-                    <Icon size={18} style={{ color: `rgb(${color})` }} />
+            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport} transition={{ duration: 0.5, ease }}
+              className="overflow-hidden rounded-3xl border border-white/[0.10]">
+              {/* Header */}
+              <div className="grid grid-cols-[1fr_80px] items-center border-b border-white/[0.10] px-5 py-3.5"
+                style={{ background: "rgba(74,222,128,0.05)" }}>
+                <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/35">Fonctionnalité</p>
+                <p className="text-center text-[0.65rem] font-black uppercase tracking-widest text-white/35">Inclus</p>
+              </div>
+              {/* Lignes */}
+              {TABLE_INCLUS.map(({ label, icon: Icon, color }, i) => (
+                <motion.div key={label}
+                  initial={{ opacity: 0, x: -10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={viewport}
+                  transition={{ duration: 0.35, delay: i * 0.07, ease }}
+                  className={`grid grid-cols-[1fr_80px] items-center px-5 py-4 transition-all hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.06]" : ""}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: `rgba(${color},0.1)` }}>
+                      <Icon size={14} style={{ color: `rgb(${color})` }} />
+                    </div>
+                    <p className="text-sm text-white/80">{label}</p>
                   </div>
-                  <div>
-                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
-                    <p className="text-xs leading-relaxed text-white/50">{desc}</p>
+                  <div className="flex items-center justify-center">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full"
+                      style={{ background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.25)" }}>
+                      <CheckCircle2 size={13} className="text-[#4ade80]" />
+                    </div>
                   </div>
-                  <CheckCircle2 size={16} className="ml-auto mt-1 shrink-0 text-[#34d399]" />
                 </motion.div>
               ))}
             </motion.div>
           </div>
         </section>
 
-        {/* EXEMPLES DE PROJETS */}
+        {/* EXEMPLES DE SITES */}
         <section id="exemples" className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de projets réalisés</motion.h2>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de sites créés</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-sm text-white/45">Quelques exemples de projets réalisés pour nos clients.</motion.p>
             </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
-              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }) => (
-                <motion.div key={titre} variants={cardReveal} className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.12)` }}>
-                    <Icon size={20} style={{ color }} />
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid items-start gap-6 sm:grid-cols-3">
+              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }, idx) => (
+                <motion.div key={titre} variants={cardReveal}
+                  className="overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.03] transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.06]">
+                  {/* Mini browser mockup */}
+                  <div className="relative overflow-hidden border-b border-white/[0.08]" style={{ background: "#0d0d0f" }}>
+                    {/* Barre navigateur */}
+                    <div className="flex items-center gap-2 border-b border-white/[0.07] px-3 py-2" style={{ background: "#111115" }}>
+                      <div className="flex gap-1">
+                        <div className="h-2 w-2 rounded-full bg-[#ff5f57]" />
+                        <div className="h-2 w-2 rounded-full bg-[#ffbd2e]" />
+                        <div className="h-2 w-2 rounded-full bg-[#28c840]" />
+                      </div>
+                      <div className="flex flex-1 items-center gap-1 rounded px-2 py-0.5 text-[0.5rem] text-white/20" style={{ background: "rgba(255,255,255,0.04)" }}>
+                        <div className="h-1 w-1 rounded-full" style={{ background: color }} />
+                        www.{idx === 0 ? "cabinet-martin.fr" : idx === 1 ? "elec-pro.fr" : "coach-sportif.fr"}
+                      </div>
+                    </div>
+                    {/* Contenu mockup */}
+                    <div className="p-3">
+                      {/* Hero */}
+                      <div className="mb-2 rounded-xl p-3" style={{ background: `rgba(${rgb},0.07)` }}>
+                        <div className="mb-1.5 h-2 w-1/3 rounded-full" style={{ background: `rgba(${rgb},0.4)` }} />
+                        <div className="mb-1 h-3 w-3/4 rounded-full bg-white/30" />
+                        <div className="mb-2 h-2 w-1/2 rounded-full bg-white/15" />
+                        <div className="h-5 w-20 rounded-lg" style={{ background: `rgba(${rgb},0.35)` }} />
+                      </div>
+                      {/* Features */}
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[1, 2, 3].map((n) => (
+                          <div key={n} className="rounded-lg p-2" style={{ background: "rgba(255,255,255,0.04)" }}>
+                            <div className="mb-1 h-3 w-3 rounded" style={{ background: `rgba(${rgb},0.2)` }} />
+                            <div className="mb-0.5 h-1.5 w-full rounded-full bg-white/15" />
+                            <div className="h-1.5 w-2/3 rounded-full bg-white/08" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{titre}</h3>
-                  <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
-                  <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
-                    <TrendingUp size={12} style={{ color }} />
-                    <p className="text-[0.68rem] font-semibold" style={{ color }}>{resultat}</p>
+                  {/* Texte carte */}
+                  <div className="p-5">
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${rgb},0.12)` }}>
+                        <Icon size={16} style={{ color }} />
+                      </div>
+                      <h3 className="text-sm font-bold text-white">{titre}</h3>
+                    </div>
+                    <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
+                    <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
+                      <TrendingUp size={11} style={{ color }} />
+                      <p className="text-[0.65rem] font-semibold leading-tight" style={{ color }}>{resultat}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* TÉMOIGNAGES */}
+        <section className="bg-[#030f08] py-14 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Avis clients</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que disent nos clients</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid items-start gap-5 sm:grid-cols-3">
+              {TEMOIGNAGES.map(({ name, activite, note, avis }) => (
+                <motion.div key={name} variants={cardReveal}
+                  className="flex flex-col rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
+                  {/* Étoiles */}
+                  <div className="mb-4 flex gap-1">
+                    {Array.from({ length: note }).map((_, i) => (
+                      <Star key={i} size={13} fill="#f9a826" style={{ color: "#f9a826" }} />
+                    ))}
+                  </div>
+                  {/* Guillemet */}
+                  <Quote size={20} className="mb-3 opacity-20" style={{ color: ACCENT }} />
+                  {/* Avis */}
+                  <p className="mb-5 flex-1 text-sm leading-relaxed text-white/65">{avis}</p>
+                  {/* Auteur */}
+                  <div className="flex items-center gap-3 border-t border-white/[0.07] pt-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-[0.65rem] font-black"
+                      style={{ background: `rgba(${ACCENT_RGB},0.15)`, color: ACCENT }}>
+                      {name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{name}</p>
+                      <p className="text-[0.65rem] text-white/35">{activite}</p>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -566,7 +717,7 @@ export default function SiteVitrinePage() {
         </section>
 
         {/* FORMULAIRE */}
-        <section id="devis" className="bg-[#030f08] py-14 sm:py-24">
+        <section id="devis" className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
@@ -578,7 +729,7 @@ export default function SiteVitrinePage() {
         </section>
 
         {/* FAQ */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
+        <section className="bg-[#030f08] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
@@ -601,8 +752,8 @@ export default function SiteVitrinePage() {
               <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: `rgba(${ACCENT_RGB},0.12)` }}>
                 <Sparkles size={26} style={{ color: ACCENT }} />
               </div>
-              <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Votre présence en ligne, enfin propre</h2>
-              <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Un site vitrine professionnel qui vous représente bien et vous génère des contacts — sans complexité inutile.</p>
+              <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Lancez votre site vitrine maintenant</h2>
+              <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Un site vitrine professionnel qui vous représente et génère des contacts — livré en 2 à 4 semaines.</p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link href="#devis" className="btn-primary px-8 py-4 text-base">Créer mon site vitrine <ArrowRight size={16} /></Link>
                 <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-semibold text-white/70 transition-all hover:bg-white/[0.07] hover:text-white">Voir tous nos services</Link>
