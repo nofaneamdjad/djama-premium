@@ -154,9 +154,26 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
   const isVisuelsPublicitaires = service.slug === "visuels-publicitaires"
                              || service.title === "Visuels publicitaires"
                              || service.title === "Visuels Publicitaires";
-  const isFournisseurs         = service.slug === "fournisseurs-internationaux"
-                             || service.title === "Recherche de fournisseurs internationaux"
-                             || service.title === "Recherche fournisseurs";
+  const isFournisseurs          = service.slug === "fournisseurs-internationaux"
+                              || service.title === "Recherche de fournisseurs internationaux"
+                              || service.title === "Recherche fournisseurs";
+  const isAutomatisationIA      = service.slug === "automatisation-ia"
+                              || service.title === "Automatisation & IA"
+                              || service.title === "Automatisation IA";
+  const isPlateformeWeb         = service.slug === "plateforme-web-sur-mesure"
+                              || service.title === "Plateforme web sur mesure"
+                              || service.title === "Plateforme web";
+  const isAppMobile             = service.slug === "application-mobile"
+                              || service.title === "Application mobile"
+                              || service.title === "Application Mobile";
+  const isSiteVitrine           = service.slug === "site-vitrine"
+                              || service.title === "Création de site vitrine"
+                              || service.title === "Site vitrine"
+                              || service.title === "Site Vitrine";
+  const isSiteEcommerce         = service.slug === "site-ecommerce"
+                              || service.title === "Site e-commerce"
+                              || service.title === "Site ecommerce"
+                              || service.title === "E-commerce";
 
   const href = isOutil
     ? "/abonnement"
@@ -178,9 +195,19 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
                     ? "/services/retouche-photo"
                     : isVisuelsPublicitaires
                       ? "/services/visuels-publicitaires"
-                      : isFournisseurs
-                        ? "/services/recherche-fournisseurs"
-                        : "/contact";
+                      : isAutomatisationIA
+                        ? "/services/automatisation-ia"
+                        : isPlateformeWeb
+                          ? "/services/plateforme-web-sur-mesure"
+                          : isAppMobile
+                            ? "/services/application-mobile"
+                            : isSiteVitrine
+                              ? "/services/site-vitrine"
+                              : isSiteEcommerce
+                                ? "/services/site-ecommerce"
+                                : isFournisseurs
+                                  ? "/services/recherche-fournisseurs"
+                                  : "/contact";
 
   const priceTag = service.price || null;
 
@@ -189,12 +216,22 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
   const extraBullets = bullets.slice(1, 3);
 
   const ctaLabel = isOutil
-    ? (lang === "en" ? "Get started" : "Commencer maintenant")
+    ? (lang === "en" ? "Get started"             : "Commencer maintenant")
     : isCoachingIA
-      ? (lang === "en" ? "Book your AI Coaching" : "Réserver votre Coaching IA")
+      ? (lang === "en" ? "Book your AI Coaching"  : "Réserver votre Coaching IA")
       : isSoutienScolaire
-        ? (lang === "en" ? "Book a trial lesson" : "Réserver votre cours d'essai")
-        : (lang === "en" ? "Request a quote" : "Demander un devis");
+        ? (lang === "en" ? "Book a trial lesson"  : "Réserver votre cours d'essai")
+        : isAutomatisationIA
+          ? (lang === "en" ? "Discuss my automation" : "Parler de mon automatisation")
+          : isPlateformeWeb
+            ? (lang === "en" ? "Discuss my platform"  : "Discuter de ma plateforme")
+            : isAppMobile
+              ? (lang === "en" ? "Discuss my app"      : "Parler de mon application")
+              : isSiteVitrine
+                ? (lang === "en" ? "Create my website"  : "Créer mon site vitrine")
+                : isSiteEcommerce
+                  ? (lang === "en" ? "Launch my store"  : "Lancer ma boutique")
+                  : (lang === "en" ? "Request a quote"  : "Demander un devis");
 
   return (
     <motion.div

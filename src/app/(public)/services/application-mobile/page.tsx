@@ -1,0 +1,382 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Smartphone, ArrowRight, CheckCircle2, Sparkles, ChevronDown,
+  Zap, User, Mail, Phone, MessageSquare, Loader2, Send, ArrowLeft,
+  ShoppingCart, Truck, Users, Settings, Bell, Shield, Star,
+  LayoutDashboard, Code2, Briefcase, TrendingUp, Lock, Palette,
+} from "lucide-react";
+import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
+import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+
+const ease       = [0.16, 1, 0.3, 1] as const;
+const ACCENT     = "#fb7185";
+const ACCENT_RGB = "251,113,133";
+
+const TYPES_APPS = [
+  { icon: ShoppingCart,    color: "#f9a826", rgb: "249,168,38",  title: "Application de réservation", desc: "Hôtels, restaurants, salons, prestataires — permettez à vos clients de réserver en quelques secondes." },
+  { icon: Truck,           color: "#60a5fa", rgb: "96,165,250",  title: "Application de livraison",   desc: "Interface client, tracking en temps réel, gestion des livreurs et des zones — tout en un." },
+  { icon: Users,           color: ACCENT,    rgb: ACCENT_RGB,    title: "Application communautaire",  desc: "Réseau social de niche, forum, plateforme d'échange ou espace membres avec profils et messagerie." },
+  { icon: MessageSquare,   color: "#4ade80", rgb: "74,222,128",  title: "Service client mobile",      desc: "Support intégré, chat en direct, base de connaissances et ticketing dans une app native." },
+  { icon: LayoutDashboard, color: "#a78bfa", rgb: "167,139,250", title: "Gestion interne",            desc: "Application métier pour vos équipes : planning, pointage, reporting, accès aux données terrain." },
+  { icon: Star,            color: "#f472b6", rgb: "244,114,182", title: "Application de marque",      desc: "App de fidélité, catalogue produits, programme de récompenses — renforcez le lien avec vos clients." },
+];
+
+const CE_QUE_NOUS_TRAVAILLONS = [
+  { icon: Palette,  color: "#60a5fa", rgb: "96,165,250",  title: "UX / UI soignée",         desc: "Design pensé pour l'usage mobile : navigation fluide, interfaces intuitives, expérience cohérente iOS et Android." },
+  { icon: Zap,      color: ACCENT,    rgb: ACCENT_RGB,    title: "Performance",              desc: "Temps de chargement optimisés, gestion du cache, fluidité des animations — une app agréable à utiliser." },
+  { icon: Lock,     color: "#4ade80", rgb: "74,222,128",  title: "Sécurité",                 desc: "Authentification sécurisée, chiffrement des données, protection contre les accès non autorisés." },
+  { icon: Users,    color: "#f9a826", rgb: "249,168,38",  title: "Espace utilisateur",      desc: "Profils, historique, préférences, favoris — chaque utilisateur a son espace personnalisé." },
+  { icon: Bell,     color: "#f472b6", rgb: "244,114,182", title: "Notifications push",       desc: "Alertes personnalisées, rappels, promotions ciblées — restez en contact avec vos utilisateurs." },
+  { icon: Code2,    color: "#a78bfa", rgb: "167,139,250", title: "API & intégrations",       desc: "Connexion à vos outils existants (CRM, paiement, analytics, cartographie) via des APIs robustes." },
+];
+
+const POUR_QUI = [
+  { icon: Briefcase, color: "#60a5fa", rgb: "96,165,250", who: "Startups & entrepreneurs",  desc: "Vous avez une idée d'app et voulez lancer un MVP rapide pour valider votre concept sur le marché.",       tags: ["MVP", "Validation", "Lean"] },
+  { icon: Star,      color: ACCENT,    rgb: ACCENT_RGB,   who: "Commerces & marques",       desc: "Fidélisez vos clients, facilitez les achats et renforcez votre présence mobile avec votre propre app.",    tags: ["Fidélité", "App de marque", "Mobile"] },
+  { icon: TrendingUp,color: "#4ade80", rgb: "74,222,128", who: "Entreprises & PME",         desc: "Optimisez les opérations terrain, équipez vos équipes mobiles et automatisez vos processus internes.",     tags: ["Terrain", "Opérations", "Équipe"] },
+  { icon: Users,     color: "#f9a826", rgb: "249,168,38", who: "Plateformes & marketplaces",desc: "Mettez en relation vendeurs et acheteurs, prestataires et clients dans une app fluide et scalable.",       tags: ["Marketplace", "Two-sided", "Scale"] },
+];
+
+const PROCESSUS = [
+  { num: "01", icon: MessageSquare, color: "#c9a55a", rgb: "201,165,90", title: "Cadrage & vision",          desc: "On définit ensemble les fonctionnalités clés, les utilisateurs cibles et les objectifs de l'application." },
+  { num: "02", icon: Palette,       color: "#60a5fa", rgb: "96,165,250", title: "Design UX/UI",              desc: "Wireframes, maquettes interactives et validation du parcours utilisateur avant tout développement." },
+  { num: "03", icon: Code2,         color: ACCENT,    rgb: ACCENT_RGB,   title: "Développement",             desc: "Développement agile par sprints, avec démonstrations régulières pour valider chaque fonctionnalité." },
+  { num: "04", icon: CheckCircle2,  color: "#4ade80", rgb: "74,222,128", title: "Tests & publication",       desc: "Tests complets, corrections, publication sur l'App Store et Google Play, suivi post-lancement." },
+];
+
+const FAQ_ITEMS = [
+  { q: "Développez-vous pour iOS et Android ?", a: "Oui. Nous utilisons React Native ou Flutter pour livrer une application disponible sur les deux plateformes à partir d'une seule base de code, ce qui réduit les coûts et les délais." },
+  { q: "Combien de temps faut-il pour développer une app mobile ?", a: "Un MVP fonctionnel est généralement livrable en 6 à 16 semaines selon la complexité. Nous découpons le projet en sprints pour livrer rapidement." },
+  { q: "Pouvez-vous vous connecter à mon système existant ?", a: "Oui. Nous développons ou connectons des APIs pour intégrer votre app à vos outils actuels : CRM, ERP, base de données, paiement, etc." },
+  { q: "Qui gère la publication sur les stores ?", a: "Nous gérons l'ensemble du processus de soumission sur l'App Store (Apple) et le Google Play Store, y compris les assets requis et la conformité aux guidelines." },
+  { q: "Quel est le budget pour une application mobile ?", a: "Cela dépend de la complexité et du nombre de fonctionnalités. Contactez-nous pour une estimation personnalisée et transparente." },
+];
+
+const TYPE_APP_OPTIONS = ["Application de réservation", "Application de livraison", "Application communautaire", "App de marque / fidélité", "Outil de gestion interne", "Marketplace", "Autre"];
+const PUBLIC_OPTIONS   = ["Grand public (B2C)", "Entreprises (B2B)", "Équipes internes", "Professionnels d'un secteur", "Autre"];
+
+function isEmailValid(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+function FieldInput({ icon: Icon, type = "text", placeholder, value, onChange, validate, required }: {
+  icon: React.ElementType; type?: string; placeholder: string; value: string;
+  onChange: (v: string) => void; validate?: (v: string) => boolean; required?: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const isValid = validate ? validate(value) : value.length > 0;
+  const showOk  = touched && value && isValid;
+  const showErr = touched && value && validate && !isValid;
+  const border  = showErr ? "rgba(248,113,113,0.5)" : showOk ? "rgba(52,211,153,0.45)" : focused ? `rgba(${ACCENT_RGB},0.5)` : "rgba(255,255,255,0.09)";
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200"
+      style={{ borderColor: border, boxShadow: focused ? `0 0 0 3px rgba(${ACCENT_RGB},0.08)` : "none" }}>
+      <Icon size={15} className="shrink-0" style={{ color: focused || value ? ACCENT : "rgba(255,255,255,0.25)" }} />
+      <input type={type} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); setTouched(true); }} required={required}
+        className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none" />
+      <AnimatePresence>
+        {showOk && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><CheckCircle2 size={14} className="text-[#34d399]" /></motion.div>}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function FieldSelect({ icon: Icon, placeholder, value, onChange, options }: {
+  icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; options: string[];
+}) {
+  const [focused, setFocused] = useState(false);
+  const border = value ? "rgba(52,211,153,0.35)" : focused ? `rgba(${ACCENT_RGB},0.45)` : "rgba(255,255,255,0.09)";
+  return (
+    <div className="relative flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200" style={{ borderColor: border }}>
+      <Icon size={15} className="shrink-0" style={{ color: value || focused ? ACCENT : "rgba(255,255,255,0.25)" }} />
+      <select value={value} onChange={(e) => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+        style={{ color: value ? "white" : "rgba(255,255,255,0.25)" }}
+        className="flex-1 appearance-none bg-transparent text-sm outline-none [&>option]:bg-[#111113] [&>option]:text-white">
+        <option value="" disabled>{placeholder}</option>
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+      <ChevronDown size={13} className="pointer-events-none shrink-0 text-white/25" />
+      {value && <CheckCircle2 size={13} className="shrink-0 text-[#34d399]" />}
+    </div>
+  );
+}
+
+function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
+  return (
+    <div className="cursor-pointer rounded-2xl border border-white/[0.07] bg-white transition-all duration-200 hover:border-[rgba(251,113,133,0.25)] hover:shadow-sm" onClick={onToggle}>
+      <div className="flex items-center justify-between gap-4 px-6 py-5">
+        <p className="text-sm font-semibold text-[#09090b] leading-relaxed">{q}</p>
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all duration-300"
+          style={{ borderColor: open ? `rgba(${ACCENT_RGB},0.4)` : "rgba(0,0,0,0.1)", background: open ? `rgba(${ACCENT_RGB},0.08)` : "transparent" }}>
+          <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25, ease }}>
+            <ChevronDown size={14} style={{ color: open ? ACCENT : "#6b7280" }} />
+          </motion.div>
+        </div>
+      </div>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease }} className="overflow-hidden">
+            <p className="border-t border-black/[0.05] px-6 pb-5 pt-4 text-sm leading-relaxed text-[#4b5563]">{a}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function DevisForm() {
+  const [nom,      setNom]      = useState("");
+  const [email,    setEmail]    = useState("");
+  const [tel,      setTel]      = useState("");
+  const [typeApp,  setTypeApp]  = useState("");
+  const [publicVise, setPublicVise] = useState("");
+  const [message,  setMessage]  = useState("");
+  const [sending,  setSending]  = useState(false);
+  const [sent,     setSent]     = useState(false);
+  const [error,    setError]    = useState<string | null>(null);
+  const canSubmit = nom && isEmailValid(email) && typeApp && message.length > 5;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault(); if (!canSubmit) return;
+    setSending(true); setError(null);
+    try {
+      const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: nom, email, phone: tel, source: "devis",
+          subject: `Application mobile — ${typeApp}${publicVise ? ` / ${publicVise}` : ""}`, message }) });
+      if (!res.ok) throw new Error(); setSent(true);
+    } catch { setError("Une erreur est survenue. Réessayez ou contactez-nous directement."); } finally { setSending(false); }
+  }
+
+  if (sent) return (
+    <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+      className="rounded-3xl border border-[rgba(251,113,133,0.25)] bg-[rgba(251,113,133,0.05)] p-10 text-center">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(251,113,133,0.12)]">
+        <CheckCircle2 size={26} style={{ color: ACCENT }} />
+      </div>
+      <h3 className="mb-2 text-lg font-extrabold text-white">Demande envoyée !</h3>
+      <p className="text-sm text-white/50">Nous vous répondons sous 24h pour analyser votre projet.</p>
+    </motion.div>
+  );
+
+  return (
+    <motion.form onSubmit={handleSubmit} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+      viewport={viewport} transition={{ duration: 0.55, ease }} className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <FieldInput icon={User} placeholder="Votre nom" value={nom} onChange={setNom} required />
+        <FieldInput icon={Mail} type="email" placeholder="Adresse email" value={email} onChange={setEmail} validate={isEmailValid} required />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <FieldInput icon={Phone} type="tel" placeholder="Téléphone (optionnel)" value={tel} onChange={setTel} />
+        <FieldSelect icon={Smartphone} placeholder="Type d'application" value={typeApp} onChange={setTypeApp} options={TYPE_APP_OPTIONS} />
+      </div>
+      <FieldSelect icon={Users} placeholder="Public visé" value={publicVise} onChange={setPublicVise} options={PUBLIC_OPTIONS} />
+      <div className="rounded-2xl border bg-white/[0.04] transition-all duration-200"
+        style={{ borderColor: message.length > 5 ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.09)" }}>
+        <div className="flex items-start gap-3 px-4 pt-4">
+          <MessageSquare size={15} className="mt-0.5 shrink-0" style={{ color: message ? ACCENT : "rgba(255,255,255,0.25)" }} />
+          <textarea placeholder="Décrivez votre besoin (concept, fonctionnalités clés, contexte, inspiration…)" value={message}
+            onChange={(e) => setMessage(e.target.value)} rows={5} required
+            className="flex-1 resize-none bg-transparent pb-4 text-sm text-white placeholder-white/25 outline-none" />
+        </div>
+        <div className="border-t border-white/[0.05] px-4 py-2 text-right">
+          <span className="text-[0.6rem] text-white/20">{message.length} caractères</span>
+        </div>
+      </div>
+      {error && <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-400">{error}</p>}
+      <button type="submit" disabled={!canSubmit || sending}
+        className="btn-primary w-full justify-center py-4 text-base disabled:cursor-not-allowed disabled:opacity-50">
+        {sending ? <><Loader2 size={17} className="animate-spin" /> Envoi en cours…</> : <><Send size={17} /> Parler de mon application</>}
+      </button>
+      <p className="text-center text-[0.68rem] text-white/20">🔒 Confidentialité garantie · Réponse sous 24h · Sans engagement</p>
+    </motion.form>
+  );
+}
+
+export default function ApplicationMobilePage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  return (
+    <>
+      <Navbar />
+      <main>
+        {/* HERO */}
+        <section className="relative overflow-hidden bg-[#09090b] pb-24 pt-32">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/4 rounded-full opacity-20"
+              style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.35) 0%, transparent 70%)` }} />
+          </div>
+          <div className="relative mx-auto max-w-4xl px-6 text-center">
+            <motion.div {...fadeIn} className="mb-8">
+              <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/50 transition-colors hover:text-white">
+                <ArrowLeft size={13} /> Tous les services
+              </Link>
+            </motion.div>
+            <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium"
+              style={{ borderColor: `rgba(${ACCENT_RGB},0.3)`, background: `rgba(${ACCENT_RGB},0.08)`, color: ACCENT }}>
+              <Smartphone size={13} /> Développement mobile
+            </motion.div>
+            <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+              <MultiLineReveal lines={["Application mobile", "sur mesure"]}
+                highlight={1} stagger={0.12} wordStagger={0.055} delay={0.08} lineClassName="justify-center" />
+            </h1>
+            <FadeReveal delay={0.2}>
+              <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-white/55 sm:text-lg">
+                Nous concevons des applications mobiles modernes, utiles et pensées pour l'expérience utilisateur sur iOS et Android.
+              </p>
+            </FadeReveal>
+            <motion.div variants={staggerContainerFast} initial="hidden" animate="show" className="mb-10 flex flex-wrap justify-center gap-4">
+              {[{ label: "iOS & Android", sub: "une seule codebase" }, { label: "MVP en 6–16 sem.", sub: "livraison rapide" }, { label: "UX soignée", sub: "pensée utilisateur" }].map(({ label, sub }) => (
+                <motion.div key={label} variants={cardReveal} className="rounded-2xl border border-white/[0.07] bg-white/[0.04] px-6 py-3.5 text-center">
+                  <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{label}</p>
+                  <p className="text-[0.65rem] text-white/35">{sub}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+            <motion.div {...fadeIn} transition={{ delay: 0.35 }}>
+              <Link href="#devis" className="btn-primary px-8 py-4 text-base">Parler de mon application <ArrowRight size={16} /></Link>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* TYPES D'APPS */}
+        <section className="bg-[#0c0c0e] py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Applications que nous créons</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Types d'applications</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {TYPES_APPS.map(({ icon: Icon, color, rgb, title, desc }) => (
+                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}><Icon size={20} style={{ color }} /></div>
+                  <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
+                  <p className="text-xs leading-relaxed text-white/45">{desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* CE QUE NOUS TRAVAILLONS */}
+        <section className="bg-[#09090b] py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre approche</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que nous travaillons sur chaque app</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {CE_QUE_NOUS_TRAVAILLONS.map(({ icon: Icon, color, rgb, title, desc }) => (
+                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}><Icon size={20} style={{ color }} /></div>
+                  <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
+                  <p className="text-xs leading-relaxed text-white/45">{desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* POUR QUI */}
+        <section className="bg-[#0c0c0e] py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Profils</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce service est fait pour vous si…</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {POUR_QUI.map(({ icon: Icon, color, rgb, who, desc, tags }) => (
+                <motion.div key={who} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}><Icon size={20} style={{ color }} /></div>
+                  <h3 className="mb-2 text-sm font-bold text-white">{who}</h3>
+                  <p className="mb-4 text-xs leading-relaxed text-white/45">{desc}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tags.map((t) => <span key={t} className="rounded-full border px-2.5 py-1 text-[0.6rem] font-medium" style={{ borderColor: `rgba(${rgb},0.25)`, color, background: `rgba(${rgb},0.07)` }}>{t}</span>)}
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* PROCESSUS */}
+        <section className="bg-[#09090b] py-24">
+          <div className="mx-auto max-w-5xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre processus</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">De l'idée à la publication</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="space-y-6">
+              {PROCESSUS.map(({ num, icon: Icon, color, rgb, title, desc }) => (
+                <motion.div key={num} variants={cardReveal} className="group relative flex gap-6 rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
+                  <div className="relative z-10 flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border"
+                    style={{ background: `rgba(${rgb},0.1)`, borderColor: `rgba(${rgb},0.25)` }}>
+                    <span className="text-[0.6rem] font-bold" style={{ color: `rgba(${rgb},0.7)` }}>{num}</span>
+                    <Icon size={18} style={{ color }} />
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <h3 className="mb-1.5 text-sm font-bold text-white">{title}</h3>
+                    <p className="text-xs leading-relaxed text-white/45">{desc}</p>
+                  </div>
+                  <span className="pointer-events-none absolute right-6 top-4 text-5xl font-black opacity-[0.04] select-none" style={{ color }}>{num}</span>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* FORMULAIRE */}
+        <section id="devis" className="bg-[#0c0c0e] py-24">
+          <div className="mx-auto max-w-2xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Parlons de votre application</motion.h2>
+              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/45">Décrivez votre idée — on analyse la faisabilité et on revient vers vous sous 24h.</motion.p>
+            </motion.div>
+            <DevisForm />
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="bg-[#09090b] py-24">
+          <div className="mx-auto max-w-2xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Vous avez des questions ?</motion.h2>
+            </motion.div>
+            <div className="space-y-3">
+              {FAQ_ITEMS.map(({ q, a }, i) => <FaqItem key={i} q={q} a={a} open={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />)}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="relative overflow-hidden bg-[#0c0c0e] pb-24 pt-20">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-15"
+              style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, transparent 70%)` }} />
+          </div>
+          <div className="relative mx-auto max-w-2xl px-6 text-center">
+            <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport} transition={{ duration: 0.6, ease }}>
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: `rgba(${ACCENT_RGB},0.12)` }}>
+                <Sparkles size={26} style={{ color: ACCENT }} />
+              </div>
+              <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Votre app, sur iOS & Android</h2>
+              <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Partagez votre concept — on le transforme en application mobile professionnelle, utile et agréable à utiliser.</p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link href="#devis" className="btn-primary px-8 py-4 text-base">Parler de mon application <ArrowRight size={16} /></Link>
+                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-semibold text-white/70 transition-all hover:bg-white/[0.07] hover:text-white">Voir tous nos services</Link>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
+  );
+}
