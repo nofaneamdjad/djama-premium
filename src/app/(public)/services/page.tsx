@@ -145,6 +145,15 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
   const isCreationAutoEntre    = service.slug === "creation-auto-entrepreneur"
                              || service.title === "Création auto-entrepreneur"
                              || service.title === "Création auto entrepreneur";
+  const isMontageVideo         = service.slug === "montage-video"
+                             || service.title === "Montage vidéo"
+                             || service.title === "Montage video";
+  const isRetouchePhoto        = service.slug === "retouche-photo"
+                             || service.title === "Retouche photo"
+                             || service.title === "Retouche Photo";
+  const isVisuelsPublicitaires = service.slug === "visuels-publicitaires"
+                             || service.title === "Visuels publicitaires"
+                             || service.title === "Visuels Publicitaires";
   const isFournisseurs         = service.slug === "fournisseurs-internationaux"
                              || service.title === "Recherche de fournisseurs internationaux"
                              || service.title === "Recherche fournisseurs";
@@ -163,9 +172,15 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
               ? "/services/declarations-urssaf"
               : isCreationAutoEntre
                 ? "/services/creation-auto-entrepreneur"
-                : isFournisseurs
-                  ? "/services/recherche-fournisseurs"
-                  : "/contact";
+                : isMontageVideo
+                  ? "/services/montage-video"
+                  : isRetouchePhoto
+                    ? "/services/retouche-photo"
+                    : isVisuelsPublicitaires
+                      ? "/services/visuels-publicitaires"
+                      : isFournisseurs
+                        ? "/services/recherche-fournisseurs"
+                        : "/contact";
 
   const priceTag = service.price || null;
 
