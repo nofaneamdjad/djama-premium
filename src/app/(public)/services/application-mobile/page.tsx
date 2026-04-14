@@ -285,7 +285,7 @@ export default function ApplicationMobilePage() {
               </FadeReveal>
               <FadeReveal delay={0.3}>
                 <div className="mb-8 flex flex-wrap gap-3">
-                  <Link href="#devis" className="btn-primary px-7 py-3.5 text-sm">Parler de mon application <ArrowRight size={15} /></Link>
+                  <Link href="/contact?besoin=Application+mobile" className="btn-primary px-7 py-3.5 text-sm">Parler de mon application <ArrowRight size={15} /></Link>
                   <Link href="#exemples" className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white/65 transition-all hover:border-white/20 hover:bg-white/[0.07] hover:text-white">Voir des exemples</Link>
                 </div>
               </FadeReveal>
@@ -638,15 +638,22 @@ export default function ApplicationMobilePage() {
           </div>
         </section>
 
-        {/* FORMULAIRE */}
-        <section id="devis" className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-2xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+        {/* CTA DEVIS */}
+        <section className="bg-[#09090b] py-14 sm:py-24">
+          <div className="mx-auto max-w-2xl px-6 text-center">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport}>
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Parlons de votre application</motion.h2>
-              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/45">Décrivez votre idée — on analyse la faisabilité et on revient vers vous sous 24h.</motion.p>
+              <motion.h2 variants={fadeIn} className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Parlons de votre application</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mb-8 max-w-md text-sm text-white/60">
+                Décrivez votre idée — on analyse la faisabilité et on revient vers vous sous 24h avec une proposition.
+              </motion.p>
+              <motion.div variants={fadeIn} className="flex flex-wrap justify-center gap-4">
+                <Link href="/contact?besoin=Application+mobile" className="btn-primary px-8 py-4 text-base">
+                  Parler de mon application <ArrowRight size={16} />
+                </Link>
+              </motion.div>
+              <motion.p variants={fadeIn} className="mt-5 text-xs text-white/25">🔒 Sans engagement · Réponse sous 24h · Devis gratuit</motion.p>
             </motion.div>
-            <DevisForm />
           </div>
         </section>
 
@@ -677,7 +684,7 @@ export default function ApplicationMobilePage() {
               <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Lancez votre application mobile</h2>
               <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Partagez votre concept — on le transforme en application iOS & Android professionnelle, utile et agréable à utiliser.</p>
               <div className="flex flex-wrap justify-center gap-4">
-                <Link href="#devis" className="btn-primary px-8 py-4 text-base">Parler de mon application <ArrowRight size={16} /></Link>
+                <Link href="/contact?besoin=Application+mobile" className="btn-primary px-8 py-4 text-base">Parler de mon application <ArrowRight size={16} /></Link>
                 <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-semibold text-white/70 transition-all hover:bg-white/[0.07] hover:text-white">Voir tous nos services</Link>
               </div>
             </motion.div>

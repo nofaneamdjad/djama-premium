@@ -270,7 +270,7 @@ export default function VisuelsPublicitairesPage() {
               ))}
             </motion.div>
             <motion.div {...fadeIn} transition={{ delay: 0.35 }}>
-              <Link href="#devis" className="btn-primary px-8 py-4 text-base">Demander un devis <ArrowRight size={16} /></Link>
+              <Link href="/contact?besoin=Création+de+visuels+publicitaires" className="btn-primary px-8 py-4 text-base">Demander un devis <ArrowRight size={16} /></Link>
             </motion.div>
           </div>
         </section>
@@ -430,17 +430,22 @@ export default function VisuelsPublicitairesPage() {
           </div>
         </section>
 
-        {/* FORMULAIRE */}
-        <section id="devis" className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-2xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
+        {/* CTA DEVIS */}
+        <section className="bg-[#09090b] py-14 sm:py-24">
+          <div className="mx-auto max-w-2xl px-6 text-center">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport}>
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Demandez votre devis</motion.h2>
-              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/60">Partagez votre objectif publicitaire — on crée les visuels qui font la différence.</motion.p>
+              <motion.h2 variants={fadeIn} className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Prêt à créer vos visuels ?</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mb-8 max-w-md text-sm text-white/60">
+                Partagez votre objectif publicitaire — on crée les visuels qui font la différence, livrés sous 72h.
+              </motion.p>
+              <motion.div variants={fadeIn} className="flex flex-wrap justify-center gap-4">
+                <Link href="/contact?besoin=Création+de+visuels+publicitaires" className="btn-primary px-8 py-4 text-base">
+                  Demander un devis <ArrowRight size={16} />
+                </Link>
+              </motion.div>
+              <motion.p variants={fadeIn} className="mt-5 text-xs text-white/25">🔒 Sans engagement · Réponse sous 24h · Devis gratuit</motion.p>
             </motion.div>
-            <div className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-5 sm:p-8 shadow-2xl">
-              <DevisForm />
-            </div>
           </div>
         </section>
 
@@ -473,7 +478,7 @@ export default function VisuelsPublicitairesPage() {
               <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Prêt à lancer votre campagne ?</h2>
               <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Décrivez votre objectif — on crée les visuels qui attirent l'attention et donnent envie d'agir.</p>
               <div className="flex flex-wrap justify-center gap-4">
-                <Link href="#devis" className="btn-primary px-8 py-4 text-base">Demander un devis <ArrowRight size={16} /></Link>
+                <Link href="/contact?besoin=Création+de+visuels+publicitaires" className="btn-primary px-8 py-4 text-base">Demander un devis <ArrowRight size={16} /></Link>
                 <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-semibold text-white/70 transition-all hover:bg-white/[0.07] hover:text-white">
                   Voir tous nos services
                 </Link>

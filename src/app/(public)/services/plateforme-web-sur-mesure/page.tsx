@@ -7,7 +7,7 @@ export default function PlatformeWebSurMesurePage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/services/automatisation-ia");
+    router.replace("/contact?besoin=Plateforme+web+sur+mesure");
   }, [router]);
 
   return null;

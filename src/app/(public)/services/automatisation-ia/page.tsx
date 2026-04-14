@@ -309,7 +309,7 @@ export default function AutomatisationIAPage() {
 
               {/* CTA */}
               <motion.div {...fadeIn} transition={{ delay: 0.45 }} className="flex flex-wrap gap-4">
-                <a href="#contact"
+                <a href="/contact?besoin=Automatisation+%26+IA"
                   className="inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90 hover:scale-[1.03]"
                   style={{ background: `linear-gradient(135deg, rgba(${ACCENT_RGB},0.9), rgba(96,165,250,0.8))` }}>
                   Parler de mon projet <ArrowRight size={16} />
@@ -798,7 +798,7 @@ export default function AutomatisationIAPage() {
             </motion.p>
 
             <motion.div variants={fadeIn} className="flex flex-wrap justify-center gap-4">
-              <a href="#contact"
+              <a href="/contact?besoin=Automatisation+%26+IA"
                 className="inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-semibold text-white shadow-xl transition-all hover:opacity-90 hover:scale-[1.03]"
                 style={{ background: `linear-gradient(135deg, rgba(${ACCENT_RGB},0.9), rgba(96,165,250,0.8))` }}>
                 Discuter de mon projet <ArrowRight size={16} />
@@ -822,58 +822,6 @@ export default function AutomatisationIAPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════
-          CONTACT FORM
-      ══════════════════════════════════════════════ */}
-      <section id="contact" className="py-24 px-6">
-        <div className="max-w-2xl mx-auto">
-          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-12">
-            <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
-              <MessageSquare size={13} style={{ color: ACCENT }} /> Contact
-            </motion.div>
-            <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl font-bold mb-4">
-              Parlons de votre <span style={{ color: ACCENT }}>projet</span>
-            </motion.h2>
-            <motion.p variants={fadeIn} className="text-white/50">
-              Décrivez votre besoin — on vous répond sous 24h avec une proposition adaptée.
-            </motion.p>
-          </motion.div>
-
-          <motion.div {...fadeIn} viewport={viewport}
-            className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-8">
-            <AnimatePresence mode="wait">
-              {sent ? (
-                <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
-                    style={{ background: `rgba(${ACCENT_RGB},0.15)` }}>
-                    <CheckCircle2 size={32} style={{ color: ACCENT }} />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Message envoyé !</h3>
-                  <p className="text-white/50 text-sm">Nous vous recontactons sous 24h.</p>
-                </motion.div>
-              ) : (
-                <motion.form key="form" onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <FieldInput icon={User}  placeholder="Votre nom" value={name}  onChange={setName}  required />
-                    <FieldInput icon={Mail}  type="email" placeholder="Email" value={email} onChange={setEmail} validate={isEmailValid} required />
-                  </div>
-                  <FieldInput icon={Phone} type="tel" placeholder="Téléphone (optionnel)" value={phone} onChange={setPhone} />
-                  <FieldSelect icon={Zap}  placeholder="Votre besoin principal" value={besoin} onChange={setBesoin} options={BESOIN_OPTIONS} />
-                  <FieldSelect icon={BarChart3} placeholder="Budget estimé" value={budget} onChange={setBudget} options={BUDGET_OPTIONS} />
-                  <FieldTextarea icon={MessageSquare} placeholder="Décrivez votre projet..." value={message} onChange={setMessage} />
-
-                  <motion.button type="submit" disabled={!canSubmit || sending}
-                    whileHover={canSubmit ? { scale: 1.02 } : {}} whileTap={canSubmit ? { scale: 0.98 } : {}}
-                    className="w-full flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-semibold text-white transition-all disabled:opacity-40"
-                    style={{ background: `linear-gradient(135deg, rgba(${ACCENT_RGB},0.9), rgba(96,165,250,0.8))` }}>
-                    {sending ? <><Loader2 size={16} className="animate-spin" /> Envoi en cours…</> : <><Send size={15} /> Envoyer ma demande</>}
-                  </motion.button>
-                </motion.form>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
-      </section>
 
       <Footer />
     </div>

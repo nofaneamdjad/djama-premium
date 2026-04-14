@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Mail, Phone, MessageCircle, ArrowRight, Sparkles, Clock,
   CheckCircle2, Send, ChevronDown, User, FileText, Wallet,
@@ -160,11 +161,19 @@ export default function ContactPage() {
   const SUBJECTS = c.form.subjects.map((s) => ({ value: s, label: s }));
   const BUDGETS  = c.form.budgets;
 
+  const searchParams = useSearchParams();
+
   const [name,    setName]    = useState("");
   const [email,   setEmail]   = useState("");
   const [subject, setSubject] = useState("");
   const [budget,  setBudget]  = useState("");
   const [message, setMessage] = useState("");
+
+  // Pré-remplir le sujet depuis le param URL ?besoin=
+  useEffect(() => {
+    const besoin = searchParams.get("besoin");
+    if (besoin) setSubject(besoin);
+  }, [searchParams]);
   const [sent,      setSent]      = useState(false);
   const [sending,   setSending]   = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);

@@ -275,6 +275,11 @@ export const en: Translations = {
       subjects: [
         "Website creation",
         "Mobile application",
+        "Custom web platform",
+        "Automation & AI",
+        "Video editing",
+        "Photo retouching",
+        "Advertising visuals creation",
         "Design & visual identity",
         "Administrative assistance",
         "Supplier sourcing",
