@@ -5,9 +5,11 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Monitor, ArrowRight, CheckCircle2, Sparkles, ChevronDown,
-  Zap, User, Mail, Phone, MessageSquare, Loader2, Send, ArrowLeft,
-  Globe, Search, Smartphone, Shield, TrendingUp, Star, Quote, Clock,
-  Briefcase, ShoppingBag, Users, Building2, Code2, Palette, CheckSquare,
+  Globe, Search, Smartphone, Shield, TrendingUp, Star,
+  Briefcase, ShoppingBag, Users, Building2, Code2, Palette,
+  MessageSquare, Zap, Clock, ArrowLeft, CheckSquare,
+  BarChart3, Lock, Wifi, HeartHandshake, BadgeCheck,
+  Layers, Pencil, Rocket, Eye,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
@@ -18,696 +20,714 @@ const ease       = [0.16, 1, 0.3, 1] as const;
 const ACCENT     = "#4ade80";
 const ACCENT_RGB = "74,222,128";
 
-const POUR_QUI = [
-  { icon: Briefcase,  color: "#60a5fa", rgb: "96,165,250",  who: "Entrepreneurs",       desc: "Vous lancez votre activité et avez besoin d'une vitrine crédible pour rassurer vos premiers clients.",  tags: ["Lancement", "Crédibilité", "Confiance"] },
-  { icon: ShoppingBag,color: ACCENT,    rgb: ACCENT_RGB,    who: "Commerces",           desc: "Boutique physique, restaurant, salon — présentez vos services, horaires et localisation simplement.",      tags: ["Adresse", "Horaires", "Réservation"] },
-  { icon: Star,       color: "#f9a826", rgb: "249,168,38",  who: "Prestataires",        desc: "Freelances, artisans, consultants — montrez votre expertise, vos réalisations et vos tarifs.",            tags: ["Portfolio", "Expertise", "Contact"] },
-  { icon: Building2,  color: "#f472b6", rgb: "244,114,182", who: "Cabinets & professions libérales", desc: "Médecins, avocats, comptables — un site sobre et professionnel qui inspire confiance.",   tags: ["Professionnel", "Confiance", "RGPD"] },
-  { icon: Users,      color: "#a78bfa", rgb: "167,139,250", who: "Associations & marques", desc: "Présentez votre mission, vos actions et vos membres dans un site clair et bien structuré.",          tags: ["Mission", "Équipe", "Adhérents"] },
-];
+/* ─── DATA ─────────────────────────────────────────────── */
 
-const CE_QUE_COMPREND = [
-  { icon: Palette,   color: "#60a5fa", rgb: "96,165,250",  title: "Design personnalisé",       desc: "Un design unique adapté à votre identité visuelle : couleurs, typographie, ambiance — rien de générique." },
-  { icon: Code2,     color: ACCENT,    rgb: ACCENT_RGB,    title: "Développement propre",      desc: "Code structuré, rapide et maintenable. Pas de page builder lourd — un site qui performe vraiment." },
-  { icon: Smartphone,color: "#f9a826", rgb: "249,168,38",  title: "Responsive mobile",         desc: "Votre site s'affiche parfaitement sur smartphone, tablette et desktop — sans compromis." },
-  { icon: Search,    color: "#f472b6", rgb: "244,114,182", title: "SEO de base",               desc: "Balises méta, titres optimisés, structure sémantique — les fondations pour être trouvé sur Google." },
-  { icon: MessageSquare, color: "#a78bfa", rgb: "167,139,250", title: "Formulaire de contact", desc: "Formulaire fonctionnel avec notifications email pour ne rater aucune demande entrante." },
-  { icon: Shield,    color: "#34d399", rgb: "52,211,153",  title: "Sécurité & conformité",    desc: "HTTPS, mentions légales, politique de confidentialité — votre site est conforme et sécurisé." },
-];
-
-const AVANTAGES = [
-  { icon: Star,       color: "#f9a826", rgb: "249,168,38",  title: "Image professionnelle",   desc: "Un site bien fait inspire confiance et vous distingue de la concurrence dès le premier regard." },
-  { icon: Globe,      color: "#60a5fa", rgb: "96,165,250",  title: "Visibilité en ligne",     desc: "Soyez trouvé par vos prospects sur Google, réseaux sociaux et annuaires professionnels." },
-  { icon: MessageSquare, color: ACCENT, rgb: ACCENT_RGB,   title: "Contact simplifié",       desc: "Formulaire, téléphone, carte — vos clients peuvent vous joindre facilement depuis n'importe quel écran." },
-  { icon: TrendingUp, color: "#f472b6", rgb: "244,114,182",title: "Présence 24h/24",          desc: "Votre site travaille pour vous même quand vous dormez — présentez, rassurer, convertir en continu." },
-];
-
-const ETAPES = [
-  { num: "01", icon: MessageSquare, color: "#c9a55a", rgb: "201,165,90", title: "Échange & brief",          desc: "On parle de votre activité, votre cible, vos concurrents et vos attentes pour le site." },
-  { num: "02", icon: Palette,       color: "#60a5fa", rgb: "96,165,250", title: "Maquette & design",        desc: "On vous soumet une maquette du site pour validation avant de commencer le développement." },
-  { num: "03", icon: Code2,         color: ACCENT,    rgb: ACCENT_RGB,   title: "Développement",            desc: "Développement du site, intégration du contenu, tests sur tous les supports." },
-  { num: "04", icon: CheckCircle2,  color: "#4ade80", rgb: "74,222,128", title: "Mise en ligne & formation","desc": "Publication sur votre domaine, formation à la gestion du contenu et suivi post-lancement." },
+const STATS = [
+  { value: "10j",   label: "Délai moyen livraison", color: ACCENT_RGB },
+  { value: "+60%",  label: "Contacts entrants",      color: "96,165,250" },
+  { value: "100%",  label: "Responsive garanti",     color: "249,168,38" },
+  { value: "Top 3", label: "Google en 2 mois",       color: "244,114,182" },
 ];
 
 const CE_QUE_VOUS_OBTENEZ = [
-  { label: "Maquette & design",          desc: "Design personnalisé validé avec vous avant développement — aucune surprise.",                    icon: Palette,       color: "74,222,128"  },
-  { label: "Développement responsive",   desc: "Site rapide, optimisé mobile, tablette et desktop — sans page builder lourd.",                   icon: Smartphone,    color: "96,165,250"  },
-  { label: "SEO de base",                desc: "Balises méta, titres H1-H6, sitemap, robots.txt — les fondations pour être trouvé sur Google.",  icon: Search,        color: "249,168,38"  },
-  { label: "Formulaire de contact",      desc: "Formulaire fonctionnel avec notifications email pour ne rater aucune demande.",                  icon: MessageSquare, color: "244,114,182" },
-  { label: "Mise en ligne",              desc: "Configuration du domaine, hébergement, certificat SSL — votre site est accessible immédiatement.", icon: Globe,        color: "167,139,250" },
-  { label: "Formation & support",        desc: "On vous apprend à gérer votre contenu et on reste disponibles après la livraison.",              icon: Shield,        color: "52,211,153"  },
+  { icon: Palette,      color: "#4ade80", rgb: "74,222,128",   title: "Design sur mesure",         desc: "Maquette validée avec vous avant développement. Couleurs, typographie, ambiance — 100% unique." },
+  { icon: Smartphone,   color: "#60a5fa", rgb: "96,165,250",   title: "Responsive mobile-first",   desc: "Parfait sur iPhone, Android, tablette et desktop. Testé sur tous les appareils." },
+  { icon: Search,       color: "#f9a826", rgb: "249,168,38",   title: "SEO de base inclus",        desc: "Balises méta, H1-H6, sitemap.xml, robots.txt — les fondations pour être trouvé sur Google." },
+  { icon: MessageSquare,color: "#f472b6", rgb: "244,114,182",  title: "Formulaire de contact",     desc: "Formulaire anti-spam avec notifications email. Aucune demande client ne passe inaperçue." },
+  { icon: Lock,         color: "#a78bfa", rgb: "167,139,250",  title: "SSL + sécurité",            desc: "HTTPS, certificat SSL, protection des données — conforme RGPD, mentions légales incluses." },
+  { icon: HeartHandshake,color:"#34d399", rgb: "52,211,153",   title: "Formation & support",       desc: "On vous forme à gérer votre contenu. Disponibles après livraison pour toute question." },
 ];
 
-const EXEMPLES_PROJETS = [
-  { icon: Briefcase,  color: "#4ade80", rgb: "74,222,128",  titre: "Cabinet d'avocat",        desc: "Site 5 pages sobre et professionnel avec système de prise de RDV et formulaire de premier contact.",               resultat: "+60% de contacts entrants vs. avant" },
-  { icon: ShoppingBag,color: "#60a5fa", rgb: "96,165,250",  titre: "Artisan électricien",     desc: "Site vitrine local avec galerie de réalisations, zones d'intervention et devis en ligne — bien référencé localement.", resultat: "Top 3 Google sur sa zone en 2 mois" },
-  { icon: Star,       color: "#f9a826", rgb: "249,168,38",  titre: "Coach sportif freelance", desc: "Portfolio avec programmes, tarifs, témoignages clients et agenda de réservation pour séances individuelles.",          resultat: "Complet sur 3 mois après lancement" },
+const POUR_QUI = [
+  { icon: Briefcase,   color: "#60a5fa", rgb: "96,165,250",  who: "Entrepreneurs",              desc: "Lancez votre activité avec une vitrine crédible qui rassure vos premiers clients.",       tags: ["Lancement", "Crédibilité"] },
+  { icon: ShoppingBag, color: ACCENT,    rgb: ACCENT_RGB,    who: "Commerces & restaurants",    desc: "Présentez vos services, horaires, localisation et menu — simple et efficace.",             tags: ["Horaires", "Réservation"] },
+  { icon: Star,        color: "#f9a826", rgb: "249,168,38",  who: "Freelances & artisans",      desc: "Montrez votre portfolio, vos tarifs et captez des leads qualifiés en continu.",           tags: ["Portfolio", "Devis"] },
+  { icon: Building2,   color: "#f472b6", rgb: "244,114,182", who: "Professions libérales",      desc: "Médecins, avocats, experts-comptables — une présence sobre et professionnelle.",          tags: ["Confiance", "RGPD"] },
+  { icon: Users,       color: "#a78bfa", rgb: "167,139,250", who: "Associations & marques",     desc: "Présentez votre mission, votre équipe et vos actions dans un site clair.",               tags: ["Mission", "Équipe"] },
 ];
 
-const TABLE_INCLUS = [
-  { label: "Design professionnel sur mesure",  icon: Palette,       color: "74,222,128"  },
-  { label: "Responsive mobile & desktop",       icon: Smartphone,    color: "96,165,250"  },
-  { label: "Optimisation SEO de base",          icon: Search,        color: "249,168,38"  },
-  { label: "Formulaire de contact fonctionnel", icon: MessageSquare, color: "244,114,182" },
-  { label: "Certificat SSL + HTTPS",            icon: Shield,        color: "167,139,250" },
-  { label: "Formation & support post-livraison",icon: Users,         color: "52,211,153"  },
+const ETAPES = [
+  { num: "01", icon: MessageSquare, color: "#c9a55a", rgb: "201,165,90", title: "Échange & brief",    desc: "On analyse votre activité, vos concurrents et vos attentes pour le site." },
+  { num: "02", icon: Palette,       color: "#60a5fa", rgb: "96,165,250", title: "Maquette & design",  desc: "Maquette complète soumise pour validation — aucun développement sans votre accord." },
+  { num: "03", icon: Code2,         color: ACCENT,    rgb: ACCENT_RGB,   title: "Développement",      desc: "Code propre, performant, testé sur mobile, tablette et desktop." },
+  { num: "04", icon: Rocket,        color: "#4ade80", rgb: "74,222,128", title: "Mise en ligne",      desc: "Déploiement sur votre domaine, SSL, formation CMS et suivi post-lancement." },
 ];
 
-const PROCESSUS_STEPS = [
-  { num: "01", icon: MessageSquare, color: "#c9a55a", rgb: "201,165,90", label: "Brief",         desc: "Analyse des besoins" },
-  { num: "02", icon: Palette,       color: "#60a5fa", rgb: "96,165,250", label: "Design",        desc: "Maquette validée" },
-  { num: "03", icon: Code2,         color: ACCENT,    rgb: ACCENT_RGB,   label: "Développement", desc: "Code clean & rapide" },
-  { num: "04", icon: CheckSquare,   color: "#f9a826", rgb: "249,168,38", label: "Tests",         desc: "Multi-supports" },
-  { num: "05", icon: Globe,         color: "#a78bfa", rgb: "167,139,250",label: "Mise en ligne", desc: "Déploiement & suivi" },
+const INCLUS = [
+  { label: "Design professionnel sur mesure",   ok: true },
+  { label: "Responsive mobile & desktop",        ok: true },
+  { label: "SEO de base (métas, sitemap…)",      ok: true },
+  { label: "Formulaire de contact fonctionnel",  ok: true },
+  { label: "Certificat SSL + HTTPS",             ok: true },
+  { label: "Mentions légales + RGPD",            ok: true },
+  { label: "Formation à la gestion du contenu",  ok: true },
+  { label: "Support post-livraison",             ok: true },
+];
+
+const NON_INCLUS = [
+  { label: "Nom de domaine (env. 15€/an)",      ok: false },
+  { label: "Hébergement (env. 5–15€/mois)",     ok: false },
+  { label: "Rédaction des textes",              ok: false },
+  { label: "Photos/visuels professionnels",     ok: false },
+];
+
+const OFFRES = [
+  {
+    nom: "Essentiel",
+    prix: "490",
+    sous: "Site 1 à 3 pages",
+    couleur: ACCENT_RGB,
+    accent: ACCENT,
+    features: [
+      "Design unique sur mesure",
+      "Responsive mobile-first",
+      "Formulaire de contact",
+      "SEO de base",
+      "SSL + HTTPS",
+      "Livraison en 1–2 semaines",
+    ],
+    popular: false,
+  },
+  {
+    nom: "Professionnel",
+    prix: "890",
+    sous: "Site 4 à 6 pages",
+    couleur: "129,140,248",
+    accent: "#818cf8",
+    features: [
+      "Tout de l'offre Essentiel",
+      "Jusqu'à 6 pages",
+      "Blog ou actualités",
+      "Intégration WhatsApp",
+      "Google Analytics",
+      "Livraison en 2–3 semaines",
+    ],
+    popular: true,
+  },
+  {
+    nom: "Premium",
+    prix: "Sur devis",
+    sous: "Site 7+ pages ou complexe",
+    couleur: "249,168,38",
+    accent: "#f9a826",
+    features: [
+      "Tout de l'offre Professionnel",
+      "Pages illimitées",
+      "Animations avancées",
+      "Espace client / portail",
+      "Maintenance mensuelle",
+      "Délai selon cahier des charges",
+    ],
+    popular: false,
+  },
+];
+
+const EXEMPLES = [
+  {
+    icon: Briefcase,
+    color: "#4ade80", rgb: "74,222,128",
+    titre: "Cabinet d'avocat",
+    desc: "5 pages sobres avec prise de RDV intégrée, formulaire de premier contact et FAQ juridique.",
+    resultat: "+60% de contacts entrants",
+    bars: [30, 55, 80, 95, 100],
+  },
+  {
+    icon: ShoppingBag,
+    color: "#60a5fa", rgb: "96,165,250",
+    titre: "Artisan électricien",
+    desc: "Site local avec galerie de réalisations, zones d'intervention et devis en ligne rapide.",
+    resultat: "Top 3 Google en 2 mois",
+    bars: [20, 45, 68, 85, 100],
+  },
+  {
+    icon: Star,
+    color: "#f9a826", rgb: "249,168,38",
+    titre: "Coach sportif freelance",
+    desc: "Portfolio programmes, tarifs, témoignages et calendrier de réservation pour séances.",
+    resultat: "Agenda complet en 3 mois",
+    bars: [25, 50, 70, 88, 100],
+  },
 ];
 
 const TEMOIGNAGES = [
-  { name: "Marie L.", activite: "Sophrologue", note: 5, avis: "DJAMA a créé mon site en 10 jours. Résultat bluffant, très professionnel. J'ai eu mes 3 premiers contacts en moins d'une semaine après la mise en ligne." },
-  { name: "Thomas B.", activite: "Artisan menuisier", note: 5, avis: "Je n'y connaissais rien au web. L'équipe a tout géré, m'a expliqué chaque étape et livré un site que mes clients adorent. Vraiment top." },
-  { name: "Camille D.", activite: "Coach business", note: 5, avis: "Site clean, rapide et bien positionné sur Google en quelques semaines. Exactement ce que je voulais. Je recommande sans hésiter." },
+  { initial: "M", color: ACCENT_RGB,    name: "Marie L.",   role: "Sophrologue",       stars: 5, avis: "DJAMA a créé mon site en 10 jours. Résultat bluffant. J'ai eu mes 3 premiers contacts en moins d'une semaine après la mise en ligne." },
+  { initial: "T", color: "96,165,250",  name: "Thomas B.",  role: "Artisan menuisier", stars: 5, avis: "Je n'y connaissais rien au web. L'équipe a tout géré, m'a expliqué chaque étape et livré un site que mes clients adorent. Vraiment top." },
+  { initial: "C", color: "249,168,38",  name: "Camille D.", role: "Coach business",    stars: 5, avis: "Site clean, rapide et bien positionné sur Google en quelques semaines. Exactement ce que je voulais. Je recommande sans hésiter." },
 ];
 
 const FAQ_ITEMS = [
-  { q: "Puis-je modifier le contenu moi-même ?", a: "Oui. Nous intégrons un système de gestion de contenu (CMS) simple si vous souhaitez modifier vos textes, images et pages sans avoir à nous contacter." },
-  { q: "Le nom de domaine et l'hébergement sont-ils inclus ?", a: "Ces éléments sont généralement à votre charge (environ 15–30€/an). Nous vous guidons pour les commander et nous occupons de la configuration technique." },
-  { q: "Combien de temps faut-il pour créer un site vitrine ?", a: "Entre 2 et 4 semaines selon le nombre de pages et la disponibilité pour les retours. Un site simple peut être livré en 1 semaine." },
-  { q: "Mon site sera-t-il bien référencé sur Google ?", a: "Nous appliquons les bonnes pratiques SEO de base (titres, métas, structure). Pour un référencement avancé, nous proposons un accompagnement SEO dédié." },
-  { q: "Combien coûte un site vitrine ?", a: "Le tarif dépend du nombre de pages et des fonctionnalités. Contactez-nous pour un devis transparent et sans engagement." },
+  { q: "Combien de temps pour livrer mon site ?",         a: "Entre 1 et 4 semaines selon le nombre de pages et votre disponibilité pour les retours. Un mini-site 3 pages peut être livré en 7 jours." },
+  { q: "Puis-je modifier le contenu moi-même ?",          a: "Oui. Nous intégrons un CMS simple (Sanity ou Notion) si vous souhaitez modifier textes et images sans nous contacter." },
+  { q: "Le nom de domaine est-il inclus ?",               a: "Le domaine et l'hébergement sont à votre charge (environ 15–30€/an). On vous guide pour les commander et on s'occupe de la configuration." },
+  { q: "Mon site sera-t-il bien référencé sur Google ?",  a: "Nous appliquons les bonnes pratiques SEO de base. Pour un référencement avancé, nous proposons un accompagnement SEO dédié." },
+  { q: "Puis-je demander des modifications après livraison ?", a: "Oui. Nous incluons 2 semaines de support post-livraison avec corrections mineures. Des contrats de maintenance mensuelle sont également disponibles." },
+  { q: "Acceptez-vous de petits budgets ?",               a: "Notre offre Essentiel démarre à 490€. Pour des besoins plus simples, contactez-nous — on trouve toujours une solution adaptée." },
 ];
-
-const ACTIVITE_OPTIONS = ["Commerce / Boutique physique", "Prestataire de services", "Profession libérale / Cabinet", "Restaurant / Hôtel", "Association / Organisation", "Autre"];
-const NB_PAGES_OPTIONS = ["1 à 3 pages (mini-site)", "4 à 6 pages", "7 à 10 pages", "Plus de 10 pages"];
-
-function isEmailValid(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
-
-function FieldInput({ icon: Icon, type = "text", placeholder, value, onChange, validate, required }: {
-  icon: React.ElementType; type?: string; placeholder: string; value: string;
-  onChange: (v: string) => void; validate?: (v: string) => boolean; required?: boolean;
-}) {
-  const [focused, setFocused] = useState(false);
-  const [touched, setTouched] = useState(false);
-  const isValid = validate ? validate(value) : value.length > 0;
-  const showOk  = touched && value && isValid;
-  const showErr = touched && value && validate && !isValid;
-  const border  = showErr ? "rgba(248,113,113,0.5)" : showOk ? "rgba(52,211,153,0.45)" : focused ? `rgba(${ACCENT_RGB},0.5)` : "rgba(255,255,255,0.09)";
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200"
-      style={{ borderColor: border, boxShadow: focused ? `0 0 0 3px rgba(${ACCENT_RGB},0.08)` : "none" }}>
-      <Icon size={15} className="shrink-0" style={{ color: focused || value ? ACCENT : "rgba(255,255,255,0.25)" }} />
-      <input type={type} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); setTouched(true); }} required={required}
-        className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none" />
-      <AnimatePresence>
-        {showOk && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><CheckCircle2 size={14} className="text-[#34d399]" /></motion.div>}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function FieldSelect({ icon: Icon, placeholder, value, onChange, options }: {
-  icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; options: string[];
-}) {
-  const [focused, setFocused] = useState(false);
-  const border = value ? "rgba(52,211,153,0.35)" : focused ? `rgba(${ACCENT_RGB},0.45)` : "rgba(255,255,255,0.09)";
-  return (
-    <div className="relative flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200" style={{ borderColor: border }}>
-      <Icon size={15} className="shrink-0" style={{ color: value || focused ? ACCENT : "rgba(255,255,255,0.25)" }} />
-      <select value={value} onChange={(e) => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        style={{ color: value ? "white" : "rgba(255,255,255,0.25)" }}
-        className="flex-1 appearance-none bg-transparent text-sm outline-none [&>option]:bg-[#111113] [&>option]:text-white">
-        <option value="" disabled>{placeholder}</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
-      <ChevronDown size={13} className="pointer-events-none shrink-0 text-white/25" />
-      {value && <CheckCircle2 size={13} className="shrink-0 text-[#34d399]" />}
-    </div>
-  );
-}
-
-function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
-  return (
-    <div className="cursor-pointer rounded-2xl border border-white/[0.07] bg-white transition-all duration-200 hover:border-[rgba(74,222,128,0.25)] hover:shadow-sm" onClick={onToggle}>
-      <div className="flex items-center justify-between gap-4 px-6 py-5">
-        <p className="text-sm font-semibold text-[#09090b] leading-relaxed">{q}</p>
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all duration-300"
-          style={{ borderColor: open ? `rgba(${ACCENT_RGB},0.4)` : "rgba(0,0,0,0.1)", background: open ? `rgba(${ACCENT_RGB},0.08)` : "transparent" }}>
-          <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25, ease }}>
-            <ChevronDown size={14} style={{ color: open ? ACCENT : "#6b7280" }} />
-          </motion.div>
-        </div>
-      </div>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease }} className="overflow-hidden">
-            <p className="border-t border-black/[0.05] px-6 pb-5 pt-4 text-sm leading-relaxed text-[#4b5563]">{a}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function DevisForm() {
-  const [nom,      setNom]      = useState("");
-  const [email,    setEmail]    = useState("");
-  const [tel,      setTel]      = useState("");
-  const [activite, setActivite] = useState("");
-  const [nbPages,  setNbPages]  = useState("");
-  const [message,  setMessage]  = useState("");
-  const [sending,  setSending]  = useState(false);
-  const [sent,     setSent]     = useState(false);
-  const [error,    setError]    = useState<string | null>(null);
-  const canSubmit = nom && isEmailValid(email) && activite && message.length > 5;
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); if (!canSubmit) return;
-    setSending(true); setError(null);
-    try {
-      const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nom, email, phone: tel, source: "devis",
-          subject: `Site vitrine — ${activite}${nbPages ? ` / ${nbPages}` : ""}`, message }) });
-      if (!res.ok) throw new Error(); setSent(true);
-    } catch { setError("Une erreur est survenue. Réessayez ou contactez-nous directement."); } finally { setSending(false); }
-  }
-
-  if (sent) return (
-    <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-      className="rounded-3xl border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.05)] p-10 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(74,222,128,0.12)]">
-        <CheckCircle2 size={26} style={{ color: ACCENT }} />
-      </div>
-      <h3 className="mb-2 text-lg font-extrabold text-white">Demande envoyée !</h3>
-      <p className="text-sm text-white/50">Nous vous répondons sous 24h avec une estimation personnalisée.</p>
-    </motion.div>
-  );
-
-  return (
-    <motion.form onSubmit={handleSubmit} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-      viewport={viewport} transition={{ duration: 0.55, ease }} className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <FieldInput icon={User} placeholder="Votre nom" value={nom} onChange={setNom} required />
-        <FieldInput icon={Mail} type="email" placeholder="Adresse email" value={email} onChange={setEmail} validate={isEmailValid} required />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <FieldInput icon={Phone} type="tel" placeholder="Téléphone (optionnel)" value={tel} onChange={setTel} />
-        <FieldSelect icon={Briefcase} placeholder="Votre activité" value={activite} onChange={setActivite} options={ACTIVITE_OPTIONS} />
-      </div>
-      <FieldSelect icon={Monitor} placeholder="Nombre de pages souhaitées" value={nbPages} onChange={setNbPages} options={NB_PAGES_OPTIONS} />
-      <div className="rounded-2xl border bg-white/[0.04] transition-all duration-200"
-        style={{ borderColor: message.length > 5 ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.09)" }}>
-        <div className="flex items-start gap-3 px-4 pt-4">
-          <MessageSquare size={15} className="mt-0.5 shrink-0" style={{ color: message ? ACCENT : "rgba(255,255,255,0.25)" }} />
-          <textarea placeholder="Décrivez votre besoin (pages souhaitées, style, références, contraintes…)" value={message}
-            onChange={(e) => setMessage(e.target.value)} rows={5} required
-            className="flex-1 resize-none bg-transparent pb-4 text-sm text-white placeholder-white/25 outline-none" />
-        </div>
-        <div className="border-t border-white/[0.05] px-4 py-2 text-right">
-          <span className="text-[0.6rem] text-white/20">{message.length} caractères</span>
-        </div>
-      </div>
-      {error && <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-400">{error}</p>}
-      <button type="submit" disabled={!canSubmit || sending}
-        className="btn-primary w-full justify-center py-4 text-base disabled:cursor-not-allowed disabled:opacity-50">
-        {sending ? <><Loader2 size={17} className="animate-spin" /> Envoi en cours…</> : <><Send size={17} /> Créer mon site vitrine</>}
-      </button>
-      <p className="text-center text-[0.68rem] text-white/20">🔒 Confidentialité garantie · Réponse sous 24h · Sans engagement</p>
-    </motion.form>
-  );
-}
 
 export default function SiteVitrinePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   return (
     <>
       <Navbar />
-      <main>
-        {/* HERO */}
-        <section
-          className="relative overflow-hidden"
-          style={{
-            background: "radial-gradient(ellipse at 30% 50%, #0d1a10 0%, #060d08 40%, #03080a 70%, #020508 100%)",
-            minHeight: "min(80vh, 720px)",
-          }}
-        >
-          {/* Grille de fond subtile */}
-          <div className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(74,222,128,0.04) 1.5px, transparent 0)",
-              backgroundSize: "32px 32px",
-            }}
-          />
-          {/* Glow gauche */}
-          <div className="pointer-events-none absolute left-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full blur-[100px]"
-            style={{ background: "radial-gradient(circle, rgba(74,222,128,0.12) 0%, transparent 70%)" }} />
-          {/* Glow droite */}
-          <div className="pointer-events-none absolute right-0 top-1/4 h-[400px] w-[400px] rounded-full blur-[80px]"
-            style={{ background: "radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%)" }} />
+      <main className="bg-[#07070a] overflow-x-hidden">
 
-          <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-12 px-6 pb-16 pt-28 lg:flex-row lg:gap-16 lg:pb-0 lg:pt-0" style={{ minHeight: "min(80vh, 720px)" }}>
+        {/* ══════════════════════════════════════════
+            HERO
+        ══════════════════════════════════════════ */}
+        <section className="relative min-h-[92vh] flex items-center overflow-hidden">
 
-            {/* ── GAUCHE : texte ── */}
-            <div className="flex flex-1 flex-col items-start lg:py-16">
-              {/* Retour */}
-              <motion.div {...fadeIn} className="mb-7">
-                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/50 transition-colors hover:text-white">
-                  <ArrowLeft size={13} /> Tous les services
-                </Link>
-              </motion.div>
+          {/* Backgrounds */}
+          <div className="pointer-events-none absolute inset-0">
+            {/* Grid */}
+            <div className="absolute inset-0 opacity-[0.025]"
+              style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.5) 1px,transparent 1px)", backgroundSize: "55px 55px" }} />
+            {/* Glow vert gauche */}
+            <motion.div animate={{ scale: [1, 1.08, 1], opacity: [0.07, 0.12, 0.07] }} transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute -left-32 top-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[120px]"
+              style={{ background: `radial-gradient(circle, rgba(${ACCENT_RGB},1) 0%, transparent 70%)` }} />
+            {/* Glow bleu droite */}
+            <div className="absolute right-0 top-1/4 w-[500px] h-[500px] rounded-full blur-[100px] opacity-[0.05]"
+              style={{ background: "radial-gradient(circle, rgba(96,165,250,1) 0%, transparent 70%)" }} />
+          </div>
 
-              {/* Badge */}
-              <motion.div {...fadeIn} transition={{ delay: 0.05 }}
-                className="mb-5 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[0.7rem] font-semibold"
-                style={{ borderColor: `rgba(${ACCENT_RGB},0.3)`, background: `rgba(${ACCENT_RGB},0.07)`, color: ACCENT }}>
-                <Monitor size={12} /> Site vitrine professionnel
-              </motion.div>
+          <div className="relative max-w-7xl mx-auto px-6 w-full py-24 lg:py-0">
+            <div className="grid lg:grid-cols-2 gap-14 items-center">
 
-              {/* Titre */}
-              <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.5rem]">
-                <MultiLineReveal
-                  lines={["Site vitrine", "professionnel"]}
-                  highlight={1} stagger={0.12} wordStagger={0.055} delay={0.08}
-                  lineClassName="justify-start"
-                />
-              </h1>
-
-              {/* Sous-titre */}
-              <FadeReveal delay={0.2}>
-                <p className="mb-8 max-w-lg text-base leading-relaxed text-white/55 sm:text-lg">
-                  Un site rapide, crédible et optimisé SEO pour présenter votre activité et générer des contacts qualifiés.
-                </p>
-              </FadeReveal>
-
-              {/* Boutons CTA */}
-              <FadeReveal delay={0.3}>
-                <div className="mb-8 flex flex-wrap gap-3">
-                  <Link href="#devis" className="btn-primary px-7 py-3.5 text-sm">
-                    Créer mon site vitrine <ArrowRight size={15} />
+              {/* LEFT */}
+              <div>
+                <motion.div {...fadeIn} className="mb-6">
+                  <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/50 hover:text-white transition-colors">
+                    <ArrowLeft size={12} /> Tous les services
                   </Link>
-                  <Link href="#exemples"
-                    className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white/65 transition-all hover:border-white/20 hover:bg-white/[0.07] hover:text-white">
-                    Voir des exemples
-                  </Link>
-                </div>
-              </FadeReveal>
+                </motion.div>
 
-              {/* Badges */}
-              <FadeReveal delay={0.42}>
-                <div className="flex flex-wrap gap-2.5">
-                  {[
-                    { emoji: "⚡", label: "Livraison rapide" },
-                    { emoji: "📈", label: "SEO optimisé" },
-                    { emoji: "📱", label: "Mobile first" },
-                  ].map(({ emoji, label }) => (
-                    <span key={label}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.09] bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/60">
-                      {emoji} {label}
-                    </span>
-                  ))}
-                </div>
-              </FadeReveal>
-            </div>
+                <motion.div {...fadeIn} transition={{ delay: 0.06 }}
+                  className="mb-5 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[0.72rem] font-semibold"
+                  style={{ borderColor: `rgba(${ACCENT_RGB},0.3)`, background: `rgba(${ACCENT_RGB},0.07)`, color: ACCENT }}>
+                  <Monitor size={12} /> Site vitrine professionnel
+                </motion.div>
 
-            {/* ── DROITE : mockup navigateur ── */}
-            <div className="w-full flex-shrink-0 lg:w-[52%] lg:py-12">
+                <h1 className="mb-5 text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.08] tracking-tight text-white">
+                  <MultiLineReveal
+                    lines={["Votre site vitrine", "professionnel,", "livré en 10 jours"]}
+                    highlight={2} stagger={0.12} wordStagger={0.055} delay={0.08}
+                    lineClassName="justify-start"
+                  />
+                </h1>
+
+                <FadeReveal delay={0.28}>
+                  <p className="mb-8 max-w-lg text-base sm:text-lg leading-relaxed text-white/55">
+                    Design sur mesure, responsive, SEO optimisé et formulaire de contact — tout ce qu'il faut pour convertir vos visiteurs en clients.
+                  </p>
+                </FadeReveal>
+
+                <FadeReveal delay={0.36}>
+                  <div className="flex flex-wrap gap-3 mb-8">
+                    <Link href="/contact?besoin=Création+de+site+web"
+                      className="inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90 hover:scale-[1.03] active:scale-[0.98]"
+                      style={{ background: `linear-gradient(135deg, rgba(${ACCENT_RGB},0.9) 0%, rgba(52,211,153,0.8) 100%)`, color: "#07070a" }}>
+                      Créer mon site vitrine <ArrowRight size={15} />
+                    </Link>
+                    <a href="#exemples"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white/70 transition-all hover:bg-white/[0.08] hover:text-white hover:border-white/20">
+                      Voir des exemples
+                    </a>
+                  </div>
+                </FadeReveal>
+
+                <FadeReveal delay={0.44}>
+                  <div className="flex flex-wrap gap-2.5">
+                    {[
+                      { emoji: "⚡", label: "Livraison en 10 jours" },
+                      { emoji: "📈", label: "SEO optimisé" },
+                      { emoji: "📱", label: "Mobile first" },
+                      { emoji: "🔒", label: "SSL inclus" },
+                    ].map(({ emoji, label }) => (
+                      <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/60">
+                        {emoji} {label}
+                      </span>
+                    ))}
+                  </div>
+                </FadeReveal>
+              </div>
+
+              {/* RIGHT — browser mockup */}
               <motion.div
-                initial={{ opacity: 0, y: 28, scale: 0.96 }}
+                initial={{ opacity: 0, y: 32, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
-                className="relative mx-auto w-full max-w-[560px]"
+                transition={{ duration: 0.75, ease, delay: 0.3 }}
+                className="relative hidden lg:block"
               >
-                {/* Halo derrière le mockup */}
-                <div className="pointer-events-none absolute -inset-6 rounded-3xl blur-3xl"
-                  style={{ background: "radial-gradient(ellipse, rgba(74,222,128,0.10) 0%, rgba(56,189,248,0.06) 50%, transparent 70%)" }} />
+                {/* glow behind */}
+                <div className="pointer-events-none absolute -inset-8 rounded-3xl blur-3xl opacity-30"
+                  style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, rgba(96,165,250,0.2) 50%, transparent 70%)` }} />
 
-                {/* Fenêtre navigateur */}
-                <div className="relative overflow-hidden rounded-2xl border border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
+                {/* Browser window */}
+                <div className="relative overflow-hidden rounded-[20px] border border-white/[0.11] shadow-[0_40px_100px_rgba(0,0,0,0.7)]"
                   style={{ background: "#0d0d0f" }}>
 
-                  {/* Barre de navigation du navigateur */}
-                  <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3"
-                    style={{ background: "#111115" }}>
+                  {/* Browser bar */}
+                  <div className="flex items-center gap-3 border-b border-white/[0.07] px-4 py-3" style={{ background: "#111115" }}>
                     <div className="flex gap-1.5">
-                      <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-                      <div className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
-                      <div className="h-3 w-3 rounded-full bg-[#28c840]" />
+                      <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                      <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                      <div className="w-3 h-3 rounded-full bg-[#28c840]" />
                     </div>
-                    <div className="flex flex-1 items-center gap-2 rounded-md border border-white/[0.07] bg-white/[0.04] px-3 py-1">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[#4ade80]" />
+                    <div className="flex flex-1 items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
                       <span className="flex-1 text-[0.6rem] text-white/30">www.votre-site.fr</span>
-                      <Globe size={10} className="text-white/20" />
+                      <Globe size={9} className="text-white/20" />
                     </div>
                   </div>
 
-                  {/* Contenu du site mockup */}
-                  <div className="p-0">
-
-                    {/* Nav mockup */}
-                    <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3"
-                      style={{ background: "#0a0a0c" }}>
-                      <div className="flex items-center gap-2">
-                        <div className="h-5 w-5 rounded-md" style={{ background: `rgba(${ACCENT_RGB},0.25)` }} />
-                        <div className="h-2 w-16 rounded-full bg-white/20" />
-                      </div>
-                      <div className="hidden items-center gap-4 sm:flex">
-                        {["Services", "À propos", "Contact"].map((t) => (
-                          <div key={t} className="h-1.5 rounded-full bg-white/15" style={{ width: `${t.length * 5}px` }} />
-                        ))}
-                      </div>
-                      <div className="h-6 w-16 rounded-full" style={{ background: `rgba(${ACCENT_RGB},0.2)` }} />
+                  {/* Site nav */}
+                  <div className="flex items-center justify-between border-b border-white/[0.05] px-5 py-3" style={{ background: "#0a0a0c" }}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-md" style={{ background: `rgba(${ACCENT_RGB},0.25)` }} />
+                      <div className="h-2 w-16 rounded-full bg-white/20" />
                     </div>
-
-                    {/* Hero mockup */}
-                    <div className="px-5 py-6" style={{ background: "linear-gradient(135deg, #0e160f 0%, #0a1214 100%)" }}>
-                      <div className="mb-2 h-2 w-20 rounded-full" style={{ background: `rgba(${ACCENT_RGB},0.35)` }} />
-                      <div className="mb-1.5 h-4 w-3/4 rounded-full bg-white/50" />
-                      <div className="mb-1 h-4 w-1/2 rounded-full bg-white/30" />
-                      <div className="mb-4 mt-3 space-y-1.5">
-                        <div className="h-2 w-full rounded-full bg-white/10" />
-                        <div className="h-2 w-4/5 rounded-full bg-white/10" />
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="h-7 w-24 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.35)` }} />
-                        <div className="h-7 w-20 rounded-xl border border-white/10" />
-                      </div>
+                    <div className="flex items-center gap-3">
+                      {[40, 50, 45].map((w, i) => <div key={i} className="h-1.5 rounded-full bg-white/15" style={{ width: w }} />)}
                     </div>
+                    <div className="h-6 w-16 rounded-full" style={{ background: `rgba(${ACCENT_RGB},0.2)` }} />
+                  </div>
 
-                    {/* Cards mockup */}
-                    <div className="grid grid-cols-3 gap-2 p-4" style={{ background: "#0d0d0f" }}>
-                      {[ACCENT, "#60a5fa", "#f9a826"].map((c, i) => (
-                        <div key={i} className="rounded-xl border border-white/[0.07] p-3" style={{ background: "#111115" }}>
-                          <div className="mb-2 h-6 w-6 rounded-lg" style={{ background: `rgba(${i === 0 ? ACCENT_RGB : i === 1 ? "96,165,250" : "249,168,38"},0.15)` }} />
-                          <div className="mb-1 h-1.5 w-full rounded-full bg-white/25" />
-                          <div className="h-1.5 w-2/3 rounded-full bg-white/12" />
-                        </div>
-                      ))}
+                  {/* Hero block */}
+                  <div className="px-5 py-6" style={{ background: "linear-gradient(135deg, #0e160f 0%, #0a1214 100%)" }}>
+                    <motion.div animate={{ width: ["30%", "45%", "30%"] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                      className="mb-2 h-2 rounded-full" style={{ background: `rgba(${ACCENT_RGB},0.4)` }} />
+                    <div className="mb-1.5 h-4 w-3/4 rounded-full bg-white/50" />
+                    <div className="mb-4 h-4 w-1/2 rounded-full bg-white/25" />
+                    <div className="space-y-1.5 mb-5">
+                      <div className="h-2 w-full rounded-full bg-white/10" />
+                      <div className="h-2 w-4/5 rounded-full bg-white/10" />
+                      <div className="h-2 w-3/5 rounded-full bg-white/08" />
                     </div>
+                    <div className="flex gap-2">
+                      <div className="h-7 w-24 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.4)` }} />
+                      <div className="h-7 w-20 rounded-xl border border-white/10" />
+                    </div>
+                  </div>
 
-                    {/* Footer mockup */}
-                    <div className="flex items-center justify-between border-t border-white/[0.06] px-5 py-3"
-                      style={{ background: "#090909" }}>
-                      <div className="h-1.5 w-24 rounded-full bg-white/10" />
-                      <div className="flex gap-3">
-                        {[1, 2, 3].map((n) => <div key={n} className="h-5 w-5 rounded-full bg-white/[0.07]" />)}
+                  {/* Stats row */}
+                  <div className="grid grid-cols-3 gap-2 p-3" style={{ background: "#0b0b0d" }}>
+                    {[
+                      { v: "247", l: "Visiteurs", c: ACCENT_RGB },
+                      { v: "4.9", l: "Note Google", c: "249,168,38" },
+                      { v: "38", l: "Contacts", c: "96,165,250" },
+                    ].map(({ v, l, c }) => (
+                      <div key={l} className="rounded-xl border border-white/[0.06] p-3" style={{ background: "#111115" }}>
+                        <p className="text-base font-bold mb-0.5" style={{ color: `rgba(${c},0.9)` }}>{v}</p>
+                        <p className="text-[0.55rem] text-white/35">{l}</p>
                       </div>
+                    ))}
+                  </div>
+
+                  {/* Cards services */}
+                  <div className="grid grid-cols-3 gap-2 px-3 pb-3" style={{ background: "#0b0b0d" }}>
+                    {[
+                      { c: ACCENT_RGB }, { c: "96,165,250" }, { c: "244,114,182" }
+                    ].map(({ c }, i) => (
+                      <div key={i} className="rounded-xl border border-white/[0.07] p-3" style={{ background: "#0e0e11" }}>
+                        <div className="mb-2 w-6 h-6 rounded-lg" style={{ background: `rgba(${c},0.15)` }} />
+                        <div className="mb-1 h-1.5 w-full rounded-full bg-white/20" />
+                        <div className="h-1.5 w-2/3 rounded-full bg-white/10" />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between border-t border-white/[0.05] px-5 py-3" style={{ background: "#090909" }}>
+                    <div className="h-1.5 w-20 rounded-full bg-white/10" />
+                    <div className="flex gap-2">
+                      {[0,1,2].map(i => <div key={i} className="w-5 h-5 rounded-full bg-white/[0.07]" />)}
                     </div>
                   </div>
                 </div>
 
-                {/* Badge flottant SEO */}
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.7, duration: 0.5 }}
-                  className="absolute -right-3 top-16 hidden rounded-2xl border border-white/[0.12] px-3.5 py-2.5 shadow-xl lg:block"
-                  style={{ background: "#141418" }}
-                >
+                {/* Floating badges */}
+                <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.85 }}
+                  className="absolute -right-4 top-14 rounded-2xl border border-white/[0.12] px-3.5 py-2.5 shadow-xl"
+                  style={{ background: "#141418" }}>
                   <div className="flex items-center gap-2">
                     <Search size={13} style={{ color: ACCENT }} />
                     <div>
                       <p className="text-[0.6rem] font-bold text-white">SEO optimisé</p>
-                      <p className="text-[0.55rem] text-white/35">Top 3 Google en 2 mois</p>
+                      <p className="text-[0.52rem] text-white/35">Top 3 Google</p>
                     </div>
                   </div>
                 </motion.div>
 
-                {/* Badge flottant mobile */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.85, duration: 0.5 }}
-                  className="absolute -left-3 bottom-16 hidden rounded-2xl border border-white/[0.12] px-3.5 py-2.5 shadow-xl lg:block"
-                  style={{ background: "#141418" }}
-                >
+                <motion.div initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1 }}
+                  className="absolute -left-4 bottom-20 rounded-2xl border border-white/[0.12] px-3.5 py-2.5 shadow-xl"
+                  style={{ background: "#141418" }}>
                   <div className="flex items-center gap-2">
                     <Smartphone size={13} style={{ color: "#60a5fa" }} />
                     <div>
                       <p className="text-[0.6rem] font-bold text-white">Mobile first</p>
-                      <p className="text-[0.55rem] text-white/35">100% responsive</p>
+                      <p className="text-[0.52rem] text-white/35">100% responsive</p>
                     </div>
                   </div>
                 </motion.div>
+
+                <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -bottom-3 right-12 rounded-2xl border border-[rgba(74,222,128,0.2)] px-3.5 py-2.5"
+                  style={{ background: "rgba(74,222,128,0.06)" }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse" />
+                    <p className="text-[0.6rem] font-semibold text-[#4ade80]">Livraison en 10 jours</p>
+                  </div>
+                </motion.div>
               </motion.div>
+
             </div>
           </div>
         </section>
 
-        {/* POUR QUI */}
-        <section className="bg-[#030f08] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Profils concernés</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Pour qui est ce service ?</motion.h2>
+        {/* ══════════════════════════════════════════
+            STATS
+        ══════════════════════════════════════════ */}
+        <section className="py-12 px-6 border-y border-white/[0.05]" style={{ background: "rgba(255,255,255,0.015)" }}>
+          <div className="max-w-5xl mx-auto">
+            <motion.div {...staggerContainerFast} viewport={viewport} className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {STATS.map((s) => (
+                <motion.div key={s.label} variants={cardReveal} className="text-center">
+                  <p className="text-3xl sm:text-4xl font-extrabold mb-1" style={{ color: `rgba(${s.color},0.9)` }}>{s.value}</p>
+                  <p className="text-xs text-white/45 font-medium">{s.label}</p>
+                </motion.div>
+              ))}
             </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {POUR_QUI.map(({ icon: Icon, color, rgb, who, desc, tags }) => (
-                <motion.div key={who} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}><Icon size={20} style={{ color }} /></div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{who}</h3>
-                  <p className="mb-4 text-xs leading-relaxed text-white/45">{desc}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {tags.map((t) => <span key={t} className="rounded-full border px-2.5 py-1 text-[0.6rem] font-medium" style={{ borderColor: `rgba(${rgb},0.25)`, color, background: `rgba(${rgb},0.07)` }}>{t}</span>)}
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════
+            CE QUE VOUS OBTENEZ
+        ══════════════════════════════════════════ */}
+        <section className="py-24 px-6">
+          <div className="max-w-6xl mx-auto">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+              <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
+                <Sparkles size={13} style={{ color: ACCENT }} /> Ce qui est inclus
+              </motion.div>
+              <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+                Ce que vous obtenez avec<br /><span style={{ color: ACCENT }}>chaque site vitrine</span>
+              </motion.h2>
+              <motion.p variants={fadeIn} className="text-white/50 max-w-xl mx-auto text-base">
+                Pas de template générique. Chaque site est conçu de A à Z pour votre activité.
+              </motion.p>
+            </motion.div>
+
+            <motion.div {...staggerContainerFast} viewport={viewport} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {CE_QUE_VOUS_OBTENEZ.map((item) => (
+                <motion.div key={item.title} variants={cardReveal}
+                  className="group rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 hover:border-white/[0.14] hover:bg-white/[0.055] transition-all duration-300 cursor-default">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110"
+                    style={{ background: `rgba(${item.rgb},0.12)` }}>
+                    <item.icon size={22} style={{ color: item.color }} />
                   </div>
+                  <h3 className="font-semibold text-white mb-2">{item.title}</h3>
+                  <p className="text-sm text-white/50 leading-relaxed">{item.desc}</p>
                 </motion.div>
               ))}
             </motion.div>
           </div>
         </section>
 
-        {/* CE QUE COMPREND LE SITE */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans le service</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que comprend votre site</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {CE_QUE_COMPREND.map(({ icon: Icon, color, rgb, title, desc }) => (
-                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}><Icon size={20} style={{ color }} /></div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/45">{desc}</p>
-                </motion.div>
-              ))}
-            </motion.div>
+        {/* ══════════════════════════════════════════
+            PROCESSUS 4 ÉTAPES
+        ══════════════════════════════════════════ */}
+        <section className="py-24 px-6 relative overflow-hidden" style={{ background: "rgba(255,255,255,0.015)" }}>
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full opacity-10"
+              style={{ background: `linear-gradient(to bottom, transparent, rgba(${ACCENT_RGB},1), transparent)` }} />
           </div>
-        </section>
-
-        {/* AVANTAGES */}
-        <section className="bg-[#030f08] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Les bénéfices</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Pourquoi avoir un site vitrine</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {AVANTAGES.map(({ icon: Icon, color, rgb, title, desc }) => (
-                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}><Icon size={20} style={{ color }} /></div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/45">{desc}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* PROCESSUS — TIMELINE HORIZONTALE */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre méthode</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Processus de création</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-sm text-white/45">De la première discussion à la mise en ligne — voici comment on travaille avec vous.</motion.p>
-            </motion.div>
-
-            {/* Timeline desktop — horizontal */}
-            <div className="hidden sm:block">
-              <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport}
-                className="relative grid grid-cols-5 gap-0">
-                {/* Ligne de connexion */}
-                <div className="absolute left-[10%] right-[10%] top-[28px] h-px"
-                  style={{ background: `linear-gradient(90deg, rgba(${ACCENT_RGB},0.15), rgba(${ACCENT_RGB},0.35), rgba(${ACCENT_RGB},0.15))` }} />
-
-                {PROCESSUS_STEPS.map(({ num, icon: Icon, color, rgb, label, desc }, i) => (
-                  <motion.div key={num} variants={cardReveal} className="group flex flex-col items-center px-3 text-center">
-                    {/* Cercle */}
-                    <div className="relative z-10 mb-4 flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-110"
-                      style={{ background: `rgba(${rgb},0.12)`, borderColor: `rgba(${rgb},0.4)`, boxShadow: `0 0 20px rgba(${rgb},0.15)` }}>
-                      <Icon size={18} style={{ color }} />
-                    </div>
-                    <span className="mb-1 text-[0.6rem] font-black uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>{num}</span>
-                    <p className="mb-1.5 text-sm font-bold text-white">{label}</p>
-                    <p className="text-[0.7rem] leading-relaxed text-white/40">{desc}</p>
-                  </motion.div>
-                ))}
+          <div className="max-w-5xl mx-auto">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+              <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
+                <Zap size={13} style={{ color: ACCENT }} /> Notre processus
               </motion.div>
-            </div>
+              <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+                De l'idée à la mise en ligne<br /><span style={{ color: ACCENT }}>en 4 étapes</span>
+              </motion.h2>
+              <motion.p variants={fadeIn} className="text-white/50 max-w-lg mx-auto">
+                Un processus rodé pour livrer vite, sans surprise et avec un résultat que vous aimez vraiment.
+              </motion.p>
+            </motion.div>
 
-            {/* Timeline mobile — verticale */}
-            <div className="sm:hidden">
-              <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="relative space-y-0">
-                {PROCESSUS_STEPS.map(({ num, icon: Icon, color, rgb, label, desc }, i) => (
-                  <motion.div key={num} variants={cardReveal} className="relative flex gap-4">
-                    {/* Ligne verticale */}
-                    {i < PROCESSUS_STEPS.length - 1 && (
-                      <div className="absolute left-[19px] top-[48px] h-full w-px" style={{ background: `rgba(${rgb},0.2)` }} />
-                    )}
-                    <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2"
-                      style={{ background: `rgba(${rgb},0.12)`, borderColor: `rgba(${rgb},0.4)` }}>
-                      <Icon size={15} style={{ color }} />
-                    </div>
-                    <div className="flex-1 pb-6 pt-1">
-                      <p className="mb-0.5 text-[0.6rem] font-black uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>{num} · {label}</p>
-                      <p className="text-xs leading-relaxed text-white/50">{desc}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {ETAPES.map((e, i) => (
+                <motion.div key={e.num}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5, ease }}
+                  className="group relative rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 hover:border-white/[0.12] transition-all duration-300">
+                  {/* number */}
+                  <div className="text-[2.5rem] font-black leading-none mb-4 select-none"
+                    style={{ color: `rgba(${e.rgb},0.15)`, fontVariantNumeric: "tabular-nums" }}>
+                    {e.num}
+                  </div>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
+                    style={{ background: `rgba(${e.rgb},0.12)` }}>
+                    <e.icon size={19} style={{ color: e.color }} />
+                  </div>
+                  <h3 className="font-bold text-white mb-2 text-sm">{e.title}</h3>
+                  <p className="text-xs text-white/45 leading-relaxed">{e.desc}</p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* CE QUE VOUS OBTENEZ — TABLEAU */}
-        <section className="bg-[#030f08] py-14 sm:py-24">
-          <div className="mx-auto max-w-3xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-md text-sm text-white/45">Tout ce qui est compris dans chaque site vitrine livré par DJAMA.</motion.p>
+        {/* ══════════════════════════════════════════
+            POUR QUI
+        ══════════════════════════════════════════ */}
+        <section className="py-24 px-6">
+          <div className="max-w-6xl mx-auto">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+              <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
+                <Users size={13} style={{ color: ACCENT }} /> Pour qui ?
+              </motion.div>
+              <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+                Un site vitrine pour <span style={{ color: ACCENT }}>tout type d'activité</span>
+              </motion.h2>
+              <motion.p variants={fadeIn} className="text-white/50 max-w-xl mx-auto">
+                Que vous soyez entrepreneur, artisan ou professionnel libéral — on a l'habitude de votre secteur.
+              </motion.p>
             </motion.div>
-            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport} transition={{ duration: 0.5, ease }}
-              className="overflow-hidden rounded-3xl border border-white/[0.10]">
-              {/* Header */}
-              <div className="grid grid-cols-[1fr_80px] items-center border-b border-white/[0.10] px-5 py-3.5"
-                style={{ background: "rgba(74,222,128,0.05)" }}>
-                <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/35">Fonctionnalité</p>
-                <p className="text-center text-[0.65rem] font-black uppercase tracking-widest text-white/35">Inclus</p>
-              </div>
-              {/* Lignes */}
-              {TABLE_INCLUS.map(({ label, icon: Icon, color }, i) => (
-                <motion.div key={label}
-                  initial={{ opacity: 0, x: -10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={viewport}
-                  transition={{ duration: 0.35, delay: i * 0.07, ease }}
-                  className={`grid grid-cols-[1fr_80px] items-center px-5 py-4 transition-all hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.06]" : ""}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-                      style={{ background: `rgba(${color},0.1)` }}>
-                      <Icon size={14} style={{ color: `rgb(${color})` }} />
-                    </div>
-                    <p className="text-sm text-white/80">{label}</p>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full"
-                      style={{ background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.25)" }}>
-                      <CheckCircle2 size={13} className="text-[#4ade80]" />
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
 
-        {/* EXEMPLES DE SITES */}
-        <section id="exemples" className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de sites créés</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-sm text-white/45">Quelques exemples de projets réalisés pour nos clients.</motion.p>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid items-start gap-6 sm:grid-cols-3">
-              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }, idx) => (
-                <motion.div key={titre} variants={cardReveal}
-                  className="overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.03] transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.06]">
-                  {/* Mini browser mockup */}
-                  <div className="relative overflow-hidden border-b border-white/[0.08]" style={{ background: "#0d0d0f" }}>
-                    {/* Barre navigateur */}
-                    <div className="flex items-center gap-2 border-b border-white/[0.07] px-3 py-2" style={{ background: "#111115" }}>
-                      <div className="flex gap-1">
-                        <div className="h-2 w-2 rounded-full bg-[#ff5f57]" />
-                        <div className="h-2 w-2 rounded-full bg-[#ffbd2e]" />
-                        <div className="h-2 w-2 rounded-full bg-[#28c840]" />
-                      </div>
-                      <div className="flex flex-1 items-center gap-1 rounded px-2 py-0.5 text-[0.5rem] text-white/20" style={{ background: "rgba(255,255,255,0.04)" }}>
-                        <div className="h-1 w-1 rounded-full" style={{ background: color }} />
-                        www.{idx === 0 ? "cabinet-martin.fr" : idx === 1 ? "elec-pro.fr" : "coach-sportif.fr"}
-                      </div>
-                    </div>
-                    {/* Contenu mockup */}
-                    <div className="p-3">
-                      {/* Hero */}
-                      <div className="mb-2 rounded-xl p-3" style={{ background: `rgba(${rgb},0.07)` }}>
-                        <div className="mb-1.5 h-2 w-1/3 rounded-full" style={{ background: `rgba(${rgb},0.4)` }} />
-                        <div className="mb-1 h-3 w-3/4 rounded-full bg-white/30" />
-                        <div className="mb-2 h-2 w-1/2 rounded-full bg-white/15" />
-                        <div className="h-5 w-20 rounded-lg" style={{ background: `rgba(${rgb},0.35)` }} />
-                      </div>
-                      {/* Features */}
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {[1, 2, 3].map((n) => (
-                          <div key={n} className="rounded-lg p-2" style={{ background: "rgba(255,255,255,0.04)" }}>
-                            <div className="mb-1 h-3 w-3 rounded" style={{ background: `rgba(${rgb},0.2)` }} />
-                            <div className="mb-0.5 h-1.5 w-full rounded-full bg-white/15" />
-                            <div className="h-1.5 w-2/3 rounded-full bg-white/08" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+            <motion.div {...staggerContainerFast} viewport={viewport} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {POUR_QUI.map((p) => (
+                <motion.div key={p.who} variants={cardReveal}
+                  className="group rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 hover:border-white/[0.13] hover:bg-white/[0.05] transition-all duration-300">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
+                    style={{ background: `rgba(${p.rgb},0.12)` }}>
+                    <p.icon size={19} style={{ color: p.color }} />
                   </div>
-                  {/* Texte carte */}
-                  <div className="p-5">
-                    <div className="mb-3 flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${rgb},0.12)` }}>
-                        <Icon size={16} style={{ color }} />
-                      </div>
-                      <h3 className="text-sm font-bold text-white">{titre}</h3>
-                    </div>
-                    <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
-                    <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
-                      <TrendingUp size={11} style={{ color }} />
-                      <p className="text-[0.65rem] font-semibold leading-tight" style={{ color }}>{resultat}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* TÉMOIGNAGES */}
-        <section className="bg-[#030f08] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Avis clients</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que disent nos clients</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid items-start gap-5 sm:grid-cols-3">
-              {TEMOIGNAGES.map(({ name, activite, note, avis }) => (
-                <motion.div key={name} variants={cardReveal}
-                  className="flex flex-col rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
-                  {/* Étoiles */}
-                  <div className="mb-4 flex gap-1">
-                    {Array.from({ length: note }).map((_, i) => (
-                      <Star key={i} size={13} fill="#f9a826" style={{ color: "#f9a826" }} />
+                  <h3 className="font-bold text-white mb-2">{p.who}</h3>
+                  <p className="text-sm text-white/50 mb-4 leading-relaxed">{p.desc}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {p.tags.map(t => (
+                      <span key={t} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-[11px] text-white/55">{t}</span>
                     ))}
                   </div>
-                  {/* Guillemet */}
-                  <Quote size={20} className="mb-3 opacity-20" style={{ color: ACCENT }} />
-                  {/* Avis */}
-                  <p className="mb-5 flex-1 text-sm leading-relaxed text-white/65">{avis}</p>
-                  {/* Auteur */}
-                  <div className="flex items-center gap-3 border-t border-white/[0.07] pt-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-[0.65rem] font-black"
-                      style={{ background: `rgba(${ACCENT_RGB},0.15)`, color: ACCENT }}>
-                      {name.charAt(0)}
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════
+            INCLUS / NON INCLUS
+        ══════════════════════════════════════════ */}
+        <section className="py-24 px-6" style={{ background: "rgba(255,255,255,0.012)" }}>
+          <div className="max-w-4xl mx-auto">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+              <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
+                <CheckSquare size={13} style={{ color: ACCENT }} /> Transparence totale
+              </motion.div>
+              <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+                Ce qui est <span style={{ color: ACCENT }}>inclus</span> — et ce qui ne l'est pas
+              </motion.h2>
+              <motion.p variants={fadeIn} className="text-white/50 max-w-lg mx-auto">
+                Aucune mauvaise surprise. On vous dit exactement ce que comprend chaque projet.
+              </motion.p>
+            </motion.div>
+
+            <div className="grid sm:grid-cols-2 gap-5">
+              {/* INCLUS */}
+              <motion.div {...fadeIn} viewport={viewport}
+                className="rounded-3xl border border-[rgba(74,222,128,0.15)] bg-[rgba(74,222,128,0.04)] p-7">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `rgba(${ACCENT_RGB},0.15)` }}>
+                    <CheckCircle2 size={18} style={{ color: ACCENT }} />
+                  </div>
+                  <h3 className="font-bold text-white text-base">Inclus dans tous nos sites</h3>
+                </div>
+                <div className="space-y-3">
+                  {INCLUS.map((item) => (
+                    <div key={item.label} className="flex items-center gap-3">
+                      <CheckCircle2 size={15} style={{ color: ACCENT }} className="shrink-0" />
+                      <span className="text-sm text-white/80">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* NON INCLUS */}
+              <motion.div {...fadeIn} viewport={viewport} transition={{ delay: 0.1 }}
+                className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-7">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.07]">
+                    <Layers size={18} className="text-white/50" />
+                  </div>
+                  <h3 className="font-bold text-white/70 text-base">En option / à votre charge</h3>
+                </div>
+                <div className="space-y-3">
+                  {NON_INCLUS.map((item) => (
+                    <div key={item.label} className="flex items-center gap-3">
+                      <div className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0" />
+                      <span className="text-sm text-white/50">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-6 text-xs text-white/30 leading-relaxed">
+                  On vous guide pour tout configurer — aucune compétence technique requise.
+                </p>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════
+            TARIFS
+        ══════════════════════════════════════════ */}
+        <section className="py-24 px-6">
+          <div className="max-w-5xl mx-auto">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+              <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
+                <BadgeCheck size={13} style={{ color: ACCENT }} /> Tarifs clairs
+              </motion.div>
+              <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+                À partir de <span style={{ color: ACCENT }}>490€</span>
+              </motion.h2>
+              <motion.p variants={fadeIn} className="text-white/50 max-w-xl mx-auto">
+                Pas d'abonnement caché. Un tarif fixe, validé avec vous avant le début du projet.
+              </motion.p>
+            </motion.div>
+
+            <motion.div {...staggerContainerFast} viewport={viewport} className="grid md:grid-cols-3 gap-5">
+              {OFFRES.map((o, i) => (
+                <motion.div key={o.nom} variants={cardReveal}
+                  className={`relative rounded-3xl border p-7 flex flex-col transition-all duration-300 ${o.popular ? "border-white/20 scale-[1.03]" : "border-white/[0.07]"}`}
+                  style={{ background: o.popular ? `rgba(${o.couleur},0.06)` : "rgba(255,255,255,0.025)" }}>
+                  {o.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-[0.65rem] font-bold text-[#07070a]"
+                      style={{ background: `rgba(${o.couleur},1)` }}>
+                      LE PLUS POPULAIRE
+                    </div>
+                  )}
+
+                  <div className="mb-5">
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: o.accent }}>{o.nom}</p>
+                    <p className="text-3xl font-extrabold text-white mb-1">
+                      {o.prix === "Sur devis" ? <span className="text-2xl">Sur devis</span> : <>{o.prix}<span className="text-lg font-normal text-white/50">€</span></>}
+                    </p>
+                    <p className="text-xs text-white/40">{o.sous}</p>
+                  </div>
+
+                  <div className="space-y-3 mb-8 flex-1">
+                    {o.features.map((f) => (
+                      <div key={f} className="flex items-center gap-2.5">
+                        <CheckCircle2 size={14} style={{ color: o.accent }} className="shrink-0" />
+                        <span className="text-sm text-white/70">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Link href="/contact?besoin=Création+de+site+web"
+                    className={`w-full flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold transition-all hover:opacity-90 ${o.popular ? "text-[#07070a]" : "text-white border border-white/[0.1] bg-white/[0.05] hover:bg-white/[0.09]"}`}
+                    style={o.popular ? { background: `rgba(${o.couleur},1)` } : {}}>
+                    Démarrer <ArrowRight size={14} />
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            <motion.p {...fadeIn} viewport={viewport} className="text-center text-xs text-white/30 mt-8">
+              Tous les tarifs sont HT · Acompte de 50% à la commande · Solde à la livraison
+            </motion.p>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════
+            EXEMPLES
+        ══════════════════════════════════════════ */}
+        <section id="exemples" className="py-24 px-6" style={{ background: "rgba(255,255,255,0.012)" }}>
+          <div className="max-w-6xl mx-auto">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+              <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
+                <Eye size={13} style={{ color: ACCENT }} /> Exemples concrets
+              </motion.div>
+              <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+                Des résultats <span style={{ color: ACCENT }}>mesurables</span>
+              </motion.h2>
+              <motion.p variants={fadeIn} className="text-white/50 max-w-xl mx-auto">
+                Quelques exemples de sites réalisés — et ce qu'ils ont apporté concrètement.
+              </motion.p>
+            </motion.div>
+
+            <motion.div {...staggerContainerFast} viewport={viewport} className="grid md:grid-cols-3 gap-6">
+              {EXEMPLES.map((ex) => (
+                <motion.div key={ex.titre} variants={cardReveal}
+                  className="rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 flex flex-col">
+                  {/* mini chart */}
+                  <div className="rounded-2xl border border-white/[0.07] bg-white/[0.04] p-4 mb-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 rounded-full" style={{ background: `rgba(${ex.rgb},0.9)` }} />
+                      <div className="h-1.5 w-20 rounded-full" style={{ background: `rgba(${ex.rgb},0.2)` }} />
+                    </div>
+                    <div className="flex items-end gap-1.5 h-14">
+                      {ex.bars.map((h, i) => (
+                        <motion.div key={i}
+                          initial={{ height: 0 }} whileInView={{ height: `${h}%` }} viewport={{ once: true }}
+                          transition={{ delay: 0.1 + i * 0.1, duration: 0.5, ease }}
+                          className="flex-1 rounded-t"
+                          style={{ background: `rgba(${ex.rgb},${0.3 + i * 0.12})` }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `rgba(${ex.rgb},0.12)` }}>
+                      <ex.icon size={18} style={{ color: ex.color }} />
+                    </div>
+                    <h3 className="font-bold text-white">{ex.titre}</h3>
+                  </div>
+                  <p className="text-sm text-white/50 leading-relaxed mb-4 flex-1">{ex.desc}</p>
+                  <div className="flex items-center gap-2 rounded-xl border border-[#4ade80]/20 bg-[#4ade80]/[0.07] px-3 py-2">
+                    <TrendingUp size={13} className="text-[#4ade80] shrink-0" />
+                    <span className="text-xs font-semibold text-[#4ade80]">{ex.resultat}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════
+            TÉMOIGNAGES
+        ══════════════════════════════════════════ */}
+        <section className="py-24 px-6">
+          <div className="max-w-6xl mx-auto">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+              <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
+                <Star size={13} style={{ color: "#f9a826" }} /> Avis clients
+              </motion.div>
+              <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+                Ce que disent <span style={{ color: ACCENT }}>nos clients</span>
+              </motion.h2>
+            </motion.div>
+
+            <motion.div {...staggerContainerFast} viewport={viewport} className="grid md:grid-cols-3 gap-6">
+              {TEMOIGNAGES.map((t) => (
+                <motion.div key={t.name} variants={cardReveal}
+                  className="rounded-3xl border border-white/[0.07] bg-white/[0.03] p-7 flex flex-col gap-5">
+                  <div className="flex gap-1">
+                    {Array.from({ length: t.stars }).map((_, i) => (
+                      <Star key={i} size={14} fill="#f9a826" stroke="none" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-white/65 leading-relaxed flex-1 italic">"{t.avis}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-[#07070a] shrink-0"
+                      style={{ background: `rgba(${t.color},0.9)` }}>
+                      {t.initial}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white">{name}</p>
-                      <p className="text-[0.65rem] text-white/35">{activite}</p>
+                      <p className="text-sm font-bold text-white">{t.name}</p>
+                      <p className="text-xs text-white/40">{t.role}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -716,51 +736,102 @@ export default function SiteVitrinePage() {
           </div>
         </section>
 
-        {/* FORMULAIRE */}
-        <section id="devis" className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-2xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Créons votre site ensemble</motion.h2>
-              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/45">Dites-nous ce dont vous avez besoin — on revient vers vous sous 24h.</motion.p>
+        {/* ══════════════════════════════════════════
+            FAQ
+        ══════════════════════════════════════════ */}
+        <section className="py-24 px-6" style={{ background: "rgba(255,255,255,0.012)" }}>
+          <div className="max-w-3xl mx-auto">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-14">
+              <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
+                <MessageSquare size={13} style={{ color: ACCENT }} /> Questions fréquentes
+              </motion.div>
+              <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+                Vous avez des <span style={{ color: ACCENT }}>questions ?</span>
+              </motion.h2>
             </motion.div>
-            <DevisForm />
+
+            <motion.div {...staggerContainerFast} viewport={viewport} className="space-y-3">
+              {FAQ_ITEMS.map((item, i) => (
+                <motion.div key={i} variants={cardReveal}
+                  className="rounded-2xl border border-white/[0.07] bg-white/[0.03] overflow-hidden">
+                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left hover:bg-white/[0.03] transition-colors">
+                    <span className="text-sm font-semibold text-white/90">{item.q}</span>
+                    <motion.div animate={{ rotate: openFaq === i ? 180 : 0 }} transition={{ duration: 0.25 }} className="shrink-0">
+                      <ChevronDown size={15} className="text-white/40" />
+                    </motion.div>
+                  </button>
+                  <AnimatePresence>
+                    {openFaq === i && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}>
+                        <p className="px-6 pb-5 text-sm text-white/55 leading-relaxed border-t border-white/[0.05] pt-4">
+                          {item.a}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </section>
 
-        {/* FAQ */}
-        <section className="bg-[#030f08] py-14 sm:py-24">
-          <div className="mx-auto max-w-2xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Vous avez des questions ?</motion.h2>
-            </motion.div>
-            <div className="space-y-3">
-              {FAQ_ITEMS.map(({ q, a }, i) => <FaqItem key={i} q={q} a={a} open={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />)}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="relative overflow-hidden bg-[#030f08] pb-14 pt-14 sm:pb-24 sm:pt-20">
+        {/* ══════════════════════════════════════════
+            CTA FINAL
+        ══════════════════════════════════════════ */}
+        <section className="py-24 px-6 relative overflow-hidden">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-15"
-              style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, transparent 70%)` }} />
+            <motion.div animate={{ scale: [1, 1.06, 1], opacity: [0.06, 0.1, 0.06] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[120px]"
+              style={{ background: `radial-gradient(circle, rgba(${ACCENT_RGB},1) 0%, transparent 70%)` }} />
           </div>
-          <div className="relative mx-auto max-w-2xl px-6 text-center">
-            <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport} transition={{ duration: 0.6, ease }}>
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: `rgba(${ACCENT_RGB},0.12)` }}>
-                <Sparkles size={26} style={{ color: ACCENT }} />
-              </div>
-              <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Lancez votre site vitrine maintenant</h2>
-              <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Un site vitrine professionnel qui vous représente et génère des contacts — livré en 2 à 4 semaines.</p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Link href="#devis" className="btn-primary px-8 py-4 text-base">Créer mon site vitrine <ArrowRight size={16} /></Link>
-                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-semibold text-white/70 transition-all hover:bg-white/[0.07] hover:text-white">Voir tous nos services</Link>
-              </div>
+
+          <div className="max-w-4xl mx-auto">
+            <motion.div {...staggerContainer} viewport={viewport}
+              className="relative rounded-3xl border border-white/[0.1] p-10 sm:p-14 text-center overflow-hidden"
+              style={{ background: `linear-gradient(135deg, rgba(${ACCENT_RGB},0.05) 0%, rgba(96,165,250,0.04) 50%, transparent 100%)` }}>
+
+              <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-8">
+                <Rocket size={13} style={{ color: ACCENT }} /> Prêt à démarrer ?
+              </motion.div>
+
+              <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-5 leading-tight">
+                Votre site vitrine,<br /><span style={{ color: ACCENT }}>livré en 10 jours</span>
+              </motion.h2>
+
+              <motion.p variants={fadeIn} className="text-white/50 text-base sm:text-lg max-w-xl mx-auto mb-10">
+                Design sur mesure, responsive, SEO-ready — à partir de 490€. Devis gratuit et sans engagement.
+              </motion.p>
+
+              <motion.div variants={fadeIn} className="flex flex-wrap justify-center gap-4 mb-10">
+                <Link href="/contact?besoin=Création+de+site+web"
+                  className="inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold transition-all hover:opacity-90 hover:scale-[1.03] active:scale-[0.97] shadow-xl"
+                  style={{ background: `linear-gradient(135deg, rgba(${ACCENT_RGB},0.95), rgba(52,211,153,0.85))`, color: "#07070a" }}>
+                  Créer mon site vitrine <ArrowRight size={16} />
+                </Link>
+                <Link href="/contact"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.05] px-8 py-4 text-sm font-semibold text-white/75 transition-all hover:bg-white/[0.09] hover:text-white">
+                  Poser une question
+                </Link>
+              </motion.div>
+
+              <motion.div variants={fadeIn} className="flex flex-wrap justify-center gap-6">
+                {[
+                  { icon: Clock,        label: "Réponse sous 24h"  },
+                  { icon: Shield,       label: "Sans engagement"    },
+                  { icon: BadgeCheck,   label: "Devis gratuit"      },
+                ].map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex items-center gap-2 text-xs text-white/35">
+                    <Icon size={12} style={{ color: ACCENT }} />
+                    {label}
+                  </div>
+                ))}
+              </motion.div>
             </motion.div>
           </div>
         </section>
+
       </main>
       <Footer />
     </>
