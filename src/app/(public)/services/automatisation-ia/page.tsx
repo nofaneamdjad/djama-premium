@@ -285,8 +285,7 @@ export default function AutomatisationIAPage() {
               <MultiLineReveal
                 lines={["Automatisation, IA", "et plateformes web", "sur mesure"]}
                 className="text-4xl sm:text-5xl font-bold leading-tight mb-6"
-                highlightLast
-                highlightColor={ACCENT}
+                highlight={2}
               />
 
               <FadeReveal delay={0.25}>

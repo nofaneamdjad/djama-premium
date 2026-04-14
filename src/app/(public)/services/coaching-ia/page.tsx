@@ -14,10 +14,12 @@ import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
 import { supabase } from "@/lib/supabase";
 import { COACHING_MODULES } from "@/lib/coaching-content";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const ACCENT = "#a78bfa";
-const ACCENT_RGB = "167,139,250";
+const ACCENT = "#f9a826";
+const ACCENT_RGB = "249,168,38";
 
 /* ─────────────────────────────────────────────────────────
    COMPOSANT — Bouton Checkout Coaching IA
@@ -431,6 +433,8 @@ export default function CoachingIAPage() {
   }, []);
 
   return (
+    <>
+    <Navbar />
     <div className="bg-[#07080e]">
 
       {/* ════════════════════════════════════════════════════
@@ -889,5 +893,7 @@ export default function CoachingIAPage() {
       </section>
 
     </div>
+    <Footer />
+    </>
   );
 }

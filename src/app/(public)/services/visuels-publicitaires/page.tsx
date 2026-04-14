@@ -17,8 +17,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const ease       = [0.16, 1, 0.3, 1] as const;
-const ACCENT     = "#f9a826";
-const ACCENT_RGB = "249,168,38";
+const ACCENT     = "#ec4899";
+const ACCENT_RGB = "236,72,153";
 
 /* ─────────────────────────────────────────────────────────
    DONNÉES
@@ -388,6 +388,41 @@ export default function VisuelsPublicitairesPage() {
                   <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
                     <TrendingUp size={12} style={{ color }} />
                     <p className="text-[0.68rem] font-semibold" style={{ color }}>{resultat}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* TÉMOIGNAGES */}
+        <section className="bg-[#130e01] py-14 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Avis clients</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce qu'en disent nos clients</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
+              {[
+                { initial: "K", color: "#ec4899", rgb: "236,72,153", name: "Karim D.", role: "Directeur marketing PME", stars: 5, text: "Les visuels réalisés pour nos campagnes Meta ont clairement amélioré notre CTR. Livraison rapide, 2 allers-retours suffisants. On renouvelle." },
+                { initial: "J", color: "#60a5fa", rgb: "96,165,250", name: "Julie M.", role: "Gérante boutique en ligne", stars: 5, text: "Mes stories publicitaires et mes posts ont enfin une cohérence visuelle. Le résultat est propre et professionnel. Très bon rapport qualité/prix." },
+                { initial: "T", color: "#4ade80", rgb: "74,222,128", name: "Thomas V.", role: "Fondateur startup", stars: 5, text: "Pour notre lancement de produit, DJAMA a créé un pack complet de 15 visuels déclinés sur 4 formats. Exactement ce qu'il nous fallait." },
+              ].map(({ initial, color, name, role, stars, text }) => (
+                <motion.div key={name} variants={cardReveal} className="rounded-3xl border border-white/[0.1] bg-white/[0.05] p-6">
+                  <div className="mb-4 flex gap-1">
+                    {Array.from({ length: stars }).map((_, i) => (
+                      <Star key={i} size={13} style={{ color: "#f9a826", fill: "#f9a826" }} />
+                    ))}
+                  </div>
+                  <p className="mb-5 text-sm leading-relaxed text-white/70">"{text}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-[#07070a]" style={{ background: color }}>
+                      {initial}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{name}</p>
+                      <p className="text-xs text-white/40">{role}</p>
+                    </div>
                   </div>
                 </motion.div>
               ))}

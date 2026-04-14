@@ -16,15 +16,15 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const ease       = [0.16, 1, 0.3, 1] as const;
-const ACCENT     = "#fb923c";
-const ACCENT_RGB = "251,146,60";
+const ACCENT     = "#c9a55a";
+const ACCENT_RGB = "201,165,90";
 
 /* ─────────────────────────────────────────────────────────
    DONNÉES
 ───────────────────────────────────────────────────────── */
 const POURQUOI = [
   {
-    icon: Zap, color: "#fb923c", rgb: "251,146,60",
+    icon: Zap, color: "#c9a55a", rgb: "201,165,90",
     title: "Statut rapide à créer",
     desc:  "Le statut auto-entrepreneur est l'un des plus simples à obtenir en France. En quelques jours seulement, votre activité peut être officiellement lancée.",
   },
@@ -95,7 +95,7 @@ const ETAPES = [
 ];
 
 const CE_QUE_VOUS_OBTENEZ = [
-  { label: "Formulaire de déclaration", desc: "Formulaire URSSAF pour création de micro-entreprise — rempli et vérifié avec vous.",            icon: FileText,     color: "251,146,60"  },
+  { label: "Formulaire de déclaration", desc: "Formulaire URSSAF pour création de micro-entreprise — rempli et vérifié avec vous.",            icon: FileText,     color: "201,165,90"  },
   { label: "Choix du régime fiscal",    desc: "On vous explique versement libératoire, TVA, franchise en base — et on choisit ensemble.",      icon: BarChart3,    color: "96,165,250"  },
   { label: "Kbis / extrait SIRENE",     desc: "Confirmation de création, numéro SIRET, inscription au répertoire des entreprises.",            icon: CheckCircle2, color: "74,222,128"  },
   { label: "Ouverture compte bancaire", desc: "Conseils sur le compte bancaire dédié et les obligations comptables de l'auto-entrepreneur.",    icon: Shield,       color: "249,168,38"  },
@@ -103,7 +103,7 @@ const CE_QUE_VOUS_OBTENEZ = [
 ];
 
 const EXEMPLES_PROJETS = [
-  { icon: Briefcase, color: "#fb923c", rgb: "251,146,60", titre: "Développeur freelance",   desc: "Création de l'auto-entreprise, choix du régime micro-BNC, ouverture compte pro et premier devis émis.",             resultat: "Actif en 48h, 1er client signé la semaine suivante" },
+  { icon: Briefcase, color: "#c9a55a", rgb: "201,165,90", titre: "Développeur freelance",   desc: "Création de l'auto-entreprise, choix du régime micro-BNC, ouverture compte pro et premier devis émis.",             resultat: "Actif en 48h, 1er client signé la semaine suivante" },
   { icon: Camera,    color: "#60a5fa", rgb: "96,165,250", titre: "Photographe indépendant", desc: "Accompagnement complet pour créer son statut, comprendre la TVA et facturer ses 1ères missions.",                    resultat: "3 missions facturées en 1 mois" },
   { icon: Wrench,    color: "#4ade80", rgb: "74,222,128", titre: "Artisan / rénovation",    desc: "Création du statut artisan avec affiliation à la chambre des métiers, assurance décennale et 1ère facture.",         resultat: "Régularisé et assuré en 5 jours" },
 ];
@@ -655,6 +655,45 @@ export default function CreationAutoEntrepreneurPage() {
                   <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
                     <TrendingUp size={12} style={{ color }} />
                     <p className="text-[0.68rem] font-semibold" style={{ color }}>{resultat}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════
+            TÉMOIGNAGES
+        ════════════════════════════════════════════════════ */}
+        <section className="bg-[#09090b] py-14 sm:py-24">
+          <div className="mx-auto max-w-5xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Avis clients</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">
+                Ils ont lancé leur activité <span style={{ color: ACCENT }}>avec nous</span>
+              </motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
+              {[
+                { initial: "I", color: "#c9a55a", name: "Ibrahim S.", role: "Coiffeur à domicile", stars: 5, text: "En 4 jours j'avais mon SIRET. DJAMA m'a guidé pour tout : le code APE, les déclarations, la TVA. Je n'aurais pas pu faire ça seul aussi vite." },
+                { initial: "E", color: "#60a5fa", name: "Emma L.", role: "Traductrice freelance", stars: 5, text: "Je ne savais pas par où commencer. DJAMA a structuré ma démarche, répondu à toutes mes questions et m'a accompagné jusqu'à la création officielle. Super expérience." },
+                { initial: "O", color: "#4ade80", name: "Omar D.", role: "Développeur web indépendant", stars: 5, text: "Rapide, clair et efficace. J'ai créé mon auto-entreprise en moins d'une semaine avec leur aide. Le suivi post-création était vraiment un plus." },
+              ].map(({ initial, color, name, role, stars, text }) => (
+                <motion.div key={name} variants={cardReveal} className="rounded-3xl border border-white/[0.1] bg-white/[0.05] p-6">
+                  <div className="mb-4 flex gap-1">
+                    {Array.from({ length: stars }).map((_, i) => (
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#f9a826" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    ))}
+                  </div>
+                  <p className="mb-5 text-sm leading-relaxed text-white/70">"{text}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-[#07070a]" style={{ background: color }}>
+                      {initial}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{name}</p>
+                      <p className="text-xs text-white/40">{role}</p>
+                    </div>
                   </div>
                 </motion.div>
               ))}

@@ -15,8 +15,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const ease       = [0.16, 1, 0.3, 1] as const;
-const ACCENT     = "#a78bfa";
-const ACCENT_RGB = "167,139,250";
+const ACCENT     = "#c9a55a";
+const ACCENT_RGB = "201,165,90";
 
 /* ─────────────────────────────────────────────────────────
    DONNÉES
@@ -564,7 +564,50 @@ export default function DeclarationsUrssafPage() {
         </section>
 
         {/* ════════════════════════════════════════════════════
-            7. FORMULAIRE
+            7. TÉMOIGNAGES
+        ════════════════════════════════════════════════════ */}
+        <section className="bg-white py-24">
+          <div className="mx-auto max-w-5xl px-6">
+            <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-12 text-center">
+              <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
+                <UserCheck size={10} /> Avis clients
+              </motion.span>
+              <h2 className="display-section text-[#09090b]">
+                Ils nous ont{" "}
+                <span className="text-[#c9a55a]">fait confiance</span>
+              </h2>
+            </motion.div>
+            <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainerFast}
+              className="grid gap-6 sm:grid-cols-3">
+              {[
+                { initial: "F", color: "#c9a55a", name: "Fatou N.", role: "Auto-entrepreneur en prestations de service", stars: 5, text: "Je ne savais pas du tout comment fonctionne l'URSSAF. DJAMA m'a tout expliqué calmement et m'a accompagné pour mes 3 premières déclarations. Je n'ai plus peur maintenant." },
+                { initial: "Y", color: "#60a5fa", name: "Youssef B.", role: "Freelance développeur web", stars: 5, text: "J'avais raté deux déclarations par oubli. DJAMA a tout régularisé avec moi et mis en place un système de rappel. Très professionnel et très accessible." },
+                { initial: "C", color: "#4ade80", name: "Carole M.", role: "Micro-entrepreneuse artisanale", stars: 5, text: "Simple, clair, rassurant. J'ai enfin compris mes cotisations et je sais exactement quoi déclarer chaque mois. Je recommande vivement." },
+              ].map(({ initial, color, name, role, stars, text }) => (
+                <motion.div key={name} variants={cardReveal} className="rounded-2xl border border-black/[0.07] bg-white p-6 shadow-sm">
+                  <div className="mb-4 flex gap-1">
+                    {Array.from({ length: stars }).map((_, i) => (
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#f9a826" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    ))}
+                  </div>
+                  <p className="mb-5 text-sm leading-relaxed text-[#4b5563]">"{text}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: color }}>
+                      {initial}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[#09090b]">{name}</p>
+                      <p className="text-xs text-[#6b7280]">{role}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════
+            8. FORMULAIRE
         ════════════════════════════════════════════════════ */}
         <section id="devis" className="hero-dark py-24">
           <div className="mx-auto max-w-2xl px-6">

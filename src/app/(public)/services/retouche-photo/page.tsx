@@ -324,6 +324,41 @@ export default function RetouchePhotoPage() {
           </div>
         </section>
 
+        {/* TÉMOIGNAGES */}
+        <section className="bg-[#09090b] py-14 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Avis clients</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce qu'en disent nos clients</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
+              {[
+                { initial: "L", color: "#d946ef", rgb: "217,70,239", name: "Laura B.", role: "Fondatrice de boutique en ligne", stars: 5, text: "Mes photos produits étaient correctes mais pas vendeuses. Après retouche DJAMA, mes fiches produits ont clairement amélioré mon taux de conversion." },
+                { initial: "M", color: "#60a5fa", rgb: "96,165,250", name: "Marc G.", role: "Photographe professionnel", stars: 5, text: "J'utilise DJAMA pour les traitements en série. Rapide, cohérent, fidèle à mon style. Excellent rapport qualité/prix pour des lots de 20+ photos." },
+                { initial: "N", color: "#f9a826", rgb: "249,168,38", name: "Nadia S.", role: "Community manager", stars: 5, text: "Les visuels livrés correspondent exactement à la charte graphique demandée. Délai respecté, retouches propres. Je reviens régulièrement." },
+              ].map(({ initial, color, rgb, name, role, stars, text }) => (
+                <motion.div key={name} variants={cardReveal} className="rounded-3xl border border-white/[0.1] bg-white/[0.05] p-6">
+                  <div className="mb-4 flex gap-1">
+                    {Array.from({ length: stars }).map((_, i) => (
+                      <Star key={i} size={13} style={{ color: "#f9a826", fill: "#f9a826" }} />
+                    ))}
+                  </div>
+                  <p className="mb-5 text-sm leading-relaxed text-white/70">"{text}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-[#07070a]" style={{ background: color }}>
+                      {initial}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{name}</p>
+                      <p className="text-xs text-white/40">{role}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
         {/* FORMULAIRE */}
         <section id="devis" className="bg-[#09090b] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">

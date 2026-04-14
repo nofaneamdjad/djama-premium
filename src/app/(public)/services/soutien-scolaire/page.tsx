@@ -12,6 +12,8 @@ import {
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
 import type { RdvPayload } from "@/app/api/rdv/route";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -429,6 +431,8 @@ export default function SoutienScolairePage() {
   }
 
   return (
+    <>
+    <Navbar />
     <div className="bg-white">
 
       {/* ════════════════════════════════════════════════════
@@ -914,7 +918,49 @@ export default function SoutienScolairePage() {
       </section>
 
       {/* ════════════════════════════════════════════════════
-          7. FORMULAIRE DE RDV
+          7. TÉMOIGNAGES
+      ════════════════════════════════════════════════════ */}
+      <section className="hero-dark py-24">
+        <div className="mx-auto max-w-5xl px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-12 text-center">
+            <motion.span variants={fadeIn} className="badge badge-gold-dark mb-4 inline-flex">
+              <Star size={10} /> Avis parents & élèves
+            </motion.span>
+            <h2 className="display-section text-white">
+              Ils progressent,{" "}
+              <span className="text-gold">ils témoignent</span>
+            </h2>
+          </motion.div>
+          <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainerFast} className="grid gap-5 sm:grid-cols-3">
+            {[
+              { initial: "C", color: "#c9a55a", name: "Chantal M.", role: "Maman d'une élève de 1ère", stars: 5, text: "Ma fille avait décroché en maths depuis la 2nde. Après 6 séances avec Sophie, elle a eu 14 au bac blanc. On n'y croyait plus. Merci DJAMA." },
+              { initial: "Y", color: "#60a5fa", name: "Yann L.", role: "Élève en Terminale", stars: 5, text: "Thomas m'a réconcilié avec le français. Sa méthode de rédaction est super claire. J'ai pris confiance et j'ai vraiment progressé en quelques semaines." },
+              { initial: "R", color: "#4ade80", name: "Rachida O.", role: "Maman d'un élève de 3ème", stars: 5, text: "Lucas donne des cours d'anglais très vivants. Mon fils parle maintenant sans complexe. On renouvelle les séances jusqu'au brevet sans hésiter." },
+            ].map(({ initial, color, name, role, stars, text }) => (
+              <motion.div key={name} variants={cardReveal} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6">
+                <div className="mb-4 flex gap-1">
+                  {Array.from({ length: stars }).map((_, i) => (
+                    <svg key={i} xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#f9a826" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  ))}
+                </div>
+                <p className="mb-5 text-sm leading-relaxed text-white/65">"{text}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-[#07070a]" style={{ background: color }}>
+                    {initial}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">{name}</p>
+                    <p className="text-xs text-white/40">{role}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════
+          8. FORMULAIRE DE RDV
       ════════════════════════════════════════════════════ */}
       <section id="rdv" className="hero-dark py-24">
         <div className="mx-auto max-w-2xl px-6">
@@ -1203,5 +1249,7 @@ export default function SoutienScolairePage() {
       </section>
 
     </div>
+    <Footer />
+    </>
   );
 }

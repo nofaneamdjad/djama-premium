@@ -379,8 +379,43 @@ export default function MontageVideoPage() {
           </div>
         </section>
 
-        {/* FAQ */}
+        {/* TÉMOIGNAGES */}
         <section className="bg-[#09090b] py-14 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
+              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Ils nous ont fait confiance</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce qu'en disent nos clients</motion.h2>
+            </motion.div>
+            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
+              {[
+                { initial: "A", color: "#e879f9", rgb: "232,121,249", name: "Amira K.", role: "Créatrice de contenu", stars: 5, text: "Le rendu était exactement ce que je voulais. Montage dynamique, sous-titres parfaitement calés, livraison en 4 jours. Je recommande à 100%." },
+                { initial: "R", color: "#60a5fa", rgb: "96,165,250",  name: "Romain P.", role: "Entrepreneur e-commerce", stars: 5, text: "J'avais des rushs bruts pas très bien filmés — DJAMA en a fait une vidéo produit propre et professionnelle. Résultat visible sur mes conversions." },
+                { initial: "S", color: "#4ade80", rgb: "74,222,128",  name: "Sofia T.", role: "Coach bien-être", stars: 5, text: "La vidéo de présentation de mon offre a été faite en moins d'une semaine. Excellent rapport qualité/prix, et l'équipe est très réactive." },
+              ].map(({ initial, color, rgb, name, role, stars, text }) => (
+                <motion.div key={name} variants={cardReveal} className="rounded-3xl border border-white/[0.1] bg-white/[0.05] p-6">
+                  <div className="mb-4 flex gap-1">
+                    {Array.from({ length: stars }).map((_, i) => (
+                      <Star key={i} size={13} style={{ color: "#f9a826", fill: "#f9a826" }} />
+                    ))}
+                  </div>
+                  <p className="mb-5 text-sm leading-relaxed text-white/70">"{text}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-[#07070a]" style={{ background: color }}>
+                      {initial}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{name}</p>
+                      <p className="text-xs text-white/40">{role}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="bg-[#0e0b18] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>

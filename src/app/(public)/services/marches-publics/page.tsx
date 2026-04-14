@@ -609,7 +609,50 @@ export default function MarchesPublicsPage() {
         </section>
 
         {/* ════════════════════════════════════════════════════
-            7. FORMULAIRE DEVIS
+            7. TÉMOIGNAGES
+        ════════════════════════════════════════════════════ */}
+        <section className="bg-white py-24">
+          <div className="mx-auto max-w-5xl px-6">
+            <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-12 text-center">
+              <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
+                <Award size={10} /> Avis clients
+              </motion.span>
+              <h2 className="display-section text-[#09090b]">
+                Des dossiers qui{" "}
+                <span className="text-[#f9a826]">font la différence</span>
+              </h2>
+            </motion.div>
+            <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainerFast}
+              className="grid gap-6 sm:grid-cols-3">
+              {[
+                { initial: "P", color: "#f9a826", name: "Pierre M.", role: "Gérant d'une entreprise de BTP", stars: 5, text: "Avec l'aide de DJAMA, notre premier dossier de réponse à un AO était irréprochable. Nous avons décroché le marché. L'accompagnement a été décisif." },
+                { initial: "N", color: "#60a5fa", name: "Nadia R.", role: "Directrice d'une société de services", stars: 5, text: "DJAMA nous a structuré notre réponse technique en 5 jours. Très bon niveau de rigueur sur les pièces administratives. On recommande." },
+                { initial: "B", color: "#4ade80", name: "Bertrand K.", role: "Chef d'entreprise PME industrielle", stars: 5, text: "Notre premier AO était une étape redoutée. DJAMA a simplifié le processus et nous a aidés à remettre un dossier conforme. Résultat positif." },
+              ].map(({ initial, color, name, role, stars, text }) => (
+                <motion.div key={name} variants={cardReveal} className="rounded-2xl border border-black/[0.07] bg-white p-6 shadow-sm">
+                  <div className="mb-4 flex gap-1">
+                    {Array.from({ length: stars }).map((_, i) => (
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#f9a826" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    ))}
+                  </div>
+                  <p className="mb-5 text-sm leading-relaxed text-[#4b5563]">"{text}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: color }}>
+                      {initial}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[#09090b]">{name}</p>
+                      <p className="text-xs text-[#6b7280]">{role}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════
+            8. FORMULAIRE DEVIS
         ════════════════════════════════════════════════════ */}
         <section id="devis" className="hero-dark py-24">
           <div className="mx-auto max-w-2xl px-6">
