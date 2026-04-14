@@ -528,7 +528,7 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           HERO
       ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pb-24 pt-40">
+      <section className="relative overflow-hidden pb-12 pt-24 sm:pb-24 sm:pt-40">
         <div className="hero-grid absolute inset-0 opacity-40" />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[350px] w-[500px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[75px]" />
@@ -617,7 +617,7 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           GRILLE PROJETS
       ══════════════════════════════════════════ */}
-      <section className="px-6 py-20">
+      <section className="px-6 py-10 sm:py-20">
         <div className="mx-auto max-w-6xl">
           {loading ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -653,7 +653,7 @@ export default function RealisationsPage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="py-24 text-center"
+              className="py-12 sm:py-24 text-center"
             >
               <p className="text-white/30">Aucun projet dans cette catégorie pour le moment.</p>
             </motion.div>
@@ -664,7 +664,7 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           EN COULISSES
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-24">
+      <section className="border-t border-white/[0.05] px-6 py-12 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -714,7 +714,7 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           MÉTHODE
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-24">
+      <section className="border-t border-white/[0.05] px-6 py-12 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
@@ -775,7 +775,7 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           AVANTAGES
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-24">
+      <section className="border-t border-white/[0.05] px-6 py-12 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
@@ -820,14 +820,14 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           CTA FINAL
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-20">
+      <section className="border-t border-white/[0.05] px-6 py-10 sm:py-20">
         <div className="mx-auto max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease }}
-            className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.18)] bg-[#111113] px-8 py-20 text-center md:px-16"
+            className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.18)] bg-[#111113] px-8 py-10 sm:py-20 text-center md:px-16"
           >
             <div className="pointer-events-none absolute left-[10%] top-[-40px] h-[180px] w-[240px] rounded-full bg-[rgba(201,165,90,0.08)] blur-[55px]" />
 

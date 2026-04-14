@@ -171,7 +171,7 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           1. HERO
       ══════════════════════════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden pb-32 pt-40">
+      <section className="hero-dark hero-grid relative overflow-hidden pb-14 pt-24 sm:pb-32 sm:pt-40">
         {/* Glow central */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[500px] w-[600px] rounded-full bg-[rgba(176,141,87,0.10)] blur-[100px]" />
@@ -245,7 +245,7 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           2. OUTILS (5 cartes)
       ══════════════════════════════════════════════ */}
-      <section id="outils" className="py-24">
+      <section id="outils" className="py-12 sm:py-24">
         <div className="mx-auto max-w-6xl px-6">
           {/* Header */}
           <motion.div
@@ -360,7 +360,7 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           3. CARTE ABONNEMENT
       ══════════════════════════════════════════════ */}
-      <section id="abonnement" className="bg-[var(--surface)] py-24">
+      <section id="abonnement" className="bg-[var(--surface)] py-12 sm:py-24">
         <div className="mx-auto max-w-md px-6">
           <motion.div
             initial={{ opacity: 0, y: 28, scale: 0.97 }}
@@ -453,7 +453,7 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           4. SECTION CONFIANCE
       ══════════════════════════════════════════════ */}
-      <section className="hero-dark relative overflow-hidden py-24">
+      <section className="hero-dark relative overflow-hidden py-12 sm:py-24">
         <div className="pointer-events-none absolute left-[15%] top-0 h-[280px] w-[340px] rounded-full bg-[rgba(201,165,90,0.05)] blur-[70px]" />
 
         <motion.div
@@ -503,7 +503,7 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           5. DÉJÀ ABONNÉ
       ══════════════════════════════════════════════ */}
-      <section className="mx-auto max-w-4xl px-6 py-20 text-center">
+      <section className="mx-auto max-w-4xl px-6 py-10 sm:py-20 text-center">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}

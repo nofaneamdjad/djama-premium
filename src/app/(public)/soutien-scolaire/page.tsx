@@ -621,7 +621,7 @@ export default function SoutienScolairePage() {
       </section>
 
       {/* ═══ PREMIER COURS GRATUIT ═══════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#0f1117] px-6 py-20">
+      <section className="relative overflow-hidden bg-[#0f1117] px-6 py-10 sm:py-20">
         {/* Glows décoratifs */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/4 top-0 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-[rgba(var(--gold),0.06)] blur-[90px]" />

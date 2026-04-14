@@ -586,7 +586,7 @@ export default function CreationAutoEntrepreneurPage() {
         {/* ════════════════════════════════════════════════════
             TRANSPARENCE
         ════════════════════════════════════════════════════ */}
-        <section className="bg-[#150e01] py-20">
+        <section className="bg-[#150e01] py-10 sm:py-20">
           <div className="mx-auto max-w-3xl px-6">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport}
               transition={{ duration: 0.55, ease }}

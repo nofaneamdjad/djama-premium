@@ -321,7 +321,7 @@ export default function RechercheFournisseursPage() {
         {/* ════════════════════════════════════════════════════
             1. HERO
         ════════════════════════════════════════════════════ */}
-        <section className="hero-dark hero-grid relative overflow-hidden pb-28 pt-36">
+        <section className="hero-dark hero-grid relative overflow-hidden pb-14 pt-24 sm:pb-28 sm:pt-36">
           <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
             <div className="h-[350px] w-[550px] rounded-full bg-[rgba(96,165,250,0.08)] blur-[90px]" />
           </div>
@@ -373,7 +373,7 @@ export default function RechercheFournisseursPage() {
         {/* ════════════════════════════════════════════════════
             2. POURQUOI L'INTERNATIONAL
         ════════════════════════════════════════════════════ */}
-        <section className="bg-white py-24">
+        <section className="bg-white py-12 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-14 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -408,7 +408,7 @@ export default function RechercheFournisseursPage() {
         {/* ════════════════════════════════════════════════════
             3. ZONES DE SOURCING
         ════════════════════════════════════════════════════ */}
-        <section id="zones" className="bg-[var(--surface)] py-24">
+        <section id="zones" className="bg-[var(--surface)] py-12 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-14 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -458,7 +458,7 @@ export default function RechercheFournisseursPage() {
         {/* ════════════════════════════════════════════════════
             4. CE QUE NOUS FAISONS
         ════════════════════════════════════════════════════ */}
-        <section className="bg-white py-24">
+        <section className="bg-white py-12 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-14 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -491,7 +491,7 @@ export default function RechercheFournisseursPage() {
         {/* ════════════════════════════════════════════════════
             5. POUR QUI
         ════════════════════════════════════════════════════ */}
-        <section className="hero-dark relative overflow-hidden py-24">
+        <section className="hero-dark relative overflow-hidden py-12 sm:py-24">
           <div className="pointer-events-none absolute left-[10%] top-[20%] h-[300px] w-[400px] rounded-full bg-[rgba(96,165,250,0.06)] blur-[80px]" />
           <div className="relative z-10 mx-auto max-w-4xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-14 text-center">
@@ -556,7 +556,7 @@ export default function RechercheFournisseursPage() {
         {/* ════════════════════════════════════════════════════
             7. TÉMOIGNAGES
         ════════════════════════════════════════════════════ */}
-        <section className="bg-white py-24">
+        <section className="bg-white py-12 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-12 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -599,7 +599,7 @@ export default function RechercheFournisseursPage() {
         {/* ════════════════════════════════════════════════════
             8. FORMULAIRE SOURCING
         ════════════════════════════════════════════════════ */}
-        <section id="sourcing" className="hero-dark py-24">
+        <section id="sourcing" className="hero-dark py-12 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-10 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold-dark mb-4 inline-flex">
@@ -621,7 +621,7 @@ export default function RechercheFournisseursPage() {
         {/* ════════════════════════════════════════════════════
             8. FAQ
         ════════════════════════════════════════════════════ */}
-        <section className="bg-white py-24">
+        <section className="bg-white py-12 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-12 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -645,7 +645,7 @@ export default function RechercheFournisseursPage() {
         {/* ════════════════════════════════════════════════════
             9. CTA FINAL
         ════════════════════════════════════════════════════ */}
-        <section className="hero-dark relative overflow-hidden py-24">
+        <section className="hero-dark relative overflow-hidden py-12 sm:py-24">
           <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
             <div className="h-[400px] w-[600px] rounded-full bg-[rgba(96,165,250,0.06)] blur-[90px]" />
           </div>

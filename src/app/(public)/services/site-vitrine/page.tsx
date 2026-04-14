@@ -175,7 +175,7 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             HERO
         ══════════════════════════════════════════ */}
-        <section className="relative min-h-[92vh] flex items-center overflow-hidden">
+        <section className="relative min-h-0 sm:min-h-[90vh] flex items-center overflow-hidden">
 
           {/* Backgrounds */}
           <div className="pointer-events-none absolute inset-0">
@@ -191,7 +191,7 @@ export default function SiteVitrinePage() {
               style={{ background: "radial-gradient(circle, rgba(96,165,250,1) 0%, transparent 70%)" }} />
           </div>
 
-          <div className="relative max-w-7xl mx-auto px-6 w-full py-24 lg:py-0">
+          <div className="relative max-w-7xl mx-auto px-6 w-full py-20 sm:py-24 lg:py-0">
             <div className="grid lg:grid-cols-2 gap-14 items-center">
 
               {/* LEFT */}
@@ -388,7 +388,7 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             STATS
         ══════════════════════════════════════════ */}
-        <section className="py-12 px-6 border-y border-white/[0.05]" style={{ background: "rgba(255,255,255,0.015)" }}>
+        <section className="py-8 sm:py-12 px-6 border-y border-white/[0.05]" style={{ background: "rgba(255,255,255,0.015)" }}>
           <div className="max-w-5xl mx-auto">
             <motion.div {...staggerContainerFast} viewport={viewport} className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               {STATS.map((s) => (
@@ -404,9 +404,9 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             CE QUE VOUS OBTENEZ
         ══════════════════════════════════════════ */}
-        <section className="py-24 px-6">
+        <section className="py-12 sm:py-24 px-6">
           <div className="max-w-6xl mx-auto">
-            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
               <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
                 <Sparkles size={13} style={{ color: ACCENT }} /> Ce qui est inclus
               </motion.div>
@@ -437,13 +437,13 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             PROCESSUS 4 ÉTAPES
         ══════════════════════════════════════════ */}
-        <section className="py-24 px-6 relative overflow-hidden" style={{ background: "rgba(255,255,255,0.015)" }}>
+        <section className="py-12 sm:py-24 px-6 relative overflow-hidden" style={{ background: "rgba(255,255,255,0.015)" }}>
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full opacity-10"
               style={{ background: `linear-gradient(to bottom, transparent, rgba(${ACCENT_RGB},1), transparent)` }} />
           </div>
           <div className="max-w-5xl mx-auto">
-            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
               <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
                 <Zap size={13} style={{ color: ACCENT }} /> Notre processus
               </motion.div>
@@ -483,9 +483,9 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             POUR QUI
         ══════════════════════════════════════════ */}
-        <section className="py-24 px-6">
+        <section className="py-12 sm:py-24 px-6">
           <div className="max-w-6xl mx-auto">
-            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
               <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
                 <Users size={13} style={{ color: ACCENT }} /> Pour qui ?
               </motion.div>
@@ -521,9 +521,9 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             INCLUS / NON INCLUS
         ══════════════════════════════════════════ */}
-        <section className="py-24 px-6" style={{ background: "rgba(255,255,255,0.012)" }}>
+        <section className="py-12 sm:py-24 px-6" style={{ background: "rgba(255,255,255,0.012)" }}>
           <div className="max-w-4xl mx-auto">
-            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
               <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
                 <CheckSquare size={13} style={{ color: ACCENT }} /> Transparence totale
               </motion.div>
@@ -583,9 +583,9 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             TARIFS
         ══════════════════════════════════════════ */}
-        <section className="py-24 px-6">
+        <section className="py-12 sm:py-24 px-6">
           <div className="max-w-5xl mx-auto">
-            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
               <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
                 <BadgeCheck size={13} style={{ color: ACCENT }} /> Tarifs clairs
               </motion.div>
@@ -644,9 +644,9 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             EXEMPLES
         ══════════════════════════════════════════ */}
-        <section id="exemples" className="py-24 px-6" style={{ background: "rgba(255,255,255,0.012)" }}>
+        <section id="exemples" className="py-12 sm:py-24 px-6" style={{ background: "rgba(255,255,255,0.012)" }}>
           <div className="max-w-6xl mx-auto">
-            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
               <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
                 <Eye size={13} style={{ color: ACCENT }} /> Exemples concrets
               </motion.div>
@@ -699,9 +699,9 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             TÉMOIGNAGES
         ══════════════════════════════════════════ */}
-        <section className="py-24 px-6">
+        <section className="py-12 sm:py-24 px-6">
           <div className="max-w-6xl mx-auto">
-            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+            <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
               <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
                 <Star size={13} style={{ color: "#f9a826" }} /> Avis clients
               </motion.div>
@@ -739,7 +739,7 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             FAQ
         ══════════════════════════════════════════ */}
-        <section className="py-24 px-6" style={{ background: "rgba(255,255,255,0.012)" }}>
+        <section className="py-12 sm:py-24 px-6" style={{ background: "rgba(255,255,255,0.012)" }}>
           <div className="max-w-3xl mx-auto">
             <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-14">
               <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
@@ -780,7 +780,7 @@ export default function SiteVitrinePage() {
         {/* ══════════════════════════════════════════
             CTA FINAL
         ══════════════════════════════════════════ */}
-        <section className="py-24 px-6 relative overflow-hidden">
+        <section className="py-12 sm:py-24 px-6 relative overflow-hidden">
           <div className="pointer-events-none absolute inset-0">
             <motion.div animate={{ scale: [1, 1.06, 1], opacity: [0.06, 0.1, 0.06] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[120px]"

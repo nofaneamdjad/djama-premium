@@ -149,7 +149,7 @@ export default function CoachingIAPage() {
     <main className="overflow-x-hidden bg-white">
 
       {/* ═══ HERO ══════════════════════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden px-4 pb-28 pt-20">
+      <section className="hero-dark hero-grid relative overflow-hidden px-4 pb-14 pt-20 sm:pb-28">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/2 top-0 h-[600px] w-[700px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-[rgba(var(--gold),0.08)] blur-[110px]" />
           <div className="absolute right-[-80px] bottom-0 h-[300px] w-[300px] rounded-full bg-[rgba(124,111,205,0.06)] blur-[80px]" />
@@ -219,7 +219,7 @@ export default function CoachingIAPage() {
       </section>
 
       {/* ═══ PROGRAMME ══════════════════════════════════════ */}
-      <section id="programme" className="mx-auto max-w-5xl px-6 py-20">
+      <section id="programme" className="mx-auto max-w-5xl px-6 py-10 sm:py-20">
         <FadeReveal className="mb-4 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(var(--gold),0.2)] bg-[rgba(var(--gold),0.05)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[rgb(var(--gold))]">
             <BookOpen size={11} />
@@ -272,7 +272,7 @@ export default function CoachingIAPage() {
       </section>
 
       {/* ═══ SUPPORTS DE COURS ══════════════════════════════ */}
-      <section className="bg-[#f9f7f4] py-20">
+      <section className="bg-[#f9f7f4] py-10 sm:py-20">
         <div className="mx-auto max-w-5xl px-6">
           <FadeReveal className="mb-12 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(var(--gold),0.2)] bg-[rgba(var(--gold),0.07)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[rgb(var(--gold))] mb-4">
@@ -317,7 +317,7 @@ export default function CoachingIAPage() {
       </section>
 
       {/* ═══ ACCOMPAGNEMENT ═════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#0f1117] py-24">
+      <section className="relative overflow-hidden bg-[#0f1117] py-12 sm:py-24">
         {/* Glows */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/4 top-1/2 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-[rgba(var(--gold),0.06)] blur-[90px]" />
@@ -437,7 +437,7 @@ export default function CoachingIAPage() {
       </section>
 
       {/* ═══ CE QUE VOUS ALLEZ APPRENDRE ═══════════════════ */}
-      <section className="mx-auto max-w-5xl px-6 py-20">
+      <section className="mx-auto max-w-5xl px-6 py-10 sm:py-20">
         <FadeReveal className="mb-12 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(var(--gold),0.2)] bg-[rgba(var(--gold),0.05)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[rgb(var(--gold))] mb-4">
             <Sparkles size={11} />
@@ -476,7 +476,7 @@ export default function CoachingIAPage() {
       </section>
 
       {/* ═══ OFFRE & TARIF ══════════════════════════════════ */}
-      <section className="bg-[#f9f7f4] py-20">
+      <section className="bg-[#f9f7f4] py-10 sm:py-20">
         <div className="mx-auto max-w-4xl px-6">
           <FadeReveal className="mb-12 text-center">
             <h2 className="text-3xl font-extrabold tracking-tight md:text-4xl">

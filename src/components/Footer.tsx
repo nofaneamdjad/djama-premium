@@ -125,9 +125,9 @@ export default function Footer() {
         whileInView="visible"
         viewport={viewport}
         variants={staggerContainer}
-        className="mx-auto max-w-6xl px-6 py-16"
+        className="mx-auto max-w-6xl px-6 py-8 sm:py-16"
       >
-        <div className="grid gap-12 md:grid-cols-[2fr_1fr_1fr]">
+        <div className="grid gap-6 sm:gap-12 grid-cols-1 sm:grid-cols-[2fr_1fr_1fr]">
 
           {/* Brand */}
           <motion.div variants={fadeUp}>
@@ -214,15 +214,15 @@ export default function Footer() {
         </div>
 
         {/* ── Séparateur ── */}
-        <div className="my-12 h-px bg-white/[0.06]" />
+        <div className="my-6 sm:my-12 h-px bg-white/[0.06]" />
 
         {/* ── Réseaux sociaux + Langue ── */}
         <motion.div
           variants={fadeUp}
-          className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-row items-center justify-between gap-4 flex-wrap"
         >
           {/* Socials */}
-          <div className="flex flex-col items-center gap-3 sm:items-start">
+          <div className="flex flex-col items-start gap-2">
             <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/25">
               {f.social.title}
             </p>
@@ -250,7 +250,7 @@ export default function Footer() {
           </div>
 
           {/* Langue */}
-          <div className="flex flex-col items-center gap-2 sm:items-end">
+          <div className="flex flex-col items-end gap-2">
             <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/25">
               {f.language.title}
             </p>
@@ -261,10 +261,10 @@ export default function Footer() {
 
       {/* ── Barre légale ─────────────────────── */}
       <div className="border-t border-white/[0.05]">
-        <div className="mx-auto max-w-6xl px-6 py-5">
+        <div className="mx-auto max-w-6xl px-4 py-4">
 
-          {/* Liens légaux */}
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mb-4">
+          {/* Liens légaux + copyright */}
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 mb-2">
             {LEGAL_LINKS.map(({ href, label, labelEn }) => (
               <Link
                 key={href}

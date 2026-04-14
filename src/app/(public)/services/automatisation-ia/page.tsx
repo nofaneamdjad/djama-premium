@@ -259,7 +259,7 @@ export default function AutomatisationIAPage() {
       {/* ══════════════════════════════════════════════
           SECTION 1 — HERO
       ══════════════════════════════════════════════ */}
-      <section className="relative pt-32 pb-20 px-6 overflow-hidden">
+      <section className="relative pt-20 pb-12 sm:pt-32 sm:pb-20 px-6 overflow-hidden">
         {/* bg glows */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-32 -left-32 w-[700px] h-[700px] rounded-full opacity-[0.07]"
@@ -272,7 +272,7 @@ export default function AutomatisationIAPage() {
         </div>
 
         <div className="relative max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-16 items-center">
 
             {/* LEFT */}
             <div>
@@ -390,14 +390,14 @@ export default function AutomatisationIAPage() {
       {/* ══════════════════════════════════════════════
           SECTION 2 — CE QUE NOUS POUVONS AUTOMATISER
       ══════════════════════════════════════════════ */}
-      <section className="py-24 px-6 relative overflow-hidden">
+      <section className="py-12 sm:py-24 px-6 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-1 opacity-40"
             style={{ background: `linear-gradient(90deg,transparent,rgba(${ACCENT_RGB},0.6),transparent)` }} />
         </div>
 
         <div className="max-w-6xl mx-auto">
-          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
             <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
               <Zap size={13} style={{ color: ACCENT }} /> Automatisation intelligente
             </motion.div>
@@ -428,11 +428,11 @@ export default function AutomatisationIAPage() {
       {/* ══════════════════════════════════════════════
           SECTION 3 — TYPES DE PLATEFORMES
       ══════════════════════════════════════════════ */}
-      <section className="py-24 px-6 relative overflow-hidden">
+      <section className="py-12 sm:py-24 px-6 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.015] to-transparent" />
 
         <div className="max-w-6xl mx-auto">
-          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
             <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
               <Layers size={13} style={{ color: ACCENT }} /> Plateformes sur mesure
             </motion.div>
@@ -498,14 +498,14 @@ export default function AutomatisationIAPage() {
       {/* ══════════════════════════════════════════════
           SECTION 4 — SCHÉMA VISUEL
       ══════════════════════════════════════════════ */}
-      <section className="py-24 px-6 relative overflow-hidden">
+      <section className="py-12 sm:py-24 px-6 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-1 opacity-30"
             style={{ background: `linear-gradient(90deg,transparent,rgba(${ACCENT_RGB},0.5),transparent)` }} />
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
             <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
               <GitMerge size={13} style={{ color: ACCENT }} /> Comment ça fonctionne
             </motion.div>
@@ -564,9 +564,9 @@ export default function AutomatisationIAPage() {
       {/* ══════════════════════════════════════════════
           SECTION 5 — TABLEAU DES FONCTIONNALITÉS
       ══════════════════════════════════════════════ */}
-      <section className="py-24 px-6">
+      <section className="py-12 sm:py-24 px-6">
         <div className="max-w-4xl mx-auto">
-          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
             <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
               <CheckSquare size={13} style={{ color: ACCENT }} /> Ce qui est inclus
             </motion.div>
@@ -602,11 +602,11 @@ export default function AutomatisationIAPage() {
       {/* ══════════════════════════════════════════════
           SECTION 6 — TECHNOLOGIES
       ══════════════════════════════════════════════ */}
-      <section className="py-24 px-6 relative overflow-hidden">
+      <section className="py-12 sm:py-24 px-6 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.015] to-transparent" />
 
         <div className="max-w-6xl mx-auto">
-          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
             <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
               <Cpu size={13} style={{ color: ACCENT }} /> Stack technique
             </motion.div>
@@ -639,9 +639,9 @@ export default function AutomatisationIAPage() {
       {/* ══════════════════════════════════════════════
           SECTION 7 — CAS D'USAGE
       ══════════════════════════════════════════════ */}
-      <section id="cas-usage" className="py-24 px-6">
+      <section id="cas-usage" className="py-12 sm:py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
             <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
               <Briefcase size={13} style={{ color: ACCENT }} /> Exemples concrets
             </motion.div>
@@ -696,11 +696,11 @@ export default function AutomatisationIAPage() {
       {/* ══════════════════════════════════════════════
           SECTION 8 — TÉMOIGNAGES
       ══════════════════════════════════════════════ */}
-      <section className="py-24 px-6 relative overflow-hidden">
+      <section className="py-12 sm:py-24 px-6 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.018] to-transparent" />
 
         <div className="max-w-6xl mx-auto">
-          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
             <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
               <Star size={13} style={{ color: "#f9a826" }} /> Avis clients
             </motion.div>
@@ -731,9 +731,9 @@ export default function AutomatisationIAPage() {
       {/* ══════════════════════════════════════════════
           SECTION 9 — FAQ
       ══════════════════════════════════════════════ */}
-      <section className="py-24 px-6">
+      <section className="py-12 sm:py-24 px-6">
         <div className="max-w-3xl mx-auto">
-          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-16">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-8 sm:mb-16">
             <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs text-white/60 mb-6">
               <Lightbulb size={13} style={{ color: ACCENT }} /> Questions fréquentes
             </motion.div>
@@ -772,7 +772,7 @@ export default function AutomatisationIAPage() {
       {/* ══════════════════════════════════════════════
           SECTION 10 — CTA FINAL
       ══════════════════════════════════════════════ */}
-      <section className="py-24 px-6 relative overflow-hidden">
+      <section className="py-12 sm:py-24 px-6 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-[0.07]"
             style={{ background: `radial-gradient(circle, rgba(${ACCENT_RGB},1) 0%, transparent 70%)` }} />

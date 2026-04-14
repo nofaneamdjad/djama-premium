@@ -164,7 +164,7 @@ export default function Navbar() {
               initial="hidden"
               animate="visible"
               variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } } }}
-              className="flex flex-col gap-1 px-6 pt-6"
+              className="flex flex-col gap-0.5 px-4 pt-4"
             >
               {NAV_LINKS.map(({ href, label }) => (
                 <motion.div
@@ -174,7 +174,7 @@ export default function Navbar() {
                   <Link
                     href={href}
                     onClick={() => setMenuOpen(false)}
-                    className="block rounded-2xl px-5 py-4 text-2xl font-extrabold text-white/80 transition hover:bg-white/5 hover:text-white"
+                    className="block rounded-2xl px-5 py-3 text-xl font-extrabold text-white/80 transition hover:bg-white/5 hover:text-white"
                   >
                     {label}
                   </Link>
@@ -184,7 +184,7 @@ export default function Navbar() {
               {/* Lang toggle mobile */}
               <motion.div
                 variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease } } }}
-                className="mt-4 px-5"
+                className="mt-2 px-5"
               >
                 <p className="mb-2 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-white/25">
                   {dict.nav.language}
@@ -208,7 +208,7 @@ export default function Navbar() {
 
               <motion.div
                 variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease } } }}
-                className="mt-6"
+                className="mt-4 px-5"
               >
                 <Link
                   href="/contact"

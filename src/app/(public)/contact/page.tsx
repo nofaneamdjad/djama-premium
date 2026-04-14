@@ -238,7 +238,7 @@ export default function ContactPage() {
       {/* ══════════════════════════════════════════
           HERO
       ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pb-28 pt-40">
+      <section className="relative overflow-hidden pb-16 pt-24 sm:pb-28 sm:pt-40">
         {/* Backgrounds */}
         <div className="hero-grid absolute inset-0 opacity-50" />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
@@ -302,7 +302,7 @@ export default function ContactPage() {
       {/* ══════════════════════════════════════════
           FORMULAIRE + INFOS
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-20">
+      <section className="border-t border-white/[0.05] px-6 py-10 sm:py-20">
         <div className="mx-auto max-w-5xl">
           <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
 
@@ -466,7 +466,7 @@ export default function ContactPage() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5, ease }}
-                    className="flex flex-col items-center justify-center px-8 py-24 text-center"
+                    className="flex flex-col items-center justify-center px-8 py-12 sm:py-24 text-center"
                   >
                     <motion.div
                       initial={{ scale: 0, rotate: -20 }}
@@ -721,7 +721,7 @@ export default function ContactPage() {
       {/* ══════════════════════════════════════════
           SECTION CONFIANCE
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-24">
+      <section className="border-t border-white/[0.05] px-6 py-12 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
@@ -765,7 +765,7 @@ export default function ContactPage() {
       {/* ══════════════════════════════════════════
           CTA FINAL
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-20">
+      <section className="border-t border-white/[0.05] px-6 py-10 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 24 }}

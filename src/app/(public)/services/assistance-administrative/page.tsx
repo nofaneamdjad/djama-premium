@@ -335,7 +335,7 @@ export default function AssistanceAdministrativePage() {
         {/* ════════════════════════════════════════════════════
             1. HERO
         ════════════════════════════════════════════════════ */}
-        <section className="hero-dark hero-grid relative overflow-hidden pb-28 pt-36">
+        <section className="hero-dark hero-grid relative overflow-hidden pb-14 pt-24 sm:pb-28 sm:pt-36">
           <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
             <div className="h-[350px] w-[500px] rounded-full bg-[rgba(52,211,153,0.07)] blur-[90px]" />
           </div>
@@ -391,7 +391,7 @@ export default function AssistanceAdministrativePage() {
         {/* ════════════════════════════════════════════════════
             2. POURQUOI SE FAIRE ACCOMPAGNER
         ════════════════════════════════════════════════════ */}
-        <section className="bg-white py-24">
+        <section className="bg-white py-12 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-14 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -429,7 +429,7 @@ export default function AssistanceAdministrativePage() {
         {/* ════════════════════════════════════════════════════
             3. NOS SERVICES
         ════════════════════════════════════════════════════ */}
-        <section id="services" className="bg-[var(--surface)] py-24">
+        <section id="services" className="bg-[var(--surface)] py-12 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-14 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -465,7 +465,7 @@ export default function AssistanceAdministrativePage() {
         {/* ════════════════════════════════════════════════════
             4. POUR QUI
         ════════════════════════════════════════════════════ */}
-        <section className="bg-white py-24">
+        <section className="bg-white py-12 sm:py-24">
           <div className="mx-auto max-w-4xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-14 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -510,7 +510,7 @@ export default function AssistanceAdministrativePage() {
         {/* ════════════════════════════════════════════════════
             5. NOTRE MÉTHODE
         ════════════════════════════════════════════════════ */}
-        <section className="hero-dark relative overflow-hidden py-24">
+        <section className="hero-dark relative overflow-hidden py-12 sm:py-24">
           <div className="pointer-events-none absolute left-[10%] top-[20%] h-[300px] w-[400px] rounded-full bg-[rgba(52,211,153,0.05)] blur-[80px]" />
           <div className="relative z-10 mx-auto max-w-4xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-14 text-center">
@@ -584,7 +584,7 @@ export default function AssistanceAdministrativePage() {
         {/* ════════════════════════════════════════════════════
             7. TÉMOIGNAGES
         ════════════════════════════════════════════════════ */}
-        <section className="bg-white py-24">
+        <section className="bg-white py-12 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-12 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -627,7 +627,7 @@ export default function AssistanceAdministrativePage() {
         {/* ════════════════════════════════════════════════════
             8. FORMULAIRE DEVIS
         ════════════════════════════════════════════════════ */}
-        <section id="devis" className="hero-dark py-24">
+        <section id="devis" className="hero-dark py-12 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-10 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold-dark mb-4 inline-flex">
@@ -649,7 +649,7 @@ export default function AssistanceAdministrativePage() {
         {/* ════════════════════════════════════════════════════
             8. FAQ
         ════════════════════════════════════════════════════ */}
-        <section className="bg-white py-24">
+        <section className="bg-white py-12 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-12 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -673,7 +673,7 @@ export default function AssistanceAdministrativePage() {
         {/* ════════════════════════════════════════════════════
             9. CTA FINAL
         ════════════════════════════════════════════════════ */}
-        <section className="hero-dark relative overflow-hidden py-24">
+        <section className="hero-dark relative overflow-hidden py-12 sm:py-24">
           <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
             <div className="h-[400px] w-[600px] rounded-full bg-[rgba(52,211,153,0.06)] blur-[90px]" />
           </div>

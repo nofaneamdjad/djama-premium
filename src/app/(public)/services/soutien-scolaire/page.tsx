@@ -438,7 +438,7 @@ export default function SoutienScolairePage() {
       {/* ════════════════════════════════════════════════════
           1. HERO
       ════════════════════════════════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden pb-28 pt-36">
+      <section className="hero-dark hero-grid relative overflow-hidden pb-14 pt-24 sm:pb-28 sm:pt-36">
         {/* Glow principal */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[500px] w-[700px] rounded-full bg-[rgba(96,165,250,0.07)] blur-[100px]" />
@@ -554,7 +554,7 @@ export default function SoutienScolairePage() {
       {/* ════════════════════════════════════════════════════
           3. NIVEAUX & MATIÈRES
       ════════════════════════════════════════════════════ */}
-      <section className="bg-[var(--surface)] py-24">
+      <section className="bg-[var(--surface)] py-12 sm:py-24">
         <div className="mx-auto max-w-5xl px-6">
           <motion.div
             initial="hidden"
@@ -651,7 +651,7 @@ export default function SoutienScolairePage() {
       {/* ════════════════════════════════════════════════════
           4. COMMENT ÇA SE PASSE
       ════════════════════════════════════════════════════ */}
-      <section id="comment" className="bg-white py-24">
+      <section id="comment" className="bg-white py-12 sm:py-24">
         <div className="mx-auto max-w-5xl px-6">
           <motion.div
             initial="hidden"
@@ -710,7 +710,7 @@ export default function SoutienScolairePage() {
       {/* ════════════════════════════════════════════════════
           5. TARIF
       ════════════════════════════════════════════════════ */}
-      <section className="bg-[var(--surface)] py-24">
+      <section className="bg-[var(--surface)] py-12 sm:py-24">
         <div className="mx-auto max-w-lg px-6">
           <motion.div
             initial={{ opacity: 0, y: 28, scale: 0.97 }}
@@ -782,7 +782,7 @@ export default function SoutienScolairePage() {
       {/* ════════════════════════════════════════════════════
           6. POURQUOI DJAMA
       ════════════════════════════════════════════════════ */}
-      <section className="hero-dark relative overflow-hidden py-24">
+      <section className="hero-dark relative overflow-hidden py-12 sm:py-24">
         <div className="pointer-events-none absolute left-[10%] top-[20%] h-[300px] w-[400px] rounded-full bg-[rgba(96,165,250,0.05)] blur-[80px]" />
 
         <div className="relative z-10 mx-auto max-w-5xl px-6">
@@ -832,7 +832,7 @@ export default function SoutienScolairePage() {
       {/* ════════════════════════════════════════════════════
           6.5. NOS PROFESSEURS
       ════════════════════════════════════════════════════ */}
-      <section className="bg-white py-24">
+      <section className="bg-white py-12 sm:py-24">
         <div className="mx-auto max-w-5xl px-6">
           <motion.div
             initial="hidden"
@@ -920,7 +920,7 @@ export default function SoutienScolairePage() {
       {/* ════════════════════════════════════════════════════
           7. TÉMOIGNAGES
       ════════════════════════════════════════════════════ */}
-      <section className="hero-dark py-24">
+      <section className="hero-dark py-12 sm:py-24">
         <div className="mx-auto max-w-5xl px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-12 text-center">
             <motion.span variants={fadeIn} className="badge badge-gold-dark mb-4 inline-flex">
@@ -962,7 +962,7 @@ export default function SoutienScolairePage() {
       {/* ════════════════════════════════════════════════════
           8. FORMULAIRE DE RDV
       ════════════════════════════════════════════════════ */}
-      <section id="rdv" className="hero-dark py-24">
+      <section id="rdv" className="hero-dark py-12 sm:py-24">
         <div className="mx-auto max-w-2xl px-6">
           <motion.div
             initial="hidden"
@@ -1164,7 +1164,7 @@ export default function SoutienScolairePage() {
       {/* ════════════════════════════════════════════════════
           8. FAQ
       ════════════════════════════════════════════════════ */}
-      <section className="bg-white py-24">
+      <section className="bg-white py-12 sm:py-24">
         <div className="mx-auto max-w-2xl px-6">
           <motion.div
             initial="hidden"
@@ -1206,7 +1206,7 @@ export default function SoutienScolairePage() {
       {/* ════════════════════════════════════════════════════
           9. CTA FINAL
       ════════════════════════════════════════════════════ */}
-      <section className="hero-dark relative overflow-hidden py-24">
+      <section className="hero-dark relative overflow-hidden py-12 sm:py-24">
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[400px] w-[600px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[90px]" />
         </div>

@@ -410,7 +410,7 @@ export default function CoachingIAPage() {
       {/* ════════════════════════════════════════════════════
           1. HERO
       ════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pb-28 pt-36">
+      <section className="relative overflow-hidden pb-14 pt-24 sm:pb-28 sm:pt-36">
         <div className="hero-grid absolute inset-0 opacity-30" />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[600px] w-[700px] rounded-full bg-[rgba(167,139,250,0.09)] blur-[100px]" />
@@ -488,7 +488,7 @@ export default function CoachingIAPage() {
       {/* ════════════════════════════════════════════════════
           2. CE QUE VOUS ALLEZ APPRENDRE
       ════════════════════════════════════════════════════ */}
-      <section className="bg-white py-24">
+      <section className="bg-white py-12 sm:py-24">
         <div className="mx-auto max-w-5xl px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
@@ -529,7 +529,7 @@ export default function CoachingIAPage() {
       {/* ════════════════════════════════════════════════════
           3. PROGRAMME
       ════════════════════════════════════════════════════ */}
-      <section id="programme" className="bg-[#07080e] py-24">
+      <section id="programme" className="bg-[#07080e] py-12 sm:py-24">
         <div className="pointer-events-none absolute left-[5%] h-[400px] w-[600px] rounded-full bg-[rgba(167,139,250,0.04)] blur-[80px]" />
 
         <div className="relative z-10 mx-auto max-w-3xl px-6">
@@ -625,7 +625,7 @@ export default function CoachingIAPage() {
       {/* ════════════════════════════════════════════════════
           4. TÉMOIGNAGES
       ════════════════════════════════════════════════════ */}
-      <section className="bg-white py-24">
+      <section className="bg-white py-12 sm:py-24">
         <div className="mx-auto max-w-5xl px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
@@ -677,7 +677,7 @@ export default function CoachingIAPage() {
       {/* ════════════════════════════════════════════════════
           5. OFFRE & TARIF
       ════════════════════════════════════════════════════ */}
-      <section id="offre" className="bg-[#07080e] py-24">
+      <section id="offre" className="bg-[#07080e] py-12 sm:py-24">
         <div className="mx-auto max-w-lg px-6">
           <motion.div
             initial={{ opacity: 0, y: 28, scale: 0.97 }}
@@ -745,7 +745,7 @@ export default function CoachingIAPage() {
       {/* ════════════════════════════════════════════════════
           6. ENTREPRISES
       ════════════════════════════════════════════════════ */}
-      <section className="bg-white py-24">
+      <section className="bg-white py-12 sm:py-24">
         <div className="mx-auto max-w-5xl px-6">
           <div className="overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0d0a1a] via-[#12102a] to-[#0f0d1f] p-10 sm:p-14">
             <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
@@ -789,7 +789,7 @@ export default function CoachingIAPage() {
       {/* ════════════════════════════════════════════════════
           7. FAQ
       ════════════════════════════════════════════════════ */}
-      <section className="bg-[#07080e] py-24">
+      <section className="bg-[#07080e] py-12 sm:py-24">
         <div className="mx-auto max-w-2xl px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
@@ -827,7 +827,7 @@ export default function CoachingIAPage() {
       {/* ════════════════════════════════════════════════════
           8. CTA FINAL
       ════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#07080e] py-24">
+      <section className="relative overflow-hidden bg-[#07080e] py-12 sm:py-24">
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[500px] w-[700px] rounded-full bg-[rgba(167,139,250,0.07)] blur-[100px]" />
         </div>

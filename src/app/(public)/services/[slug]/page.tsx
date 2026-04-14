@@ -65,7 +65,7 @@ export default function ServiceSlugPage() {
     <div className="bg-white">
 
       {/* ══ HERO ══════════════════════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden pb-20 pt-32">
+      <section className="hero-dark hero-grid relative overflow-hidden pb-12 pt-20 sm:pb-20 sm:pt-32">
         {/* Glow de fond */}
         <div
           className="pointer-events-none absolute inset-0 flex items-start justify-center"

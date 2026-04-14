@@ -496,7 +496,7 @@ export default function PlanningAgendaPage() {
       {/* ── Corps ──────────────────────────────────────── */}
       <main className="relative z-10 mx-auto max-w-7xl px-5 py-6 sm:px-8">
         {loading ? (
-          <div className="flex items-center justify-center py-24">
+          <div className="flex items-center justify-center py-12 sm:py-24">
             <Loader2 size={28} className="animate-spin text-white/20"/>
           </div>
         ) : (

@@ -485,7 +485,7 @@ export default function ServicesPage() {
       {/* ══════════════════════════════════════════════════
           HERO
       ══════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pb-32 pt-40">
+      <section className="relative overflow-hidden pb-14 pt-24 sm:pb-32 sm:pt-40">
 
         <div className="hero-grid absolute inset-0 opacity-60" />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
@@ -578,7 +578,7 @@ export default function ServicesPage() {
       {/* ══════════════════════════════════════════════════
           FILTRES + GRILLE SERVICES
       ══════════════════════════════════════════════════ */}
-      <section id="services" className="border-t border-white/[0.05] px-6 py-20">
+      <section id="services" className="border-t border-white/[0.05] px-6 py-10 sm:py-20">
         <div className="mx-auto max-w-6xl">
 
           {/* En-tête section */}
@@ -645,7 +645,7 @@ export default function ServicesPage() {
             variants={staggerContainer}
           >
             {/* Header */}
-            <div className="mb-16 text-center">
+            <div className="mb-8 sm:mb-16 text-center">
               <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
                 <Star size={10} /> {s.whyUs.badge}
               </motion.span>
@@ -812,7 +812,7 @@ export default function ServicesPage() {
       {/* ══════════════════════════════════════════════════
           CTA FINAL
       ══════════════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-20">
+      <section className="border-t border-white/[0.05] px-6 py-10 sm:py-20">
         <div className="mx-auto max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 32 }}
