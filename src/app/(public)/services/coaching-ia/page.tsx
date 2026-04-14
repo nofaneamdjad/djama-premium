@@ -198,10 +198,10 @@ function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean
 }
 
 /* ─────────────────────────────────────────────────────────
-   COMPOSANT — Sélecteur de paiement (Stripe / PayPal / Virement)
+   COMPOSANT — Sélecteur de paiement (Stripe / Virement)
 ───────────────────────────────────────────────────────── */
 function PaymentSelector({ user }: { user?: { id?: string; email?: string } | null }) {
-  const [tab, setTab] = useState<"stripe" | "paypal" | "virement">("stripe");
+  const [tab, setTab] = useState<"stripe" | "virement">("stripe");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // virement form state
@@ -223,19 +223,6 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
     } catch (err) { setError(err instanceof Error ? err.message : "Erreur"); setLoading(false); }
   }
 
-  async function handlePayPal() {
-    setLoading(true); setError(null);
-    try {
-      const res = await fetch("/api/checkout/coaching-ia/paypal", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userEmail: user?.email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Erreur PayPal");
-      if (data.url) window.location.href = data.url;
-    } catch (err) { setError(err instanceof Error ? err.message : "Erreur"); setLoading(false); }
-  }
-
   async function handleVirement(e: React.FormEvent) {
     e.preventDefault();
     if (!vEmail.trim()) return;
@@ -251,7 +238,6 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
 
   const TABS = [
     { id: "stripe",   label: "💳 Carte bancaire", icon: CreditCard },
-    { id: "paypal",   label: "PayPal",             icon: Wallet     },
     { id: "virement", label: "🏦 Virement",        icon: Landmark   },
   ] as const;
 
@@ -290,22 +276,6 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
             <><Loader2 size={18} className="animate-spin" /> Redirection…</>
           ) : (
             <><CreditCard size={18} /> Payer par carte — 190€</>
-          )}
-        </button>
-      )}
-
-      {/* PayPal tab */}
-      {tab === "paypal" && (
-        <button
-          onClick={handlePayPal}
-          disabled={loading}
-          className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl py-4 text-base font-bold transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-          style={{ background: "#FFD140", color: "#07080e", boxShadow: "0 8px 32px rgba(255,209,64,0.25)" }}
-        >
-          {loading ? (
-            <><Loader2 size={18} className="animate-spin" /> Redirection…</>
-          ) : (
-            <><span className="font-black tracking-tight">Pay</span><span className="font-black tracking-tight" style={{ color: "#003087" }}>Pal</span>&nbsp;— 190€</>
           )}
         </button>
       )}

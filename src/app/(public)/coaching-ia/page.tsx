@@ -509,7 +509,7 @@ export default function CoachingIAPage() {
                   <span className="text-6xl font-extrabold text-white">190€</span>
                   <span className="mb-2 text-sm text-white/65">/ 3 mois</span>
                 </div>
-                <p className="mt-2 text-xs text-white/30">Paiement unique — PayPal ou virement</p>
+                <p className="mt-2 text-xs text-white/30">Paiement unique — carte ou virement</p>
               </div>
             </div>
 

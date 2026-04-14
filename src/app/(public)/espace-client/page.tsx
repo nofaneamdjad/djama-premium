@@ -11,7 +11,6 @@ import {
   AlertTriangle, MessageCircle, Users,
 } from "lucide-react";
 import StripeButton  from "@/components/ui/StripeButton";
-import PayPalButton  from "@/components/ui/PayPalButton";
 import { FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainerFast, cardReveal, viewport, staggerContainer, fadeIn } from "@/lib/animations";
 
@@ -420,18 +419,6 @@ export default function EspaceClientPage() {
 
               {/* ── Stripe ── */}
               <StripeButton label="S'abonner — 11,90€ / mois" />
-
-              {/* Séparateur */}
-              <div className="my-5 flex items-center gap-3">
-                <div className="h-px flex-1 bg-white/[0.07]" />
-                <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/20">
-                  ou
-                </span>
-                <div className="h-px flex-1 bg-white/[0.07]" />
-              </div>
-
-              {/* ── PayPal ── */}
-              <PayPalButton />
 
               {/* Message rassurant */}
               <div className="mt-6 rounded-xl border border-[rgba(201,165,90,0.14)] bg-[rgba(201,165,90,0.06)] px-4 py-3.5">

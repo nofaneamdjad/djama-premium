@@ -336,7 +336,7 @@ export default function ServiceSlugPage() {
               </div>
 
               <p className="mt-5 text-center text-xs text-white/30">
-                Paiement : PayPal ou virement bancaire
+                Paiement : carte bancaire ou virement
               </p>
             </motion.div>
 

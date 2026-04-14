@@ -67,10 +67,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         className={`fixed inset-y-0 left-0 z-30 flex w-[230px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0f0f12] transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-[1.1rem]">
-          <div>
-            <p className="text-[0.95rem] font-black tracking-tight text-white">DJAMA</p>
-            <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">Admin</p>
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-[1.05rem]">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.15)]">
+              <span className="text-[0.7rem] font-black text-[#c9a55a]">D</span>
+            </div>
+            <div>
+              <p className="text-[0.88rem] font-black tracking-tight text-white leading-none">DJAMA</p>
+              <p className="text-[0.58rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a] leading-none mt-0.5">Admin</p>
+            </div>
           </div>
           <button onClick={() => setOpen(false)} className="lg:hidden text-white/30 hover:text-white/60 transition-colors">
             <X size={17} />
@@ -123,21 +128,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
 
         {/* Top bar */}
-        <header className="flex shrink-0 items-center gap-4 border-b border-white/[0.06] bg-[#0f0f12] px-6 py-[0.9rem]">
+        <header className="flex shrink-0 items-center gap-4 border-b border-white/[0.06] bg-[#0f0f12] px-6 py-[0.85rem]">
           <button
             onClick={() => setOpen(true)}
             className="lg:hidden text-white/35 hover:text-white/65 transition-colors"
           >
             <Menu size={19} />
           </button>
-          <div className="flex-1">
-            <p className="text-[0.78rem] text-white/30">{activeLabel}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-[0.92rem] font-bold text-white/80 truncate">{activeLabel}</p>
+            <p className="text-[0.68rem] text-white/25 hidden sm:block">Espace admin DJAMA</p>
           </div>
           <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-1.5">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[rgba(201,165,90,0.16)] text-[0.6rem] font-black text-[#c9a55a]">
               A
             </div>
-            <span className="text-[0.78rem] text-white/45">Admin DJAMA</span>
+            <span className="text-[0.78rem] text-white/45 hidden sm:block">Admin DJAMA</span>
           </div>
         </header>
 
