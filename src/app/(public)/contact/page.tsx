@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Mail, Phone, MessageCircle, ArrowRight, Sparkles, Clock,
@@ -144,9 +144,17 @@ function PremiumSelect({
 }
 
 /* ════════════════════════════════════════════════
-   PAGE
+   PAGE — enveloppée dans Suspense (requis par useSearchParams)
 ════════════════════════════════════════════════ */
 export default function ContactPage() {
+  return (
+    <Suspense>
+      <ContactPageContent />
+    </Suspense>
+  );
+}
+
+function ContactPageContent() {
   const { dict } = useLanguage();
   const c = dict.contact;
 
