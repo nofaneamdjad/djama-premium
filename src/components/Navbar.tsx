@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import { useLanguage } from "@/lib/language-context";
 import { ShimmerText } from "@/components/ui/HoverText";
@@ -203,6 +203,38 @@ export default function Navbar() {
                       {l === "fr" ? "🇫🇷 FR" : "🇬🇧 EN"}
                     </button>
                   ))}
+                </div>
+              </motion.div>
+
+              {/* Contacts rapides mobile */}
+              <motion.div
+                variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease } } }}
+                className="mt-4 px-5"
+              >
+                <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-white/25">Contact</p>
+                <div className="flex flex-col gap-2">
+                  <a
+                    href={`mailto:${data.contact.email}`}
+                    className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/60 transition hover:border-[rgba(201,165,90,0.25)] hover:text-white/90"
+                  >
+                    <Mail size={14} className="text-[#c9a55a] shrink-0" />
+                    {data.contact.email}
+                  </a>
+                  <a
+                    href={`https://wa.me/${data.contact.whatsapp.replace(/[^0-9]/g, "")}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/60 transition hover:border-[rgba(37,211,102,0.25)] hover:text-white/90"
+                  >
+                    <MessageCircle size={14} className="text-[#25d366] shrink-0" />
+                    WhatsApp — {data.contact.whatsapp}
+                  </a>
+                  <a
+                    href={`tel:${data.contact.phone.replace(/\s/g, "")}`}
+                    className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/60 transition hover:border-[rgba(96,165,250,0.25)] hover:text-white/90"
+                  >
+                    <Phone size={14} className="text-[#60a5fa] shrink-0" />
+                    {data.contact.phone}
+                  </a>
                 </div>
               </motion.div>
 

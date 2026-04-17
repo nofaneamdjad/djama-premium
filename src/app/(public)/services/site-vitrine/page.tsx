@@ -13,8 +13,6 @@ import {
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const A  = "#4ade80";
@@ -118,7 +116,6 @@ export default function SiteVitrinePage() {
 
   return (
     <>
-      <Navbar />
       <main className="bg-[#07070a] text-white overflow-x-hidden">
 
         {/* ── 1. HERO ── */}
@@ -663,7 +660,6 @@ export default function SiteVitrinePage() {
         </section>
 
       </main>
-      <Footer />
     </>
   );
 }

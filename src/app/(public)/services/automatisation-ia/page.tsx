@@ -14,8 +14,6 @@ import {
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 const ease       = [0.16, 1, 0.3, 1] as const;
 const ACCENT     = "#818cf8";
@@ -254,7 +252,6 @@ export default function AutomatisationIAPage() {
 
   return (
     <div className="min-h-screen bg-[#07070a] text-white overflow-x-hidden">
-      <Navbar />
 
       {/* ══════════════════════════════════════════════
           SECTION 1 — HERO
@@ -823,7 +820,6 @@ export default function AutomatisationIAPage() {
       </section>
 
 
-      <Footer />
     </div>
   );
 }

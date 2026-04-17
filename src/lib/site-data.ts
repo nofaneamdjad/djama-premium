@@ -6,6 +6,7 @@ export type SiteData = {
   contact: {
     email: string;
     whatsapp: string;
+    phone: string;
   };
   offers: {
     abonnement: string;
@@ -27,8 +28,9 @@ export const siteData: SiteData = {
   },
 
   contact: {
-    email: "contact@djama.fr",
-    whatsapp: "+262000000000",
+    email: "contact@djama.space",
+    whatsapp: "+262693523665",
+    phone: "+262693520520",
   },
 
   offers: {

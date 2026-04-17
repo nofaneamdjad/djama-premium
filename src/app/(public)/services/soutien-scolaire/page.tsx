@@ -12,8 +12,6 @@ import {
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
 import type { RdvPayload } from "@/app/api/rdv/route";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -432,7 +430,6 @@ export default function SoutienScolairePage() {
 
   return (
     <>
-    <Navbar />
     <div className="bg-white">
 
       {/* ════════════════════════════════════════════════════
@@ -1249,7 +1246,6 @@ export default function SoutienScolairePage() {
       </section>
 
     </div>
-    <Footer />
     </>
   );
 }

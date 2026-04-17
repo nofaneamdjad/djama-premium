@@ -4,12 +4,39 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { SocialLinkRow } from "@/types/db";
 
+const DEFAULT_SOCIALS: SocialLinkRow[] = [
+  {
+    id: "default-instagram",
+    platform: "instagram",
+    url: "https://www.instagram.com/djama.9?igsh=ZnY4OGYzOHk0ajF1",
+    active: true,
+    sort_order: 1,
+    created_at: "",
+  },
+  {
+    id: "default-facebook",
+    platform: "facebook",
+    url: "https://www.facebook.com/share/18T3KHwcZA/",
+    active: true,
+    sort_order: 2,
+    created_at: "",
+  },
+  {
+    id: "default-youtube",
+    platform: "youtube",
+    url: "https://youtube.com/@djama.net7?si=NnwlZiKt1GeKI8c4",
+    active: true,
+    sort_order: 3,
+    created_at: "",
+  },
+];
+
 export type SiteSettingsMap = Record<string, string>;
 
 const DEFAULT_SETTINGS: SiteSettingsMap = {
-  "contact.email":    "contact@djama.fr",
-  "contact.phone":    "+33 6 00 00 00 00",
-  "contact.whatsapp": "+33 6 00 00 00 00",
+  "contact.email":    "contact@djama.space",
+  "contact.phone":    "+262693520520",
+  "contact.whatsapp": "+262693523665",
   "contact.address":  "",
   "contact.hours":    "Lun–Ven 9h–18h",
   "contact.delay":    "Sous 24 heures",
@@ -37,7 +64,7 @@ const DEFAULT_SETTINGS: SiteSettingsMap = {
  */
 export function useSiteSettings() {
   const [settings, setSettings] = useState<SiteSettingsMap>(DEFAULT_SETTINGS);
-  const [socials,  setSocials]  = useState<SocialLinkRow[]>([]);
+  const [socials,  setSocials]  = useState<SocialLinkRow[]>(DEFAULT_SOCIALS);
   const [ready,    setReady]    = useState(false);
 
   useEffect(() => {
@@ -58,8 +85,10 @@ export function useSiteSettings() {
             });
             setSettings(map);
           }
-          if (rData) {
+          if (rData && rData.length > 0) {
             setSocials(rData as SocialLinkRow[]);
+          } else {
+            setSocials(DEFAULT_SOCIALS);
           }
         }
       } catch {

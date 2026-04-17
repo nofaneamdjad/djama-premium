@@ -157,6 +157,7 @@ export default function ContactPage() {
   const contactSubtitle   = get("contact.page.subtitle") || c.hero.subtitle;
   const contactEmail      = get("contact.email")         || siteData.contact.email;
   const contactWhatsapp   = get("contact.whatsapp")      || siteData.contact.whatsapp;
+  const contactPhone      = get("contact.phone")         || siteData.contact.phone;
 
   const SUBJECTS = c.form.subjects.map((s) => ({ value: s, label: s }));
   const BUDGETS  = c.form.budgets;
@@ -576,15 +577,19 @@ export default function ContactPage() {
                     </a>
 
                     {/* Téléphone */}
-                    <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5">
+                    <a
+                      href={`tel:${contactPhone.replace(/\s/g, "")}`}
+                      className="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5 transition-all duration-200 hover:border-[rgba(96,165,250,0.3)] hover:bg-[rgba(96,165,250,0.05)]"
+                    >
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgba(96,165,250,0.1)] border border-[rgba(96,165,250,0.2)]">
                         <Phone size={15} className="text-[#60a5fa]" />
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{c.contactBlock.phoneLabel}</p>
-                        <p className="text-sm font-semibold text-white/75">{contactWhatsapp}</p>
+                        <p className="text-sm font-semibold text-white/75">{contactPhone}</p>
                       </div>
-                    </div>
+                      <ArrowRight size={13} className="shrink-0 text-white/20 transition-transform group-hover:translate-x-0.5 group-hover:text-[#60a5fa]" />
+                    </a>
 
                     {/* Délai */}
                     <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5">

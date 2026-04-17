@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  Mail, MessageCircle, ArrowUpRight,
+  Mail, MessageCircle, Phone, ArrowUpRight,
   Instagram, Linkedin, Facebook, Youtube, Twitter,
   Globe, ChevronDown,
 } from "lucide-react";
@@ -168,6 +168,13 @@ export default function Footer() {
               >
                 <MessageCircle size={13} className="text-[#c9a55a]" />
                 {get("contact.whatsapp")}
+              </a>
+              <a
+                href={`tel:${get("contact.phone").replace(/\s/g, "")}`}
+                className="inline-flex items-center gap-2 text-sm text-white/35 transition-colors duration-200 hover:text-white/70"
+              >
+                <Phone size={13} className="text-[#c9a55a]" />
+                {get("contact.phone")}
               </a>
             </div>
           </motion.div>
