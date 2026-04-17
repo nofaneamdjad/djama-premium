@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { sendWelcomeEmail, sendCoachingIAEmail, sendAccessWelcomeEmail } from "@/lib/email";
+import { sendPaymentReceivedEmail } from "@/lib/email";
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/webhook/stripe
@@ -99,12 +99,15 @@ async function upsertUserAccess(opts: {
   const row = {
     email:            opts.email,
     name:             opts.name ?? existing?.name ?? "",
-    espace_premium:   opts.espace_premium   ?? existing?.espace_premium   ?? false,
-    coaching_ia:      opts.coaching_ia      ?? existing?.coaching_ia      ?? false,
-    soutien_scolaire: opts.soutien_scolaire ?? existing?.soutien_scolaire ?? false,
-    outils_saas:      opts.outils_saas      ?? existing?.outils_saas      ?? false,
+    // IMPORTANT : on ne débloque PAS automatiquement — l'admin doit valider manuellement.
+    // Les booléens restent à false jusqu'à activation dans /admin/acces.
+    espace_premium:   existing?.espace_premium   ?? false,
+    coaching_ia:      existing?.coaching_ia      ?? false,
+    soutien_scolaire: existing?.soutien_scolaire ?? false,
+    outils_saas:      existing?.outils_saas      ?? false,
     access_code:      accessCode,
     source:           opts.source,
+    notes:            `Paiement ${opts.source} reçu le ${new Date().toLocaleDateString("fr-FR")} — en attente d'activation par DJAMA`,
     updated_at:       new Date().toISOString(),
   };
 
@@ -182,9 +185,6 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
     ? (await supabase.auth.admin.getUserById(providedUserId)).data?.user ?? null
     : await findUserByEmail(email);
 
-  /* Expiry : 90 jours */
-  const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
-
   let isNewUser = false;
   let userId: string;
 
@@ -193,9 +193,8 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
       email,
       email_confirm: true,
       user_metadata: {
-        full_name:           fullName,
-        coaching_ia_active:  true,
-        coaching_ia_expires: expiresAt,
+        full_name:          fullName,
+        coaching_ia_active: false,   // pas encore activé — l'admin décide
       },
     });
     if (error || !data.user) {
@@ -210,21 +209,19 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
     await supabase.auth.admin.updateUserById(user.id, {
       user_metadata: {
         ...user.user_metadata,
-        full_name:           fullName ?? user.user_metadata?.full_name,
-        coaching_ia_active:  true,
-        coaching_ia_expires: expiresAt,
+        full_name:          fullName ?? user.user_metadata?.full_name,
+        coaching_ia_active: false,   // pas encore activé
       },
     });
   }
 
-  /* Upsert clients */
+  /* Upsert clients — paiement reçu, activation manuelle requise */
   await supabase.from("clients").upsert(
     {
       user_id:                      userId,
       email,
       full_name:                    fullName,
-      coaching_ia_active:           true,
-      coaching_ia_expires:          expiresAt,
+      coaching_ia_active:           false,
       coaching_ia_payment_method:   "stripe",
       coaching_ia_pending_transfer: false,
       updated_at:                   new Date().toISOString(),
@@ -232,44 +229,17 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
     { onConflict: "email" }
   );
 
-  /* Générer le lien d'accès */
-  let accessLink = `${SITE_URL}/coaching-ia/espace`;
-  try {
-    const { data: linkData } = await supabase.auth.admin.generateLink({
-      type: isNewUser ? "invite" : "magiclink",
-      email,
-      options: { redirectTo: `${SITE_URL}/coaching-ia/espace` },
-    });
-    if (linkData?.properties?.action_link) {
-      accessLink = linkData.properties.action_link;
-    }
-  } catch { /* fallback URL */ }
-
-  /* Activer dans user_access */
-  const { accessCode: coachingAccessCode } = await upsertUserAccess({
+  /* Créer entrée user_access (accès non débloqué — en attente admin) */
+  await upsertUserAccess({
     email,
-    name:        fullName,
-    coaching_ia: true,
-    source:      "stripe",
+    name:   fullName,
+    source: "stripe",
   });
 
-  /* Email de bienvenue coaching IA (template spécifique) */
-  await sendCoachingIAEmail({
-    email,
-    fullName,
-    accessLink,
-    isNewUser,
-  });
+  /* Email de confirmation de paiement (PAS d'accès encore) */
+  await sendPaymentReceivedEmail({ email, fullName, service: "coaching_ia" });
 
-  /* Email avec identifiants + code d'accès (template unifié) */
-  await sendAccessWelcomeEmail({
-    email,
-    fullName,
-    accessCode: coachingAccessCode,
-    loginUrl:   accessLink,
-  });
-
-  console.log("[Webhook] ✅ Coaching IA activé →", email, `(expires: ${expiresAt})`);
+  console.log("[Webhook] ✅ Coaching IA — paiement enregistré →", email, "(en attente d'activation admin)");
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -305,9 +275,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       email_confirm: true,          // email déjà vérifié via Stripe
       user_metadata: {
         full_name:             fullName,
-        subscription_active:   true,
-        abonnement:            "outils_djama",
-        statut:                "actif",
+        subscription_active:   false,   // pas encore activé — l'admin décide
         stripe_customer_id:    stripeCustomerId,
         stripe_subscription_id: stripeSubId,
       },
@@ -331,9 +299,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       user_metadata: {
         ...existingUser.user_metadata,
         full_name:             fullName ?? existingUser.user_metadata?.full_name,
-        subscription_active:   true,
-        abonnement:            "outils_djama",
-        statut:                "actif",
+        subscription_active:   false,   // pas encore activé — l'admin décide
         stripe_customer_id:    stripeCustomerId,
         stripe_subscription_id: stripeSubId,
       },
@@ -348,51 +314,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     fullName,
     stripeCustomerId,
     stripeSubscriptionId: stripeSubId,
-    subscriptionActive:   true,
+    subscriptionActive:   false,   // pas encore activé — l'admin décide
   });
 
-  /* ── 3. Générer le lien d'accès ──────────────────────────── */
-  let accessLink = `${SITE_URL}/client`;
-
-  try {
-    const linkType = isNewUser ? "invite" : "magiclink";
-    const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
-      type:    linkType,
-      email,
-      options: { redirectTo: `${SITE_URL}/client` },
-    });
-
-    if (linkErr) {
-      console.warn("[Webhook] ⚠️ generateLink error:", linkErr.message, "→ fallback URL");
-    } else if (linkData?.properties?.action_link) {
-      accessLink = linkData.properties.action_link;
-      console.log("[Webhook] 🔗 Lien généré (type:", linkType, ")");
-    }
-  } catch (e) {
-    console.warn("[Webhook] ⚠️ generateLink exception:", e);
-  }
-
-  /* ── 4. Activer dans user_access ────────────────────────── */
-  const { accessCode: checkoutAccessCode } = await upsertUserAccess({
+  /* ── 3. Enregistrer dans user_access (sans débloquer) ───── */
+  await upsertUserAccess({
     email,
-    name:           fullName,
-    outils_saas:    true,
-    espace_premium: true,
-    source:         "stripe",
+    name:   fullName,
+    source: "stripe",
+    // tous les booleans restent false par défaut (voir upsertUserAccess)
   });
 
-  /* ── 5. Envoyer l'email de bienvenue (template abonnement) ── */
-  await sendWelcomeEmail({ email, fullName, accessLink, isNewUser });
+  /* ── 4. Envoyer email "paiement reçu, en attente d'activation" ── */
+  await sendPaymentReceivedEmail({ email, fullName, service: "espace_client" });
 
-  /* ── 6. Envoyer l'email avec identifiants + code d'accès ─── */
-  await sendAccessWelcomeEmail({
-    email,
-    fullName,
-    accessCode: checkoutAccessCode,
-    loginUrl:   accessLink,
-  });
-
-  console.log("[Webhook] ✅ Flux complet terminé →", email, isNewUser ? "(nouveau client)" : "(client existant)");
+  console.log("[Webhook] ✅ Paiement enregistré →", email, isNewUser ? "(nouveau client)" : "(existant)", "— EN ATTENTE ACTIVATION ADMIN");
 }
 
 /* ─────────────────────────────────────────────────────────────

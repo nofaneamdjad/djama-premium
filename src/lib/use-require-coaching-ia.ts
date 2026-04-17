@@ -9,15 +9,17 @@ import { supabase } from "@/lib/supabase";
  *
  * Vérifie :
  *  1. Utilisateur authentifié (sinon → /login)
- *  2. coaching_ia_active === true dans user_metadata
- *  3. Fallback table clients
- *
- * Redirige vers /services/coaching-ia?acces=requis si pas d'accès.
+ *  2. user_access.coaching_ia=true → accès complet
+ *  3. user_access row + source=stripe/paypal + coaching_ia=false → pending
+ *  4. Fallback legacy: user_metadata.coaching_ia_active
+ *  5. Fallback legacy: table clients
+ *  6. Aucun accès → /services/coaching-ia?acces=requis
  */
 export function useRequireCoachingIA() {
   const router = useRouter();
-  const [ready, setReady]   = useState(false);
-  const [user,  setUser]    = useState<{
+  const [ready,   setReady]   = useState(false);
+  const [pending, setPending] = useState(false);
+  const [user,    setUser]    = useState<{
     id:    string;
     email: string | undefined;
     name:  string | undefined;
@@ -35,22 +37,43 @@ export function useRequireCoachingIA() {
         return;
       }
 
-      const meta = authUser.user_metadata ?? {};
+      const userObj = {
+        id:    authUser.id,
+        email: authUser.email,
+        name:  authUser.user_metadata?.full_name ?? authUser.email,
+      };
 
-      /* Vérification principale */
-      if (meta.coaching_ia_active === true) {
-        if (!cancelled) {
-          setUser({
-            id:    authUser.id,
-            email: authUser.email,
-            name:  meta.full_name ?? meta.name ?? authUser.email,
-          });
-          setReady(true);
-        }
+      /* user_access (source de vérité principale) */
+      const { data: access } = await supabase
+        .from("user_access")
+        .select("coaching_ia, source")
+        .eq("email", (authUser.email ?? "").toLowerCase())
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (access?.coaching_ia === true) {
+        if (!cancelled) { setUser(userObj); setReady(true); }
         return;
       }
 
-      /* Fallback DB */
+      if (
+        access &&
+        !access.coaching_ia &&
+        (access.source === "stripe" || access.source === "paypal")
+      ) {
+        if (!cancelled) { setUser(userObj); setPending(true); }
+        return;
+      }
+
+      /* Fallback legacy metadata */
+      const meta = authUser.user_metadata ?? {};
+      if (meta.coaching_ia_active === true) {
+        if (!cancelled) { setUser(userObj); setReady(true); }
+        return;
+      }
+
+      /* Fallback legacy clients table */
       const { data: client } = await supabase
         .from("clients")
         .select("coaching_ia_active")
@@ -59,39 +82,31 @@ export function useRequireCoachingIA() {
 
       if (cancelled) return;
 
-      if (!client?.coaching_ia_active) {
-        router.replace("/services/coaching-ia?acces=requis");
+      if (client?.coaching_ia_active) {
+        if (!cancelled) { setUser(userObj); setReady(true); }
         return;
       }
 
-      if (!cancelled) {
-        setUser({
-          id:    authUser.id,
-          email: authUser.email,
-          name:  meta.full_name ?? authUser.email,
-        });
-        setReady(true);
-      }
+      router.replace("/services/coaching-ia?acces=requis");
     }
 
     check();
     return () => { cancelled = true; };
   }, [router]);
 
-  return { ready, user };
+  return { ready, pending, user };
 }
 
 /**
- * Hook étendu — retourne un accès tristate :
+ * Hook étendu — retourne un accès quadristate :
  *  - "loading"  : vérification en cours
- *  - "preview"  : utilisateur connecté mais pas d'accès payant (afficher PreviewGate)
+ *  - "preview"  : utilisateur connecté mais pas d'accès payant
+ *  - "pending"  : paiement reçu, accès en attente d'activation admin
  *  - "full"     : accès complet confirmé
- *
- * Ne redirige jamais — laisse le composant gérer l'affichage.
  */
 export function useCoachingIAAccess() {
   const router = useRouter();
-  const [access, setAccess] = useState<"loading" | "preview" | "full">("loading");
+  const [access, setAccess] = useState<"loading" | "preview" | "pending" | "full">("loading");
   const [user, setUser] = useState<{
     id:    string;
     email: string | undefined;
@@ -106,7 +121,6 @@ export function useCoachingIAAccess() {
       if (cancelled) return;
 
       if (!authUser) {
-        /* Non authentifié → rediriger vers login */
         router.replace("/login?redirect=/coaching-ia/espace");
         return;
       }
@@ -118,21 +132,40 @@ export function useCoachingIAAccess() {
         name:  meta.full_name ?? meta.name ?? authUser.email,
       };
 
-      /* ── Whitelist dev (NEXT_PUBLIC_COACHING_DEV_EMAILS) ──
-         Liste d'emails séparés par des virgules — accès complet
-         sans paiement, pour tests visuels uniquement.
-         Exemple : NEXT_PUBLIC_COACHING_DEV_EMAILS=dev@djama.fr,test@djama.fr
-      ────────────────────────────────────────────────────── */
+      /* Whitelist dev */
       const devEmails = (process.env.NEXT_PUBLIC_COACHING_DEV_EMAILS ?? "")
         .split(",")
         .map((e) => e.trim().toLowerCase())
         .filter(Boolean);
-
       if (devEmails.includes((authUser.email ?? "").toLowerCase())) {
         if (!cancelled) { setUser(userObj); setAccess("full"); }
         return;
       }
 
+      /* user_access (source de vérité principale) */
+      const { data: access } = await supabase
+        .from("user_access")
+        .select("coaching_ia, source")
+        .eq("email", (authUser.email ?? "").toLowerCase())
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (access?.coaching_ia === true) {
+        if (!cancelled) { setUser(userObj); setAccess("full"); }
+        return;
+      }
+
+      if (
+        access &&
+        !access.coaching_ia &&
+        (access.source === "stripe" || access.source === "paypal")
+      ) {
+        if (!cancelled) { setUser(userObj); setAccess("pending"); }
+        return;
+      }
+
+      /* Fallback legacy */
       if (meta.coaching_ia_active === true) {
         if (!cancelled) { setUser(userObj); setAccess("full"); }
         return;
