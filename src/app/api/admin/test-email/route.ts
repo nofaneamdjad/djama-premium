@@ -14,17 +14,22 @@ const GOLD = "#c9a55a";
 const BG   = "#09090b";
 const CARD = "#111113";
 
+function sanitizeKey(raw: string | undefined): string {
+  if (!raw) return "";
+  return raw.trim().replace(/^["']|["']$/g, "").trim();
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const to = searchParams.get("to")?.trim();
 
   // ── 1. Vérification variables ────────────────────────────
-  const apiKey  = process.env.RESEND_API_KEY;
-  const from    = process.env.RESEND_FROM ?? "DJAMA <noreply@djama.space>";
+  const apiKey  = sanitizeKey(process.env.RESEND_API_KEY);
+  const from    = process.env.RESEND_FROM?.trim() ?? "DJAMA <noreply@djama.space>";
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   const checks = {
-    RESEND_API_KEY:        !!apiKey,
+    RESEND_API_KEY:        !!apiKey && apiKey.startsWith("re_"),
     RESEND_FROM:           !!process.env.RESEND_FROM,
     NEXT_PUBLIC_SITE_URL:  !!process.env.NEXT_PUBLIC_SITE_URL,
     SUPABASE_SERVICE_ROLE: !!(process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY.startsWith("COLLER_")),
@@ -53,7 +58,7 @@ export async function GET(req: Request) {
 
   // ── 2. Tentative d'envoi ─────────────────────────────────
   try {
-    const resend = new Resend(apiKey);
+    const resend = new Resend(apiKey); // apiKey déjà sanitisé via sanitizeKey()
 
     const html = `<!DOCTYPE html>
 <html lang="fr">

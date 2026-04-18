@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Shield, Plus, X, Check, Loader2, Trash2,
   RefreshCw, Search, Pencil, CreditCard, User,
-  Clock, Zap, AlertCircle, Mail, CheckCircle2, SendHorizonal,
+  Clock, Zap, AlertCircle, Mail, CheckCircle2, SendHorizonal, KeyRound,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { UserAccessRow } from "@/types/db";
@@ -91,6 +91,13 @@ export default function AdminAcces() {
   const [testTo,     setTestTo]     = useState("");
   const [testLoading,setTestLoading]= useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message?: string; error?: string; fix?: string; from?: string } | null>(null);
+  const [pingLoading,setPingLoading]= useState(false);
+  const [pingResult, setPingResult] = useState<{
+    ok: boolean; message?: string; error?: string; fix?: string;
+    key_preview?: string; from?: string; djama_domain_status?: string;
+    env?: Record<string, unknown>;
+  } | null>(null);
+  const [pingOpen,   setPingOpen]   = useState(false);
   const loadedRef = useRef(false);
 
   // ── Chargement ─────────────────────────────────────────────
@@ -326,6 +333,21 @@ export default function AdminAcces() {
     }
   }
 
+  // ── Ping clé Resend ────────────────────────────────────────
+  async function runPing() {
+    setPingLoading(true);
+    setPingResult(null);
+    try {
+      const res  = await fetch("/api/admin/resend-ping");
+      const json = await res.json();
+      setPingResult(json);
+    } catch (err) {
+      setPingResult({ ok: false, error: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setPingLoading(false);
+    }
+  }
+
   // ── Filtrage ───────────────────────────────────────────────
   const filtered = users.filter(u => {
     if (search.trim()) {
@@ -378,6 +400,14 @@ export default function AdminAcces() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => { setPingOpen(true); setPingResult(null); runPing(); }}
+            title="Vérifier que RESEND_API_KEY est valide"
+            className="flex items-center gap-2 rounded-2xl border border-white/[0.08] px-4 py-2.5 text-[0.83rem] font-semibold text-white/40 transition-all hover:border-[rgba(167,139,250,0.25)] hover:text-[#a78bfa]"
+          >
+            {pingLoading ? <Loader2 size={13} className="animate-spin" /> : <KeyRound size={14} />}
+            Valider clé
+          </button>
           <button
             onClick={() => { setTestOpen(true); setTestResult(null); setTestTo(""); }}
             title="Tester l'envoi d'email Resend"
@@ -730,6 +760,96 @@ export default function AdminAcces() {
                   {modal === "add" ? "Créer l'accès" : "Sauvegarder"}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal ping Resend ───────────────────────────────────── */}
+      {pingOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
+          onClick={e => { if (e.target === e.currentTarget) setPingOpen(false); }}
+        >
+          <div className="w-full max-w-lg rounded-3xl border border-white/[0.08] bg-[#0f0f12] p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.1)]">
+                  <KeyRound size={14} className="text-[#a78bfa]" />
+                </div>
+                <h2 className="text-[0.95rem] font-black text-white">Validation de la clé Resend</h2>
+              </div>
+              <button onClick={() => setPingOpen(false)} className="text-white/30 hover:text-white/70"><X size={18} /></button>
+            </div>
+
+            {pingLoading && (
+              <div className="flex items-center justify-center gap-3 py-8 text-white/30">
+                <Loader2 size={18} className="animate-spin" />
+                <span className="text-[0.84rem]">Vérification en cours…</span>
+              </div>
+            )}
+
+            {!pingLoading && pingResult && (
+              <div className="space-y-3">
+                {/* Résultat principal */}
+                <div className={[
+                  "rounded-2xl border p-4",
+                  pingResult.ok
+                    ? "border-[rgba(74,222,128,0.2)] bg-[rgba(74,222,128,0.06)]"
+                    : "border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)]",
+                ].join(" ")}>
+                  <p className={`mb-1 text-[0.88rem] font-bold ${pingResult.ok ? "text-[#4ade80]" : "text-[#f87171]"}`}>
+                    {pingResult.ok ? "✓ Clé valide — Resend répond OK" : "✗ Clé invalide ou absente"}
+                  </p>
+                  {pingResult.message && <p className="text-[0.8rem] text-white/60">{pingResult.message}</p>}
+                  {pingResult.error   && <p className="text-[0.8rem] text-white/60">{pingResult.error}</p>}
+                </div>
+
+                {/* Détails env */}
+                {pingResult.env && (
+                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1.5">
+                    <p className="mb-2 text-[0.7rem] font-bold uppercase tracking-wider text-white/25">Variables en production</p>
+                    {Object.entries(pingResult.env).map(([k, v]) => (
+                      <div key={k} className="flex items-center justify-between gap-4">
+                        <span className="text-[0.75rem] text-white/35 font-mono">{k}</span>
+                        <span className={`text-[0.75rem] font-semibold ${
+                          v === true ? "text-[#4ade80]" : v === false ? "text-[#f87171]" : "text-white/55"
+                        }`}>{String(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Domaine Resend */}
+                {pingResult.djama_domain_status && (
+                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                    <p className="text-[0.7rem] font-bold uppercase tracking-wider text-white/25 mb-1">Domaine Resend</p>
+                    <p className="text-[0.8rem] text-white/60">{pingResult.djama_domain_status}</p>
+                  </div>
+                )}
+
+                {/* Fix actionnable */}
+                {pingResult.fix && (
+                  <div className="rounded-2xl border border-[rgba(249,168,38,0.2)] bg-[rgba(249,168,38,0.05)] p-4">
+                    <p className="mb-1 text-[0.7rem] font-bold uppercase tracking-wider text-[#f9a826]">Comment corriger</p>
+                    <p className="text-[0.8rem] text-white/55">{pingResult.fix}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setPingOpen(false)} className="flex-1 rounded-2xl border border-white/[0.08] py-2.5 text-[0.83rem] font-bold text-white/40 transition-colors hover:text-white/70">
+                Fermer
+              </button>
+              <button
+                onClick={runPing}
+                disabled={pingLoading}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[rgba(167,139,250,0.15)] py-2.5 text-[0.83rem] font-bold text-[#a78bfa] border border-[rgba(167,139,250,0.2)] transition hover:bg-[rgba(167,139,250,0.22)] disabled:opacity-40"
+              >
+                {pingLoading ? <Loader2 size={13} className="animate-spin" /> : <KeyRound size={13} />}
+                Revérifier
+              </button>
             </div>
           </div>
         </div>

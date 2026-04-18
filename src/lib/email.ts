@@ -12,9 +12,15 @@ import { Resend } from "resend";
 // ── Resend — instanciation PARESSEUSE (jamais au niveau du module)
 //    new Resend("") lève "Invalid API key" de façon synchrone
 //    dans le constructeur. On lit la clé à la demande.
+// Nettoie une clé API : supprime espaces/newlines ET guillemets éventuels
+// (cas fréquent : copier-coller depuis Resend avec les guillemets inclus)
+function sanitizeKey(raw: string | undefined): string {
+  if (!raw) return "";
+  return raw.trim().replace(/^["']|["']$/g, "").trim();
+}
+
 function getResend(): Resend {
-  // .trim() élimine les espaces/newlines invisibles (copier-coller Vercel)
-  const key = process.env.RESEND_API_KEY?.trim();
+  const key = sanitizeKey(process.env.RESEND_API_KEY);
   if (!key) {
     throw new Error(
       "RESEND_API_KEY manquant. Ajoutez-la dans Vercel → Settings → Environment Variables"
