@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Shield, Plus, X, Check, Loader2, Trash2,
   RefreshCw, Search, Pencil, CreditCard, User,
-  Clock, Zap, AlertCircle, Mail, CheckCircle2,
+  Clock, Zap, AlertCircle, Mail, CheckCircle2, SendHorizonal,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { UserAccessRow } from "@/types/db";
@@ -87,6 +87,10 @@ export default function AdminAcces() {
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [toast,      setToast]      = useState<{ msg: string; ok: boolean } | null>(null);
   const [toggling,   setToggling]   = useState<string | null>(null); // "id:col"
+  const [testOpen,   setTestOpen]   = useState(false);
+  const [testTo,     setTestTo]     = useState("");
+  const [testLoading,setTestLoading]= useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message?: string; error?: string; fix?: string; from?: string } | null>(null);
   const loadedRef = useRef(false);
 
   // ── Chargement ─────────────────────────────────────────────
@@ -306,6 +310,22 @@ export default function AdminAcces() {
     load();
   }
 
+  // ── Test email ─────────────────────────────────────────────
+  async function runTestEmail() {
+    if (!testTo.trim()) return;
+    setTestLoading(true);
+    setTestResult(null);
+    try {
+      const res  = await fetch(`/api/admin/test-email?to=${encodeURIComponent(testTo.trim())}`);
+      const json = await res.json() as { ok: boolean; message?: string; error?: string; fix?: string; from?: string };
+      setTestResult(json);
+    } catch (err) {
+      setTestResult({ ok: false, error: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setTestLoading(false);
+    }
+  }
+
   // ── Filtrage ───────────────────────────────────────────────
   const filtered = users.filter(u => {
     if (search.trim()) {
@@ -357,12 +377,21 @@ export default function AdminAcces() {
             </p>
           </div>
         </div>
-        <button
-          onClick={openAdd}
-          className="flex shrink-0 items-center gap-2 rounded-2xl bg-[#c9a55a] px-4 py-2.5 text-[0.83rem] font-bold text-[#1a1308] transition-opacity hover:opacity-90"
-        >
-          <Plus size={14} /> Ajouter
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => { setTestOpen(true); setTestResult(null); setTestTo(""); }}
+            title="Tester l'envoi d'email Resend"
+            className="flex items-center gap-2 rounded-2xl border border-white/[0.08] px-4 py-2.5 text-[0.83rem] font-semibold text-white/40 transition-all hover:border-[rgba(201,165,90,0.25)] hover:text-[#c9a55a]"
+          >
+            <SendHorizonal size={14} /> Test email
+          </button>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 rounded-2xl bg-[#c9a55a] px-4 py-2.5 text-[0.83rem] font-bold text-[#1a1308] transition-opacity hover:opacity-90"
+          >
+            <Plus size={14} /> Ajouter
+          </button>
+        </div>
       </div>
 
       {/* Alerte : utilisateurs en attente */}
@@ -701,6 +730,81 @@ export default function AdminAcces() {
                   {modal === "add" ? "Créer l'accès" : "Sauvegarder"}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal test email ────────────────────────────────────── */}
+      {testOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
+          onClick={e => { if (e.target === e.currentTarget) setTestOpen(false); }}
+        >
+          <div className="w-full max-w-md rounded-3xl border border-white/[0.08] bg-[#0f0f12] p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[rgba(201,165,90,0.1)]">
+                  <SendHorizonal size={14} className="text-[#c9a55a]" />
+                </div>
+                <h2 className="text-[0.95rem] font-black text-white">Tester l&apos;envoi email</h2>
+              </div>
+              <button onClick={() => setTestOpen(false)} className="text-white/30 hover:text-white/70"><X size={18} /></button>
+            </div>
+
+            <p className="mb-4 text-[0.78rem] leading-relaxed text-white/35">
+              Envoie un email de test via Resend pour vérifier la configuration.{" "}
+              <strong className="text-white/50">Important :</strong> tant que le domaine <code className="rounded bg-white/[0.07] px-1 py-0.5 text-[0.72rem] text-[#c9a55a]">djama.space</code> n&apos;est pas vérifié dans Resend, seul <code className="rounded bg-white/[0.07] px-1 py-0.5 text-[0.72rem] text-[#c9a55a]">nofane.soufie@gmail.com</code> peut recevoir des emails.
+            </p>
+
+            <div className="mb-4">
+              <label className="mb-1.5 block text-[0.71rem] font-bold uppercase tracking-[0.07em] text-white/30">
+                Email destinataire
+              </label>
+              <input
+                type="email"
+                value={testTo}
+                onChange={e => { setTestTo(e.target.value); setTestResult(null); }}
+                onKeyDown={e => { if (e.key === "Enter") runTestEmail(); }}
+                placeholder="nofane.soufie@gmail.com"
+                className="w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5 text-[0.84rem] text-white/80 placeholder:text-white/20 outline-none transition-colors focus:border-[rgba(201,165,90,0.4)]"
+              />
+            </div>
+
+            {testResult && (
+              <div className={[
+                "mb-4 rounded-2xl border p-4 text-[0.8rem] leading-relaxed",
+                testResult.ok
+                  ? "border-[rgba(74,222,128,0.2)] bg-[rgba(74,222,128,0.06)] text-[#4ade80]"
+                  : "border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] text-[#f87171]",
+              ].join(" ")}>
+                <p className="mb-1 font-bold">
+                  {testResult.ok ? "✓ Email envoyé avec succès" : "✗ Échec d'envoi"}
+                </p>
+                {testResult.message && <p className="text-white/60">{testResult.message}</p>}
+                {testResult.error   && <p className="text-white/60">{testResult.error}</p>}
+                {testResult.from    && <p className="mt-1 text-[0.72rem] text-white/30">Expéditeur : {testResult.from}</p>}
+                {testResult.fix     && (
+                  <div className="mt-3 rounded-xl border border-[rgba(249,168,38,0.2)] bg-[rgba(249,168,38,0.06)] p-3">
+                    <p className="mb-1 text-[0.72rem] font-bold uppercase tracking-wide text-[#f9a826]">Comment corriger</p>
+                    <p className="text-[0.78rem] text-white/50">{testResult.fix}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button onClick={() => setTestOpen(false)} className="flex-1 rounded-2xl border border-white/[0.08] py-2.5 text-[0.83rem] font-bold text-white/40 transition-colors hover:text-white/70">
+                Fermer
+              </button>
+              <button
+                onClick={runTestEmail}
+                disabled={testLoading || !testTo.trim()}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#c9a55a] py-2.5 text-[0.83rem] font-bold text-[#1a1308] transition-opacity hover:opacity-90 disabled:opacity-40"
+              >
+                {testLoading ? <Loader2 size={13} className="animate-spin" /> : <SendHorizonal size={13} />}
+                {testLoading ? "Envoi…" : "Envoyer le test"}
+              </button>
             </div>
           </div>
         </div>

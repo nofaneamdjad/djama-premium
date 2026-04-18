@@ -22,11 +22,15 @@ function getResend(): Resend {
   return new Resend(key);
 }
 
-// ── Constantes d'envoi — lues à chaque require (pas de cache figé)
-// FROM et SITE restent des constantes de module : en Next.js, le module
-// est importé APRÈS le chargement de .env.local, donc les valeurs sont correctes.
-const FROM  = process.env.RESEND_FROM           ?? "DJAMA <onboarding@resend.dev>";
-const SITE  = process.env.NEXT_PUBLIC_SITE_URL  ?? "http://localhost:3000";
+// ── FROM et SITE lues à l'appel (pas au chargement du module)
+//    Garantit que les env vars Vercel sont toujours utilisées,
+//    même si le module est mis en cache entre les requêtes.
+function getFrom(): string {
+  return process.env.RESEND_FROM ?? "DJAMA <onboarding@resend.dev>";
+}
+function getSite(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
 
 const GOLD  = "#c9a55a";
 const BG    = "#09090b";
@@ -170,7 +174,7 @@ function buildWelcomeHtml(opts: {
           </p>
           <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.12);">
             DJAMA — Solutions digitales professionnelles<br />
-            <a href="${SITE}/espace-client" style="color:rgba(255,255,255,0.2);text-decoration:none;">${SITE}</a>
+            <a href="${getSite()}/espace-client" style="color:rgba(255,255,255,0.2);text-decoration:none;">${getSite()}</a>
           </p>
         </td>
       </tr>
@@ -209,7 +213,7 @@ export async function sendWelcomeEmail(opts: WelcomeEmailOptions): Promise<boole
 
   try {
     const { data, error } = await getResend().emails.send({
-      from: FROM,
+      from: getFrom(),
       to:   opts.email,
       subject: opts.isNewUser
         ? "Bienvenue chez DJAMA — Votre espace client est prêt 🎉"
@@ -360,7 +364,7 @@ function buildCoachingIAHtml(opts: {
           </p>
           <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.12);">
             DJAMA — Formation IA pour professionnels<br/>
-            <a href="${SITE}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${SITE}</a>
+            <a href="${getSite()}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${getSite()}</a>
           </p>
         </td>
       </tr>
@@ -392,7 +396,7 @@ export async function sendCoachingIAEmail(opts: CoachingIAEmailOptions): Promise
 
   try {
     const { data, error } = await getResend().emails.send({
-      from:    FROM,
+      from:    getFrom(),
       to:      opts.email,
       subject: opts.isNewUser
         ? "Bienvenue — Votre Coaching IA DJAMA est prêt 🎓"
@@ -539,7 +543,7 @@ function buildAccessWelcomeHtml(opts: {
           <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.15);">
             Questions ? <a href="mailto:contact@djama.fr" style="color:${GOLD};text-decoration:none;">contact@djama.fr</a>
             &nbsp;&middot;&nbsp;
-            <a href="${SITE}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${SITE}</a>
+            <a href="${getSite()}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${getSite()}</a>
           </p>
         </td>
       </tr>
@@ -557,7 +561,7 @@ export interface AccessWelcomeEmailOptions {
   email:      string;
   fullName:   string | null;
   accessCode: string;
-  /** URL de connexion affichée dans l'email — défaut : ${SITE}/acces */
+  /** URL de connexion affichée dans l'email — défaut : ${getSite()}/acces */
   loginUrl?:  string;
 }
 
@@ -584,8 +588,8 @@ export async function sendAccessWelcomeEmail(
 
   // ── Étape 2 : construction paramètres ─────────────────────────
   const firstName = opts.fullName?.split(" ")[0] ?? opts.email.split("@")[0];
-  const loginUrl  = opts.loginUrl ?? `${SITE}/acces`;
-  const fromAddr  = FROM;
+  const loginUrl  = opts.loginUrl ?? `${getSite()}/acces`;
+  const fromAddr  = getFrom();
 
   console.log("[Email Access] 📤 Tentative envoi →", {
     from:       fromAddr,
@@ -710,7 +714,7 @@ function buildPaymentReceivedHtml(opts: {
           </p>
           <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.12);">
             DJAMA — Services digitaux professionnels<br/>
-            <a href="${SITE}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${SITE}</a>
+            <a href="${getSite()}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${getSite()}</a>
           </p>
         </td>
       </tr>
@@ -745,7 +749,7 @@ export async function sendPaymentReceivedEmail(
 
   try {
     const { data, error } = await getResend().emails.send({
-      from:    FROM,
+      from:    getFrom(),
       to:      opts.email,
       subject: `DJAMA — Votre paiement ${label} a bien été reçu ✓`,
       html:    buildPaymentReceivedHtml({ firstName, service: opts.service }),
@@ -879,7 +883,7 @@ function buildAccessActivatedHtml(opts: {
           <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.15);">
             Questions&nbsp;? <a href="mailto:contact@djama.space" style="color:${GOLD};text-decoration:none;">contact@djama.space</a>
             &nbsp;·&nbsp;
-            <a href="${SITE}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${SITE}</a>
+            <a href="${getSite()}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${getSite()}</a>
           </p>
         </td>
       </tr>
@@ -913,12 +917,12 @@ export async function sendAccessActivatedEmail(
 
   const firstName = opts.fullName?.split(" ")[0] ?? opts.email.split("@")[0];
   const label     = ACCESS_TYPE_LABELS[opts.accessType];
-  const defaultLogin = `${SITE}${ACCESS_TYPE_LOGIN[opts.accessType]}`;
+  const defaultLogin = `${getSite()}${ACCESS_TYPE_LOGIN[opts.accessType]}`;
   const loginUrl  = opts.loginUrl ?? defaultLogin;
 
   try {
     const { data, error } = await getResend().emails.send({
-      from:    FROM,
+      from:    getFrom(),
       to:      opts.email,
       subject: `Votre accès ${label} DJAMA est activé ✓`,
       html:    buildAccessActivatedHtml({
