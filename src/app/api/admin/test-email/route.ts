@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
   // ── 1. Vérification variables ────────────────────────────
   const apiKey  = process.env.RESEND_API_KEY;
-  const from    = process.env.RESEND_FROM ?? "DJAMA <onboarding@resend.dev>";
+  const from    = process.env.RESEND_FROM ?? "DJAMA <noreply@djama.space>";
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   const checks = {

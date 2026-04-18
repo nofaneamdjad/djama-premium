@@ -3,7 +3,7 @@
  *
  * Variables requises :
  *   RESEND_API_KEY   → console.resend.com → API Keys
- *   RESEND_FROM      → ex: "DJAMA <noreply@djama.fr>"  (domaine vérifié dans Resend)
+ *   RESEND_FROM      → ex: "DJAMA <noreply@djama.space>"  (domaine vérifié dans Resend)
  *   NEXT_PUBLIC_SITE_URL → URL publique du site
  */
 
@@ -27,7 +27,7 @@ function getResend(): Resend {
 //    Garantit que les env vars Vercel sont toujours utilisées,
 //    même si le module est mis en cache entre les requêtes.
 function getFrom(): string {
-  return process.env.RESEND_FROM?.trim() ?? "DJAMA <onboarding@resend.dev>";
+  return process.env.RESEND_FROM?.trim() ?? "DJAMA <noreply@djama.space>";
 }
 function getSite(): string {
   return process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000";
@@ -171,7 +171,7 @@ function buildWelcomeHtml(opts: {
       <tr>
         <td style="padding:28px 40px;text-align:center;">
           <p style="margin:0 0 8px;font-size:12px;color:rgba(255,255,255,0.2);">
-            Questions ? Contactez-nous sur <a href="mailto:contact@djama.fr" style="color:${GOLD};text-decoration:none;">contact@djama.fr</a>
+            Questions ? Contactez-nous sur <a href="mailto:contact@djama.space" style="color:${GOLD};text-decoration:none;">contact@djama.space</a>
           </p>
           <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.12);">
             DJAMA — Solutions digitales professionnelles<br />
@@ -361,7 +361,7 @@ function buildCoachingIAHtml(opts: {
       <tr>
         <td style="padding:28px 40px;text-align:center;">
           <p style="margin:0 0 8px;font-size:12px;color:rgba(255,255,255,0.2);">
-            Questions ? <a href="mailto:contact@djama.fr" style="color:${PURPLE};text-decoration:none;">contact@djama.fr</a>
+            Questions ? <a href="mailto:contact@djama.space" style="color:${PURPLE};text-decoration:none;">contact@djama.space</a>
           </p>
           <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.12);">
             DJAMA — Formation IA pour professionnels<br/>
@@ -542,7 +542,7 @@ function buildAccessWelcomeHtml(opts: {
             Cordialement,<br/>L&apos;équipe DJAMA
           </p>
           <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.15);">
-            Questions ? <a href="mailto:contact@djama.fr" style="color:${GOLD};text-decoration:none;">contact@djama.fr</a>
+            Questions ? <a href="mailto:contact@djama.space" style="color:${GOLD};text-decoration:none;">contact@djama.space</a>
             &nbsp;&middot;&nbsp;
             <a href="${getSite()}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${getSite()}</a>
           </p>

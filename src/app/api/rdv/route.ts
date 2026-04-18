@@ -18,8 +18,8 @@ function getResend() {
   if (!key) throw new Error("RESEND_API_KEY manquant");
   return new Resend(key);
 }
-function getFrom()    { return process.env.RESEND_FROM?.trim()          ?? "DJAMA <onboarding@resend.dev>"; }
-function getContact() { return process.env.CONTACT_EMAIL?.trim()        ?? "contact@djama.fr"; }
+function getFrom()    { return process.env.RESEND_FROM?.trim()          ?? "DJAMA <noreply@djama.space>"; }
+function getContact() { return process.env.CONTACT_EMAIL?.trim()        ?? "contact@djama.space"; }
 function getSiteUrl() { return process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000"; }
 const GOLD          = "#c9a55a";
 const BG            = "#09090b";
@@ -121,7 +121,7 @@ function buildConfirmEmail(d: RdvPayload): string {
         </td></tr></table>
       </td></tr>
       <tr><td style="padding:20px 40px 28px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
-        <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.2);">DJAMA · Soutien scolaire en ligne · <a href="mailto:contact@djama.fr" style="color:${GOLD};text-decoration:none;">contact@djama.fr</a></p>
+        <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.2);">DJAMA · Soutien scolaire en ligne · <a href="mailto:contact@djama.space" style="color:${GOLD};text-decoration:none;">contact@djama.space</a></p>
       </td></tr>
     </table>
   </td></tr>

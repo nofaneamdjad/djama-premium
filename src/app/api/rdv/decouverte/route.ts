@@ -16,8 +16,8 @@ import { Resend } from "resend";
 
 // Instanciation PARESSEUSE — new Resend("") lève "Invalid API key" synchrone
 function getResend()    { const k = process.env.RESEND_API_KEY?.trim(); if (!k) throw new Error("RESEND_API_KEY manquant"); return new Resend(k); }
-function getFrom()      { return process.env.RESEND_FROM?.trim()          ?? "DJAMA <onboarding@resend.dev>"; }
-function getAdminEmail(){ return process.env.CONTACT_EMAIL?.trim()        ?? "contact@djama.fr"; }
+function getFrom()      { return process.env.RESEND_FROM?.trim()          ?? "DJAMA <noreply@djama.space>"; }
+function getAdminEmail(){ return process.env.CONTACT_EMAIL?.trim()        ?? "contact@djama.space"; }
 function getSiteUrl()   { return process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000"; }
 
 const GOLD   = "#c9a55a";
@@ -166,7 +166,7 @@ function buildConfirmHtml(d: DecouvertePayload): string {
       <!-- Footer -->
       <tr><td style="padding:20px 40px 28px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
         <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.2);">
-          Questions ? <a href="mailto:contact@djama.fr" style="color:${GOLD};text-decoration:none;">contact@djama.fr</a>
+          Questions ? <a href="mailto:contact@djama.space" style="color:${GOLD};text-decoration:none;">contact@djama.space</a>
           · DJAMA — Solutions digitales & IA
         </p>
       </td></tr>
