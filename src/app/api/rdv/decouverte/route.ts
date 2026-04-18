@@ -14,10 +14,11 @@ import { Resend } from "resend";
      NEXT_PUBLIC_SITE_URL
 ─────────────────────────────────────────────────────────────── */
 
-const resend       = new Resend(process.env.RESEND_API_KEY ?? "");
-const FROM         = process.env.RESEND_FROM          ?? "DJAMA <onboarding@resend.dev>";
-const ADMIN_EMAIL  = process.env.CONTACT_EMAIL         ?? "contact@djama.fr";
-const SITE_URL     = process.env.NEXT_PUBLIC_SITE_URL  ?? "http://localhost:3000";
+// Instanciation PARESSEUSE — new Resend("") lève "Invalid API key" synchrone
+function getResend()    { const k = process.env.RESEND_API_KEY?.trim(); if (!k) throw new Error("RESEND_API_KEY manquant"); return new Resend(k); }
+function getFrom()      { return process.env.RESEND_FROM?.trim()          ?? "DJAMA <onboarding@resend.dev>"; }
+function getAdminEmail(){ return process.env.CONTACT_EMAIL?.trim()        ?? "contact@djama.fr"; }
+function getSiteUrl()   { return process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000"; }
 
 const GOLD   = "#c9a55a";
 const BG     = "#09090b";
@@ -155,7 +156,7 @@ function buildConfirmHtml(d: DecouvertePayload): string {
         </table>
 
         <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:${GOLD};">
-          <a href="${SITE_URL}/contact"
+          <a href="${getSiteUrl()}/contact"
             style="display:inline-block;padding:13px 26px;font-size:13px;font-weight:700;color:#09090b;text-decoration:none;border-radius:10px;">
             En savoir plus sur DJAMA →
           </a>
@@ -196,14 +197,14 @@ export async function POST(req: Request) {
 
   try {
     await Promise.all([
-      resend.emails.send({
-        from:    FROM,
-        to:      ADMIN_EMAIL,
+      getResend().emails.send({
+        from:    getFrom(),
+        to:      getAdminEmail(),
         subject: `[DJAMA] Appel découverte — ${fullName} · ${slot}`,
         html:    buildAdminHtml(data),
       }),
-      resend.emails.send({
-        from:    FROM,
+      getResend().emails.send({
+        from:    getFrom(),
         to:      email,
         subject: `Votre appel découverte DJAMA est confirmé — ${slot}`,
         html:    buildConfirmHtml(data),

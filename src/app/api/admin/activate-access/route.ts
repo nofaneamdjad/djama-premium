@@ -45,6 +45,21 @@ const LOGIN_URLS: Record<AccessCol, string> = {
 };
 
 export async function POST(req: Request) {
+  // ── Diagnostic env (visible dans les logs Vercel) ──────────────
+  const apiKeyRaw = process.env.RESEND_API_KEY;
+  const apiKeyTrimmed = apiKeyRaw?.trim();
+  console.log("[activate-access] ENV check →", {
+    RESEND_API_KEY_set:    !!apiKeyRaw,
+    RESEND_API_KEY_length: apiKeyRaw?.length ?? 0,
+    RESEND_API_KEY_trimmed_length: apiKeyTrimmed?.length ?? 0,
+    RESEND_API_KEY_starts: apiKeyTrimmed ? apiKeyTrimmed.slice(0, 7) : "ABSENT",
+    RESEND_FROM:           process.env.RESEND_FROM ?? "ABSENT",
+    SITE_URL:              process.env.NEXT_PUBLIC_SITE_URL ?? "ABSENT",
+    SUPABASE_SERVICE_ROLE: process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? (process.env.SUPABASE_SERVICE_ROLE_KEY.startsWith("COLLER_") ? "PLACEHOLDER" : "SET")
+      : "ABSENT",
+  });
+
   try {
     const body = await req.json() as {
       email:    string;
@@ -105,10 +120,25 @@ export async function POST(req: Request) {
       loginUrl:   LOGIN_URLS[col],
     });
 
+    // Enrichir le message d'erreur email pour guider le diagnostic
+    let emailError: string | undefined;
+    if (!emailResult.sent) {
+      const raw = emailResult.reason ?? "Erreur inconnue";
+      if (raw.toLowerCase().includes("invalid api key") || raw.toLowerCase().includes("unauthorized")) {
+        emailError = `RESEND_API_KEY invalide ou non configurée dans Vercel. Clé actuelle : ${
+          process.env.RESEND_API_KEY ? `re_...${process.env.RESEND_API_KEY.trim().slice(-4)} (${process.env.RESEND_API_KEY.trim().length} chars)` : "ABSENTE"
+        }`;
+      } else if (raw.includes("verify a domain") || raw.includes("own email address")) {
+        emailError = `Domaine non vérifié dans Resend. Allez sur resend.com/domains et vérifiez djama.space`;
+      } else {
+        emailError = raw;
+      }
+    }
+
     return NextResponse.json({
       success:     true,
       email_sent:  emailResult.sent,
-      email_error: emailResult.sent ? undefined : emailResult.reason,
+      email_error: emailError,
     });
 
   } catch (err) {

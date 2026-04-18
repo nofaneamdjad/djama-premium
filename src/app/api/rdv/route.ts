@@ -12,11 +12,15 @@ import { Resend } from "resend";
      CONTACT_EMAIL     (email admin qui reçoit les demandes)
 ─────────────────────────────────────────────────────────────── */
 
-const resend = new Resend(process.env.RESEND_API_KEY ?? "");
-
-const FROM          = process.env.RESEND_FROM ?? "DJAMA <onboarding@resend.dev>";
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "contact@djama.fr";
-const SITE_URL      = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// Instanciation PARESSEUSE — new Resend("") lève "Invalid API key" synchrone
+function getResend() {
+  const key = process.env.RESEND_API_KEY?.trim();
+  if (!key) throw new Error("RESEND_API_KEY manquant");
+  return new Resend(key);
+}
+function getFrom()    { return process.env.RESEND_FROM?.trim()          ?? "DJAMA <onboarding@resend.dev>"; }
+function getContact() { return process.env.CONTACT_EMAIL?.trim()        ?? "contact@djama.fr"; }
+function getSiteUrl() { return process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000"; }
 const GOLD          = "#c9a55a";
 const BG            = "#09090b";
 const CARD          = "#111113";
@@ -111,7 +115,7 @@ function buildConfirmEmail(d: RdvPayload): string {
           </td></tr>
         </table>
         <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:${GOLD};">
-          <a href="${SITE_URL}/services/soutien-scolaire" style="display:inline-block;padding:13px 26px;font-size:13px;font-weight:700;color:#09090b;text-decoration:none;border-radius:10px;">
+          <a href="${getSiteUrl()}/services/soutien-scolaire" style="display:inline-block;padding:13px 26px;font-size:13px;font-weight:700;color:#09090b;text-decoration:none;border-radius:10px;">
             Voir les informations du cours →
           </a>
         </td></tr></table>
@@ -146,16 +150,16 @@ export async function POST(req: Request) {
 
   try {
     /* Email admin */
-    await resend.emails.send({
-      from:    FROM,
-      to:      CONTACT_EMAIL,
+    await getResend().emails.send({
+      from:    getFrom(),
+      to:      getContact(),
       subject: `[DJAMA] Nouveau RDV soutien — ${studentName} (${subject}, ${level})`,
       html:    buildAdminEmail(data),
     });
 
     /* Email confirmation client */
-    await resend.emails.send({
-      from:    FROM,
+    await getResend().emails.send({
+      from:    getFrom(),
       to:      email,
       subject: "Votre demande de soutien scolaire DJAMA — Confirmation",
       html:    buildConfirmEmail(data),

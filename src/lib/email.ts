@@ -13,10 +13,11 @@ import { Resend } from "resend";
 //    new Resend("") lève "Invalid API key" de façon synchrone
 //    dans le constructeur. On lit la clé à la demande.
 function getResend(): Resend {
-  const key = process.env.RESEND_API_KEY;
+  // .trim() élimine les espaces/newlines invisibles (copier-coller Vercel)
+  const key = process.env.RESEND_API_KEY?.trim();
   if (!key) {
     throw new Error(
-      "RESEND_API_KEY manquant. Ajoutez-la dans .env.local : RESEND_API_KEY=re_xxxxxxxxxx"
+      "RESEND_API_KEY manquant. Ajoutez-la dans Vercel → Settings → Environment Variables"
     );
   }
   return new Resend(key);
@@ -26,10 +27,10 @@ function getResend(): Resend {
 //    Garantit que les env vars Vercel sont toujours utilisées,
 //    même si le module est mis en cache entre les requêtes.
 function getFrom(): string {
-  return process.env.RESEND_FROM ?? "DJAMA <onboarding@resend.dev>";
+  return process.env.RESEND_FROM?.trim() ?? "DJAMA <onboarding@resend.dev>";
 }
 function getSite(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000";
 }
 
 const GOLD  = "#c9a55a";
