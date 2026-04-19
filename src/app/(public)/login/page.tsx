@@ -113,12 +113,13 @@ export default function LoginPage() {
 
       /* ── 2. MODE TEST : redirection directe sans vérif abonnement
          TODO: réactiver le check clients table quand prêt           */
-      console.log("[Login] ✅ Connecté (mode test) :", data.session.user.email, "→ /client");
+      const needsReset = data.session.user.user_metadata?.needs_password_reset === true;
+      console.log("[Login] ✅ Connecté :", data.session.user.email, "→", needsReset ? "/definir-mot-de-passe" : "/client");
 
       /* ── 3. Redirection ─────────────────────────── */
       setPhase("redirecting");
       willRedirect = true;
-      window.location.href = "/client";
+      window.location.href = needsReset ? "/definir-mot-de-passe" : "/client";
 
     } catch (err) {
       console.error("[Login] ❌ Exception :", err);

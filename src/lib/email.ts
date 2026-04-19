@@ -498,11 +498,11 @@ function buildAccessWelcomeHtml(opts: {
 
           <!-- Bloc identifiants -->
           <table width="100%" cellpadding="0" cellspacing="0"
-            style="background:#0c0c0f;border:1px solid rgba(201,165,90,0.15);border-radius:12px;margin-bottom:32px;overflow:hidden;">
+            style="background:#0c0c0f;border:1px solid rgba(201,165,90,0.15);border-radius:12px;margin-bottom:24px;overflow:hidden;">
             <tr>
               <td style="padding:18px 24px;border-bottom:1px solid rgba(255,255,255,0.05);">
                 <p style="margin:0 0 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.25);">
-                  Identifiant
+                  Identifiant (email)
                 </p>
                 <p style="margin:0;font-size:14px;color:#e5e7eb;font-family:'Courier New',monospace;">
                   ${email}
@@ -512,7 +512,7 @@ function buildAccessWelcomeHtml(opts: {
             <tr>
               <td style="padding:18px 24px;">
                 <p style="margin:0 0 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.25);">
-                  Code d&apos;accès
+                  Mot de passe temporaire
                 </p>
                 <p style="margin:0;font-size:22px;font-weight:800;color:${GOLD};font-family:'Courier New',monospace;letter-spacing:0.14em;">
                   ${accessCode}
@@ -521,14 +521,22 @@ function buildAccessWelcomeHtml(opts: {
             </tr>
           </table>
 
+          <!-- Note mot de passe temporaire -->
+          <div style="background:rgba(201,165,90,0.06);border:1px solid rgba(201,165,90,0.15);border-radius:10px;padding:14px 18px;margin-bottom:28px;">
+            <p style="margin:0;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.5);">
+              <strong style="color:rgba(255,255,255,0.75);">Première connexion :</strong>
+              entrez votre email et ce mot de passe temporaire sur la page de connexion.
+              Vous pourrez définir votre propre mot de passe juste après.
+            </p>
+          </div>
+
           <!-- CTA -->
-          <p style="margin:0 0 12px;font-size:13px;color:${MUTED};">Lien de connexion :</p>
           <table cellpadding="0" cellspacing="0">
             <tr>
               <td style="border-radius:10px;background:${GOLD};">
                 <a href="${loginUrl}"
                   style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:700;color:#09090b;text-decoration:none;letter-spacing:0.03em;border-radius:10px;">
-                  Accéder à la plateforme →
+                  Se connecter →
                 </a>
               </td>
             </tr>

@@ -145,7 +145,44 @@ export async function POST(req: Request) {
 
     console.log("[grant-access] ✅ user_access upserted →", normalizedEmail, isNew ? "(nouveau)" : "(mis à jour)");
 
-    // ── 3. Envoyer l'email de bienvenue ────────────────────────
+    // ── 3. Créer / confirmer le compte Supabase Auth ───────────────────────────
+    // Nécessite SUPABASE_SERVICE_ROLE_KEY (clé admin).
+    // Sans cette clé, l'utilisateur ne pourra pas se connecter via /login.
+    const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    const hasSvc = svcKey && !svcKey.startsWith("COLLER_");
+
+    if (hasSvc) {
+      const adminClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        svcKey,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      );
+
+      const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
+        email:         normalizedEmail,
+        password:      accessCode,      // code temporaire = mot de passe initial
+        email_confirm: true,            // pas de vérification email requise
+        user_metadata: { needs_password_reset: true },
+      });
+
+      if (authErr) {
+        const alreadyExists =
+          authErr.message.toLowerCase().includes("already") ||
+          authErr.message.toLowerCase().includes("duplicate") ||
+          authErr.message.toLowerCase().includes("registered");
+        if (alreadyExists) {
+          console.log("[grant-access] ℹ️ Auth user existant — credentials inchangés");
+        } else {
+          console.warn("[grant-access] ⚠️ Auth user non créé :", authErr.message);
+        }
+      } else {
+        console.log("[grant-access] ✅ Auth user créé → id:", authData.user?.id);
+      }
+    } else {
+      console.warn("[grant-access] ⚠️ SUPABASE_SERVICE_ROLE_KEY absent — compte Auth non créé");
+    }
+
+    // ── 4. Envoyer l'email de bienvenue ────────────────────────
     // Non bloquant : si l'email échoue, l'accès reste créé.
     // La raison précise est retournée à l'UI pour affichage.
     let emailResult: { sent: boolean; reason?: string } = { sent: false, reason: "Non tenté" };
@@ -155,7 +192,7 @@ export async function POST(req: Request) {
         email:      normalizedEmail,
         fullName:   name?.trim() || null,
         accessCode,
-        loginUrl:   `${SITE_URL}/acces`,
+        loginUrl:   `${SITE_URL}/login`,
       });
       console.log("[grant-access] 📧 Résultat email :", emailResult);
     } catch (emailErr) {
