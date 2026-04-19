@@ -151,6 +151,9 @@ export async function POST(req: Request) {
     const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
     const hasSvc = svcKey && !svcKey.startsWith("COLLER_");
 
+    const codePreview = `${accessCode.slice(0, 7)}...${accessCode.slice(-2)} (${accessCode.length} chars)`;
+    console.log("[grant-access] 🔑 accessCode →", codePreview, "| isNew:", isNew);
+
     if (hasSvc) {
       const adminClient = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -170,13 +173,41 @@ export async function POST(req: Request) {
           authErr.message.toLowerCase().includes("already") ||
           authErr.message.toLowerCase().includes("duplicate") ||
           authErr.message.toLowerCase().includes("registered");
+
         if (alreadyExists) {
-          console.log("[grant-access] ℹ️ Auth user existant — credentials inchangés");
+          // L'utilisateur existe déjà dans Auth.
+          // On DOIT mettre à jour son mot de passe pour le synchroniser avec
+          // l'accessCode qu'on va envoyer par email — sinon le login échouera.
+          console.log("[grant-access] ℹ️ Auth user existant — synchronisation du mot de passe →", codePreview);
+          try {
+            const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+            if (listErr) {
+              console.warn("[grant-access] ⚠️ listUsers error :", listErr.message);
+            } else {
+              const authUser = users?.find(u => u.email?.toLowerCase() === normalizedEmail);
+              if (authUser) {
+                const { error: updErr } = await adminClient.auth.admin.updateUserById(authUser.id, {
+                  password:      accessCode,
+                  email_confirm: true,
+                  user_metadata: { needs_password_reset: true },
+                });
+                if (updErr) {
+                  console.warn("[grant-access] ⚠️ updateUserById échoué :", updErr.message);
+                } else {
+                  console.log("[grant-access] ✅ Auth user mis à jour → id:", authUser.id, "| email_confirmed:", authUser.email_confirmed_at ? "oui" : "non");
+                }
+              } else {
+                console.warn("[grant-access] ⚠️ Auth user non trouvé dans listUsers pour :", normalizedEmail);
+              }
+            }
+          } catch (listEx) {
+            console.warn("[grant-access] ⚠️ Exception listUsers :", listEx);
+          }
         } else {
           console.warn("[grant-access] ⚠️ Auth user non créé :", authErr.message);
         }
       } else {
-        console.log("[grant-access] ✅ Auth user créé → id:", authData.user?.id);
+        console.log("[grant-access] ✅ Auth user créé → id:", authData.user?.id, "| confirmed:", authData.user?.email_confirmed_at ? "oui" : "non");
       }
     } else {
       console.warn("[grant-access] ⚠️ SUPABASE_SERVICE_ROLE_KEY absent — compte Auth non créé");

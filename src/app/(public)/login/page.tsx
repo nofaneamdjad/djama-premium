@@ -82,13 +82,18 @@ export default function LoginPage() {
 
     try {
       /* ── 1. Authentification ─────────────────────── */
+      const pwdPreview = password.length > 1
+        ? `${password[0]}${"*".repeat(Math.max(0, password.length - 2))}${password[password.length - 1]}`
+        : "*".repeat(password.length);
+      console.log("[Login] → email:", trimmedEmail, "| pwd length:", password.length, "| pwd preview:", pwdPreview);
+
       const { data, error: sbError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
       });
 
       if (sbError) {
-        console.error("[Login] ❌", sbError.message, "| status:", sbError.status);
+        console.error("[Login] ❌ message:", sbError.message, "| status:", sbError.status, "| code:", (sbError as { code?: string }).code ?? "—");
         if (
           sbError.message.includes("Invalid login credentials") ||
           sbError.message.includes("invalid_credentials")
