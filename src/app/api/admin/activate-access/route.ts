@@ -35,26 +35,27 @@ function getSupabaseClient() {
   );
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
-const LOGIN_URLS: Record<AccessCol, string> = {
-  espace_premium:   `${SITE_URL}/client`,
-  coaching_ia:      `${SITE_URL}/coaching-ia/espace`,
-  soutien_scolaire: `${SITE_URL}/client`,
-  outils_saas:      `${SITE_URL}/client`,
-};
-
 export async function POST(req: Request) {
+  // ── Constantes URL résolues à l'exécution (pas au chargement du module) ──
+  const SITE_URL   = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000";
+  const LOGIN_URLS: Record<AccessCol, string> = {
+    espace_premium:   `${SITE_URL}/client`,
+    coaching_ia:      `${SITE_URL}/coaching-ia/espace`,
+    soutien_scolaire: `${SITE_URL}/client`,
+    outils_saas:      `${SITE_URL}/client`,
+  };
+
   // ── Diagnostic env (visible dans les logs Vercel) ──────────────
-  const apiKeyRaw = process.env.RESEND_API_KEY;
-  const apiKeyTrimmed = apiKeyRaw?.trim();
-  console.log("[activate-access] ENV check →", {
-    RESEND_API_KEY_set:    !!apiKeyRaw,
-    RESEND_API_KEY_length: apiKeyRaw?.length ?? 0,
-    RESEND_API_KEY_trimmed_length: apiKeyTrimmed?.length ?? 0,
-    RESEND_API_KEY_starts: apiKeyTrimmed ? apiKeyTrimmed.slice(0, 7) : "ABSENT",
-    RESEND_FROM:           process.env.RESEND_FROM ?? "ABSENT",
-    SITE_URL:              process.env.NEXT_PUBLIC_SITE_URL ?? "ABSENT",
+  const rawKey    = process.env.RESEND_API_KEY;
+  const trimmed   = rawKey?.trim() ?? "";
+  const sanitized = trimmed.replace(/^["']|["']$/g, "").trim();
+  const keyPreview = sanitized
+    ? `${sanitized.slice(0, 7)}...${sanitized.slice(-4)} (${sanitized.length} chars)`
+    : "ABSENTE";
+  console.log("[activate-access] ENV →", {
+    RESEND_API_KEY: keyPreview,
+    RESEND_FROM:    process.env.RESEND_FROM ?? "ABSENT",
+    SITE_URL,
     SUPABASE_SERVICE_ROLE: process.env.SUPABASE_SERVICE_ROLE_KEY
       ? (process.env.SUPABASE_SERVICE_ROLE_KEY.startsWith("COLLER_") ? "PLACEHOLDER" : "SET")
       : "ABSENT",
@@ -124,10 +125,13 @@ export async function POST(req: Request) {
     let emailError: string | undefined;
     if (!emailResult.sent) {
       const raw = emailResult.reason ?? "Erreur inconnue";
-      if (raw.toLowerCase().includes("invalid api key") || raw.toLowerCase().includes("unauthorized")) {
-        emailError = `RESEND_API_KEY invalide ou non configurée dans Vercel. Clé actuelle : ${
-          process.env.RESEND_API_KEY ? `re_...${process.env.RESEND_API_KEY.trim().slice(-4)} (${process.env.RESEND_API_KEY.trim().length} chars)` : "ABSENTE"
-        }`;
+      if (
+        raw.toLowerCase().includes("invalid api key") ||
+        raw.toLowerCase().includes("api key is invalid") ||
+        raw.toLowerCase().includes("unauthorized") ||
+        raw.includes("401")
+      ) {
+        emailError = `RESEND_API_KEY invalide ou non configurée dans Vercel. Clé utilisée : ${keyPreview}`;
       } else if (raw.includes("verify a domain") || raw.includes("own email address")) {
         emailError = `Domaine non vérifié dans Resend. Allez sur resend.com/domains et vérifiez djama.space`;
       } else {

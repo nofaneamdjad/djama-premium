@@ -912,44 +912,70 @@ export interface AccessActivatedEmailOptions {
 /**
  * Envoie l'email "votre accès est activé" quand l'admin débloque manuellement.
  * Template différent selon le type (espace client vs coaching IA).
+ *
+ * Utilise fetch direct (même pattern que /api/admin/resend-ping) pour éviter
+ * tout problème de cache ou d'état interne du SDK Resend.
  */
 export async function sendAccessActivatedEmail(
   opts: AccessActivatedEmailOptions
 ): Promise<{ sent: boolean; reason?: string }> {
-  if (!process.env.RESEND_API_KEY) {
-    const reason = "RESEND_API_KEY absente dans .env.local";
+
+  // ── Sanitisation identique à resend-ping (supprime guillemets/espaces) ──
+  const key = sanitizeKey(process.env.RESEND_API_KEY);
+  if (!key) {
+    const reason = "RESEND_API_KEY absente ou vide — configurez-la dans Vercel → Settings → Environment Variables";
     console.warn("[Email Activated] ⚠️", reason);
     return { sent: false, reason };
   }
 
-  const firstName = opts.fullName?.split(" ")[0] ?? opts.email.split("@")[0];
-  const label     = ACCESS_TYPE_LABELS[opts.accessType];
+  const keyPreview   = `${key.slice(0, 7)}...${key.slice(-4)} (${key.length} chars)`;
+  const fromAddr     = getFrom();
+  const firstName    = opts.fullName?.split(" ")[0] ?? opts.email.split("@")[0];
+  const label        = ACCESS_TYPE_LABELS[opts.accessType];
   const defaultLogin = `${getSite()}${ACCESS_TYPE_LOGIN[opts.accessType]}`;
-  const loginUrl  = opts.loginUrl ?? defaultLogin;
+  const loginUrl     = opts.loginUrl ?? defaultLogin;
 
+  console.log("[Email Activated] 🔑 Clé →", keyPreview, "| from:", fromAddr, "| to:", opts.email);
+
+  // ── Appel direct fetch (même pattern que /api/admin/resend-ping) ─────────
   try {
-    const { data, error } = await getResend().emails.send({
-      from:    getFrom(),
-      to:      opts.email,
-      subject: `Votre accès ${label} DJAMA est activé ✓`,
-      html:    buildAccessActivatedHtml({
-        firstName,
-        accessType: opts.accessType,
-        loginUrl,
+    const res = await fetch("https://api.resend.com/emails", {
+      method:  "POST",
+      headers: {
+        "Authorization": `Bearer ${key}`,
+        "Content-Type":  "application/json",
+      },
+      body: JSON.stringify({
+        from:    fromAddr,
+        to:      opts.email,
+        subject: `Votre accès ${label} DJAMA est activé ✓`,
+        html:    buildAccessActivatedHtml({
+          firstName,
+          accessType: opts.accessType,
+          loginUrl,
+        }),
       }),
     });
 
-    if (error) {
-      const reason = (error as { message?: string })?.message ?? JSON.stringify(error);
-      console.error("[Email Activated] ❌ Resend error:", error);
+    const body = await res.json() as {
+      id?:         string;
+      name?:       string;
+      message?:    string;
+      statusCode?: number;
+    };
+
+    if (!res.ok) {
+      const reason = body.message ?? body.name ?? `HTTP ${res.status}`;
+      console.error("[Email Activated] ❌ Resend API", res.status, JSON.stringify(body));
       return { sent: false, reason };
     }
 
-    console.log("[Email Activated] ✅ Email envoyé →", opts.email, "| id:", data?.id);
+    console.log("[Email Activated] ✅ Email envoyé →", opts.email, "| Resend id:", body.id);
     return { sent: true };
+
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
-    console.error("[Email Activated] ❌ Exception:", reason);
+    console.error("[Email Activated] ❌ Exception réseau:", reason);
     return { sent: false, reason };
   }
 }
