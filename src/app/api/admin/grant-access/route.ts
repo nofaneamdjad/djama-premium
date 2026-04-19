@@ -49,9 +49,6 @@ function getSupabaseClient() {
   );
 }
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
 // ── Génération du code d'accès ─────────────────────────────────
 // Format : DJAM-XXXXXX (6 caractères, sans O/0/I/1 pour éviter confusion)
 function generateAccessCode(): string {
@@ -65,6 +62,21 @@ function generateAccessCode(): string {
 
 // ── Handler ────────────────────────────────────────────────────
 export async function POST(req: Request) {
+  // SITE_URL résolu à l'exécution (jamais au chargement du module)
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000";
+
+  // Diagnostic clé (visible dans les logs Vercel)
+  const rawKey    = process.env.RESEND_API_KEY;
+  const sanitized = rawKey?.trim().replace(/^["']|["']$/g, "").trim() ?? "";
+  const keyPreview = sanitized
+    ? `${sanitized.slice(0, 7)}...${sanitized.slice(-4)} (${sanitized.length} chars)`
+    : "ABSENTE";
+  console.log("[grant-access] ENV →", {
+    RESEND_API_KEY: keyPreview,
+    RESEND_FROM:    process.env.RESEND_FROM ?? "ABSENT",
+    SITE_URL,
+  });
+
   try {
     const body = await req.json() as {
       email:             string;
@@ -139,12 +151,29 @@ export async function POST(req: Request) {
       emailResult = { sent: false, reason: msg };
     }
 
+    // Mapper le message d'erreur Resend en message lisible
+    let emailError: string | undefined;
+    if (!emailResult.sent) {
+      const raw = emailResult.reason ?? "Erreur inconnue";
+      console.error("[grant-access] ❌ Email non envoyé — raison exacte :", raw);
+      if (
+        raw.toLowerCase().includes("invalid api key") ||
+        raw.toLowerCase().includes("api key is invalid") ||
+        raw.toLowerCase().includes("unauthorized") ||
+        raw.includes("401")
+      ) {
+        emailError = `RESEND_API_KEY invalide. Clé utilisée : ${keyPreview}`;
+      } else {
+        emailError = raw;
+      }
+    }
+
     return NextResponse.json({
       success:      true,
       isNew,
       access_code:  accessCode,
       email_sent:   emailResult.sent,
-      email_error:  emailResult.sent ? undefined : emailResult.reason,
+      email_error:  emailError,
     });
 
   } catch (err) {

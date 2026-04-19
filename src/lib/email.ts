@@ -583,56 +583,62 @@ export async function sendAccessWelcomeEmail(
   opts: AccessWelcomeEmailOptions
 ): Promise<{ sent: boolean; reason?: string }> {
 
-  // ── Étape 1 : vérification clé API ────────────────────────────
-  const apiKey = process.env.RESEND_API_KEY;
-  console.log("[Email Access] 🔑 RESEND_API_KEY présente :", apiKey ? `oui (longueur ${apiKey.length})` : "NON ← problème");
-
-  if (!apiKey) {
-    const reason = "RESEND_API_KEY absente dans .env.local";
+  // ── Sanitisation identique à resend-ping ──────────────────────
+  const key = sanitizeKey(process.env.RESEND_API_KEY);
+  if (!key) {
+    const reason = "RESEND_API_KEY absente ou vide";
     console.warn("[Email Access] ⚠️", reason);
     return { sent: false, reason };
   }
 
-  // ── Étape 2 : construction paramètres ─────────────────────────
-  const firstName = opts.fullName?.split(" ")[0] ?? opts.email.split("@")[0];
-  const loginUrl  = opts.loginUrl ?? `${getSite()}/acces`;
-  const fromAddr  = getFrom();
+  const keyPreview = `${key.slice(0, 7)}...${key.slice(-4)} (${key.length} chars)`;
+  const fromAddr   = getFrom();
+  const firstName  = opts.fullName?.split(" ")[0] ?? opts.email.split("@")[0];
+  const loginUrl   = opts.loginUrl ?? `${getSite()}/acces`;
 
-  console.log("[Email Access] 📤 Tentative envoi →", {
-    from:       fromAddr,
-    to:         opts.email,
-    accessCode: opts.accessCode,
-    loginUrl,
-  });
+  console.log("[Email Access] 🔑 Clé →", keyPreview, "| endpoint → POST https://api.resend.com/emails");
+  console.log("[Email Access] 📤 from:", fromAddr, "| to:", opts.email, "| loginUrl:", loginUrl);
 
-  // ── Étape 3 : appel Resend ─────────────────────────────────────
+  // ── Appel direct fetch (même pattern que /api/admin/resend-ping) ──
   try {
-    const { data, error } = await getResend().emails.send({
-      from:    fromAddr,
-      to:      opts.email,
-      subject: "Bienvenue sur DJAMA — Vos informations d'accès",
-      html:    buildAccessWelcomeHtml({
-        firstName,
-        email:      opts.email,
-        accessCode: opts.accessCode,
-        loginUrl,
+    const res = await fetch("https://api.resend.com/emails", {
+      method:  "POST",
+      headers: {
+        "Authorization": `Bearer ${key}`,
+        "Content-Type":  "application/json",
+      },
+      body: JSON.stringify({
+        from:    fromAddr,
+        to:      opts.email,
+        subject: "Bienvenue sur DJAMA — Vos informations d'accès",
+        html:    buildAccessWelcomeHtml({
+          firstName,
+          email:      opts.email,
+          accessCode: opts.accessCode,
+          loginUrl,
+        }),
       }),
     });
 
-    if (error) {
-      // Log l'objet entier (pas seulement .message qui peut être undefined)
-      const reason = (error as { message?: string; name?: string; statusCode?: number })?.message
-        ?? JSON.stringify(error);
-      console.error("[Email Access] ❌ Resend a retourné une erreur :", JSON.stringify(error, null, 2));
+    const body = await res.json() as {
+      id?:         string;
+      name?:       string;
+      message?:    string;
+      statusCode?: number;
+    };
+
+    if (!res.ok) {
+      const reason = body.message ?? body.name ?? `HTTP ${res.status}`;
+      console.error("[Email Access] ❌ Resend API", res.status, JSON.stringify(body));
       return { sent: false, reason };
     }
 
-    console.log("[Email Access] ✅ Email envoyé avec succès →", opts.email, "| Resend id:", data?.id);
+    console.log("[Email Access] ✅ Email envoyé →", opts.email, "| Resend id:", body.id);
     return { sent: true };
 
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
-    console.error("[Email Access] ❌ Exception lors de l'appel Resend :", reason);
+    console.error("[Email Access] ❌ Exception réseau:", reason);
     return { sent: false, reason };
   }
 }
