@@ -65,17 +65,24 @@ export async function POST(req: Request) {
   // SITE_URL résolu à l'exécution (jamais au chargement du module)
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000";
 
-  // Diagnostic clé (visible dans les logs Vercel)
+  // ── Diagnostic complet (visible dans les logs Vercel) ──────────
   const rawKey    = process.env.RESEND_API_KEY;
   const sanitized = rawKey?.trim().replace(/^["']|["']$/g, "").trim() ?? "";
   const keyPreview = sanitized
     ? `${sanitized.slice(0, 7)}...${sanitized.slice(-4)} (${sanitized.length} chars)`
     : "ABSENTE";
-  console.log("[grant-access] ENV →", {
-    RESEND_API_KEY: keyPreview,
-    RESEND_FROM:    process.env.RESEND_FROM ?? "ABSENT",
-    SITE_URL,
-  });
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "ABSENT";
+  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  const isPlaceholder = !serviceKey || serviceKey.startsWith("COLLER_");
+  const supabaseKeyType = isPlaceholder ? "anon" : `service_role (${serviceKey.slice(0, 10)}...)`;
+
+  console.log("[grant-access] ── DIAGNOSTIC ──────────────────────────────");
+  console.log("[grant-access] RESEND_API_KEY :", keyPreview);
+  console.log("[grant-access] RESEND_FROM    :", process.env.RESEND_FROM ?? "ABSENT (fallback noreply@djama.space)");
+  console.log("[grant-access] SUPABASE_URL   :", supabaseUrl.slice(0, 40));
+  console.log("[grant-access] SUPABASE_KEY   :", supabaseKeyType);
+  console.log("[grant-access] ────────────────────────────────────────────");
 
   try {
     const body = await req.json() as {
@@ -98,11 +105,16 @@ export async function POST(req: Request) {
     const supabase        = getSupabaseClient();
 
     // ── 1. Lire la ligne existante (pour préserver les champs non fournis) ──
-    const { data: existing } = await supabase
+    const { data: existing, error: selectError } = await supabase
       .from("user_access")
       .select("*")
       .eq("email", normalizedEmail)
       .maybeSingle();
+    if (selectError) {
+      console.error("[grant-access] ❌ SELECT error (Supabase) :", selectError.message, selectError.code);
+    } else {
+      console.log("[grant-access] ✅ SELECT ok — existing:", !!existing);
+    }
 
     const isNew      = !existing;
     const accessCode = (existing?.access_code as string | null) ?? generateAccessCode();
@@ -126,8 +138,9 @@ export async function POST(req: Request) {
       .upsert([row], { onConflict: "email" });
 
     if (upsertError) {
-      console.error("[grant-access] ❌ upsert error:", upsertError.message);
-      return NextResponse.json({ error: upsertError.message }, { status: 500 });
+      console.error("[grant-access] ❌ UPSERT error (Supabase) :", upsertError.message, upsertError.code);
+      console.error("[grant-access] ❌ → C'est un problème SUPABASE, pas Resend");
+      return NextResponse.json({ error: `[Supabase] ${upsertError.message}` }, { status: 500 });
     }
 
     console.log("[grant-access] ✅ user_access upserted →", normalizedEmail, isNew ? "(nouveau)" : "(mis à jour)");
