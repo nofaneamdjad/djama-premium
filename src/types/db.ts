@@ -205,6 +205,24 @@ export type VisualRow = {
   created_at:   string;
 };
 
+// ── Projets vidéo (montage-video) ────────────────────────────
+export type VideoCategory = 'reels' | 'tiktok' | 'youtube' | 'shorts' | 'pub' | 'corporate' | 'evenement' | 'teaser' | 'produit' | 'autre';
+export type VideoStatus   = 'published' | 'draft';
+
+export type VideoProjectRow = {
+  id:            string;
+  title:         string;
+  category:      VideoCategory;
+  description:   string | null;
+  thumbnail_url: string | null;
+  video_url:     string | null;
+  format:        string | null;   // '9:16' | '16:9' | '1:1' | etc.
+  client:        string | null;
+  status:        VideoStatus;
+  sort_order:    number;
+  created_at:    string;
+};
+
 // ── Factures (migration 010) ──────────────────────────────────
 export type InvoiceStatus        = 'brouillon' | 'envoyée' | 'payée' | 'en retard' | 'annulée';
 export type InvoicePaymentStatus = 'non payée' | 'payée' | 'partielle';
