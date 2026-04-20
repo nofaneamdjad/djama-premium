@@ -5,689 +5,1003 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Smartphone, ArrowRight, CheckCircle2, Sparkles, ChevronDown,
-  Zap, User, Mail, Phone, MessageSquare, Loader2, Send, ArrowLeft,
-  ShoppingCart, Truck, Users, Settings, Bell, Shield, Star,
-  LayoutDashboard, Code2, Briefcase, TrendingUp, Lock, Palette,
-  Quote, Globe, Database, WifiOff, CreditCard, CheckSquare,
+  ArrowLeft, Users, Settings, Bell, Shield, Star, LayoutDashboard,
+  Code2, Briefcase, TrendingUp, Lock, Palette, Globe, Database,
+  CreditCard, Zap, HelpCircle, BadgeCheck, Rocket, HeartHandshake,
+  RefreshCw, BarChart3, Activity, GitBranch, Layers, Box,
+  MessageSquare, ShoppingCart, WifiOff, Search, Clock,
+  ChevronRight, CheckSquare,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
 
-const ease       = [0.16, 1, 0.3, 1] as const;
-const ACCENT     = "#fb7185";
-const ACCENT_RGB = "251,113,133";
+const ease = [0.16, 1, 0.3, 1] as const;
 
-const TYPES_APPS = [
-  { icon: ShoppingCart,    color: "#f9a826", rgb: "249,168,38",  title: "Application de réservation", desc: "Hôtels, restaurants, salons, prestataires — permettez à vos clients de réserver en quelques secondes." },
-  { icon: Truck,           color: "#60a5fa", rgb: "96,165,250",  title: "Application de livraison",   desc: "Interface client, tracking en temps réel, gestion des livreurs et des zones — tout en un." },
-  { icon: Users,           color: ACCENT,    rgb: ACCENT_RGB,    title: "Application communautaire",  desc: "Réseau social de niche, forum, plateforme d'échange ou espace membres avec profils et messagerie." },
-  { icon: MessageSquare,   color: "#4ade80", rgb: "74,222,128",  title: "Service client mobile",      desc: "Support intégré, chat en direct, base de connaissances et ticketing dans une app native." },
-  { icon: LayoutDashboard, color: "#a78bfa", rgb: "167,139,250", title: "Gestion interne",            desc: "Application métier pour vos équipes : planning, pointage, reporting, accès aux données terrain." },
-  { icon: Star,            color: "#f472b6", rgb: "244,114,182", title: "Application de marque",      desc: "App de fidélité, catalogue produits, programme de récompenses — renforcez le lien avec vos clients." },
+/* ── Palette cyan / indigo — tech premium ──────── */
+const C  = "#22d3ee";   // cyan-400
+const CR = "34,211,238";
+const C2 = "#0891b2";   // cyan-600
+const I  = "#818cf8";   // indigo-400
+const IR = "129,140,248";
+const G  = "#c9a55a";   // gold DJAMA
+const GR = "201,165,90";
+
+/* ═══════════════════════════════════════ DATA ══════════════════════════════════════ */
+
+const POURQUOI_APP = [
+  { icon: Users,      c: C,        r: CR,           t: "Fidélisation maximale",     d: "Vos utilisateurs reviennent 3× plus souvent via une app que via un site. L'icône sur leur écran = présence permanente dans leur quotidien." },
+  { icon: Bell,       c: I,        r: IR,           t: "Push notifications",        d: "Parlez à vos utilisateurs en temps réel, sans algorithme. Un push bien ciblé convertit à 7–10% — aucun canal email ne rivalise." },
+  { icon: TrendingUp, c: "#f9a826",r: "249,168,38", t: "Revenus récurrents",        d: "Abonnements, achats in-app, freemium — les apps mobiles génèrent des modèles de revenus stables et prédictibles." },
+  { icon: Palette,    c: "#f472b6",r: "244,114,182",t: "Image de marque premium",   d: "Avoir une app native = signal de sérieux. Vos concurrents n'en ont pas. C'est un avantage compétitif immédiat." },
+  { icon: Activity,   c: "#4ade80",r: "74,222,128", t: "Expérience native",         d: "Gestes naturels, performances fluides, accès caméra/GPS/contacts — l'expérience mobile qu'un site web ne peut pas offrir." },
+  { icon: BarChart3,  c: G,        r: GR,           t: "Analytics comportementaux", d: "Comprenez chaque action de vos utilisateurs. Optimisez l'UX, augmentez la rétention, prenez des décisions basées sur les données." },
 ];
 
-const CE_QUE_NOUS_TRAVAILLONS = [
-  { icon: Palette,  color: "#60a5fa", rgb: "96,165,250",  title: "UX / UI soignée",         desc: "Design pensé pour l'usage mobile : navigation fluide, interfaces intuitives, expérience cohérente iOS et Android." },
-  { icon: Zap,      color: ACCENT,    rgb: ACCENT_RGB,    title: "Performance",              desc: "Temps de chargement optimisés, gestion du cache, fluidité des animations — une app agréable à utiliser." },
-  { icon: Lock,     color: "#4ade80", rgb: "74,222,128",  title: "Sécurité",                 desc: "Authentification sécurisée, chiffrement des données, protection contre les accès non autorisés." },
-  { icon: Users,    color: "#f9a826", rgb: "249,168,38",  title: "Espace utilisateur",      desc: "Profils, historique, préférences, favoris — chaque utilisateur a son espace personnalisé." },
-  { icon: Bell,     color: "#f472b6", rgb: "244,114,182", title: "Notifications push",       desc: "Alertes personnalisées, rappels, promotions ciblées — restez en contact avec vos utilisateurs." },
-  { icon: Code2,    color: "#a78bfa", rgb: "167,139,250", title: "API & intégrations",       desc: "Connexion à vos outils existants (CRM, paiement, analytics, cartographie) via des APIs robustes." },
+const TYPES_APP = [
+  {
+    icon: Briefcase,
+    c: C, r: CR,
+    t: "App business / service",
+    d: "Prise de rendez-vous, devis en ligne, espace client, service après-vente. Votre activité dans la poche de vos clients.",
+    tags: ["RDV", "Client", "Service"],
+  },
+  {
+    icon: ShoppingCart,
+    c: "#f9a826", r: "249,168,38",
+    t: "App e-commerce",
+    d: "Boutique mobile native, panier, paiement Apple Pay / Google Pay, suivi commandes et programme de fidélité.",
+    tags: ["Ventes", "Panier", "Paiement"],
+  },
+  {
+    icon: Layers,
+    c: I, r: IR,
+    t: "App SaaS / plateforme",
+    d: "Dashboard, gestion de compte, analytics, onboarding — le cœur de votre produit SaaS dans une app mobile optimisée.",
+    tags: ["SaaS", "Dashboard", "API"],
+  },
+  {
+    icon: Box,
+    c: "#4ade80", r: "74,222,128",
+    t: "Outil interne (B2E)",
+    d: "Application terrain pour vos équipes : planning, pointage, reporting, accès aux données — offline-first si nécessaire.",
+    tags: ["Terrain", "RH", "Reporting"],
+  },
+  {
+    icon: Rocket,
+    c: "#f472b6", r: "244,114,182",
+    t: "MVP startup",
+    d: "Validez votre idée vite. On vous aide à définir le périmètre MVP, concevoir, développer et lancer en App Store/Play Store.",
+    tags: ["MVP", "Validation", "Lancement"],
+  },
 ];
 
-const POUR_QUI = [
-  { icon: Briefcase, color: "#60a5fa", rgb: "96,165,250", who: "Startups & entrepreneurs",  desc: "Vous avez une idée d'app et voulez lancer un MVP rapide pour valider votre concept sur le marché.",       tags: ["MVP", "Validation", "Lean"] },
-  { icon: Star,      color: ACCENT,    rgb: ACCENT_RGB,   who: "Commerces & marques",       desc: "Fidélisez vos clients, facilitez les achats et renforcez votre présence mobile avec votre propre app.",    tags: ["Fidélité", "App de marque", "Mobile"] },
-  { icon: TrendingUp,color: "#4ade80", rgb: "74,222,128", who: "Entreprises & PME",         desc: "Optimisez les opérations terrain, équipez vos équipes mobiles et automatisez vos processus internes.",     tags: ["Terrain", "Opérations", "Équipe"] },
-  { icon: Users,     color: "#f9a826", rgb: "249,168,38", who: "Plateformes & marketplaces",desc: "Mettez en relation vendeurs et acheteurs, prestataires et clients dans une app fluide et scalable.",       tags: ["Marketplace", "Two-sided", "Scale"] },
+const FONCTIONNALITES = [
+  { icon: Lock,          c: C,        r: CR,           t: "Authentification",          d: "Email, Google, Apple Sign-In, biométrie (Face ID / Touch ID), MFA." },
+  { icon: LayoutDashboard,c: I,       r: IR,           t: "Dashboard & analytics",     d: "Tableaux de bord dynamiques, graphiques temps réel, KPIs personnalisés." },
+  { icon: CreditCard,    c: "#4ade80",r: "74,222,128", t: "Paiements in-app",          d: "Stripe, Apple Pay, Google Pay, abonnements, achats one-time." },
+  { icon: Bell,          c: "#f9a826",r: "249,168,38", t: "Notifications push",        d: "Notifications ciblées, segmentées, programmables — via Firebase ou OneSignal." },
+  { icon: Database,      c: "#f472b6",r: "244,114,182",t: "Base de données temps réel",d: "Synchronisation live entre utilisateurs. Chat, collaboration, mises à jour instantanées." },
+  { icon: Globe,         c: G,        r: GR,           t: "Intégrations API",          d: "Connexion à vos outils existants : ERP, CRM, logistique, paiement, IA." },
+  { icon: WifiOff,       c: "#fb923c",r: "251,146,60", t: "Mode offline",              d: "L'app fonctionne sans connexion et synchronise dès le retour du réseau." },
+  { icon: Activity,      c: "#e879f9",r: "232,121,249",t: "Analytics & tracking",      d: "Mixpanel, Amplitude, Firebase Analytics — comprenez chaque comportement utilisateur." },
 ];
 
 const PROCESSUS = [
-  { num: "01", icon: MessageSquare, color: "#c9a55a", rgb: "201,165,90", title: "Cadrage & vision",          desc: "On définit ensemble les fonctionnalités clés, les utilisateurs cibles et les objectifs de l'application." },
-  { num: "02", icon: Palette,       color: "#60a5fa", rgb: "96,165,250", title: "Design UX/UI",              desc: "Wireframes, maquettes interactives et validation du parcours utilisateur avant tout développement." },
-  { num: "03", icon: Code2,         color: ACCENT,    rgb: ACCENT_RGB,   title: "Développement",             desc: "Développement agile par sprints, avec démonstrations régulières pour valider chaque fonctionnalité." },
-  { num: "04", icon: CheckCircle2,  color: "#4ade80", rgb: "74,222,128", title: "Tests & publication",       desc: "Tests complets, corrections, publication sur l'App Store et Google Play, suivi post-lancement." },
+  { icon: BarChart3,    c: G,        r: GR,           t: "Stratégie",        d: "Brief, personas, user stories, choix technologique, architecture.",  duration: "Jours 1–3"  },
+  { icon: GitBranch,    c: C,        r: CR,           t: "Wireframes",       d: "Parcours utilisateurs, arborescence, maquettes fil de fer.",           duration: "Jours 4–7"  },
+  { icon: Palette,      c: I,        r: IR,           t: "Design UI/UX",     d: "Interface premium, design system, prototypage interactif.",           duration: "Jours 8–14" },
+  { icon: Code2,        c: "#4ade80",r: "74,222,128", t: "Développement",    d: "Code natif ou cross-platform (React Native / Flutter), API, back-end.",duration: "Jours 15–35"},
+  { icon: CheckSquare,  c: "#f9a826",r: "249,168,38", t: "Tests & QA",       d: "Tests unitaires, tests utilisateurs, corrections, performance.",     duration: "Jours 36–42"},
+  { icon: Rocket,       c: "#f472b6",r: "244,114,182",t: "Publication",      d: "Soumission App Store & Google Play, validations, mise en ligne.",    duration: "Jours 43–50"},
+  { icon: RefreshCw,    c: "#fb923c",r: "251,146,60", t: "Maintenance",      d: "Mises à jour OS, nouvelles fonctionnalités, monitoring continu.",    duration: "Mensuel"    },
 ];
 
-const CE_QUE_VOUS_OBTENEZ = [
-  { label: "Cadrage & vision produit",    desc: "Définition des fonctionnalités clés, utilisateurs cibles, parcours et MVP.",                   icon: Briefcase,    color: "251,113,133" },
-  { label: "Design UX/UI mobile",         desc: "Maquettes interactives, design system, prototypage validé avant développement.",                icon: Palette,      color: "96,165,250"  },
-  { label: "Développement iOS & Android", desc: "Application native ou React Native — une base de code pour les deux plateformes.",              icon: Smartphone,   color: "74,222,128"  },
-  { label: "Backend & API",               desc: "Serveur, base de données, authentification, notifications push — tout l'écosystème.",           icon: Code2,        color: "249,168,38"  },
-  { label: "Tests & publication stores",  desc: "Tests complets, soumission App Store et Google Play, conformité aux guidelines.",               icon: CheckCircle2, color: "244,114,182" },
-  { label: "Support post-lancement",      desc: "Suivi des crashes, mises à jour, nouvelles fonctionnalités selon les retours utilisateurs.",     icon: Shield,       color: "167,139,250" },
+const PREUVES = [
+  { icon: Code2,        c: C,        r: CR,           t: "React Native & Flutter",     d: "Cross-platform natif : une codebase, deux stores. Performance identique à du natif pur." },
+  { icon: Palette,      c: I,        r: IR,           t: "Design system sur mesure",   d: "Composants, tokens, guidelines — une identité visuelle cohérente sur chaque écran." },
+  { icon: Zap,          c: "#f9a826",r: "249,168,38", t: "Performance Lighthouse 90+", d: "Animations à 60fps, temps de chargement < 1s, Lighthouse 90+ sur toutes les pages." },
+  { icon: Shield,       c: "#4ade80",r: "74,222,128", t: "Sécurité & conformité",      d: "Chiffrement des données, authentification forte, conformité RGPD et CCPA." },
+  { icon: TrendingUp,   c: "#f472b6",r: "244,114,182",t: "Architecture scalable",      d: "Infrastructure prête à supporter 10 ou 10 000 utilisateurs. Aucune refonte nécessaire." },
+  { icon: HeartHandshake,c: G,       r: GR,           t: "Accompagnement complet",     d: "De l'idée au store, un expert dédié. Pas de sous-traitance, pas d'intermédiaire." },
 ];
 
-const EXEMPLES_PROJETS = [
-  { icon: ShoppingCart, color: "#fb7185", rgb: "251,113,133", titre: "App de réservation",     desc: "Application iOS/Android pour un réseau de salons de coiffure — réservation, fidélité et notifications push.",   resultat: "30% de no-show en moins grâce aux rappels auto" },
-  { icon: Truck,        color: "#60a5fa", rgb: "96,165,250",  titre: "App de livraison",       desc: "Interface client + interface livreur avec tracking GPS en temps réel et gestion des statuts de commande.",         resultat: "4.8/5 sur l'App Store dès la 1ère semaine" },
-  { icon: Users,        color: "#4ade80", rgb: "74,222,128",  titre: "Réseau social de niche", desc: "Plateforme communautaire pour passionnés de sport — profils, fil d'actualité, événements et messagerie privée.",   resultat: "2 000 membres actifs en 3 mois" },
-];
-
-const PROCESSUS_STEPS = [
-  { num: "01", icon: MessageSquare, color: "#c9a55a", rgb: "201,165,90",  label: "Analyse",        desc: "Cadrage du projet" },
-  { num: "02", icon: Palette,       color: "#60a5fa", rgb: "96,165,250",  label: "Prototype UX",   desc: "Maquettes validées" },
-  { num: "03", icon: Code2,         color: ACCENT,    rgb: ACCENT_RGB,    label: "Développement",  desc: "Sprints agiles" },
-  { num: "04", icon: CheckSquare,   color: "#4ade80", rgb: "74,222,128",  label: "Tests",          desc: "QA multi-devices" },
-  { num: "05", icon: Globe,         color: "#a78bfa", rgb: "167,139,250", label: "Publication",    desc: "App Store & Play" },
-];
-
-const TABLE_INCLUS = [
-  { label: "Application iOS (App Store)",          icon: Smartphone,   color: "251,113,133" },
-  { label: "Application Android (Google Play)",    icon: Smartphone,   color: "96,165,250"  },
-  { label: "Design UX/UI mobile complet",          icon: Palette,      color: "74,222,128"  },
-  { label: "Backend & API sur mesure",             icon: Database,     color: "249,168,38"  },
-  { label: "Notifications push",                   icon: Bell,         color: "244,114,182" },
-  { label: "Authentification utilisateurs",        icon: Lock,         color: "167,139,250" },
-  { label: "Mode hors ligne (cache local)",        icon: WifiOff,      color: "52,211,153"  },
-  { label: "Maintenance & support post-lancement", icon: Shield,       color: "201,165,90"  },
+const FAQ = [
+  { q: "Combien coûte une application mobile ?",              a: "Le prix dépend du périmètre fonctionnel, de la complexité UX et de l'infrastructure back-end. On commence par un atelier stratégique gratuit pour définir le périmètre exact, puis on vous soumet un devis détaillé. Les projets démarrent généralement autour de 4 000€ pour un MVP solide." },
+  { q: "Combien de temps pour développer une app ?",         a: "Un MVP bien défini peut être livré en 6 à 10 semaines. Une app plus complexe avec back-end, paiements et temps réel prend 3 à 5 mois. On établit un planning détaillé sprint par sprint avant de commencer." },
+  { q: "iOS et Android sont-ils tous les deux couverts ?",   a: "Oui. On travaille en React Native ou Flutter pour couvrir les deux plateformes avec une seule codebase. Aucun compromis sur la performance : l'expérience est native sur les deux stores." },
+  { q: "Que se passe-t-il après la publication ?",           a: "On propose des contrats de maintenance mensuelle : monitoring, mises à jour iOS/Android, corrections de bugs, nouvelles fonctionnalités. Votre app reste à jour et fonctionnelle dans le temps." },
+  { q: "Avez-vous de l'expérience avec des apps existantes ?",a: "Oui. On reprend des projets existants pour les refondre, ajouter des fonctionnalités ou améliorer les performances. Un audit technique gratuit permet d'évaluer l'état du code avant tout engagement." },
+  { q: "Gérez-vous aussi le back-end et l'API ?",            a: "Absolument. On conçoit et développe l'architecture complète : API REST ou GraphQL, base de données, authentification, notifications push, hébergement cloud (Vercel, Railway, AWS)." },
 ];
 
 const TEMOIGNAGES = [
-  { name: "Julien F.",  activite: "Fondateur d'une app de réservation", note: 5, avis: "DJAMA a transformé mon idée en application fonctionnelle en moins de 3 mois. Design soigné, performances excellentes, et un accompagnement au top du début à la fin." },
-  { name: "Sarah K.",  activite: "Directrice marketplace locale",       note: 5, avis: "Notre marketplace est en ligne sur iOS et Android. L'équipe a géré tout le processus — du design à la publication. On a 400 utilisateurs actifs le premier mois." },
-  { name: "Marc D.",   activite: "Gérant d'une chaîne de restaurants",  note: 5, avis: "L'app de réservation a réduit nos no-shows de 30%. Les notifications push automatiques ont changé la donne. Je recommande sans hésitation." },
+  { i: "R", c: CR,  n: "Romain S.",  r: "Fondateur SaaS",    s: 5, t: "DJAMA a su transformer notre vision produit en une app fluide et scalable. On est passés de 0 à 2000 utilisateurs actifs en 3 mois après le lancement." },
+  { i: "A", c: IR,  n: "Aïcha M.",   r: "CEO startup santé",  s: 5, t: "L'expertise UX a fait toute la différence. Notre taux de rétention à J7 est de 68% — bien au-dessus de la moyenne du secteur. Un travail d'orfèvre." },
+  { i: "N", c: GR,  n: "Nicolas F.", r: "Directeur digital",  s: 5, t: "De l'idée au store en 8 semaines. Qualité du code, respect du budget, communication irréprochable. On a lancé notre MVP et levé des fonds dans la foulée." },
 ];
 
-const FAQ_ITEMS = [
-  { q: "Combien de temps pour développer une application ?", a: "Un MVP fonctionnel est généralement livrable en 6 à 16 semaines selon la complexité. Nous découpons le projet en sprints pour vous livrer rapidement et valider au fur et à mesure." },
-  { q: "Est-elle disponible sur iOS et Android ?", a: "Oui. Nous utilisons React Native ou Flutter pour livrer une application disponible sur les deux plateformes à partir d'une seule base de code, ce qui réduit les coûts et les délais." },
-  { q: "Puis-je modifier l'application après la livraison ?", a: "Oui. Toutes nos apps sont documentées et conçues pour évoluer. Nous pouvons ajouter des fonctionnalités, corriger des bugs ou adapter l'interface selon vos retours utilisateurs." },
-  { q: "La maintenance est-elle incluse ?", a: "Un suivi post-lancement est inclus. Pour une maintenance longue durée (mises à jour OS, nouvelles fonctionnalités, monitoring), nous proposons des contrats de maintenance dédiés." },
-  { q: "Puis-je connecter mon application à mon site ou mon CRM ?", a: "Oui. Nous développons ou connectons des APIs pour intégrer votre app à vos outils existants : site web, CRM, ERP, base de données, paiement, analytics, etc." },
-  { q: "Quel est le budget pour une application mobile ?", a: "Cela dépend de la complexité et du nombre de fonctionnalités. Contactez-nous pour une estimation transparente et personnalisée, sans engagement." },
-];
-
-const TYPE_APP_OPTIONS = ["Application de réservation", "Application de livraison", "Application communautaire", "App de marque / fidélité", "Outil de gestion interne", "Marketplace", "Autre"];
-const PUBLIC_OPTIONS   = ["Grand public (B2C)", "Entreprises (B2B)", "Équipes internes", "Professionnels d'un secteur", "Autre"];
-
-function isEmailValid(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
-
-function FieldInput({ icon: Icon, type = "text", placeholder, value, onChange, validate, required }: {
-  icon: React.ElementType; type?: string; placeholder: string; value: string;
-  onChange: (v: string) => void; validate?: (v: string) => boolean; required?: boolean;
-}) {
-  const [focused, setFocused] = useState(false);
-  const [touched, setTouched] = useState(false);
-  const isValid = validate ? validate(value) : value.length > 0;
-  const showOk  = touched && value && isValid;
-  const showErr = touched && value && validate && !isValid;
-  const border  = showErr ? "rgba(248,113,113,0.5)" : showOk ? "rgba(52,211,153,0.45)" : focused ? `rgba(${ACCENT_RGB},0.5)` : "rgba(255,255,255,0.09)";
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200"
-      style={{ borderColor: border, boxShadow: focused ? `0 0 0 3px rgba(${ACCENT_RGB},0.08)` : "none" }}>
-      <Icon size={15} className="shrink-0" style={{ color: focused || value ? ACCENT : "rgba(255,255,255,0.25)" }} />
-      <input type={type} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); setTouched(true); }} required={required}
-        className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none" />
-      <AnimatePresence>
-        {showOk && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><CheckCircle2 size={14} className="text-[#34d399]" /></motion.div>}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function FieldSelect({ icon: Icon, placeholder, value, onChange, options }: {
-  icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; options: string[];
-}) {
-  const [focused, setFocused] = useState(false);
-  const border = value ? "rgba(52,211,153,0.35)" : focused ? `rgba(${ACCENT_RGB},0.45)` : "rgba(255,255,255,0.09)";
-  return (
-    <div className="relative flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200" style={{ borderColor: border }}>
-      <Icon size={15} className="shrink-0" style={{ color: value || focused ? ACCENT : "rgba(255,255,255,0.25)" }} />
-      <select value={value} onChange={(e) => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        style={{ color: value ? "white" : "rgba(255,255,255,0.25)" }}
-        className="flex-1 appearance-none bg-transparent text-sm outline-none [&>option]:bg-[#111113] [&>option]:text-white">
-        <option value="" disabled>{placeholder}</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
-      <ChevronDown size={13} className="pointer-events-none shrink-0 text-white/25" />
-      {value && <CheckCircle2 size={13} className="shrink-0 text-[#34d399]" />}
-    </div>
-  );
-}
-
-function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
-  return (
-    <div className="cursor-pointer rounded-2xl border border-white/[0.07] bg-white transition-all duration-200 hover:border-[rgba(251,113,133,0.25)] hover:shadow-sm" onClick={onToggle}>
-      <div className="flex items-center justify-between gap-4 px-6 py-5">
-        <p className="text-sm font-semibold text-[#09090b] leading-relaxed">{q}</p>
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all duration-300"
-          style={{ borderColor: open ? `rgba(${ACCENT_RGB},0.4)` : "rgba(0,0,0,0.1)", background: open ? `rgba(${ACCENT_RGB},0.08)` : "transparent" }}>
-          <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25, ease }}>
-            <ChevronDown size={14} style={{ color: open ? ACCENT : "#6b7280" }} />
-          </motion.div>
-        </div>
-      </div>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease }} className="overflow-hidden">
-            <p className="border-t border-black/[0.05] px-6 pb-5 pt-4 text-sm leading-relaxed text-[#4b5563]">{a}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function DevisForm() {
-  const [nom,      setNom]      = useState("");
-  const [email,    setEmail]    = useState("");
-  const [tel,      setTel]      = useState("");
-  const [typeApp,  setTypeApp]  = useState("");
-  const [publicVise, setPublicVise] = useState("");
-  const [message,  setMessage]  = useState("");
-  const [sending,  setSending]  = useState(false);
-  const [sent,     setSent]     = useState(false);
-  const [error,    setError]    = useState<string | null>(null);
-  const canSubmit = nom && isEmailValid(email) && typeApp && message.length > 5;
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); if (!canSubmit) return;
-    setSending(true); setError(null);
-    try {
-      const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nom, email, phone: tel, source: "devis",
-          subject: `Application mobile — ${typeApp}${publicVise ? ` / ${publicVise}` : ""}`, message }) });
-      if (!res.ok) throw new Error(); setSent(true);
-    } catch { setError("Une erreur est survenue. Réessayez ou contactez-nous directement."); } finally { setSending(false); }
-  }
-
-  if (sent) return (
-    <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-      className="rounded-3xl border border-[rgba(251,113,133,0.25)] bg-[rgba(251,113,133,0.05)] p-10 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(251,113,133,0.12)]">
-        <CheckCircle2 size={26} style={{ color: ACCENT }} />
-      </div>
-      <h3 className="mb-2 text-lg font-extrabold text-white">Demande envoyée !</h3>
-      <p className="text-sm text-white/50">Nous vous répondons sous 24h pour analyser votre projet.</p>
-    </motion.div>
-  );
-
-  return (
-    <motion.form onSubmit={handleSubmit} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-      viewport={viewport} transition={{ duration: 0.55, ease }} className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <FieldInput icon={User} placeholder="Votre nom" value={nom} onChange={setNom} required />
-        <FieldInput icon={Mail} type="email" placeholder="Adresse email" value={email} onChange={setEmail} validate={isEmailValid} required />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <FieldInput icon={Phone} type="tel" placeholder="Téléphone (optionnel)" value={tel} onChange={setTel} />
-        <FieldSelect icon={Smartphone} placeholder="Type d'application" value={typeApp} onChange={setTypeApp} options={TYPE_APP_OPTIONS} />
-      </div>
-      <FieldSelect icon={Users} placeholder="Public visé" value={publicVise} onChange={setPublicVise} options={PUBLIC_OPTIONS} />
-      <div className="rounded-2xl border bg-white/[0.04] transition-all duration-200"
-        style={{ borderColor: message.length > 5 ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.09)" }}>
-        <div className="flex items-start gap-3 px-4 pt-4">
-          <MessageSquare size={15} className="mt-0.5 shrink-0" style={{ color: message ? ACCENT : "rgba(255,255,255,0.25)" }} />
-          <textarea placeholder="Décrivez votre besoin (concept, fonctionnalités clés, contexte, inspiration…)" value={message}
-            onChange={(e) => setMessage(e.target.value)} rows={5} required
-            className="flex-1 resize-none bg-transparent pb-4 text-sm text-white placeholder-white/25 outline-none" />
-        </div>
-        <div className="border-t border-white/[0.05] px-4 py-2 text-right">
-          <span className="text-[0.6rem] text-white/20">{message.length} caractères</span>
-        </div>
-      </div>
-      {error && <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-400">{error}</p>}
-      <button type="submit" disabled={!canSubmit || sending}
-        className="btn-primary w-full justify-center py-4 text-base disabled:cursor-not-allowed disabled:opacity-50">
-        {sending ? <><Loader2 size={17} className="animate-spin" /> Envoi en cours…</> : <><Send size={17} /> Parler de mon application</>}
-      </button>
-      <p className="text-center text-[0.68rem] text-white/20">🔒 Confidentialité garantie · Réponse sous 24h · Sans engagement</p>
-    </motion.form>
-  );
-}
-
+/* ═══════════════════════════════════════ PAGE ══════════════════════════════════════ */
 export default function ApplicationMobilePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   return (
-    <>
-      <main>
-        {/* HERO */}
-        <section className="relative overflow-hidden"
-          style={{
-            background: "radial-gradient(ellipse at 30% 50%, #1a0810 0%, #0e0409 40%, #090306 70%, #050205 100%)",
-            minHeight: "min(80vh, 720px)",
-          }}>
-          <div className="pointer-events-none absolute inset-0"
-            style={{ backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(251,113,133,0.04) 1.5px, transparent 0)", backgroundSize: "32px 32px" }} />
-          <div className="pointer-events-none absolute left-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full blur-[100px]"
-            style={{ background: "radial-gradient(circle, rgba(251,113,133,0.10) 0%, transparent 70%)" }} />
-          <div className="pointer-events-none absolute right-0 top-1/4 h-[400px] w-[400px] rounded-full blur-[80px]"
-            style={{ background: "radial-gradient(circle, rgba(244,114,182,0.07) 0%, transparent 70%)" }} />
+    <main className="bg-[#07070a] text-white overflow-x-hidden">
 
-          <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-12 px-6 pb-16 pt-28 lg:flex-row lg:gap-16 lg:pb-0 lg:pt-0" style={{ minHeight: "min(80vh, 720px)" }}>
+      {/* ══════════════════════════════════════════
+          1. HERO
+      ══════════════════════════════════════════ */}
+      <section className="relative overflow-hidden pt-20 pb-16 sm:pt-28 sm:pb-28">
 
-            {/* GAUCHE */}
-            <div className="flex flex-1 flex-col items-start lg:py-16">
-              <motion.div {...fadeIn} className="mb-7">
-                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/50 transition-colors hover:text-white">
-                  <ArrowLeft size={13} /> Tous les services
+        {/* Backgrounds */}
+        <div className="pointer-events-none absolute inset-0">
+          {/* Subtle grid */}
+          <div className="absolute inset-0 opacity-[0.022]"
+            style={{ backgroundImage: `linear-gradient(rgba(${CR},.7) 1px,transparent 1px),linear-gradient(90deg,rgba(${CR},.7) 1px,transparent 1px)`, backgroundSize: "52px 52px" }} />
+          {/* Orbs */}
+          <motion.div
+            animate={{ scale: [1, 1.12, 1], opacity: [.06, .13, .06] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -left-48 top-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[140px]"
+            style={{ background: `radial-gradient(circle,rgba(${CR},1) 0%,transparent 70%)` }} />
+          <motion.div
+            animate={{ scale: [1, 1.08, 1], opacity: [.04, .09, .04] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            className="absolute right-0 top-0 w-[500px] h-[500px] rounded-full blur-[120px]"
+            style={{ background: `radial-gradient(circle,rgba(${IR},1) 0%,transparent 70%)` }} />
+          <div className="absolute right-1/4 bottom-0 w-[280px] h-[280px] rounded-full blur-[80px] opacity-[0.04]"
+            style={{ background: `radial-gradient(circle,rgba(${GR},1) 0%,transparent 70%)` }} />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-5">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+            {/* Left: copy */}
+            <div>
+              <motion.div
+                initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: .45, ease }}
+                className="mb-5"
+              >
+                <Link href="/services"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/50 hover:text-white/80 transition-colors">
+                  <ArrowLeft size={11} /> Tous les services
                 </Link>
               </motion.div>
-              <motion.div {...fadeIn} transition={{ delay: 0.05 }}
-                className="mb-5 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[0.7rem] font-semibold"
-                style={{ borderColor: `rgba(${ACCENT_RGB},0.3)`, background: `rgba(${ACCENT_RGB},0.07)`, color: ACCENT }}>
-                <Smartphone size={12} /> Application mobile
+
+              <motion.div
+                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: .5, ease, delay: .05 }}
+                className="mb-5 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[.72rem] font-bold"
+                style={{ borderColor: `rgba(${CR},.3)`, background: `rgba(${CR},.08)`, color: C }}
+              >
+                <Smartphone size={11} /> Application mobile iOS / Android
+                <span className="ml-1 rounded-full px-2 py-0.5 text-[.6rem] font-extrabold text-[#07070a]"
+                  style={{ background: C }}>SUR MESURE</span>
               </motion.div>
-              <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.5rem]">
-                <MultiLineReveal lines={["Créez votre application", "mobile"]}
-                  highlight={1} stagger={0.12} wordStagger={0.055} delay={0.08} lineClassName="justify-start" />
+
+              <h1 className="mb-5 text-[2.6rem] sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.07] tracking-tight">
+                <MultiLineReveal
+                  lines={["Votre application", "mobile, pensée", "pour scaler."]}
+                  highlight={2}
+                  stagger={.13}
+                  wordStagger={.055}
+                  delay={.08}
+                  lineClassName="justify-start"
+                />
               </h1>
-              <FadeReveal delay={0.2}>
-                <p className="mb-8 max-w-lg text-base leading-relaxed text-white/55 sm:text-lg">
-                  Application iOS et Android sur mesure pour digitaliser votre activité et améliorer l'expérience de vos utilisateurs.
+
+              <FadeReveal delay={.28}>
+                <p className="mb-7 max-w-lg text-base sm:text-lg leading-relaxed text-white/50">
+                  iOS, Android, cross-platform — on conçoit des applications natives qui fidélisent vos utilisateurs, génèrent des revenus récurrents et positionnent votre marque à un niveau supérieur.
                 </p>
               </FadeReveal>
-              <FadeReveal delay={0.3}>
-                <div className="mb-8 flex flex-wrap gap-3">
-                  <Link href="/contact?besoin=Application+mobile" className="btn-primary px-7 py-3.5 text-sm">Parler de mon application <ArrowRight size={15} /></Link>
-                  <Link href="#exemples" className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white/65 transition-all hover:border-white/20 hover:bg-white/[0.07] hover:text-white">Voir des exemples</Link>
+
+              {/* "Sur devis" block */}
+              <FadeReveal delay={.36}>
+                <div className="mb-7 inline-flex flex-wrap items-center gap-4 rounded-2xl border p-4 sm:p-5"
+                  style={{ borderColor: `rgba(${CR},.22)`, background: `rgba(${CR},.06)` }}>
+                  <div>
+                    <p className="text-[.65rem] font-bold uppercase tracking-widest text-white/35 mb-0.5">Tarif</p>
+                    <p className="text-[1.6rem] font-extrabold leading-none" style={{ color: C }}>Sur devis</p>
+                    <p className="text-[.62rem] text-white/35 mt-0.5">Après atelier stratégique gratuit</p>
+                  </div>
+                  <div className="h-12 w-px bg-white/[0.08]" />
+                  <div className="space-y-1">
+                    {["Devis gratuit & sans engagement", "MVP dès 6 semaines", "iOS + Android couverts"].map(t => (
+                      <div key={t} className="flex items-center gap-1.5 text-xs text-white/55">
+                        <CheckCircle2 size={11} className="shrink-0" style={{ color: C }} /> {t}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </FadeReveal>
-              <FadeReveal delay={0.42}>
-                <div className="flex flex-wrap gap-2.5">
-                  {[{ emoji: "📱", label: "iOS & Android" }, { emoji: "⚡", label: "Performances optimisées" }, { emoji: "🔒", label: "Sécurité des données" }].map(({ emoji, label }) => (
-                    <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.09] bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/60">{emoji} {label}</span>
-                  ))}
+
+              <FadeReveal delay={.44}>
+                <div className="flex flex-wrap gap-3">
+                  <Link href="/contact?besoin=Application+mobile"
+                    className="inline-flex items-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-bold transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_0_36px_rgba(34,211,238,0.3)]"
+                    style={{ background: `linear-gradient(135deg,${C2},${C})`, color: "#07070a" }}>
+                    Parler de mon application <ArrowRight size={15} />
+                  </Link>
+                  <a href="#processus"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-3.5 text-sm font-semibold text-white/65 hover:bg-white/[0.08] hover:text-white transition-all duration-200">
+                    Voir la méthode
+                  </a>
                 </div>
               </FadeReveal>
             </div>
 
-            {/* DROITE — mockup smartphone */}
-            <div className="w-full flex-shrink-0 lg:w-[46%] lg:py-12">
-              <motion.div initial={{ opacity: 0, y: 28, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
-                className="relative mx-auto w-full max-w-[300px]">
-                <div className="pointer-events-none absolute -inset-8 rounded-3xl blur-3xl"
-                  style={{ background: "radial-gradient(ellipse, rgba(251,113,133,0.12) 0%, rgba(244,114,182,0.07) 50%, transparent 70%)" }} />
+            {/* Right: phone mockup */}
+            <motion.div
+              initial={{ opacity: 0, y: 36, scale: .93 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: .8, ease, delay: .32 }}
+              className="relative flex justify-center"
+            >
+              {/* Glow behind phone */}
+              <div className="pointer-events-none absolute inset-0 flex justify-center items-center">
+                <div className="w-[280px] h-[500px] rounded-full blur-3xl opacity-[0.22]"
+                  style={{ background: `radial-gradient(ellipse,rgba(${CR},.8) 0%,rgba(${IR},.4) 55%,transparent 75%)` }} />
+              </div>
 
-                {/* Smartphone shell */}
-                <div className="relative mx-auto overflow-hidden rounded-[2.5rem] border-[6px] border-white/[0.12] shadow-[0_40px_100px_rgba(0,0,0,0.7)]"
-                  style={{ background: "#0d0d0f", aspectRatio: "9/19" }}>
-                  {/* Notch */}
-                  <div className="absolute left-1/2 top-2 z-20 h-5 w-20 -translate-x-1/2 rounded-full" style={{ background: "#0d0d0f", border: "2px solid rgba(255,255,255,0.06)" }} />
+              {/* Phone frame */}
+              <div className="relative w-[230px] sm:w-[260px]">
+                <div className="relative overflow-hidden rounded-[36px] border-[2px] shadow-[0_60px_120px_rgba(0,0,0,.85)]"
+                  style={{ borderColor: "rgba(255,255,255,.12)", background: "#0d0d10" }}>
 
-                  {/* Status bar */}
-                  <div className="flex items-center justify-between px-4 pb-1 pt-3" style={{ background: "#111115" }}>
-                    <span className="text-[0.5rem] font-bold text-white/40">9:41</span>
-                    <div className="flex gap-1">
-                      {[3, 4, 5].map(n => <div key={n} className="rounded-sm bg-white/40" style={{ width: 3, height: n }} />)}
-                      <div className="ml-0.5 h-2 w-3 rounded-sm border border-white/30">
-                        <div className="h-full rounded-sm bg-white/60" style={{ width: "70%" }} />
+                  {/* Dynamic island */}
+                  <div className="flex justify-center pt-3 pb-1">
+                    <div className="w-20 h-5 rounded-full"
+                      style={{ background: "#111116" }}>
+                      <div className="flex items-center justify-center gap-1.5 h-full">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: C }} />
+                        <div className="w-5 h-1.5 rounded-full bg-white/20" />
                       </div>
                     </div>
                   </div>
 
-                  {/* Header app */}
-                  <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-2.5" style={{ background: "#111115" }}>
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.25)` }} />
-                      <div className="h-2 w-14 rounded-full bg-white/30" />
+                  {/* Status bar */}
+                  <div className="flex items-center justify-between px-5 py-1">
+                    <span className="text-[.55rem] font-bold text-white/60">9:41</span>
+                    <div className="flex items-center gap-1">
+                      <div className="flex items-end gap-0.5 h-2.5">
+                        {[60, 80, 100, 80].map((h, i) => (
+                          <div key={i} className="w-0.5 rounded-sm bg-white/50" style={{ height: `${h}%` }} />
+                        ))}
+                      </div>
+                      <div className="w-3 h-1.5 rounded-sm border border-white/40 ml-0.5">
+                        <div className="h-full w-3/4 rounded-sm" style={{ background: C }} />
+                      </div>
                     </div>
-                    <Bell size={12} style={{ color: ACCENT }} />
                   </div>
 
-                  {/* Content */}
-                  <div className="space-y-2 p-3" style={{ background: "#0d0d0f" }}>
-                    {/* Bannière */}
-                    <div className="rounded-2xl p-3" style={{ background: `rgba(${ACCENT_RGB},0.08)` }}>
-                      <div className="mb-1.5 h-1.5 w-16 rounded-full" style={{ background: `rgba(${ACCENT_RGB},0.5)` }} />
-                      <div className="mb-1 h-3 w-4/5 rounded-full bg-white/40" />
-                      <div className="mb-2.5 h-2 w-3/5 rounded-full bg-white/20" />
-                      <div className="h-6 w-20 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.4)` }} />
+                  {/* App header */}
+                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06]"
+                    style={{ background: "rgba(255,255,255,.025)" }}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+                        style={{ background: `rgba(${CR},.2)` }}>
+                        <div className="w-3 h-3 rounded-sm" style={{ background: C }} />
+                      </div>
+                      <span className="text-[.65rem] font-extrabold text-white">MonApp</span>
                     </div>
-                    {/* Cards stat */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {[{ c: ACCENT_RGB, label: "Utilisateurs", val: "2.4k" }, { c: "96,165,250", label: "Sessions", val: "8.1k" }].map(({ c, label, val }) => (
-                        <div key={label} className="rounded-2xl border border-white/[0.07] p-2.5" style={{ background: "#111115" }}>
-                          <p className="mb-0.5 text-[0.55rem] text-white/35">{label}</p>
-                          <p className="text-sm font-black" style={{ color: `rgb(${c})` }}>{val}</p>
+                    <div className="flex items-center gap-2">
+                      <div className="relative w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{ background: "rgba(255,255,255,.06)" }}>
+                        <Bell size={9} style={{ color: C }} />
+                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full text-[.35rem] flex items-center justify-center text-[#07070a] font-extrabold"
+                          style={{ background: C }}>3</div>
+                      </div>
+                      <div className="w-5 h-5 rounded-full bg-white/10" />
+                    </div>
+                  </div>
+
+                  {/* Dashboard content */}
+                  <div className="px-3 pt-3 pb-2" style={{ background: "#0a0a0e" }}>
+                    {/* Revenue card */}
+                    <div className="rounded-2xl p-3 mb-2.5"
+                      style={{ background: `linear-gradient(135deg,rgba(${CR},.15) 0%,rgba(${IR},.1) 100%)`, border: `1px solid rgba(${CR},.2)` }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[.52rem] font-bold text-white/50 uppercase tracking-wider">Revenus</span>
+                        <span className="text-[.52rem] font-bold px-1.5 py-0.5 rounded-full"
+                          style={{ background: `rgba(${CR},.15)`, color: C }}>+18%</span>
+                      </div>
+                      <p className="text-lg font-extrabold mb-1" style={{ color: C }}>€12,450</p>
+                      {/* Mini sparkline */}
+                      <div className="flex items-end gap-0.5 h-5">
+                        {[35, 55, 40, 70, 50, 80, 60, 90, 65, 100].map((h, i) => (
+                          <motion.div key={i}
+                            initial={{ height: 0 }}
+                            animate={{ height: `${h}%` }}
+                            transition={{ delay: .9 + i * .05, duration: .35, ease }}
+                            className="flex-1 rounded-sm"
+                            style={{ background: i === 9 ? C : `rgba(${CR},.25)` }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Stats row */}
+                    <div className="grid grid-cols-2 gap-1.5 mb-2.5">
+                      {[
+                        ["2,847", "Utilisateurs", CR],
+                        ["94%",   "Rétention J7", IR],
+                      ].map(([v, l, c]) => (
+                        <div key={l} className="rounded-xl border border-white/[0.06] p-2.5"
+                          style={{ background: "#111116" }}>
+                          <p className="text-sm font-extrabold mb-0.5" style={{ color: `rgba(${c},.9)` }}>{v}</p>
+                          <p className="text-[.52rem] text-white/35">{l}</p>
                         </div>
                       ))}
                     </div>
-                    {/* Liste items */}
-                    {[1, 2, 3].map((n) => (
-                      <div key={n} className="flex items-center gap-2.5 rounded-2xl border border-white/[0.06] p-2.5" style={{ background: "#111115" }}>
-                        <div className="h-8 w-8 shrink-0 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.1)` }} />
-                        <div className="flex-1 space-y-1">
-                          <div className="h-1.5 w-3/4 rounded-full bg-white/25" />
-                          <div className="h-1 w-1/2 rounded-full bg-white/12" />
+
+                    {/* Action list */}
+                    <div className="space-y-1.5">
+                      {[
+                        [Activity,      "Analytics",     CR],
+                        [CreditCard,    "Paiements",     IR],
+                        [MessageSquare, "Messages",      "249,168,38"],
+                      ].map(([Icon, label, c]) => (
+                        <div key={label as string}
+                          className="flex items-center justify-between rounded-xl border border-white/[0.05] px-3 py-2"
+                          style={{ background: "#111116" }}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-lg flex items-center justify-center"
+                              style={{ background: `rgba(${c},.12)` }}>
+                              <Icon size={10} style={{ color: `rgba(${c},.9)` }} />
+                            </div>
+                            <span className="text-[.6rem] font-semibold text-white/70">{label as string}</span>
+                          </div>
+                          <ChevronRight size={9} className="text-white/25" />
                         </div>
-                        <div className="h-5 w-10 rounded-xl" style={{ background: `rgba(${ACCENT_RGB},0.2)` }} />
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
 
                   {/* Bottom nav */}
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-around border-t border-white/[0.07] px-4 py-2.5" style={{ background: "#111115" }}>
-                    {[LayoutDashboard, Users, Bell, Settings].map((Icon, i) => (
-                      <div key={i} className={`flex h-7 w-7 items-center justify-center rounded-xl transition-all ${i === 0 ? "" : ""}`}
-                        style={{ background: i === 0 ? `rgba(${ACCENT_RGB},0.15)` : "transparent" }}>
-                        <Icon size={13} style={{ color: i === 0 ? ACCENT : "rgba(255,255,255,0.3)" }} />
+                  <div className="flex items-center justify-around border-t border-white/[0.07] px-2 py-2.5"
+                    style={{ background: "#0d0d10" }}>
+                    {[LayoutDashboard, BarChart3, Bell, Settings].map((Icon, i) => (
+                      <div key={i}
+                        className="flex flex-col items-center gap-0.5 w-10 py-1 rounded-xl transition-all"
+                        style={i === 0 ? { background: `rgba(${CR},.1)` } : {}}>
+                        <Icon size={14} style={{ color: i === 0 ? C : "rgba(255,255,255,.3)" }} />
+                        {i === 0 && <div className="w-1 h-1 rounded-full" style={{ background: C }} />}
                       </div>
                     ))}
                   </div>
+
+                  {/* Home indicator */}
+                  <div className="flex justify-center py-2">
+                    <div className="w-20 h-1 rounded-full bg-white/25" />
+                  </div>
                 </div>
 
-                {/* Badge iOS */}
-                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
-                  className="absolute -right-4 top-16 hidden rounded-2xl border border-white/[0.12] px-3 py-2 shadow-xl lg:block" style={{ background: "#141418" }}>
-                  <div className="flex items-center gap-2">
-                    <Smartphone size={12} style={{ color: ACCENT }} />
-                    <div><p className="text-[0.6rem] font-bold text-white">iOS & Android</p><p className="text-[0.55rem] text-white/35">Une seule codebase</p></div>
+                {/* Phone side buttons (decorative) */}
+                <div className="absolute -right-[3px] top-24 w-[3px] h-14 rounded-r-full bg-white/10" />
+                <div className="absolute -left-[3px] top-20 w-[3px] h-8 rounded-l-full bg-white/10" />
+                <div className="absolute -left-[3px] top-32 w-[3px] h-12 rounded-l-full bg-white/10" />
+              </div>
+
+              {/* Floating chips */}
+              <motion.div
+                initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.1 }}
+                className="absolute top-12 -right-2 sm:right-0 rounded-xl border border-white/[0.12] px-3 py-2 shadow-xl hidden sm:block"
+                style={{ background: "#14141a" }}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-lg flex items-center justify-center"
+                    style={{ background: `rgba(${CR},.15)` }}>
+                    <Star size={9} style={{ color: C }} />
                   </div>
-                </motion.div>
-                {/* Badge performances */}
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.85, duration: 0.5 }}
-                  className="absolute -left-4 bottom-20 hidden rounded-2xl border border-white/[0.12] px-3 py-2 shadow-xl lg:block" style={{ background: "#141418" }}>
-                  <div className="flex items-center gap-2">
-                    <Zap size={12} style={{ color: "#f9a826" }} />
-                    <div><p className="text-[0.6rem] font-bold text-white">MVP en 6–16 sem.</p><p className="text-[0.55rem] text-white/35">Livraison rapide</p></div>
+                  <div>
+                    <p className="text-[.58rem] font-bold text-white">4.9 ★ App Store</p>
+                    <p className="text-[.5rem] text-white/35">1 200+ avis</p>
                   </div>
-                </motion.div>
+                </div>
               </motion.div>
-            </div>
-          </div>
-        </section>
 
-        {/* TYPES D'APPS */}
-        <section className="bg-[#160a0d] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Applications que nous créons</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Types d'applications</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {TYPES_APPS.map(({ icon: Icon, color, rgb, title, desc }) => (
-                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}><Icon size={20} style={{ color }} /></div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/45">{desc}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* CE QUE NOUS TRAVAILLONS */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre approche</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que nous travaillons sur chaque app</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {CE_QUE_NOUS_TRAVAILLONS.map(({ icon: Icon, color, rgb, title, desc }) => (
-                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}><Icon size={20} style={{ color }} /></div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/45">{desc}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* POUR QUI */}
-        <section className="bg-[#160a0d] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Profils</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce service est fait pour vous si…</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {POUR_QUI.map(({ icon: Icon, color, rgb, who, desc, tags }) => (
-                <motion.div key={who} variants={cardReveal} className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}><Icon size={20} style={{ color }} /></div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{who}</h3>
-                  <p className="mb-4 text-xs leading-relaxed text-white/45">{desc}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {tags.map((t) => <span key={t} className="rounded-full border px-2.5 py-1 text-[0.6rem] font-medium" style={{ borderColor: `rgba(${rgb},0.25)`, color, background: `rgba(${rgb},0.07)` }}>{t}</span>)}
+              <motion.div
+                initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.3 }}
+                className="absolute top-1/3 -left-2 sm:-left-4 rounded-xl border border-white/[0.12] px-3 py-2 shadow-xl hidden sm:block"
+                style={{ background: "#14141a" }}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-0.5">
+                    <div className="w-3 h-5 rounded-sm" style={{ background: `rgba(${CR},.7)` }} />
+                    <div className="w-3 h-5 rounded-sm" style={{ background: `rgba(${IR},.7)` }} />
                   </div>
-                </motion.div>
-              ))}
+                  <div>
+                    <p className="text-[.58rem] font-bold text-white">iOS + Android</p>
+                    <p className="text-[.5rem] text-white/35">Cross-platform</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                animate={{ y: [0, -8, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -bottom-4 right-4 sm:right-8 rounded-xl border px-3.5 py-2 hidden sm:flex items-center gap-2"
+                style={{ borderColor: `rgba(${CR},.28)`, background: `rgba(${CR},.08)` }}
+              >
+                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: C }} />
+                <p className="text-[.58rem] font-semibold" style={{ color: C }}>MVP en 6 semaines</p>
+              </motion.div>
             </motion.div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* PROCESSUS — TIMELINE */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre processus</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">De l'idée à la publication</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-sm text-white/45">5 étapes claires pour aller de votre concept à une application publiée sur les stores.</motion.p>
+      {/* ══════════════════════════════════════════
+          STATS BAR
+      ══════════════════════════════════════════ */}
+      <div className="border-y border-white/[0.05] py-5 px-5"
+        style={{ background: "rgba(255,255,255,.012)" }}>
+        <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-5">
+          {[
+            ["6 sem.",  "Délai MVP moyen",              CR],
+            ["3×",     "Plus de rétention vs site web", IR],
+            ["4.9★",   "Note moyenne App Store",        "249,168,38"],
+            ["100%",   "Couverture iOS & Android",      "244,114,182"],
+          ].map(([v, l, c]) => (
+            <motion.div key={l} {...fadeIn} viewport={viewport} className="text-center">
+              <p className="text-2xl sm:text-3xl font-extrabold mb-0.5" style={{ color: `rgba(${c},.9)` }}>{v}</p>
+              <p className="text-[.68rem] text-white/40 font-medium">{l}</p>
             </motion.div>
-            {/* Desktop horizontal */}
-            <div className="hidden sm:block">
-              <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="relative grid grid-cols-5 gap-0">
-                <div className="absolute left-[10%] right-[10%] top-[28px] h-px"
-                  style={{ background: `linear-gradient(90deg, rgba(${ACCENT_RGB},0.15), rgba(${ACCENT_RGB},0.4), rgba(${ACCENT_RGB},0.15))` }} />
-                {PROCESSUS_STEPS.map(({ num, icon: Icon, color, rgb, label, desc }) => (
-                  <motion.div key={num} variants={cardReveal} className="group flex flex-col items-center px-3 text-center">
-                    <div className="relative z-10 mb-4 flex h-14 w-14 items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-110"
-                      style={{ background: `rgba(${rgb},0.12)`, borderColor: `rgba(${rgb},0.45)`, boxShadow: `0 0 20px rgba(${rgb},0.18)` }}>
-                      <Icon size={18} style={{ color }} />
+          ))}
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════
+          2. POURQUOI UNE APP MOBILE
+      ══════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 px-5">
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-12">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <Smartphone size={12} style={{ color: C }} /> Pourquoi une app ?
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3">
+              L&apos;app mobile, <span style={{ color: C }}>votre canal le plus puissant</span>
+            </motion.h2>
+            <motion.p variants={fadeIn} className="text-white/45 max-w-lg mx-auto text-sm sm:text-base">
+              En 2025, les utilisateurs passent 90% de leur temps mobile dans des applications. Pas dans un navigateur.
+            </motion.p>
+          </motion.div>
+          <motion.div {...staggerContainerFast} viewport={viewport}
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {POURQUOI_APP.map(item => (
+              <motion.div key={item.t} variants={cardReveal}
+                whileHover={{ y: -5, transition: { duration: .22 } }}
+                className="group relative rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 overflow-hidden hover:border-white/[0.14] transition-all duration-300 cursor-default"
+              >
+                <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: `radial-gradient(ellipse at 50% 120%,rgba(${item.r},.12) 0%,transparent 65%)` }} />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: `rgba(${item.r},.12)` }}>
+                  <item.icon size={19} style={{ color: item.c }} />
+                </div>
+                <p className="font-bold text-white text-sm mb-1.5">{item.t}</p>
+                <p className="text-xs text-white/45 leading-relaxed">{item.d}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          3. TYPES D'APPLICATIONS
+      ══════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 px-5 relative overflow-hidden"
+        style={{ background: "rgba(255,255,255,.012)" }}>
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute right-0 top-1/4 w-[400px] h-[400px] rounded-full blur-[100px] opacity-[0.05]"
+            style={{ background: `radial-gradient(circle,rgba(${IR},1) 0%,transparent 70%)` }} />
+        </div>
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-12">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <Layers size={12} style={{ color: C }} /> Types d&apos;applications
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3">
+              Quel type <span style={{ color: C }}>d&apos;application vous convient ?</span>
+            </motion.h2>
+            <motion.p variants={fadeIn} className="text-white/45 max-w-lg mx-auto text-sm sm:text-base">
+              Chaque projet est unique. On s&apos;adapte à votre secteur, vos utilisateurs et vos objectifs business.
+            </motion.p>
+          </motion.div>
+          <motion.div {...staggerContainerFast} viewport={viewport}
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {TYPES_APP.map(item => (
+              <motion.div key={item.t} variants={cardReveal}
+                whileHover={{ y: -5, transition: { duration: .22 } }}
+                className="group relative rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 overflow-hidden hover:border-white/[0.14] transition-all duration-300 cursor-default"
+              >
+                <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: `radial-gradient(ellipse at 0% 100%,rgba(${item.r},.1) 0%,transparent 60%)` }} />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: `rgba(${item.r},.12)` }}>
+                  <item.icon size={19} style={{ color: item.c }} />
+                </div>
+                <p className="font-bold text-white text-sm mb-1.5">{item.t}</p>
+                <p className="text-xs text-white/45 leading-relaxed mb-3">{item.d}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {item.tags.map(tag => (
+                    <span key={tag}
+                      className="text-[.6rem] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: `rgba(${item.r},.1)`, color: `rgba(${item.r},.9)` }}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          4. FONCTIONNALITÉS
+      ══════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 px-5">
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-12">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <Code2 size={12} style={{ color: C }} /> Fonctionnalités
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3">
+              Tout ce qu&apos;on peut <span style={{ color: C }}>intégrer dans votre app</span>
+            </motion.h2>
+            <motion.p variants={fadeIn} className="text-white/45 max-w-lg mx-auto text-sm sm:text-base">
+              Authentification, paiements, temps réel, offline — on maîtrise l&apos;ensemble de l&apos;écosystème mobile.
+            </motion.p>
+          </motion.div>
+          <motion.div {...staggerContainerFast} viewport={viewport}
+            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {FONCTIONNALITES.map(item => (
+              <motion.div key={item.t} variants={cardReveal}
+                whileHover={{ y: -4, transition: { duration: .2 } }}
+                className="group relative rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 overflow-hidden hover:border-white/[0.14] transition-all duration-300 cursor-default"
+              >
+                <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: `radial-gradient(ellipse at 50% 120%,rgba(${item.r},.1) 0%,transparent 60%)` }} />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: `rgba(${item.r},.12)` }}>
+                  <item.icon size={16} style={{ color: item.c }} />
+                </div>
+                <p className="font-bold text-white text-sm mb-1">{item.t}</p>
+                <p className="text-xs text-white/40 leading-relaxed">{item.d}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          5. PROCESSUS — 7 ÉTAPES
+      ══════════════════════════════════════════ */}
+      <section id="processus" className="py-16 sm:py-24 px-5 relative overflow-hidden"
+        style={{ background: "rgba(255,255,255,.012)" }}>
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-0 top-0 w-[400px] h-[400px] rounded-full blur-[110px] opacity-[0.04]"
+            style={{ background: `radial-gradient(circle,rgba(${CR},1) 0%,transparent 70%)` }} />
+        </div>
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-14">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <Zap size={12} style={{ color: C }} /> Notre méthode
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3">
+              De l&apos;idée à l&apos;App Store <span style={{ color: C }}>en 7 étapes</span>
+            </motion.h2>
+            <motion.p variants={fadeIn} className="text-white/45 max-w-lg mx-auto text-sm sm:text-base">
+              Un processus éprouvé, piloté sprint par sprint, avec des points de validation à chaque étape clé.
+            </motion.p>
+          </motion.div>
+
+          {/* Desktop — 4 + 3 staggered */}
+          <div className="hidden lg:block space-y-8">
+            {/* Row 1: 4 steps */}
+            <div className="relative">
+              <motion.div
+                initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }}
+                viewport={{ once: true }} transition={{ duration: 1.3, ease, delay: .4 }}
+                className="absolute top-9 left-[12%] right-[12%] h-px origin-left"
+                style={{ background: `linear-gradient(90deg,${C},${I})` }}
+              />
+              <div className="grid grid-cols-4 gap-4">
+                {PROCESSUS.slice(0, 4).map((e, i) => (
+                  <motion.div key={e.t}
+                    initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }} transition={{ delay: .2 + i * .11, duration: .5, ease }}
+                    className="flex flex-col items-center text-center"
+                  >
+                    <div className="relative w-[70px] h-[70px] rounded-2xl border-2 flex items-center justify-center mb-4 z-10"
+                      style={{ borderColor: `rgba(${e.r},.4)`, background: `rgba(${e.r},.08)` }}>
+                      <e.icon size={21} style={{ color: e.c }} />
+                      <span className="absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full text-[.58rem] font-extrabold flex items-center justify-center text-[#07070a]"
+                        style={{ background: e.c }}>{i + 1}</span>
                     </div>
-                    <span className="mb-1 text-[0.6rem] font-black uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>{num}</span>
-                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
-                    <p className="text-[0.7rem] leading-relaxed text-white/40">{desc}</p>
+                    <p className="font-bold text-white text-sm mb-1">{e.t}</p>
+                    <p className="text-xs text-white/45 leading-relaxed mb-2 max-w-[140px]">{e.d}</p>
+                    <span className="text-[.6rem] font-bold px-2.5 py-1 rounded-full border border-white/[0.08]"
+                      style={{ color: e.c }}>
+                      {e.duration}
+                    </span>
                   </motion.div>
                 ))}
-              </motion.div>
+              </div>
             </div>
-            {/* Mobile vertical */}
-            <div className="sm:hidden">
-              <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="space-y-0">
-                {PROCESSUS_STEPS.map(({ num, icon: Icon, color, rgb, label, desc }, i) => (
-                  <motion.div key={num} variants={cardReveal} className="relative flex gap-4">
-                    {i < PROCESSUS_STEPS.length - 1 && (
-                      <div className="absolute left-[19px] top-[48px] h-full w-px" style={{ background: `rgba(${rgb},0.2)` }} />
-                    )}
-                    <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2"
-                      style={{ background: `rgba(${rgb},0.12)`, borderColor: `rgba(${rgb},0.4)` }}>
-                      <Icon size={15} style={{ color }} />
+            {/* Row 2: 3 steps (offset) */}
+            <div className="relative px-[12.5%]">
+              <motion.div
+                initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }}
+                viewport={{ once: true }} transition={{ duration: 1, ease, delay: .8 }}
+                className="absolute top-9 left-[20%] right-[20%] h-px origin-left"
+                style={{ background: `linear-gradient(90deg,${I},${C})` }}
+              />
+              <div className="grid grid-cols-3 gap-4">
+                {PROCESSUS.slice(4).map((e, i) => (
+                  <motion.div key={e.t}
+                    initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }} transition={{ delay: .5 + i * .12, duration: .5, ease }}
+                    className="flex flex-col items-center text-center"
+                  >
+                    <div className="relative w-[70px] h-[70px] rounded-2xl border-2 flex items-center justify-center mb-4 z-10"
+                      style={{ borderColor: `rgba(${e.r},.4)`, background: `rgba(${e.r},.08)` }}>
+                      <e.icon size={21} style={{ color: e.c }} />
+                      <span className="absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full text-[.58rem] font-extrabold flex items-center justify-center text-[#07070a]"
+                        style={{ background: e.c }}>{i + 5}</span>
                     </div>
-                    <div className="flex-1 pb-6 pt-1">
-                      <p className="mb-0.5 text-[0.6rem] font-black uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>{num} · {label}</p>
-                      <p className="text-xs leading-relaxed text-white/50">{desc}</p>
-                    </div>
+                    <p className="font-bold text-white text-sm mb-1">{e.t}</p>
+                    <p className="text-xs text-white/45 leading-relaxed mb-2 max-w-[140px]">{e.d}</p>
+                    <span className="text-[.6rem] font-bold px-2.5 py-1 rounded-full border border-white/[0.08]"
+                      style={{ color: e.c }}>
+                      {e.duration}
+                    </span>
                   </motion.div>
                 ))}
-              </motion.div>
+              </div>
             </div>
           </div>
-        </section>
 
-        {/* TABLEAU DES FONCTIONNALITÉS */}
-        <section className="bg-[#160a0d] py-14 sm:py-24">
-          <div className="mx-auto max-w-3xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-md text-sm text-white/45">Tout ce qui est compris dans chaque application mobile livrée par DJAMA.</motion.p>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport} transition={{ duration: 0.5, ease }}
-              className="overflow-hidden rounded-3xl border border-white/[0.10]">
-              <div className="grid grid-cols-[1fr_80px] items-center border-b border-white/[0.10] px-5 py-3.5"
-                style={{ background: "rgba(251,113,133,0.05)" }}>
-                <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/35">Fonctionnalité</p>
-                <p className="text-center text-[0.65rem] font-black uppercase tracking-widest text-white/35">Inclus</p>
-              </div>
-              {TABLE_INCLUS.map(({ label, icon: Icon, color }, i) => (
-                <motion.div key={label}
-                  initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={viewport}
-                  transition={{ duration: 0.35, delay: i * 0.06, ease }}
-                  className={`grid grid-cols-[1fr_80px] items-center px-5 py-4 transition-all hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.06]" : ""}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
-                      <Icon size={14} style={{ color: `rgb(${color})` }} />
-                    </div>
-                    <p className="text-sm text-white/80">{label}</p>
+          {/* Mobile — vertical */}
+          <div className="lg:hidden space-y-3 relative">
+            <div className="absolute left-[22px] top-6 bottom-6 w-px"
+              style={{ background: `linear-gradient(180deg,transparent,rgba(${CR},.35),rgba(${IR},.35),transparent)` }} />
+            {PROCESSUS.map((e, i) => (
+              <motion.div key={e.t}
+                initial={{ opacity: 0, x: -18 }} whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * .07, duration: .4, ease }}
+                className="flex items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 ml-10"
+              >
+                <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: `rgba(${e.r},.12)` }}>
+                  <e.icon size={16} style={{ color: e.c }} />
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[.5rem] font-extrabold flex items-center justify-center text-[#07070a]"
+                    style={{ background: e.c }}>{i + 1}</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className="font-bold text-white text-sm">{e.t}</p>
+                    <span className="text-[.6rem] font-bold" style={{ color: e.c }}>{e.duration}</span>
                   </div>
-                  <div className="flex items-center justify-center">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full"
-                      style={{ background: "rgba(251,113,133,0.12)", border: "1px solid rgba(251,113,133,0.3)" }}>
-                      <CheckCircle2 size={13} style={{ color: ACCENT }} />
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* EXEMPLES D'APPLICATIONS */}
-        <section id="exemples" className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples d'applications créées</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-sm text-white/45">Quelques applications réalisées pour nos clients, de différents secteurs.</motion.p>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid items-start gap-6 sm:grid-cols-3">
-              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }, idx) => (
-                <motion.div key={titre} variants={cardReveal}
-                  className="overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.03] transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.06]">
-                  {/* Mini smartphone mockup */}
-                  <div className="flex items-center justify-center py-6" style={{ background: "#111115" }}>
-                    <div className="relative overflow-hidden rounded-[1.5rem] border-[4px] border-white/[0.10] shadow-xl"
-                      style={{ background: "#0d0d0f", width: 100, aspectRatio: "9/19" }}>
-                      {/* Header */}
-                      <div className="border-b border-white/[0.08] px-2 py-1.5" style={{ background: "#111115" }}>
-                        <div className="h-1 w-8 rounded-full bg-white/20 mx-auto" />
-                      </div>
-                      {/* App content */}
-                      <div className="p-2 space-y-1.5">
-                        <div className="rounded-lg p-2" style={{ background: `rgba(${rgb},0.1)` }}>
-                          <div className="mb-1 h-1.5 w-full rounded-full" style={{ background: `rgba(${rgb},0.4)` }} />
-                          <div className="h-1 w-3/4 rounded-full bg-white/20" />
-                        </div>
-                        {[1, 2, 3].map(n => (
-                          <div key={n} className="flex items-center gap-1.5 rounded-lg p-1.5" style={{ background: "rgba(255,255,255,0.04)" }}>
-                            <div className="h-5 w-5 shrink-0 rounded-lg" style={{ background: `rgba(${rgb},0.15)` }} />
-                            <div className="flex-1 space-y-0.5">
-                              <div className="h-1 w-full rounded-full bg-white/20" />
-                              <div className="h-1 w-2/3 rounded-full bg-white/10" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      {/* Bottom nav */}
-                      <div className="absolute bottom-0 left-0 right-0 flex justify-around border-t border-white/[0.07] py-1.5" style={{ background: "#111115" }}>
-                        {[0, 1, 2, 3].map(i => (
-                          <div key={i} className="h-3 w-3 rounded-full" style={{ background: i === 0 ? `rgba(${rgb},0.5)` : "rgba(255,255,255,0.1)" }} />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  {/* Texte */}
-                  <div className="p-5">
-                    <div className="mb-3 flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${rgb},0.12)` }}>
-                        <Icon size={16} style={{ color }} />
-                      </div>
-                      <h3 className="text-sm font-bold text-white">{titre}</h3>
-                    </div>
-                    <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
-                    <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
-                      <TrendingUp size={11} style={{ color }} />
-                      <p className="text-[0.65rem] font-semibold leading-tight" style={{ color }}>{resultat}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* TÉMOIGNAGES */}
-        <section className="bg-[#160a0d] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Avis clients</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que disent nos clients</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid items-start gap-5 sm:grid-cols-3">
-              {TEMOIGNAGES.map(({ name, activite, note, avis }) => (
-                <motion.div key={name} variants={cardReveal}
-                  className="flex flex-col rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
-                  <div className="mb-4 flex gap-1">
-                    {Array.from({ length: note }).map((_, i) => <Star key={i} size={13} fill="#f9a826" style={{ color: "#f9a826" }} />)}
-                  </div>
-                  <Quote size={20} className="mb-3 opacity-20" style={{ color: ACCENT }} />
-                  <p className="mb-5 flex-1 text-sm leading-relaxed text-white/65">{avis}</p>
-                  <div className="flex items-center gap-3 border-t border-white/[0.07] pt-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-[0.65rem] font-black"
-                      style={{ background: `rgba(${ACCENT_RGB},0.15)`, color: ACCENT }}>
-                      {name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">{name}</p>
-                      <p className="text-[0.65rem] text-white/35">{activite}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* CTA DEVIS */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-2xl px-6 text-center">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport}>
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
-              <motion.h2 variants={fadeIn} className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Parlons de votre application</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mb-8 max-w-md text-sm text-white/60">
-                Décrivez votre idée — on analyse la faisabilité et on revient vers vous sous 24h avec une proposition.
-              </motion.p>
-              <motion.div variants={fadeIn} className="flex flex-wrap justify-center gap-4">
-                <Link href="/contact?besoin=Application+mobile" className="btn-primary px-8 py-4 text-base">
-                  Parler de mon application <ArrowRight size={16} />
-                </Link>
+                  <p className="text-xs text-white/45 leading-relaxed">{e.d}</p>
+                </div>
               </motion.div>
-              <motion.p variants={fadeIn} className="mt-5 text-xs text-white/25">🔒 Sans engagement · Réponse sous 24h · Devis gratuit</motion.p>
-            </motion.div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* FAQ */}
-        <section className="bg-[#160a0d] py-14 sm:py-24">
-          <div className="mx-auto max-w-2xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Vous avez des questions ?</motion.h2>
+      {/* ══════════════════════════════════════════
+          6. SUR MESURE — BLOC PREMIUM
+      ══════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 px-5 relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          <motion.div
+            animate={{ scale: [1, 1.05, 1], opacity: [.03, .07, .03] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] rounded-full blur-[130px]"
+            style={{ background: `radial-gradient(ellipse,rgba(${CR},.8) 0%,rgba(${IR},.6) 50%,transparent 70%)` }}
+          />
+        </div>
+        <div className="max-w-5xl mx-auto relative">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-10">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <Sparkles size={12} style={{ color: G }} /> Notre engagement
             </motion.div>
-            <div className="space-y-3">
-              {FAQ_ITEMS.map(({ q, a }, i) => <FaqItem key={i} q={q} a={a} open={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />)}
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3">
+              Un projet <span style={{ color: C }}>100% sur mesure</span>
+            </motion.h2>
+            <motion.p variants={fadeIn} className="text-white/45 max-w-lg mx-auto text-sm sm:text-base">
+              Pas de template, pas de no-code fragile. Chaque ligne de code est écrite pour votre projet, votre audience, votre vision.
+            </motion.p>
+          </motion.div>
+
+          {/* 3 piliers */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }} transition={{ duration: .6, ease }}
+            className="relative rounded-3xl border overflow-hidden"
+            style={{ borderColor: `rgba(${CR},.18)`, background: `rgba(${CR},.04)` }}
+          >
+            {/* Top gradient line */}
+            <div className="h-px w-full"
+              style={{ background: `linear-gradient(90deg,transparent,rgba(${CR},.5),rgba(${IR},.5),transparent)` }} />
+
+            <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.06]">
+              {[
+                {
+                  icon: Box,    c: C, r: CR,
+                  t: "Chaque projet est unique",
+                  d: "On commence par comprendre votre vision, vos utilisateurs et vos contraintes. Le périmètre se construit avec vous, pas pour vous.",
+                },
+                {
+                  icon: BarChart3, c: I, r: IR,
+                  t: "Devis personnalisé",
+                  d: "Après un atelier stratégique gratuit, vous recevez une proposition détaillée : fonctionnalités, planning, budget. Aucune surprise.",
+                },
+                {
+                  icon: HeartHandshake, c: G, r: GR,
+                  t: "Accompagnement 360°",
+                  d: "Stratégie, design, développement, publication, maintenance — un seul interlocuteur de A à Z. Pas de sous-traitance.",
+                },
+              ].map(item => (
+                <div key={item.t} className="p-7 flex flex-col items-start gap-4">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                    style={{ background: `rgba(${item.r},.12)` }}>
+                    <item.icon size={20} style={{ color: item.c }} />
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-white mb-2">{item.t}</p>
+                    <p className="text-sm text-white/45 leading-relaxed">{item.d}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </section>
 
-        {/* CTA */}
-        <section className="relative overflow-hidden bg-[#160a0d] pb-14 pt-14 sm:pb-24 sm:pt-20">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-15"
-              style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, transparent 70%)` }} />
-          </div>
-          <div className="relative mx-auto max-w-2xl px-6 text-center">
-            <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport} transition={{ duration: 0.6, ease }}>
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: `rgba(${ACCENT_RGB},0.12)` }}>
-                <Sparkles size={26} style={{ color: ACCENT }} />
-              </div>
-              <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Lancez votre application mobile</h2>
-              <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Partagez votre concept — on le transforme en application iOS & Android professionnelle, utile et agréable à utiliser.</p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Link href="/contact?besoin=Application+mobile" className="btn-primary px-8 py-4 text-base">Parler de mon application <ArrowRight size={16} /></Link>
-                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-semibold text-white/70 transition-all hover:bg-white/[0.07] hover:text-white">Voir tous nos services</Link>
-              </div>
+            {/* Bottom CTA */}
+            <div className="border-t border-white/[0.06] px-7 py-5 flex flex-col sm:flex-row items-center justify-between gap-4"
+              style={{ background: "rgba(255,255,255,.01)" }}>
+              <p className="text-sm text-white/45 max-w-md text-center sm:text-left">
+                Discutons de votre projet lors d&apos;un <strong className="text-white/70">appel de 30 min gratuit</strong> — sans engagement.
+              </p>
+              <Link href="/contact?besoin=Application+mobile"
+                className="shrink-0 inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold transition-all duration-200 hover:scale-[1.02]"
+                style={{ background: `linear-gradient(135deg,${C2},${C})`, color: "#07070a" }}>
+                Réserver mon atelier <ArrowRight size={14} />
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          7. EXPERTISE & PREUVES
+      ══════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 px-5 relative overflow-hidden"
+        style={{ background: "rgba(255,255,255,.012)" }}>
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-12">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <BadgeCheck size={12} style={{ color: G }} /> Notre expertise
             </motion.div>
-          </div>
-        </section>
-      </main>
-    </>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3">
+              Pourquoi choisir <span style={{ color: C }}>DJAMA</span>
+            </motion.h2>
+            <motion.p variants={fadeIn} className="text-white/45 max-w-lg mx-auto text-sm sm:text-base">
+              Une app mobile c&apos;est un investissement stratégique. On s&apos;assure qu&apos;il tient sur la durée.
+            </motion.p>
+          </motion.div>
+          <motion.div {...staggerContainerFast} viewport={viewport}
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {PREUVES.map(item => (
+              <motion.div key={item.t} variants={cardReveal}
+                whileHover={{ y: -4, transition: { duration: .2 } }}
+                className="group relative flex items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 overflow-hidden hover:border-white/[0.14] transition-all duration-300 cursor-default"
+              >
+                <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: `radial-gradient(ellipse at 0% 100%,rgba(${item.r},.1) 0%,transparent 60%)` }} />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: `rgba(${item.r},.12)` }}>
+                  <item.icon size={18} style={{ color: item.c }} />
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm mb-1">{item.t}</p>
+                  <p className="text-xs text-white/45 leading-relaxed">{item.d}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          8. TÉMOIGNAGES
+      ══════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 px-5 relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[500px] h-[200px] rounded-full blur-[80px] opacity-[0.05]"
+            style={{ background: `radial-gradient(ellipse,rgba(${CR},1) 0%,transparent 70%)` }} />
+        </div>
+        <div className="max-w-5xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-12">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <Star size={12} style={{ color: "#f9a826" }} /> Ce qu&apos;ils ont lancé
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl font-extrabold mb-3">
+              Des projets <span style={{ color: C }}>qui ont décollé</span>
+            </motion.h2>
+          </motion.div>
+          <motion.div {...staggerContainerFast} viewport={viewport} className="grid sm:grid-cols-3 gap-4">
+            {TEMOIGNAGES.map(t => (
+              <motion.div key={t.n} variants={cardReveal}
+                whileHover={{ y: -5, transition: { duration: .2 } }}
+                className="group relative rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 flex flex-col gap-4 overflow-hidden hover:border-white/[0.14] transition-all duration-300 cursor-default"
+              >
+                <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: `radial-gradient(ellipse at 50% 110%,rgba(${t.c},.08) 0%,transparent 60%)` }} />
+                <div className="flex gap-0.5">
+                  {Array.from({ length: t.s }).map((_, i) => (
+                    <Star key={i} size={13} fill="#f9a826" stroke="none" />
+                  ))}
+                </div>
+                <p className="text-sm text-white/65 leading-relaxed flex-1 italic">&ldquo;{t.t}&rdquo;</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-[#07070a] shrink-0"
+                    style={{ background: `rgba(${t.c},.9)` }}>{t.i}</div>
+                  <div>
+                    <p className="text-sm font-bold text-white leading-tight">{t.n}</p>
+                    <p className="text-xs text-white/40">{t.r}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          9. FAQ
+      ══════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 px-5"
+        style={{ background: "rgba(255,255,255,.012)" }}>
+        <div className="max-w-2xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-12">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <HelpCircle size={12} style={{ color: C }} /> Questions fréquentes
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl font-extrabold mb-3">
+              Vos questions, <span style={{ color: C }}>nos réponses</span>
+            </motion.h2>
+          </motion.div>
+          <motion.div {...staggerContainerFast} viewport={viewport} className="space-y-2.5">
+            {FAQ.map((item, i) => (
+              <motion.div key={i} variants={cardReveal}
+                className="rounded-2xl border overflow-hidden transition-all duration-200"
+                style={{
+                  borderColor: openFaq === i ? `rgba(${CR},.3)` : "rgba(255,255,255,.07)",
+                  background:  openFaq === i ? `rgba(${CR},.05)` : "rgba(255,255,255,.03)",
+                }}
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors"
+                >
+                  <span className="text-sm font-semibold text-white/88 leading-snug">{item.q}</span>
+                  <motion.div animate={{ rotate: openFaq === i ? 180 : 0 }} transition={{ duration: .22 }} className="shrink-0">
+                    <ChevronDown size={14} style={{ color: openFaq === i ? C : "rgba(255,255,255,.38)" }} />
+                  </motion.div>
+                </button>
+                <AnimatePresence>
+                  {openFaq === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }} transition={{ duration: .22 }}
+                    >
+                      <p className="px-5 pb-4 text-sm text-white/55 leading-relaxed border-t border-white/[0.05] pt-3">{item.a}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          10. CTA FINAL
+      ══════════════════════════════════════════ */}
+      <section className="py-16 sm:py-28 px-5 relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          <motion.div
+            animate={{ scale: [1, 1.1, 1], opacity: [.05, .11, .05] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[400px] rounded-full blur-[150px]"
+            style={{ background: `radial-gradient(ellipse,rgba(${CR},1) 0%,rgba(${IR},.7) 45%,transparent 70%)` }}
+          />
+          <div className="absolute inset-0 opacity-[0.014]"
+            style={{ backgroundImage: "radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
+        </div>
+
+        <div className="max-w-3xl mx-auto relative">
+          <motion.div {...staggerContainer} viewport={viewport}
+            className="relative rounded-3xl border p-8 sm:p-14 text-center overflow-hidden"
+            style={{ borderColor: `rgba(${CR},.2)`, background: `rgba(${CR},.04)` }}
+          >
+            {/* Corners */}
+            <div className="absolute top-0 left-0 w-28 h-28 rounded-br-3xl border-b border-r"
+              style={{ borderColor: `rgba(${CR},.12)` }} />
+            <div className="absolute bottom-0 right-0 w-28 h-28 rounded-tl-3xl border-t border-l"
+              style={{ borderColor: `rgba(${CR},.12)` }} />
+            {/* Floating orbs in card */}
+            <div className="pointer-events-none absolute -top-12 right-8 w-40 h-40 rounded-full blur-3xl opacity-15"
+              style={{ background: `rgba(${CR},1)` }} />
+            <div className="pointer-events-none absolute -bottom-12 left-8 w-36 h-36 rounded-full blur-3xl opacity-12"
+              style={{ background: `rgba(${IR},1)` }} />
+
+            <motion.div variants={fadeIn}
+              className="relative inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-7">
+              <Rocket size={12} style={{ color: C }} /> Votre app vous attend
+            </motion.div>
+
+            <motion.h2 variants={fadeIn}
+              className="relative text-3xl sm:text-4xl lg:text-[2.8rem] font-extrabold mb-5 leading-tight">
+              Transformons votre idée<br />
+              <span style={{
+                background: `linear-gradient(135deg,${C},${I})`,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}>
+                en application réelle.
+              </span>
+            </motion.h2>
+
+            <motion.p variants={fadeIn}
+              className="relative text-white/45 text-base max-w-md mx-auto mb-9">
+              Atelier stratégique gratuit de 30 min. On définit ensemble le périmètre, la stack et le budget — sans engagement.
+            </motion.p>
+
+            <motion.div variants={fadeIn} className="relative flex flex-col sm:flex-row justify-center gap-3 mb-9">
+              <Link href="/contact?besoin=Application+mobile"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold transition-all duration-200 hover:scale-[1.02] shadow-[0_0_40px_rgba(34,211,238,0.2)] hover:shadow-[0_0_60px_rgba(34,211,238,0.38)]"
+                style={{ background: `linear-gradient(135deg,${C2},${C})`, color: "#07070a" }}>
+                Parler de mon application <ArrowRight size={15} />
+              </Link>
+              <Link href="/contact"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.04] px-8 py-4 text-sm font-semibold text-white/65 hover:bg-white/[0.08] hover:text-white transition-all duration-200">
+                Voir nos réalisations
+              </Link>
+            </motion.div>
+
+            <motion.div variants={fadeIn}
+              className="relative flex flex-wrap justify-center gap-5 sm:gap-7">
+              {[
+                [Clock,      "Atelier gratuit 30 min"],
+                [Shield,     "Sans engagement"],
+                [Smartphone, "iOS + Android"],
+                [Star,       "Devis sous 48h"],
+              ].map(([Icon, l]) => (
+                <div key={l as string} className="flex items-center gap-1.5 text-xs text-white/35">
+                  <Icon size={11} style={{ color: C }} />
+                  {l as string}
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+    </main>
   );
 }
