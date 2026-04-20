@@ -530,9 +530,12 @@ export default function RealisationsPage() {
       ══════════════════════════════════════════ */}
       <section className="relative overflow-hidden pb-12 pt-24 sm:pb-24 sm:pt-40">
         <div className="hero-grid absolute inset-0 opacity-40" />
+        {/* Animated orbs */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[350px] w-[500px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[75px]" />
+          <div className="h-[380px] w-[560px] animate-float-slow rounded-full bg-[rgba(201,165,90,0.07)] blur-[75px]" />
         </div>
+        <div className="pointer-events-none absolute right-[10%] top-[35%] h-[240px] w-[240px] animate-float-delayed rounded-full bg-[rgba(96,165,250,0.04)] blur-[55px]" />
+        <div className="pointer-events-none absolute left-[8%] top-[45%] h-[180px] w-[180px] animate-float rounded-full bg-[rgba(167,139,250,0.04)] blur-[45px]" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
           <motion.div
@@ -541,6 +544,7 @@ export default function RealisationsPage() {
             transition={{ duration: 0.55, ease }}
             className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a] hover-glow-gold cursor-default"
           >
+            <span className="animate-pulse-ring relative flex h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
             <Sparkles size={11} /> Portfolio & réalisations
           </motion.div>
 

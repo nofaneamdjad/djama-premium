@@ -487,10 +487,13 @@ export default function ServicesPage() {
       ══════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden pb-14 pt-24 sm:pb-32 sm:pt-40">
 
-        <div className="hero-grid absolute inset-0 opacity-60" />
+        <div className="hero-grid absolute inset-0 opacity-50" />
+        {/* Animated orbs */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[350px] w-[500px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[75px]" />
+          <div className="h-[400px] w-[600px] animate-float-slow rounded-full bg-[rgba(201,165,90,0.08)] blur-[80px]" />
         </div>
+        <div className="pointer-events-none absolute right-[10%] top-[30%] h-[300px] w-[300px] animate-float-delayed rounded-full bg-[rgba(167,139,250,0.05)] blur-[70px]" />
+        <div className="pointer-events-none absolute left-[5%] bottom-[10%] h-[250px] w-[250px] animate-float rounded-full bg-[rgba(96,165,250,0.04)] blur-[60px]" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
 
@@ -669,19 +672,21 @@ export default function ServicesPage() {
                   <motion.div
                     key={title}
                     variants={cardReveal}
-                    className="group rounded-[1.5rem] border border-white/[0.07] bg-white/[0.03] p-7 transition-all duration-400 hover:border-white/[0.13] hover:bg-white/[0.05]"
+                    whileHover={{ y: -5, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
+                    className="group relative overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-white/[0.03] p-7 transition-all duration-300 hover:border-white/[0.14] hover:bg-white/[0.05] hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
                   >
                     <div
-                      className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl border"
-                      style={{
-                        background: `rgba(${rgb}, 0.10)`,
-                        borderColor: `rgba(${rgb}, 0.22)`,
-                      }}
+                      className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                      style={{ background: `radial-gradient(ellipse at 20% 0%, rgba(${rgb},0.10) 0%, transparent 60%)` }}
+                    />
+                    <div
+                      className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-110"
+                      style={{ background: `rgba(${rgb}, 0.10)`, borderColor: `rgba(${rgb}, 0.22)` }}
                     >
                       <Icon size={22} style={{ color }} />
                     </div>
-                    <h3 className="text-[0.95rem] font-extrabold text-white/85">{title}</h3>
-                    <p className="mt-2.5 text-sm leading-relaxed text-white/40">{desc}</p>
+                    <h3 className="text-[0.95rem] font-extrabold text-white/88">{title}</h3>
+                    <p className="mt-2.5 text-sm leading-relaxed text-white/42">{desc}</p>
                   </motion.div>
                 );
               })}

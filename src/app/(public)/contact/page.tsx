@@ -250,9 +250,12 @@ function ContactPageContent() {
       <section className="relative overflow-hidden pb-16 pt-24 sm:pb-28 sm:pt-40">
         {/* Backgrounds */}
         <div className="hero-grid absolute inset-0 opacity-50" />
+        {/* Animated orbs */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[350px] w-[500px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[70px]" />
+          <div className="h-[400px] w-[600px] animate-float-slow rounded-full bg-[rgba(201,165,90,0.08)] blur-[80px]" />
         </div>
+        <div className="pointer-events-none absolute right-[8%] top-[30%] h-[260px] w-[260px] animate-float-delayed rounded-full bg-[rgba(167,139,250,0.05)] blur-[60px]" />
+        <div className="pointer-events-none absolute left-[6%] top-[50%] h-[200px] w-[200px] animate-float rounded-full bg-[rgba(96,165,250,0.04)] blur-[50px]" />
 
         <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
 
@@ -263,6 +266,7 @@ function ContactPageContent() {
             transition={{ duration: 0.55, ease }}
             className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]"
           >
+            <span className="animate-pulse-ring relative flex h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
             <Sparkles size={11} /> {c.hero.badge}
           </motion.div>
 

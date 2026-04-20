@@ -392,79 +392,99 @@ function HomeContent() {
       ══════════════════════════════════════════════ */}
       <section className="hero-dark hero-grid relative overflow-hidden">
 
-        <div className="pointer-events-none absolute -left-24 -top-8 h-[400px] w-[400px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[120px]" />
-        <div className="pointer-events-none absolute right-[-60px] top-[30%] h-[300px] w-[300px] rounded-full bg-[rgba(167,139,250,0.05)] blur-[100px]" />
+        {/* Animated glow orbs */}
+        <div className="pointer-events-none absolute -left-24 -top-8 h-[480px] w-[480px] animate-float-slow rounded-full bg-[rgba(201,165,90,0.08)] blur-[120px]" />
+        <div className="pointer-events-none absolute right-[-80px] top-[25%] h-[360px] w-[360px] animate-float-delayed rounded-full bg-[rgba(167,139,250,0.06)] blur-[100px]" />
+        <div className="pointer-events-none absolute bottom-[10%] left-[40%] h-[280px] w-[280px] animate-float rounded-full bg-[rgba(96,165,250,0.04)] blur-[80px]" />
 
-        <div className="relative z-10 mx-auto max-w-6xl px-6 pb-40 pt-48">
-          <div className="grid items-center gap-12 lg:grid-cols-[1fr_260px]">
+        <div className="relative z-10 mx-auto max-w-6xl px-6 pb-44 pt-44 lg:pt-48">
+          <div className="grid items-center gap-12 lg:grid-cols-[1fr_280px]">
 
             <div>
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }} className="mb-7">
-                <span className="badge badge-gold-dark"><Sparkles size={10} /> {heroBadge}</span>
+              {/* Badge with pulse ring */}
+              <motion.div
+                initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5, ease }}
+                className="mb-7"
+              >
+                <span className="badge badge-gold-dark relative">
+                  <Sparkles size={10} />
+                  {heroBadge}
+                  <span className="absolute inset-0 rounded-full border border-[rgba(201,165,90,0.35)] animate-pulse-ring" />
+                </span>
               </motion.div>
 
               <h1 className="display-hero text-white">
                 <MultiLineReveal lines={[heroTitle1, heroTitle2]} highlight={1} stagger={0.14} wordStagger={0.055} delay={0.06} lineClassName="block" />
               </h1>
 
-              <FadeReveal delay={0.55} as="p" className="mt-6 max-w-[520px] text-[1.05rem] leading-[1.85] text-white/48">
+              <FadeReveal delay={0.55} as="p" className="mt-6 max-w-[520px] text-[1.05rem] leading-[1.85] text-white/50">
                 {heroSubtitle}
               </FadeReveal>
 
               <FadeReveal delay={0.7} className="mt-9 flex flex-wrap gap-3">
-                <Link href={ctaPrimHref} className="btn-primary px-7 py-[0.875rem] text-[0.925rem]">
+                <Link href={ctaPrimHref} className="btn-primary px-7 py-[0.9rem] text-[0.925rem]">
                   {ctaPrimText} <ArrowRight size={15} />
                 </Link>
-                <Link href={ctaSecHref} className="btn-ghost px-7 py-[0.875rem] text-[0.925rem]">
+                <Link href={ctaSecHref} className="btn-ghost px-7 py-[0.9rem] text-[0.925rem]">
                   {ctaSecText}
                 </Link>
               </FadeReveal>
 
-              <FadeReveal delay={0.85} className="mt-10 flex items-center gap-5 border-t border-white/[0.06] pt-9">
+              <FadeReveal delay={0.85} className="mt-10 flex items-center gap-5 border-t border-white/[0.07] pt-9">
                 <div className="flex -space-x-2">
                   {[...Array(5)].map((_, i) => (
-                    <div key={i} style={{ zIndex: 5 - i }} className="h-8 w-8 rounded-full border-2 border-[#09090b] bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]" />
+                    <div
+                      key={i}
+                      style={{ zIndex: 5 - i }}
+                      className="h-8 w-8 rounded-full border-2 border-[#09090b] bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f] shadow-[0_0_0_1px_rgba(201,165,90,0.3)]"
+                    />
                   ))}
                 </div>
                 <div>
                   <div className="mb-1 flex items-center gap-0.5">
                     {[...Array(5)].map((_, i) => <Star key={i} size={10} className="fill-[#c9a55a] text-[#c9a55a]" />)}
                   </div>
-                  <p className="text-[0.82rem] text-white/38">
+                  <p className="text-[0.82rem] text-white/40">
                     <span className="font-semibold text-white/65">{h.hero.socialProof}</span>
                   </p>
                 </div>
               </FadeReveal>
             </div>
 
-            {/* Panneau services — desktop */}
+            {/* Panneau services — desktop, floating */}
             <motion.aside
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.4, ease }}
+              initial={{ opacity: 0, y: 24, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="hidden lg:block"
+              style={{ animation: "float 8s ease-in-out infinite 0.8s" }}
             >
-              <div className="overflow-hidden rounded-[1.4rem] border border-white/[0.08] bg-white/[0.03] shadow-[0_24px_60px_rgba(0,0,0,0.4)] backdrop-blur-xl">
-                <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                  <p className="ml-auto text-[0.58rem] font-bold uppercase tracking-[0.18em] text-white/25">DJAMA · Services</p>
+              <div
+                className="overflow-hidden rounded-[1.6rem] border border-white/[0.1] bg-white/[0.03] shadow-[0_32px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-xl"
+                style={{ boxShadow: "0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)" }}
+              >
+                {/* Window chrome */}
+                <div className="flex items-center gap-2 border-b border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(248,113,113,0.4)]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(251,191,36,0.4)]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(74,222,128,0.4)]" />
+                  <p className="ml-auto text-[0.58rem] font-bold uppercase tracking-[0.18em] text-white/22">DJAMA · Services</p>
                 </div>
-                <div className="px-4 py-3 space-y-2">
+
+                <div className="px-4 py-3.5 space-y-2.5">
                   {HERO_SERVICE_GROUPS.map((group, gi) => (
                     <div key={gi}>
-                      {gi > 0 && <div className="mb-2 h-px bg-white/[0.05]" />}
+                      {gi > 0 && <div className="mb-2.5 h-px bg-white/[0.05]" />}
                       <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
                         {group.items.map((item) => (
-                          <div
-                            key={item}
-                            className="group/s flex items-start gap-1.5 py-[3px] cursor-default"
-                          >
+                          <div key={item} className="group/s flex items-start gap-1.5 py-[3px] cursor-default">
                             <div
-                              className="mt-[4px] h-[5px] w-[5px] shrink-0 rounded-full transition-transform duration-150 group-hover/s:scale-125"
+                              className="mt-[5px] h-[5px] w-[5px] shrink-0 rounded-full transition-all duration-200 group-hover/s:scale-150 group-hover/s:shadow-[0_0_4px_currentColor]"
                               style={{ background: group.color }}
                             />
-                            <span className="text-[0.66rem] leading-[1.3] text-white/52 transition-colors duration-150 group-hover/s:text-white/80">
+                            <span className="text-[0.65rem] leading-[1.35] text-white/48 transition-colors duration-200 group-hover/s:text-white/82">
                               {item}
                             </span>
                           </div>
@@ -473,9 +493,10 @@ function HomeContent() {
                     </div>
                   ))}
                 </div>
-                <div className="border-t border-white/[0.06] bg-[rgba(201,165,90,0.04)] px-4 py-4 text-center">
-                  <p className="text-[2rem] font-black leading-none tracking-tight text-[#c9a55a]">50+</p>
-                  <p className="mt-1 text-[0.72rem] text-white/35">clients accompagnés depuis 2022</p>
+
+                <div className="border-t border-white/[0.06] bg-gradient-to-r from-[rgba(201,165,90,0.05)] to-transparent px-4 py-4 text-center">
+                  <p className="text-[2.1rem] font-black leading-none tracking-tight text-[#c9a55a]">50+</p>
+                  <p className="mt-1 text-[0.7rem] text-white/32">clients accompagnés depuis 2022</p>
                   <div className="mt-2.5 flex justify-center gap-0.5">
                     {[...Array(5)].map((_, i) => <Star key={i} size={9} className="fill-[#c9a55a] text-[#c9a55a]" />)}
                   </div>
@@ -485,13 +506,15 @@ function HomeContent() {
 
           </div>
         </div>
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white to-transparent" />
+
+        {/* Bottom fade to white */}
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
       </section>
 
       {/* ══════════════════════════════════════════════
           2. STATS
       ══════════════════════════════════════════════ */}
-      <section className="border-b border-[var(--border)] py-14">
+      <section className="border-b border-[var(--border)]/60 py-14">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainerFast}
@@ -503,13 +526,23 @@ function HomeContent() {
               const color = STAT_COLORS[i];
               return (
                 <motion.div
-                  key={label} variants={cardReveal}
-                  className="group flex flex-col items-center gap-2.5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_12px_36px_rgba(0,0,0,0.07)]"
+                  key={label}
+                  variants={cardReveal}
+                  whileHover={{ y: -5, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
+                  className="group relative flex flex-col items-center gap-2.5 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center transition-all duration-300 hover:border-transparent hover:shadow-[0_16px_40px_rgba(0,0,0,0.08)]"
                 >
-                  <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110" style={{ background: `${color}14` }}>
-                    <Icon size={16} style={{ color }} />
+                  {/* Gradient overlay on hover */}
+                  <div
+                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-2xl"
+                    style={{ background: `radial-gradient(ellipse at 50% 0%, ${color}0f 0%, transparent 65%)` }}
+                  />
+                  <div
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-110 group-hover:shadow-[0_0_16px_currentColor]"
+                    style={{ background: `${color}12`, borderColor: `${color}22` }}
+                  >
+                    <Icon size={17} style={{ color }} />
                   </div>
-                  <p className="text-[2rem] font-black leading-none tracking-tight text-[var(--ink)]">{value}</p>
+                  <p className="text-[2.1rem] font-black leading-none tracking-tight text-[var(--ink)]">{value}</p>
                   <div>
                     <p className="text-[0.8rem] font-bold leading-snug text-[var(--ink)]">{label}</p>
                     <p className="mt-0.5 text-[0.72rem] text-[var(--muted)]">{sub}</p>
@@ -563,29 +596,35 @@ function HomeContent() {
               <motion.div
                 key={category}
                 variants={cardReveal}
-                className="group flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
+                whileHover={{ y: -6, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }}
+                className="group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
                 style={{ borderColor: border, background: "rgba(255,255,255,0.03)" }}
               >
+                {/* Glow overlay on hover */}
+                <div
+                  className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-400 group-hover:opacity-100"
+                  style={{ background: `radial-gradient(ellipse at 50% -20%, ${color}18 0%, transparent 70%)` }}
+                />
                 {/* Barre top colorée */}
-                <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${color}, ${color}44)` }} />
+                <div className="h-[2px] w-full transition-all duration-300 group-hover:h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}55)` }} />
 
-                <div className="flex flex-1 flex-col p-5">
+                <div className="relative flex flex-1 flex-col p-5">
                   {/* En-tête catégorie */}
                   <div className="mb-4 flex items-center gap-2.5">
                     <div
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-[0_0_16px_rgba(0,0,0,0.3)]"
                       style={{ background: bg, border: `1px solid ${border}` }}
                     >
-                      <Icon size={15} style={{ color }} />
+                      <Icon size={16} style={{ color }} />
                     </div>
-                    <h3 className="text-[0.82rem] font-extrabold text-white/85">{category}</h3>
+                    <h3 className="text-[0.83rem] font-extrabold text-white/88">{category}</h3>
                   </div>
 
                   {/* Liste services */}
                   <ul className="flex flex-col gap-2">
                     {services.map((s) => (
-                      <li key={s} className="flex items-center gap-2 text-[0.78rem] text-white/45 transition-colors duration-200 group-hover:text-white/60">
-                        <div className="h-1 w-1 shrink-0 rounded-full" style={{ background: color }} />
+                      <li key={s} className="flex items-center gap-2 text-[0.78rem] text-white/42 transition-colors duration-200 group-hover:text-white/65">
+                        <div className="h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-200 group-hover:scale-110" style={{ background: color }} />
                         {s}
                       </li>
                     ))}
@@ -949,10 +988,12 @@ function HomeContent() {
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
-          className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.16)] bg-[var(--ink)] px-8 py-24 text-center md:px-20"
+          className="relative overflow-hidden rounded-[2rem] border animate-border-glow bg-[var(--ink)] px-8 py-24 text-center md:px-20"
+          style={{ borderColor: "rgba(201,165,90,0.18)" }}
         >
-          <div className="pointer-events-none absolute left-[10%] top-[-70px] h-[240px] w-[320px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[70px]" />
-          <div className="pointer-events-none absolute bottom-[-50px] right-[8%] h-[200px] w-[240px] rounded-full bg-[rgba(96,165,250,0.04)] blur-[60px]" />
+          {/* Animated background glow */}
+          <div className="pointer-events-none absolute left-[10%] top-[-70px] h-[280px] w-[360px] animate-float-slow rounded-full bg-[rgba(201,165,90,0.08)] blur-[70px]" />
+          <div className="pointer-events-none absolute bottom-[-50px] right-[8%] h-[220px] w-[260px] animate-float-delayed rounded-full bg-[rgba(96,165,250,0.05)] blur-[60px]" />
 
           <div className="relative z-10">
             <motion.span variants={fadeIn} className="badge badge-gold-dark">
