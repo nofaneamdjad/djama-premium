@@ -189,6 +189,22 @@ export type QuoteRow = {
   quote_items?: QuoteItemRow[];
 };
 
+// ── Visuels publicitaires ────────────────────────────────────
+export type VisualCategory = 'digital' | 'print';
+export type VisualStatus   = 'published' | 'draft';
+
+export type VisualRow = {
+  id:           string;
+  title:        string;
+  category:     VisualCategory;
+  sub_category: string | null;
+  description:  string | null;
+  image_url:    string;
+  status:       VisualStatus;
+  sort_order:   number;
+  created_at:   string;
+};
+
 // ── Factures (migration 010) ──────────────────────────────────
 export type InvoiceStatus        = 'brouillon' | 'envoyée' | 'payée' | 'en retard' | 'annulée';
 export type InvoicePaymentStatus = 'non payée' | 'payée' | 'partielle';

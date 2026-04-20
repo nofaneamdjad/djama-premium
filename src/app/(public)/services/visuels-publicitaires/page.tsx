@@ -1,490 +1,871 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Megaphone, ArrowRight, CheckCircle2, Sparkles, ChevronDown,
-  Zap, Target, User, Mail, Phone,
-  MessageSquare, Loader2, Send, ArrowLeft,
-  Image, Layout, FileImage, Monitor, ShoppingBag,
-  Briefcase, Star, TrendingUp, Instagram, Hash,
-  Palette, Settings, FileText, LayoutGrid,
+  ArrowLeft, Star, Palette, TrendingUp, Download, ZoomIn,
+  Zap, Image, Monitor, FileImage, Layers, Layout,
+  Clock, Shield, BadgeCheck, HelpCircle, Printer,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
+import { getSupabase } from "@/lib/supabase";
+import type { VisualRow } from "@/types/db";
 
-const ease       = [0.16, 1, 0.3, 1] as const;
-const ACCENT     = "#ec4899";
-const ACCENT_RGB = "236,72,153";
+const ease = [0.16, 1, 0.3, 1] as const;
 
-/* ─────────────────────────────────────────────────────────
-   DONNÉES
-───────────────────────────────────────────────────────── */
-const TYPES_VISUELS = [
-  { icon: Image,     color: "#f9a826", rgb: "249,168,38",  title: "Posts sponsorisés",          desc: "Visuels carrés ou paysages optimisés pour les publicités sur Meta, Instagram et Facebook Ads." },
-  { icon: Layout,    color: "#60a5fa", rgb: "96,165,250",  title: "Stories publicitaires",      desc: "Formats verticaux 9:16 percutants pour des stories sponsorisées qui retiennent l'attention." },
-  { icon: Monitor,   color: "#4ade80", rgb: "74,222,128",  title: "Bannières",                  desc: "Bannières display pour campagnes Google Ads, sites partenaires et réseaux publicitaires." },
-  { icon: FileImage, color: ACCENT,    rgb: ACCENT_RGB,    title: "Flyers digitaux",            desc: "Flyers événementiels ou promotionnels au format numérique pour diffusion sur les réseaux." },
-  { icon: Star,      color: "#f472b6", rgb: "244,114,182", title: "Visuels promotionnels",      desc: "Soldes, offres limitées, lancement de produit — des visuels qui mettent votre offre en avant." },
-  { icon: Instagram, color: "#a78bfa", rgb: "167,139,250", title: "Annonces Meta / Instagram",  desc: "Créations pensées nativement pour les formats publicitaires de Meta : single image, carousel, collection." },
+/* ── Palette rose / fuchsia — design créatif ── */
+const R  = "#f43f5e";
+const RR = "244,63,94";
+const R2 = "#e11d48";
+const V  = "#c026d3";
+const VR = "192,38,211";
+const G  = "#c9a55a";
+const GR = "201,165,90";
+
+/* ═══════════════════════════════ DATA ═══════════════════════════════ */
+
+const TYPES_DIGITAL = [
+  { icon: Image,    c: R,        r: RR,           t: "Réseaux sociaux",             d: "Posts, carrousels, stories — tous formats pour Instagram, Facebook, LinkedIn, TikTok." },
+  { icon: Megaphone,c: V,        r: VR,           t: "Publicités Facebook / Insta", d: "Creatives ads optimisées pour la conversion : single image, carousel, collection." },
+  { icon: Monitor,  c: "#f9a826",r: "249,168,38", t: "Bannières web & display",     d: "Formats display Google Ads, bannières site web, habillage digital." },
+  { icon: Layout,   c: "#4ade80",r: "74,222,128", t: "Visuels marketing & email",   d: "Newsletters, headers d'email, visuels promotionnels, covers LinkedIn." },
 ];
 
-const CE_QUE_NOUS_TRAVAILLONS = [
-  { icon: MessageSquare, color: "#60a5fa", rgb: "96,165,250", title: "Message clair",            desc: "Un visuel publicitaire efficace dit l'essentiel en moins de 3 secondes. On structure votre message pour qu'il frappe juste." },
-  { icon: Star,          color: ACCENT,    rgb: ACCENT_RGB,   title: "Design professionnel",    desc: "Mise en page soignée, typographie lisible, hiérarchie visuelle maîtrisée — un rendu qui inspire confiance." },
-  { icon: Hash,          color: "#4ade80", rgb: "74,222,128", title: "Branding cohérent",       desc: "Vos couleurs, votre logo, votre ton — on respecte votre identité visuelle pour des publicités reconnaissables." },
-  { icon: Megaphone,     color: "#f472b6", rgb: "244,114,182",title: "Mise en avant de l'offre",desc: "Prix, promotion, avantage clé — on met en scène votre proposition de valeur de façon claire et attractive." },
-  { icon: Target,        color: "#a78bfa", rgb: "167,139,250",title: "Pensés pour convertir",   desc: "Call-to-action bien placé, visuel qui attire l'œil, message ancré dans les besoins de votre cible." },
+const TYPES_PRINT = [
+  { icon: Printer,   c: R,        r: RR,           t: "Affiches publicitaires",   d: "Formats A0 à A3 — événements, promotions, vitrine. Fichiers prêts pour impression." },
+  { icon: Layers,    c: V,        r: VR,           t: "Bâches publicitaires",     d: "Grands formats extérieurs, bâches de chantier, vitrophanie — haute résolution." },
+  { icon: FileImage, c: "#f9a826",r: "249,168,38", t: "Banderoles",               d: "Banderoles événementielles ou commerçantes, tous formats, fichiers 300 dpi." },
+  { icon: Image,     c: "#4ade80",r: "74,222,128", t: "Panneaux publicitaires",   d: "4×3, abribus, PLV — visuels conçus pour être lus à distance." },
+  { icon: FileImage, c: R,        r: RR,           t: "Flyers & dépliants",       d: "A4, A5, DL — recto/verso, tryptique. Mise en page claire et attractive." },
+  { icon: BadgeCheck,c: V,        r: VR,           t: "Cartes de visite",         d: "Design premium 85×55 mm, recto/verso, avec effets pelliculage ou dorure." },
 ];
 
-const POUR_QUI = [
-  { icon: Briefcase,   color: "#60a5fa", rgb: "96,165,250", who: "Entreprises",           desc: "Campagnes de notoriété, lancement de service, recrutement — on crée les visuels adaptés à vos objectifs.",   tags: ["B2B", "Notoriété", "Campagne"] },
-  { icon: ShoppingBag, color: ACCENT,    rgb: ACCENT_RGB,   who: "Commerces & e-commerce",desc: "Promos, nouveautés, soldes — des visuels conçus pour vendre et générer du trafic vers votre boutique.",      tags: ["Soldes", "Produit", "Vente"] },
-  { icon: TrendingUp,  color: "#4ade80", rgb: "74,222,128", who: "Marques",               desc: "Visuels alignés sur votre identité de marque pour maintenir une présence forte et cohérente sur les réseaux.", tags: ["Identité", "Branding", "Feed"] },
-  { icon: Star,        color: "#f472b6", rgb: "244,114,182",who: "Entrepreneurs",         desc: "Vous lancez une offre, un service ou un événement — on vous crée des visuels prêts à diffuser.",            tags: ["Lancement", "Offre", "Promo"] },
+const VALEUR = [
+  { icon: Zap,       c: R,        r: RR,           t: "Impact immédiat",            d: "En 3 secondes, un visuel pro transmet votre message et capte l'attention de votre cible." },
+  { icon: BadgeCheck,c: V,        r: VR,           t: "Crédibilité & confiance",    d: "Un design professionnel génère instantanément confiance et perception de qualité." },
+  { icon: TrendingUp,c: "#f9a826",r: "249,168,38", t: "Meilleure conversion",       d: "Des visuels pensés pour déclencher l'action : CTA bien placé, hiérarchie visuelle maîtrisée." },
+  { icon: Palette,   c: "#4ade80",r: "74,222,128", t: "Cohérence de marque",        d: "Vos couleurs, votre typographie, votre ton — une identité visuelle forte et reconnaissable." },
+  { icon: Clock,     c: R,        r: RR,           t: "Prêts à utiliser",           d: "Formats natifs livrés (PNG/JPG/PDF HD) + sources éditables. Publiez ou imprimez directement." },
+  { icon: Layers,    c: V,        r: VR,           t: "Multi-formats couverts",     d: "Une commande, toutes les déclinaisons : social, print, display — adaptation automatique." },
 ];
 
-const CE_QUE_VOUS_OBTENEZ = [
-  { label: "Brief & direction artistique", desc: "On analyse vos objectifs, votre audience et votre charte graphique pour cadrer les visuels.",   icon: Palette,    color: "249,168,38"  },
-  { label: "Création des visuels",         desc: "Conception des visuels dans les formats demandés — 1 à 30 déclinaisons selon le pack.",          icon: Sparkles,   color: "96,165,250"  },
-  { label: "2 séries de retouches",        desc: "Deux allers-retours inclus pour ajuster les visuels selon vos retours.",                         icon: Settings,   color: "74,222,128"  },
-  { label: "Fichiers sources + exports",   desc: "Vous recevez les fichiers PNG/JPG haute résolution + les sources éditables (AI, PSD ou Figma).", icon: FileText,   color: "249,168,38"  },
-  { label: "Déclinaisons multi-formats",   desc: "Adaptation automatique au format Stories, Post carré, bannière web et format print si besoin.",  icon: LayoutGrid, color: "244,114,182" },
+const PROCESSUS = [
+  { icon: Megaphone,   c: G,        r: GR,           t: "Brief client",        d: "Objectifs, audience, message clé, références visuelles.",        dur: "J1"    },
+  { icon: Palette,     c: R,        r: RR,           t: "Direction artistique", d: "Recherche créative, moodboard, direction typographique.",         dur: "J1–J2" },
+  { icon: Sparkles,    c: V,        r: VR,           t: "Création",            d: "Design des visuels dans tous les formats demandés.",              dur: "J2–J3" },
+  { icon: CheckCircle2,c: "#4ade80",r: "74,222,128", t: "Validation",          d: "2 rounds de retours inclus pour affiner chaque détail.",          dur: "J3–J4" },
+  { icon: Download,    c: G,        r: GR,           t: "Livraison",           d: "PNG/JPG HD + sources éditables Figma, AI ou PSD.",               dur: "J4–J5" },
 ];
 
-const EXEMPLES_PROJETS = [
-  { icon: Megaphone, color: "#f9a826", rgb: "249,168,38", titre: "Campagne Instagram",      desc: "Pack de 10 visuels pour une boutique mode — stories + posts + bannière pour le lancement d'une collection.",          resultat: "+2 400 clics sur la campagne Meta Ads" },
-  { icon: Star,      color: "#60a5fa", rgb: "96,165,250", titre: "Identité pub restaurant", desc: "Visuels menu du jour, promotions hebdomadaires et stories pour un restaurant gastronomique parisien.",                  resultat: "Taux d'engagement stories multiplié par 3" },
-  { icon: Zap,       color: "#4ade80", rgb: "74,222,128", titre: "Visuels Google Ads",      desc: "Bannières display en 5 formats pour une campagne de notoriété — avec variantes A/B pour les tests.",                   resultat: "CTR de 4.2% vs 1.1% en moyenne secteur" },
+const FAQ = [
+  { q: "Quels formats de fichiers livrez-vous ?",                a: "Tous les visuels sont livrés en PNG et JPEG haute résolution (300 dpi pour le print, 72–96 dpi pour le digital). Vous recevez également les sources éditables Figma, Adobe Illustrator (.AI) ou Photoshop (.PSD) selon votre demande." },
+  { q: "Puis-je demander des modifications après livraison ?",   a: "2 rounds de modifications sont inclus dans chaque commande. Au-delà, des ajustements supplémentaires sont possibles sur devis, selon l'ampleur des changements demandés." },
+  { q: "Gérez-vous aussi l'impression physique ?",               a: "Nous livrons des fichiers prêts à imprimer (300 dpi, profil CMJN, fond perdu inclus). L'impression en elle-même n'est pas gérée directement, mais nous pouvons vous orienter vers des imprimeurs partenaires." },
+  { q: "Quel délai pour des visuels print (bâches, affiches) ?", a: "Le délai de livraison des fichiers est de 48 à 72h. Pour les grands formats complexes, comptez 3 à 5 jours ouvrés. L'impression est ensuite à prévoir avec votre imprimeur." },
+  { q: "Comment vous transmettre mes éléments de marque ?",      a: "Via WeTransfer, Google Drive ou par email — logo haute résolution, charte graphique si disponible, polices. Si vous n'avez pas de charte, on définit ensemble une direction artistique cohérente." },
 ];
 
-const FAQ_ITEMS = [
-  { q: "Dois-je fournir mon logo et mes couleurs ?", a: "Oui, idéalement. Si vous avez une charte graphique ou un kit de marque, partagez-le avec nous. Si ce n'est pas le cas, nous pouvons vous proposer un style cohérent basé sur vos préférences." },
-  { q: "Combien de visuels puis-je commander à la fois ?", a: "Il n'y a pas de minimum ni de maximum. Vous pouvez commander un seul visuel ou un lot complet. Les tarifs sont dégressifs à partir de 5 visuels." },
-  { q: "Quels formats de fichiers livrez-vous ?", a: "Nous livrons en PNG, JPEG ou PDF selon l'usage. Les fichiers sont fournis aux dimensions exactes demandées (ex. 1080x1080, 1080x1920, etc.)." },
-  { q: "Combien de modifications sont incluses ?", a: "2 rounds de retours sont inclus par visuel. Des modifications supplémentaires sont possibles sur devis si le projet évolue significativement." },
-  { q: "Combien coûte la création d'un visuel publicitaire ?", a: "Le tarif varie selon le nombre de visuels, la complexité et les formats. Contactez-nous pour une estimation gratuite et sans engagement." },
+const PLACEHOLDER_CARDS = [
+  { label: "Post Instagram", ratio: "1/1",  gr: `linear-gradient(135deg,rgba(${RR},.22),rgba(${VR},.12))`,     br: RR },
+  { label: "Story",          ratio: "9/16", gr: `linear-gradient(180deg,rgba(${VR},.22),rgba(${RR},.12))`,     br: VR },
+  { label: "Bannière",       ratio: "16/9", gr: `linear-gradient(90deg,rgba(249,168,38,.18),rgba(${RR},.12))`, br: "249,168,38" },
+  { label: "Affiche",        ratio: "3/4",  gr: `linear-gradient(135deg,rgba(${VR},.18),rgba(74,222,128,.1))`, br: VR },
+  { label: "Flyer",          ratio: "1/1",  gr: `linear-gradient(45deg,rgba(${RR},.18),rgba(249,168,38,.12))`, br: RR },
+  { label: "Bâche",          ratio: "16/9", gr: `linear-gradient(90deg,rgba(${VR},.18),rgba(${RR},.12))`,      br: VR },
 ];
 
-const TYPE_VISUEL_OPTIONS = ["Post sponsorisé", "Story publicitaire", "Bannière web", "Flyer digital", "Visuel promotionnel", "Annonce Meta / Instagram", "Autre"];
-const PLATEFORME_OPTIONS  = ["Instagram", "Facebook", "LinkedIn", "TikTok", "Google Ads", "Site web", "Autre"];
-
-/* ─────────────────────────────────────────────────────────
-   SOUS-COMPOSANTS
-───────────────────────────────────────────────────────── */
-function isEmailValid(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
-
-function FieldInput({ icon: Icon, type = "text", placeholder, value, onChange, validate, required }: {
-  icon: React.ElementType; type?: string; placeholder: string;
-  value: string; onChange: (v: string) => void;
-  validate?: (v: string) => boolean; required?: boolean;
-}) {
-  const [focused, setFocused] = useState(false);
-  const [touched, setTouched] = useState(false);
-  const isValid = validate ? validate(value) : value.length > 0;
-  const showOk  = touched && value && isValid;
-  const showErr = touched && value && validate && !isValid;
-  const border  = showErr ? "rgba(248,113,113,0.5)" : showOk ? "rgba(52,211,153,0.45)" : focused ? `rgba(${ACCENT_RGB},0.5)` : "rgba(255,255,255,0.09)";
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-white/[0.09] px-4 py-3.5 transition-all duration-200"
-      style={{ borderColor: border, boxShadow: focused ? `0 0 0 3px rgba(${ACCENT_RGB},0.08)` : "none" }}>
-      <Icon size={15} className="shrink-0" style={{ color: focused || value ? ACCENT : "rgba(255,255,255,0.25)" }} />
-      <input type={type} placeholder={placeholder} value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); setTouched(true); }}
-        required={required}
-        className="flex-1 bg-transparent text-sm text-white placeholder-white/40 outline-none" />
-      <AnimatePresence>
-        {showOk && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><CheckCircle2 size={14} className="text-[#34d399]" /></motion.div>}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function FieldSelect({ icon: Icon, placeholder, value, onChange, options }: {
-  icon: React.ElementType; placeholder: string; value: string;
-  onChange: (v: string) => void; options: string[];
-}) {
-  const [focused, setFocused] = useState(false);
-  const border = value ? "rgba(52,211,153,0.35)" : focused ? `rgba(${ACCENT_RGB},0.45)` : "rgba(255,255,255,0.09)";
-  return (
-    <div className="relative flex items-center gap-3 rounded-2xl border bg-white/[0.09] px-4 py-3.5 transition-all duration-200" style={{ borderColor: border }}>
-      <Icon size={15} className="shrink-0" style={{ color: value || focused ? ACCENT : "rgba(255,255,255,0.25)" }} />
-      <select value={value} onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        style={{ color: value ? "white" : "rgba(255,255,255,0.25)" }}
-        className="flex-1 appearance-none bg-transparent text-sm outline-none [&>option]:bg-[#111113] [&>option]:text-white">
-        <option value="" disabled>{placeholder}</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
-      <ChevronDown size={13} className="pointer-events-none shrink-0 text-white/25" />
-      {value && <CheckCircle2 size={13} className="shrink-0 text-[#34d399]" />}
-    </div>
-  );
-}
-
-function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
-  return (
-    <div className="cursor-pointer rounded-2xl border border-[rgba(255,255,255,0.12)] bg-white transition-all duration-200 hover:border-[rgba(249,168,38,0.4)] hover:shadow-md" onClick={onToggle}>
-      <div className="flex items-center justify-between gap-4 px-6 py-5">
-        <p className="text-sm font-semibold text-[#09090b] leading-relaxed">{q}</p>
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all duration-300"
-          style={{ borderColor: open ? `rgba(${ACCENT_RGB},0.4)` : "rgba(0,0,0,0.1)", background: open ? `rgba(${ACCENT_RGB},0.08)` : "transparent" }}>
-          <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25, ease }}>
-            <ChevronDown size={14} style={{ color: open ? ACCENT : "#6b7280" }} />
-          </motion.div>
-        </div>
-      </div>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease }} className="overflow-hidden">
-            <p className="border-t border-black/[0.05] px-6 pb-5 pt-4 text-sm leading-relaxed text-[#4b5563]">{a}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function DevisForm() {
-  const [nom,        setNom]        = useState("");
-  const [email,      setEmail]      = useState("");
-  const [tel,        setTel]        = useState("");
-  const [typeVisuel, setTypeVisuel] = useState("");
-  const [plateforme, setPlateforme] = useState("");
-  const [message,    setMessage]    = useState("");
-  const [sending,    setSending]    = useState(false);
-  const [sent,       setSent]       = useState(false);
-  const [error,      setError]      = useState<string | null>(null);
-
-  const canSubmit = nom && isEmailValid(email) && typeVisuel && message.length > 5;
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!canSubmit) return;
-    setSending(true); setError(null);
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nom, email, phone: tel, source: "devis",
-          subject: `Visuels publicitaires — ${typeVisuel}${plateforme ? ` / ${plateforme}` : ""}`, message }),
-      });
-      if (!res.ok) throw new Error();
-      setSent(true);
-    } catch { setError("Une erreur est survenue. Réessayez ou contactez-nous directement."); }
-    finally { setSending(false); }
-  }
-
-  if (sent) return (
-    <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-      className="rounded-3xl border border-[rgba(249,168,38,0.25)] bg-[rgba(249,168,38,0.05)] p-10 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(249,168,38,0.12)]">
-        <CheckCircle2 size={26} style={{ color: ACCENT }} />
-      </div>
-      <h3 className="mb-2 text-lg font-extrabold text-white">Demande envoyée !</h3>
-      <p className="text-sm text-white/50">Nous vous répondons sous 24h avec une estimation personnalisée.</p>
-    </motion.div>
-  );
-
-  return (
-    <motion.form onSubmit={handleSubmit} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-      viewport={viewport} transition={{ duration: 0.55, ease }} className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <FieldInput icon={User} placeholder="Votre nom" value={nom} onChange={setNom} required />
-        <FieldInput icon={Mail} type="email" placeholder="Adresse email" value={email} onChange={setEmail} validate={isEmailValid} required />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <FieldInput icon={Phone} type="tel" placeholder="Téléphone (optionnel)" value={tel} onChange={setTel} />
-        <FieldSelect icon={Image} placeholder="Type de visuel" value={typeVisuel} onChange={setTypeVisuel} options={TYPE_VISUEL_OPTIONS} />
-      </div>
-      <FieldSelect icon={Monitor} placeholder="Plateforme cible" value={plateforme} onChange={setPlateforme} options={PLATEFORME_OPTIONS} />
-      <div className="rounded-2xl border bg-white/[0.09] transition-all duration-200"
-        style={{ borderColor: message.length > 5 ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.09)" }}>
-        <div className="flex items-start gap-3 px-4 pt-4">
-          <MessageSquare size={15} className="mt-0.5 shrink-0" style={{ color: message ? ACCENT : "rgba(255,255,255,0.25)" }} />
-          <textarea placeholder="Décrivez votre objectif publicitaire (offre à promouvoir, cible, message clé, références…)" value={message}
-            onChange={(e) => setMessage(e.target.value)} rows={5} required
-            className="flex-1 resize-none bg-transparent pb-4 text-sm text-white placeholder-white/40 outline-none" />
-        </div>
-        <div className="border-t border-white/[0.05] px-4 py-2 text-right">
-          <span className="text-[0.6rem] text-white/20">{message.length} caractères</span>
-        </div>
-      </div>
-      {error && <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-400">{error}</p>}
-      <button type="submit" disabled={!canSubmit || sending}
-        className="btn-primary w-full justify-center py-4 text-base disabled:cursor-not-allowed disabled:opacity-50">
-        {sending ? <><Loader2 size={17} className="animate-spin" /> Envoi en cours…</> : <><Send size={17} /> Demander un devis</>}
-      </button>
-      <p className="text-center text-[0.68rem] text-white/20">🔒 Confidentialité garantie · Réponse sous 24h · Sans engagement</p>
-    </motion.form>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════
-   PAGE
-═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════ PAGE ═══════════════════════════════ */
 export default function VisuelsPublicitairesPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [filter, setFilter]   = useState<"all" | "digital" | "print">("all");
+  const [visuals, setVisuals] = useState<VisualRow[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const { data } = await getSupabase()
+          .from("visuals")
+          .select("*")
+          .eq("status", "published")
+          .order("sort_order", { ascending: true });
+        setVisuals((data ?? []) as VisualRow[]);
+      } catch {
+        setVisuals([]);
+      } finally {
+        setGalleryLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const filtered = filter === "all" ? visuals : visuals.filter(v => v.category === filter);
 
   return (
-    <>
-      <main>
+    <main className="bg-[#07070a] text-white overflow-x-hidden">
 
-        {/* HERO */}
-        <section className="relative overflow-hidden bg-[#09090b] pb-14 pt-24 sm:pb-24 sm:pt-32">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/4 rounded-full opacity-30"
-              style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.35) 0%, transparent 70%)` }} />
-          </div>
-          <div className="relative mx-auto max-w-4xl px-6 text-center">
-            <motion.div {...fadeIn} className="mb-8">
-              <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/50 transition-colors hover:text-white">
-                <ArrowLeft size={13} /> Tous les services
-              </Link>
-            </motion.div>
-            <motion.div {...fadeIn} transition={{ delay: 0.05 }}
-              className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium"
-              style={{ borderColor: `rgba(${ACCENT_RGB},0.3)`, background: `rgba(${ACCENT_RGB},0.08)`, color: ACCENT }}>
-              <Megaphone size={13} /> Publicité & communication
-            </motion.div>
-            <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-              <MultiLineReveal lines={["Création de visuels", "publicitaires"]}
-                highlight={1} stagger={0.12} wordStagger={0.055} delay={0.08} lineClassName="justify-center" />
-            </h1>
-            <FadeReveal delay={0.2}>
-              <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-white/55 sm:text-lg">
-                Nous concevons des visuels impactants pour vos réseaux sociaux, campagnes publicitaires et supports de communication.
-              </p>
-            </FadeReveal>
-            <motion.div variants={staggerContainerFast} initial="hidden" animate="show" className="mb-10 flex flex-wrap justify-center gap-4">
-              {[{ label: "À partir de 19€", sub: "par visuel" }, { label: "24–48h", sub: "délai de livraison" }, { label: "2 retours", sub: "inclus" }].map(({ label, sub }) => (
-                <motion.div key={label} variants={cardReveal} className="rounded-2xl border border-white/[0.07] bg-white/[0.04] px-6 py-3.5 text-center">
-                  <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{label}</p>
-                  <p className="text-[0.65rem] text-white/35">{sub}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-            <motion.div {...fadeIn} transition={{ delay: 0.35 }}>
-              <Link href="/contact?besoin=Création+de+visuels+publicitaires" className="btn-primary px-8 py-4 text-base">Demander un devis <ArrowRight size={16} /></Link>
-            </motion.div>
-          </div>
-        </section>
+      {/* ══════════════ 1. HERO ══════════════ */}
+      <section className="relative overflow-hidden pt-20 pb-16 sm:pt-28 sm:pb-28">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 opacity-[0.016]"
+            style={{ backgroundImage: `linear-gradient(rgba(${RR},.5) 1px,transparent 1px),linear-gradient(90deg,rgba(${RR},.5) 1px,transparent 1px)`, backgroundSize: "52px 52px" }} />
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [.05, .13, .05] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -left-48 top-1/3 w-[700px] h-[700px] rounded-full blur-[150px]"
+            style={{ background: `radial-gradient(circle,rgba(${RR},1) 0%,transparent 70%)` }} />
+          <motion.div
+            animate={{ scale: [1, 1.1, 1], opacity: [.04, .09, .04] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            className="absolute right-0 top-0 w-[500px] h-[500px] rounded-full blur-[120px]"
+            style={{ background: `radial-gradient(circle,rgba(${VR},1) 0%,transparent 70%)` }} />
+          <div className="absolute right-1/3 bottom-0 w-[280px] h-[280px] rounded-full blur-[80px] opacity-[0.04]"
+            style={{ background: `radial-gradient(circle,rgba(${GR},1) 0%,transparent 70%)` }} />
+        </div>
 
-        {/* TYPES DE VISUELS */}
-        <section className="bg-[#130e01] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Formats disponibles</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Types de visuels publicitaires</motion.h2>
-              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/60 max-w-xl mx-auto">Posts, stories, bannières, flyers — on couvre tous les formats de vos campagnes.</motion.p>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {TYPES_VISUELS.map(({ icon: Icon, color, rgb, title, desc }) => (
-                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}>
-                    <Icon size={20} style={{ color }} />
-                  </div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/60">{desc}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
+        <div className="relative max-w-7xl mx-auto px-5">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
-        {/* CE QUE NOUS TRAVAILLONS */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre approche</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que nous travaillons sur chaque visuel</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {CE_QUE_NOUS_TRAVAILLONS.map(({ icon: Icon, color, rgb, title, desc }) => (
-                <motion.div key={title} variants={cardReveal} className="group rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}>
-                    <Icon size={20} style={{ color }} />
-                  </div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/60">{desc}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* POUR QUI */}
-        <section className="bg-[#130e01] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Profils concernés</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce service est fait pour vous si…</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {POUR_QUI.map(({ icon: Icon, color, rgb, who, desc, tags }) => (
-                <motion.div key={who} variants={cardReveal} className="group rounded-3xl border border-white/[0.13] bg-white/[0.07] p-6 shadow-sm transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.11]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}>
-                    <Icon size={20} style={{ color }} />
-                  </div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{who}</h3>
-                  <p className="mb-4 text-xs leading-relaxed text-white/60">{desc}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {tags.map((t) => (
-                      <span key={t} className="rounded-full border px-2.5 py-1 text-[0.6rem] font-medium"
-                        style={{ borderColor: `rgba(${rgb},0.25)`, color, background: `rgba(${rgb},0.07)` }}>{t}</span>
-                    ))}
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* CE QUE VOUS OBTENEZ */}
-        <section className="bg-[#130e01] py-14 sm:py-24">
-          <div className="mx-auto max-w-4xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="overflow-hidden rounded-3xl border border-white/[0.10]">
-              {CE_QUE_VOUS_OBTENEZ.map(({ label, desc, icon: Icon, color }, i) => (
-                <motion.div key={label} variants={cardReveal}
-                  className={`flex items-start gap-5 p-5 sm:p-6 transition-all duration-200 hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.07]" : ""}`}>
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
-                    <Icon size={18} style={{ color: `rgb(${color})` }} />
-                  </div>
-                  <div>
-                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
-                    <p className="text-xs leading-relaxed text-white/50">{desc}</p>
-                  </div>
-                  <CheckCircle2 size={16} className="ml-auto mt-1 shrink-0 text-[#34d399]" />
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* EXEMPLES DE PROJETS */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Références</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de projets réalisés</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
-              {EXEMPLES_PROJETS.map(({ icon: Icon, color, rgb, titre, desc, resultat }) => (
-                <motion.div key={titre} variants={cardReveal} className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.12)` }}>
-                    <Icon size={20} style={{ color }} />
-                  </div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{titre}</h3>
-                  <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
-                  <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
-                    <TrendingUp size={12} style={{ color }} />
-                    <p className="text-[0.68rem] font-semibold" style={{ color }}>{resultat}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* TÉMOIGNAGES */}
-        <section className="bg-[#130e01] py-14 sm:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Avis clients</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce qu'en disent nos clients</motion.h2>
-            </motion.div>
-            <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-3">
-              {[
-                { initial: "K", color: "#ec4899", rgb: "236,72,153", name: "Karim D.", role: "Directeur marketing PME", stars: 5, text: "Les visuels réalisés pour nos campagnes Meta ont clairement amélioré notre CTR. Livraison rapide, 2 allers-retours suffisants. On renouvelle." },
-                { initial: "J", color: "#60a5fa", rgb: "96,165,250", name: "Julie M.", role: "Gérante boutique en ligne", stars: 5, text: "Mes stories publicitaires et mes posts ont enfin une cohérence visuelle. Le résultat est propre et professionnel. Très bon rapport qualité/prix." },
-                { initial: "T", color: "#4ade80", rgb: "74,222,128", name: "Thomas V.", role: "Fondateur startup", stars: 5, text: "Pour notre lancement de produit, DJAMA a créé un pack complet de 15 visuels déclinés sur 4 formats. Exactement ce qu'il nous fallait." },
-              ].map(({ initial, color, name, role, stars, text }) => (
-                <motion.div key={name} variants={cardReveal} className="rounded-3xl border border-white/[0.1] bg-white/[0.05] p-6">
-                  <div className="mb-4 flex gap-1">
-                    {Array.from({ length: stars }).map((_, i) => (
-                      <Star key={i} size={13} style={{ color: "#f9a826", fill: "#f9a826" }} />
-                    ))}
-                  </div>
-                  <p className="mb-5 text-sm leading-relaxed text-white/70">"{text}"</p>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-[#07070a]" style={{ background: color }}>
-                      {initial}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">{name}</p>
-                      <p className="text-xs text-white/40">{role}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* CTA DEVIS */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
-          <div className="mx-auto max-w-2xl px-6 text-center">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport}>
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
-              <motion.h2 variants={fadeIn} className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Prêt à créer vos visuels ?</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mb-8 max-w-md text-sm text-white/60">
-                Partagez votre objectif publicitaire — on crée les visuels qui font la différence, livrés sous 72h.
-              </motion.p>
-              <motion.div variants={fadeIn} className="flex flex-wrap justify-center gap-4">
-                <Link href="/contact?besoin=Création+de+visuels+publicitaires" className="btn-primary px-8 py-4 text-base">
-                  Demander un devis <ArrowRight size={16} />
+            {/* Left */}
+            <div>
+              <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: .45, ease }} className="mb-5">
+                <Link href="/services"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/50 hover:text-white/80 transition-colors">
+                  <ArrowLeft size={11} /> Tous les services
                 </Link>
               </motion.div>
-              <motion.p variants={fadeIn} className="mt-5 text-xs text-white/25">🔒 Sans engagement · Réponse sous 24h · Devis gratuit</motion.p>
+
+              <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: .5, ease, delay: .05 }}
+                className="mb-5 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[.72rem] font-bold"
+                style={{ borderColor: `rgba(${RR},.3)`, background: `rgba(${RR},.08)`, color: R }}>
+                <Palette size={11} /> Visuels publicitaires · Digital &amp; Print
+                <span className="ml-1 rounded-full px-2 py-0.5 text-[.6rem] font-extrabold text-white"
+                  style={{ background: R2 }}>À PARTIR DE 90€</span>
+              </motion.div>
+
+              <h1 className="mb-5 text-[2.6rem] sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.07] tracking-tight">
+                <MultiLineReveal
+                  lines={["Visuels qui", "captivent,", "campagnes qui convertissent."]}
+                  highlight={2}
+                  stagger={.13}
+                  wordStagger={.055}
+                  delay={.08}
+                  lineClassName="justify-start"
+                />
+              </h1>
+
+              <FadeReveal delay={.28}>
+                <p className="mb-7 max-w-lg text-base sm:text-lg leading-relaxed text-white/50">
+                  Posts sponsorisés, stories, bâches, affiches, flyers — on crée tous vos visuels digitaux et print. Une seule équipe, tous vos supports de communication.
+                </p>
+              </FadeReveal>
+
+              <FadeReveal delay={.36}>
+                <div className="mb-7 inline-flex flex-wrap items-center gap-4 rounded-2xl border p-4 sm:p-5"
+                  style={{ borderColor: `rgba(${RR},.22)`, background: `rgba(${RR},.06)` }}>
+                  <div>
+                    <p className="text-[.65rem] font-bold uppercase tracking-widest text-white/35 mb-0.5">À partir de</p>
+                    <p className="text-[1.6rem] font-extrabold leading-none" style={{ color: R }}>90€</p>
+                    <p className="text-[.62rem] text-white/35 mt-0.5">par visuel ou pack</p>
+                  </div>
+                  <div className="h-12 w-px bg-white/[0.08]" />
+                  <div className="space-y-1">
+                    {["Livraison 24–72h", "2 retours inclus", "Sources éditables fournies"].map(t => (
+                      <div key={t} className="flex items-center gap-1.5 text-xs text-white/55">
+                        <CheckCircle2 size={11} className="shrink-0" style={{ color: R }} /> {t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </FadeReveal>
+
+              <FadeReveal delay={.44}>
+                <div className="flex flex-wrap gap-3">
+                  <Link href="/contact?besoin=Visuels+publicitaires"
+                    className="inline-flex items-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-bold transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_0_36px_rgba(244,63,94,0.32)]"
+                    style={{ background: `linear-gradient(135deg,${R2},${R})`, color: "#fff" }}>
+                    Demander un devis <ArrowRight size={15} />
+                  </Link>
+                  <a href="#galerie"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-3.5 text-sm font-semibold text-white/65 hover:bg-white/[0.08] hover:text-white transition-all duration-200">
+                    Voir la galerie
+                  </a>
+                </div>
+              </FadeReveal>
+            </div>
+
+            {/* Right: creative mockup grid */}
+            <motion.div
+              initial={{ opacity: 0, y: 36, scale: .93 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: .85, ease, delay: .3 }}
+              className="relative flex justify-center items-center"
+            >
+              <div className="pointer-events-none absolute inset-0 flex justify-center items-center">
+                <div className="w-[380px] h-[340px] rounded-full blur-3xl opacity-[0.18]"
+                  style={{ background: `radial-gradient(ellipse,rgba(${RR},.7) 0%,rgba(${VR},.4) 55%,transparent 75%)` }} />
+              </div>
+
+              <div className="relative grid grid-cols-2 gap-3 w-full max-w-[420px]">
+
+                {/* Post Instagram — 1:1 */}
+                <motion.div whileHover={{ scale: 1.04 }} transition={{ duration: .22 }}
+                  className="relative rounded-2xl overflow-hidden cursor-pointer"
+                  style={{ aspectRatio: "1/1", background: `linear-gradient(135deg,rgba(${RR},.3),rgba(${VR},.18))`, border: `1px solid rgba(${RR},.22)` }}>
+                  <div className="absolute inset-0 p-3 flex flex-col justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-4 h-4 rounded-full" style={{ background: `rgba(${RR},.5)` }} />
+                      <div className="h-1.5 rounded-full w-12 bg-white/15" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="h-14 rounded-xl" style={{ background: `rgba(${RR},.2)` }} />
+                      <div className="h-1.5 rounded-full w-3/4 bg-white/20" />
+                      <div className="h-1.5 rounded-full w-1/2 bg-white/12" />
+                      <div className="h-6 rounded-lg w-1/2" style={{ background: `linear-gradient(90deg,${R2},${R})` }} />
+                    </div>
+                  </div>
+                  <span className="absolute bottom-2 right-2 text-[.48rem] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ background: `rgba(${RR},.25)`, color: R }}>Post Insta</span>
+                </motion.div>
+
+                {/* Story — 9:16 */}
+                <motion.div whileHover={{ scale: 1.04 }} transition={{ duration: .22 }}
+                  className="relative rounded-2xl overflow-hidden cursor-pointer"
+                  style={{ aspectRatio: "9/16", background: `linear-gradient(180deg,rgba(${VR},.3),rgba(${RR},.12))`, border: `1px solid rgba(${VR},.22)` }}>
+                  <div className="absolute inset-0 p-3 flex flex-col justify-between">
+                    <div className="h-1.5 rounded-full w-full bg-white/12" />
+                    <div className="space-y-2">
+                      <div className="h-16 rounded-xl" style={{ background: `rgba(${VR},.22)` }} />
+                      <div className="h-1.5 rounded-full bg-white/18" />
+                      <div className="h-1.5 rounded-full w-2/3 bg-white/10" />
+                      <div className="h-7 rounded-full flex items-center justify-center" style={{ background: V }}>
+                        <div className="h-1.5 rounded-full w-16 bg-white/60" />
+                      </div>
+                    </div>
+                  </div>
+                  <span className="absolute bottom-2 right-2 text-[.48rem] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ background: `rgba(${VR},.25)`, color: V }}>Story 9:16</span>
+                </motion.div>
+
+                {/* Bâche — 16:5 wide */}
+                <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: .22 }}
+                  className="relative rounded-2xl overflow-hidden cursor-pointer col-span-2"
+                  style={{ aspectRatio: "16/5", background: "linear-gradient(90deg,rgba(249,115,22,.22),rgba(244,63,94,.14))", border: "1px solid rgba(249,115,22,.22)" }}>
+                  <div className="absolute inset-0 flex items-center gap-4 px-4">
+                    <div className="w-9 h-9 rounded-xl shrink-0" style={{ background: "rgba(249,115,22,.3)" }} />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-2 rounded-full w-2/3 bg-white/22" />
+                      <div className="h-1.5 rounded-full w-1/2 bg-white/12" />
+                    </div>
+                    <div className="h-7 w-16 rounded-lg shrink-0"
+                      style={{ background: "linear-gradient(90deg,rgba(249,115,22,.55),rgba(244,63,94,.45))" }} />
+                  </div>
+                  <span className="absolute bottom-1.5 right-2 text-[.48rem] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ background: "rgba(249,115,22,.2)", color: "#fb923c" }}>Bâche / Bannière</span>
+                </motion.div>
+
+                {/* Flyer — 2:1 */}
+                <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: .22 }}
+                  className="relative rounded-2xl overflow-hidden cursor-pointer col-span-2"
+                  style={{ aspectRatio: "2/1", background: `linear-gradient(135deg,rgba(${VR},.22),rgba(74,222,128,.1))`, border: `1px solid rgba(${VR},.18)` }}>
+                  <div className="absolute inset-0 flex items-center gap-5 px-5">
+                    <div className="space-y-2 flex-1">
+                      <div className="h-3 rounded-full w-3/4 bg-white/22" />
+                      <div className="h-1.5 rounded-full w-full bg-white/14" />
+                      <div className="h-1.5 rounded-full w-2/3 bg-white/10" />
+                      <div className="h-7 rounded-xl w-1/3 mt-1" style={{ background: `linear-gradient(90deg,${V},rgba(${VR},.7))` }} />
+                    </div>
+                    <div className="w-14 h-18 rounded-xl shrink-0" style={{ background: `rgba(${VR},.22)`, height: "4.5rem" }} />
+                  </div>
+                  <span className="absolute bottom-1.5 right-2 text-[.48rem] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ background: `rgba(${VR},.22)`, color: V }}>Flyer A5</span>
+                </motion.div>
+              </div>
+
+              {/* Chips */}
+              <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.1 }}
+                className="absolute -top-3 -right-1 sm:right-0 rounded-xl border border-white/[0.12] px-3 py-2 shadow-xl hidden sm:block"
+                style={{ background: "#14141c" }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: `rgba(${RR},.15)` }}>
+                    <Megaphone size={9} style={{ color: R }} />
+                  </div>
+                  <div>
+                    <p className="text-[.58rem] font-bold text-white">Instagram + Facebook</p>
+                    <p className="text-[.5rem] text-white/35">Formats natifs optimisés</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.3 }}
+                className="absolute top-1/3 -left-1 sm:-left-4 rounded-xl border border-white/[0.12] px-3 py-2 shadow-xl hidden sm:block"
+                style={{ background: "#14141c" }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: `rgba(${VR},.15)` }}>
+                    <Printer size={9} style={{ color: V }} />
+                  </div>
+                  <div>
+                    <p className="text-[.58rem] font-bold text-white">Print &amp; Digital</p>
+                    <p className="text-[.5rem] text-white/35">Tous supports couverts</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                animate={{ y: [0, -7, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -bottom-4 right-4 sm:right-8 rounded-xl border px-3.5 py-2 hidden sm:flex items-center gap-2"
+                style={{ borderColor: `rgba(${RR},.28)`, background: `rgba(${RR},.08)` }}>
+                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: R }} />
+                <p className="text-[.58rem] font-semibold" style={{ color: R }}>Livraison en 72h</p>
+              </motion.div>
             </motion.div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* FAQ */}
-        <section className="bg-[#130e01] py-14 sm:py-24">
-          <div className="mx-auto max-w-2xl px-6">
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
-              <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Vous avez des questions ?</motion.h2>
+      {/* ══════════════ STATS BAR ══════════════ */}
+      <div className="border-y border-white/[0.05] py-5 px-5"
+        style={{ background: "rgba(255,255,255,.012)" }}>
+        <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-5">
+          {[
+            ["24–72h", "Délai de livraison",             RR],
+            ["2",      "Retours inclus",                  VR],
+            ["+300",   "Visuels créés",                   "249,168,38"],
+            ["100%",   "Sources éditables fournies",      GR],
+          ].map(([v, l, c]) => (
+            <motion.div key={l} {...fadeIn} viewport={viewport} className="text-center">
+              <p className="text-2xl sm:text-3xl font-extrabold mb-0.5" style={{ color: `rgba(${c},.9)` }}>{v}</p>
+              <p className="text-[.68rem] text-white/40 font-medium">{l}</p>
             </motion.div>
-            <div className="space-y-3">
-              {FAQ_ITEMS.map(({ q, a }, i) => (
-                <FaqItem key={i} q={q} a={a} open={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />
+          ))}
+        </div>
+      </div>
+
+      {/* ══════════════ 2. PRÉSENTATION ══════════════ */}
+      <section className="py-16 sm:py-24 px-5">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <motion.div {...staggerContainer} viewport={viewport}>
+              <motion.div variants={fadeIn}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-5">
+                <Palette size={12} style={{ color: R }} /> L&apos;importance du visuel
+              </motion.div>
+              <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-5 leading-tight">
+                En 3 secondes, votre visuel<br />
+                <span style={{ color: R }}>dit tout sur votre marque.</span>
+              </motion.h2>
+              <motion.p variants={fadeIn} className="text-white/50 leading-relaxed mb-5">
+                Avant de lire un mot, votre cible voit votre visuel. Un design professionnel <strong className="text-white/75">inspire confiance, capte l&apos;attention et incite à l&apos;action</strong>. Un visuel amateur fait l&apos;effet inverse — même si le produit est excellent.
+              </motion.p>
+              <motion.p variants={fadeIn} className="text-white/50 leading-relaxed mb-7">
+                Nos créations couvrent 100% de vos besoins : réseaux sociaux, publicités, impression grand format — une identité visuelle cohérente sur tous vos supports.
+              </motion.p>
+              <motion.div variants={fadeIn}>
+                <Link href="/contact?besoin=Visuels+publicitaires"
+                  className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold transition-all duration-200 hover:scale-[1.02]"
+                  style={{ background: `linear-gradient(135deg,${R2},${R})`, color: "#fff" }}>
+                  Demander un devis <ArrowRight size={14} />
+                </Link>
+              </motion.div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }} transition={{ duration: .6, ease }}
+              className="relative rounded-3xl border overflow-hidden"
+              style={{ borderColor: `rgba(${RR},.15)`, background: `rgba(${RR},.04)` }}
+            >
+              <div className="h-px w-full"
+                style={{ background: `linear-gradient(90deg,transparent,rgba(${RR},.5),rgba(${VR},.4),transparent)` }} />
+              <div className="p-7">
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="rounded-2xl border border-red-500/12 p-4" style={{ background: "rgba(239,68,68,.03)" }}>
+                    <p className="text-[.6rem] font-bold uppercase tracking-widest text-red-400/55 mb-3">Sans designer</p>
+                    <div className="space-y-2">
+                      {["Rendu amateur", "Incohérence visuelle", "Peu mémorable", "CTR faible"].map(t => (
+                        <div key={t} className="flex items-center gap-1.5 text-[.68rem] text-white/38">
+                          <div className="w-1 h-1 rounded-full bg-red-400/35 shrink-0" />{t}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border p-4"
+                    style={{ borderColor: `rgba(${RR},.18)`, background: `rgba(${RR},.05)` }}>
+                    <p className="text-[.6rem] font-bold uppercase tracking-widest mb-3" style={{ color: R }}>Avec DJAMA</p>
+                    <div className="space-y-2">
+                      {["Rendu agence premium", "Identité cohérente", "Mémorable & distinctif", "Conversion optimisée"].map(t => (
+                        <div key={t} className="flex items-center gap-1.5 text-[.68rem] text-white/65">
+                          <CheckCircle2 size={10} className="shrink-0" style={{ color: R }} />{t}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-white/[0.07] p-4 flex items-center gap-3"
+                  style={{ background: "rgba(255,255,255,.02)" }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: `rgba(${GR},.15)` }}>
+                    <Star size={16} style={{ color: G }} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white mb-0.5">+40% de CTR en moyenne</p>
+                    <p className="text-[.62rem] text-white/38">Constaté sur les campagnes Meta de nos clients vs. visuels précédents</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════ 3. TYPES DE VISUELS ══════════════ */}
+      <section className="py-16 sm:py-24 px-5 relative overflow-hidden"
+        style={{ background: "rgba(255,255,255,.012)" }}>
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-12">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <Layers size={12} style={{ color: R }} /> Formats proposés
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3">
+              Digital <span style={{ color: R }}>et print</span> — tout couvert
+            </motion.h2>
+            <motion.p variants={fadeIn} className="text-white/45 max-w-lg mx-auto text-sm sm:text-base">
+              Du post Instagram à la bâche 3 mètres — une seule équipe pour tous vos supports.
+            </motion.p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Digital */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }} transition={{ duration: .55, ease }}
+              className="rounded-3xl border overflow-hidden"
+              style={{ borderColor: `rgba(${RR},.18)`, background: `rgba(${RR},.04)` }}
+            >
+              <div className="h-px w-full"
+                style={{ background: `linear-gradient(90deg,transparent,rgba(${RR},.5),transparent)` }} />
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                    style={{ background: `rgba(${RR},.12)` }}>
+                    <Monitor size={16} style={{ color: R }} />
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-white text-sm">Digital</p>
+                    <p className="text-[.62rem] text-white/40">Réseaux sociaux &amp; publicités</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {TYPES_DIGITAL.map(item => (
+                    <div key={item.t}
+                      className="flex items-start gap-3 rounded-xl border border-white/[0.06] p-3.5"
+                      style={{ background: "rgba(255,255,255,.02)" }}>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: `rgba(${item.r},.12)` }}>
+                        <item.icon size={14} style={{ color: item.c }} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white text-xs mb-0.5">{item.t}</p>
+                        <p className="text-[.62rem] text-white/40 leading-relaxed">{item.d}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Print */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }} transition={{ duration: .55, ease, delay: .1 }}
+              className="rounded-3xl border overflow-hidden"
+              style={{ borderColor: `rgba(${VR},.18)`, background: `rgba(${VR},.04)` }}
+            >
+              <div className="h-px w-full"
+                style={{ background: `linear-gradient(90deg,transparent,rgba(${VR},.5),transparent)` }} />
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                    style={{ background: `rgba(${VR},.12)` }}>
+                    <Printer size={16} style={{ color: V }} />
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-white text-sm">Print</p>
+                    <p className="text-[.62rem] text-white/40">Grand format &amp; supports physiques</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {TYPES_PRINT.map(item => (
+                    <div key={item.t}
+                      className="flex items-start gap-3 rounded-xl border border-white/[0.06] p-3.5"
+                      style={{ background: "rgba(255,255,255,.02)" }}>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: `rgba(${item.r},.12)` }}>
+                        <item.icon size={14} style={{ color: item.c }} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white text-xs mb-0.5">{item.t}</p>
+                        <p className="text-[.62rem] text-white/40 leading-relaxed">{item.d}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════ 4. GALERIE ══════════════ */}
+      <section id="galerie" className="py-16 sm:py-24 px-5 relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[600px] h-[300px] rounded-full blur-[100px] opacity-[0.05]"
+            style={{ background: `radial-gradient(ellipse,rgba(${RR},1) 0%,transparent 70%)` }} />
+        </div>
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-10">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <Image size={12} style={{ color: R }} /> Portfolio créatif
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3">
+              Nos <span style={{ color: R }}>créations</span>
+            </motion.h2>
+            <motion.p variants={fadeIn} className="text-white/45 max-w-lg mx-auto text-sm sm:text-base mb-8">
+              Découvrez nos dernières réalisations — visuels digitaux et print pour nos clients.
+            </motion.p>
+
+            {/* Filter tabs */}
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-1 rounded-2xl border border-white/[0.08] p-1"
+              style={{ background: "rgba(255,255,255,.03)" }}>
+              {(["all", "digital", "print"] as const).map(f => (
+                <button key={f}
+                  onClick={() => setFilter(f)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200"
+                  style={filter === f
+                    ? { background: `linear-gradient(135deg,${R2},${R})`, color: "#fff" }
+                    : { color: "rgba(255,255,255,.45)" }}>
+                  {f === "all" ? "Tous" : f === "digital" ? "Digital" : "Print"}
+                </button>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Gallery */}
+          {galleryLoading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-2xl overflow-hidden animate-pulse"
+                  style={{ aspectRatio: "1/1", background: "rgba(255,255,255,.06)" }} />
+              ))}
+            </div>
+          ) : filtered.length > 0 ? (
+            <motion.div {...staggerContainerFast} viewport={viewport}
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map(item => (
+                <motion.div key={item.id} variants={cardReveal}
+                  className="group relative rounded-2xl overflow-hidden cursor-pointer"
+                  style={{ aspectRatio: "1/1" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.image_url}
+                    alt={item.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                    style={{ background: "rgba(7,7,10,.78)" }}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ background: `rgba(${RR},.2)`, border: `1px solid rgba(${RR},.4)` }}>
+                      <ZoomIn size={18} style={{ color: R }} />
+                    </div>
+                    <p className="font-bold text-white text-sm text-center px-4">{item.title}</p>
+                    <span className="text-[.62rem] font-bold px-3 py-1 rounded-full capitalize"
+                      style={{
+                        background: `rgba(${item.category === "digital" ? RR : VR},.15)`,
+                        color: item.category === "digital" ? R : V,
+                      }}>
+                      {item.category}{item.sub_category ? ` · ${item.sub_category}` : ""}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                {PLACEHOLDER_CARDS.map((card, i) => (
+                  <motion.div key={i}
+                    initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }} transition={{ delay: i * .07, duration: .4, ease }}
+                    className="relative rounded-2xl overflow-hidden"
+                    style={{ aspectRatio: card.ratio as string, background: card.gr, border: `1px solid rgba(${card.br},.18)` }}>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                          style={{ background: `rgba(${card.br},.14)` }}>
+                          <Image size={20} style={{ color: `rgba(${card.br},.65)` }} />
+                        </div>
+                        <p className="text-[.65rem] font-bold text-white/28">{card.label}</p>
+                        <p className="text-[.55rem] text-white/18 mt-0.5">Bientôt disponible</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-white/40 mb-4">La galerie sera mise à jour prochainement avec nos créations.</p>
+                <Link href="/contact?besoin=Visuels+publicitaires"
+                  className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold transition-all duration-200 hover:scale-[1.02]"
+                  style={{ background: `linear-gradient(135deg,${R2},${R})`, color: "#fff" }}>
+                  Demander un aperçu de nos créations <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ══════════════ 5. PROCESSUS ══════════════ */}
+      <section className="py-16 sm:py-24 px-5 relative overflow-hidden"
+        style={{ background: "rgba(255,255,255,.012)" }}>
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-14">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <Zap size={12} style={{ color: R }} /> Notre méthode
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3">
+              De votre brief <span style={{ color: R }}>à la livraison</span>
+            </motion.h2>
+          </motion.div>
+
+          {/* Desktop */}
+          <div className="hidden lg:block relative">
+            <motion.div
+              initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }}
+              viewport={{ once: true }} transition={{ duration: 1.5, ease, delay: .3 }}
+              className="absolute top-9 left-[8%] right-[8%] h-px origin-left"
+              style={{ background: `linear-gradient(90deg,${R},${V},${R})` }}
+            />
+            <div className="grid grid-cols-5 gap-4">
+              {PROCESSUS.map((e, i) => (
+                <motion.div key={e.t}
+                  initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }} transition={{ delay: .15 + i * .1, duration: .5, ease }}
+                  className="flex flex-col items-center text-center"
+                >
+                  <div className="relative w-[70px] h-[70px] rounded-2xl border-2 flex items-center justify-center mb-4 z-10"
+                    style={{ borderColor: `rgba(${e.r},.4)`, background: `rgba(${e.r},.08)` }}>
+                    <e.icon size={21} style={{ color: e.c }} />
+                    <span className="absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full text-[.58rem] font-extrabold flex items-center justify-center text-white"
+                      style={{ background: e.c }}>{i + 1}</span>
+                  </div>
+                  <p className="font-bold text-white text-sm mb-1">{e.t}</p>
+                  <p className="text-xs text-white/45 leading-relaxed mb-2 max-w-[120px]">{e.d}</p>
+                  <span className="text-[.6rem] font-bold px-2.5 py-1 rounded-full border border-white/[0.08]"
+                    style={{ color: e.c }}>{e.dur}</span>
+                </motion.div>
               ))}
             </div>
           </div>
-        </section>
 
-        {/* CTA FINAL */}
-        <section className="relative overflow-hidden bg-[#09090b] pb-14 pt-14 sm:pb-24 sm:pt-20">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-15"
-              style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, transparent 70%)` }} />
+          {/* Mobile */}
+          <div className="lg:hidden space-y-3 relative">
+            <div className="absolute left-[22px] top-6 bottom-6 w-px"
+              style={{ background: `linear-gradient(180deg,transparent,rgba(${RR},.35),rgba(${VR},.35),transparent)` }} />
+            {PROCESSUS.map((e, i) => (
+              <motion.div key={e.t}
+                initial={{ opacity: 0, x: -18 }} whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * .07, duration: .4, ease }}
+                className="flex items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 ml-10"
+              >
+                <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: `rgba(${e.r},.12)` }}>
+                  <e.icon size={16} style={{ color: e.c }} />
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[.5rem] font-extrabold flex items-center justify-center text-white"
+                    style={{ background: e.c }}>{i + 1}</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className="font-bold text-white text-sm">{e.t}</p>
+                    <span className="text-[.6rem] font-bold" style={{ color: e.c }}>{e.dur}</span>
+                  </div>
+                  <p className="text-xs text-white/45 leading-relaxed">{e.d}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
-          <div className="relative mx-auto max-w-2xl px-6 text-center">
-            <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport} transition={{ duration: 0.6, ease }}>
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: `rgba(${ACCENT_RGB},0.12)` }}>
-                <Sparkles size={26} style={{ color: ACCENT }} />
-              </div>
-              <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Prêt à lancer votre campagne ?</h2>
-              <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Décrivez votre objectif — on crée les visuels qui attirent l'attention et donnent envie d'agir.</p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Link href="/contact?besoin=Création+de+visuels+publicitaires" className="btn-primary px-8 py-4 text-base">Demander un devis <ArrowRight size={16} /></Link>
-                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-semibold text-white/70 transition-all hover:bg-white/[0.07] hover:text-white">
-                  Voir tous nos services
-                </Link>
-              </div>
+        </div>
+      </section>
+
+      {/* ══════════════ 6. VALEUR ══════════════ */}
+      <section className="py-16 sm:py-24 px-5">
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-12">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <TrendingUp size={12} style={{ color: G }} /> Ce que ça change
             </motion.div>
-          </div>
-        </section>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3">
+              Pourquoi des visuels <span style={{ color: R }}>professionnels</span>
+            </motion.h2>
+          </motion.div>
+          <motion.div {...staggerContainerFast} viewport={viewport}
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {VALEUR.map(item => (
+              <motion.div key={item.t} variants={cardReveal}
+                whileHover={{ y: -5, transition: { duration: .22 } }}
+                className="group relative rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 overflow-hidden hover:border-white/[0.14] transition-all duration-300 cursor-default"
+              >
+                <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: `radial-gradient(ellipse at 50% 120%,rgba(${item.r},.12) 0%,transparent 65%)` }} />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: `rgba(${item.r},.12)` }}>
+                  <item.icon size={19} style={{ color: item.c }} />
+                </div>
+                <p className="font-bold text-sm mb-1.5" style={{ color: item.c }}>{item.t}</p>
+                <p className="text-xs text-white/45 leading-relaxed">{item.d}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
 
-      </main>
-    </>
+      {/* ══════════════ 7. FAQ ══════════════ */}
+      <section className="py-16 sm:py-24 px-5"
+        style={{ background: "rgba(255,255,255,.012)" }}>
+        <div className="max-w-2xl mx-auto">
+          <motion.div {...staggerContainer} viewport={viewport} className="text-center mb-12">
+            <motion.div variants={fadeIn}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-4">
+              <HelpCircle size={12} style={{ color: R }} /> Questions fréquentes
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="text-2xl sm:text-3xl font-extrabold mb-3">
+              Vos questions, <span style={{ color: R }}>nos réponses</span>
+            </motion.h2>
+          </motion.div>
+          <motion.div {...staggerContainerFast} viewport={viewport} className="space-y-2.5">
+            {FAQ.map((item, i) => (
+              <motion.div key={i} variants={cardReveal}
+                className="rounded-2xl border overflow-hidden transition-all duration-200"
+                style={{
+                  borderColor: openFaq === i ? `rgba(${RR},.3)` : "rgba(255,255,255,.07)",
+                  background:  openFaq === i ? `rgba(${RR},.05)` : "rgba(255,255,255,.03)",
+                }}
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors"
+                >
+                  <span className="text-sm font-semibold text-white/88 leading-snug">{item.q}</span>
+                  <motion.div animate={{ rotate: openFaq === i ? 180 : 0 }} transition={{ duration: .22 }} className="shrink-0">
+                    <ChevronDown size={14} style={{ color: openFaq === i ? R : "rgba(255,255,255,.38)" }} />
+                  </motion.div>
+                </button>
+                <AnimatePresence>
+                  {openFaq === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }} transition={{ duration: .22 }}
+                    >
+                      <p className="px-5 pb-4 text-sm text-white/55 leading-relaxed border-t border-white/[0.05] pt-3">{item.a}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════ 8. CTA FINAL ══════════════ */}
+      <section className="py-16 sm:py-28 px-5 relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          <motion.div
+            animate={{ scale: [1, 1.1, 1], opacity: [.04, .1, .04] }}
+            transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[400px] rounded-full blur-[150px]"
+            style={{ background: `radial-gradient(ellipse,rgba(${RR},1) 0%,rgba(${VR},.7) 45%,transparent 70%)` }}
+          />
+          <div className="absolute inset-0 opacity-[0.012]"
+            style={{ backgroundImage: "radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1px)", backgroundSize: "30px 30px" }} />
+        </div>
+
+        <div className="max-w-3xl mx-auto relative">
+          <motion.div {...staggerContainer} viewport={viewport}
+            className="relative rounded-3xl border p-8 sm:p-14 text-center overflow-hidden"
+            style={{ borderColor: `rgba(${RR},.2)`, background: `rgba(${RR},.04)` }}
+          >
+            <div className="absolute top-0 left-0 w-28 h-28 rounded-br-3xl border-b border-r"
+              style={{ borderColor: `rgba(${RR},.12)` }} />
+            <div className="absolute bottom-0 right-0 w-28 h-28 rounded-tl-3xl border-t border-l"
+              style={{ borderColor: `rgba(${RR},.12)` }} />
+            <div className="pointer-events-none absolute -top-12 right-8 w-44 h-44 rounded-full blur-3xl opacity-[0.14]"
+              style={{ background: `rgba(${RR},1)` }} />
+            <div className="pointer-events-none absolute -bottom-12 left-8 w-36 h-36 rounded-full blur-3xl opacity-[0.1]"
+              style={{ background: `rgba(${VR},1)` }} />
+
+            <motion.div variants={fadeIn}
+              className="relative inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/55 mb-7">
+              <Sparkles size={12} style={{ color: R }} /> Vos prochains visuels vous attendent
+            </motion.div>
+
+            <motion.h2 variants={fadeIn}
+              className="relative text-3xl sm:text-4xl lg:text-[2.8rem] font-extrabold mb-5 leading-tight">
+              Vos prochains visuels,<br />
+              <span style={{
+                background: `linear-gradient(135deg,${R},${V})`,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}>
+                livrés sous 72h.
+              </span>
+            </motion.h2>
+
+            <motion.p variants={fadeIn}
+              className="relative text-white/45 text-base max-w-md mx-auto mb-9">
+              Partagez votre brief — on crée les visuels qui attirent l&apos;attention, renforcent votre image et déclenchent l&apos;action. Devis gratuit et sans engagement.
+            </motion.p>
+
+            <motion.div variants={fadeIn} className="relative flex flex-col sm:flex-row justify-center gap-3 mb-9">
+              <Link href="/contact?besoin=Visuels+publicitaires"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold transition-all duration-200 hover:scale-[1.02] shadow-[0_0_40px_rgba(244,63,94,0.2)] hover:shadow-[0_0_60px_rgba(244,63,94,0.38)]"
+                style={{ background: `linear-gradient(135deg,${R2},${R})`, color: "#fff" }}>
+                Demander un devis <ArrowRight size={15} />
+              </Link>
+              <Link href="/realisations"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.04] px-8 py-4 text-sm font-semibold text-white/65 hover:bg-white/[0.08] hover:text-white transition-all duration-200">
+                Voir nos réalisations
+              </Link>
+            </motion.div>
+
+            <motion.div variants={fadeIn}
+              className="relative flex flex-wrap justify-center gap-5 sm:gap-7">
+              {[
+                [Clock,      "Livraison 24–72h"],
+                [Shield,     "Sans engagement"],
+                [BadgeCheck, "2 retours inclus"],
+                [Star,       "Sources éditables fournies"],
+              ].map(([Icon, l]) => (
+                <div key={l as string} className="flex items-center gap-1.5 text-xs text-white/35">
+                  <Icon size={11} style={{ color: R }} />
+                  {l as string}
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+    </main>
   );
 }
