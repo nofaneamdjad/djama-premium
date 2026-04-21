@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* ── Dark mode variant (Tailwind v4 class strategy) ── */
+@variant dark (&:where(.dark, .dark *));
+
 /* ══════════════════════════════════════════════
    DESIGN TOKENS — DJAMA PREMIUM
 ══════════════════════════════════════════════ */
@@ -596,3 +599,171 @@ body {
   .shimmer-gold:hover,
   .shimmer-white:hover { background-position: 100% center !important; }
 }
+
+/* ══════════════════════════════════════════════
+   DARK MODE — corps sombre (évite le flash blanc)
+══════════════════════════════════════════════ */
+.dark body { background: #09090b; color: rgba(255,255,255,0.85); }
+
+/* ══════════════════════════════════════════════
+   LIGHT MODE — Base + overrides
+   Activé quand la classe .dark est ABSENTE de <html>
+   Ces règles sont hors @layer → priorité > @layer utilities
+══════════════════════════════════════════════ */
+
+html:not(.dark) body {
+  background-color: #f7f6f3;
+  color: #1a1915;
+}
+
+/* Scrollbar en mode clair */
+html:not(.dark) ::-webkit-scrollbar-thumb        { background: rgba(26,25,21,.15); }
+html:not(.dark) ::-webkit-scrollbar-thumb:hover  { background: rgba(26,25,21,.28); }
+
+/* Sélection de texte */
+html:not(.dark) ::selection { background: rgba(176,141,87,.18); color: #1a1915; }
+
+/* ── Backgrounds hexadécimaux ────────────────── */
+html:not(.dark) .bg-\[\#09090b\]  { background-color: #f7f6f3; }
+html:not(.dark) .bg-\[\#0c0c0e\]  { background-color: #f5f3ef; }
+html:not(.dark) .bg-\[\#111113\]  { background-color: #ffffff; }
+html:not(.dark) .bg-\[\#12121a\]  { background-color: #f8f7f4; }
+html:not(.dark) .bg-\[\#18181b\]  { background-color: #f0ede8; }
+html:not(.dark) .bg-\[\#1a1a1f\]  { background-color: #ededeb; }
+
+/* ── Texte — white avec opacité (slash notation) ── */
+html:not(.dark) .text-white        { color: #1a1915; }
+html:not(.dark) .text-white\/90    { color: rgba(26,25,21,.9); }
+html:not(.dark) .text-white\/85    { color: rgba(26,25,21,.85); }
+html:not(.dark) .text-white\/80    { color: rgba(26,25,21,.8); }
+html:not(.dark) .text-white\/75    { color: rgba(26,25,21,.75); }
+html:not(.dark) .text-white\/70    { color: rgba(26,25,21,.7); }
+html:not(.dark) .text-white\/65    { color: rgba(26,25,21,.65); }
+html:not(.dark) .text-white\/60    { color: rgba(26,25,21,.6); }
+html:not(.dark) .text-white\/55    { color: rgba(26,25,21,.55); }
+html:not(.dark) .text-white\/50    { color: rgba(26,25,21,.5); }
+html:not(.dark) .text-white\/45    { color: rgba(26,25,21,.45); }
+html:not(.dark) .text-white\/40    { color: rgba(26,25,21,.4); }
+html:not(.dark) .text-white\/38    { color: rgba(26,25,21,.38); }
+html:not(.dark) .text-white\/35    { color: rgba(26,25,21,.35); }
+html:not(.dark) .text-white\/30    { color: rgba(26,25,21,.3); }
+html:not(.dark) .text-white\/28    { color: rgba(26,25,21,.28); }
+html:not(.dark) .text-white\/25    { color: rgba(26,25,21,.25); }
+html:not(.dark) .text-white\/22    { color: rgba(26,25,21,.22); }
+html:not(.dark) .text-white\/20    { color: rgba(26,25,21,.2); }
+html:not(.dark) .text-white\/15    { color: rgba(26,25,21,.15); }
+html:not(.dark) .text-white\/10    { color: rgba(26,25,21,.1); }
+
+/* Notation bracket */
+html:not(.dark) .text-white\/\[0\.04\]  { color: rgba(26,25,21,.04); }
+html:not(.dark) .text-white\/\[0\.06\]  { color: rgba(26,25,21,.06); }
+html:not(.dark) .text-white\/\[0\.07\]  { color: rgba(26,25,21,.07); }
+html:not(.dark) .text-white\/\[\.022\]  { color: rgba(26,25,21,.022); }
+
+/* hover: et group-hover: */
+html:not(.dark) .hover\:text-white:hover        { color: #1a1915; }
+html:not(.dark) .hover\:text-white\/90:hover    { color: rgba(26,25,21,.9); }
+html:not(.dark) .hover\:text-white\/75:hover    { color: rgba(26,25,21,.75); }
+html:not(.dark) .hover\:text-white\/70:hover    { color: rgba(26,25,21,.7); }
+html:not(.dark) .hover\:text-white\/60:hover    { color: rgba(26,25,21,.6); }
+html:not(.dark) .group:hover .group-hover\:text-white     { color: #1a1915; }
+html:not(.dark) .group:hover .group-hover\:text-white\/90 { color: rgba(26,25,21,.9); }
+
+/* Placeholder */
+html:not(.dark) .placeholder\:text-white\/30::placeholder { color: rgba(26,25,21,.3); }
+html:not(.dark) .placeholder\:text-white\/35::placeholder { color: rgba(26,25,21,.35); }
+html:not(.dark) .placeholder\:text-white\/25::placeholder { color: rgba(26,25,21,.25); }
+
+/* ── Bordures — white avec opacité ──────────── */
+html:not(.dark) .border-white\/\[0\.04\]  { border-color: rgba(26,25,21,.05); }
+html:not(.dark) .border-white\/\[0\.05\]  { border-color: rgba(26,25,21,.06); }
+html:not(.dark) .border-white\/\[0\.06\]  { border-color: rgba(26,25,21,.07); }
+html:not(.dark) .border-white\/\[0\.07\]  { border-color: rgba(26,25,21,.08); }
+html:not(.dark) .border-white\/\[0\.08\]  { border-color: rgba(26,25,21,.09); }
+html:not(.dark) .border-white\/\[0\.09\]  { border-color: rgba(26,25,21,.1); }
+html:not(.dark) .border-white\/\[0\.1\]   { border-color: rgba(26,25,21,.12); }
+html:not(.dark) .border-white\/\[0\.12\]  { border-color: rgba(26,25,21,.14); }
+html:not(.dark) .border-white\/\[\.07\]   { border-color: rgba(26,25,21,.08); }
+html:not(.dark) .border-white\/\[\.08\]   { border-color: rgba(26,25,21,.09); }
+html:not(.dark) .border-white\/\[\.1\]    { border-color: rgba(26,25,21,.12); }
+html:not(.dark) .border-white\/10         { border-color: rgba(26,25,21,.1); }
+
+/* ── Overlays bg-white semi-transparents ─────── */
+html:not(.dark) .bg-white\/\[0\.02\]  { background-color: rgba(26,25,21,.02); }
+html:not(.dark) .bg-white\/\[0\.03\]  { background-color: rgba(26,25,21,.02); }
+html:not(.dark) .bg-white\/\[0\.04\]  { background-color: rgba(26,25,21,.03); }
+html:not(.dark) .bg-white\/\[0\.05\]  { background-color: rgba(26,25,21,.04); }
+html:not(.dark) .bg-white\/\[0\.06\]  { background-color: rgba(26,25,21,.05); }
+html:not(.dark) .bg-white\/\[0\.07\]  { background-color: rgba(26,25,21,.06); }
+html:not(.dark) .bg-white\/\[0\.08\]  { background-color: rgba(26,25,21,.07); }
+html:not(.dark) .bg-white\/\[0\.09\]  { background-color: rgba(26,25,21,.07); }
+html:not(.dark) .bg-white\/\[\.04\]   { background-color: rgba(26,25,21,.03); }
+html:not(.dark) .bg-white\/\[\.05\]   { background-color: rgba(26,25,21,.04); }
+html:not(.dark) .bg-white\/\[\.06\]   { background-color: rgba(26,25,21,.05); }
+
+/* hover: bg overlays */
+html:not(.dark) .hover\:bg-white\/\[0\.04\]:hover { background-color: rgba(26,25,21,.03); }
+html:not(.dark) .hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(26,25,21,.05); }
+html:not(.dark) .hover\:bg-white\/\[0\.09\]:hover { background-color: rgba(26,25,21,.07); }
+
+/* ── Séparateurs et dividers ─────────────────── */
+html:not(.dark) .bg-white\/\[\.05\]   { background-color: rgba(26,25,21,.06); }
+html:not(.dark) .divider-subtle {
+  background: linear-gradient(90deg, transparent, rgba(26,25,21,.07), transparent);
+}
+
+/* ── Shimmer white → neutral en mode clair ──── */
+html:not(.dark) .shimmer-white {
+  background-image: none;
+  -webkit-text-fill-color: currentColor;
+  background-clip:         unset;
+  -webkit-background-clip: unset;
+}
+html:not(.dark) .shimmer-white:hover { background-position: unset; }
+
+/* ── Classes utilitaires ─────────────────────── */
+html:not(.dark) .hero-dark {
+  background: #f7f6f3;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(176,141,87,.1) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 80% 60%,  rgba(176,141,87,.04) 0%, transparent 60%);
+}
+
+html:not(.dark) .hero-grid {
+  background-image:
+    linear-gradient(rgba(26,25,21,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,25,21,.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+html:not(.dark) .dot-grid {
+  background-image: radial-gradient(circle at 1.5px 1.5px, rgba(26,25,21,.055) 1.5px, transparent 0);
+  background-size: 32px 32px;
+}
+
+html:not(.dark) .glass-card {
+  background:    rgba(255,255,255,.72);
+  border-color:  rgba(26,25,21,.08);
+}
+
+html:not(.dark) .btn-ghost {
+  background:   rgba(26,25,21,.05);
+  color:        #1a1915;
+  border-color: rgba(26,25,21,.12);
+}
+html:not(.dark) .btn-ghost:hover {
+  background:   rgba(26,25,21,.08);
+  border-color: rgba(26,25,21,.18);
+}
+
+html:not(.dark) .section-gradient-top {
+  background: linear-gradient(to bottom, rgba(247,246,243,0) 0%, rgba(247,246,243,1) 100%);
+}
+html:not(.dark) .section-gradient-bottom {
+  background: linear-gradient(to top, rgba(247,246,243,0) 0%, rgba(247,246,243,1) 100%);
+}
+
+/* ── h-px dividers (Tailwind bg-white/[...]) ── */
+html:not(.dark) .h-px.bg-white\/\[\.05\]   { background-color: rgba(26,25,21,.07); }
+html:not(.dark) .h-px.bg-white\/\[\.06\]   { background-color: rgba(26,25,21,.08); }
+html:not(.dark) .h-px.bg-white\/\[0\.06\]  { background-color: rgba(26,25,21,.08); }
