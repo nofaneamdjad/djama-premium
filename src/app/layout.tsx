@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import SplashScreen from "@/components/SplashScreen";
-import { Providers } from "@/app/providers";
 
 export const metadata: Metadata = {
   title: "DJAMA — Services digitaux & outils pro",
@@ -15,12 +14,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr">
       <body>
-        <Providers>
-          <SplashScreen />
-          {children}
-        </Providers>
+        <SplashScreen />
+        {children}
       </body>
     </html>
   );

@@ -6,11 +6,9 @@ import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
 import { Menu, X, ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
-import { useTheme } from "next-themes";
 import { getSiteData } from "@/lib/site-data";
 import { useLanguage } from "@/lib/language-context";
 import { ShimmerText } from "@/components/ui/HoverText";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -18,7 +16,6 @@ export default function Navbar() {
   const data    = getSiteData();
   const { lang, setLang, dict } = useLanguage();
   const pathname = usePathname();
-  const { resolvedTheme } = useTheme();
 
   const NAV_LINKS = [
     { href: "/",              label: dict.nav.home       },
@@ -28,16 +25,13 @@ export default function Navbar() {
     { href: "/espace-client", label: dict.nav.clientArea },
   ];
 
-  const [scrolled,  setScrolled]  = useState(false);
-  const [menuOpen,  setMenuOpen]  = useState(false);
-  const [hidden,    setHidden]    = useState(false);
-  const [mounted,   setMounted]   = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [hidden,   setHidden]   = useState(false);
   const lastY = useRef(0);
 
   const { scrollY, scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 400, damping: 40 });
-
-  useEffect(() => { setMounted(true); }, []);
 
   useMotionValueEvent(scrollY, "change", (y) => {
     const dir = y > lastY.current;
@@ -58,25 +52,6 @@ export default function Navbar() {
     return pathname?.startsWith(href);
   };
 
-  /* ── Theme helpers ─────────────────────────────── */
-  // Default to dark during SSR / before hydration
-  const isDark = !mounted || resolvedTheme !== "light";
-
-  const logoFilter        = isDark ? "brightness(0) invert(1)"                                         : "brightness(0)";
-  const logoFilterHover   = isDark ? "brightness(0) invert(1) drop-shadow(0 0 14px rgba(201,165,90,0.5))" : "brightness(0) drop-shadow(0 0 14px rgba(201,165,90,0.5))";
-  const logoFilterAnimate = isDark
-    ? ["brightness(0) invert(1)", "brightness(0) invert(1) drop-shadow(0 0 22px rgba(201,165,90,0.65))", "brightness(0) invert(1)"]
-    : ["brightness(0)",           "brightness(0) drop-shadow(0 0 22px rgba(201,165,90,0.65))",           "brightness(0)"];
-
-  /* bg et border : CSS variables → changent automatiquement selon le thème
-     seule l'ombre reste en JS car box-shadow complexe dans Tailwind arbitrary */
-  const navShadow = isDark
-    ? "shadow-[0_1px_0_rgba(255,255,255,0.04),0_4px_20px_rgba(0,0,0,0.3)]"
-    : "shadow-[0_1px_0_rgba(26,25,21,0.04),0_4px_20px_rgba(0,0,0,0.08)]";
-
-  const scrolledClass = `bg-[var(--nav-bg)] backdrop-blur-2xl border-b border-[var(--border-base)] ${navShadow}`;
-  const mobileMenuClass = "bg-[var(--nav-mobile)] backdrop-blur-2xl";
-
   return (
     <>
       {/* ── Scroll progress bar ─────────────────────── */}
@@ -90,7 +65,9 @@ export default function Navbar() {
         animate={{ y: hidden ? -100 : 0, opacity: hidden ? 0 : 1 }}
         transition={{ duration: 0.4, ease }}
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-          scrolled ? scrolledClass : "bg-transparent"
+          scrolled
+            ? "bg-[rgba(9,9,11,0.92)] backdrop-blur-2xl border-b border-white/[0.07] shadow-[0_1px_0_rgba(255,255,255,0.05),0_8px_32px_rgba(0,0,0,0.4)]"
+            : "bg-transparent"
         }`}
       >
         <div className="mx-auto flex h-[80px] max-w-6xl items-center justify-between px-6">
@@ -104,12 +81,18 @@ export default function Navbar() {
               style={{ display: "flex", alignItems: "center" }}
             >
               <motion.div
-                style={{ filter: logoFilter }}
-                animate={{ filter: logoFilterAnimate }}
+                style={{ filter: "brightness(0) invert(1)" }}
+                animate={{
+                  filter: [
+                    "brightness(0) invert(1)",
+                    "brightness(0) invert(1) drop-shadow(0 0 22px rgba(201,165,90,0.65))",
+                    "brightness(0) invert(1)",
+                  ],
+                }}
                 transition={{ duration: 1.6, delay: 0.9, ease: [0.4, 0, 0.2, 1], times: [0, 0.5, 1] }}
                 whileHover={{
                   scale: 1.06,
-                  filter: logoFilterHover,
+                  filter: "brightness(0) invert(1) drop-shadow(0 0 14px rgba(201,165,90,0.5))",
                   transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
                 }}
                 whileTap={{ scale: 0.95, transition: { duration: 0.12 } }}
@@ -121,7 +104,7 @@ export default function Navbar() {
                   height={72}
                   priority
                   className="h-14 md:h-[60px] w-auto object-contain"
-                  style={{ filter: logoFilter }}
+                  style={{ filter: "brightness(0) invert(1)" }}
                 />
               </motion.div>
             </motion.div>
@@ -141,11 +124,10 @@ export default function Navbar() {
                   <Link
                     href={href}
                     className={`group relative px-3.5 py-2 text-sm font-medium transition-colors duration-200 ${
-                      active ? "text-white" : "text-white/60 hover:text-white"
+                      active ? "text-white" : "text-white/55 hover:text-white/90"
                     }`}
                   >
                     <ShimmerText variant="white" className="font-medium">{label}</ShimmerText>
-                    {/* Active indicator */}
                     <span
                       className={`absolute inset-x-3.5 -bottom-px h-px rounded-full bg-gradient-to-r from-[#c9a55a] to-[#e8cc94] transition-all duration-300 ${
                         active ? "opacity-100 scale-x-100" : "opacity-0 scale-x-0 group-hover:opacity-70 group-hover:scale-x-100"
@@ -157,14 +139,13 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Lang toggle + ThemeToggle + CTA desktop */}
+          {/* Lang toggle + CTA desktop */}
           <motion.div
             initial={{ opacity: 0, x: 14 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
             className="hidden md:flex items-center gap-3"
           >
-            {/* Compact lang toggle */}
             <div className="flex items-center gap-1 rounded-full border border-white/[0.09] bg-white/[0.04] p-1">
               {(["fr", "en"] as const).map((l) => (
                 <button
@@ -173,7 +154,7 @@ export default function Navbar() {
                   className={`rounded-full px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-widest transition-all duration-200 ${
                     lang === l
                       ? "bg-[#c9a55a] text-[#09090b] shadow-[0_1px_4px_rgba(201,165,90,0.4)]"
-                      : "text-white/35 hover:text-white/60"
+                      : "text-white/35 hover:text-white/65"
                   }`}
                 >
                   {l}
@@ -181,40 +162,33 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* Theme toggle */}
-            <ThemeToggle />
-
             <Link href="/contact" className="btn-primary text-sm px-5 py-2.5">
               {dict.nav.freeQuote} <ArrowRight size={14} />
             </Link>
           </motion.div>
 
-          {/* ThemeToggle + Hamburger mobile */}
-          <div className="flex md:hidden items-center gap-2">
-            <ThemeToggle />
-
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.05] p-2.5 text-white backdrop-blur-sm transition-colors hover:bg-white/[0.09]"
-              aria-label="Menu"
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span
-                  key={menuOpen ? "x" : "menu"}
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {menuOpen ? <X size={19} /> : <Menu size={19} />}
-                </motion.span>
-              </AnimatePresence>
-            </motion.button>
-          </div>
+          {/* Hamburger mobile */}
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex md:hidden items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.05] p-2.5 text-white/80 backdrop-blur-sm transition-colors hover:bg-white/[0.09] hover:text-white"
+            aria-label="Menu"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={menuOpen ? "x" : "menu"}
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {menuOpen ? <X size={19} /> : <Menu size={19} />}
+              </motion.span>
+            </AnimatePresence>
+          </motion.button>
         </div>
       </motion.header>
 
@@ -226,9 +200,8 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22 }}
-            className={`fixed inset-0 z-40 md:hidden ${mobileMenuClass}`}
+            className="fixed inset-0 z-40 bg-[rgba(9,9,11,0.97)] backdrop-blur-2xl md:hidden"
           >
-            {/* Top spacer */}
             <div className="h-[68px]" />
 
             <motion.nav
@@ -243,8 +216,8 @@ export default function Navbar() {
                   <motion.div
                     key={href}
                     variants={{
-                      hidden:   { opacity: 0, x: -20 },
-                      visible:  { opacity: 1, x: 0, transition: { duration: 0.4, ease } },
+                      hidden:  { opacity: 0, x: -20 },
+                      visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease } },
                     }}
                   >
                     <Link
@@ -253,13 +226,11 @@ export default function Navbar() {
                       className={`flex items-center justify-between rounded-2xl px-5 py-3.5 text-xl font-extrabold transition-all duration-200 ${
                         active
                           ? "bg-[rgba(201,165,90,0.08)] text-white border border-[rgba(201,165,90,0.2)]"
-                          : "text-white/70 hover:bg-white/[0.04] hover:text-white"
+                          : "text-white/65 hover:bg-white/[0.04] hover:text-white/90"
                       }`}
                     >
                       <span>{label}</span>
-                      {active && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
-                      )}
+                      {active && <span className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />}
                     </Link>
                   </motion.div>
                 );
