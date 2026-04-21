@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import {
-  staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport,
+  staggerContainer, staggerContainerFast, cardReveal, cardRevealBlur,
+  fadeIn, blurReveal, viewport,
 } from "@/lib/animations";
 import type { ServiceRow } from "@/types/db";
 import { useLanguage } from "@/lib/language-context";
@@ -21,59 +22,59 @@ import { WordLift } from "@/components/ui/HoverText";
 ───────────────────────────────────────────────────────── */
 const CAT_CONFIG = {
   "Digital": {
-    bg:       "from-[#080814] via-[#0d0d26] to-[#101030]",
-    glow:     "rgba(124,111,205,0.30)",
-    glowDark: "rgba(124,111,205,0.15)",
-    accent:   "#7c6fcd",
-    accentRgb:"124,111,205",
-    border:   "rgba(124,111,205,0.28)",
-    hoverShadow: "0 28px 64px rgba(124,111,205,0.20)",
-    label:    "Digital",
-    emoji:    "⚡",
+    bg:          "from-[#080814] via-[#0d0d26] to-[#101030]",
+    glow:        "rgba(124,111,205,0.30)",
+    glowDark:    "rgba(124,111,205,0.15)",
+    accent:      "#7c6fcd",
+    accentRgb:   "124,111,205",
+    border:      "rgba(124,111,205,0.28)",
+    hoverShadow: "0 32px 72px rgba(124,111,205,0.24), 0 8px 20px rgba(0,0,0,0.6)",
+    label:       "Digital",
+    emoji:       "⚡",
   },
   "Création de contenu": {
-    bg:       "from-[#160810] via-[#220c1c] to-[#1c0a16]",
-    glow:     "rgba(220,80,120,0.28)",
-    glowDark: "rgba(220,80,120,0.14)",
-    accent:   "#dc5078",
-    accentRgb:"220,80,120",
-    border:   "rgba(220,80,120,0.28)",
-    hoverShadow: "0 28px 64px rgba(220,80,120,0.18)",
-    label:    "Création",
-    emoji:    "✦",
+    bg:          "from-[#160810] via-[#220c1c] to-[#1c0a16]",
+    glow:        "rgba(220,80,120,0.28)",
+    glowDark:    "rgba(220,80,120,0.14)",
+    accent:      "#dc5078",
+    accentRgb:   "220,80,120",
+    border:      "rgba(220,80,120,0.28)",
+    hoverShadow: "0 32px 72px rgba(220,80,120,0.22), 0 8px 20px rgba(0,0,0,0.6)",
+    label:       "Création",
+    emoji:       "✦",
   },
   "Documents & Outils": {
-    bg:       "from-[#001412] via-[#001f1a] to-[#001815]",
-    glow:     "rgba(52,211,153,0.26)",
-    glowDark: "rgba(52,211,153,0.12)",
-    accent:   "#34d399",
-    accentRgb:"52,211,153",
-    border:   "rgba(52,211,153,0.28)",
-    hoverShadow: "0 28px 64px rgba(52,211,153,0.16)",
-    label:    "Outils",
-    emoji:    "◈",
+    bg:          "from-[#001412] via-[#001f1a] to-[#001815]",
+    glow:        "rgba(52,211,153,0.26)",
+    glowDark:    "rgba(52,211,153,0.12)",
+    accent:      "#34d399",
+    accentRgb:   "52,211,153",
+    border:      "rgba(52,211,153,0.28)",
+    hoverShadow: "0 32px 72px rgba(52,211,153,0.20), 0 8px 20px rgba(0,0,0,0.6)",
+    label:       "Outils",
+    emoji:       "◈",
   },
   "Accompagnement": {
-    bg:       "from-[#160c00] via-[#221400] to-[#1c1000]",
-    glow:     "rgba(249,168,38,0.26)",
-    glowDark: "rgba(249,168,38,0.12)",
-    accent:   "#f9a826",
-    accentRgb:"249,168,38",
-    border:   "rgba(249,168,38,0.28)",
-    hoverShadow: "0 28px 64px rgba(249,168,38,0.16)",
-    label:    "Accompagnement",
-    emoji:    "◎",
+    bg:          "from-[#160c00] via-[#221400] to-[#1c1000]",
+    glow:        "rgba(249,168,38,0.26)",
+    glowDark:    "rgba(249,168,38,0.12)",
+    accent:      "#f9a826",
+    accentRgb:   "249,168,38",
+    border:      "rgba(249,168,38,0.28)",
+    hoverShadow: "0 32px 72px rgba(249,168,38,0.20), 0 8px 20px rgba(0,0,0,0.6)",
+    label:       "Accompagnement",
+    emoji:       "◎",
   },
   "Coaching": {
-    bg:       "from-[#0e0a02] via-[#160e04] to-[#1a1206]",
-    glow:     "rgba(201,165,90,0.28)",
-    glowDark: "rgba(201,165,90,0.13)",
-    accent:   "#c9a55a",
-    accentRgb:"201,165,90",
-    border:   "rgba(201,165,90,0.28)",
-    hoverShadow: "0 28px 64px rgba(201,165,90,0.18)",
-    label:    "Coaching",
-    emoji:    "◉",
+    bg:          "from-[#0e0a02] via-[#160e04] to-[#1a1206]",
+    glow:        "rgba(201,165,90,0.28)",
+    glowDark:    "rgba(201,165,90,0.13)",
+    accent:      "#c9a55a",
+    accentRgb:   "201,165,90",
+    border:      "rgba(201,165,90,0.28)",
+    hoverShadow: "0 32px 72px rgba(201,165,90,0.22), 0 8px 20px rgba(0,0,0,0.6)",
+    label:       "Coaching",
+    emoji:       "◉",
   },
 } as const;
 
@@ -90,7 +91,7 @@ const CAT_ICONS: Record<string, React.ElementType> = {
 const ease = [0.16, 1, 0.3, 1] as const;
 
 /* ─────────────────────────────────────────────────────────
-   CARD VISUEL
+   CARD VISUEL — premium animated header
 ───────────────────────────────────────────────────────── */
 function CardVisual({ icon: Icon, config }: {
   icon: React.ElementType;
@@ -98,26 +99,68 @@ function CardVisual({ icon: Icon, config }: {
 }) {
   return (
     <div className={`relative flex h-[160px] sm:h-[200px] items-center justify-center overflow-hidden bg-gradient-to-br ${config.bg}`}>
+
+      {/* Dot grid */}
       <div className="absolute inset-0" style={{
-        backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.05) 1.5px, transparent 0)",
-        backgroundSize: "28px 28px",
+        backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.055) 1.5px, transparent 0)",
+        backgroundSize: "24px 24px",
       }} />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full blur-3xl" style={{ background: config.glow }} />
-      </div>
-      <div className="absolute right-6 top-4 h-20 w-20 rounded-full blur-2xl" style={{ background: config.glowDark }} />
+
+      {/* Animated main glow orb */}
+      <motion.div
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        animate={{ scale: [1, 1.12, 1], opacity: [0.7, 1, 0.7] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <div className="h-44 w-44 rounded-full blur-3xl" style={{ background: config.glow }} />
+      </motion.div>
+
+      {/* Secondary glow top-right */}
+      <motion.div
+        className="absolute right-5 top-3 h-20 w-20 rounded-full blur-2xl pointer-events-none"
+        style={{ background: config.glowDark }}
+        animate={{ x: [0, 6, 0], y: [0, -5, 0], opacity: [0.6, 0.9, 0.6] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      />
+
+      {/* Floating particles */}
+      {[0, 1, 2, 3].map((i) => (
+        <motion.div
+          key={i}
+          className="absolute h-[3px] w-[3px] rounded-full pointer-events-none"
+          style={{
+            background: config.accent,
+            left: `${18 + i * 18}%`,
+            top: `${28 + (i % 2 === 0 ? 20 : -5)}%`,
+          }}
+          animate={{ y: [0, -(8 + i * 4), 0], opacity: [0.18, 0.5, 0.18] }}
+          transition={{ duration: 2.8 + i * 0.6, repeat: Infinity, ease: "easeInOut", delay: i * 0.45 }}
+        />
+      ))}
+
+      {/* Icon container with pulse glow */}
       <div className="relative z-10">
-        <div
+        <motion.div
           className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl border"
           style={{
             background: `rgba(${config.accentRgb}, 0.12)`,
             borderColor: config.border,
-            boxShadow: `0 0 32px rgba(${config.accentRgb}, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)`,
           }}
+          animate={{
+            boxShadow: [
+              `0 0 18px rgba(${config.accentRgb}, 0.16), inset 0 1px 0 rgba(255,255,255,0.06)`,
+              `0 0 40px rgba(${config.accentRgb}, 0.38), inset 0 1px 0 rgba(255,255,255,0.08)`,
+              `0 0 18px rgba(${config.accentRgb}, 0.16), inset 0 1px 0 rgba(255,255,255,0.06)`,
+            ],
+          }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+          whileHover={{ scale: 1.1 }}
         >
           <Icon size={34} style={{ color: config.accent }} />
-        </div>
+        </motion.div>
       </div>
+
+      {/* Bottom gradient separator */}
       <div
         className="absolute inset-x-0 bottom-0 h-px"
         style={{ background: `linear-gradient(90deg, transparent, ${config.border}, transparent)` }}
@@ -127,7 +170,7 @@ function CardVisual({ icon: Icon, config }: {
 }
 
 /* ─────────────────────────────────────────────────────────
-   SERVICE CARD
+   SERVICE CARD — premium glassmorphism
 ───────────────────────────────────────────────────────── */
 function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en" }) {
   const config  = CAT_CONFIG[service.category as CatKey];
@@ -209,10 +252,9 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
                                   ? "/services/recherche-fournisseurs"
                                   : "/contact";
 
-  const priceTag = service.price || null;
-
-  const bullets     = service.description.split(/\n+/).map((b) => b.trim()).filter(Boolean);
-  const excerpt     = bullets[0] ?? service.description ?? "";
+  const priceTag  = service.price || null;
+  const bullets    = service.description.split(/\n+/).map((b) => b.trim()).filter(Boolean);
+  const excerpt    = bullets[0] ?? service.description ?? "";
   const extraBullets = bullets.slice(1, 3);
 
   const ctaLabel = isOutil
@@ -234,132 +276,157 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
                   : (lang === "en" ? "Request a quote"  : "Demander un devis");
 
   return (
+    /* Outer wrapper — stagger target + group anchor */
     <motion.div
-      variants={cardReveal}
-      className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border bg-[#09090b] transition-all duration-500"
-      style={{
-        borderColor: isOutil ? config.border : "rgba(255,255,255,0.07)",
-        boxShadow: isOutil
-          ? `0 4px 24px rgba(${config.accentRgb}, 0.12), 0 1px 0 rgba(255,255,255,0.04) inset`
-          : "0 4px 16px rgba(0,0,0,0.4)",
-      }}
-      whileHover={{
-        y: -8,
-        boxShadow: config.hoverShadow,
-        borderColor: config.border,
-      }}
-      transition={{ duration: 0.35, ease }}
+      variants={cardRevealBlur}
+      className="group relative"
     >
-      {/* Overlay — toute la carte est cliquable */}
-      <Link href={href} className="absolute inset-0 z-0" aria-label={service.title} tabIndex={-1} />
-      <CardVisual icon={Icon} config={config} />
+      {/* Gradient border bloom — outside the overflow-hidden inner card */}
+      <div
+        className="pointer-events-none absolute -inset-[1px] rounded-[1.8rem] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        style={{
+          background: `linear-gradient(145deg, rgba(${config.accentRgb}, 0.5) 0%, transparent 45%, rgba(${config.accentRgb}, 0.2) 100%)`,
+        }}
+      />
 
-      {/* Bandeau "Espace client" pour les outils */}
-      {isOutil && (
-        <div
-          className="flex items-center justify-center gap-1.5 py-1.5 text-[0.6rem] font-black uppercase tracking-[0.15em]"
-          style={{
-            background: `rgba(${config.accentRgb}, 0.1)`,
-            color: config.accent,
-            borderBottom: `1px solid rgba(${config.accentRgb}, 0.15)`,
-          }}
-        >
-          <span className="h-1 w-1 rounded-full" style={{ background: config.accent }} />
-          {lang === "en" ? "Included in subscription" : "Inclus dans l'abonnement"}
+      {/* Main card — lift + shadow on hover */}
+      <motion.div
+        className="relative flex flex-col overflow-hidden rounded-[1.75rem] border bg-[#09090b] transition-shadow duration-500"
+        style={{
+          borderColor: isOutil ? config.border : "rgba(255,255,255,0.08)",
+          boxShadow: isOutil
+            ? `0 4px 24px rgba(${config.accentRgb}, 0.12), inset 0 1px 0 rgba(255,255,255,0.04)`
+            : "0 2px 16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
+        }}
+        whileHover={{
+          y: -10,
+          boxShadow: config.hoverShadow,
+          borderColor: config.border,
+        }}
+        transition={{ duration: 0.38, ease }}
+      >
+        {/* Shimmer sweep */}
+        <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[1.75rem]">
+          <div
+            className="absolute inset-y-0 -left-[60%] w-[45%] -skew-x-12 transition-all duration-700 ease-out group-hover:left-[160%]"
+            style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.045), transparent)" }}
+          />
         </div>
-      )}
 
-      <div className="flex flex-col p-5 sm:p-7">
-        {/* Badge catégorie + prix */}
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-[0.14em]"
+        {/* Top highlight edge on hover */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          style={{ background: `linear-gradient(90deg, transparent, rgba(${config.accentRgb}, 0.9), transparent)` }}
+        />
+
+        {/* Overlay — whole card is clickable */}
+        <Link href={href} className="absolute inset-0 z-0" aria-label={service.title} tabIndex={-1} />
+
+        <CardVisual icon={Icon} config={config} />
+
+        {/* Espace client banner */}
+        {isOutil && (
+          <div
+            className="flex items-center justify-center gap-1.5 py-1.5 text-[0.6rem] font-black uppercase tracking-[0.15em]"
             style={{
               background: `rgba(${config.accentRgb}, 0.1)`,
               color: config.accent,
-              border: `1px solid rgba(${config.accentRgb}, 0.22)`,
+              borderBottom: `1px solid rgba(${config.accentRgb}, 0.15)`,
             }}
           >
             <span className="h-1 w-1 rounded-full" style={{ background: config.accent }} />
-            {config.label}
-          </span>
-          {priceTag && (
+            {lang === "en" ? "Included in subscription" : "Inclus dans l'abonnement"}
+          </div>
+        )}
+
+        <div className="flex flex-col p-5 sm:p-7">
+          {/* Badge catégorie + prix */}
+          <div className="mb-4 flex items-center justify-between gap-2">
             <span
-              className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold"
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-[0.14em]"
               style={{
-                background: isOutil ? `rgba(${config.accentRgb}, 0.12)` : "transparent",
-                color: isOutil ? config.accent : "rgba(255,255,255,0.3)",
-                border: isOutil ? `1px solid rgba(${config.accentRgb}, 0.22)` : "none",
+                background: `rgba(${config.accentRgb}, 0.1)`,
+                color: config.accent,
+                border: `1px solid rgba(${config.accentRgb}, 0.22)`,
               }}
             >
-              {priceTag}
+              <span className="h-1 w-1 rounded-full" style={{ background: config.accent }} />
+              {config.label}
             </span>
+            {priceTag && (
+              <span
+                className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold"
+                style={{
+                  background: isOutil ? `rgba(${config.accentRgb}, 0.12)` : "transparent",
+                  color: isOutil ? config.accent : "rgba(255,255,255,0.3)",
+                  border: isOutil ? `1px solid rgba(${config.accentRgb}, 0.22)` : "none",
+                }}
+              >
+                {priceTag}
+              </span>
+            )}
+          </div>
+
+          <h2 className="text-[1.05rem] font-extrabold leading-snug text-white/90">
+            <WordLift text={service.title} yOffset={4} stagger={25} hoverColor="rgba(255,255,255,1)" />
+          </h2>
+
+          <p className="mt-2.5 text-sm leading-relaxed text-white/40">
+            {excerpt}
+          </p>
+
+          {extraBullets.length > 0 && (
+            <ul className="mt-5 space-y-2">
+              {extraBullets.map((hl) => (
+                <li key={hl} className="flex items-start gap-2 text-xs text-white/50">
+                  <CheckCircle2 size={12} className="mt-0.5 shrink-0" style={{ color: config.accent }} />
+                  {hl}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* CTAs */}
+          {isOutil ? (
+            <Link
+              href={href}
+              className="group/cta relative z-[1] mt-5 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
+              style={{ background: config.accent, color: "#09090b" }}
+            >
+              <span>{ctaLabel}</span>
+              <motion.span
+                animate={{ x: [0, 3, 0] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <ChevronRight size={16} />
+              </motion.span>
+            </Link>
+          ) : (
+            <Link
+              href={href}
+              className="group/cta relative z-[1] mt-5 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300"
+              style={{
+                background: `rgba(${config.accentRgb}, 0.08)`,
+                border: `1px solid rgba(${config.accentRgb}, 0.18)`,
+                color: config.accent,
+              }}
+            >
+              <span>{ctaLabel}</span>
+              <ChevronRight size={16} className="transition-transform duration-300 group-hover/cta:translate-x-1" />
+              <span
+                className="absolute inset-0 -translate-x-full rounded-xl transition-transform duration-500 group-hover/cta:translate-x-0"
+                style={{ background: `rgba(${config.accentRgb}, 0.10)` }}
+              />
+            </Link>
           )}
         </div>
-
-        <h2 className="text-[1.05rem] font-extrabold leading-snug text-white/90">
-          <WordLift text={service.title} yOffset={4} stagger={25} hoverColor="rgba(255,255,255,1)" />
-        </h2>
-
-        <p className="mt-2.5 text-sm leading-relaxed text-white/40">
-          {excerpt}
-        </p>
-
-        {extraBullets.length > 0 && (
-          <ul className="mt-5 space-y-2">
-            {extraBullets.map((hl) => (
-              <li key={hl} className="flex items-start gap-2 text-xs text-white/50">
-                <CheckCircle2
-                  size={12}
-                  className="mt-0.5 shrink-0"
-                  style={{ color: config.accent }}
-                />
-                {hl}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {/* ── CTA — deux styles selon category ── */}
-        {isOutil ? (
-          /* CTA solid pour les outils → conversion abonnement */
-          <Link
-            href={href}
-            className="group/cta relative z-[1] mt-5 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
-            style={{
-              background: config.accent,
-              color: "#09090b",
-            }}
-          >
-            <span>{ctaLabel}</span>
-            <ChevronRight size={16} className="transition-transform duration-300 group-hover/cta:translate-x-1" />
-          </Link>
-        ) : (
-          /* CTA ghost pour les prestations */
-          <Link
-            href={href}
-            className="group/cta relative z-[1] mt-5 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300"
-            style={{
-              background: `rgba(${config.accentRgb}, 0.08)`,
-              border: `1px solid rgba(${config.accentRgb}, 0.18)`,
-              color: config.accent,
-            }}
-          >
-            <span>{ctaLabel}</span>
-            <ChevronRight size={16} className="transition-transform duration-300 group-hover/cta:translate-x-1" />
-            <span
-              className="absolute inset-0 -translate-x-full rounded-xl transition-transform duration-400 group-hover/cta:translate-x-0"
-              style={{ background: `rgba(${config.accentRgb}, 0.10)` }}
-            />
-          </Link>
-        )}
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
 
 /* ─────────────────────────────────────────────────────────
-   FILTRE CATÉGORIES
+   FILTRE CATÉGORIES — animated layoutId pill
 ───────────────────────────────────────────────────────── */
 function CategoryFilter({
   active,
@@ -388,26 +455,43 @@ function CategoryFilter({
         const config   = cat !== "all" ? CAT_CONFIG[cat as CatKey] : null;
         const count    = counts[cat] ?? 0;
         const label    = cat === "all" ? filterLabels["all"] : (filterLabels[cat] ?? (config ? config.label : cat));
+
         return (
-          <button
+          <motion.button
             key={cat}
             onClick={() => onChange(cat)}
-            className="relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300"
+            whileTap={{ scale: 0.93 }}
+            className="relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200"
             style={{
-              background: isActive
-                ? config ? `rgba(${config.accentRgb}, 0.12)` : "rgba(201,165,90,0.12)"
-                : "rgba(255,255,255,0.03)",
               color: isActive
                 ? config ? config.accent : "#c9a55a"
                 : "rgba(255,255,255,0.35)",
-              border: isActive
-                ? `1px solid ${config ? config.border : "rgba(201,165,90,0.3)"}`
-                : "1px solid rgba(255,255,255,0.07)",
             }}
           >
-            <span>{label}</span>
+            {/* Animated active pill */}
+            {isActive ? (
+              <motion.span
+                layoutId="active-cat-pill"
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: config ? `rgba(${config.accentRgb}, 0.12)` : "rgba(201,165,90,0.12)",
+                  border: `1px solid ${config ? config.border : "rgba(201,165,90,0.3)"}`,
+                }}
+                transition={{ type: "spring", bounce: 0.18, duration: 0.48 }}
+              />
+            ) : (
+              <span
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: "rgba(255,255,255,0.025)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                }}
+              />
+            )}
+
+            <span className="relative z-10">{label}</span>
             <span
-              className="inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.55rem] font-black"
+              className="relative z-10 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[0.55rem] font-black"
               style={{
                 background: isActive
                   ? config ? `rgba(${config.accentRgb}, 0.2)` : "rgba(201,165,90,0.2)"
@@ -419,7 +503,7 @@ function CategoryFilter({
             >
               {count}
             </span>
-          </button>
+          </motion.button>
         );
       })}
     </motion.div>
@@ -434,14 +518,11 @@ export default function ServicesPage() {
   const s = dict.services;
 
   const [activeCategory, setActiveCategory] = useState("all");
-
   const [rows, setRows]       = useState<ServiceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchErr, setFetchErr] = useState<string | null>(null);
 
   useEffect(() => {
-    // Appel à la route SERVEUR — lit les env vars au RUNTIME, pas au build.
-    // Résout le problème "0 services en prod" causé par les NEXT_PUBLIC_* gravées vides.
     fetch("/api/services")
       .then(async (res) => {
         if (!res.ok) {
@@ -469,7 +550,7 @@ export default function ServicesPage() {
     return acc;
   }, {} as Record<string, number>);
 
-  const WHY_ICONS = [Zap, TrendingUp, Users, Settings2, Shield, Clock] as const;
+  const WHY_ICONS  = [Zap, TrendingUp, Users, Settings2, Shield, Clock] as const;
   const WHY_COLORS = [
     { color: "#c9a55a", rgb: "201,165,90"  },
     { color: "#60a5fa", rgb: "96,165,250"  },
@@ -487,17 +568,48 @@ export default function ServicesPage() {
       ══════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden pb-14 pt-24 sm:pb-32 sm:pt-40">
 
-        <div className="hero-grid absolute inset-0 opacity-50" />
-        {/* Animated orbs */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[400px] w-[600px] animate-float-slow rounded-full bg-[rgba(201,165,90,0.08)] blur-[80px]" />
-        </div>
-        <div className="pointer-events-none absolute right-[10%] top-[30%] h-[300px] w-[300px] animate-float-delayed rounded-full bg-[rgba(167,139,250,0.05)] blur-[70px]" />
-        <div className="pointer-events-none absolute left-[5%] bottom-[10%] h-[250px] w-[250px] animate-float rounded-full bg-[rgba(96,165,250,0.04)] blur-[60px]" />
+        {/* Grid */}
+        <div className="hero-grid absolute inset-0 opacity-40" />
+
+        {/* Breathing mesh gradient */}
+        <motion.div
+          className="pointer-events-none absolute inset-0"
+          animate={{
+            background: [
+              "radial-gradient(ellipse 65% 55% at 50% 0%, rgba(201,165,90,0.07) 0%, transparent 72%)",
+              "radial-gradient(ellipse 75% 60% at 50% 0%, rgba(124,111,205,0.05) 0%, transparent 72%)",
+              "radial-gradient(ellipse 65% 55% at 50% 0%, rgba(201,165,90,0.07) 0%, transparent 72%)",
+            ],
+          }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* Orb 1 — gold, top center */}
+        <motion.div
+          className="pointer-events-none absolute inset-x-0 top-0 flex justify-center"
+          animate={{ y: [0, -18, 0], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <div className="h-[420px] w-[640px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[90px]" />
+        </motion.div>
+
+        {/* Orb 2 — purple, top-right */}
+        <motion.div
+          className="pointer-events-none absolute right-[8%] top-[20%] h-[280px] w-[280px] rounded-full bg-[rgba(167,139,250,0.045)] blur-[70px]"
+          animate={{ x: [0, 12, 0], y: [0, -10, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+        />
+
+        {/* Orb 3 — blue, bottom-left */}
+        <motion.div
+          className="pointer-events-none absolute bottom-[5%] left-[5%] h-[240px] w-[240px] rounded-full bg-[rgba(96,165,250,0.035)] blur-[65px]"
+          animate={{ x: [0, -8, 0], y: [0, 12, 0] }}
+          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 2.5 }}
+        />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
 
-          {/* Badge */}
+          {/* Badge with pulse ring */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -508,7 +620,7 @@ export default function ServicesPage() {
             {s.hero.badge}
           </motion.div>
 
-          {/* Titre */}
+          {/* Title */}
           <h1 className="display-hero text-white">
             <MultiLineReveal
               lines={s.hero.titleLines}
@@ -530,66 +642,98 @@ export default function ServicesPage() {
 
           {/* CTAs */}
           <FadeReveal delay={0.8} className="mt-10 flex flex-wrap justify-center gap-3">
-            <Link href="/contact" className="btn-primary">
-              {lang === "fr" ? "Démarrer un projet" : "Start a project"} <ArrowRight size={16} />
-            </Link>
-            <Link
-              href="#services"
-              className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.05] px-7 py-[0.875rem] text-sm font-bold text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
-            >
-              {lang === "fr" ? "Explorer les services" : "Explore services"}
-            </Link>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
+              <Link href="/contact" className="btn-primary">
+                {lang === "fr" ? "Démarrer un projet" : "Start a project"}
+                <motion.span
+                  animate={{ x: [0, 3, 0] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <ArrowRight size={16} />
+                </motion.span>
+              </Link>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
+              <Link
+                href="#services"
+                className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.05] px-7 py-[0.875rem] text-sm font-bold text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+              >
+                {lang === "fr" ? "Explorer les services" : "Explore services"}
+              </Link>
+            </motion.div>
           </FadeReveal>
 
           {/* Stats */}
-          <FadeReveal delay={0.95} className="mt-14 flex flex-wrap justify-center gap-10 border-t border-white/[0.06] pt-12">
-            {[
-              { value: loading ? "…" : `${rows.length}`, label: lang === "fr" ? "services disponibles" : "services available" },
-              { value: "5",                   label: lang === "fr" ? "pôles d'expertise"    : "areas of expertise" },
-              { value: "50+",                 label: lang === "fr" ? "clients accompagnés"  : "clients supported"  },
-              { value: "24h",                 label: lang === "fr" ? "délai de réponse"     : "response time"      },
-            ].map(({ value, label }) => (
-              <div key={label} className="text-center">
-                <p className="text-2xl font-black tracking-tight text-white">{value}</p>
-                <p className="mt-0.5 text-xs text-white/30">{label}</p>
-              </div>
-            ))}
+          <FadeReveal delay={0.95} className="mt-14 border-t border-white/[0.06] pt-12">
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1, delayChildren: 1.0 } } }}
+              className="flex flex-wrap justify-center gap-10"
+            >
+              {[
+                { value: loading ? "…" : `${rows.length}`, label: lang === "fr" ? "services disponibles" : "services available" },
+                { value: "5",    label: lang === "fr" ? "pôles d'expertise"    : "areas of expertise" },
+                { value: "50+",  label: lang === "fr" ? "clients accompagnés"  : "clients supported"  },
+                { value: "24h",  label: lang === "fr" ? "délai de réponse"     : "response time"      },
+              ].map(({ value, label }) => (
+                <motion.div
+                  key={label}
+                  variants={blurReveal}
+                  className="text-center"
+                >
+                  <p className="text-2xl font-black tracking-tight text-white">{value}</p>
+                  <p className="mt-0.5 text-xs text-white/30">{label}</p>
+                </motion.div>
+              ))}
+            </motion.div>
           </FadeReveal>
 
-          {/* Chips catégories en bas du hero */}
-          <FadeReveal delay={1.05} className="mt-10 flex flex-wrap justify-center gap-2">
-            {(Object.keys(CAT_CONFIG) as CatKey[]).map((cat) => {
-              const c = CAT_CONFIG[cat];
-              return (
-                <span
-                  key={cat}
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.62rem] font-bold"
-                  style={{
-                    background: `rgba(${c.accentRgb}, 0.08)`,
-                    border: `1px solid rgba(${c.accentRgb}, 0.20)`,
-                    color: c.accent,
-                  }}
-                >
-                  {c.emoji} {c.label}
-                </span>
-              );
-            })}
+          {/* Category chips */}
+          <FadeReveal delay={1.1} className="mt-10">
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08, delayChildren: 1.15 } } }}
+              className="flex flex-wrap justify-center gap-2"
+            >
+              {(Object.keys(CAT_CONFIG) as CatKey[]).map((cat) => {
+                const c = CAT_CONFIG[cat];
+                return (
+                  <motion.span
+                    key={cat}
+                    variants={blurReveal}
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.62rem] font-bold"
+                    style={{
+                      background: `rgba(${c.accentRgb}, 0.08)`,
+                      border: `1px solid rgba(${c.accentRgb}, 0.20)`,
+                      color: c.accent,
+                    }}
+                  >
+                    {c.emoji} {c.label}
+                  </motion.span>
+                );
+              })}
+            </motion.div>
           </FadeReveal>
         </div>
+
+        {/* Bottom fade to section */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#09090b] to-transparent" />
       </section>
 
       {/* ══════════════════════════════════════════════════
           FILTRES + GRILLE SERVICES
       ══════════════════════════════════════════════════ */}
-      <section id="services" className="border-t border-white/[0.05] px-6 py-10 sm:py-20">
+      <section id="services" className="border-t border-white/[0.05] px-6 py-12 sm:py-20">
         <div className="mx-auto max-w-6xl">
 
-          {/* En-tête section */}
+          {/* Section header */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport}
-            transition={{ duration: 0.6, ease }}
+            transition={{ duration: 0.65, ease }}
             className="mb-12 text-center"
           >
             <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-white/30">
@@ -598,6 +742,8 @@ export default function ServicesPage() {
             <h2 className="mt-2 text-2xl font-extrabold text-white/80">
               {lang === "fr" ? "Filtrez par catégorie" : "Filter by category"}
             </h2>
+            {/* Decorative line */}
+            <div className="mx-auto mt-4 h-px w-12 rounded-full bg-gradient-to-r from-transparent via-[#c9a55a]/40 to-transparent" />
           </motion.div>
 
           <CategoryFilter
@@ -608,9 +754,13 @@ export default function ServicesPage() {
           />
 
           {loading ? (
-            <div className="mt-10 grid items-start gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-12 grid items-start gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-[320px] sm:h-[380px] animate-pulse rounded-[1.75rem] border border-white/[0.06] bg-white/[0.02]" />
+                <div
+                  key={i}
+                  className="h-[340px] sm:h-[400px] animate-pulse rounded-[1.75rem] border border-white/[0.05] bg-white/[0.015]"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                />
               ))}
             </div>
           ) : fetchErr ? (
@@ -625,7 +775,7 @@ export default function ServicesPage() {
                 initial="hidden"
                 animate="visible"
                 variants={staggerContainerFast}
-                className="mt-10 grid items-start gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                className="mt-12 grid items-start gap-6 sm:grid-cols-2 xl:grid-cols-3"
               >
                 {filtered.map((service) => (
                   <ServiceCard key={service.id} service={service} lang={lang} />
@@ -639,8 +789,13 @@ export default function ServicesPage() {
       {/* ══════════════════════════════════════════════════
           POURQUOI DJAMA
       ══════════════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-28">
-        <div className="mx-auto max-w-6xl">
+      <section className="relative border-t border-white/[0.05] px-6 py-28 overflow-hidden">
+        {/* Subtle section glow */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
+          <div className="h-[300px] w-[500px] rounded-full bg-[rgba(201,165,90,0.03)] blur-[100px]" />
+        </div>
+
+        <div className="relative mx-auto max-w-6xl">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -648,8 +803,11 @@ export default function ServicesPage() {
             variants={staggerContainer}
           >
             {/* Header */}
-            <div className="mb-8 sm:mb-16 text-center">
-              <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
+            <div className="mb-10 sm:mb-16 text-center">
+              <motion.span
+                variants={fadeIn}
+                className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]"
+              >
                 <Star size={10} /> {s.whyUs.badge}
               </motion.span>
               <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">
@@ -660,7 +818,7 @@ export default function ServicesPage() {
               </motion.p>
             </div>
 
-            {/* Grille 3×2 */}
+            {/* Grid 3×2 */}
             <motion.div
               variants={staggerContainerFast}
               className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
@@ -671,22 +829,46 @@ export default function ServicesPage() {
                 return (
                   <motion.div
                     key={title}
-                    variants={cardReveal}
-                    whileHover={{ y: -5, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
-                    className="group relative overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-white/[0.03] p-7 transition-all duration-300 hover:border-white/[0.14] hover:bg-white/[0.05] hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
+                    variants={cardRevealBlur}
+                    whileHover={{ y: -6, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
+                    className="group relative overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#0c0c10] p-7 transition-all duration-300 hover:border-white/[0.14]"
                   >
+                    {/* Faint number watermark */}
+                    <span
+                      className="pointer-events-none absolute -right-1 -top-5 select-none text-[6.5rem] font-black leading-none text-white/[0.022]"
+                      aria-hidden="true"
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+
+                    {/* Radial hover glow */}
                     <div
-                      className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                      style={{ background: `radial-gradient(ellipse at 20% 0%, rgba(${rgb},0.10) 0%, transparent 60%)` }}
+                      className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
+                      style={{ background: `radial-gradient(ellipse at 15% 0%, rgba(${rgb}, 0.13) 0%, transparent 60%)` }}
                     />
+
+                    {/* Hover inset border glow */}
                     <div
-                      className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-110"
-                      style={{ background: `rgba(${rgb}, 0.10)`, borderColor: `rgba(${rgb}, 0.22)` }}
+                      className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
+                      style={{ boxShadow: `inset 0 0 0 1px rgba(${rgb}, 0.22)` }}
+                    />
+
+                    {/* Icon */}
+                    <motion.div
+                      className="relative mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl border"
+                      style={{
+                        background: `rgba(${rgb}, 0.10)`,
+                        borderColor: `rgba(${rgb}, 0.22)`,
+                        boxShadow: `0 0 14px rgba(${rgb}, 0.12)`,
+                      }}
+                      whileHover={{ scale: 1.12, boxShadow: `0 0 28px rgba(${rgb}, 0.4)` }}
+                      transition={{ duration: 0.25 }}
                     >
                       <Icon size={22} style={{ color }} />
-                    </div>
-                    <h3 className="text-[0.95rem] font-extrabold text-white/88">{title}</h3>
-                    <p className="mt-2.5 text-sm leading-relaxed text-white/42">{desc}</p>
+                    </motion.div>
+
+                    <h3 className="relative text-[0.95rem] font-extrabold text-white/88">{title}</h3>
+                    <p className="relative mt-2.5 text-sm leading-relaxed text-white/42">{desc}</p>
                   </motion.div>
                 );
               })}
@@ -698,8 +880,12 @@ export default function ServicesPage() {
       {/* ══════════════════════════════════════════════════
           LE SYSTÈME DJAMA
       ══════════════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-28">
-        <div className="mx-auto max-w-6xl">
+      <section className="relative border-t border-white/[0.05] bg-[#0b0b12] px-6 py-28 overflow-hidden">
+        {/* Background orb */}
+        <div className="pointer-events-none absolute right-0 top-0 h-[500px] w-[500px] rounded-full bg-[rgba(201,165,90,0.03)] blur-[120px]" />
+        <div className="pointer-events-none absolute left-0 bottom-0 h-[400px] w-[400px] rounded-full bg-[rgba(124,111,205,0.025)] blur-[100px]" />
+
+        <div className="relative mx-auto max-w-6xl">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -708,9 +894,12 @@ export default function ServicesPage() {
           >
             <div className="grid items-center gap-16 lg:grid-cols-[1fr_480px]">
 
-              {/* Texte gauche */}
+              {/* Text left */}
               <div>
-                <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
+                <motion.span
+                  variants={fadeIn}
+                  className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]"
+                >
                   <Layers size={10} /> {lang === "fr" ? "L'approche DJAMA" : "The DJAMA approach"}
                 </motion.span>
                 <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">
@@ -733,17 +922,17 @@ export default function ServicesPage() {
                     { label: "Accompagnement",                    desc: "Administratif, fournisseurs, marchés — on gère à votre place." },
                     { label: "Coaching & montée en compétence",   desc: "IA, scolaire, numérique — vous progressez vraiment." },
                   ] : [
-                    { label: "Creation & Design",   desc: "Website, app, visuals — a premium image that converts." },
-                    { label: "Professional tools",  desc: "Invoices, scheduling, notes — integrated into your workflow." },
-                    { label: "Support",             desc: "Admin, suppliers, tenders — we handle it for you." },
+                    { label: "Creation & Design",     desc: "Website, app, visuals — a premium image that converts." },
+                    { label: "Professional tools",    desc: "Invoices, scheduling, notes — integrated into your workflow." },
+                    { label: "Support",               desc: "Admin, suppliers, tenders — we handle it for you." },
                     { label: "Coaching & upskilling", desc: "AI, academic, digital — you truly progress." },
                   ]).map(({ label, desc }, i) => (
                     <motion.div
                       key={label}
                       variants={cardReveal}
-                      className="flex items-start gap-4 rounded-[1.25rem] border border-white/[0.07] bg-white/[0.03] p-4 transition-all duration-300 hover:border-[rgba(201,165,90,0.22)] hover:bg-[rgba(201,165,90,0.04)]"
+                      className="group flex items-start gap-4 rounded-[1.25rem] border border-white/[0.07] bg-white/[0.025] p-4 transition-all duration-300 hover:border-[rgba(201,165,90,0.25)] hover:bg-[rgba(201,165,90,0.04)]"
                     >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.1)] text-xs font-black text-[#c9a55a]">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.1)] text-xs font-black text-[#c9a55a] transition-all duration-300 group-hover:bg-[rgba(201,165,90,0.18)]">
                         {i + 1}
                       </div>
                       <div>
@@ -755,46 +944,58 @@ export default function ServicesPage() {
                 </motion.div>
 
                 <motion.div variants={fadeIn} className="mt-8">
-                  <Link href="/contact" className="btn-primary">
-                    {lang === "fr" ? "Parlons de votre projet" : "Let's talk about your project"} <ArrowRight size={16} />
-                  </Link>
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }} className="inline-block">
+                    <Link href="/contact" className="btn-primary">
+                      {lang === "fr" ? "Parlons de votre projet" : "Let's talk about your project"}
+                      <ArrowRight size={16} />
+                    </Link>
+                  </motion.div>
                 </motion.div>
               </div>
 
-              {/* Visual droite — carte système */}
-              <motion.div variants={cardReveal}>
-                <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.09] bg-gradient-to-b from-white/[0.05] to-transparent p-8">
-                  <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[rgba(201,165,90,0.08)] blur-[80px]" />
+              {/* Visual right — system card */}
+              <motion.div variants={cardRevealBlur}>
+                <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.09] bg-gradient-to-b from-white/[0.04] to-transparent p-8">
+                  {/* Corner glow */}
+                  <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[rgba(201,165,90,0.07)] blur-[80px]" />
+                  <div className="pointer-events-none absolute left-0 bottom-0 h-48 w-48 rounded-full bg-[rgba(124,111,205,0.04)] blur-[60px]" />
 
                   <div className="relative">
                     <p className="text-[0.65rem] font-black uppercase tracking-[0.18em] text-white/25">
                       {lang === "fr" ? "Ce que vous obtenez" : "What you get"}
                     </p>
 
-                    <div className="mt-6 space-y-4">
+                    <div className="mt-6 space-y-3">
                       {[
-                        { icon: Code2,         color: "#7c6fcd", rgb: "124,111,205", label: lang === "fr" ? "Présence digitale"    : "Digital presence",    value: lang === "fr" ? "Site · App · E-commerce"          : "Website · App · E-commerce"        },
-                        { icon: LayoutGrid,    color: "#34d399", rgb: "52,211,153",  label: lang === "fr" ? "Outils opérationnels" : "Operational tools",   value: lang === "fr" ? "Factures · Planning · Notes"       : "Invoices · Scheduling · Notes"      },
-                        { icon: MessageSquare, color: "#f9a826", rgb: "249,168,38",  label: lang === "fr" ? "Accompagnement"       : "Support",             value: lang === "fr" ? "Admin · Fournisseurs · Marchés"    : "Admin · Suppliers · Tenders"        },
-                        { icon: Sparkles,      color: "#c9a55a", rgb: "201,165,90",  label: "Coaching",                                                      value: lang === "fr" ? "IA · Scolaire · Numérique"         : "AI · Academic · Digital"            },
-                        { icon: TrendingUp,    color: "#f87171", rgb: "248,113,113", label: lang === "fr" ? "Résultats"            : "Results",             value: lang === "fr" ? "Performance · Croissance · Clarté" : "Performance · Growth · Clarity"     },
+                        { icon: Code2,         color: "#7c6fcd", rgb: "124,111,205", label: lang === "fr" ? "Présence digitale"    : "Digital presence",    value: lang === "fr" ? "Site · App · E-commerce"          : "Website · App · E-commerce"    },
+                        { icon: LayoutGrid,    color: "#34d399", rgb: "52,211,153",  label: lang === "fr" ? "Outils opérationnels" : "Operational tools",   value: lang === "fr" ? "Factures · Planning · Notes"       : "Invoices · Scheduling · Notes"  },
+                        { icon: MessageSquare, color: "#f9a826", rgb: "249,168,38",  label: lang === "fr" ? "Accompagnement"       : "Support",             value: lang === "fr" ? "Admin · Fournisseurs · Marchés"    : "Admin · Suppliers · Tenders"    },
+                        { icon: Sparkles,      color: "#c9a55a", rgb: "201,165,90",  label: "Coaching",                                                      value: lang === "fr" ? "IA · Scolaire · Numérique"         : "AI · Academic · Digital"        },
+                        { icon: TrendingUp,    color: "#f87171", rgb: "248,113,113", label: lang === "fr" ? "Résultats"            : "Results",             value: lang === "fr" ? "Performance · Croissance · Clarté" : "Performance · Growth · Clarity"  },
                       ].map(({ icon: Icon, color, rgb, label, value }) => (
-                        <div
+                        <motion.div
                           key={label}
-                          className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 transition-colors hover:border-white/[0.1]"
+                          className="group/row flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]"
+                          whileHover={{ x: 4 }}
+                          transition={{ duration: 0.22 }}
                         >
                           <div
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-300 group-hover/row:scale-110"
                             style={{ background: `rgba(${rgb}, 0.12)`, border: `1px solid rgba(${rgb}, 0.22)` }}
                           >
                             <Icon size={15} style={{ color }} />
                           </div>
-                          <div className="flex-1 min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-[0.7rem] font-bold text-white/70">{label}</p>
-                            <p className="text-[0.6rem] text-white/30 truncate">{value}</p>
+                            <p className="truncate text-[0.6rem] text-white/30">{value}</p>
                           </div>
-                          <CheckCircle2 size={14} className="shrink-0 text-[#c9a55a]" />
-                        </div>
+                          <motion.div
+                            animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                          >
+                            <CheckCircle2 size={14} className="shrink-0 text-[#c9a55a]" />
+                          </motion.div>
+                        </motion.div>
                       ))}
                     </div>
 
@@ -817,18 +1018,35 @@ export default function ServicesPage() {
       {/* ══════════════════════════════════════════════════
           CTA FINAL
       ══════════════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-10 sm:py-20">
+      <section className="border-t border-white/[0.05] px-6 py-12 sm:py-24">
         <div className="mx-auto max-w-4xl">
           <motion.div
-            initial={{ opacity: 0, y: 32 }}
+            initial={{ opacity: 0, y: 36 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport}
-            transition={{ duration: 0.8, ease }}
-            className="relative overflow-hidden rounded-[2.5rem] border border-[rgba(201,165,90,0.18)] bg-gradient-to-br from-[rgba(201,165,90,0.07)] via-transparent to-[rgba(124,111,205,0.06)] p-12 text-center"
+            transition={{ duration: 0.85, ease }}
+            className="relative overflow-hidden rounded-[2.5rem] border border-[rgba(201,165,90,0.18)] p-12 text-center"
+            style={{
+              background: "linear-gradient(145deg, rgba(201,165,90,0.08) 0%, rgba(9,9,11,0.9) 35%, rgba(124,111,205,0.05) 100%)",
+              boxShadow: "0 0 80px rgba(201,165,90,0.07), inset 0 1px 0 rgba(255,255,255,0.05)",
+            }}
           >
+            {/* Background glows */}
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="h-64 w-96 rounded-full bg-[rgba(201,165,90,0.06)] blur-[80px]" />
+              <motion.div
+                className="h-64 w-96 rounded-full blur-[90px]"
+                style={{ background: "rgba(201,165,90,0.07)" }}
+                animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+              />
             </div>
+            <div className="pointer-events-none absolute right-[10%] bottom-[10%] h-40 w-40 rounded-full bg-[rgba(124,111,205,0.05)] blur-[60px]" />
+
+            {/* Top border highlight */}
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 h-px"
+              style={{ background: "linear-gradient(90deg, transparent, rgba(201,165,90,0.5), transparent)" }}
+            />
 
             <div className="relative">
               <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
@@ -846,29 +1064,46 @@ export default function ServicesPage() {
               </p>
 
               <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <Link href="/contact" className="btn-primary px-8 py-4 text-base">
-                  {lang === "fr" ? "Demander un devis" : "Request a quote"} <ArrowRight size={17} />
-                </Link>
-                <Link
-                  href="/abonnement"
-                  className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.05] px-8 py-4 text-base font-bold text-white/65 backdrop-blur-sm transition-all duration-300 hover:border-[rgba(201,165,90,0.25)] hover:bg-[rgba(201,165,90,0.07)] hover:text-white/90"
-                >
-                  {lang === "fr" ? "Voir nos outils" : "View our tools"} <ChevronRight size={17} />
-                </Link>
+                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
+                  <Link href="/contact" className="btn-primary px-8 py-4 text-base">
+                    {lang === "fr" ? "Demander un devis" : "Request a quote"}
+                    <motion.span
+                      animate={{ x: [0, 3, 0] }}
+                      transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <ArrowRight size={17} />
+                    </motion.span>
+                  </Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
+                  <Link
+                    href="/abonnement"
+                    className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.05] px-8 py-4 text-base font-bold text-white/65 backdrop-blur-sm transition-all duration-300 hover:border-[rgba(201,165,90,0.28)] hover:bg-[rgba(201,165,90,0.07)] hover:text-white/90"
+                  >
+                    {lang === "fr" ? "Voir nos outils" : "View our tools"} <ChevronRight size={17} />
+                  </Link>
+                </motion.div>
               </div>
 
-              {/* Signaux de confiance */}
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
+              {/* Trust signals */}
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
                 {[
-                  { icon: Shield,     label: lang === "fr" ? "Devis gratuit"          : "Free quote"           },
-                  { icon: Clock,      label: lang === "fr" ? "Réponse sous 24h"        : "Reply within 24h"    },
-                  { icon: BadgeCheck, label: lang === "fr" ? "Sans engagement"         : "No commitment"       },
-                  { icon: Star,       label: lang === "fr" ? "50+ clients satisfaits"  : "50+ satisfied clients"},
-                ].map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex items-center gap-1.5 text-xs text-white/30">
+                  { icon: Shield,     label: lang === "fr" ? "Devis gratuit"          : "Free quote"            },
+                  { icon: Clock,      label: lang === "fr" ? "Réponse sous 24h"        : "Reply within 24h"     },
+                  { icon: BadgeCheck, label: lang === "fr" ? "Sans engagement"         : "No commitment"        },
+                  { icon: Star,       label: lang === "fr" ? "50+ clients satisfaits"  : "50+ satisfied clients" },
+                ].map(({ icon: Icon, label }, i) => (
+                  <motion.div
+                    key={label}
+                    className="flex items-center gap-1.5 text-xs text-white/32"
+                    initial={{ opacity: 0, y: 8 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={viewport}
+                    transition={{ duration: 0.4, delay: i * 0.08 }}
+                  >
                     <Icon size={12} className="text-[#c9a55a]" />
                     {label}
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
