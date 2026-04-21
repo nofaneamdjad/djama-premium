@@ -15,6 +15,7 @@ import {
   Globe, Brain, MessageCircle,
   LayoutDashboard, Smartphone, Palette, Briefcase,
   LineChart, GraduationCap, Code2, BarChart3,
+  Receipt, CalendarDays, StickyNote, FolderOpen, Gem,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import {
@@ -110,6 +111,30 @@ const TICKER_ITEMS = [
 
 const STAT_ICONS   = [Users2, LineChart, Zap, HeartHandshake] as const;
 const STAT_COLORS  = [GOLD, "#60a5fa", "#4ade80", "#a78bfa"] as const;
+
+const ESPACE_TOOLS = [
+  { icon: Receipt,         color: GOLD,       title: "Factures & devis",       desc: "Créez et envoyez des documents professionnels en quelques clics." },
+  { icon: CalendarDays,    color: "#60a5fa",  title: "Agenda & planning",      desc: "Gérez vos rendez-vous et organisez vos journées sans effort." },
+  { icon: StickyNote,      color: "#a78bfa",  title: "Bloc-notes pro",         desc: "Notez vos idées, tâches et mémos en un endroit centralisé." },
+  { icon: LayoutDashboard, color: "#4ade80",  title: "Tableau de bord",        desc: "Pilotez votre activité avec une vue claire et complète." },
+  { icon: FolderOpen,      color: GOLD,       title: "Espace documents",       desc: "Stockez et retrouvez vos fichiers clients en toute sécurité." },
+] as const;
+
+const ESPACE_BENEFITS = [
+  { text: "Gain de temps immédiat",    color: GOLD },
+  { text: "Image professionnelle",     color: "#60a5fa" },
+  { text: "Gestion 100% centralisée",  color: "#4ade80" },
+  { text: "Accessible sur tous vos appareils", color: "#a78bfa" },
+  { text: "Interface simple et fluide", color: GOLD },
+  { text: "Outils toujours à jour",    color: "#60a5fa" },
+] as const;
+
+const ESPACE_PILLARS = [
+  { val: "5",       label: "outils inclus",    color: GOLD      },
+  { val: "11,90€",  label: "par mois",         color: "#60a5fa" },
+  { val: "0",       label: "engagement",       color: "#4ade80" },
+  { val: "✓",       label: "accès immédiat",   color: "#a78bfa" },
+] as const;
 
 /* ═══════════════════════════════════════════════════════
    WRAPPER
@@ -322,7 +347,203 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          3. ÉCOSYSTÈME DIGITAL
+          3. ESPACE CLIENT — Offre phare
+      ══════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden bg-[#0e0b18] py-20 sm:py-28">
+        {/* Ambient glows */}
+        <div className="pointer-events-none absolute left-[-100px] top-[15%] h-[380px] w-[380px] rounded-full bg-[rgba(201,165,90,.06)] blur-[100px]" />
+        <div className="pointer-events-none absolute right-[-80px] bottom-[10%] h-[300px] w-[300px] rounded-full bg-[rgba(167,139,250,.05)] blur-[90px]" />
+        <div className="pointer-events-none absolute left-[40%] top-[-60px] h-[220px] w-[220px] rounded-full bg-[rgba(96,165,250,.04)] blur-[70px]" />
+
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+          className="relative z-10 mx-auto max-w-6xl px-6"
+        >
+          {/* ── Header centré ── */}
+          <div className="mb-14 text-center">
+            <motion.div variants={fadeIn} className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.35)] bg-[rgba(201,165,90,.1)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]" style={{ color: GOLD }}>
+              <Gem size={11} />
+              Offre essentielle DJAMA
+            </motion.div>
+            <h2 className="display-section text-white">
+              <MultiLineReveal
+                lines={["Vos outils pros, tout-en-un", "à 11,90€ / mois."]}
+                highlight={1} stagger={0.1} wordStagger={0.04}
+                lineClassName="justify-center text-white"
+              />
+            </h2>
+            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/40">
+              Un seul abonnement pour gérer votre activité d'indépendant. Sans engagement, résiliable à tout moment, accès immédiat.
+            </FadeReveal>
+          </div>
+
+          {/* ── 4 pilliers ── */}
+          <motion.div variants={staggerContainerFast} className="mb-14 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {ESPACE_PILLARS.map(({ val, label, color }) => (
+              <motion.div key={label} variants={cardReveal}
+                whileHover={{ y: -4, transition: { duration: 0.25, ease } }}
+                className="group relative overflow-hidden rounded-2xl border border-white/[.07] bg-white/[.03] px-4 py-5 text-center transition-all duration-300 hover:border-white/[.15]"
+              >
+                <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  style={{ background: `radial-gradient(ellipse at 50% -20%,${color}18 0%,transparent 70%)` }} />
+                <p className="text-[1.9rem] font-black leading-none tracking-tight" style={{ color }}>{val}</p>
+                <p className="mt-1.5 text-[0.7rem] font-semibold text-white/40">{label}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* ── Main grid ── */}
+          <div className="grid items-start gap-10 lg:grid-cols-[1fr_370px]">
+
+            {/* ── Left : outils + bénéfices ── */}
+            <div>
+              <motion.p variants={fadeIn} className="mb-5 text-[0.62rem] font-black uppercase tracking-[.24em] text-white/25">
+                5 outils inclus dans l'abonnement
+              </motion.p>
+
+              {/* Tool cards */}
+              <motion.div variants={staggerContainerFast} className="grid gap-3 sm:grid-cols-2">
+                {ESPACE_TOOLS.map(({ icon: Icon, color, title, desc }) => (
+                  <motion.div key={title} variants={cardReveal}
+                    whileHover={{ y: -5, transition: { duration: 0.25, ease } }}
+                    className="group relative flex items-start gap-3.5 overflow-hidden rounded-2xl border border-white/[.07] bg-white/[.025] p-4 transition-all duration-300 hover:border-white/[.14] hover:bg-white/[.04]"
+                  >
+                    <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                      style={{ background: `radial-gradient(ellipse at 10% 50%,${color}0e 0%,transparent 65%)` }} />
+                    <motion.div
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"
+                      style={{ background: `${color}15`, borderColor: `${color}30`, boxShadow: `0 0 14px ${color}20` }}
+                      whileHover={{ scale: 1.12, boxShadow: `0 0 24px ${color}50` }}
+                      transition={{ duration: 0.22 }}
+                    >
+                      <Icon size={19} style={{ color }} />
+                    </motion.div>
+                    <div className="min-w-0">
+                      <p className="text-[0.88rem] font-extrabold text-white/88">{title}</p>
+                      <p className="mt-0.5 text-[0.74rem] leading-snug text-white/38">{desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+
+                {/* Badge "+ à venir" dans la 6e cellule */}
+                <motion.div variants={cardReveal}
+                  className="flex items-center justify-center rounded-2xl border border-dashed border-white/[.09] bg-transparent px-4 py-4"
+                >
+                  <p className="text-center text-[0.72rem] font-bold text-white/22">
+                    + nouvelles fonctionnalités<br />régulièrement
+                  </p>
+                </motion.div>
+              </motion.div>
+
+              {/* Bénéfices */}
+              <motion.div variants={staggerContainerFast} className="mt-5 grid grid-cols-2 gap-2">
+                {ESPACE_BENEFITS.map(({ text, color }) => (
+                  <motion.div key={text} variants={fadeIn}
+                    className="flex items-center gap-2.5 rounded-xl border border-white/[.06] bg-white/[.02] px-3.5 py-2.5"
+                  >
+                    <CheckCircle2 size={12} style={{ color }} className="shrink-0" />
+                    <span className="text-[0.77rem] text-white/52">{text}</span>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* CTAs mobiles (cachés sur desktop) */}
+              <FadeReveal delay={0.3} className="mt-8 flex flex-col gap-2.5 sm:flex-row lg:hidden">
+                <Link href="/espace-client"
+                  className="btn-primary group relative flex-1 justify-center overflow-hidden py-[0.9rem] text-[0.92rem]">
+                  <span className="relative z-10 flex items-center gap-2">
+                    S'abonner — 11,90€/mois
+                    <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
+                  </span>
+                  <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
+                </Link>
+                <Link href="/espace-client"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[.09] bg-white/[.03] py-[0.9rem] text-sm font-semibold text-white/55 transition-all duration-200 hover:border-white/[.18] hover:text-white/80">
+                  Voir les outils <ArrowRight size={13} />
+                </Link>
+              </FadeReveal>
+            </div>
+
+            {/* ── Right : pricing card ── */}
+            <motion.div variants={cardReveal} className="hidden lg:block">
+              <div className="relative overflow-hidden rounded-[1.75rem] border shadow-[0_32px_70px_rgba(0,0,0,.55)]"
+                style={{ borderColor: `rgba(${GOLDR},.28)`, background: "#0f0f13" }}
+              >
+                {/* Top glow */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-[radial-gradient(ellipse_90%_80%_at_50%_0%,rgba(201,165,90,.13),transparent)]" />
+                {/* Gold top bar */}
+                <div className="h-[2.5px] w-full" style={{ background: `linear-gradient(90deg,transparent,${GOLD},transparent)` }} />
+
+                {/* Header */}
+                <div className="border-b px-7 pt-7 pb-6 text-center" style={{ borderColor: `rgba(${GOLDR},.12)` }}>
+                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.6rem] font-black uppercase tracking-[.22em]"
+                    style={{ background: `rgba(${GOLDR},.1)`, borderColor: `rgba(${GOLDR},.25)`, color: GOLD }}>
+                    <Sparkles size={9} /> Essentiel DJAMA
+                  </div>
+
+                  {/* Prix */}
+                  <div className="mt-2 flex items-end justify-center gap-1">
+                    <span className="text-[3.4rem] font-black leading-none tracking-tight text-white">11,90</span>
+                    <div className="mb-2.5 flex flex-col items-start leading-none">
+                      <span className="text-xl font-black" style={{ color: GOLD }}>€</span>
+                      <span className="text-[0.62rem] font-bold text-white/32">/mois</span>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[0.7rem] font-medium text-white/32">
+                    Sans engagement · Résiliable à tout moment
+                  </p>
+                </div>
+
+                {/* Features list */}
+                <div className="space-y-2.5 px-7 py-6">
+                  {[
+                    { label: "Factures & devis illimités",      highlight: false },
+                    { label: "Agenda & planning intégré",       highlight: false },
+                    { label: "Bloc-notes professionnel",        highlight: false },
+                    { label: "Tableau de bord centralisé",      highlight: false },
+                    { label: "Espace documents sécurisé",       highlight: false },
+                    { label: "Accès immédiat après paiement",   highlight: true  },
+                    { label: "Support DJAMA inclus",            highlight: true  },
+                  ].map(({ label, highlight }) => (
+                    <div key={label} className="flex items-center gap-3">
+                      <CheckCircle2 size={14} className="shrink-0"
+                        style={{ color: highlight ? GOLD : "rgba(255,255,255,.38)" }} />
+                      <span className={`text-[0.82rem] ${highlight ? "font-semibold" : ""}`}
+                        style={{ color: highlight ? GOLD : "rgba(255,255,255,.6)" }}>
+                        {label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <div className="space-y-2.5 px-7 pb-7">
+                  <Link href="/espace-client"
+                    className="btn-primary group relative w-full justify-center overflow-hidden py-[0.95rem] text-[0.92rem]">
+                    <span className="relative z-10 flex items-center gap-2">
+                      S'abonner maintenant
+                      <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
+                    </span>
+                    <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
+                  </Link>
+                  <Link href="/espace-client"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[.08] bg-white/[.03] py-3 text-sm font-semibold text-white/50 transition-all duration-200 hover:border-white/[.16] hover:text-white/75">
+                    Voir tous les outils <ArrowRight size={13} />
+                  </Link>
+                  <p className="text-center text-[0.62rem] text-white/22">
+                    Paiement sécurisé · Données protégées
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          4. ÉCOSYSTÈME DIGITAL
       ══════════════════════════════════════════════ */}
       <section className="py-20 sm:py-28">
         <motion.div
