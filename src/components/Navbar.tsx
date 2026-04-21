@@ -68,13 +68,14 @@ export default function Navbar() {
     ? ["brightness(0) invert(1)", "brightness(0) invert(1) drop-shadow(0 0 22px rgba(201,165,90,0.65))", "brightness(0) invert(1)"]
     : ["brightness(0)",           "brightness(0) drop-shadow(0 0 22px rgba(201,165,90,0.65))",           "brightness(0)"];
 
-  const scrolledClass = isDark
-    ? "bg-[rgba(9,9,11,0.88)] backdrop-blur-2xl border-b border-white/[0.07] shadow-[0_1px_0_rgba(255,255,255,0.04),0_4px_20px_rgba(0,0,0,0.3)]"
-    : "bg-[rgba(247,246,243,0.92)] backdrop-blur-2xl border-b border-[rgba(26,25,21,0.09)] shadow-[0_1px_0_rgba(26,25,21,0.04),0_4px_20px_rgba(0,0,0,0.08)]";
+  /* bg et border : CSS variables → changent automatiquement selon le thème
+     seule l'ombre reste en JS car box-shadow complexe dans Tailwind arbitrary */
+  const navShadow = isDark
+    ? "shadow-[0_1px_0_rgba(255,255,255,0.04),0_4px_20px_rgba(0,0,0,0.3)]"
+    : "shadow-[0_1px_0_rgba(26,25,21,0.04),0_4px_20px_rgba(0,0,0,0.08)]";
 
-  const mobileMenuClass = isDark
-    ? "bg-[rgba(9,9,11,0.97)] backdrop-blur-2xl"
-    : "bg-[rgba(247,246,243,0.97)] backdrop-blur-2xl";
+  const scrolledClass = `bg-[var(--nav-bg)] backdrop-blur-2xl border-b border-[var(--border-base)] ${navShadow}`;
+  const mobileMenuClass = "bg-[var(--nav-mobile)] backdrop-blur-2xl";
 
   return (
     <>
