@@ -16,6 +16,7 @@ import {
   LayoutDashboard, Smartphone, Palette, Briefcase,
   LineChart, GraduationCap, Code2, BarChart3,
   Receipt, CalendarDays, StickyNote, FolderOpen, Gem,
+  Network, Landmark,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import {
@@ -543,7 +544,187 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          4. ÉCOSYSTÈME DIGITAL
+          4. ACCOMPAGNEMENT — Fournisseurs & Marchés
+      ══════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden bg-[#09090b] py-20 sm:py-28">
+        {/* Ambient glows */}
+        <div className="pointer-events-none absolute left-[-80px] top-[20%] h-[320px] w-[320px] rounded-full bg-[rgba(245,158,11,.07)] blur-[95px]" />
+        <div className="pointer-events-none absolute right-[-60px] bottom-[15%] h-[280px] w-[280px] rounded-full bg-[rgba(251,146,60,.05)] blur-[80px]" />
+        <div className="pointer-events-none absolute left-[40%] top-[-40px] h-[200px] w-[200px] rounded-full bg-[rgba(201,165,90,.04)] blur-[65px]" />
+
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+          className="relative z-10 mx-auto max-w-6xl px-6"
+        >
+          {/* ── Header ── */}
+          <div className="mb-14 text-center">
+            <motion.div variants={fadeIn}
+              className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(245,158,11,.32)] bg-[rgba(245,158,11,.09)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em] text-[#f59e0b]">
+              <HeartHandshake size={11} />
+              Accompagnement sur mesure
+            </motion.div>
+            <h2 className="display-section text-white">
+              <MultiLineReveal
+                lines={["DJAMA vous accompagne", "dans vos projets stratégiques."]}
+                highlight={0} stagger={0.1} wordStagger={0.04}
+                lineClassName="justify-center text-white"
+              />
+            </h2>
+            <FadeReveal delay={0.18} as="p" className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/40">
+              Des outils pour avancer seul, ou un accompagnement sur mesure pour aller plus vite.
+            </FadeReveal>
+
+            {/* Differentiator strip */}
+            <motion.div variants={fadeIn}
+              className="mt-8 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/[.07] bg-white/[.025] p-1.5"
+            >
+              <div className="flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.22)] bg-[rgba(201,165,90,.09)] px-3.5 py-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
+                <span className="text-[0.62rem] font-bold text-[#c9a55a]">Outils — dès 11,90€/mois</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-full border border-[rgba(245,158,11,.22)] bg-[rgba(245,158,11,.09)] px-3.5 py-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-[#f59e0b]" />
+                <span className="text-[0.62rem] font-bold text-[#f59e0b]">Accompagnement — sur devis</span>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* ── Two premium cards ── */}
+          <motion.div variants={staggerContainerFast} className="grid gap-5 sm:grid-cols-2">
+
+            {/* Card 1 — Recherche fournisseurs */}
+            <motion.div variants={cardReveal}
+              whileHover={{ y: -10, transition: { duration: 0.32, ease } }}
+              className="group relative overflow-hidden rounded-[1.75rem] border transition-all duration-300 hover:shadow-[0_32px_70px_rgba(245,158,11,.18)]"
+              style={{ borderColor: "rgba(245,158,11,.2)", background: "rgba(255,255,255,.025)" }}
+            >
+              {/* Inner glow on hover */}
+              <div className="pointer-events-none absolute inset-0 rounded-[1.75rem] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
+                style={{ background: "radial-gradient(ellipse at 50% -15%,rgba(245,158,11,.13) 0%,transparent 65%)" }} />
+              {/* Top accent */}
+              <div className="h-[2.5px] w-full transition-all duration-300 group-hover:h-[3.5px]"
+                style={{ background: "linear-gradient(90deg,transparent,#f59e0b,transparent)" }} />
+
+              <div className="relative p-7">
+                {/* Icon + badge */}
+                <div className="mb-6 flex items-start justify-between">
+                  <motion.div
+                    className="flex h-[54px] w-[54px] items-center justify-center rounded-2xl border"
+                    style={{ background: "rgba(245,158,11,.14)", borderColor: "rgba(245,158,11,.30)", boxShadow: "0 0 18px rgba(245,158,11,.24)" }}
+                    whileHover={{ scale: 1.12, boxShadow: "0 0 34px rgba(245,158,11,.58)" }}
+                    transition={{ duration: 0.22 }}
+                  >
+                    <Network size={24} style={{ color: "#f59e0b" }} />
+                  </motion.div>
+                  <span className="inline-flex items-center rounded-full border border-[rgba(245,158,11,.28)] bg-[rgba(245,158,11,.09)] px-3 py-1 text-[0.6rem] font-black uppercase tracking-[.18em] text-[#f59e0b]">
+                    Sur devis
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-extrabold text-white">Recherche de fournisseurs</h3>
+                <p className="mt-2.5 text-[0.87rem] leading-relaxed text-white/45">
+                  Sourcing international, audit et sélection de fournisseurs adaptés à votre activité. Gagnez du temps sur votre approvisionnement.
+                </p>
+
+                {/* Chips */}
+                <div className="mt-5 flex flex-wrap gap-1.5">
+                  {["Sourcing international", "Négociation", "Sélection", "B2B"].map((t) => (
+                    <span key={t} className="rounded-full border border-[rgba(245,158,11,.2)] bg-[rgba(245,158,11,.07)] px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-[#f59e0b]">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <Link
+                  href="/contact?besoin=Recherche+de+fournisseurs"
+                  className="group/btn mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(245,158,11,.3)] bg-[rgba(245,158,11,.1)] px-5 py-3 text-sm font-bold text-[#f59e0b] transition-all duration-200 hover:border-[rgba(245,158,11,.55)] hover:bg-[rgba(245,158,11,.18)]"
+                >
+                  Demander un devis
+                  <ArrowRight size={14} className="transition-transform duration-200 group-hover/btn:translate-x-1" />
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Card 2 — Marchés publics */}
+            <motion.div variants={cardReveal}
+              whileHover={{ y: -10, transition: { duration: 0.32, ease } }}
+              className="group relative overflow-hidden rounded-[1.75rem] border transition-all duration-300 hover:shadow-[0_32px_70px_rgba(251,146,60,.18)]"
+              style={{ borderColor: "rgba(251,146,60,.2)", background: "rgba(255,255,255,.025)" }}
+            >
+              {/* Inner glow on hover */}
+              <div className="pointer-events-none absolute inset-0 rounded-[1.75rem] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
+                style={{ background: "radial-gradient(ellipse at 50% -15%,rgba(251,146,60,.12) 0%,transparent 65%)" }} />
+              {/* Top accent */}
+              <div className="h-[2.5px] w-full transition-all duration-300 group-hover:h-[3.5px]"
+                style={{ background: "linear-gradient(90deg,transparent,#fb923c,transparent)" }} />
+
+              <div className="relative p-7">
+                {/* Icon + badge */}
+                <div className="mb-6 flex items-start justify-between">
+                  <motion.div
+                    className="flex h-[54px] w-[54px] items-center justify-center rounded-2xl border"
+                    style={{ background: "rgba(251,146,60,.14)", borderColor: "rgba(251,146,60,.30)", boxShadow: "0 0 18px rgba(251,146,60,.22)" }}
+                    whileHover={{ scale: 1.12, boxShadow: "0 0 34px rgba(251,146,60,.55)" }}
+                    transition={{ duration: 0.22 }}
+                  >
+                    <Landmark size={24} style={{ color: "#fb923c" }} />
+                  </motion.div>
+                  <span className="inline-flex items-center rounded-full border border-[rgba(251,146,60,.28)] bg-[rgba(251,146,60,.09)] px-3 py-1 text-[0.6rem] font-black uppercase tracking-[.18em] text-[#fb923c]">
+                    Sur devis
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-extrabold text-white">Marchés publics & privés</h3>
+                <p className="mt-2.5 text-[0.87rem] leading-relaxed text-white/45">
+                  Aide aux appels d'offres, rédaction des dossiers de candidature et accompagnement stratégique pour remporter vos marchés.
+                </p>
+
+                {/* Chips */}
+                <div className="mt-5 flex flex-wrap gap-1.5">
+                  {["Appels d'offres", "Candidature", "Suivi dossier", "Conseil"].map((t) => (
+                    <span key={t} className="rounded-full border border-[rgba(251,146,60,.2)] bg-[rgba(251,146,60,.07)] px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-[#fb923c]">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <Link
+                  href="/contact?besoin=Marchés+publics+%26+privés"
+                  className="group/btn mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(251,146,60,.3)] bg-[rgba(251,146,60,.1)] px-5 py-3 text-sm font-bold text-[#fb923c] transition-all duration-200 hover:border-[rgba(251,146,60,.55)] hover:bg-[rgba(251,146,60,.18)]"
+                >
+                  Demander un devis
+                  <ArrowRight size={14} className="transition-transform duration-200 group-hover/btn:translate-x-1" />
+                </Link>
+              </div>
+            </motion.div>
+
+          </motion.div>
+
+          {/* ── CTA global ── */}
+          <FadeReveal delay={0.35} className="mt-12 flex flex-col items-center gap-4 text-center">
+            <p className="text-[0.88rem] text-white/32">
+              Besoin d&apos;un conseil personnalisé ?{" "}
+              <span className="font-semibold text-white/55">Échangeons directement.</span>
+            </p>
+            <Link href="/contact"
+              className="btn-primary group relative overflow-hidden px-8 py-[0.9rem] text-[0.92rem]">
+              <span className="relative z-10 flex items-center gap-2">
+                <HeartHandshake size={15} />
+                Discuter de mon projet
+                <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </span>
+              <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
+            </Link>
+          </FadeReveal>
+
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          5. ÉCOSYSTÈME DIGITAL
       ══════════════════════════════════════════════ */}
       <section className="py-20 sm:py-28">
         <motion.div
