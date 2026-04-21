@@ -162,7 +162,7 @@ function AlreadySubscribedRedirect() {
 ───────────────────────────────────────────────────────── */
 export default function EspaceClientPage() {
   return (
-    <div className="bg-white">
+    <div className="bg-[#09090b]">
       <Suspense>
         <AlreadySubscribedRedirect />
         <AccessBanner />
@@ -239,13 +239,13 @@ export default function EspaceClientPage() {
           </FadeReveal>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#09090b] to-transparent" />
       </section>
 
       {/* ══════════════════════════════════════════════
           2. OUTILS (5 cartes)
       ══════════════════════════════════════════════ */}
-      <section id="outils" className="py-12 sm:py-24">
+      <section id="outils" className="bg-[#0f0f13] py-12 sm:py-24">
         <div className="mx-auto max-w-6xl px-6">
           {/* Header */}
           <motion.div
@@ -255,14 +255,14 @@ export default function EspaceClientPage() {
             transition={{ duration: 0.6, ease }}
             className="mb-14 text-center"
           >
-            <span className="badge badge-gold-light mb-4 inline-flex">
+            <span className="badge badge-gold-dark mb-4 inline-flex">
               <Sparkles size={10} /> Ce qui est inclus
             </span>
-            <h2 className="display-section text-[var(--ink)]">
+            <h2 className="display-section text-white">
               5 outils,{" "}
               <span className="text-gold">un seul abonnement.</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-base text-[var(--muted)]">
+            <p className="mx-auto mt-4 max-w-lg text-base text-white/45">
               Conçus pour les indépendants et entrepreneurs qui veulent aller
               vite sans sacrifier la qualité.
             </p>
@@ -301,15 +301,18 @@ export default function EspaceClientPage() {
                   />
                   <div className="p-6">
                     {/* Icon */}
-                    <div
-                      className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition-transform duration-300 group-hover:scale-110"
+                    <motion.div
+                      className="mb-4 inline-flex h-[52px] w-[52px] items-center justify-center rounded-2xl border"
                       style={{
-                        background: `rgba(${tool.rgb}, 0.12)`,
-                        borderColor: `rgba(${tool.rgb}, 0.24)`,
+                        background: `rgba(${tool.rgb}, 0.14)`,
+                        borderColor: `rgba(${tool.rgb}, 0.30)`,
+                        boxShadow: `0 0 16px rgba(${tool.rgb}, 0.22)`,
                       }}
+                      whileHover={{ scale: 1.13, boxShadow: `0 0 28px rgba(${tool.rgb}, 0.55)` }}
+                      transition={{ duration: 0.22 }}
                     >
-                      <Icon size={20} style={{ color: tool.color }} />
-                    </div>
+                      <Icon size={22} style={{ color: tool.color }} />
+                    </motion.div>
 
                     <h3 className="text-base font-extrabold text-white">
                       {tool.title}
@@ -360,14 +363,14 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           3. CARTE ABONNEMENT
       ══════════════════════════════════════════════ */}
-      <section id="abonnement" className="bg-[var(--surface)] py-12 sm:py-24">
+      <section id="abonnement" className="bg-[#09090b] py-12 sm:py-24">
         <div className="mx-auto max-w-md px-6">
           <motion.div
             initial={{ opacity: 0, y: 28, scale: 0.97 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={viewport}
             transition={{ duration: 0.75, ease }}
-            className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.28)] bg-[var(--ink)] shadow-[0_40px_100px_rgba(0,0,0,0.28)]"
+            className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.28)] bg-[#111113] shadow-[0_40px_100px_rgba(0,0,0,0.45)]"
           >
             {/* Glow interne */}
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -483,15 +486,18 @@ export default function EspaceClientPage() {
                 variants={cardReveal}
                 className="group rounded-[1.5rem] border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:bg-white/[0.06]"
               >
-                <div
-                  className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition-transform duration-300 group-hover:scale-110"
+                <motion.div
+                  className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border"
                   style={{
-                    background: `rgba(${rgb}, 0.12)`,
-                    borderColor: `rgba(${rgb}, 0.22)`,
+                    background: `rgba(${rgb}, 0.14)`,
+                    borderColor: `rgba(${rgb}, 0.28)`,
+                    boxShadow: `0 0 14px rgba(${rgb}, 0.20)`,
                   }}
+                  whileHover={{ scale: 1.12, boxShadow: `0 0 26px rgba(${rgb}, 0.52)` }}
+                  transition={{ duration: 0.22 }}
                 >
-                  <Icon size={20} style={{ color }} />
-                </div>
+                  <Icon size={21} style={{ color }} />
+                </motion.div>
                 <h3 className="text-sm font-extrabold text-white">{title}</h3>
                 <p className="mt-2 text-xs leading-relaxed text-white/40">{desc}</p>
               </motion.div>
@@ -509,12 +515,12 @@ export default function EspaceClientPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={viewport}
           transition={{ duration: 0.55, ease }}
-          className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] px-8 py-10"
+          className="rounded-[1.5rem] border border-white/[.08] bg-[#111113] px-8 py-10"
         >
-          <p className="mb-1 text-base font-bold text-[var(--ink)]">
+          <p className="mb-1 text-base font-bold text-white">
             Déjà abonné ?
           </p>
-          <p className="mb-6 text-sm text-[var(--muted)]">
+          <p className="mb-6 text-sm text-white/45">
             Connectez-vous pour accéder directement à votre espace et vos outils.
           </p>
           <Link
