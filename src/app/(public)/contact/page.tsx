@@ -7,8 +7,8 @@ import { useSearchParams } from "next/navigation";
 import {
   Mail, Phone, MessageCircle, ArrowRight, Sparkles, Clock,
   CheckCircle2, Send, ChevronDown, User, FileText, Wallet,
-  Search, Zap, Shield, Star, Users, Calendar,
-  MessageSquare, TrendingUp, Layers,
+  Search, Zap, Shield, Star, Users2, Calendar,
+  MessagesSquare, TrendingUp, Layers, Rocket,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
@@ -223,7 +223,7 @@ function ContactPageContent() {
 
   const canSubmit = name.trim() && isEmailValid(email) && subject && message.trim().length > 10;
 
-  const TRUST_ICONS = [Zap, Users, CheckCircle2, TrendingUp, Star, Shield] as const;
+  const TRUST_ICONS = [Zap, Users2, CheckCircle2, TrendingUp, Star, Shield] as const;
   const TRUST_COLORS = [
     { color: "#c9a55a", rgb: "201,165,90"  },
     { color: "#60a5fa", rgb: "96,165,250"  },
@@ -233,7 +233,7 @@ function ContactPageContent() {
     { color: "#f87171", rgb: "248,113,113" },
   ] as const;
 
-  const PROCESS_ICONS = [Send, Search, MessageSquare, TrendingUp] as const;
+  const PROCESS_ICONS = [Send, Search, MessagesSquare, Rocket] as const;
   const PROCESS_COLORS = [
     { color: "#c9a55a", rgb: "201,165,90"  },
     { color: "#60a5fa", rgb: "96,165,250"  },
@@ -303,7 +303,7 @@ function ContactPageContent() {
                 }}
               >
                 {i === 0 && <Clock size={12} />}
-                {i === 1 && <Users size={12} />}
+                {i === 1 && <Users2 size={12} />}
                 {i === 2 && <MessageCircle size={12} />}
                 {text}
               </motion.div>
@@ -333,8 +333,8 @@ function ContactPageContent() {
                     {/* Header formulaire */}
                     <div className="border-b border-white/[0.06] px-8 py-7">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(201,165,90,0.1)] border border-[rgba(201,165,90,0.2)]">
-                          <Send size={15} className="text-[#c9a55a]" />
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(201,165,90,0.13)] border border-[rgba(201,165,90,0.28)]" style={{ boxShadow: "0 0 14px rgba(201,165,90,0.22)" }}>
+                          <Send size={17} className="text-[#c9a55a]" />
                         </div>
                         <div>
                           <p className="text-[0.65rem] font-black uppercase tracking-[0.15em] text-[#c9a55a]">
@@ -560,8 +560,8 @@ function ContactPageContent() {
                       href={`mailto:${contactEmail}`}
                       className="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5 transition-all duration-200 hover:border-[rgba(201,165,90,0.25)] hover:bg-[rgba(201,165,90,0.05)]"
                     >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.1)] border border-[rgba(201,165,90,0.2)]">
-                        <Mail size={15} className="text-[#c9a55a]" />
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgba(201,165,90,0.13)] border border-[rgba(201,165,90,0.28)]" style={{ boxShadow: "0 0 14px rgba(201,165,90,0.22)" }}>
+                        <Mail size={18} className="text-[#c9a55a]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{c.contactBlock.emailLabel}</p>
@@ -576,8 +576,8 @@ function ContactPageContent() {
                       target="_blank" rel="noopener noreferrer"
                       className="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5 transition-all duration-200 hover:border-[rgba(37,211,102,0.3)] hover:bg-[rgba(37,211,102,0.05)]"
                     >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgba(37,211,102,0.1)] border border-[rgba(37,211,102,0.2)]">
-                        <MessageCircle size={15} className="text-[#25d366]" />
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgba(37,211,102,0.13)] border border-[rgba(37,211,102,0.28)]" style={{ boxShadow: "0 0 14px rgba(37,211,102,0.18)" }}>
+                        <MessageCircle size={18} className="text-[#25d366]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{c.contactBlock.whatsappLabel}</p>
@@ -593,8 +593,8 @@ function ContactPageContent() {
                       href={`tel:${contactPhone.replace(/\s/g, "")}`}
                       className="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5 transition-all duration-200 hover:border-[rgba(96,165,250,0.3)] hover:bg-[rgba(96,165,250,0.05)]"
                     >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgba(96,165,250,0.1)] border border-[rgba(96,165,250,0.2)]">
-                        <Phone size={15} className="text-[#60a5fa]" />
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgba(96,165,250,0.13)] border border-[rgba(96,165,250,0.28)]" style={{ boxShadow: "0 0 14px rgba(96,165,250,0.18)" }}>
+                        <Phone size={18} className="text-[#60a5fa]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{c.contactBlock.phoneLabel}</p>
@@ -605,8 +605,8 @@ function ContactPageContent() {
 
                     {/* Délai */}
                     <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgba(52,211,153,0.1)] border border-[rgba(52,211,153,0.2)]">
-                        <Clock size={15} className="text-[#34d399]" />
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgba(52,211,153,0.13)] border border-[rgba(52,211,153,0.28)]" style={{ boxShadow: "0 0 14px rgba(52,211,153,0.18)" }}>
+                        <Clock size={18} className="text-[#34d399]" />
                       </div>
                       <div>
                         <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{c.contactBlock.delayLabel}</p>
@@ -644,8 +644,8 @@ function ContactPageContent() {
                     className="group flex items-center justify-between rounded-[1.5rem] border border-white/[0.07] bg-[#111113] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(201,165,90,0.2)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(201,165,90,0.08)] border border-[rgba(201,165,90,0.15)]">
-                        <Icon size={15} className="text-[#c9a55a]" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[rgba(201,165,90,0.10)] border border-[rgba(201,165,90,0.24)]" style={{ boxShadow: "0 0 10px rgba(201,165,90,0.16)" }}>
+                        <Icon size={16} className="text-[#c9a55a]" />
                       </div>
                       <div>
                         <p className="text-sm font-extrabold text-white/75 group-hover:text-white">{label}</p>
@@ -705,15 +705,18 @@ function ContactPageContent() {
                     </div>
 
                     {/* Icône */}
-                    <div
-                      className="inline-flex h-12 w-12 items-center justify-center rounded-xl border"
+                    <motion.div
+                      className="inline-flex h-14 w-14 items-center justify-center rounded-2xl border"
                       style={{
-                        background: `rgba(${rgb}, 0.10)`,
-                        borderColor: `rgba(${rgb}, 0.22)`,
+                        background: `rgba(${rgb}, 0.12)`,
+                        borderColor: `rgba(${rgb}, 0.28)`,
+                        boxShadow: `0 0 18px rgba(${rgb}, 0.22)`,
                       }}
+                      whileHover={{ scale: 1.12, boxShadow: `0 0 32px rgba(${rgb}, 0.55)` }}
+                      transition={{ duration: 0.22 }}
                     >
-                      <Icon size={22} style={{ color }} />
-                    </div>
+                      <Icon size={25} style={{ color }} />
+                    </motion.div>
 
                     {/* Numéro badge */}
                     <div>
@@ -763,12 +766,18 @@ function ContactPageContent() {
                     variants={cardReveal}
                     className="group rounded-[1.5rem] border border-white/[0.07] bg-[#111113] p-6 transition-all duration-300 hover:border-white/[0.13] hover:bg-white/[0.04]"
                   >
-                    <div
-                      className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl border"
-                      style={{ background: `rgba(${rgb}, 0.10)`, borderColor: `rgba(${rgb}, 0.22)` }}
+                    <motion.div
+                      className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border"
+                      style={{
+                        background: `rgba(${rgb}, 0.12)`,
+                        borderColor: `rgba(${rgb}, 0.28)`,
+                        boxShadow: `0 0 14px rgba(${rgb}, 0.18)`,
+                      }}
+                      whileHover={{ scale: 1.12, boxShadow: `0 0 26px rgba(${rgb}, 0.50)` }}
+                      transition={{ duration: 0.22 }}
                     >
-                      <Icon size={20} style={{ color }} />
-                    </div>
+                      <Icon size={22} style={{ color }} />
+                    </motion.div>
                     <h3 className="text-[0.9rem] font-extrabold text-white/85">{title}</h3>
                     <p className="mt-2 text-xs leading-relaxed text-white/38">{desc}</p>
                   </motion.div>

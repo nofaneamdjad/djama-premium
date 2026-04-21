@@ -10,10 +10,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import {
-  ArrowRight, Mail, Star, Zap, Users, Shield,
+  ArrowRight, Mail, Star, Zap, Users2, Shield,
   CheckCircle2, Sparkles, TrendingUp, HeartHandshake,
   Globe, Brain, MessageCircle,
-  LayoutDashboard, Smartphone, Palette, Briefcase, BookOpen,
+  LayoutDashboard, Smartphone, Palette, Briefcase,
+  LineChart, GraduationCap, Code2, BarChart3,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import {
@@ -66,8 +67,8 @@ const ECOSYSTEM = [
   { icon: Smartphone,      color: "#4ade80",  bg: "rgba(74,222,128,.08)",    border: "rgba(74,222,128,.18)",    category: "Développement digital",       services: ["Application mobile", "Plateforme / outil web sur mesure"] },
   { icon: Palette,         color: GOLD,       bg: `rgba(${GOLDR},.09)`,      border: `rgba(${GOLDR},.2)`,       category: "Création visuelle",           services: ["Visuels publicitaires", "Montage vidéo", "Retouche photo"] },
   { icon: Briefcase,       color: "#60a5fa",  bg: "rgba(96,165,250,.09)",    border: "rgba(96,165,250,.2)",     category: "Business & administratif",    services: ["Création auto-entrepreneur", "Déclarations URSSAF", "Assistance administrative"] },
-  { icon: TrendingUp,      color: "#4ade80",  bg: "rgba(74,222,128,.08)",    border: "rgba(74,222,128,.18)",    category: "Développement business",      services: ["Recherche de fournisseurs internationaux", "Marchés publics & privés"] },
-  { icon: BookOpen,        color: "#a78bfa",  bg: "rgba(167,139,250,.09)",   border: "rgba(167,139,250,.2)",    category: "Formation",                   services: ["Soutien scolaire"] },
+  { icon: LineChart,       color: "#4ade80",  bg: "rgba(74,222,128,.08)",    border: "rgba(74,222,128,.18)",    category: "Développement business",      services: ["Recherche de fournisseurs internationaux", "Marchés publics & privés"] },
+  { icon: GraduationCap,  color: "#a78bfa",  bg: "rgba(167,139,250,.09)",   border: "rgba(167,139,250,.2)",    category: "Formation",                   services: ["Soutien scolaire"] },
 ] as const;
 
 const HERO_SERVICE_GROUPS = [
@@ -91,8 +92,8 @@ const SOLUTIONS_TABLE = [
 const SCHEMA_STEPS = [
   { num: "01", icon: Sparkles,   color: GOLD,       bg: `rgba(${GOLDR},.12)`,      border: `rgba(${GOLDR},.22)`,      title: "Idée / besoin",               desc: "Vous arrivez avec un besoin, un projet ou un problème à résoudre." },
   { num: "02", icon: Brain,      color: "#a78bfa",  bg: "rgba(167,139,250,.12)",   border: "rgba(167,139,250,.22)",   title: "Assistant IA DJAMA",          desc: "L'IA vous guide, clarifie vos options et vous aide à choisir la bonne direction." },
-  { num: "03", icon: Zap,        color: "#60a5fa",  bg: "rgba(96,165,250,.12)",    border: "rgba(96,165,250,.22)",    title: "Construction de la solution", desc: "Site, application, outil métier, automatisation ou espace client sur mesure." },
-  { num: "04", icon: TrendingUp, color: "#4ade80",  bg: "rgba(74,222,128,.10)",    border: "rgba(74,222,128,.20)",    title: "Croissance & gestion",        desc: "Vous pilotez, améliorez et développez votre activité avec une base solide." },
+  { num: "03", icon: Code2,      color: "#60a5fa",  bg: "rgba(96,165,250,.12)",    border: "rgba(96,165,250,.22)",    title: "Construction de la solution", desc: "Site, application, outil métier, automatisation ou espace client sur mesure." },
+  { num: "04", icon: BarChart3,  color: "#4ade80",  bg: "rgba(74,222,128,.10)",    border: "rgba(74,222,128,.20)",    title: "Croissance & gestion",        desc: "Vous pilotez, améliorez et développez votre activité avec une base solide." },
 ] as const;
 
 const AI_POINTS = [
@@ -107,7 +108,7 @@ const TICKER_ITEMS = [
   "E-commerce", "Outils métiers", "IA", "Design", "SEO",
 ] as const;
 
-const STAT_ICONS   = [Users, TrendingUp, Zap, HeartHandshake] as const;
+const STAT_ICONS   = [Users2, LineChart, Zap, HeartHandshake] as const;
 const STAT_COLORS  = [GOLD, "#60a5fa", "#4ade80", "#a78bfa"] as const;
 
 /* ═══════════════════════════════════════════════════════
@@ -297,10 +298,14 @@ function HomeContent() {
                   {/* Glow on hover */}
                   <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-400 group-hover:opacity-100"
                     style={{ background: `radial-gradient(ellipse at 50% -10%, ${color}14 0%, transparent 65%)` }} />
-                  <div className="mx-auto mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-110 group-hover:shadow-[0_0_20px_currentColor]"
-                    style={{ background: `${color}12`, borderColor: `${color}25`, color }}>
-                    <Icon size={17} style={{ color }} />
-                  </div>
+                  <motion.div
+                    className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl border"
+                    style={{ background: `${color}18`, borderColor: `${color}35`, boxShadow: `0 0 16px ${color}28` }}
+                    whileHover={{ scale: 1.14, boxShadow: `0 0 28px ${color}60` }}
+                    transition={{ duration: 0.22 }}
+                  >
+                    <Icon size={21} style={{ color }} />
+                  </motion.div>
                   <p className="text-[2rem] font-black leading-none tracking-tight text-white">{value}</p>
                   <div className="mt-1.5">
                     <p className="text-[0.78rem] font-bold text-white/70">{label}</p>
@@ -361,10 +366,14 @@ function HomeContent() {
                   style={{ background: `linear-gradient(90deg,${color},${color}44)` }} />
                 <div className="relative flex flex-1 flex-col p-5">
                   <div className="mb-4 flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-[1.12] group-hover:shadow-[0_0_18px_rgba(0,0,0,.4)]"
-                      style={{ background: bg, border: `1px solid ${border}` }}>
-                      <Icon size={16} style={{ color }} />
-                    </div>
+                    <motion.div
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+                      style={{ background: bg, border: `1.5px solid ${border}`, boxShadow: `0 0 14px ${color}20` }}
+                      whileHover={{ scale: 1.14, boxShadow: `0 0 24px ${color}50` }}
+                      transition={{ duration: 0.22 }}
+                    >
+                      <Icon size={19} style={{ color }} />
+                    </motion.div>
                     <h3 className="text-[0.83rem] font-extrabold text-white/88">{category}</h3>
                   </div>
                   <ul className="flex flex-col gap-2">
@@ -428,10 +437,14 @@ function HomeContent() {
                 <div className="absolute left-0 top-0 h-full w-[3px] opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-l-2xl"
                   style={{ background: color }} />
                 {/* Icon */}
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-[1.08]"
-                  style={{ background: `${color}10`, borderColor: `${color}22` }}>
-                  <Icon size={18} style={{ color }} />
-                </div>
+                <motion.div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border"
+                  style={{ background: `${color}16`, borderColor: `${color}32`, boxShadow: `0 0 12px ${color}20` }}
+                  whileHover={{ scale: 1.12, boxShadow: `0 0 24px ${color}50` }}
+                  transition={{ duration: 0.22 }}
+                >
+                  <Icon size={20} style={{ color }} />
+                </motion.div>
                 {/* Content — responsive */}
                 <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
                   <span className="text-sm font-bold text-white/70 sm:w-36 shrink-0">{besoin}</span>
@@ -502,10 +515,14 @@ function HomeContent() {
                       <span className="text-5xl font-black leading-none opacity-[.06] select-none" style={{ color }}>{num}</span>
                     </div>
                     {/* Icon */}
-                    <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl border transition-transform duration-300 group-hover:scale-110"
-                      style={{ background: bg, borderColor: border }}>
-                      <Icon size={20} style={{ color }} />
-                    </div>
+                    <motion.div
+                      className="mb-4 inline-flex h-[52px] w-[52px] items-center justify-center rounded-2xl border"
+                      style={{ background: bg, borderColor: border, boxShadow: `0 0 18px ${color}28` }}
+                      whileHover={{ scale: 1.14, boxShadow: `0 0 32px ${color}60` }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      <Icon size={23} style={{ color }} />
+                    </motion.div>
                     <h3 className="text-[0.9rem] font-extrabold text-white/90">{title}</h3>
                     <p className="mt-2 flex-1 text-[0.82rem] leading-relaxed text-white/45">{desc}</p>
                     {/* Animated underline */}
