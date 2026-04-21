@@ -49,10 +49,10 @@ export default function SplashScreen() {
               <Image
                 src="/logo.png"
                 alt="DJAMA"
-                width={200}
-                height={65}
+                width={320}
+                height={104}
                 priority
-                className="h-16 w-auto object-contain"
+                className="w-44 sm:w-52 h-auto object-contain"
                 style={{ filter: "brightness(0) invert(1)" }}
               />
             </motion.div>

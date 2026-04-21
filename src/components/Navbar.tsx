@@ -70,7 +70,7 @@ export default function Navbar() {
             : "bg-transparent"
         }`}
       >
-        <div className="mx-auto flex h-[68px] max-w-6xl items-center justify-between px-6">
+        <div className="mx-auto flex h-[80px] max-w-6xl items-center justify-between px-6">
 
           {/* Logo */}
           <Link href="/" onClick={() => setMenuOpen(false)} aria-label="DJAMA — Accueil">
@@ -100,10 +100,10 @@ export default function Navbar() {
                 <Image
                   src={data.media.logo}
                   alt="Logo DJAMA"
-                  width={200}
-                  height={65}
+                  width={220}
+                  height={72}
                   priority
-                  className="h-12 md:h-14 w-auto object-contain"
+                  className="h-14 md:h-[60px] w-auto object-contain"
                   style={{ filter: "brightness(0) invert(1)" }}
                 />
               </motion.div>
