@@ -271,21 +271,25 @@ export default function Footer() {
         <div className="mx-auto max-w-6xl px-4 py-4">
 
           {/* Liens légaux + copyright */}
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 mb-2">
-            {LEGAL_LINKS.map(({ href, label, labelEn }) => (
-              <Link
-                key={href}
-                href={href}
-                className="text-[0.68rem] text-white/25 transition-colors duration-200 hover:text-white/55"
-              >
-                {lang === "en" ? labelEn : label}
-              </Link>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mb-3">
+            {LEGAL_LINKS.map(({ href, label, labelEn }, i) => (
+              <span key={href} className="inline-flex items-center gap-5">
+                <Link
+                  href={href}
+                  className="text-[0.7rem] font-medium text-white/38 transition-colors duration-200 hover:text-[#c9a55a]"
+                >
+                  {lang === "en" ? labelEn : label}
+                </Link>
+                {i < LEGAL_LINKS.length - 1 && (
+                  <span className="h-2.5 w-px bg-white/[.1]" aria-hidden="true" />
+                )}
+              </span>
             ))}
           </div>
 
           {/* Copyright */}
-          <p className="text-center text-[0.68rem] text-white/20">
-            © {new Date().getFullYear()} DJAMA — {f.copyright}
+          <p className="text-center text-[0.67rem] text-white/22">
+            © {new Date().getFullYear()} DJAMA — {f.copyright} · Tous droits réservés
           </p>
         </div>
       </div>
