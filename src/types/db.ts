@@ -205,6 +205,23 @@ export type VisualRow = {
   created_at:   string;
 };
 
+// ── Projets retouche photo ────────────────────────────────────
+export type PhotoRetouchCategory = 'portrait' | 'beaute' | 'produit' | 'ecommerce' | 'pub' | 'detourage' | 'amelioration' | 'couleur' | 'impression' | 'autre';
+export type PhotoRetouchStatus   = 'published' | 'draft';
+
+export type PhotoRetouchRow = {
+  id:          string;
+  title:       string;
+  category:    PhotoRetouchCategory;
+  description: string | null;
+  before_url:  string | null;   // image brute (optionnel — active la comparaison)
+  after_url:   string;          // image retouchée (obligatoire)
+  client:      string | null;
+  status:      PhotoRetouchStatus;
+  sort_order:  number;
+  created_at:  string;
+};
+
 // ── Projets vidéo (montage-video) ────────────────────────────
 export type VideoCategory = 'reels' | 'tiktok' | 'youtube' | 'shorts' | 'pub' | 'corporate' | 'evenement' | 'teaser' | 'produit' | 'autre';
 export type VideoStatus   = 'published' | 'draft';
