@@ -167,6 +167,8 @@ export type QuoteItemRow = {
 export type QuoteRow = {
   id: string;
   reference: string;
+  /** Template visuel PDF — colonne optionnelle (défaut : 'modern') */
+  template?: TemplateType | null;
   client_name: string;
   client_email: string;
   client_phone: string | null;
@@ -240,6 +242,15 @@ export type VideoProjectRow = {
   created_at:    string;
 };
 
+// ── Templates factures / devis ────────────────────────────────
+/** Modèle visuel utilisé pour le rendu PDF */
+export type TemplateType =
+  | 'modern'    // header sombre, accents dorés (défaut DJAMA)
+  | 'minimal'   // tout blanc, lignes fines
+  | 'classic'   // bleu marine corporate
+  | 'premium'   // fond sombre, luxe
+  | 'colorful'; // header indigo, SaaS
+
 // ── Factures (migration 010) ──────────────────────────────────
 export type InvoiceStatus        = 'brouillon' | 'envoyée' | 'payée' | 'en retard' | 'annulée';
 export type InvoicePaymentStatus = 'non payée' | 'payée' | 'partielle';
@@ -259,6 +270,8 @@ export type InvoiceRow = {
   id: string;
   reference: string;
   quote_id: string | null;
+  /** Template visuel PDF — colonne optionnelle (défaut : 'modern') */
+  template?: TemplateType | null;
   client_name: string;
   client_email: string;
   client_phone: string | null;

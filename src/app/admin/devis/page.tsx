@@ -6,9 +6,10 @@ import {
   ArrowRight, RefreshCw, Check,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import type { QuoteRow, QuoteItemRow, QuoteStatus } from "@/types/db";
+import type { QuoteRow, QuoteItemRow, QuoteStatus, TemplateType } from "@/types/db";
 import { generatePdf } from "@/lib/pdf/generatePdf";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
+import { TemplateSelector } from "@/components/invoice/TemplateSelector";
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -72,6 +73,7 @@ type QuoteForm = {
   valid_until:    string;
   tax_rate:       number;
   notes:          string;
+  template:       TemplateType;
   items:          FormItem[];
 };
 
@@ -79,7 +81,7 @@ const EMPTY_FORM: QuoteForm = {
   client_name: "", client_email: "", client_phone: "", client_company: "",
   client_address: "", subject: "", description: "", budget: "",
   status: "brouillon", issue_date: TODAY(), valid_until: "", tax_rate: 20,
-  notes: "", items: [],
+  notes: "", template: "modern", items: [],
 };
 
 function newItem(): FormItem {
@@ -169,6 +171,7 @@ export default function AdminDevis() {
       valid_until:    q.valid_until     ?? "",
       tax_rate:       q.tax_rate,
       notes:          q.notes           ?? "",
+      template:       (q.template as TemplateType) ?? "modern",
       items,
     });
     setEditId(q.id);
@@ -222,6 +225,7 @@ export default function AdminDevis() {
         tax_amount,
         total,
         notes:          form.notes.trim()          || null,
+        template:       form.template,
         updated_at:     new Date().toISOString(),
       };
 
@@ -301,6 +305,7 @@ export default function AdminDevis() {
     ]);
     await generatePdf({
       type:           "quote",
+      template:       (q.template as TemplateType) ?? "modern",
       reference:      q.reference,
       issue_date:     q.issue_date    ?? TODAY(),
       valid_until:    q.valid_until   ?? undefined,
@@ -638,6 +643,32 @@ export default function AdminDevis() {
                   </div>
                 </div>
               </fieldset>
+
+              {/* Template */}
+              <TemplateSelector
+                value={form.template}
+                onChange={t => setForm(f => ({ ...f, template: t }))}
+                data={{
+                  type:           "quote",
+                  reference:      `DEV-${YEAR()}-0001`,
+                  issue_date:     form.issue_date   || TODAY(),
+                  valid_until:    form.valid_until   || null,
+                  client_name:    form.client_name   || "Client",
+                  client_email:   form.client_email  || "client@email.com",
+                  client_company: form.client_company || null,
+                  subject:        form.subject || "Objet du devis",
+                  items:          form.items.filter(i => i.description).map(i => ({
+                    description: i.description,
+                    quantity:    Number(i.quantity),
+                    unit_price:  Number(i.unit_price),
+                    total:       Number(i.total),
+                  })),
+                  subtotal:   subtotal,
+                  tax_rate:   form.tax_rate,
+                  tax_amount: tax_amount,
+                  total:      total,
+                }}
+              />
 
               {/* Notes */}
               <div>

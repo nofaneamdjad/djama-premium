@@ -6,9 +6,10 @@ import {
   RefreshCw, Check, CreditCard,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import type { InvoiceRow, InvoiceStatus, InvoicePaymentStatus } from "@/types/db";
+import type { InvoiceRow, InvoiceStatus, InvoicePaymentStatus, TemplateType } from "@/types/db";
 import { generatePdf } from "@/lib/pdf/generatePdf";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
+import { TemplateSelector } from "@/components/invoice/TemplateSelector";
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -77,6 +78,7 @@ type InvForm = {
   tax_rate:       number;
   notes:          string;
   footer_text:    string;
+  template:       TemplateType;
   items:          FormItem[];
 };
 
@@ -84,7 +86,7 @@ const EMPTY: InvForm = {
   client_name: "", client_email: "", client_phone: "", client_company: "",
   client_address: "", subject: "", description: "", status: "brouillon",
   payment_status: "non payée", payment_method: "", issue_date: TODAY(),
-  due_date: "", tax_rate: 20, notes: "", footer_text: "", items: [],
+  due_date: "", tax_rate: 20, notes: "", footer_text: "", template: "modern", items: [],
 };
 
 function newItem(): FormItem {
@@ -175,6 +177,7 @@ export default function AdminFactures() {
       tax_rate:       inv.tax_rate,
       notes:          inv.notes           ?? "",
       footer_text:    inv.footer_text     ?? "",
+      template:       (inv.template as TemplateType) ?? "modern",
       items,
     });
     setEditId(inv.id);
@@ -230,6 +233,7 @@ export default function AdminFactures() {
         total,
         notes:          form.notes.trim()          || null,
         footer_text:    form.footer_text.trim()    || null,
+        template:       form.template,
         updated_at:     new Date().toISOString(),
       };
 
@@ -298,6 +302,7 @@ export default function AdminFactures() {
     const company = await fetchCompanySettings();
     await generatePdf({
       type:           "invoice",
+      template:       (inv.template as TemplateType) ?? "modern",
       reference:      inv.reference,
       issue_date:     inv.issue_date    ?? TODAY(),
       due_date:       inv.due_date      ?? undefined,
@@ -316,6 +321,7 @@ export default function AdminFactures() {
       tax_amount:  inv.tax_amount,
       total:       inv.total,
       notes:       inv.notes,
+      footer_text: inv.footer_text,
       company,
     });
   }
@@ -565,6 +571,32 @@ export default function AdminFactures() {
                   </div>
                 </div>
               </fieldset>
+
+              {/* Template */}
+              <TemplateSelector
+                value={form.template}
+                onChange={t => setForm(f => ({ ...f, template: t }))}
+                data={{
+                  type:          "invoice",
+                  reference:     `FAC-${YEAR()}-0001`,
+                  issue_date:    form.issue_date || TODAY(),
+                  due_date:      form.due_date   || null,
+                  client_name:   form.client_name  || "Client",
+                  client_email:  form.client_email || "client@email.com",
+                  client_company: form.client_company || null,
+                  subject:       form.subject || "Objet de la facture",
+                  items:         form.items.filter(i => i.description).map(i => ({
+                    description: i.description,
+                    quantity:    Number(i.quantity),
+                    unit_price:  Number(i.unit_price),
+                    total:       Number(i.total),
+                  })),
+                  subtotal:   subtotal,
+                  tax_rate:   form.tax_rate,
+                  tax_amount: tax_amount,
+                  total:      total,
+                }}
+              />
 
               {/* Notes + footer */}
               <div className="grid grid-cols-2 gap-3">
