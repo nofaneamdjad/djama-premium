@@ -9,7 +9,9 @@ import {
   AlertTriangle, ImagePlus, Palette, Landmark,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import jsPDF from "jspdf";
+import type { TemplateType }      from "@/lib/pdf/types";
+import type { PreviewData }       from "@/components/invoice/shared";
+import { TemplateSelector }       from "@/components/invoice/TemplateSelector";
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -55,6 +57,8 @@ interface Document {
   conditions:       string;
   /* Couleur */
   couleur:          string;
+  /* Template PDF */
+  template:         TemplateType;
   /* Totaux */
   total_ht:         number;
   total_tva:        number;
@@ -102,6 +106,7 @@ const EMPTY_DRAFT = (): DraftDoc => ({
   rib_titulaire:"", rib_iban:"", rib_bic:"", rib_banque:"",
   notes:"", conditions:"",
   couleur:"#c9a55a",
+  template: "modern" as TemplateType,
 });
 
 /* ═══════════════════════════════════════════════════════════
@@ -142,187 +147,84 @@ function contrastColor(hex:string):"#0a0a0a"|"#ffffff"{
   return (0.299*r+0.587*g+0.114*b)/255 > 0.55 ? "#0a0a0a" : "#ffffff";
 }
 
-/* Formate IBAN en groupes de 4 */
-function fmtIban(iban:string){ return iban.replace(/\s/g,"").replace(/(.{4})/g,"$1 ").trim(); }
+/* ═══════════════════════════════════════════════════════════
+   PDF EXPORT — utilise le template sélectionné
+═══════════════════════════════════════════════════════════ */
+async function exportPDFWithTemplate(
+  draft: DraftDoc,
+  items: DocItem[],
+  totals: ReturnType<typeof calcTotals>,
+) {
+  const { generatePdf } = await import("@/lib/pdf/generatePdf");
+  const tpl = draft.template ?? "modern";
+
+  await generatePdf({
+    type:         draft.type === "facture" ? "invoice" : "quote",
+    template:     tpl,
+    reference:    draft.numero || (draft.type === "facture" ? "FACTURE" : "DEVIS"),
+    issue_date:   draft.date_document,
+    due_date:     draft.date_echeance || null,
+    client_name:  draft.client_nom   || "(Client)",
+    client_email: draft.client_email,
+    client_address: draft.client_adresse || null,
+    subject:      draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
+    items: items.map(it => ({
+      description: it.description || "(description)",
+      quantity:    it.quantity,
+      unit_price:  it.unit_price,
+      total:       r2(it.quantity * it.unit_price),
+    })),
+    subtotal:   totals.ht,
+    tax_rate:   items[0]?.vat_rate ?? 20,
+    tax_amount: totals.tva,
+    total:      totals.ttc,
+    notes:       draft.notes       || null,
+    footer_text: draft.conditions  || null,
+    company: {
+      logoUrl:  draft.emetteur_logo    || null,
+      name:     draft.emetteur_nom     || "DJAMA",
+      email:    draft.emetteur_email,
+      address:  draft.emetteur_adresse,
+      siret:    draft.emetteur_siret,
+      iban:     draft.rib_iban         || "",
+    },
+  });
+}
 
 /* ═══════════════════════════════════════════════════════════
-   PDF EXPORT
+   ADAPTER — convertit DraftDoc en PreviewData pour l'aperçu
 ═══════════════════════════════════════════════════════════ */
-function exportPDF(draft:DraftDoc, items:DocItem[], totals:ReturnType<typeof calcTotals>){
-  const pdf = new jsPDF({unit:"mm",format:"a4"});
-  const W=210, mgL=18, mgR=192;
-  const col  = draft.couleur||"#c9a55a";
-  const [cr,cg,cb] = hexToRgb(col);
-  const onCol = contrastColor(col)==="#0a0a0a" ? [10,10,10] : [255,255,255];
-  const st = STATUTS[draft.statut];
-
-  /* ─ Header sombre ─ */
-  pdf.setFillColor(8,10,15);
-  pdf.rect(0,0,W,56,"F");
-  pdf.setFillColor(cr,cg,cb);
-  pdf.rect(0,53,W,1.8,"F");
-
-  /* Logo */
-  let logoEndX = mgL;
-  if(draft.emetteur_logo){
-    try{
-      const ext = draft.emetteur_logo.includes("image/png")?"PNG":
-                  draft.emetteur_logo.includes("image/webp")?"WEBP":"JPEG";
-      pdf.addImage(draft.emetteur_logo,ext,mgL,7,30,30);
-      logoEndX = mgL+34;
-    }catch{ /* image invalide */ }
-  }
-
-  /* Type + numéro */
-  pdf.setFont("helvetica","bold"); pdf.setFontSize(8);
-  pdf.setTextColor(cr,cg,cb);
-  pdf.text(draft.type.toUpperCase(), logoEndX, 16);
-  pdf.setFontSize(21); pdf.setTextColor(255,255,255);
-  pdf.text(draft.numero||(draft.type==="facture"?"FACTURE":"DEVIS"), logoEndX, 28);
-
-  /* Infos droite */
-  pdf.setFont("helvetica","normal"); pdf.setFontSize(7.5); pdf.setTextColor(170,170,170);
-  pdf.text(`Statut : ${st.label}`,                    mgR, 14, {align:"right"});
-  pdf.text(`Émis le ${fmtDate(draft.date_document)}`,  mgR, 20, {align:"right"});
-  if(draft.date_echeance)
-    pdf.text(`Échéance : ${fmtDate(draft.date_echeance)}`, mgR, 26, {align:"right"});
-
-  /* ─ Bloc Émetteur / Client ─ */
-  let y=66;
-  pdf.setFont("helvetica","bold"); pdf.setFontSize(7); pdf.setTextColor(160,160,160);
-  pdf.text("DE", mgL, y);
-  pdf.text("POUR", W/2+4, y);
-
-  y+=5;
-  pdf.setFontSize(10); pdf.setFont("helvetica","bold"); pdf.setTextColor(20,20,20);
-  pdf.text(draft.emetteur_nom||"(Émetteur)", mgL,   y);
-  pdf.text(draft.client_nom  ||"(Client)",   W/2+4, y);
-
-  y+=5;
-  pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.setTextColor(80,80,80);
-  const emLines = pdf.splitTextToSize(
-    [draft.emetteur_email,
-     draft.emetteur_adresse,
-     draft.emetteur_siret?`SIRET : ${draft.emetteur_siret}`:""]
-     .filter(Boolean).join("\n"),80) as string[];
-  const clLines = pdf.splitTextToSize(
-    [draft.client_email, draft.client_adresse].filter(Boolean).join("\n"),80) as string[];
-  pdf.text(emLines, mgL,   y);
-  pdf.text(clLines, W/2+4, y);
-
-  /* ─ Tableau lignes ─ */
-  y = Math.max(y+emLines.length*4.8, y+clLines.length*4.8)+10;
-
-  pdf.setFillColor(cr,cg,cb);
-  pdf.rect(mgL-2,y-5,mgR-mgL+4,8,"F");
-  pdf.setFont("helvetica","bold"); pdf.setFontSize(7.5);
-  pdf.setTextColor(onCol[0],onCol[1],onCol[2]);
-  pdf.text("Description", mgL,  y);
-  pdf.text("Qté",         120,  y,{align:"right"});
-  pdf.text("P.U. HT",     140,  y,{align:"right"});
-  pdf.text("TVA",         155,  y,{align:"right"});
-  pdf.text("Total HT",    mgR,  y,{align:"right"});
-
-  y+=5;
-  pdf.setFont("helvetica","normal"); pdf.setFontSize(8.5);
-  for(const [i,it] of items.entries()){
-    if(y>255){pdf.addPage();y=18;}
-    const lineHT=r2(it.quantity*it.unit_price);
-    if(i%2===0){pdf.setFillColor(248,248,250);pdf.rect(mgL-2,y-3.5,mgR-mgL+4,7,"F");}
-    pdf.setTextColor(25,25,25);
-    const descLines=pdf.splitTextToSize(it.description||"(description)",80) as string[];
-    pdf.text(descLines,mgL,y);
-    pdf.setTextColor(60,60,60);
-    pdf.text(String(it.quantity),    120,y,{align:"right"});
-    pdf.text(fmtEur(it.unit_price),  140,y,{align:"right"});
-    pdf.text(`${it.vat_rate}%`,      155,y,{align:"right"});
-    pdf.setFont("helvetica","bold");
-    pdf.text(fmtEur(lineHT),         mgR,y,{align:"right"});
-    pdf.setFont("helvetica","normal");
-    y+=descLines.length*5.2+1.5;
-  }
-
-  /* ─ Totaux ─ */
-  y+=4;
-  pdf.setDrawColor(cr,cg,cb); pdf.setLineWidth(0.5);
-  pdf.line(mgL,y,mgR,y); y+=6;
-
-  for(const [lbl,val] of [["Sous-total HT",totals.ht],["TVA",totals.tva]] as [string,number][]){
-    pdf.setFont("helvetica","normal"); pdf.setTextColor(100,100,100);
-    pdf.text(lbl, 148,y);
-    pdf.setFont("helvetica","bold"); pdf.setTextColor(40,40,40);
-    pdf.text(fmtEur(val),mgR,y,{align:"right"});
-    y+=5;
-  }
-  y+=1;
-  pdf.setFillColor(cr,cg,cb);
-  pdf.roundedRect(138,y-1,mgR-138+2,10,1.5,1.5,"F");
-  pdf.setTextColor(onCol[0],onCol[1],onCol[2]);
-  pdf.setFont("helvetica","bold"); pdf.setFontSize(9.5);
-  pdf.text("TOTAL TTC",142,y+6.2);
-  pdf.text(fmtEur(totals.ttc),mgR,y+6.2,{align:"right"});
-  y+=15;
-
-  /* ─ RIB / Coordonnées bancaires ─ */
-  const hasRib = draft.rib_titulaire||draft.rib_iban||draft.rib_bic||draft.rib_banque;
-  if(hasRib){
-    if(y>255){pdf.addPage();y=18;}
-    /* Fond léger */
-    pdf.setFillColor(245,247,250);
-    const ribStartY=y;
-    /* Calcul hauteur estimée */
-    const ribLines = [
-      draft.rib_titulaire?`Titulaire : ${draft.rib_titulaire}`:"",
-      draft.rib_banque?`Banque : ${draft.rib_banque}`:"",
-      draft.rib_iban?`IBAN : ${fmtIban(draft.rib_iban)}`:"",
-      draft.rib_bic?`BIC : ${draft.rib_bic}`:"",
-    ].filter(Boolean);
-    const ribH = 8+ribLines.length*5+4;
-    pdf.roundedRect(mgL-2,ribStartY-2,mgR-mgL+4,ribH,2,2,"F");
-
-    /* Barre couleur gauche */
-    pdf.setFillColor(cr,cg,cb);
-    pdf.roundedRect(mgL-2,ribStartY-2,3,ribH,1,1,"F");
-
-    pdf.setFont("helvetica","bold"); pdf.setFontSize(8); pdf.setTextColor(cr,cg,cb);
-    pdf.text("Coordonnées bancaires", mgL+4, y+1);
-    y+=7;
-
-    pdf.setFont("helvetica","normal"); pdf.setFontSize(8.5); pdf.setTextColor(40,40,40);
-    for(const line of ribLines){
-      if(y>270){pdf.addPage();y=18;}
-      pdf.text(line, mgL+4, y);
-      y+=5;
-    }
-    y+=6;
-  }
-
-  /* ─ Notes & Conditions ─ */
-  if(draft.notes){
-    if(y>260){pdf.addPage();y=18;}
-    pdf.setFont("helvetica","bold"); pdf.setFontSize(8); pdf.setTextColor(cr,cg,cb);
-    pdf.text("Notes", mgL, y); y+=4.5;
-    pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.setTextColor(60,60,60);
-    const nl=pdf.splitTextToSize(draft.notes,W-36) as string[];
-    pdf.text(nl,mgL,y); y+=nl.length*4.5+4;
-  }
-  if(draft.conditions){
-    if(y>260){pdf.addPage();y=18;}
-    pdf.setFont("helvetica","bold"); pdf.setFontSize(8); pdf.setTextColor(cr,cg,cb);
-    pdf.text("Conditions de paiement", mgL, y); y+=4.5;
-    pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.setTextColor(60,60,60);
-    pdf.text(pdf.splitTextToSize(draft.conditions,W-36) as string[], mgL, y);
-  }
-
-  /* ─ Footer ─ */
-  pdf.setFillColor(8,10,15);
-  pdf.rect(0,284,W,13,"F");
-  pdf.setFontSize(7); pdf.setFont("helvetica","normal"); pdf.setTextColor(120,120,120);
-  pdf.text(draft.emetteur_nom||"DJAMA", mgL, 291);
-  pdf.text(draft.numero||draft.type, mgR, 291, {align:"right"});
-
-  const safe=(draft.numero||draft.type).replace(/[^a-z0-9-]/gi,"_");
-  pdf.save(`${safe}.pdf`);
+function draftToPreviewData(
+  draft: DraftDoc,
+  items: DocItem[],
+  totals: ReturnType<typeof calcTotals>,
+): PreviewData {
+  return {
+    type:           draft.type === "facture" ? "invoice" : "quote",
+    reference:      draft.numero || (draft.type === "facture" ? "FAC-2026-001" : "DEV-2026-001"),
+    issue_date:     draft.date_document,
+    due_date:       draft.date_echeance || null,
+    client_name:    draft.client_nom   || "Client",
+    client_email:   draft.client_email,
+    client_address: draft.client_adresse || null,
+    subject:        draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
+    items: items.map(it => ({
+      description: it.description || "Prestation",
+      quantity:    it.quantity,
+      unit_price:  it.unit_price,
+      total:       r2(it.quantity * it.unit_price),
+    })),
+    subtotal:   totals.ht,
+    tax_rate:   items[0]?.vat_rate ?? 20,
+    tax_amount: totals.tva,
+    total:      totals.ttc,
+    notes: draft.notes || null,
+    company: {
+      name:    draft.emetteur_nom  || "DJAMA",
+      email:   draft.emetteur_email,
+      logoUrl: draft.emetteur_logo || null,
+    },
+  };
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -521,6 +423,7 @@ export default function FacturesPage(){
       notes:            doc.notes            ?? "",
       conditions:       doc.conditions       ?? "",
       couleur:          doc.couleur          ?? "#c9a55a",
+      template:         (doc.template as TemplateType) ?? "modern",
     });
     const{data}=await supabase.from("document_items").select("*").eq("document_id",doc.id).order("position");
     setItems((data as DocItem[])?.length ? (data as DocItem[]) : [EMPTY_ITEM()]);
@@ -586,6 +489,7 @@ export default function FacturesPage(){
       notes:            draft.notes,
       conditions:       draft.conditions,
       couleur:          draft.couleur,
+      template:         draft.template ?? "modern",
       total_ht:         totals.ht,
       total_tva:        totals.tva,
       total_ttc:        totals.ttc,
@@ -720,6 +624,7 @@ export default function FacturesPage(){
       notes:            selected.notes,
       conditions:       selected.conditions,
       couleur:          selected.couleur          ?? "#c9a55a",
+      template:         selected.template         ?? "modern",
       total_ht:         selected.total_ht,
       total_tva:        selected.total_tva,
       total_ttc:        selected.total_ttc,
@@ -921,7 +826,7 @@ export default function FacturesPage(){
                       {converting?<Loader2 size={12} className="animate-spin"/>:<RefreshCw size={12}/>} → Facture
                     </button>
                   )}
-                  <button onClick={()=>exportPDF(draft,items,totals)}
+                  <button onClick={()=>exportPDFWithTemplate(draft,items,totals)}
                     className="hidden items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/50 transition hover:border-white/20 hover:text-white/80 sm:flex"
                     title="Exporter en PDF">
                     <FileDown size={13}/> PDF
@@ -983,6 +888,15 @@ export default function FacturesPage(){
 
                   {/* Couleur */}
                   <ColorPicker value={activeColor} onChange={v=>updDraft("couleur",v)}/>
+
+                  {/* Template PDF */}
+                  <div className="rounded-[1.25rem] border border-white/8 bg-[rgba(255,255,255,0.02)] p-4">
+                    <TemplateSelector
+                      value={draft.template ?? "modern"}
+                      onChange={v => { setDraft(d => d ? { ...d, template: v } : d); setDirty(true); }}
+                      data={draftToPreviewData(draft, items, totals)}
+                    />
+                  </div>
 
                   {/* Émetteur | Client */}
                   <div className="grid gap-5 sm:grid-cols-2">
@@ -1105,7 +1019,7 @@ export default function FacturesPage(){
                         {converting?<Loader2 size={12} className="animate-spin"/>:<RefreshCw size={12}/>} → Facture
                       </button>
                     )}
-                    <button onClick={()=>exportPDF(draft,items,totals)}
+                    <button onClick={()=>exportPDFWithTemplate(draft,items,totals)}
                       className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/60 transition hover:border-white/20">
                       <FileDown size={13}/> Exporter PDF
                     </button>
