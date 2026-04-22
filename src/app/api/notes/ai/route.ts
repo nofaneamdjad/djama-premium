@@ -1,34 +1,30 @@
 /**
  * POST /api/notes/ai — Actions IA sur les notes du bloc-notes
+ * GET  /api/notes/ai — Health check (diagnostic prod)
  *
- * Actions :
+ * Actions POST :
  *   improve   → Améliore style, grammaire, clarté
  *   summarize → Résumé en 3-5 points clés
  *   to-tasks  → Transforme en liste de tâches - [ ]
  *   chat      → Réponse libre à une instruction sur la note
  *
- * v2 diagnostics :
- *   • requestId unique par appel — logs traçables dans Vercel Functions
- *   • Vérification ANTHROPIC_API_KEY dès l'entrée (retour 500 précis si absente)
- *   • Mapping complet des erreurs Anthropic → messages FR lisibles
- *   • maxRetries: 0 sur le client — les retries sont gérés côté frontend
- *   • Timeout Anthropic : 18 s (le frontend AbortController est à 20 s)
+ * Corrections v3 :
+ *   • @anthropic-ai/sdk dans serverExternalPackages → chargé via require() Node.js,
+ *     pas bundlé en chunk Turbopack → évite le 404 Vercel par chunk manquant
+ *   • Détection erreurs par status HTTP (sans dépendre des named exports du SDK)
+ *   • requestId unique par appel pour traçabilité dans Vercel Functions logs
+ *   • ANTHROPIC_API_KEY vérifiée dès l'entrée
+ *   • timeout: 18 000 ms, maxRetries: 0 (retries gérés côté frontend)
  */
 
-import Anthropic, {
-  APIError,
-  APIConnectionError,
-  APIConnectionTimeoutError,
-  AuthenticationError,
-  PermissionDeniedError,
-  RateLimitError,
-  BadRequestError,
-  InternalServerError,
-} from "@anthropic-ai/sdk";
+import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime  = "nodejs";
 export const dynamic  = "force-dynamic";
+
+/* ── Log de démarrage module ── */
+console.log("[AI route] Module chargé — runtime:", process.version);
 
 type AiAction = "improve" | "summarize" | "to-tasks" | "chat";
 
@@ -60,67 +56,84 @@ const CHAT_SYSTEM =
   "Si c'est une question, réponds clairement et concisément. " +
   "Sois précis, professionnel et bienveillant.";
 
-/* ── Mapping erreurs Anthropic → messages FR lisibles ── */
+/* ── Mapping erreurs Anthropic → messages FR
+ *
+ * On détecte via la propriété .status (nombre HTTP) ou le nom de classe,
+ * sans dépendre des named exports du SDK qui varient selon la version.
+ * ─────────────────────────────────────────────────────────────────────── */
 function parseAnthropicError(err: unknown): { message: string; status: number } {
-  /* 401 — clé invalide */
-  if (err instanceof AuthenticationError) {
+  /* L'objet d'erreur Anthropic expose toujours .status pour les erreurs HTTP */
+  const httpStatus =
+    err != null &&
+    typeof err === "object" &&
+    "status" in err &&
+    typeof (err as { status: unknown }).status === "number"
+      ? (err as { status: number }).status
+      : null;
+
+  const name =
+    err instanceof Error ? err.constructor.name : "";
+
+  /* Clé invalide (401) */
+  if (httpStatus === 401 || name === "AuthenticationError") {
     return {
       message: "Clé API Anthropic invalide — vérifiez ANTHROPIC_API_KEY dans Vercel → Settings → Environment Variables.",
       status: 401,
     };
   }
-  /* 403 — permission */
-  if (err instanceof PermissionDeniedError) {
+  /* Permission refusée (403) */
+  if (httpStatus === 403 || name === "PermissionDeniedError") {
     return {
       message: "Clé API Anthropic sans permission — vérifiez les droits sur console.anthropic.com.",
       status: 403,
     };
   }
-  /* 400 — requête mal formée */
-  if (err instanceof BadRequestError) {
+  /* Requête invalide (400) */
+  if (httpStatus === 400 || name === "BadRequestError") {
     return {
       message: "Requête invalide — contenu trop long ou mal formé.",
       status: 400,
     };
   }
-  /* 429 — quota dépassé */
-  if (err instanceof RateLimitError) {
+  /* Quota dépassé (429) */
+  if (httpStatus === 429 || name === "RateLimitError") {
     return {
       message: "Quota IA dépassé — attendez quelques instants et réessayez.",
       status: 429,
     };
   }
-  /* Timeout réseau vers Anthropic */
-  if (err instanceof APIConnectionTimeoutError) {
+  /* Service surchargé (529 = Anthropic overloaded / 503 = unavailable) */
+  if (httpStatus === 529 || httpStatus === 503) {
     return {
-      message: "Délai IA dépassé (18 s) — réessayez dans quelques secondes.",
-      status: 408,
-    };
-  }
-  /* Connexion impossible vers Anthropic */
-  if (err instanceof APIConnectionError) {
-    return {
-      message: "Impossible de joindre Anthropic — vérifiez la connectivité réseau Vercel.",
+      message: "Service IA surchargé — réessayez dans quelques secondes.",
       status: 503,
     };
   }
-  /* 500 — erreur interne Anthropic */
-  if (err instanceof InternalServerError) {
+  /* Erreur interne Anthropic (500) */
+  if (httpStatus === 500 || name === "InternalServerError") {
     return {
       message: "Erreur interne Anthropic (500) — réessayez dans quelques instants.",
       status: 502,
     };
   }
-  /* Autres erreurs HTTP Anthropic (ex : 529 = overloaded) */
-  if (err instanceof APIError) {
-    if (err.status === 529 || err.status === 503) {
-      return {
-        message: "Service IA surchargé — réessayez dans quelques secondes.",
-        status: 503,
-      };
-    }
+  /* Timeout réseau */
+  if (name === "APIConnectionTimeoutError") {
     return {
-      message: `Erreur service IA (HTTP ${err.status}) — réessayez.`,
+      message: "Délai IA dépassé (18 s) — réessayez dans quelques secondes.",
+      status: 408,
+    };
+  }
+  /* Connexion impossible */
+  if (name === "APIConnectionError") {
+    return {
+      message: "Impossible de joindre Anthropic — vérifiez la connectivité réseau Vercel.",
+      status: 503,
+    };
+  }
+  /* Autres erreurs HTTP Anthropic */
+  if (httpStatus !== null) {
+    return {
+      message: `Erreur service IA (HTTP ${httpStatus}) — réessayez.`,
       status: 502,
     };
   }
@@ -131,7 +144,26 @@ function parseAnthropicError(err: unknown): { message: string; status: number } 
   };
 }
 
-/* ── Handler principal ── */
+/* ══════════════════════════════════════════════════════════
+   GET — Health check (diagnostic prod)
+   Appel : GET /api/notes/ai
+   Retour : { ok, node, keySet, keyPrefix, ts }
+══════════════════════════════════════════════════════════ */
+export async function GET() {
+  const apiKey = process.env.ANTHROPIC_API_KEY ?? "";
+  return NextResponse.json({
+    ok:        true,
+    route:     "/api/notes/ai",
+    node:      process.version,
+    keySet:    apiKey.length > 0,
+    keyPrefix: apiKey.length > 8 ? apiKey.slice(0, 8) + "…" : "(vide)",
+    ts:        new Date().toISOString(),
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   POST — Handler principal
+══════════════════════════════════════════════════════════ */
 export async function POST(req: NextRequest) {
   /* ID unique par requête pour tracer dans Vercel Functions logs */
   const reqId = Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -141,7 +173,7 @@ export async function POST(req: NextRequest) {
   if (!apiKey || apiKey.trim() === "") {
     console.error(
       `[AI:${reqId}] ❌ ANTHROPIC_API_KEY absente ou vide.`,
-      "→ Ajoutez-la dans Vercel → Project → Settings → Environment Variables"
+      "→ Vercel → Project → Settings → Environment Variables"
     );
     return NextResponse.json(
       { error: "Configuration IA manquante — ANTHROPIC_API_KEY introuvable. Ajoutez-la sur Vercel." },
@@ -161,8 +193,8 @@ export async function POST(req: NextRequest) {
 
     console.log(
       `[AI:${reqId}] ▶ action="${action}"`,
-      `| titre="${(title ?? "").slice(0, 40)}"`,
-      `| contenu=${(content ?? "").length} car.`
+      `titre="${(title ?? "").slice(0, 40)}"`,
+      `contenu=${(content ?? "").length} car.`
     );
 
     /* Validation action */
@@ -172,14 +204,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Action invalide." }, { status: 400 });
     }
 
-    /* ── 3. Client Anthropic — instancié par requête pour lire la clé à jour ── */
+    /* ── 3. Client Anthropic — instancié par requête ── */
     const client = new Anthropic({
       apiKey,
       maxRetries: 0,      // retries gérés côté frontend
       timeout:    18_000, // 18 s — le AbortController frontend est à 20 s
     });
 
-    /* ── 4a. Action chat — prompt libre ── */
+    /* ── 4a. Action chat ── */
     if (action === "chat") {
       if (!prompt?.trim()) {
         return NextResponse.json({ error: "Instruction vide." }, { status: 400 });
