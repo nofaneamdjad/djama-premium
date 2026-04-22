@@ -665,6 +665,86 @@ body {
 }
 
 /* ══════════════════════════════════════════════
+   PARTNER LOGOS — fond animé + micro-float + rayon
+══════════════════════════════════════════════ */
+
+/*
+ * Fond dégradé vivant :
+ *   or DJAMA (#c9a55a) · violet · bleu profond — très désaturés
+ *   background-size 400% → le mouvement est très doux, quasi imperceptible
+ *   Animation 22 s : lent → premium, jamais distrayant
+ */
+@keyframes partners-gradient {
+  0%   { background-position:   0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position:   0% 50%; }
+}
+
+/*
+ * Rayon lumineux qui traverse les logos :
+ *   or DJAMA + blanc central → effet reflet vitrine haut de gamme
+ *   Période 11 s avec delay 4 s → discret, surprenant, premium
+ */
+@keyframes partners-sweep {
+  0%   { transform: translateX(-220px) skewX(-10deg); opacity: 0; }
+  4%   { opacity: 1; }
+  96%  { opacity: 1; }
+  100% { transform: translateX(calc(100vw + 220px)) skewX(-10deg); opacity: 0; }
+}
+
+/*
+ * Micro-flottement individuel :
+ *   Amplitude 5 px — amplitude très douce, "respiration" des logos
+ *   La durée et le delay sont surchargés par inline style per-tile
+ */
+@keyframes partners-float {
+  0%, 100% { transform: translateY(0);    }
+  50%       { transform: translateY(-5px); }
+}
+
+/* Classe section — fond chaud animé */
+.partners-bg {
+  background: linear-gradient(
+    130deg,
+    #ffffff       0%,
+    #fefcf5      20%,   /* or DJAMA 4 % */
+    #fbfaff      42%,   /* violet 3 % */
+    #f7fbff      62%,   /* bleu 4 % */
+    #fffef5      80%,   /* or retour */
+    #ffffff     100%
+  );
+  background-size: 400% 400%;
+  animation: partners-gradient 22s ease infinite;
+}
+
+/* Rayon */
+.partners-sweep {
+  width: 180px;
+  background: linear-gradient(
+    90deg,
+    transparent              0%,
+    rgba(201,165,90,0.09)   25%,
+    rgba(255,255,255,0.40)  50%,
+    rgba(201,165,90,0.09)   75%,
+    transparent             100%
+  );
+  animation: partners-sweep 11s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+  animation-delay: 4s;
+}
+
+/* Micro-flottement tile */
+.partners-tile-float {
+  animation: partners-float 3.5s ease-in-out infinite;
+}
+
+/* Reduced motion — tout immobile sauf ticker ralenti */
+@media (prefers-reduced-motion: reduce) {
+  .partners-bg     { animation: none; background: #fafaf9; }
+  .partners-sweep  { animation: none; opacity: 0; pointer-events: none; }
+  .partners-tile-float { animation: none; }
+}
+
+/* ══════════════════════════════════════════════
    PERFORMANCE — GPU & PAINT ISOLATION
 ══════════════════════════════════════════════ */
 .gpu-layer      { transform: translateZ(0); will-change: auto; }
