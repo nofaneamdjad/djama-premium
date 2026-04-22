@@ -1,16 +1,19 @@
 "use client";
 
 /**
- * PartnerLogosSection — Galerie premium de logos en flux continu.
+ * PartnerLogosSection — Ticker premium sur fond blanc.
  *
- * Technique logo blanc universel :
- *   filter: brightness(0) invert(1)
- *   → convertit n'importe quel logo (sombre, coloré, clair) en silhouette
- *     blanche pure, préserve la transparence → cohérence visuelle totale
- *   → même technique utilisée par Stripe / Apple / Linear
+ * Technique logo sur fond clair :
+ *   • Au repos  : grayscale(1) + opacity réduite → ton neutre, non intrusif
+ *   • Au hover  : grayscale(0) + pleine opacité → couleur d'origine révélée
+ *   → Standard industrie : Vercel, Notion, Linear, Stripe (section "trusted by")
  *
- * Hover : retire le filtre → couleur originale à pleine opacité
- * (effet de révélation premium).
+ * Animation ticker :
+ *   • track = items × 2 ; keyframes 0 → -50% = exactement 1 copie
+ *   • marginRight (pas gap CSS) → chaque tile = TILE_UNIT px exact → -50% pur
+ *   • Ligne 1 : gauche 46 s / Ligne 2 : droite 61 s → effet courant organique
+ *   • Pause hover desktop uniquement (pointer: fine) → jamais sur mobile
+ *   • prefers-reduced-motion → 240 s (ralenti, non bloqué)
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -18,15 +21,15 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import type { PartnerLogoRow } from "@/types/db";
 
-/* ─── Géométrie ticker ──────────────────────────────────────────
-   marginRight = TILE_GAP (pas de `gap` CSS) : chaque tile occupe
-   exactement TILE_UNIT px → calcul -50% mathématiquement exact.
+/* ─── Géométrie ticker ─────────────────────────────────────────
+   marginRight = TILE_GAP → chaque tile = TILE_UNIT px exact.
+   -50% = N × TILE_UNIT : boucle mathématiquement sans coupure.
 ──────────────────────────────────────────────────────────────── */
-const TILE_W    = 200;            // px — largeur slot logo
-const TILE_GAP  = 40;             // px — espacement généreux
-const TILE_UNIT = TILE_W + TILE_GAP; // 240px — unité atomique
-const TILE_H    = 88;             // px — hauteur slot
-const FILL_MIN  = 6;              // logos min simultanément visibles
+const TILE_W    = 200;
+const TILE_GAP  = 48;
+const TILE_UNIT = TILE_W + TILE_GAP;   // 248 px — unité atomique
+const TILE_H    = 88;
+const FILL_MIN  = 6;                   // logos min visibles simultanément
 
 function fillTrack(arr: PartnerLogoRow[]): PartnerLogoRow[] {
   if (!arr.length) return arr;
@@ -35,9 +38,10 @@ function fillTrack(arr: PartnerLogoRow[]): PartnerLogoRow[] {
 }
 
 /* ─── LogoTile ──────────────────────────────────────────────────
-   Au repos : blanc pur via brightness(0)+invert(1), opacity ~65 %.
-   Au hover  : filtre retiré → couleur originale, pleine présence.
-   Tile      : invisible au repos, legère capsule pill au hover.
+   Sur fond blanc :
+   Repos  : grayscale(1) opacity-50 → ton gris neutre discret
+   Hover  : grayscale(0) opacity-95 → couleur originale, révélation
+   Capsule: invisible au repos → légère ombre/bordure au hover
 ──────────────────────────────────────────────────────────────── */
 function LogoTile({ logo }: { logo: PartnerLogoRow }) {
   const pill = (
@@ -46,19 +50,20 @@ function LogoTile({ logo }: { logo: PartnerLogoRow }) {
         "relative flex items-center justify-center overflow-hidden",
         /* Repos : structure invisible */
         "border border-transparent",
-        /* Hover : capsule légère */
-        "group-hover:border-white/[0.12]",
-        "group-hover:bg-white/[0.035]",
-        "group-hover:shadow-[0_0_32px_rgba(255,255,255,0.06),0_0_0_1px_rgba(255,255,255,0.05)]",
+        /* Hover : capsule légère sur fond blanc */
+        "group-hover:border-black/[0.07]",
+        "group-hover:bg-black/[0.025]",
+        "group-hover:shadow-[0_2px_20px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.04)]",
         /* Transition */
         "transition-[border-color,background-color,box-shadow] duration-[350ms] ease-out",
       ].join(" ")}
       style={{ width: TILE_W, height: TILE_H, marginRight: TILE_GAP, borderRadius: "9999px" }}
     >
-      {/* Logo
-          Repos : brightness(0) invert(1) → silhouette blanche pure
-                  opacity 0.65 → présence forte sans agressivité
-          Hover : filtre reset → couleur d'origine, scale via parent FM
+      {/*
+        Fond blanc → technique grayscale :
+        Repos  : grayscale(1) opacity-[0.52] → gris neutre, présent sans agresser
+        Hover  : grayscale(0) opacity-[0.92] → couleur d'origine révélée
+        Transition fluide filter + opacity
       */}
       <img
         src={logo.logo_url}
@@ -68,13 +73,13 @@ function LogoTile({ logo }: { logo: PartnerLogoRow }) {
         loading="lazy"
         className={[
           "relative z-10 object-contain select-none",
-          /* Tailles généreuses — impact immédiat */
+          /* Tailles généreuses */
           "h-10 w-auto sm:h-11 md:h-12",
           "max-w-[116px] sm:max-w-[136px] md:max-w-[158px]",
-          /* Repos : silhouette blanche */
-          "brightness-0 invert opacity-[0.65]",
+          /* Repos : gris neutre */
+          "grayscale opacity-[0.52]",
           /* Hover : couleur originale */
-          "group-hover:brightness-100 group-hover:invert-0 group-hover:opacity-[0.92]",
+          "group-hover:grayscale-0 group-hover:opacity-[0.92]",
           /* Transition filtre fluide */
           "transition-[filter,opacity] duration-[350ms] ease-out",
         ].join(" ")}
@@ -148,7 +153,7 @@ function SkeletonRow() {
             height:       TILE_H,
             marginRight:  TILE_GAP,
             borderRadius: "9999px",
-            background:   "rgba(255,255,255,0.05)",
+            background:   "rgba(0,0,0,0.05)",
           }}
         />
       ))}
@@ -187,26 +192,14 @@ export default function PartnerLogosSection() {
       aria-label="Nos partenaires"
       style={{
         /*
-         * Surface légèrement élevée : le dégradé crée une "plaque"
-         * distincte (~2 % plus claire que #09090b) sans bloc massif.
-         * Commence et finit à #09090b → fondu propre avec les sections adjacentes.
+         * Off-white premium chaud :
+         * Commence et finit à #ffffff pour fondu propre avec les sections blanches.
+         * Centre légèrement cassé vers #f5f4f1 → profondeur sans zone sombre.
          */
         background:
-          "linear-gradient(180deg, #09090b 0%, #0d0d11 28%, #0f0f14 50%, #0d0d11 72%, #09090b 100%)",
+          "linear-gradient(180deg, #ffffff 0%, #faf9f7 28%, #f5f4f1 50%, #faf9f7 72%, #ffffff 100%)",
       }}
     >
-      {/* Halo doux — léger fond lumineux derrière les logos */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        aria-hidden
-        style={{
-          width:      "min(1000px, 100%)",
-          height:     "260px",
-          background: "radial-gradient(ellipse 65% 100% at 50% 50%, rgba(255,255,255,0.025) 0%, transparent 70%)",
-          filter:     "blur(50px)",
-        }}
-      />
-
       {/* Titre */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -217,35 +210,35 @@ export default function PartnerLogosSection() {
       >
         <div
           className="h-px flex-1"
-          style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.10))" }}
+          style={{ background: "linear-gradient(to right, transparent, rgba(0,0,0,0.10))" }}
         />
-        <p className="flex-shrink-0 whitespace-nowrap text-[0.67rem] font-black uppercase tracking-[0.24em] text-white/30">
+        <p className="flex-shrink-0 whitespace-nowrap text-[0.67rem] font-black uppercase tracking-[0.24em] text-[#b0aba3]">
           Ils nous font confiance
         </p>
         <div
           className="h-px flex-1"
-          style={{ background: "linear-gradient(to left, transparent, rgba(255,255,255,0.10))" }}
+          style={{ background: "linear-gradient(to left, transparent, rgba(0,0,0,0.10))" }}
         />
       </motion.div>
 
       {/* Tickers */}
       <div className="relative space-y-5">
-        {/* Fade gauche */}
+        {/* Fade gauche — blanc pour correspondre au fond de section */}
         <div
           className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 sm:w-32 md:w-52"
-          style={{ background: "linear-gradient(to right, #09090b, transparent)" }}
+          style={{ background: "linear-gradient(to right, #ffffff, transparent)" }}
           aria-hidden
         />
         {/* Fade droit */}
         <div
           className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 sm:w-32 md:w-52"
-          style={{ background: "linear-gradient(to left, #09090b, transparent)" }}
+          style={{ background: "linear-gradient(to left, #ffffff, transparent)" }}
           aria-hidden
         />
 
         {/* Ligne 1 → gauche, 46 s */}
         {ready ? <TickerRow logos={row1} direction="left"  duration={46} /> : <SkeletonRow />}
-        {/* Ligne 2 ← droite, 61 s — écart 15 s = effet organique */}
+        {/* Ligne 2 ← droite, 61 s — écart 15 s = effet courant organique */}
         {ready ? <TickerRow logos={row2} direction="right" duration={61} /> : <SkeletonRow />}
       </div>
     </section>
