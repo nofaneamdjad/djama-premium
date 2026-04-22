@@ -514,6 +514,71 @@ export default function BlocNotesPage() {
     });
   }
 
+  /* ══════════════════════════════════════════════════════════════
+     callAI — fetch /api/notes/ai
+     • AbortController 20 s  →  compatible WebView WhatsApp/Instagram
+     • Détecte offline avant d'envoyer  →  message clair
+     • Retry automatique 1 fois sur erreurs transitoires
+       (surchargé, délai, réseau)  — pas sur auth/quota/invalid
+  ══════════════════════════════════════════════════════════════ */
+  async function callAI(
+    body: { action: AiAction; content: string; title: string; prompt?: string },
+    attempt = 0,
+  ): Promise<string> {
+    /* ── Offline guard (WhatsApp WebView / avion) ── */
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      throw new Error("Pas de connexion internet — vérifiez votre réseau.");
+    }
+
+    /* ── AbortController 20 s ── */
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 20_000);
+
+    try {
+      const res = await fetch("/api/notes/ai", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(body),
+        signal:  controller.signal,
+      });
+      clearTimeout(tid);
+
+      /* Parse JSON (même sur 4xx/5xx — le backend retourne toujours { error }) */
+      const json = await res.json() as { result?: string; error?: string };
+      if (json.error) throw new Error(json.error);
+      if (!json.result) throw new Error("Réponse vide — réessayez.");
+      return json.result;
+
+    } catch (err) {
+      clearTimeout(tid);
+
+      /* ── Traduction des erreurs client-side ── */
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new Error("Délai IA dépassé (20 s) — réessayez.");
+      }
+      if (err instanceof TypeError) {
+        /* TypeError = fetch échoué (réseau coupé, DNS, CORS) */
+        throw new Error("Impossible de joindre le serveur IA — vérifiez votre connexion.");
+      }
+
+      /* ── Retry unique sur erreurs transitoires ── */
+      const msg = err instanceof Error ? err.message : "";
+      const isTransient =
+        msg.includes("surchargé") ||
+        msg.includes("Délai")     ||
+        msg.includes("connexion") ||
+        msg.includes("Erreur interne Anthropic");
+
+      if (attempt === 0 && isTransient) {
+        /* Pause 1,4 s avant le retry — invisible pour l'utilisateur */
+        await new Promise(r => setTimeout(r, 1_400));
+        return callAI(body, 1);
+      }
+
+      throw err;
+    }
+  }
+
   /* ── IA — actions prédéfinies ── */
   async function runAI(action: NonChatAction) {
     if (!draft.content?.trim() && !draft.title?.trim()) {
@@ -522,14 +587,11 @@ export default function BlocNotesPage() {
     }
     setAiLoading(action);
     try {
-      const res = await fetch("/api/notes/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, content: draft.content ?? "", title: draft.title ?? "" }),
+      const result = await callAI({
+        action,
+        content: draft.content ?? "",
+        title:   draft.title   ?? "",
       });
-      const { result, error } = await res.json() as { result?: string; error?: string };
-      if (error) throw new Error(error);
-      if (!result) throw new Error("Réponse vide");
 
       if (action === "to-tasks") {
         setDraft(d => ({ ...d, content: result, category: "tâches" as Category }));
@@ -559,26 +621,16 @@ export default function BlocNotesPage() {
     setChatPrompt("");
 
     try {
-      const res = await fetch("/api/notes/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action:  "chat",
-          content: draft.content ?? "",
-          title:   draft.title   ?? "",
-          prompt,
-        }),
+      const result = await callAI({
+        action:  "chat",
+        content: draft.content ?? "",
+        title:   draft.title   ?? "",
+        prompt,
       });
-      const { result, error } = await res.json() as { result?: string; error?: string };
-      if (error) throw new Error(error);
-      if (!result) throw new Error("Réponse vide");
-
       setChatHistory(prev => [...prev, { role: "assistant", text: result }]);
     } catch (err) {
-      setChatHistory(prev => [...prev, {
-        role: "assistant",
-        text: "❌ " + (err instanceof Error ? err.message : "Erreur IA."),
-      }]);
+      const msg = err instanceof Error ? err.message : "Erreur IA.";
+      setChatHistory(prev => [...prev, { role: "assistant", text: `❌ ${msg}` }]);
     } finally {
       setChatLoading(false);
     }
