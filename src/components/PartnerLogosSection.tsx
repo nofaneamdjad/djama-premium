@@ -77,24 +77,23 @@ function LogoTile({ logo, index }: { logo: PartnerLogoRow; index: number }) {
       style={{ width: TILE_W, height: TILE_H, marginRight: TILE_GAP, borderRadius: "9999px" }}
     >
       {/*
-        Glow interne — halo or DJAMA + violet derrière le logo.
-        Invisible au repos → révélé au hover (transition 500 ms).
-        Crée une présence lumineuse premium sans alourdir.
+        Glow neutre au hover — halo blanc doux "rétroéclairage" :
+        Fonctionne avec n'importe quelle couleur de logo.
+        Invisible au repos → révélé en 400 ms au hover.
       */}
       <div
-        className="pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        className="pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-[400ms]"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 50% 55%, rgba(201,165,90,0.16) 0%, rgba(139,92,246,0.07) 55%, transparent 100%)",
+            "radial-gradient(ellipse 85% 65% at 50% 55%, rgba(255,255,255,0.75) 0%, transparent 75%)",
         }}
         aria-hidden
       />
 
       {/*
-        Logo — fond blanc → technique grayscale :
-          Repos  : grayscale(1) opacity-52 → ton gris neutre discret
-          Hover  : grayscale(0) opacity-92 → couleur originale révélée
-          Transition filter + opacity fluide
+        Logo — couleurs originales, pas de filtre.
+        drop-shadow très léger → contraste sur fond clair même pour les logos clairs.
+        opacity-[0.90] au repos → 100 % au hover.
       */}
       <img
         src={logo.logo_url}
@@ -106,13 +105,13 @@ function LogoTile({ logo, index }: { logo: PartnerLogoRow; index: number }) {
           "relative z-10 object-contain select-none",
           "h-9 w-auto sm:h-10 md:h-[2.875rem]",
           "max-w-[108px] sm:max-w-[128px] md:max-w-[150px]",
-          /* Repos : gris neutre */
-          "grayscale opacity-[0.52]",
-          /* Hover : couleur originale */
-          "group-hover:grayscale-0 group-hover:opacity-[0.92]",
-          /* Transition filtre fluide */
-          "transition-[filter,opacity] duration-[350ms] ease-out",
+          /* Couleurs originales — pas de grayscale */
+          "opacity-[0.90]",
+          "group-hover:opacity-100",
+          /* Transition douce */
+          "transition-opacity duration-[300ms] ease-out",
         ].join(" ")}
+        style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.10))" }}
       />
     </div>
   );
@@ -253,7 +252,7 @@ export default function PartnerLogosSection() {
           className="h-px flex-1"
           style={{ background: "linear-gradient(to right, transparent, rgba(0,0,0,0.09))" }}
         />
-        <p className="flex-shrink-0 whitespace-nowrap text-[0.67rem] font-black uppercase tracking-[0.24em] text-[#b0aba3]">
+        <p className="flex-shrink-0 whitespace-nowrap text-[0.67rem] font-black uppercase tracking-[0.24em] text-[#c9a55a]">
           Ils nous font confiance
         </p>
         <div
