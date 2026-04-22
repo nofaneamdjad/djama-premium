@@ -5,20 +5,26 @@
  * vers Supabase Storage.
  *
  * Props :
- *   type        "image" | "video"
- *   bucket      Bucket Supabase (défaut : "djama-media")
- *   folder      Sous-dossier (défaut : "images" / "videos"). Vide = racine du bucket.
- *   currentUrl  URL actuellement stockée en base
- *   onUrlChange Callback avec la nouvelle URL (upload réussi OU saisie manuelle)
- *   label       Label affiché au-dessus (optionnel)
+ *   type          "image" | "video"
+ *   bucket        Bucket Supabase (défaut : "djama-media")
+ *   folder        Sous-dossier (défaut : "images" / "videos"). Vide = racine.
+ *   apiPath       Si fourni, l'upload passe par cette route API serveur au lieu
+ *                 d'appeler Supabase Storage directement depuis le client.
+ *                 Nécessaire quand le client n'a pas de session Supabase Auth
+ *                 (ex : admin avec auth localStorage). La route doit accepter
+ *                 un POST multipart/form-data avec : file, bucket, path.
+ *   currentUrl    URL actuellement stockée en base
+ *   onUrlChange   Callback avec la nouvelle URL (upload réussi OU saisie manuelle)
+ *   label         Label affiché au-dessus (optionnel)
  *
  * Fixes appliqués :
- *   - Path : folder vide → fichier à la racine (pas de "/" en tête)
- *   - SVG   : bypass de la compression canvas (incompatible sur mobile)
+ *   - apiPath     : upload via route serveur (service_role) → bypass RLS
+ *   - Path        : folder vide → fichier à la racine (pas de "/" en tête)
+ *   - SVG         : bypass de la compression canvas (incompatible sur mobile)
  *   - Compression : fallback vers le fichier original si canvas échoue
- *   - Erreurs Supabase : messages contextuels (403, 404, réseau…)
- *   - État succès : visible 2,5 s avant reset
- *   - upsert: true pour éviter les conflits de nom (rare mais possible)
+ *   - Erreurs     : messages contextuels (403, 404, réseau…)
+ *   - Succès      : visible 2,5 s avant reset
+ *   - upsert:true : évite les conflits 409 (rare)
  */
 
 import { useRef, useState } from "react";
@@ -32,7 +38,6 @@ import { supabase } from "@/lib/supabase";
 const MAX_IMG = 5  * 1024 * 1024;   // 5 MB
 const MAX_VID = 50 * 1024 * 1024;   // 50 MB
 
-// ⚠️ "image/jpg" n'est pas un MIME valide — on utilise "image/jpeg" uniquement
 const ACCEPT_IMAGE = "image/jpeg,image/png,image/webp,image/gif,image/svg+xml";
 const ACCEPT_VIDEO = "video/mp4,video/webm,video/quicktime";
 
@@ -46,16 +51,14 @@ function uid(): string {
 
 /**
  * Compresse une image via Canvas → Blob WebP (ou JPEG en fallback).
- * - SVG : contournement direct (pas de canvas ; rendu SVG mobile non fiable)
- * - Si canvas.toBlob() échoue : renvoie le fichier original non compressé
- * - maxWidth : 1920 px ; qualité : 0.85
+ * - SVG  : contournement direct (pas de canvas ; rendu SVG mobile non fiable)
+ * - Fail : renvoie le fichier original non compressé (ne rejette jamais)
  */
 async function compressImage(
   file: File,
   maxWidth = 1920,
   quality  = 0.85,
 ): Promise<{ blob: Blob; ext: string; mimeType: string }> {
-  // ── SVG : pas de compression ──────────────────────────────────────────────
   if (file.type === "image/svg+xml") {
     return { blob: file, ext: "svg", mimeType: "image/svg+xml" };
   }
@@ -64,7 +67,6 @@ async function compressImage(
     const img    = new window.Image();
     const objUrl = URL.createObjectURL(file);
 
-    // ── Fallback : on ne reject() jamais, on renvoie le fichier original ──
     const useOriginal = () => {
       URL.revokeObjectURL(objUrl);
       const parts = file.name.split(".");
@@ -74,29 +76,24 @@ async function compressImage(
 
     img.onload = () => {
       URL.revokeObjectURL(objUrl);
-
       let { width, height } = img;
       if (width > maxWidth) {
         height = Math.round((height * maxWidth) / width);
         width  = maxWidth;
       }
-
       const canvas = document.createElement("canvas");
       canvas.width  = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       if (!ctx) { useOriginal(); return; }
-
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Essai WebP
       canvas.toBlob(
         webpBlob => {
           if (webpBlob && webpBlob.size > 0) {
             resolve({ blob: webpBlob, ext: "webp", mimeType: "image/webp" });
             return;
           }
-          // Fallback JPEG
           canvas.toBlob(
             jpegBlob => {
               if (jpegBlob && jpegBlob.size > 0) {
@@ -120,44 +117,37 @@ async function compressImage(
 }
 
 /**
- * Formate une erreur Supabase Storage en message utilisateur compréhensible.
- * Beaucoup plus utile que le message générique "Vérifiez votre connexion".
+ * Formate une erreur Supabase Storage en message utilisateur lisible.
  */
 function formatStorageError(err: unknown, bucketName: string): string {
   if (!err) return "Erreur inconnue lors de l'upload.";
 
-  // Erreur native JS (réseau, canvas…)
   if (err instanceof Error) {
     const m = err.message.toLowerCase();
-    if (m.includes("canvas") || m.includes("compression")) {
+    if (m.includes("canvas") || m.includes("compression"))
       return "Impossible de traiter l'image. Essayez un autre format (JPG ou PNG).";
-    }
-    if (m.includes("network") || m.includes("fetch") || m.includes("failed")) {
+    if (m.includes("network") || m.includes("fetch") || m.includes("failed"))
       return "Connexion interrompue. Vérifiez votre réseau et réessayez.";
-    }
     return `Erreur : ${err.message}`;
   }
 
-  // Erreur Supabase (objet avec statusCode / message / error)
   if (typeof err === "object" && err !== null) {
     const e    = err as Record<string, unknown>;
     const code = String(e.statusCode ?? e.status ?? "");
     const msg  = String(e.message ?? e.error ?? "").toLowerCase();
 
-    if (code === "403" || msg.includes("unauthorized") || msg.includes("forbidden")) {
-      return `Accès refusé au bucket "${bucketName}". ` +
-             `Vérifiez les politiques RLS dans Supabase Storage.`;
-    }
-    if (code === "404" || msg.includes("not found") || msg.includes("bucket")) {
-      return `Bucket introuvable : "${bucketName}". ` +
-             `Créez-le dans Supabase → Storage → New bucket (accès public activé).`;
-    }
-    if (code === "413" || msg.includes("too large") || msg.includes("payload")) {
+    if (code === "403" || msg.includes("unauthorized") || msg.includes("forbidden"))
+      return `Accès refusé au bucket "${bucketName}". Vérifiez les politiques RLS dans Supabase Storage.`;
+    if (code === "404" || msg.includes("not found") || msg.includes("bucket"))
+      return `Bucket introuvable : "${bucketName}". Créez-le dans Supabase → Storage → New bucket (accès public activé).`;
+    if (code === "413" || msg.includes("too large") || msg.includes("payload"))
       return "Fichier trop volumineux pour le serveur. Réduisez la taille et réessayez.";
-    }
-    if (code === "409" || msg.includes("already exists")) {
-      return "Un fichier avec ce nom existe déjà. Réessayez (nom généré automatiquement).";
-    }
+    if (code === "409" || msg.includes("already exists"))
+      return "Un fichier avec ce nom existe déjà. Réessayez.";
+    if (msg.includes("row-level security") || msg.includes("rls") || msg.includes("violates"))
+      return `Politique de sécurité Supabase bloquante (RLS). ` +
+             `L'upload doit passer par la route API serveur (prop apiPath). ` +
+             `Vérifiez que apiPath="/api/admin/upload" est bien passé au composant.`;
     const detail = String(e.message ?? e.error ?? "").trim();
     if (detail) return `Supabase Storage : ${detail}`;
   }
@@ -172,14 +162,24 @@ function formatStorageError(err: unknown, bucketName: string): string {
 export type MediaUploaderType = "image" | "video";
 
 export interface MediaUploaderProps {
-  type:        MediaUploaderType;
+  type:         MediaUploaderType;
   /** Bucket Supabase Storage (défaut : "djama-media") */
-  bucket?:     string;
+  bucket?:      string;
   /** Sous-dossier. Vide ("") = racine du bucket. */
-  folder?:     string;
-  currentUrl:  string;
-  onUrlChange: (url: string) => void;
-  label?:      string;
+  folder?:      string;
+  /**
+   * Route API serveur à utiliser pour l'upload (optionnel).
+   * Quand fourni, le fichier est envoyé en POST multipart/form-data à cette URL
+   * plutôt que directement à Supabase depuis le client.
+   * Nécessaire quand le client n'a pas de session Supabase Auth (ex : admin
+   * avec auth localStorage) — la route serveur utilise la service_role_key
+   * et bypasse entièrement les RLS.
+   * Ex : apiPath="/api/admin/upload"
+   */
+  apiPath?:     string;
+  currentUrl:   string;
+  onUrlChange:  (url: string) => void;
+  label?:       string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -190,14 +190,15 @@ export function MediaUploader({
   type,
   bucket   = "djama-media",
   folder,
+  apiPath,
   currentUrl,
   onUrlChange,
   label,
 }: MediaUploaderProps) {
   const [tab,       setTab]       = useState<"upload" | "url">("upload");
   const [uploading, setUploading] = useState(false);
-  const [progress,  setProgress]  = useState(0);        // 0-100
-  const [success,   setSuccess]   = useState(false);    // état succès distinct
+  const [progress,  setProgress]  = useState(0);
+  const [success,   setSuccess]   = useState(false);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
   const [dragOver,  setDragOver]  = useState(false);
 
@@ -205,19 +206,17 @@ export function MediaUploader({
 
   const BUCKET = bucket;
 
-  // ── folder vide → racine ; sinon "dossier/fichier" ──────────────────────
-  // BUG FIX : quand folder="", `${folder}/${filename}` donnait "/filename.webp"
-  // (slash initial) → rejeté par Supabase Storage.
+  // folder="" → racine du bucket (pas de slash en tête du path)
   const effectiveFolder =
     folder !== undefined
-      ? folder                                         // valeur explicite (même vide)
-      : type === "image" ? "images" : "videos";        // défaut si prop absente
+      ? folder
+      : type === "image" ? "images" : "videos";
 
   const maxBytes   = type === "image" ? MAX_IMG : MAX_VID;
   const maxLabel   = type === "image" ? "5 MB"  : "50 MB";
   const acceptAttr = type === "image" ? ACCEPT_IMAGE : ACCEPT_VIDEO;
 
-  // ── Upload vers Supabase Storage ─────────────────────────────────────────
+  // ── Upload ───────────────────────────────────────────────────────────────
 
   async function uploadFile(file: File) {
     setUploadErr(null);
@@ -236,6 +235,7 @@ export function MediaUploader({
     setProgress(5);
 
     try {
+      // ── 1. Compression (image seulement) ──────────────────────────────
       let uploadBlob: Blob | File = file;
       let ext: string;
       let mimeType: string;
@@ -253,50 +253,99 @@ export function MediaUploader({
         mimeType = file.type || "video/mp4";
       }
 
-      // ── Construction du chemin sans slash initial ──────────────────────
-      // BUG FIX principal : si effectiveFolder est vide, on n'ajoute pas "/"
+      // ── 2. Construction du path (sans slash initial) ──────────────────
       const filename = `${Date.now()}-${uid()}.${ext}`;
       const path     = effectiveFolder ? `${effectiveFolder}/${filename}` : filename;
 
+      // ── 3. Logs de diagnostic ─────────────────────────────────────────
+      console.group("[MediaUploader] upload diagnostics");
+      console.log("bucket      :", BUCKET);
+      console.log("path        :", path);
+      console.log("mimeType    :", mimeType);
+      console.log("size (blob) :", uploadBlob.size, "bytes");
+      console.log("apiPath     :", apiPath ?? "(aucun — upload direct Supabase)");
+
+      // Vérification session Supabase (info diagnostic)
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData?.session;
+        console.log("supabase session :", session ? `user=${session.user.id} role=${session.user.role}` : "null (anon)");
+        if (!session && !apiPath) {
+          console.warn(
+            "⚠️  Pas de session Supabase + pas d'apiPath → l'upload va partir en rôle 'anon'.",
+            "Les policies RLS 'FOR authenticated' ne matcheront pas.",
+            "Passez apiPath='/api/admin/upload' pour contourner RLS via service_role.",
+          );
+        }
+      } catch {
+        console.log("supabase session : (impossible à lire)");
+      }
+      console.groupEnd();
+
       setProgress(55);
 
-      console.log(`[MediaUploader] uploading to ${BUCKET}/${path} (${mimeType})`);
+      // ── 4a. Upload via route API serveur (bypass RLS) ──────────────────
+      if (apiPath) {
+        const fd = new FormData();
+        fd.append("file",   new File([uploadBlob], filename, { type: mimeType }));
+        fd.append("bucket", BUCKET);
+        fd.append("path",   path);
 
-      const { error: storageError } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, uploadBlob, {
-          contentType:  mimeType,
-          cacheControl: "3600",
-          upsert:       true,    // évite l'erreur 409 si collision de nom (rare)
+        const res = await fetch(apiPath, {
+          method:  "POST",
+          headers: { "x-djama-admin": "ok" },
+          body:    fd,
         });
 
-      if (storageError) {
-        console.error("[MediaUploader] storageError:", storageError);
-        throw storageError;
+        setProgress(90);
+
+        const json = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+
+        if (!res.ok) {
+          console.error("[MediaUploader] API upload error:", json);
+          const msg = typeof json?.error === "string" ? json.error : `Erreur serveur (${res.status})`;
+          throw new Error(msg);
+        }
+
+        const publicUrl: string = json.url;
+        console.log("[MediaUploader] API upload success →", publicUrl);
+        onUrlChange(publicUrl);
+
+      // ── 4b. Upload direct Supabase (si pas d'apiPath) ──────────────────
+      } else {
+        const { error: storageError } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, uploadBlob, {
+            contentType:  mimeType,
+            cacheControl: "3600",
+            upsert:       true,
+          });
+
+        if (storageError) {
+          console.error("[MediaUploader] storageError:", JSON.stringify(storageError));
+          throw storageError;
+        }
+
+        setProgress(90);
+
+        const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+        const publicUrl = urlData.publicUrl;
+        console.log("[MediaUploader] direct upload success →", publicUrl);
+        onUrlChange(publicUrl);
       }
 
-      setProgress(90);
-
-      const { data: urlData } = supabase.storage
-        .from(BUCKET)
-        .getPublicUrl(path);
-
-      const publicUrl = urlData.publicUrl;
-      console.log(`[MediaUploader] success:`, publicUrl);
-
-      onUrlChange(publicUrl);
+      // ── 5. Succès ─────────────────────────────────────────────────────
       setProgress(100);
       setSuccess(true);
-
-      // Reset après 2,5 s (assez long pour être vu sur mobile)
-      setTimeout(() => {
-        setProgress(0);
-        setSuccess(false);
-      }, 2500);
+      setTimeout(() => { setProgress(0); setSuccess(false); }, 2500);
 
     } catch (err) {
-      console.error("[MediaUploader] upload error:", err);
-      setUploadErr(formatStorageError(err, BUCKET));
+      console.error("[MediaUploader] upload error (final catch):", err);
+      setUploadErr(
+        err instanceof Error
+          ? (err.message.length > 10 ? err.message : formatStorageError(err, BUCKET))
+          : formatStorageError(err, BUCKET),
+      );
     } finally {
       setUploading(false);
     }
@@ -314,7 +363,7 @@ export function MediaUploader({
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) uploadFile(file);
-    e.target.value = ""; // permet re-sélection du même fichier
+    e.target.value = "";
   }
 
   function clearUrl() {
@@ -364,7 +413,6 @@ export function MediaUploader({
       {tab === "upload" && (
         <div className="space-y-2.5">
 
-          {/* Zone drag & drop / tap */}
           <div
             onDragOver={e => { e.preventDefault(); if (!uploading) setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
@@ -385,7 +433,7 @@ export function MediaUploader({
                     : "border-white/[0.09] bg-white/[0.02] hover:border-white/[0.2] hover:bg-white/[0.04]",
             ].join(" ")}
           >
-            {/* ── État : upload en cours ── */}
+            {/* Upload en cours */}
             {uploading && (
               <>
                 <Loader2 size={22} className="animate-spin text-[#c9a55a]" />
@@ -401,7 +449,7 @@ export function MediaUploader({
               </>
             )}
 
-            {/* ── État : succès ── */}
+            {/* Succès */}
             {!uploading && success && (
               <>
                 <CheckCircle2 size={24} className="text-[#4ade80]" />
@@ -410,7 +458,7 @@ export function MediaUploader({
               </>
             )}
 
-            {/* ── État : idle (prompt) ── */}
+            {/* Idle */}
             {!uploading && !success && (
               <>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05]">
@@ -441,7 +489,6 @@ export function MediaUploader({
             )}
           </div>
 
-          {/* Input fichier caché — capture="environment" aide sur mobile */}
           <input
             ref={inputRef}
             type="file"
@@ -450,7 +497,7 @@ export function MediaUploader({
             onChange={handleFileInput}
           />
 
-          {/* ── Message d'erreur contextuel ── */}
+          {/* Erreur contextuelle */}
           {uploadErr && (
             <div className="flex items-start gap-2 rounded-xl border border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.08)] px-3 py-3">
               <AlertCircle size={14} className="mt-0.5 shrink-0 text-[#f87171]" />
@@ -479,13 +526,13 @@ export function MediaUploader({
           placeholder={
             isImage
               ? "https://… (jpg, png, webp, svg)"
-              : "https://youtube.com/watch?v=… · https://vimeo.com/… · ou lien direct .mp4"
+              : "https://youtube.com/… · https://vimeo.com/… · ou lien direct .mp4"
           }
           className="w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-[0.84rem] text-white/80 placeholder:text-white/20 outline-none transition-colors focus:border-[rgba(201,165,90,0.4)]"
         />
       )}
 
-      {/* ── Aperçu de l'URL courante ─────────────────────────────────────── */}
+      {/* ── Aperçu ───────────────────────────────────────────────────────── */}
       {hasUrl && (
         <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2.5">
           {isImage ? (

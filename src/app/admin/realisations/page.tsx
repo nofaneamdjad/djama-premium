@@ -382,6 +382,7 @@ export default function AdminRealisations() {
                 <MediaUploader
                   type="image"
                   folder="images"
+                  apiPath="/api/admin/upload"
                   label="Image du projet"
                   currentUrl={form.image_url}
                   onUrlChange={url => setForm(f => ({ ...f, image_url: url }))}
@@ -393,6 +394,7 @@ export default function AdminRealisations() {
                   <MediaUploader
                     type="video"
                     folder="videos"
+                    apiPath="/api/admin/upload"
                     label="Vidéo du projet (YouTube · Vimeo · MP4)"
                     currentUrl={form.video_url}
                     onUrlChange={url => setForm(f => ({ ...f, video_url: url }))}
@@ -400,6 +402,7 @@ export default function AdminRealisations() {
                   <MediaUploader
                     type="image"
                     folder="thumbnails"
+                    apiPath="/api/admin/upload"
                     label="Miniature / thumbnail (optionnel)"
                     currentUrl={form.thumbnail_url}
                     onUrlChange={url => setForm(f => ({ ...f, thumbnail_url: url }))}

@@ -338,6 +338,7 @@ export default function AdminPartenaires() {
               <MediaUploader
                 type="image"
                 folder="images"
+                apiPath="/api/admin/upload"
                 label="Logo du partenaire *"
                 currentUrl={form.logo_url}
                 onUrlChange={url => setForm(f => ({ ...f, logo_url: url }))}

@@ -194,6 +194,7 @@ export default function AdminSettings() {
               type="image"
               bucket="logos"
               folder=""
+              apiPath="/api/admin/upload"
               label="Logo (PNG, SVG, WebP · fond transparent recommandé · max 5 MB)"
               currentUrl={form.logo_url}
               onUrlChange={url => set("logo_url", url)}
