@@ -32,7 +32,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { supabase } from "@/lib/supabase";
 import type { PartnerLogoRow } from "@/types/db";
 
 /* ─── Géométrie ─────────────────────────────────────────────────────
@@ -41,14 +40,29 @@ import type { PartnerLogoRow } from "@/types/db";
    → -50% = N×TILE_UNIT : boucle mathématiquement sans coupure.
 ──────────────────────────────────────────────────────────────────── */
 const TILE_W    = 192;
-const TILE_GAP  = 16;                  // ← serré : densité visuelle forte
+const TILE_GAP  = 16;
 const TILE_UNIT = TILE_W + TILE_GAP;   // 208 px
 const TILE_H    = 80;
-const FILL_MIN  = 8;
+
+/*
+ * fillTrack — garantit que le segment est toujours plus large que l'écran.
+ *
+ * Logique :
+ *   Le ticker affiche track×2 tiles ; l'animation déplace -50% → 1 segment.
+ *   Pour ne jamais voir de vide, 1 segment doit couvrir ≥ la largeur max
+ *   possible (2600 px → couvre 4K 2560 px avec marge).
+ *
+ *   Exemples :
+ *     1 logo  → 13 copies × 208 px = 2704 px/segment  ✓
+ *     3 logos →  5 copies × 3 × 208 px = 3120 px      ✓
+ *     10 logos → 3 copies × 10 × 208 px = 6240 px     ✓ (oversize, inoffensif)
+ */
+const MIN_SEGMENT_PX = 2600;
 
 function fillTrack(arr: PartnerLogoRow[]): PartnerLogoRow[] {
   if (!arr.length) return arr;
-  const copies = Math.max(1, Math.ceil(FILL_MIN / arr.length));
+  const tilesNeeded = Math.ceil(MIN_SEGMENT_PX / TILE_UNIT);
+  const copies = Math.max(1, Math.ceil(tilesNeeded / arr.length));
   return Array.from({ length: copies }, () => arr).flat();
 }
 
@@ -214,15 +228,19 @@ export default function PartnerLogosSection() {
   useEffect(() => {
     if (loadRef.current) return;
     loadRef.current = true;
-    supabase
-      .from("partner_logos")
-      .select("*")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true })
-      .then(({ data }) => {
-        setLogos((data ?? []) as PartnerLogoRow[]);
+    /*
+     * Fetch via route serveur /api/partenaires :
+     *   → utilise createSupabaseAdmin() (service_role key, bypass RLS)
+     *   → garantit l'accès même si des policies RLS sont actives sur la table
+     *   → le client anon direct retournerait [] silencieusement si RLS bloque
+     */
+    fetch("/api/partenaires")
+      .then(r => (r.ok ? r.json() : []))
+      .then((data: PartnerLogoRow[]) => {
+        setLogos(Array.isArray(data) ? data : []);
         setReady(true);
-      });
+      })
+      .catch(() => setReady(true));
   }, []);
 
   if (ready && logos.length === 0) return null;
