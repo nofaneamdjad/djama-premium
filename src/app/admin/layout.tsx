@@ -52,9 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   )?.label ?? "Admin";
 
   return (
-    /* data-theme="dark" — force le thème nuit sur toute l'interface admin,
-       indépendamment du thème choisi par l'utilisateur public. */
-    <div data-theme="dark" className="flex h-screen overflow-hidden bg-[#09090b] text-white">
+    <div className="flex h-screen overflow-hidden bg-[#09090b] text-white">
 
       {/* Mobile overlay */}
       {open && (
