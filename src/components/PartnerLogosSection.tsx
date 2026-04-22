@@ -126,6 +126,12 @@ function LogoTile({ logo, index }: { logo: PartnerLogoRow; index: number }) {
           "transition-opacity duration-[300ms] ease-out",
         ].join(" ")}
         style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.10))" }}
+        onError={e => {
+          /* Image inaccessible → tile invisible mais la place reste (pas de saut) */
+          const img = e.currentTarget;
+          img.style.opacity = "0";
+          img.style.pointerEvents = "none";
+        }}
       />
     </div>
   );
@@ -234,13 +240,23 @@ export default function PartnerLogosSection() {
      *   → garantit l'accès même si des policies RLS sont actives sur la table
      *   → le client anon direct retournerait [] silencieusement si RLS bloque
      */
-    fetch("/api/partenaires")
+    fetch("/api/partenaires", { cache: "no-store" })
       .then(r => (r.ok ? r.json() : []))
       .then((data: PartnerLogoRow[]) => {
-        setLogos(Array.isArray(data) ? data : []);
+        const valid = Array.isArray(data)
+          ? data.filter(l => l.logo_url && l.logo_url.trim() !== "")
+          : [];
+        if (process.env.NODE_ENV === "development") {
+          console.log(`[PartnerLogosSection] ${valid.length} logo(s) chargés :`,
+            valid.map(l => l.name).join(", "));
+        }
+        setLogos(valid);
         setReady(true);
       })
-      .catch(() => setReady(true));
+      .catch(err => {
+        console.error("[PartnerLogosSection] fetch error:", err);
+        setReady(true);
+      });
   }, []);
 
   if (ready && logos.length === 0) return null;
