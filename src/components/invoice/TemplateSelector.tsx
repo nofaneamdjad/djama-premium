@@ -1,21 +1,17 @@
 "use client";
 /**
- * TemplateSelector — Sélecteur de template avec thumbnails live.
+ * TemplateSelector — Sélecteur de template premium.
  *
- * Affiche 5 cartes cliquables, chacune contenant un aperçu miniature
- * du template rendu avec les vraies données ou des données de démo.
- *
- * Props :
- *   value      Template actuellement sélectionné
- *   onChange   Callback quand l'utilisateur change de template
- *   data       Données à utiliser dans les thumbnails (optionnel — démo si absent)
- *
- * Usage :
- *   <TemplateSelector value={form.template} onChange={v => setForm(f => ({...f, template: v}))} />
+ * - Thumbnails A4 live avec ScaledA4 (ResizeObserver) + LazyThumbnail (IntersectionObserver)
+ * - Cartes Framer Motion : hover scale, AnimatePresence check badge
+ * - Badges par template (Populaire, Clean, Corporate…)
+ * - Bouton "Aperçu" → PreviewModal plein écran avec navigation entre templates
+ * - Mobile : scroll horizontal, ~2.5 cartes visibles
  */
 
-import { useState } from "react";
-import { Check, Eye, X } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
 import type { TemplateType }  from "@/lib/pdf/types";
 import { TEMPLATE_INFO }      from "@/lib/pdf/pdfThemes";
 import { InvoiceTemplate }    from "./InvoiceTemplate";
@@ -29,151 +25,409 @@ export interface TemplateSelectorProps {
   data?:    PreviewData;
 }
 
-// ── Thumbnail miniature (rendu dans une carte) ────────────────────────────────
+// ── ScaledA4 — adapte un rendu 595 × 842 px à la largeur du container ────────
 
-function TemplateThumbnail({ type, data }: { type: TemplateType; data: PreviewData }) {
+function ScaledA4({ children }: { children: React.ReactNode }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.2);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      const w = entries[0].contentRect.width;
+      if (w > 0) setScale(w / 595);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    // Container A4 simulé à l'échelle (595px → ~120px de large)
-    <div className="w-full overflow-hidden rounded-lg border border-white/[0.08]" style={{ aspectRatio: "595/842" }}>
+    <div ref={containerRef} className="w-full overflow-hidden" style={{ aspectRatio: "595/842" }}>
       <div
         style={{
-          width:     595,
-          height:    842,
-          transform: "scale(0.202)",
+          width:           595,
+          height:          842,
+          transform:       `scale(${scale})`,
           transformOrigin: "top left",
+          pointerEvents:   "none",
+          userSelect:      "none",
         }}
       >
-        <InvoiceTemplate type={type} data={data} />
+        {children}
       </div>
     </div>
   );
 }
 
-// ── Preview plein écran ───────────────────────────────────────────────────────
+// ── LazyThumbnail — ne rend qu'une fois la carte dans le viewport ─────────────
 
-function FullPreviewModal({
-  type,
-  data,
-  onClose,
-}: {
-  type:    TemplateType;
-  data:    PreviewData;
-  onClose: () => void;
-}) {
-  const info = TEMPLATE_INFO.find(t => t.id === type)!;
+function LazyThumbnail({ type, data }: { type: TemplateType; data: PreviewData }) {
+  const ref     = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+  const headerColor = TEMPLATE_INFO.find(t => t.id === type)?.headerColor ?? "#1a1a1a";
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setReady(true); io.disconnect(); } },
+      { threshold: 0.05 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
-    <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+    <div ref={ref} className="w-full" style={{ aspectRatio: "595/842" }}>
+      {ready ? (
+        <ScaledA4>
+          <InvoiceTemplate type={type} data={data} />
+        </ScaledA4>
+      ) : (
+        /* Skeleton coloré : simule la couleur du header du template */
+        <div
+          className="w-full h-full rounded-lg"
+          style={{ background: `linear-gradient(160deg, ${headerColor} 0%, ${headerColor}99 35%, #1a1a22 100%)` }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── PreviewModal — plein écran, navigation entre templates ────────────────────
+
+function PreviewModal({
+  initial,
+  data,
+  selected,
+  onSelect,
+  onClose,
+}: {
+  initial:  TemplateType;
+  data:     PreviewData;
+  selected: TemplateType;
+  onSelect: (t: TemplateType) => void;
+  onClose:  () => void;
+}) {
+  const [active, setActive] = useState<TemplateType>(initial);
+  const info        = TEMPLATE_INFO.find(t => t.id === active)!;
+  const activeIndex = TEMPLATE_INFO.findIndex(t => t.id === active);
+
+  const prev = () => setActive(TEMPLATE_INFO[(activeIndex - 1 + TEMPLATE_INFO.length) % TEMPLATE_INFO.length].id);
+  const next = () => setActive(TEMPLATE_INFO[(activeIndex + 1) % TEMPLATE_INFO.length].id);
+
+  /* Escape pour fermer */
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+
+  const isSelected = selected === active;
+
+  return (
+    <motion.div
+      key="overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.84)", backdropFilter: "blur(10px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-3xl border border-white/[0.1] bg-[#0f0f12] shadow-2xl overflow-hidden">
-        {/* Barre */}
-        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-5 py-3.5">
-          <div>
-            <p className="text-[0.88rem] font-black text-white">{info.label}</p>
-            <p className="text-[0.7rem] text-white/35">{info.description}</p>
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0, y: 16 }}
+        animate={{ scale: 1,    opacity: 1, y: 0  }}
+        exit={{    scale: 0.94, opacity: 0, y: 16 }}
+        transition={{ type: "spring", stiffness: 380, damping: 32 }}
+        className="relative flex max-h-[92vh] w-full max-w-lg flex-col rounded-3xl border border-white/[0.1] bg-[#0c0c10] shadow-[0_32px_80px_rgba(0,0,0,0.8)] overflow-hidden"
+      >
+        {/* ─── Header ─── */}
+        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-5 py-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-[0.9rem] font-black text-white">{info.label}</p>
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-[0.59rem] font-bold"
+                style={{ color: info.badge.textColor, background: info.badge.bgColor }}
+              >
+                {info.badge.label}
+              </span>
+            </div>
+            <p className="mt-0.5 truncate text-[0.67rem] text-white/35">{info.description}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-white/30 hover:text-white/70 transition-colors"
+            className="ml-4 shrink-0 rounded-xl border border-white/[0.07] p-2 text-white/30 transition-colors hover:border-white/[0.18] hover:text-white/70"
           >
-            <X size={17} />
+            <X size={14} />
           </button>
         </div>
 
-        {/* Preview scrollable */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="mx-auto max-w-xl overflow-hidden rounded-xl border border-white/[0.07] bg-white shadow-lg">
-            {/* Container A4 simulé à ~85% de largeur */}
-            <div style={{ width: 595, transformOrigin: "top left" }}>
-              <InvoiceTemplate type={type} data={data} />
-            </div>
+        {/* ─── Tabs ─── */}
+        <div className="flex shrink-0 gap-1 border-b border-white/[0.07] px-4 py-2.5 overflow-x-auto">
+          {TEMPLATE_INFO.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setActive(t.id)}
+              className={[
+                "shrink-0 rounded-full px-3 py-1 text-[0.65rem] font-bold transition-all duration-150",
+                active === t.id
+                  ? "bg-[#c9a55a] text-[#0f0f12]"
+                  : "text-white/40 hover:text-white/70 hover:bg-white/[0.05]",
+              ].join(" ")}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ─── Preview scrollable ─── */}
+        <div className="relative flex-1 overflow-y-auto p-5">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={active}
+              initial={{ opacity: 0, x: 14 }}
+              animate={{ opacity: 1, x: 0  }}
+              exit={{    opacity: 0, x: -14 }}
+              transition={{ duration: 0.16 }}
+              className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-white/[0.07] shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
+            >
+              <ScaledA4>
+                <InvoiceTemplate type={active} data={data} />
+              </ScaledA4>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Flèches de navigation */}
+          <button
+            onClick={prev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.1] bg-black/60 text-white/50 backdrop-blur-sm transition-all hover:bg-black/80 hover:text-white active:scale-95"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.1] bg-black/60 text-white/50 backdrop-blur-sm transition-all hover:bg-black/80 hover:text-white active:scale-95"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+
+        {/* ─── Footer ─── */}
+        <div className="flex shrink-0 items-center justify-between border-t border-white/[0.07] px-5 py-3.5">
+          {/* Dots */}
+          <div className="flex items-center gap-1.5">
+            {TEMPLATE_INFO.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setActive(t.id)}
+                className={[
+                  "rounded-full transition-all duration-200",
+                  active === t.id ? "w-5 h-1.5 bg-[#c9a55a]" : "w-1.5 h-1.5 bg-white/20 hover:bg-white/40",
+                ].join(" ")}
+              />
+            ))}
           </div>
+
+          {/* CTA */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { onSelect(active); onClose(); }}
+            className={[
+              "flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.73rem] font-bold transition-all duration-150",
+              isSelected
+                ? "bg-[#c9a55a]/15 text-[#c9a55a] cursor-default"
+                : "bg-[#c9a55a] text-[#0f0f12] hover:bg-[#d4af6a] shadow-[0_4px_16px_rgba(201,165,90,0.3)]",
+            ].join(" ")}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {isSelected ? (
+                <motion.span key="sel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5">
+                  <Check size={11} strokeWidth={3} /> Sélectionné
+                </motion.span>
+              ) : (
+                <motion.span key="use" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  Utiliser ce modèle
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── PreviewCard — carte individuelle animée ───────────────────────────────────
+
+interface PreviewCardProps {
+  info:      (typeof TEMPLATE_INFO)[number];
+  selected:  boolean;
+  data:      PreviewData;
+  onSelect:  () => void;
+  onPreview: () => void;
+}
+
+function PreviewCard({ info, selected, data, onSelect, onPreview }: PreviewCardProps) {
+  return (
+    <motion.div
+      layout
+      whileHover={{ scale: 1.028, y: -4 }}
+      whileTap={{   scale: 0.975 }}
+      transition={{ type: "spring", stiffness: 420, damping: 28 }}
+      onClick={onSelect}
+      className={[
+        "group relative cursor-pointer rounded-2xl border-2 bg-[#0f0f12] transition-colors duration-200",
+        selected
+          ? "border-[#c9a55a] shadow-[0_0_0_1px_rgba(201,165,90,0.2),0_8px_28px_rgba(201,165,90,0.1)]"
+          : "border-white/[0.07] hover:border-white/[0.2] shadow-[0_2px_10px_rgba(0,0,0,0.45)]",
+      ].join(" ")}
+    >
+      {/* Badge top-left */}
+      <div className="absolute -top-2 left-2 z-10">
+        <span
+          className="rounded-full px-2 py-0.5 text-[0.52rem] font-bold leading-none whitespace-nowrap"
+          style={{
+            color:      info.badge.textColor,
+            background: info.badge.bgColor,
+            border:     `1px solid ${info.badge.textColor}22`,
+          }}
+        >
+          {info.badge.label}
+        </span>
+      </div>
+
+      {/* Check badge top-right */}
+      <AnimatePresence>
+        {selected && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{    scale: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 500, damping: 26 }}
+            className="absolute -top-2 -right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[#c9a55a] shadow-[0_2px_8px_rgba(201,165,90,0.55)]"
+          >
+            <Check size={9} className="text-[#0f0f12]" strokeWidth={3.5} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Thumbnail */}
+      <div className="p-1.5 pb-0">
+        <div
+          className={[
+            "overflow-hidden rounded-xl border transition-colors duration-200",
+            selected ? "border-[#c9a55a]/20" : "border-white/[0.06]",
+          ].join(" ")}
+        >
+          <LazyThumbnail type={info.id} data={data} />
         </div>
       </div>
-    </div>
+
+      {/* Label + bouton aperçu */}
+      <div className="flex items-center justify-between px-2 pb-2 pt-1.5">
+        <p
+          className={[
+            "text-[0.62rem] font-bold truncate transition-colors duration-150",
+            selected ? "text-[#c9a55a]" : "text-white/50 group-hover:text-white/80",
+          ].join(" ")}
+        >
+          {info.label}
+        </p>
+        <button
+          type="button"
+          onClick={e => { e.stopPropagation(); onPreview(); }}
+          className="flex items-center gap-0.5 rounded-full border border-white/[0.09] bg-white/[0.04] px-1.5 py-0.5 text-[0.5rem] font-bold text-white/35 transition-all hover:bg-white/[0.1] hover:text-white/70"
+        >
+          <Eye size={7} /> Aperçu
+        </button>
+      </div>
+    </motion.div>
   );
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export function TemplateSelector({ value, onChange, data }: TemplateSelectorProps) {
-  const previewData = data ?? DEMO_DATA;
-  const [fullPreview, setFullPreview] = useState<TemplateType | null>(null);
+  const previewData  = data ?? DEMO_DATA;
+  const [modalTpl, setModalTpl] = useState<TemplateType | null>(null);
+  const currentInfo  = TEMPLATE_INFO.find(t => t.id === value);
 
   return (
     <>
-      <div className="space-y-2.5">
+      <div className="space-y-3">
+        {/* Label + badge actif */}
         <div className="flex items-center justify-between">
           <label className="text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">
             Modèle de document
           </label>
-          <span className="text-[0.68rem] text-white/20">
-            {TEMPLATE_INFO.find(t => t.id === value)?.label}
-          </span>
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={value}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y:  0 }}
+              exit={{    opacity: 0, y:  4 }}
+              transition={{ duration: 0.15 }}
+              className="rounded-full px-2 py-0.5 text-[0.59rem] font-bold"
+              style={{
+                color:      currentInfo?.badge.textColor,
+                background: currentInfo?.badge.bgColor,
+              }}
+            >
+              {currentInfo?.badge.label}
+            </motion.span>
+          </AnimatePresence>
         </div>
 
-        <div className="grid grid-cols-5 gap-2.5">
-          {TEMPLATE_INFO.map(info => {
-            const selected = value === info.id;
-            return (
-              <div
-                key={info.id}
-                className={[
-                  "group relative cursor-pointer rounded-2xl border-2 transition-all duration-200",
-                  selected
-                    ? "border-[#c9a55a] shadow-[0_0_0_1px_rgba(201,165,90,0.3)]"
-                    : "border-white/[0.07] hover:border-white/[0.2]",
-                ].join(" ")}
-                onClick={() => onChange(info.id)}
-              >
-                {/* Thumbnail */}
-                <div className="p-1.5">
-                  <TemplateThumbnail type={info.id} data={previewData} />
-                </div>
-
-                {/* Label */}
-                <div className="pb-2 px-1.5 text-center">
-                  <p className={`text-[0.64rem] font-bold truncate ${selected ? "text-[#c9a55a]" : "text-white/50 group-hover:text-white/75"}`}>
-                    {info.label}
-                  </p>
-                </div>
-
-                {/* Badge sélectionné */}
-                {selected && (
-                  <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#c9a55a]">
-                    <Check size={10} className="text-[#0f0f12]" strokeWidth={3} />
-                  </div>
-                )}
-
-                {/* Bouton aperçu */}
-                <button
-                  type="button"
-                  onClick={e => { e.stopPropagation(); setFullPreview(info.id); }}
-                  className="absolute bottom-7 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full border border-white/[0.12] bg-black/60 px-2 py-0.5 text-[0.56rem] font-bold text-white/60 opacity-0 backdrop-blur-sm transition-all duration-150 hover:bg-black/80 hover:text-white group-hover:opacity-100"
-                >
-                  <Eye size={8} /> Aperçu
-                </button>
-              </div>
-            );
-          })}
+        {/*
+          Mobile : flex scroll horizontal, ~2.5 cartes visibles.
+          Desktop (sm+) : grid 5 colonnes.
+        */}
+        <div className="flex gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-5 sm:overflow-x-visible sm:pb-0">
+          {TEMPLATE_INFO.map(info => (
+            <div key={info.id} className="w-[calc(38vw-8px)] min-w-[88px] shrink-0 sm:w-auto sm:min-w-0">
+              <PreviewCard
+                info={info}
+                selected={value === info.id}
+                data={previewData}
+                onSelect={() => onChange(info.id)}
+                onPreview={() => setModalTpl(info.id)}
+              />
+            </div>
+          ))}
         </div>
 
-        {/* Description du template sélectionné */}
-        <p className="text-[0.67rem] text-white/22 italic">
-          {TEMPLATE_INFO.find(t => t.id === value)?.description}
-        </p>
+        {/* Description animée du template sélectionné */}
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={value}
+            initial={{ opacity: 0, y: 5  }}
+            animate={{ opacity: 1, y: 0  }}
+            exit={{    opacity: 0, y: -5 }}
+            transition={{ duration: 0.17 }}
+            className="text-[0.67rem] italic text-white/22"
+          >
+            {currentInfo?.description}
+          </motion.p>
+        </AnimatePresence>
       </div>
 
       {/* Modal plein écran */}
-      {fullPreview && (
-        <FullPreviewModal
-          type={fullPreview}
-          data={previewData}
-          onClose={() => setFullPreview(null)}
-        />
-      )}
+      <AnimatePresence>
+        {modalTpl && (
+          <PreviewModal
+            key="modal"
+            initial={modalTpl}
+            data={previewData}
+            selected={value}
+            onSelect={onChange}
+            onClose={() => setModalTpl(null)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

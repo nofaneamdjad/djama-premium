@@ -210,49 +210,77 @@ export function getTheme(template: TemplateType): PdfTheme {
   return PDF_THEMES[template] ?? modernTheme;
 }
 
-// Métadonnées UI (label, description, couleurs preview)
+// ─── Métadonnées UI ───────────────────────────────────────────────────────────
+
+export interface TemplateBadge {
+  label:     string;
+  textColor: string;
+  bgColor:   string;
+}
+
 export interface TemplateInfo {
-  id:          TemplateType;
-  label:       string;
-  description: string;
-  previewBg:   string;   // CSS color for thumbnail bg
-  previewAccent: string; // CSS color for thumbnail accent
+  id:           TemplateType;
+  label:        string;
+  description:  string;
+  /** Couleur dominante du header (pour le placeholder skeleton) */
+  headerColor:  string;
+  badge:        TemplateBadge;
 }
 
 export const TEMPLATE_INFO: TemplateInfo[] = [
   {
-    id:            "modern",
-    label:         "Modern",
-    description:   "Header sombre, accents dorés",
-    previewBg:     "#0f0f12",
-    previewAccent: "#c9a55a",
+    id:          "modern",
+    label:       "Modern",
+    description: "Header sombre & accents dorés, le design signature DJAMA.",
+    headerColor: "#0f0f12",
+    badge: {
+      label:     "Populaire",
+      textColor: "#c9a55a",
+      bgColor:   "rgba(201,165,90,0.15)",
+    },
   },
   {
-    id:            "minimal",
-    label:         "Minimal",
-    description:   "Épuré, lignes fines, blanc",
-    previewBg:     "#ffffff",
-    previewAccent: "#0f0f12",
+    id:          "minimal",
+    label:       "Minimal",
+    description: "Tout blanc, lignes fines. Épuré et intemporel.",
+    headerColor: "#e8e8ec",
+    badge: {
+      label:     "Clean",
+      textColor: "#94a3b8",
+      bgColor:   "rgba(148,163,184,0.12)",
+    },
   },
   {
-    id:            "classic",
-    label:         "Classic",
-    description:   "Corporate bleu marine",
-    previewBg:     "#1a2e4f",
-    previewAccent: "#ffffff",
+    id:          "classic",
+    label:       "Classic",
+    description: "Bleu marine professionnel. Idéal pour le B2B formel.",
+    headerColor: "#1a2e4f",
+    badge: {
+      label:     "Corporate",
+      textColor: "#60a5fa",
+      bgColor:   "rgba(96,165,250,0.12)",
+    },
   },
   {
-    id:            "premium",
-    label:         "Premium",
-    description:   "Luxe sombre, typographie or",
-    previewBg:     "#0a0a0e",
-    previewAccent: "#c9a55a",
+    id:          "premium",
+    label:       "Premium",
+    description: "Fond sombre intégral, typographie or. Ultra-luxe.",
+    headerColor: "#0a0a0e",
+    badge: {
+      label:     "✦ Luxe",
+      textColor: "#e8cc94",
+      bgColor:   "rgba(232,204,148,0.14)",
+    },
   },
   {
-    id:            "colorful",
-    label:         "Colorful",
-    description:   "Indigo vif, design SaaS",
-    previewBg:     "#4f46e5",
-    previewAccent: "#ffffff",
+    id:          "colorful",
+    label:       "Colorful",
+    description: "Header indigo vif, design SaaS moderne.",
+    headerColor: "#4f46e5",
+    badge: {
+      label:     "Moderne",
+      textColor: "#a78bfa",
+      bgColor:   "rgba(167,139,250,0.14)",
+    },
   },
 ];
