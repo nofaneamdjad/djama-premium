@@ -9,6 +9,8 @@ import { Menu, X, ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import { useLanguage } from "@/lib/language-context";
 import { ShimmerText } from "@/components/ui/HoverText";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useTheme } from "@/components/ThemeProvider";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -16,6 +18,7 @@ export default function Navbar() {
   const data    = getSiteData();
   const { lang, setLang, dict } = useLanguage();
   const pathname = usePathname();
+  const { isDark } = useTheme();
 
   const NAV_LINKS = [
     { href: "/",              label: dict.nav.home       },
@@ -52,6 +55,23 @@ export default function Navbar() {
     return pathname?.startsWith(href);
   };
 
+  /* Filtre logo : blanc sur fond sombre, noir sur fond ivoire */
+  const logoFilterBase = isDark
+    ? "brightness(0) invert(1)"
+    : "brightness(0)";
+  const logoFilterHover = isDark
+    ? "brightness(0) invert(1) drop-shadow(0 0 14px rgba(201,165,90,0.5))"
+    : "brightness(0) drop-shadow(0 0 14px rgba(140,100,48,0.4))";
+  const logoFilterAnimate = isDark ? [
+    "brightness(0) invert(1)",
+    "brightness(0) invert(1) drop-shadow(0 0 22px rgba(201,165,90,0.65))",
+    "brightness(0) invert(1)",
+  ] : [
+    "brightness(0)",
+    "brightness(0) drop-shadow(0 0 22px rgba(140,100,48,0.55))",
+    "brightness(0)",
+  ];
+
   return (
     <>
       {/* ── Scroll progress bar ─────────────────────── */}
@@ -66,7 +86,7 @@ export default function Navbar() {
         transition={{ duration: 0.4, ease }}
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-[rgba(9,9,11,0.92)] backdrop-blur-2xl border-b border-white/[0.07] shadow-[0_1px_0_rgba(255,255,255,0.05),0_8px_32px_rgba(0,0,0,0.4)]"
+            ? "bg-[var(--nav-bg)] backdrop-blur-2xl border-b border-[var(--border-soft)] shadow-[var(--shadow-card)]"
             : "bg-transparent"
         }`}
       >
@@ -81,18 +101,12 @@ export default function Navbar() {
               style={{ display: "flex", alignItems: "center" }}
             >
               <motion.div
-                style={{ filter: "brightness(0) invert(1)" }}
-                animate={{
-                  filter: [
-                    "brightness(0) invert(1)",
-                    "brightness(0) invert(1) drop-shadow(0 0 22px rgba(201,165,90,0.65))",
-                    "brightness(0) invert(1)",
-                  ],
-                }}
+                style={{ filter: logoFilterBase }}
+                animate={{ filter: logoFilterAnimate }}
                 transition={{ duration: 1.6, delay: 0.9, ease: [0.4, 0, 0.2, 1], times: [0, 0.5, 1] }}
                 whileHover={{
                   scale: 1.06,
-                  filter: "brightness(0) invert(1) drop-shadow(0 0 14px rgba(201,165,90,0.5))",
+                  filter: logoFilterHover,
                   transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
                 }}
                 whileTap={{ scale: 0.95, transition: { duration: 0.12 } }}
@@ -103,8 +117,7 @@ export default function Navbar() {
                   width={220}
                   height={72}
                   priority
-                  className="h-14 md:h-[60px] w-auto object-contain"
-                  style={{ filter: "brightness(0) invert(1)" }}
+                  className="logo-nav h-14 md:h-[60px] w-auto object-contain"
                 />
               </motion.div>
             </motion.div>
@@ -124,7 +137,9 @@ export default function Navbar() {
                   <Link
                     href={href}
                     className={`group relative px-3.5 py-2 text-sm font-medium transition-colors duration-200 ${
-                      active ? "text-white" : "text-white/55 hover:text-white/90"
+                      active
+                        ? "text-[var(--text-primary)]"
+                        : "text-[var(--text-55)] hover:text-[var(--text-90)]"
                     }`}
                   >
                     <ShimmerText variant="white" className="font-medium">{label}</ShimmerText>
@@ -139,14 +154,15 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Lang toggle + CTA desktop */}
+          {/* Lang toggle + ThemeToggle + CTA desktop */}
           <motion.div
             initial={{ opacity: 0, x: 14 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
             className="hidden md:flex items-center gap-3"
           >
-            <div className="flex items-center gap-1 rounded-full border border-white/[0.09] bg-white/[0.04] p-1">
+            {/* Langue */}
+            <div className="flex items-center gap-1 rounded-full border border-[var(--border-base)] bg-[var(--bg-glass)] p-1">
               {(["fr", "en"] as const).map((l) => (
                 <button
                   key={l}
@@ -154,13 +170,16 @@ export default function Navbar() {
                   className={`rounded-full px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-widest transition-all duration-200 ${
                     lang === l
                       ? "bg-[#c9a55a] text-[#09090b] shadow-[0_1px_4px_rgba(201,165,90,0.4)]"
-                      : "text-white/35 hover:text-white/65"
+                      : "text-[var(--text-38)] hover:text-[var(--text-55)]"
                   }`}
                 >
                   {l}
                 </button>
               ))}
             </div>
+
+            {/* Thème */}
+            <ThemeToggle variant="default" />
 
             <Link href="/contact" className="btn-primary text-sm px-5 py-2.5">
               {dict.nav.freeQuote} <ArrowRight size={14} />
@@ -174,7 +193,7 @@ export default function Navbar() {
             transition={{ duration: 0.4, delay: 0.2 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex md:hidden items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.05] p-2.5 text-white/80 backdrop-blur-sm transition-colors hover:bg-white/[0.09] hover:text-white"
+            className="flex md:hidden items-center justify-center rounded-xl border border-[var(--border-base)] bg-[var(--bg-glass)] p-2.5 text-[var(--text-75)] backdrop-blur-sm transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             aria-label="Menu"
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -200,7 +219,7 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22 }}
-            className="fixed inset-0 z-40 bg-[rgba(9,9,11,0.97)] backdrop-blur-2xl md:hidden"
+            className="fixed inset-0 z-40 bg-[var(--nav-mobile)] backdrop-blur-2xl md:hidden"
           >
             <div className="h-[68px]" />
 
@@ -225,39 +244,45 @@ export default function Navbar() {
                       onClick={() => setMenuOpen(false)}
                       className={`flex items-center justify-between rounded-2xl px-5 py-3.5 text-xl font-extrabold transition-all duration-200 ${
                         active
-                          ? "bg-[rgba(201,165,90,0.08)] text-white border border-[rgba(201,165,90,0.2)]"
-                          : "text-white/65 hover:bg-white/[0.04] hover:text-white/90"
+                          ? "bg-[var(--accent-bg)] text-[var(--text-primary)] border border-[var(--accent-border)]"
+                          : "text-[var(--text-55)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-90)]"
                       }`}
                     >
                       <span>{label}</span>
-                      {active && <span className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />}
+                      {active && <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />}
                     </Link>
                   </motion.div>
                 );
               })}
 
-              {/* Lang toggle mobile */}
+              {/* Lang toggle + ThemeToggle mobile */}
               <motion.div
                 variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease } } }}
-                className="mt-2 px-5"
+                className="mt-2 px-5 flex items-center justify-between"
               >
-                <p className="mb-2.5 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-white/25">
-                  {dict.nav.language}
-                </p>
-                <div className="inline-flex items-center gap-1 rounded-full border border-white/[0.09] bg-white/[0.04] p-1">
-                  {(["fr", "en"] as const).map((l) => (
-                    <button
-                      key={l}
-                      onClick={() => setLang(l)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-widest transition-all duration-200 ${
-                        lang === l
-                          ? "bg-[#c9a55a] text-[#09090b] shadow-[0_1px_4px_rgba(201,165,90,0.4)]"
-                          : "text-white/40 hover:text-white/70"
-                      }`}
-                    >
-                      {l === "fr" ? "🇫🇷 FR" : "🇬🇧 EN"}
-                    </button>
-                  ))}
+                <div>
+                  <p className="mb-2.5 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-[var(--text-38)]">
+                    {dict.nav.language}
+                  </p>
+                  <div className="inline-flex items-center gap-1 rounded-full border border-[var(--border-base)] bg-[var(--bg-glass)] p-1">
+                    {(["fr", "en"] as const).map((l) => (
+                      <button
+                        key={l}
+                        onClick={() => setLang(l)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-widest transition-all duration-200 ${
+                          lang === l
+                            ? "bg-[#c9a55a] text-[#09090b] shadow-[0_1px_4px_rgba(201,165,90,0.4)]"
+                            : "text-[var(--text-38)] hover:text-[var(--text-55)]"
+                        }`}
+                      >
+                        {l === "fr" ? "🇫🇷 FR" : "🇬🇧 EN"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <p className="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-[var(--text-38)]">Thème</p>
+                  <ThemeToggle variant="pill" />
                 </div>
               </motion.div>
 
@@ -266,11 +291,11 @@ export default function Navbar() {
                 variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease } } }}
                 className="mt-4 px-5"
               >
-                <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-white/25">Contact</p>
+                <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-[var(--text-38)]">Contact</p>
                 <div className="flex flex-col gap-2">
                   <a
                     href={`mailto:${data.contact.email}`}
-                    className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/55 transition-all duration-200 hover:border-[rgba(201,165,90,0.25)] hover:bg-[rgba(201,165,90,0.05)] hover:text-white/90"
+                    className="flex items-center gap-3 rounded-xl border border-[var(--border-base)] bg-[var(--bg-glass)] px-4 py-3 text-sm font-semibold text-[var(--text-55)] transition-all duration-200 hover:border-[var(--accent-border)] hover:bg-[var(--accent-bg)] hover:text-[var(--text-90)]"
                   >
                     <Mail size={14} className="text-[#c9a55a] shrink-0" />
                     {data.contact.email}
@@ -278,14 +303,14 @@ export default function Navbar() {
                   <a
                     href={`https://wa.me/${data.contact.whatsapp.replace(/[^0-9]/g, "")}`}
                     target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/55 transition-all duration-200 hover:border-[rgba(37,211,102,0.25)] hover:bg-[rgba(37,211,102,0.05)] hover:text-white/90"
+                    className="flex items-center gap-3 rounded-xl border border-[var(--border-base)] bg-[var(--bg-glass)] px-4 py-3 text-sm font-semibold text-[var(--text-55)] transition-all duration-200 hover:border-[var(--glow-green)] hover:bg-[rgba(37,211,102,0.05)] hover:text-[var(--text-90)]"
                   >
                     <MessageCircle size={14} className="text-[#25d366] shrink-0" />
                     WhatsApp — {data.contact.whatsapp}
                   </a>
                   <a
                     href={`tel:${data.contact.phone.replace(/\s/g, "")}`}
-                    className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/55 transition-all duration-200 hover:border-[rgba(96,165,250,0.25)] hover:bg-[rgba(96,165,250,0.05)] hover:text-white/90"
+                    className="flex items-center gap-3 rounded-xl border border-[var(--border-base)] bg-[var(--bg-glass)] px-4 py-3 text-sm font-semibold text-[var(--text-55)] transition-all duration-200 hover:border-[var(--glow-blue)] hover:bg-[rgba(96,165,250,0.05)] hover:text-[var(--text-90)]"
                   >
                     <Phone size={14} className="text-[#60a5fa] shrink-0" />
                     {data.contact.phone}

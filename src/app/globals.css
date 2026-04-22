@@ -4,14 +4,17 @@
    DESIGN TOKENS — DJAMA PREMIUM (DARK ONLY)
    Source de vérité unique. Modifier ici = changer tout le site.
 ══════════════════════════════════════════════ */
-:root {
+/* ══════════════════════════════════════════════
+   THÈME NUIT (dark) — défaut DJAMA
+   Le thème jour est défini via [data-theme="light"]
+   plus bas dans ce fichier.
+══════════════════════════════════════════════ */
+:root,
+[data-theme="dark"] {
   /*
    * color-scheme: dark — signal principal aux navigateurs et WebViews.
-   * Désactive l'algorithme "Force Dark" d'Android WebView (Chrome 81+)
-   * utilisé par WhatsApp, Facebook, Instagram in-app browsers.
-   *
-   * forced-color-adjust: none — empêche Windows High Contrast / Forced
-   * Colors de remplacer les couleurs de la palette DJAMA.
+   * Désactive l'algorithme "Force Dark" d'Android WebView (Chrome 81+).
+   * forced-color-adjust: none — bloque Forced Colors / High Contrast.
    */
   color-scheme: dark;
   forced-color-adjust: none;
@@ -23,8 +26,17 @@
   --gold-400:  #c9a55a;
   --gold-500:  #b08d57;
   --gold-600:  #8c6d3f;
-  --gold-rgb:  176 141 87;       /* pour color-mix / oklch */
-  --gold-text: var(--gold-200);  /* texte or sur fond sombre */
+  --gold-rgb:  176 141 87;
+  --gold-text: var(--gold-200);
+
+  /* ── Accent (adaptatif selon thème) ── */
+  --accent:          #c9a55a;
+  --accent-hover:    #d4b06a;
+  --accent-muted:    #b08d57;
+  --accent-bg:       rgba(201,165,90,0.10);
+  --accent-border:   rgba(201,165,90,0.25);
+  --accent-glow:     rgba(201,165,90,0.22);
+  --accent-on:       #09090b;   /* texte sur fond accent */
 
   /* ── Radius ── */
   --radius-sm: 0.75rem;
@@ -33,18 +45,23 @@
   --radius-xl: 2.25rem;
 
   /* ── Fonds ── */
-  --bg-base:      #09090b;                  /* fond de page */
-  --bg-card:      #111113;                  /* cartes / sections */
-  --bg-card-2:    #18181b;                  /* fond alternatif */
-  --bg-card-3:    #1e1e22;                  /* fond profond */
-  --bg-glass:     rgba(255,255,255,.04);    /* glassmorphism */
-  --bg-overlay:   rgba(255,255,255,.045);   /* surbrillance subtile */
-  --bg-input:     rgba(255,255,255,.055);   /* fond des champs */
-  --bg-hover:     rgba(255,255,255,.065);   /* hover state */
-  --bg-alpha0:    rgba(9,9,11,0);           /* transparent (pour dégradés) */
+  --bg-base:      #09090b;
+  --bg-card:      #111113;
+  --bg-card-2:    #18181b;
+  --bg-card-3:    #1e1e22;
+  --bg-glass:     rgba(255,255,255,.04);
+  --bg-overlay:   rgba(255,255,255,.045);
+  --bg-input:     rgba(255,255,255,.055);
+  --bg-hover:     rgba(255,255,255,.065);
+  --bg-alpha0:    rgba(9,9,11,0);
+
+  /* ── Surface / composants ── */
+  --surface:       #0f0f12;
+  --surface-muted: #080a0f;
+  --surface-input: rgba(255,255,255,0.06);
 
   /* ── Texte ── */
-  --text-primary:  rgba(255,255,255,.92);   /* titres / texte principal */
+  --text-primary:  rgba(255,255,255,.92);
   --text-90:       rgba(255,255,255,.85);
   --text-75:       rgba(255,255,255,.72);
   --text-55:       rgba(255,255,255,.58);
@@ -60,10 +77,10 @@
   --nav-bg:     rgba(9,9,11,.92);
   --nav-mobile: rgba(9,9,11,.98);
 
-  /* ── Glows — maîtrisés, subtils ── */
-  --glow-gold:     rgba(176,141,87,.18);    /* halo or doux */
-  --glow-gold-hi:  rgba(176,141,87,.26);    /* halo or prononcé */
-  --glow-soft:     rgba(176,141,87,.10);    /* halo or très doux */
+  /* ── Glows ── */
+  --glow-gold:     rgba(176,141,87,.18);
+  --glow-gold-hi:  rgba(176,141,87,.26);
+  --glow-soft:     rgba(176,141,87,.10);
   --glow-blue:     rgba(96,165,250,.20);
   --glow-green:    rgba(37,211,102,.20);
 
@@ -77,18 +94,107 @@
   --grid-line:     rgba(255,255,255,.028);
   --dot-color:     rgba(255,255,255,.052);
   --divider-color: rgba(255,255,255,.068);
+
+  /* ── Ink (alias sémantique pour dark/light) ── */
+  --ink:           rgba(255,255,255,.92);
+  --ink-secondary: rgba(255,255,255,.60);
+  --ink-muted:     rgba(255,255,255,.38);
+  --ink-faint:     rgba(255,255,255,.18);
+}
+
+/* ══════════════════════════════════════════════
+   THÈME JOUR (light) — ivoire luxe premium
+   Activé par data-theme="light" sur <html>.
+══════════════════════════════════════════════ */
+[data-theme="light"] {
+  color-scheme: light;
+  forced-color-adjust: none;
+
+  /* ── Palette Or — plus foncée pour contraste AA sur fond clair ── */
+  --gold-100:  #f0e6cc;
+  --gold-200:  #c9a55a;
+  --gold-400:  #a07838;   /* AA: 4.8:1 sur --bg-base ivoire */
+  --gold-500:  #8a6430;
+  --gold-600:  #6e4e22;
+  --gold-text: #8a6430;
+
+  /* ── Accent adaptatif ── */
+  --accent:          #8a6430;   /* AA sur fond ivoire */
+  --accent-hover:    #9a7238;
+  --accent-muted:    #a07838;
+  --accent-bg:       rgba(140,100,48,0.09);
+  --accent-border:   rgba(140,100,48,0.22);
+  --accent-glow:     rgba(140,100,48,0.12);
+  --accent-on:       #ffffff;   /* texte sur fond accent */
+
+  /* ── Fonds ivoire ── */
+  --bg-base:      #f7f6f2;   /* ivoire chaud */
+  --bg-card:      #ffffff;   /* blanc pur */
+  --bg-card-2:    #f2f0eb;   /* crème */
+  --bg-card-3:    #e9e6dd;   /* beige */
+  --bg-glass:     rgba(0,0,0,0.032);
+  --bg-overlay:   rgba(0,0,0,0.038);
+  --bg-input:     rgba(0,0,0,0.05);
+  --bg-hover:     rgba(0,0,0,0.06);
+  --bg-alpha0:    rgba(247,246,242,0);
+
+  /* ── Surface ── */
+  --surface:       #f0ede6;
+  --surface-muted: #eae7de;
+  --surface-input: rgba(0,0,0,0.055);
+
+  /* ── Texte — noir profond ── */
+  --text-primary:  rgba(15,15,18,.92);
+  --text-90:       rgba(15,15,18,.82);
+  --text-75:       rgba(15,15,18,.68);
+  --text-55:       rgba(15,15,18,.52);
+  --text-38:       rgba(15,15,18,.36);
+  --text-22:       rgba(15,15,18,.20);
+
+  /* ── Bordures ── */
+  --border-strong: rgba(15,15,18,.14);
+  --border-base:   rgba(15,15,18,.09);
+  --border-soft:   rgba(15,15,18,.055);
+
+  /* ── Navigation ── */
+  --nav-bg:     rgba(247,246,242,.94);
+  --nav-mobile: rgba(247,246,242,.99);
+
+  /* ── Glows — plus subtils sur fond clair ── */
+  --glow-gold:     rgba(140,100,48,.10);
+  --glow-gold-hi:  rgba(140,100,48,.16);
+  --glow-soft:     rgba(140,100,48,.07);
+  --glow-blue:     rgba(37,99,235,.12);
+  --glow-green:    rgba(22,163,74,.12);
+
+  /* ── Ombres ── */
+  --shadow-sm:   0 1px 4px rgba(0,0,0,.08);
+  --shadow-card: 0 4px 20px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.05);
+  --shadow-lg:   0 16px 56px rgba(0,0,0,.14), 0 6px 20px rgba(0,0,0,.07);
+  --shadow-gold: 0 0 40px rgba(140,100,48,.16), 0 8px 24px rgba(140,100,48,.08);
+
+  /* ── Décorations ── */
+  --grid-line:     rgba(0,0,0,.048);
+  --dot-color:     rgba(0,0,0,.075);
+  --divider-color: rgba(0,0,0,.085);
+
+  /* ── Ink ── */
+  --ink:           rgba(15,15,18,.92);
+  --ink-secondary: rgba(15,15,18,.60);
+  --ink-muted:     rgba(15,15,18,.38);
+  --ink-faint:     rgba(15,15,18,.18);
 }
 
 /* ── BASE ──────────────────────────────────── */
 html {
   scroll-behavior: smooth;
   /*
-   * Renforce le signal dark-mode au niveau CSS.
-   * background-color solide = fallback avant que les CSS vars se chargent
-   * (évite le flash blanc / fond transparent dans les WebViews lents).
+   * background-color via token : s'adapte dark (#09090b) / light (#f7f6f2).
+   * color-scheme est piloté par les blocs [data-theme="dark/light"] ci-dessus.
+   * Le script no-flash dans layout.tsx pose data-theme avant que CSS charge,
+   * donc aucun flash visuel n'est possible.
    */
-  color-scheme: dark;
-  background-color: #09090b;
+  background-color: var(--bg-base);
 }
 
 body {
@@ -624,6 +730,110 @@ body {
 }
 
 /* ══════════════════════════════════════════════
+   THÈME JOUR — overrides composants
+   Classes qui embarquent des couleurs hardcodées
+   adaptées au dark (gold clair, blanc) → on les
+   redéfinit pour [data-theme="light"].
+══════════════════════════════════════════════ */
+
+/* Gradient texte or — version jour (contraste AA 4.8:1 sur ivoire) */
+[data-theme="light"] .text-gold {
+  background: linear-gradient(135deg, #a07838 0%, #8a6430 40%, #7a5826 70%, #6e4e22 100%);
+}
+[data-theme="light"] .text-gold-subtle { color: var(--gold-500); }
+
+/* Gradient animé or — version jour */
+[data-theme="light"] .text-gradient-animate {
+  background: linear-gradient(270deg, #a07838, #8a6430, #7a5826, #8a6430, #a07838);
+  background-size: 300% auto;
+}
+
+/* Shimmer gold — tons plus foncés sur fond ivoire */
+[data-theme="light"] .shimmer-gold {
+  background-image: linear-gradient(
+    90deg,
+    currentColor 0%,
+    currentColor 35%,
+    #8a6430 46%,
+    #a07838 50%,
+    #8a6430 54%,
+    currentColor 65%,
+    currentColor 100%
+  );
+}
+
+/* Shimmer white → shimmer dark sur fond ivoire */
+[data-theme="light"] .shimmer-white {
+  background-image: linear-gradient(
+    90deg,
+    currentColor 0%,
+    currentColor 35%,
+    rgba(15,15,18,.90) 46%,
+    rgba(15,15,18,1)   50%,
+    rgba(15,15,18,.90) 54%,
+    currentColor 65%,
+    currentColor 100%
+  );
+}
+
+/* Hover glow gold — adapté sur fond clair */
+[data-theme="light"] .hover-glow-gold:hover {
+  text-shadow: 0 0 18px rgba(140,100,48,.42), 0 0 36px rgba(140,100,48,.20);
+}
+
+/* Underline draw — or foncé */
+[data-theme="light"] .underline-draw::after { background: #8a6430; }
+
+/* Gradient border */
+[data-theme="light"] .gradient-border::before {
+  background: linear-gradient(135deg, rgba(140,100,48,.42), rgba(140,100,48,.10), rgba(99,102,241,.20));
+}
+
+/* Card premium hover */
+[data-theme="light"] .card-premium:hover { border-color: rgba(140,100,48,.30); }
+
+/* Badge gold */
+[data-theme="light"] .badge-gold-dark,
+[data-theme="light"] .badge-gold-light {
+  background:    rgba(140,100,48,.10);
+  border-color:  rgba(140,100,48,.22);
+  color:         var(--gold-text);
+}
+
+/* Divider gold */
+[data-theme="light"] .divider-gold {
+  background: linear-gradient(90deg, transparent, rgba(140,100,48,.38), transparent);
+}
+
+/* Glass cards — fond blanc translucide sur fond ivoire */
+[data-theme="light"] .glass-card {
+  background:   rgba(255,255,255,.72);
+  border-color: rgba(15,15,18,.08);
+}
+[data-theme="light"] .glass-card-light {
+  background:   rgba(255,255,255,.92);
+  border-color: rgba(15,15,18,.09);
+}
+
+/* Sélection texte */
+[data-theme="light"] ::selection {
+  background: rgba(140,100,48,.18);
+  color:      rgba(15,15,18,.96);
+}
+
+/* Scrollbar */
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(15,15,18,.14); }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(140,100,48,.38); }
+
+/* Focus ring */
+[data-theme="light"] :focus-visible { outline-color: rgba(140,100,48,.55); }
+
+/* Logo navigation — blanc sur dark → noir sur ivoire */
+[data-theme="light"] .logo-nav {
+  filter: brightness(0) !important;
+}
+
+/* ══════════════════════════════════════════════
    WEBVIEW IN-APP BROWSER COMPAT
    WhatsApp · Facebook · Instagram · Android
    ──────────────────────────────────────────────
@@ -654,30 +864,24 @@ body {
 ══════════════════════════════════════════════ */
 
 /*
- * 1. Override complet si WebView signale prefers-color-scheme: light
- *    (Force Dark désactivé, mais page pensée dark-only)
+ * 1. Override WebView si prefers-color-scheme: light est signalé à tort
+ *    (ex : Android WebView WhatsApp/Instagram en dark système).
+ *    N'applique PAS si l'utilisateur a volontairement choisi le thème jour
+ *    (data-theme="light" posé par le ThemeProvider / no-flash script).
  */
 @media (prefers-color-scheme: light) {
-  html {
+  html:not([data-theme="light"]) {
     color-scheme: dark;
     background-color: #09090b;
+    --bg-base:      #09090b;
+    --bg-card:      #111113;
+    --bg-card-2:    #18181b;
+    --bg-card-3:    #1e1e22;
+    --text-primary: rgba(255,255,255,.92);
   }
-  body {
+  body:not([data-theme="light"]) {
     background-color: #09090b;
-    color: rgba(255, 255, 255, 0.92);
-  }
-  /*
-   * Réaffirme les tokens critiques en cas d'inversion partielle.
-   * Les propriétés CSS custom ne sont pas inversées par Force Dark,
-   * mais certains WebViews peuvent les recalculer.
-   */
-  :root {
-    --bg-base:   #09090b;
-    --bg-card:   #111113;
-    --bg-card-2: #18181b;
-    --bg-card-3: #1e1e22;
-    --text-primary: rgba(255, 255, 255, 0.92);
-    color-scheme: dark;
+    color: rgba(255,255,255,.92);
   }
 }
 

@@ -14,6 +14,7 @@ import { staggerContainer, fadeUp, viewport } from "@/lib/animations";
 import { useLanguage } from "@/lib/language-context";
 import { UnderlineDraw } from "@/components/ui/HoverText";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useTheme } from "@/components/ThemeProvider";
 import type { SocialPlatform } from "@/types/db";
 
 /* ── Liens services / compte (hrefs) ─────────── */
@@ -72,7 +73,7 @@ function LangSwitcher() {
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-3 py-1.5 text-[0.7rem] font-bold text-white/50 transition-all duration-200 hover:border-[rgba(201,165,90,0.3)] hover:bg-[rgba(201,165,90,0.06)] hover:text-[#c9a55a]"
+        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-base)] bg-[var(--bg-glass)] px-3 py-1.5 text-[0.7rem] font-bold text-[var(--text-55)] transition-all duration-200 hover:border-[var(--accent-border)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)]"
       >
         <Globe size={11} />
         {lang === "fr" ? "FR" : "EN"}
@@ -80,13 +81,13 @@ function LangSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 overflow-hidden rounded-xl border border-white/[0.1] bg-[#111113] shadow-xl">
+        <div className="absolute bottom-full left-0 mb-2 overflow-hidden rounded-xl border border-[var(--border-base)] bg-[var(--bg-card)] shadow-[var(--shadow-lg)]">
           {(["fr", "en"] as const).map((l) => (
             <button
               key={l}
               onClick={() => { setLang(l); setOpen(false); }}
-              className={`flex w-full items-center gap-2 px-4 py-2.5 text-[0.72rem] font-bold transition-colors hover:bg-white/[0.06] ${
-                lang === l ? "text-[#c9a55a]" : "text-white/45"
+              className={`flex w-full items-center gap-2 px-4 py-2.5 text-[0.72rem] font-bold transition-colors hover:bg-[var(--bg-hover)] ${
+                lang === l ? "text-[var(--accent)]" : "text-[var(--text-55)]"
               }`}
             >
               {l === "fr" ? "🇫🇷 Français" : "🇬🇧 English"}
@@ -103,6 +104,7 @@ export default function Footer() {
   const data = getSiteData();
   const { lang, dict } = useLanguage();
   const f = dict.footer;
+  const { isDark } = useTheme();
 
   const { get, socials } = useSiteSettings();
 
@@ -116,8 +118,13 @@ export default function Footer() {
     label: f.account.links[i]?.label ?? "",
   }));
 
+  /* Logo : blanc sur fond sombre, noir sur fond ivoire */
+  const logoFilter = isDark
+    ? "drop-shadow(0 0 10px rgba(201,165,90,0.25)) brightness(0) invert(1)"
+    : "drop-shadow(0 0 8px rgba(140,100,48,0.18)) brightness(0)";
+
   return (
-    <footer className="border-t border-white/[0.07] bg-[#09090b]">
+    <footer className="border-t border-[var(--border-base)] bg-[var(--bg-base)]">
 
       {/* ── Bloc principal ───────────────────── */}
       <motion.div
@@ -132,48 +139,42 @@ export default function Footer() {
           {/* Brand */}
           <motion.div variants={fadeUp}>
             <Link href="/" className="mb-6 inline-block">
-              <div
-                className="relative"
-                style={{
-                  filter: "drop-shadow(0 0 10px rgba(201,165,90,0.25))",
-                }}
-              >
+              <div style={{ filter: logoFilter }}>
                 <Image
                   src={data.media.logo}
                   alt="DJAMA"
                   width={44}
                   height={44}
                   className="rounded-xl object-contain"
-                  style={{ filter: "brightness(0) invert(1)" }}
                 />
               </div>
             </Link>
 
-            <p className="max-w-xs text-sm leading-relaxed text-white/35">
+            <p className="max-w-xs text-sm leading-relaxed text-[var(--text-38)]">
               {f.tagline}
             </p>
 
             <div className="mt-6 flex flex-col gap-2.5">
               <a
                 href={`mailto:${get("contact.email")}`}
-                className="inline-flex items-center gap-2 text-sm text-white/35 transition-colors duration-200 hover:text-white/70"
+                className="inline-flex items-center gap-2 text-sm text-[var(--text-38)] transition-colors duration-200 hover:text-[var(--text-75)]"
               >
-                <Mail size={13} className="text-[#c9a55a]" />
+                <Mail size={13} className="text-[var(--accent)]" />
                 {get("contact.email")}
               </a>
               <a
                 href={`https://wa.me/${get("contact.whatsapp").replace(/[^0-9]/g, "")}`}
                 target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-white/35 transition-colors duration-200 hover:text-white/70"
+                className="inline-flex items-center gap-2 text-sm text-[var(--text-38)] transition-colors duration-200 hover:text-[var(--text-75)]"
               >
-                <MessageCircle size={13} className="text-[#c9a55a]" />
+                <MessageCircle size={13} className="text-[var(--accent)]" />
                 {get("contact.whatsapp")}
               </a>
               <a
                 href={`tel:${get("contact.phone").replace(/\s/g, "")}`}
-                className="inline-flex items-center gap-2 text-sm text-white/35 transition-colors duration-200 hover:text-white/70"
+                className="inline-flex items-center gap-2 text-sm text-[var(--text-38)] transition-colors duration-200 hover:text-[var(--text-75)]"
               >
-                <Phone size={13} className="text-[#c9a55a]" />
+                <Phone size={13} className="text-[var(--accent)]" />
                 {get("contact.phone")}
               </a>
             </div>
@@ -181,7 +182,7 @@ export default function Footer() {
 
           {/* Services */}
           <motion.div variants={fadeUp}>
-            <h4 className="mb-5 text-[0.65rem] font-black uppercase tracking-[0.15em] text-white/25">
+            <h4 className="mb-5 text-[0.65rem] font-black uppercase tracking-[0.15em] text-[var(--text-38)]">
               {f.services.title}
             </h4>
             <ul className="flex flex-col gap-3">
@@ -189,7 +190,7 @@ export default function Footer() {
                 <li key={href}>
                   <Link
                     href={href}
-                    className="group inline-flex items-center gap-1 text-sm text-white/40 transition-colors duration-200 hover:text-white/75"
+                    className="group inline-flex items-center gap-1 text-sm text-[var(--text-38)] transition-colors duration-200 hover:text-[var(--text-75)]"
                   >
                     <UnderlineDraw lineColor="rgba(201,165,90,0.55)" thickness={1}>{label}</UnderlineDraw>
                     <ArrowUpRight size={11} className="opacity-0 transition-opacity group-hover:opacity-60" />
@@ -201,7 +202,7 @@ export default function Footer() {
 
           {/* Compte */}
           <motion.div variants={fadeUp}>
-            <h4 className="mb-5 text-[0.65rem] font-black uppercase tracking-[0.15em] text-white/25">
+            <h4 className="mb-5 text-[0.65rem] font-black uppercase tracking-[0.15em] text-[var(--text-38)]">
               {f.account.title}
             </h4>
             <ul className="flex flex-col gap-3">
@@ -209,7 +210,7 @@ export default function Footer() {
                 <li key={href}>
                   <Link
                     href={href}
-                    className="group inline-flex items-center gap-1 text-sm text-white/40 transition-colors duration-200 hover:text-white/75"
+                    className="group inline-flex items-center gap-1 text-sm text-[var(--text-38)] transition-colors duration-200 hover:text-[var(--text-75)]"
                   >
                     <UnderlineDraw lineColor="rgba(201,165,90,0.55)" thickness={1}>{label}</UnderlineDraw>
                     <ArrowUpRight size={11} className="opacity-0 transition-opacity group-hover:opacity-60" />
@@ -221,7 +222,7 @@ export default function Footer() {
         </div>
 
         {/* ── Séparateur ── */}
-        <div className="my-6 sm:my-12 h-px bg-white/[0.06]" />
+        <div className="my-6 sm:my-12 divider-subtle" />
 
         {/* ── Réseaux sociaux + Langue ── */}
         <motion.div
@@ -230,7 +231,7 @@ export default function Footer() {
         >
           {/* Socials */}
           <div className="flex flex-col items-start gap-2">
-            <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/25">
+            <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-[var(--text-38)]">
               {f.social.title}
             </p>
             <div className="flex items-center gap-2">
@@ -247,7 +248,7 @@ export default function Footer() {
                     whileHover={{ scale: 1.12, y: -2 }}
                     whileTap={{ scale: 0.92 }}
                     transition={{ duration: 0.2, ease }}
-                    className="group flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-white/35 transition-all duration-200 hover:border-[rgba(201,165,90,0.3)] hover:bg-[rgba(201,165,90,0.08)] hover:text-[#c9a55a]"
+                    className="group flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-base)] bg-[var(--bg-glass)] text-[var(--text-38)] transition-all duration-200 hover:border-[var(--accent-border)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)]"
                   >
                     <Icon size={15} />
                   </motion.a>
@@ -258,7 +259,7 @@ export default function Footer() {
 
           {/* Langue */}
           <div className="flex flex-col items-end gap-2">
-            <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/25">
+            <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-[var(--text-38)]">
               {f.language.title}
             </p>
             <LangSwitcher />
@@ -267,7 +268,7 @@ export default function Footer() {
       </motion.div>
 
       {/* ── Barre légale ─────────────────────── */}
-      <div className="border-t border-white/[0.05]">
+      <div className="border-t border-[var(--border-soft)]">
         <div className="mx-auto max-w-6xl px-4 py-4">
 
           {/* Liens légaux + copyright */}
@@ -276,19 +277,19 @@ export default function Footer() {
               <span key={href} className="inline-flex items-center gap-5">
                 <Link
                   href={href}
-                  className="text-[0.7rem] font-medium text-white/38 transition-colors duration-200 hover:text-[#c9a55a]"
+                  className="text-[0.7rem] font-medium text-[var(--text-38)] transition-colors duration-200 hover:text-[var(--accent)]"
                 >
                   {lang === "en" ? labelEn : label}
                 </Link>
                 {i < LEGAL_LINKS.length - 1 && (
-                  <span className="h-2.5 w-px bg-white/[.1]" aria-hidden="true" />
+                  <span className="h-2.5 w-px bg-[var(--border-base)]" aria-hidden="true" />
                 )}
               </span>
             ))}
           </div>
 
           {/* Copyright */}
-          <p className="text-center text-[0.67rem] text-white/22">
+          <p className="text-center text-[0.67rem] text-[var(--text-22)]">
             © {new Date().getFullYear()} DJAMA — {f.copyright} · Tous droits réservés
           </p>
         </div>
