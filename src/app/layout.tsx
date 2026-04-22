@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import SplashScreen from "@/components/SplashScreen";
+import SplashScreen    from "@/components/SplashScreen";
+import { WebViewBanner } from "@/components/WebViewBanner";
 
 export const metadata: Metadata = {
   title: "DJAMA — Services digitaux & outils pro",
@@ -44,6 +45,8 @@ export default function RootLayout({
       <body>
         <SplashScreen />
         {children}
+        {/* Bandeau "Ouvrir dans le navigateur" pour les in-app browsers */}
+        <WebViewBanner />
       </body>
     </html>
   );
