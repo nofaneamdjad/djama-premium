@@ -2,54 +2,75 @@
 
 /**
  * MediaUploader — composant réutilisable pour uploader images ou vidéos
- * vers Supabase Storage (bucket "djama-media").
+ * vers Supabase Storage.
  *
  * Props :
  *   type        "image" | "video"
- *   folder      Sous-dossier dans le bucket (défaut : "images" / "videos")
- *   currentUrl  URL actuelle (image_url ou video_url)
- *   onUrlChange Callback appelé avec la nouvelle URL après upload OU saisie manuelle
+ *   bucket      Bucket Supabase (défaut : "djama-media")
+ *   folder      Sous-dossier (défaut : "images" / "videos"). Vide = racine du bucket.
+ *   currentUrl  URL actuellement stockée en base
+ *   onUrlChange Callback avec la nouvelle URL (upload réussi OU saisie manuelle)
+ *   label       Label affiché au-dessus (optionnel)
  *
- * Fonctionnalités :
- *   - Onglet "Upload" : drag & drop + sélection fichier
- *   - Onglet "URL"    : coller une URL directement (YouTube, Vimeo, lien direct…)
- *   - Compression auto en WebP pour les images (Canvas API)
- *   - Barre de progression
- *   - Preview inline après upload
- *   - Limite : 5 MB images / 50 MB vidéos (vérification côté client)
+ * Fixes appliqués :
+ *   - Path : folder vide → fichier à la racine (pas de "/" en tête)
+ *   - SVG   : bypass de la compression canvas (incompatible sur mobile)
+ *   - Compression : fallback vers le fichier original si canvas échoue
+ *   - Erreurs Supabase : messages contextuels (403, 404, réseau…)
+ *   - État succès : visible 2,5 s avant reset
+ *   - upsert: true pour éviter les conflits de nom (rare mais possible)
  */
 
 import { useRef, useState } from "react";
-import { Upload, Link2, X, Loader2, CheckCircle2, Film } from "lucide-react";
+import { Upload, Link2, X, Loader2, CheckCircle2, Film, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constantes
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MAX_IMG      = 5  * 1024 * 1024;   // 5 MB
-const MAX_VID      = 50 * 1024 * 1024;   // 50 MB
-const ACCEPT_IMAGE = "image/jpeg,image/jpg,image/png,image/webp,image/gif,image/svg+xml";
+const MAX_IMG = 5  * 1024 * 1024;   // 5 MB
+const MAX_VID = 50 * 1024 * 1024;   // 50 MB
+
+// ⚠️ "image/jpg" n'est pas un MIME valide — on utilise "image/jpeg" uniquement
+const ACCEPT_IMAGE = "image/jpeg,image/png,image/webp,image/gif,image/svg+xml";
 const ACCEPT_VIDEO = "video/mp4,video/webm,video/quicktime";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Génère un identifiant aléatoire court */
-function uid() {
+function uid(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
 /**
- * Compresse une image via Canvas et la retourne en Blob WebP.
- * Réduit la largeur max à 1920px et applique une qualité 0.85.
- * Fallback vers JPEG si WebP n'est pas supporté par le navigateur.
+ * Compresse une image via Canvas → Blob WebP (ou JPEG en fallback).
+ * - SVG : contournement direct (pas de canvas ; rendu SVG mobile non fiable)
+ * - Si canvas.toBlob() échoue : renvoie le fichier original non compressé
+ * - maxWidth : 1920 px ; qualité : 0.85
  */
-async function compressImage(file: File, maxWidth = 1920, quality = 0.85): Promise<{ blob: Blob; ext: string }> {
-  return new Promise((resolve, reject) => {
-    const img   = new window.Image();
+async function compressImage(
+  file: File,
+  maxWidth = 1920,
+  quality  = 0.85,
+): Promise<{ blob: Blob; ext: string; mimeType: string }> {
+  // ── SVG : pas de compression ──────────────────────────────────────────────
+  if (file.type === "image/svg+xml") {
+    return { blob: file, ext: "svg", mimeType: "image/svg+xml" };
+  }
+
+  return new Promise(resolve => {
+    const img    = new window.Image();
     const objUrl = URL.createObjectURL(file);
+
+    // ── Fallback : on ne reject() jamais, on renvoie le fichier original ──
+    const useOriginal = () => {
+      URL.revokeObjectURL(objUrl);
+      const parts = file.name.split(".");
+      const ext   = (parts[parts.length - 1] ?? "jpg").toLowerCase();
+      resolve({ blob: file, ext, mimeType: file.type || "image/jpeg" });
+    };
 
     img.onload = () => {
       URL.revokeObjectURL(objUrl);
@@ -64,37 +85,84 @@ async function compressImage(file: File, maxWidth = 1920, quality = 0.85): Promi
       canvas.width  = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
-      if (!ctx) { reject(new Error("Canvas non disponible")); return; }
+      if (!ctx) { useOriginal(); return; }
+
       ctx.drawImage(img, 0, 0, width, height);
 
       // Essai WebP
       canvas.toBlob(
         webpBlob => {
-          if (webpBlob) {
-            resolve({ blob: webpBlob, ext: "webp" });
-          } else {
-            // Fallback JPEG
-            canvas.toBlob(
-              jpegBlob => {
-                if (jpegBlob) resolve({ blob: jpegBlob, ext: "jpg" });
-                else reject(new Error("Compression impossible"));
-              },
-              "image/jpeg",
-              quality
-            );
+          if (webpBlob && webpBlob.size > 0) {
+            resolve({ blob: webpBlob, ext: "webp", mimeType: "image/webp" });
+            return;
           }
+          // Fallback JPEG
+          canvas.toBlob(
+            jpegBlob => {
+              if (jpegBlob && jpegBlob.size > 0) {
+                resolve({ blob: jpegBlob, ext: "jpg", mimeType: "image/jpeg" });
+              } else {
+                useOriginal();
+              }
+            },
+            "image/jpeg",
+            quality,
+          );
         },
         "image/webp",
-        quality
+        quality,
       );
     };
 
-    img.onerror = () => {
-      URL.revokeObjectURL(objUrl);
-      reject(new Error("Impossible de charger l'image"));
-    };
-    img.src = objUrl;
+    img.onerror = useOriginal;
+    img.src     = objUrl;
   });
+}
+
+/**
+ * Formate une erreur Supabase Storage en message utilisateur compréhensible.
+ * Beaucoup plus utile que le message générique "Vérifiez votre connexion".
+ */
+function formatStorageError(err: unknown, bucketName: string): string {
+  if (!err) return "Erreur inconnue lors de l'upload.";
+
+  // Erreur native JS (réseau, canvas…)
+  if (err instanceof Error) {
+    const m = err.message.toLowerCase();
+    if (m.includes("canvas") || m.includes("compression")) {
+      return "Impossible de traiter l'image. Essayez un autre format (JPG ou PNG).";
+    }
+    if (m.includes("network") || m.includes("fetch") || m.includes("failed")) {
+      return "Connexion interrompue. Vérifiez votre réseau et réessayez.";
+    }
+    return `Erreur : ${err.message}`;
+  }
+
+  // Erreur Supabase (objet avec statusCode / message / error)
+  if (typeof err === "object" && err !== null) {
+    const e    = err as Record<string, unknown>;
+    const code = String(e.statusCode ?? e.status ?? "");
+    const msg  = String(e.message ?? e.error ?? "").toLowerCase();
+
+    if (code === "403" || msg.includes("unauthorized") || msg.includes("forbidden")) {
+      return `Accès refusé au bucket "${bucketName}". ` +
+             `Vérifiez les politiques RLS dans Supabase Storage.`;
+    }
+    if (code === "404" || msg.includes("not found") || msg.includes("bucket")) {
+      return `Bucket introuvable : "${bucketName}". ` +
+             `Créez-le dans Supabase → Storage → New bucket (accès public activé).`;
+    }
+    if (code === "413" || msg.includes("too large") || msg.includes("payload")) {
+      return "Fichier trop volumineux pour le serveur. Réduisez la taille et réessayez.";
+    }
+    if (code === "409" || msg.includes("already exists")) {
+      return "Un fichier avec ce nom existe déjà. Réessayez (nom généré automatiquement).";
+    }
+    const detail = String(e.message ?? e.error ?? "").trim();
+    if (detail) return `Supabase Storage : ${detail}`;
+  }
+
+  return "Erreur lors de l'upload. Vérifiez votre connexion et réessayez.";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,27 +172,23 @@ async function compressImage(file: File, maxWidth = 1920, quality = 0.85): Promi
 export type MediaUploaderType = "image" | "video";
 
 export interface MediaUploaderProps {
-  /** "image" ou "video" */
-  type: MediaUploaderType;
+  type:        MediaUploaderType;
   /** Bucket Supabase Storage (défaut : "djama-media") */
-  bucket?: string;
-  /** Sous-dossier dans le bucket (défaut : "images" ou "videos") */
-  folder?: string;
-  /** URL actuellement stockée en base */
-  currentUrl: string;
-  /** Appelé à chaque changement d'URL (upload réussi OU saisie manuelle) */
+  bucket?:     string;
+  /** Sous-dossier. Vide ("") = racine du bucket. */
+  folder?:     string;
+  currentUrl:  string;
   onUrlChange: (url: string) => void;
-  /** Label affiché au-dessus du composant (optionnel) */
-  label?: string;
+  label?:      string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Composant principal
+// Composant
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function MediaUploader({
   type,
-  bucket = "djama-media",
+  bucket   = "djama-media",
   folder,
   currentUrl,
   onUrlChange,
@@ -132,26 +196,39 @@ export function MediaUploader({
 }: MediaUploaderProps) {
   const [tab,       setTab]       = useState<"upload" | "url">("upload");
   const [uploading, setUploading] = useState(false);
-  const [progress,  setProgress]  = useState(0);      // 0-100
+  const [progress,  setProgress]  = useState(0);        // 0-100
+  const [success,   setSuccess]   = useState(false);    // état succès distinct
   const [uploadErr, setUploadErr] = useState<string | null>(null);
   const [dragOver,  setDragOver]  = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const BUCKET          = bucket;
-  const effectiveFolder = folder ?? (type === "image" ? "images" : "videos");
-  const maxBytes        = type === "image" ? MAX_IMG : MAX_VID;
-  const maxLabel        = type === "image" ? "5 MB"  : "50 MB";
-  const acceptAttr      = type === "image" ? ACCEPT_IMAGE : ACCEPT_VIDEO;
+  const BUCKET = bucket;
 
-  // ── Upload vers Supabase Storage ────────────────────────────────────────
+  // ── folder vide → racine ; sinon "dossier/fichier" ──────────────────────
+  // BUG FIX : quand folder="", `${folder}/${filename}` donnait "/filename.webp"
+  // (slash initial) → rejeté par Supabase Storage.
+  const effectiveFolder =
+    folder !== undefined
+      ? folder                                         // valeur explicite (même vide)
+      : type === "image" ? "images" : "videos";        // défaut si prop absente
+
+  const maxBytes   = type === "image" ? MAX_IMG : MAX_VID;
+  const maxLabel   = type === "image" ? "5 MB"  : "50 MB";
+  const acceptAttr = type === "image" ? ACCEPT_IMAGE : ACCEPT_VIDEO;
+
+  // ── Upload vers Supabase Storage ─────────────────────────────────────────
 
   async function uploadFile(file: File) {
     setUploadErr(null);
+    setSuccess(false);
 
-    // Vérification taille
+    // Vérification taille côté client
     if (file.size > maxBytes) {
-      setUploadErr(`Fichier trop lourd. Maximum autorisé : ${maxLabel}.`);
+      setUploadErr(
+        `Fichier trop lourd (${(file.size / 1024 / 1024).toFixed(1)} MB). ` +
+        `Maximum autorisé : ${maxLabel}.`,
+      );
       return;
     }
 
@@ -161,37 +238,42 @@ export function MediaUploader({
     try {
       let uploadBlob: Blob | File = file;
       let ext: string;
+      let mimeType: string;
 
       if (type === "image") {
-        // ── Compression WebP ──────────────────────────────────────────────
         setProgress(15);
         const result = await compressImage(file);
         uploadBlob   = result.blob;
         ext          = result.ext;
-        setProgress(35);
+        mimeType     = result.mimeType;
+        setProgress(40);
       } else {
-        // ── Vidéo : pas de compression, conserver l'extension d'origine ──
         const parts = file.name.split(".");
-        ext         = (parts[parts.length - 1] ?? "mp4").toLowerCase();
+        ext      = (parts[parts.length - 1] ?? "mp4").toLowerCase();
+        mimeType = file.type || "video/mp4";
       }
 
+      // ── Construction du chemin sans slash initial ──────────────────────
+      // BUG FIX principal : si effectiveFolder est vide, on n'ajoute pas "/"
       const filename = `${Date.now()}-${uid()}.${ext}`;
-      const path     = `${effectiveFolder}/${filename}`;
-      const mimeType = type === "image"
-        ? (ext === "webp" ? "image/webp" : "image/jpeg")
-        : file.type;
+      const path     = effectiveFolder ? `${effectiveFolder}/${filename}` : filename;
 
-      setProgress(50);
+      setProgress(55);
+
+      console.log(`[MediaUploader] uploading to ${BUCKET}/${path} (${mimeType})`);
 
       const { error: storageError } = await supabase.storage
         .from(BUCKET)
         .upload(path, uploadBlob, {
           contentType:  mimeType,
           cacheControl: "3600",
-          upsert:       false,
+          upsert:       true,    // évite l'erreur 409 si collision de nom (rare)
         });
 
-      if (storageError) throw storageError;
+      if (storageError) {
+        console.error("[MediaUploader] storageError:", storageError);
+        throw storageError;
+      }
 
       setProgress(90);
 
@@ -199,18 +281,24 @@ export function MediaUploader({
         .from(BUCKET)
         .getPublicUrl(path);
 
-      onUrlChange(urlData.publicUrl);
-      setProgress(100);
+      const publicUrl = urlData.publicUrl;
+      console.log(`[MediaUploader] success:`, publicUrl);
 
-      console.log(`[MediaUploader] uploaded ${type}:`, urlData.publicUrl);
+      onUrlChange(publicUrl);
+      setProgress(100);
+      setSuccess(true);
+
+      // Reset après 2,5 s (assez long pour être vu sur mobile)
+      setTimeout(() => {
+        setProgress(0);
+        setSuccess(false);
+      }, 2500);
 
     } catch (err) {
       console.error("[MediaUploader] upload error:", err);
-      setUploadErr("Erreur lors de l'upload. Vérifiez votre connexion et réessayez.");
+      setUploadErr(formatStorageError(err, BUCKET));
     } finally {
       setUploading(false);
-      // Reset progress après un court délai
-      setTimeout(() => setProgress(0), 800);
     }
   }
 
@@ -226,15 +314,13 @@ export function MediaUploader({
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) uploadFile(file);
-    // Reset input pour permettre re-sélection du même fichier
-    e.target.value = "";
+    e.target.value = ""; // permet re-sélection du même fichier
   }
-
-  // ── Suppression de l'URL courante ────────────────────────────────────────
 
   function clearUrl() {
     onUrlChange("");
     setUploadErr(null);
+    setSuccess(false);
   }
 
   // ── Rendu ────────────────────────────────────────────────────────────────
@@ -245,6 +331,7 @@ export function MediaUploader({
 
   return (
     <div className="space-y-2.5">
+
       {/* Label */}
       {label && (
         <label className="block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">
@@ -254,92 +341,99 @@ export function MediaUploader({
 
       {/* ── Tabs ─────────────────────────────────────────────────────────── */}
       <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.03] p-1">
-        <button
-          type="button"
-          onClick={() => setTab("upload")}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[0.74rem] font-bold transition-all ${
-            tab === "upload"
-              ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a]"
-              : "text-white/30 hover:text-white/55"
-          }`}
-        >
-          <Upload size={11} /> Upload fichier
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("url")}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[0.74rem] font-bold transition-all ${
-            tab === "url"
-              ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a]"
-              : "text-white/30 hover:text-white/55"
-          }`}
-        >
-          <Link2 size={11} /> Coller une URL
-        </button>
+        {(["upload", "url"] as const).map(t => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[0.74rem] font-bold transition-all ${
+              tab === t
+                ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a]"
+                : "text-white/30 hover:text-white/55"
+            }`}
+          >
+            {t === "upload"
+              ? <><Upload size={11} /> Upload fichier</>
+              : <><Link2  size={11} /> Coller une URL</>
+            }
+          </button>
+        ))}
       </div>
 
       {/* ── Panneau Upload ───────────────────────────────────────────────── */}
       {tab === "upload" && (
         <div className="space-y-2.5">
-          {/* Zone drag & drop */}
+
+          {/* Zone drag & drop / tap */}
           <div
             onDragOver={e => { e.preventDefault(); if (!uploading) setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             onClick={() => !uploading && inputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => e.key === "Enter" && !uploading && inputRef.current?.click()}
             className={[
-              "relative flex min-h-[110px] cursor-pointer flex-col items-center justify-center gap-2.5",
-              "rounded-2xl border-2 border-dashed transition-all duration-200",
+              "relative flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2.5",
+              "rounded-2xl border-2 border-dashed transition-all duration-200 select-none",
               uploading
                 ? "pointer-events-none border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.05)]"
                 : dragOver
-                  ? "border-[rgba(201,165,90,0.55)] bg-[rgba(201,165,90,0.08)] scale-[1.01]"
-                  : "border-white/[0.09] bg-white/[0.02] hover:border-white/[0.18] hover:bg-white/[0.04]",
+                  ? "border-[rgba(201,165,90,0.6)] bg-[rgba(201,165,90,0.08)] scale-[1.01]"
+                  : success
+                    ? "border-[rgba(74,222,128,0.35)] bg-[rgba(74,222,128,0.05)]"
+                    : "border-white/[0.09] bg-white/[0.02] hover:border-white/[0.2] hover:bg-white/[0.04]",
             ].join(" ")}
           >
-            {uploading ? (
+            {/* ── État : upload en cours ── */}
+            {uploading && (
               <>
-                <Loader2 size={20} className="animate-spin text-[#c9a55a]" />
-                <p className="text-[0.74rem] font-semibold text-white/35">
-                  {isImage ? "Compression et upload…" : "Upload en cours…"}
+                <Loader2 size={22} className="animate-spin text-[#c9a55a]" />
+                <p className="text-[0.74rem] font-semibold text-white/40">
+                  {isImage ? "Traitement et upload…" : "Upload en cours…"}
                 </p>
-                {/* Barre de progression */}
-                {progress > 0 && (
-                  <div className="absolute bottom-3 left-5 right-5 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
-                    <div
-                      className="h-full rounded-full bg-[#c9a55a] transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                )}
+                <div className="absolute bottom-3 left-5 right-5 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#c9a55a] to-[#e8cc94] transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </>
-            ) : progress === 100 ? (
+            )}
+
+            {/* ── État : succès ── */}
+            {!uploading && success && (
               <>
-                <CheckCircle2 size={20} className="text-[#4ade80]" />
-                <p className="text-[0.74rem] font-semibold text-[#4ade80]">Upload réussi !</p>
+                <CheckCircle2 size={24} className="text-[#4ade80]" />
+                <p className="text-[0.78rem] font-bold text-[#4ade80]">Upload réussi !</p>
+                <p className="text-[0.66rem] text-[#4ade80]/60">Cliquez pour uploader un autre fichier</p>
               </>
-            ) : (
+            )}
+
+            {/* ── État : idle (prompt) ── */}
+            {!uploading && !success && (
               <>
-                {isImage ? (
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.05]">
-                    <Upload size={16} className="text-white/30" />
-                  </div>
-                ) : (
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.05]">
-                    <Film size={16} className="text-white/30" />
-                  </div>
-                )}
-                <div className="text-center">
-                  <p className="text-[0.78rem] font-semibold text-white/45">
-                    Glisser {isImage ? "une image" : "une vidéo"} ici
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05]">
+                  {isImage
+                    ? <Upload size={18} className="text-white/30" />
+                    : <Film   size={18} className="text-white/30" />
+                  }
+                </div>
+                <div className="px-4 text-center">
+                  <p className="text-[0.82rem] font-semibold text-white/50">
+                    {isImage ? "Glisser une image ici" : "Glisser une vidéo ici"}
                   </p>
-                  <p className="text-[0.66rem] text-white/22">
-                    ou <span className="text-white/40 underline underline-offset-2">cliquer pour sélectionner</span>
-                    {" · "}{isImage ? "JPG, PNG, WebP, GIF · max 5 MB" : "MP4, WebM · max 50 MB"}
+                  <p className="mt-0.5 text-[0.67rem] text-white/25">
+                    ou{" "}
+                    <span className="text-white/40 underline underline-offset-2">
+                      appuyer pour sélectionner
+                    </span>
+                    {" · "}
+                    {isImage ? "JPG, PNG, WebP, SVG · max 5 MB" : "MP4, WebM · max 50 MB"}
                   </p>
                   {isImage && (
-                    <p className="mt-0.5 text-[0.6rem] text-[rgba(201,165,90,0.5)]">
-                      ✦ Compressé automatiquement en WebP
+                    <p className="mt-1 text-[0.62rem] text-[rgba(201,165,90,0.55)]">
+                      ✦ Converti automatiquement en WebP
                     </p>
                   )}
                 </div>
@@ -347,7 +441,7 @@ export function MediaUploader({
             )}
           </div>
 
-          {/* Input fichier caché */}
+          {/* Input fichier caché — capture="environment" aide sur mobile */}
           <input
             ref={inputRef}
             type="file"
@@ -356,11 +450,21 @@ export function MediaUploader({
             onChange={handleFileInput}
           />
 
-          {/* Message d'erreur upload */}
+          {/* ── Message d'erreur contextuel ── */}
           {uploadErr && (
-            <div className="flex items-start gap-2 rounded-xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-3 py-2.5">
-              <X size={12} className="mt-0.5 shrink-0 text-[#f87171]" />
-              <p className="text-[0.73rem] text-[#f87171]">{uploadErr}</p>
+            <div className="flex items-start gap-2 rounded-xl border border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.08)] px-3 py-3">
+              <AlertCircle size={14} className="mt-0.5 shrink-0 text-[#f87171]" />
+              <div className="min-w-0">
+                <p className="text-[0.76rem] font-semibold text-[#f87171]">Erreur d&apos;upload</p>
+                <p className="mt-0.5 text-[0.71rem] leading-relaxed text-[#f87171]/75">{uploadErr}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUploadErr(null)}
+                className="ml-auto shrink-0 text-[#f87171]/40 hover:text-[#f87171]"
+              >
+                <X size={12} />
+              </button>
             </div>
           )}
         </div>
@@ -368,43 +472,41 @@ export function MediaUploader({
 
       {/* ── Panneau URL ──────────────────────────────────────────────────── */}
       {tab === "url" && (
-        <div>
-          <input
-            type="url"
-            value={currentUrl}
-            onChange={e => { onUrlChange(e.target.value); setUploadErr(null); }}
-            placeholder={
-              isImage
-                ? "https://… (jpg, png, webp, svg)"
-                : "https://youtube.com/watch?v=… · https://vimeo.com/… · ou lien direct .mp4"
-            }
-            className="w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-[0.84rem] text-white/80 placeholder:text-white/20 outline-none transition-colors focus:border-[rgba(201,165,90,0.4)]"
-          />
-        </div>
+        <input
+          type="url"
+          value={currentUrl}
+          onChange={e => { onUrlChange(e.target.value); setUploadErr(null); }}
+          placeholder={
+            isImage
+              ? "https://… (jpg, png, webp, svg)"
+              : "https://youtube.com/watch?v=… · https://vimeo.com/… · ou lien direct .mp4"
+          }
+          className="w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-[0.84rem] text-white/80 placeholder:text-white/20 outline-none transition-colors focus:border-[rgba(201,165,90,0.4)]"
+        />
       )}
 
-      {/* ── Aperçu de l'URL courante (si présente) ───────────────────────── */}
+      {/* ── Aperçu de l'URL courante ─────────────────────────────────────── */}
       {hasUrl && (
-        <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2">
+        <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2.5">
           {isImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={currentUrl}
               alt="aperçu"
-              className="h-10 w-14 shrink-0 rounded-lg object-cover"
+              className="h-10 w-14 shrink-0 rounded-lg object-contain bg-white/[0.04]"
               onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             />
           ) : (
             <Film size={18} className="shrink-0 text-white/25" />
           )}
-          <p className="min-w-0 flex-1 truncate text-[0.7rem] text-white/40">
+          <p className="min-w-0 flex-1 truncate text-[0.7rem] text-white/40" title={currentUrl}>
             {currentUrl}
           </p>
           <button
             type="button"
             onClick={clearUrl}
             title={`Supprimer l'${typeLabel}`}
-            className="shrink-0 text-white/20 transition-colors hover:text-[#f87171]"
+            className="shrink-0 rounded-lg p-1 text-white/20 transition-colors hover:bg-[rgba(248,113,113,0.1)] hover:text-[#f87171]"
           >
             <X size={13} />
           </button>
