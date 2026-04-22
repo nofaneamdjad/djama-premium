@@ -1,17 +1,15 @@
 "use client";
 
 /**
- * Bloc-notes DJAMA PRO — v2 premium
+ * Bloc-notes DJAMA PRO — v3
  *
- * Nouveautés v2 :
- *   ✨ IA : Améliorer / Résumer / Transformer en tâches (claude-3-haiku)
- *   ⭐ Favoris + 📌 Épinglés (localStorage, persistants per-device)
- *   ↻  Auto-save : 2,5 s après dernière frappe sur note existante
- *   ☑  Checklists : bouton "Insérer case" + mode aperçu interactif
- *   🔤 Compteur de mots en temps réel
- *   📂 Tri par date (↑↓) ou par catégorie
- *   ⚡ Filtres rapides : Favoris / Épinglés
- *   💬 Tagline positionnement SaaS dans l'empty state
+ * Nouveautés v3 :
+ *   🤖 "Demander à l'IA" → mini panel chat contextuel (badge PRO)
+ *   ✏️  Boutons IA : "Améliorer mon texte" / "Résumer" / "Créer des actions"
+ *   ☑  Checklist tri-state : [ ] en attente · [~] en cours · [x] terminé
+ *   📊 Barre de progression pour les notes "Tâches"
+ *   💬 Empty state : "Capturez vos idées, améliorez-les avec l'IA…"
+ *   🔒 Placeholder "Bientôt" sur Traduire
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -20,8 +18,9 @@ import {
   StickyNote, Plus, Search, Trash2, FileDown, Save,
   CheckCircle2, AlertCircle, Loader2, ArrowLeft,
   ChevronDown, Clock, SortAsc, SortDesc, X,
-  Sparkles, Wand2, FileText, ListChecks,
+  Sparkles, Wand2, FileText, ListChecks, MessageSquare,
   Star, Pin, Check, Eye, EyeOff, CheckSquare,
+  Send, Globe, CornerDownLeft,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import jsPDF from "jspdf";
@@ -29,9 +28,10 @@ import jsPDF from "jspdf";
 /* ═══════════════════════════════════════════════════════════════
    TYPES
 ═══════════════════════════════════════════════════════════════ */
-type Category  = "réunion" | "idées" | "tâches" | "personnel";
-type AiAction  = "improve" | "summarize" | "to-tasks";
-type SortBy    = "date" | "category";
+type Category     = "réunion" | "idées" | "tâches" | "personnel";
+type AiAction     = "improve" | "summarize" | "to-tasks" | "chat";
+type NonChatAction = Exclude<AiAction, "chat">;
+type SortBy       = "date" | "category";
 
 interface Note {
   id:         string;
@@ -41,6 +41,11 @@ interface Note {
   category:   Category;
   created_at: string;
   updated_at: string;
+}
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  text: string;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -55,13 +60,13 @@ const CATEGORIES = [
   { value: "personnel" as Category, label: "Personnel", color: "#a78bfa", bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.3)"  },
 ] as const;
 
-const AI_ACTIONS = [
-  { action: "improve"   as AiAction, label: "Améliorer",  icon: Wand2,       tip: "Améliore style et grammaire"  },
-  { action: "summarize" as AiAction, label: "Résumer",    icon: FileText,    tip: "Génère un résumé en points"   },
-  { action: "to-tasks"  as AiAction, label: "En tâches",  icon: ListChecks,  tip: "Transforme en liste de tâches"},
-] as const;
+const AI_ACTIONS: { action: NonChatAction; label: string; labelShort: string; icon: React.ElementType; tip: string }[] = [
+  { action: "improve",   label: "Améliorer mon texte", labelShort: "Améliorer", icon: Wand2,      tip: "Améliore style et grammaire"   },
+  { action: "summarize", label: "Résumer",              labelShort: "Résumer",   icon: FileText,   tip: "Génère un résumé en points"    },
+  { action: "to-tasks",  label: "Créer des actions",   labelShort: "Actions",   icon: ListChecks, tip: "Transforme en liste de tâches" },
+];
 
-/* ── localStorage helpers — favoris & épinglés ── */
+/* ── localStorage helpers ── */
 const FAV_KEY = "djama_notes_favorites";
 const PIN_KEY = "djama_notes_pinned";
 
@@ -92,6 +97,13 @@ function fmtDateShort(iso: string) {
 }
 function countWords(text: string) {
   return text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+}
+function getTaskProgress(content: string) {
+  const lines  = content.split("\n");
+  const total  = lines.filter(l => /^(\s*)-\s*\[[x~\s]\]\s/.test(l)).length;
+  const done   = lines.filter(l => /^(\s*)-\s*\[x\]\s/i.test(l)).length;
+  const inProg = lines.filter(l => /^(\s*)-\s*\[~\]\s/.test(l)).length;
+  return { total, done, inProg };
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -126,7 +138,9 @@ function Toast({ toast, onClose }: { toast: { type: "success" | "error"; msg: st
         ? <CheckCircle2 size={16} className="shrink-0 text-green-400" />
         : <AlertCircle  size={16} className="shrink-0 text-red-400" />}
       <span className="text-sm font-medium">{toast.msg}</span>
-      <button onClick={onClose} className="ml-1 text-white/30 hover:text-white/70 transition"><X size={13} /></button>
+      <button onClick={onClose} className="ml-1 text-white/30 hover:text-white/70 transition">
+        <X size={13} />
+      </button>
     </motion.div>
   );
 }
@@ -156,38 +170,56 @@ function ConfirmDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCance
   );
 }
 
-/* ── ChecklistView — aperçu interactif des cases à cocher ── */
+/* ── ChecklistView — tri-state : [ ] · [~] · [x] ── */
 function ChecklistView({ content, onToggle }: { content: string; onToggle: (c: string) => void }) {
   const lines = content.split("\n");
-  return (
-    <div className="space-y-1.5 py-1">
-      {lines.map((line, i) => {
-        const unchecked = line.match(/^(\s*)-\s*\[\s*\]\s*(.*)/);
-        const checked   = line.match(/^(\s*)-\s*\[x\]\s*(.*)/i);
 
-        if (unchecked || checked) {
-          const isDone = !!checked;
-          const indent = (unchecked ?? checked)![1].length;
-          const text   = (unchecked ?? checked)![2];
+  function cycleState(i: number) {
+    const nl = [...lines];
+    const l  = nl[i];
+    if (/^(\s*-\s*)\[ \]/.test(l))      nl[i] = l.replace(/^(\s*-\s*)\[ \]/, "$1[~]");
+    else if (/^(\s*-\s*)\[~\]/.test(l)) nl[i] = l.replace(/^(\s*-\s*)\[~\]/, "$1[x]");
+    else                                  nl[i] = l.replace(/^(\s*-\s*)\[x\]/i, "$1[ ]");
+    onToggle(nl.join("\n"));
+  }
+
+  return (
+    <div className="space-y-2 py-1">
+      {lines.map((line, i) => {
+        const mPend = /^(\s*)-\s*\[ \]\s*(.*)/.exec(line);
+        const mProg = /^(\s*)-\s*\[~\]\s*(.*)/.exec(line);
+        const mDone = /^(\s*)-\s*\[x\]\s*(.*)/i.exec(line);
+        const m     = mPend ?? mProg ?? mDone;
+
+        if (m) {
+          const indent     = m[1].length;
+          const text       = m[2] ?? "";
+          const state      = mDone ? "done" : mProg ? "progress" : "pending";
+          const borderCol  = state === "done"     ? "#4ade80"
+                           : state === "progress" ? "#c9a55a"
+                           :                        "rgba(255,255,255,0.2)";
+          const bgCol      = state === "done"     ? "rgba(74,222,128,0.12)"
+                           : state === "progress" ? "rgba(201,165,90,0.12)"
+                           :                        "transparent";
+          const textClass  = state === "done"     ? "text-white/35 line-through"
+                           : state === "progress" ? "text-[#c9a55a]/90"
+                           :                        "text-white/80";
+          const title      = state === "pending"  ? "Marquer en cours"
+                           : state === "progress" ? "Marquer terminé"
+                           :                        "Remettre en attente";
+
           return (
             <div key={i} className="flex items-center gap-2.5" style={{ paddingLeft: `${indent * 8}px` }}>
               <button
-                onClick={() => {
-                  const nl = [...lines];
-                  nl[i] = isDone
-                    ? `${ (unchecked ?? checked)![1] }- [ ] ${text}`
-                    : `${ (unchecked ?? checked)![1] }- [x] ${text}`;
-                  onToggle(nl.join("\n"));
-                }}
-                className="flex h-4 w-4 shrink-0 items-center justify-center rounded border transition"
-                style={{
-                  borderColor: isDone ? "#4ade80" : "rgba(255,255,255,0.2)",
-                  background:  isDone ? "rgba(74,222,128,0.12)" : "transparent",
-                }}
+                onClick={() => cycleState(i)}
+                title={title}
+                className="flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all duration-200 hover:scale-110"
+                style={{ borderColor: borderCol, background: bgCol }}
               >
-                {isDone && <Check size={10} className="text-green-400" />}
+                {state === "done"     && <Check size={9} className="text-green-400" />}
+                {state === "progress" && <div className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />}
               </button>
-              <span className={`text-[0.95rem] leading-relaxed transition ${isDone ? "text-white/35 line-through" : "text-white/80"}`}>
+              <span className={`text-[0.95rem] leading-relaxed transition-colors ${textClass}`}>
                 {text || "\u00a0"}
               </span>
             </div>
@@ -204,8 +236,42 @@ function ChecklistView({ content, onToggle }: { content: string; onToggle: (c: s
   );
 }
 
+/* ── TaskProgressBar ── */
+function TaskProgressBar({ content }: { content: string }) {
+  const { total, done, inProg } = getTaskProgress(content);
+  if (total === 0) return null;
+
+  const pctDone = Math.round((done   / total) * 100);
+  const pctProg = Math.round((inProg / total) * 100);
+
+  return (
+    <div className="flex items-center gap-3 mt-2">
+      <div className="flex-1 h-1.5 rounded-full bg-white/[0.07] overflow-hidden">
+        <div className="h-full flex">
+          <motion.div
+            initial={{ width: 0 }} animate={{ width: `${pctDone}%` }}
+            transition={{ duration: 0.55, ease }}
+            className="h-full bg-green-400/75 rounded-l-full"
+          />
+          <motion.div
+            initial={{ width: 0 }} animate={{ width: `${pctProg}%` }}
+            transition={{ duration: 0.55, ease, delay: 0.1 }}
+            className="h-full bg-[#c9a55a]/60"
+          />
+        </div>
+      </div>
+      <span className="text-[0.6rem] font-bold text-white/30 shrink-0 tabular-nums">
+        {done}/{total}
+        {inProg > 0 && (
+          <span className="ml-1 text-[#c9a55a]/50">· {inProg} en cours</span>
+        )}
+      </span>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════
-   EXPORT PDF (inchangé)
+   EXPORT PDF
 ═══════════════════════════════════════════════════════════════ */
 function exportPDF(note: Note) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -238,6 +304,7 @@ function exportPDF(note: Note) {
    PAGE PRINCIPALE
 ═══════════════════════════════════════════════════════════════ */
 export default function BlocNotesPage() {
+
   /* ── Notes & sélection ── */
   const [notes,      setNotes]      = useState<Note[]>([]);
   const [selected,   setSelected]   = useState<Note | null>(null);
@@ -249,13 +316,19 @@ export default function BlocNotesPage() {
   const [saving,     setSaving]     = useState(false);
   const [deleting,   setDeleting]   = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
-  const [aiLoading,  setAiLoading]  = useState<AiAction | null>(null);
+  const [aiLoading,  setAiLoading]  = useState<NonChatAction | null>(null);
+
+  /* ── Chat IA ── */
+  const [chatOpen,    setChatOpen]    = useState(false);
+  const [chatPrompt,  setChatPrompt]  = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   /* ── UI ── */
   const [confirmDel, setConfirmDel] = useState(false);
   const [toast,      setToast]      = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [mobileView, setMobileView] = useState<"list" | "editor">("list");
-  const [preview,    setPreview]    = useState(false);  // mode aperçu checklist
+  const [preview,    setPreview]    = useState(false);
 
   /* ── Filtres ── */
   const [query,      setQuery]      = useState("");
@@ -264,13 +337,15 @@ export default function BlocNotesPage() {
   const [sortDir,    setSortDir]    = useState<"desc" | "asc">("desc");
   const [sortBy,     setSortBy]     = useState<SortBy>("date");
 
-  /* ── Favoris & épinglés (localStorage) ── */
+  /* ── Favoris & épinglés ── */
   const [favorites,  setFavorites]  = useState<Set<string>>(new Set());
   const [pinned,     setPinned]     = useState<Set<string>>(new Set());
 
   /* ── Refs ── */
   const textareaRef   = useRef<HTMLTextAreaElement>(null);
   const handleSaveRef = useRef<(silent?: boolean) => Promise<void>>(async () => {});
+  const chatInputRef  = useRef<HTMLTextAreaElement>(null);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
 
   /* ── Charger les notes ── */
   const fetchNotes = useCallback(async () => {
@@ -284,11 +359,31 @@ export default function BlocNotesPage() {
 
   useEffect(() => { fetchNotes(); }, [fetchNotes]);
 
-  /* ── Charger favoris/épinglés depuis localStorage ── */
+  /* ── Charger favoris/épinglés ── */
   useEffect(() => {
     setFavorites(getLocalSet(FAV_KEY));
     setPinned(getLocalSet(PIN_KEY));
   }, []);
+
+  /* ── Réinitialiser chat quand on change de note ── */
+  useEffect(() => {
+    setChatHistory([]);
+    setChatOpen(false);
+    setChatPrompt("");
+  }, [selected?.id]);
+
+  /* ── Focus input chat à l'ouverture ── */
+  useEffect(() => {
+    if (chatOpen) {
+      const t = setTimeout(() => chatInputRef.current?.focus(), 150);
+      return () => clearTimeout(t);
+    }
+  }, [chatOpen]);
+
+  /* ── Scroll chat vers le bas ── */
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatHistory]);
 
   /* ── Ctrl+S ── */
   useEffect(() => {
@@ -354,10 +449,9 @@ export default function BlocNotesPage() {
     if (!silent) { setSaving(false); showToast("success", "Note enregistrée."); }
   }, [draft, selected]);
 
-  /* ── Sync ref ── */
   useEffect(() => { handleSaveRef.current = handleSave; }, [handleSave]);
 
-  /* ── Auto-save (2,5 s après dernière frappe, note existante seulement) ── */
+  /* ── Auto-save ── */
   useEffect(() => {
     if (!dirty || !selected?.id) return;
     const timer = setTimeout(async () => {
@@ -382,7 +476,7 @@ export default function BlocNotesPage() {
     showToast("success", "Note supprimée.");
   }
 
-  /* ── Sélectionner / Créer ── */
+  /* ── Navigation ── */
   function openNote(note: Note) {
     setSelected(note);
     setDraft({ title: note.title, content: note.content, category: note.category });
@@ -420,8 +514,8 @@ export default function BlocNotesPage() {
     });
   }
 
-  /* ── IA ── */
-  async function runAI(action: AiAction) {
+  /* ── IA — actions prédéfinies ── */
+  async function runAI(action: NonChatAction) {
     if (!draft.content?.trim() && !draft.title?.trim()) {
       showToast("error", "Écrivez quelque chose avant d'utiliser l'IA.");
       return;
@@ -439,10 +533,13 @@ export default function BlocNotesPage() {
 
       if (action === "to-tasks") {
         setDraft(d => ({ ...d, content: result, category: "tâches" as Category }));
-        showToast("success", "✅ Transformé en liste de tâches — pensez à sauvegarder.");
+        showToast("success", "✅ Actions créées — pensez à sauvegarder.");
+      } else if (action === "improve") {
+        setDraft(d => ({ ...d, content: result }));
+        showToast("success", "✨ Texte amélioré — pensez à sauvegarder.");
       } else {
         setDraft(d => ({ ...d, content: result }));
-        showToast("success", action === "improve" ? "✨ Note améliorée — pensez à sauvegarder." : "📋 Résumé généré — pensez à sauvegarder.");
+        showToast("success", "📋 Résumé généré — pensez à sauvegarder.");
       }
       setDirty(true);
     } catch (err) {
@@ -452,10 +549,51 @@ export default function BlocNotesPage() {
     }
   }
 
+  /* ── IA — chat libre ── */
+  async function runChat() {
+    const prompt = chatPrompt.trim();
+    if (!prompt || chatLoading) return;
+
+    setChatLoading(true);
+    setChatHistory(prev => [...prev, { role: "user", text: prompt }]);
+    setChatPrompt("");
+
+    try {
+      const res = await fetch("/api/notes/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action:  "chat",
+          content: draft.content ?? "",
+          title:   draft.title   ?? "",
+          prompt,
+        }),
+      });
+      const { result, error } = await res.json() as { result?: string; error?: string };
+      if (error) throw new Error(error);
+      if (!result) throw new Error("Réponse vide");
+
+      setChatHistory(prev => [...prev, { role: "assistant", text: result }]);
+    } catch (err) {
+      setChatHistory(prev => [...prev, {
+        role: "assistant",
+        text: "❌ " + (err instanceof Error ? err.message : "Erreur IA."),
+      }]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  function applyToNote(text: string) {
+    updateDraft("content", text);
+    showToast("success", "✅ Réponse appliquée — pensez à sauvegarder.");
+    setChatOpen(false);
+  }
+
   /* ── Insérer une case à cocher ── */
   function insertCheckItem() {
-    const content = draft.content ?? "";
-    const sep     = content.length > 0 && !content.endsWith("\n") ? "\n" : "";
+    const content    = draft.content ?? "";
+    const sep        = content.length > 0 && !content.endsWith("\n") ? "\n" : "";
     const newContent = `${content}${sep}- [ ] `;
     updateDraft("content", newContent);
     setTimeout(() => {
@@ -467,17 +605,14 @@ export default function BlocNotesPage() {
   /* ── Filtres & tri ── */
   const filtered = useMemo(() => {
     let list = [...notes];
-
     if (filterCat !== "tous") list = list.filter(n => n.category === filterCat);
     if (filterFav)            list = list.filter(n => favorites.has(n.id));
-
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter(n =>
         n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
       );
     }
-
     if (sortBy === "category") {
       list.sort((a, b) => a.category.localeCompare(b.category));
     } else {
@@ -487,15 +622,13 @@ export default function BlocNotesPage() {
         return sortDir === "desc" ? tb - ta : ta - tb;
       });
     }
-
-    // Épinglés toujours en premier
     list.sort((a, b) => (pinned.has(b.id) ? 1 : 0) - (pinned.has(a.id) ? 1 : 0));
-
     return list;
   }, [notes, filterCat, filterFav, query, sortBy, sortDir, favorites, pinned]);
 
-  const wordCount = useMemo(() => countWords(draft.content ?? ""), [draft.content]);
+  const wordCount  = useMemo(() => countWords(draft.content ?? ""), [draft.content]);
   const hasContent = draft.title !== undefined || draft.content !== undefined;
+  const isTaches   = (draft.category ?? "") === "tâches";
 
   /* ══════════════════════════════════════════════════════════════
      RENDER
@@ -523,8 +656,8 @@ export default function BlocNotesPage() {
                   PRO
                 </span>
               </div>
-              <p className="text-[0.64rem] text-white/30 hidden sm:block">
-                Capturez vos idées, organisez votre travail et améliorez vos notes avec l&apos;IA.
+              <p className="hidden text-[0.64rem] text-white/30 sm:block">
+                Capturez vos idées, améliorez-les avec l&apos;IA et transformez-les en actions.
               </p>
             </div>
           </div>
@@ -535,7 +668,7 @@ export default function BlocNotesPage() {
             </span>
             <button
               onClick={newNote}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:shadow-[0_6px_24px_rgba(201,165,90,0.45)]"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:shadow-[0_6px_24px_rgba(201,165,90,0.45)] active:scale-[0.97]"
             >
               <Plus size={14} /> Nouvelle note
             </button>
@@ -556,8 +689,6 @@ export default function BlocNotesPage() {
         >
           {/* Search + filtres */}
           <div className="space-y-2.5 border-b border-white/6 p-4">
-
-            {/* Barre de recherche */}
             <div className="relative">
               <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25" />
               <input
@@ -566,13 +697,12 @@ export default function BlocNotesPage() {
                 className="w-full rounded-xl border border-white/8 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-white/15 focus:border-[rgba(201,165,90,0.4)] focus:ring-1 focus:ring-[rgba(201,165,90,0.15)]"
               />
               {query && (
-                <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition">
+                <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 transition hover:text-white/60">
                   <X size={13} />
                 </button>
               )}
             </div>
 
-            {/* Filtres catégorie */}
             <div className="flex flex-wrap gap-1.5">
               <button
                 onClick={() => setFilterCat("tous")}
@@ -598,22 +728,18 @@ export default function BlocNotesPage() {
               ))}
             </div>
 
-            {/* Filtres rapides + tri */}
             <div className="flex items-center justify-between gap-2">
-              {/* Favoris */}
               <button
                 onClick={() => setFilterFav(v => !v)}
                 className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.65rem] font-bold transition ${
                   filterFav
-                    ? "bg-[rgba(201,165,90,0.12)] text-[#c9a55a] border border-[rgba(201,165,90,0.3)]"
+                    ? "border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.12)] text-[#c9a55a]"
                     : "text-white/25 hover:text-white/50"
                 }`}
               >
                 <Star size={11} fill={filterFav ? "#c9a55a" : "none"} />
                 Favoris
               </button>
-
-              {/* Tri */}
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setSortBy("date")}
@@ -630,7 +756,7 @@ export default function BlocNotesPage() {
                 {sortBy === "date" && (
                   <button
                     onClick={() => setSortDir(d => d === "desc" ? "asc" : "desc")}
-                    className="text-white/25 hover:text-white/55 transition"
+                    className="text-white/25 transition hover:text-white/55"
                   >
                     {sortDir === "desc" ? <SortDesc size={12} /> : <SortAsc size={12} />}
                   </button>
@@ -639,7 +765,7 @@ export default function BlocNotesPage() {
             </div>
           </div>
 
-          {/* Liste des notes */}
+          {/* Liste */}
           <div className="flex-1 overflow-y-auto">
             {loadingAll ? (
               <div className="flex items-center justify-center py-16">
@@ -663,8 +789,8 @@ export default function BlocNotesPage() {
             ) : (
               <AnimatePresence initial={false}>
                 {filtered.map(note => {
-                  const isFav = favorites.has(note.id);
-                  const isPin = pinned.has(note.id);
+                  const isFav    = favorites.has(note.id);
+                  const isPin    = pinned.has(note.id);
                   const isActive = selected?.id === note.id;
                   return (
                     <motion.div
@@ -675,21 +801,18 @@ export default function BlocNotesPage() {
                         isActive ? "bg-white/[0.05]" : ""
                       }`}
                     >
-                      {/* Indicateur actif */}
                       {isActive && (
                         <motion.div layoutId="note-indicator"
-                          className="absolute left-0 top-3 bottom-3 w-0.5 rounded-r-full bg-[#c9a55a]"
+                          className="absolute bottom-3 left-0 top-3 w-0.5 rounded-r-full bg-[#c9a55a]"
                         />
                       )}
-
-                      {/* Contenu cliquable */}
                       <button className="w-full px-4 py-3.5 text-left" onClick={() => openNote(note)}>
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="flex min-w-0 items-center gap-1.5">
                             {isPin && <Pin size={10} className="shrink-0 text-[#a78bfa]" fill="#a78bfa" />}
                             {isFav && <Star size={10} className="shrink-0 text-[#c9a55a]" fill="#c9a55a" />}
                             <p className="line-clamp-1 text-sm font-bold text-white/90">
-                              {note.title || <span className="text-white/30 italic">Sans titre</span>}
+                              {note.title || <span className="italic text-white/30">Sans titre</span>}
                             </p>
                           </div>
                           <CategoryBadge cat={note.category} />
@@ -702,7 +825,6 @@ export default function BlocNotesPage() {
                         </div>
                       </button>
 
-                      {/* Actions rapides au hover */}
                       <div className="absolute right-3 top-3 hidden items-center gap-1 group-hover:flex">
                         <button
                           onClick={e => { e.stopPropagation(); togglePin(note.id); }}
@@ -741,12 +863,10 @@ export default function BlocNotesPage() {
 
               {/* ── Toolbar principale ── */}
               <div className="flex items-center justify-between gap-3 border-b border-white/6 px-5 py-3">
-                {/* Retour mobile */}
                 <button onClick={() => setMobileView("list")} className="flex items-center gap-1.5 text-xs text-white/40 transition hover:text-white/70 sm:hidden">
                   <ArrowLeft size={14} /> Notes
                 </button>
 
-                {/* Statut save */}
                 <div className="hidden items-center gap-2 sm:flex">
                   {autoSaving && (
                     <span className="flex items-center gap-1.5 text-[0.6rem] text-white/30">
@@ -767,9 +887,7 @@ export default function BlocNotesPage() {
                   )}
                 </div>
 
-                {/* Actions droite */}
                 <div className="ml-auto flex items-center gap-1.5">
-                  {/* Favoris (note ouverte) */}
                   {selected && (
                     <button
                       onClick={() => toggleFavorite(selected.id)}
@@ -779,7 +897,6 @@ export default function BlocNotesPage() {
                       <Star size={13} className={favorites.has(selected.id) ? "text-[#c9a55a]" : "text-white/40"} fill={favorites.has(selected.id) ? "#c9a55a" : "none"} />
                     </button>
                   )}
-                  {/* Épingler (note ouverte) */}
                   {selected && (
                     <button
                       onClick={() => togglePin(selected.id)}
@@ -789,20 +906,6 @@ export default function BlocNotesPage() {
                       <Pin size={13} className={pinned.has(selected.id) ? "text-[#a78bfa]" : "text-white/40"} fill={pinned.has(selected.id) ? "#a78bfa" : "none"} />
                     </button>
                   )}
-                  {/* Aperçu checklist */}
-                  <button
-                    onClick={() => setPreview(v => !v)}
-                    title={preview ? "Mode édition" : "Mode aperçu checklist"}
-                    className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold transition ${
-                      preview
-                        ? "border-[rgba(96,165,250,0.3)] bg-[rgba(59,130,246,0.08)] text-[#60a5fa]"
-                        : "border-white/10 text-white/40 hover:border-white/20 hover:text-white/70"
-                    }`}
-                  >
-                    {preview ? <EyeOff size={13} /> : <Eye size={13} />}
-                    <span className="hidden sm:inline">{preview ? "Éditer" : "Aperçu"}</span>
-                  </button>
-                  {/* Export PDF */}
                   {selected && (
                     <button
                       onClick={() => exportPDF({ ...selected, ...draft } as Note)}
@@ -811,7 +914,6 @@ export default function BlocNotesPage() {
                       <FileDown size={13} /><span className="hidden sm:inline">PDF</span>
                     </button>
                   )}
-                  {/* Supprimer */}
                   {selected && (
                     <button
                       onClick={() => setConfirmDel(true)} disabled={deleting}
@@ -821,11 +923,10 @@ export default function BlocNotesPage() {
                       <span className="hidden sm:inline">Supprimer</span>
                     </button>
                   )}
-                  {/* Sauvegarder */}
                   <button
                     onClick={() => handleSaveRef.current()}
                     disabled={saving || autoSaving || !dirty}
-                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_2px_12px_rgba(201,165,90,0.3)] transition hover:shadow-[0_4px_20px_rgba(201,165,90,0.45)] disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_2px_12px_rgba(201,165,90,0.3)] transition hover:shadow-[0_4px_20px_rgba(201,165,90,0.45)] active:scale-[0.97] disabled:opacity-50"
                   >
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                     Enregistrer
@@ -833,43 +934,199 @@ export default function BlocNotesPage() {
                 </div>
               </div>
 
-              {/* ── Zone IA ── */}
-              <div className="flex flex-wrap items-center gap-2 border-b border-white/5 bg-[rgba(201,165,90,0.025)] px-5 py-2.5">
-                <div className="flex items-center gap-1.5 mr-1">
-                  <Sparkles size={11} className="text-[#c9a55a]" />
-                  <span className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-white/25">IA</span>
+              {/* ── Barre IA ── */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-white/5 bg-[rgba(201,165,90,0.02)] px-5 py-2.5">
+
+                {/* Label IA + boutons actions */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles size={11} className="text-[#c9a55a]" />
+                    <span className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-white/25">IA</span>
+                  </div>
+
+                  {AI_ACTIONS.map(({ action, label, labelShort, icon: Icon, tip }) => (
+                    <button
+                      key={action}
+                      onClick={() => runAI(action)}
+                      disabled={!!aiLoading || chatLoading}
+                      title={tip}
+                      className={`group/ai flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                        aiLoading === action
+                          ? "border-[rgba(201,165,90,0.4)] bg-[rgba(201,165,90,0.12)] text-[#c9a55a] shadow-[0_0_14px_rgba(201,165,90,0.2)]"
+                          : "border-white/[0.08] text-white/45 hover:border-[rgba(201,165,90,0.3)] hover:bg-[rgba(201,165,90,0.06)] hover:text-[#c9a55a] hover:shadow-[0_0_12px_rgba(201,165,90,0.12)]"
+                      } disabled:cursor-not-allowed disabled:opacity-50`}
+                    >
+                      {aiLoading === action
+                        ? <Loader2 size={11} className="animate-spin" />
+                        : <Icon size={11} className="transition-transform group-hover/ai:scale-110" />
+                      }
+                      <span className="hidden sm:inline">{label}</span>
+                      <span className="inline sm:hidden">{labelShort}</span>
+                    </button>
+                  ))}
+
+                  {/* Locked — Traduire (bientôt) */}
+                  <div
+                    title="Fonctionnalité à venir"
+                    className="flex cursor-not-allowed select-none items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-white/18"
+                  >
+                    <Globe size={11} />
+                    <span className="hidden sm:inline">Traduire</span>
+                    <span className="rounded-full bg-white/[0.06] px-1.5 py-px text-[0.5rem] font-black uppercase tracking-[0.1em] text-white/22">
+                      Bientôt
+                    </span>
+                  </div>
                 </div>
-                {AI_ACTIONS.map(({ action, label, icon: Icon, tip }) => (
+
+                {/* Outils droite + bouton chat */}
+                <div className="ml-auto flex items-center gap-1.5">
+                  {!preview && (
+                    <button
+                      onClick={insertCheckItem}
+                      title="Insérer une case à cocher"
+                      className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-white/35 transition hover:border-white/18 hover:text-white/60"
+                    >
+                      <CheckSquare size={11} />
+                      <span className="hidden sm:inline">Case</span>
+                    </button>
+                  )}
+
                   <button
-                    key={action}
-                    onClick={() => runAI(action)}
-                    disabled={!!aiLoading}
-                    title={tip}
-                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
-                      aiLoading === action
-                        ? "border-[rgba(201,165,90,0.4)] bg-[rgba(201,165,90,0.12)] text-[#c9a55a] shadow-[0_0_12px_rgba(201,165,90,0.2)]"
-                        : "border-white/[0.08] text-white/45 hover:border-[rgba(201,165,90,0.3)] hover:bg-[rgba(201,165,90,0.07)] hover:text-[#c9a55a]"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    onClick={() => setPreview(v => !v)}
+                    title={preview ? "Mode édition" : "Mode aperçu checklist"}
+                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
+                      preview
+                        ? "border-[rgba(96,165,250,0.3)] bg-[rgba(59,130,246,0.08)] text-[#60a5fa]"
+                        : "border-white/[0.08] text-white/35 hover:border-white/18 hover:text-white/60"
+                    }`}
                   >
-                    {aiLoading === action
+                    {preview ? <EyeOff size={11} /> : <Eye size={11} />}
+                    <span className="hidden sm:inline">{preview ? "Éditer" : "Aperçu"}</span>
+                  </button>
+
+                  {/* Séparateur */}
+                  <div className="h-4 w-px bg-white/10" />
+
+                  {/* Demander à l'IA — PRO */}
+                  <button
+                    onClick={() => setChatOpen(v => !v)}
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
+                      chatOpen
+                        ? "border-[rgba(201,165,90,0.45)] bg-[rgba(201,165,90,0.10)] text-[#c9a55a] shadow-[0_0_14px_rgba(201,165,90,0.18)]"
+                        : "border-[rgba(201,165,90,0.18)] text-[#c9a55a]/60 hover:border-[rgba(201,165,90,0.38)] hover:bg-[rgba(201,165,90,0.06)] hover:text-[#c9a55a] hover:shadow-[0_0_12px_rgba(201,165,90,0.12)]"
+                    }`}
+                  >
+                    {chatLoading
                       ? <Loader2 size={11} className="animate-spin" />
-                      : <Icon size={11} />
+                      : <MessageSquare size={11} />
                     }
-                    {label}
+                    <span className="hidden sm:inline">Demander à l&apos;IA</span>
+                    <span className="rounded-full bg-[rgba(201,165,90,0.15)] px-1.5 py-px text-[0.5rem] font-black uppercase tracking-[0.12em] text-[#c9a55a]">
+                      PRO
+                    </span>
                   </button>
-                ))}
-                {/* Insérer case à cocher */}
-                {!preview && (
-                  <button
-                    onClick={insertCheckItem}
-                    title="Insérer une case à cocher"
-                    className="ml-auto flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-white/35 transition hover:border-white/20 hover:text-white/60"
-                  >
-                    <CheckSquare size={11} />
-                    <span className="hidden sm:inline">Case à cocher</span>
-                  </button>
-                )}
+                </div>
               </div>
+
+              {/* ── Panel chat IA ── */}
+              <AnimatePresence initial={false}>
+                {chatOpen && (
+                  <motion.div
+                    key="chat-panel"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease }}
+                    className="overflow-hidden border-b border-[rgba(201,165,90,0.1)] bg-[rgba(201,165,90,0.018)]"
+                  >
+                    <div className="p-4">
+
+                      {/* Historique */}
+                      {chatHistory.length > 0 && (
+                        <div className="mb-3 max-h-52 space-y-3 overflow-y-auto pr-1 scroll-smooth">
+                          {chatHistory.map((msg, i) => (
+                            <div
+                              key={i}
+                              className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                            >
+                              {msg.role === "assistant" && (
+                                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(201,165,90,0.15)]">
+                                  <Sparkles size={9} className="text-[#c9a55a]" />
+                                </div>
+                              )}
+                              <div className={`max-w-[88%] rounded-xl px-3 py-2.5 text-xs leading-relaxed ${
+                                msg.role === "user"
+                                  ? "bg-white/[0.07] text-white/65"
+                                  : "border border-[rgba(201,165,90,0.12)] bg-[rgba(201,165,90,0.07)] text-white/80"
+                              }`}>
+                                <p className="whitespace-pre-wrap">{msg.text}</p>
+                                {msg.role === "assistant" && !msg.text.startsWith("❌") && (
+                                  <button
+                                    onClick={() => applyToNote(msg.text)}
+                                    className="mt-2 flex items-center gap-1 text-[0.6rem] font-bold text-[#c9a55a]/50 transition hover:text-[#c9a55a]"
+                                  >
+                                    <CornerDownLeft size={9} /> Appliquer à la note
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Indicateur de frappe */}
+                          {chatLoading && (
+                            <div className="flex gap-2.5 justify-start">
+                              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(201,165,90,0.15)]">
+                                <Sparkles size={9} className="text-[#c9a55a]" />
+                              </div>
+                              <div className="rounded-xl border border-[rgba(201,165,90,0.12)] bg-[rgba(201,165,90,0.07)] px-3 py-2.5">
+                                <div className="flex items-center gap-1">
+                                  {[0, 1, 2].map(j => (
+                                    <motion.div
+                                      key={j}
+                                      animate={{ opacity: [0.25, 1, 0.25] }}
+                                      transition={{ duration: 1, repeat: Infinity, delay: j * 0.2 }}
+                                      className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]"
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          <div ref={chatBottomRef} />
+                        </div>
+                      )}
+
+                      {/* Zone saisie */}
+                      <div className="flex items-end gap-2">
+                        <textarea
+                          ref={chatInputRef}
+                          value={chatPrompt}
+                          onChange={e => setChatPrompt(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              runChat();
+                            }
+                          }}
+                          placeholder="Posez une question ou demandez à l'IA de modifier cette note…"
+                          rows={2}
+                          className="flex-1 resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-xs leading-relaxed text-white placeholder:text-white/22 outline-none transition focus:border-[rgba(201,165,90,0.35)] focus:ring-1 focus:ring-[rgba(201,165,90,0.12)]"
+                        />
+                        <button
+                          onClick={runChat}
+                          disabled={chatLoading || !chatPrompt.trim()}
+                          className="flex h-[4.2rem] w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-[#c9a55a] to-[#b08d45] text-[#0a0a0a] shadow-[0_2px_10px_rgba(201,165,90,0.3)] transition hover:shadow-[0_4px_16px_rgba(201,165,90,0.45)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Send size={13} />
+                        </button>
+                      </div>
+                      <p className="mt-1.5 text-[0.58rem] text-white/20">
+                        ↵ Envoyer · Shift+↵ Nouvelle ligne · L&apos;IA lit le contenu de votre note
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* ── Zone édition ── */}
               <div className="flex flex-1 flex-col overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
@@ -880,16 +1137,16 @@ export default function BlocNotesPage() {
                   value={draft.title ?? ""}
                   onChange={e => updateDraft("title", e.target.value)}
                   placeholder="Titre de la note…"
-                  className="w-full border-none bg-transparent text-2xl font-extrabold text-white placeholder:text-white/20 outline-none sm:text-3xl"
+                  className="w-full border-none bg-transparent text-2xl font-extrabold text-white placeholder:text-white/18 outline-none transition-colors focus:placeholder:text-white/10 sm:text-3xl"
                 />
 
-                {/* Méta : catégorie + date */}
+                {/* Méta */}
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <div className="relative">
                     <select
                       value={draft.category ?? "idées"}
                       onChange={e => updateDraft("category", e.target.value)}
-                      className="appearance-none rounded-full border py-1 pl-3 pr-7 text-[0.65rem] font-bold uppercase tracking-wider outline-none transition cursor-pointer"
+                      className="appearance-none cursor-pointer rounded-full border py-1 pl-3 pr-7 text-[0.65rem] font-bold uppercase tracking-wider outline-none transition"
                       style={(() => {
                         const c = getCat((draft.category as Category) ?? "idées");
                         return { color: c.color, background: c.bg, borderColor: c.border };
@@ -901,7 +1158,7 @@ export default function BlocNotesPage() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-current opacity-60" />
+                    <ChevronDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 opacity-60" style={{ color: "currentcolor" }} />
                   </div>
                   {selected && (
                     <span className="flex items-center gap-1 text-[0.65rem] text-white/25">
@@ -910,15 +1167,20 @@ export default function BlocNotesPage() {
                   )}
                 </div>
 
+                {/* Barre de progression (notes tâches) */}
+                {isTaches && draft.content && (
+                  <TaskProgressBar content={draft.content} />
+                )}
+
                 {/* Divider or */}
                 <div className="my-5 h-px w-full bg-gradient-to-r from-[rgba(201,165,90,0.25)] via-[rgba(201,165,90,0.08)] to-transparent" />
 
-                {/* Contenu : aperçu checklist OU textarea */}
+                {/* Contenu */}
                 {preview ? (
                   <div className="flex-1">
                     <ChecklistView
                       content={draft.content ?? ""}
-                      onToggle={c => { updateDraft("content", c); }}
+                      onToggle={c => updateDraft("content", c)}
                     />
                     {!(draft.content?.trim()) && (
                       <p className="text-sm italic text-white/20">Note vide — passez en mode édition pour écrire.</p>
@@ -930,17 +1192,17 @@ export default function BlocNotesPage() {
                     value={draft.content ?? ""}
                     onChange={e => updateDraft("content", e.target.value)}
                     placeholder="Commencez à écrire… Utilisez l'IA pour améliorer, résumer ou transformer votre note."
-                    className="min-h-[240px] w-full flex-1 resize-none border-none bg-transparent text-[0.95rem] leading-relaxed text-white/80 placeholder:text-white/18 outline-none focus:placeholder:text-white/10 transition-colors"
+                    className="min-h-[240px] w-full flex-1 resize-none border-none bg-transparent text-[0.95rem] leading-relaxed text-white/80 outline-none placeholder:text-white/18 transition-colors focus:placeholder:text-white/10"
                     style={{ height: "auto" }}
                   />
                 )}
               </div>
 
-              {/* ── Footer : compteur de mots + auto-save ── */}
+              {/* ── Footer ── */}
               <div className="flex items-center justify-between border-t border-white/5 px-6 py-2.5 sm:px-8">
-                <span className="text-[0.62rem] text-white/20">
+                <span className="text-[0.62rem] text-white/20 tabular-nums">
                   {wordCount} mot{wordCount !== 1 ? "s" : ""}
-                  {draft.content ? ` · ${draft.content.length} caractères` : ""}
+                  {draft.content ? ` · ${draft.content.length} car.` : ""}
                 </span>
                 {autoSaving && (
                   <span className="flex items-center gap-1.5 text-[0.62rem] text-white/25">
@@ -956,38 +1218,39 @@ export default function BlocNotesPage() {
 
             </motion.div>
           ) : (
-            /* ── Empty state — positionnement SaaS ── */
+            /* ── Empty state ── */
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="flex h-full flex-col items-center justify-center gap-5 rounded-none p-8 text-center sm:rounded-[1.5rem] sm:border sm:border-white/8 sm:bg-[rgba(15,17,23,0.4)]"
             >
-              {/* Icône animée */}
               <motion.div
                 animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)]"
+                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] shadow-[0_0_32px_rgba(201,165,90,0.08)]"
               >
                 <StickyNote size={28} style={{ color: "#c9a55a" }} />
               </motion.div>
 
-              {/* Tagline SaaS */}
               <div>
-                <p className="text-lg font-extrabold text-white">Bloc-notes IA</p>
-                <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/40">
-                  Capturez vos idées, organisez votre travail et améliorez vos notes avec l&apos;IA.
+                <p className="text-lg font-extrabold text-white">Votre bloc-notes intelligent</p>
+                <p className="mt-2 max-w-[280px] text-sm leading-relaxed text-white/40">
+                  Capturez vos idées, améliorez-les avec l&apos;IA et transformez-les en actions.
                 </p>
               </div>
 
-              {/* Feature chips */}
               <div className="flex flex-wrap justify-center gap-2">
                 {[
-                  { icon: Sparkles,    label: "Améliorer avec l'IA" },
-                  { icon: Star,        label: "Favoris"              },
-                  { icon: Pin,         label: "Épingler"             },
-                  { icon: CheckSquare, label: "Checklists"           },
-                  { icon: FileDown,    label: "Export PDF"           },
+                  { icon: Wand2,        label: "Améliorer l'écriture" },
+                  { icon: FileText,     label: "Résumer"               },
+                  { icon: ListChecks,   label: "Créer des actions"     },
+                  { icon: MessageSquare,label: "Demander à l'IA"       },
+                  { icon: CheckSquare,  label: "Checklists"            },
+                  { icon: FileDown,     label: "Export PDF"            },
                 ].map(f => (
-                  <span key={f.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/45">
+                  <span
+                    key={f.label}
+                    className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/45"
+                  >
                     <f.icon size={11} className="text-[#c9a55a]" />
                     {f.label}
                   </span>
@@ -996,7 +1259,7 @@ export default function BlocNotesPage() {
 
               <button
                 onClick={newNote}
-                className="mt-2 flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-5 py-2.5 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:shadow-[0_6px_24px_rgba(201,165,90,0.45)]"
+                className="mt-2 flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-5 py-2.5 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:shadow-[0_6px_24px_rgba(201,165,90,0.45)] active:scale-[0.97]"
               >
                 <Plus size={15} /> Nouvelle note
               </button>
