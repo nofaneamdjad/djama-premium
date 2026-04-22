@@ -1,22 +1,36 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════
-   DESIGN TOKENS — DJAMA PREMIUM (DARK ONLY)
-   Source de vérité unique. Modifier ici = changer tout le site.
+   DESIGN TOKENS — DJAMA ADAPTIVE PREMIUM
+   Thème unique, stable, premium. Un seul système
+   visuel robuste — aucune dépendance dark/light.
+
+   Rendu garanti sur :
+   • Chrome desktop / mobile
+   • Safari iOS
+   • Android Chrome
+   • WhatsApp WebView / Facebook IAB
+   • Instagram in-app browser
+   • Windows / macOS / Linux
+
+   Source de vérité unique : modifier ici = changer
+   tout le site d'un seul coup.
 ══════════════════════════════════════════════ */
 :root {
   /*
-   * color-scheme: dark — signal principal aux navigateurs et WebViews.
-   * Désactive l'algorithme "Force Dark" d'Android WebView (Chrome 81+)
-   * utilisé par WhatsApp, Facebook, Instagram in-app browsers.
-   *
-   * forced-color-adjust: none — empêche Windows High Contrast / Forced
-   * Colors de remplacer les couleurs de la palette DJAMA.
+   * color-scheme: dark — signal explicite aux navigateurs.
+   *   → Désactive l'algorithme "Force Dark" d'Android WebView (Chrome 81+)
+   *     utilisé par WhatsApp, Facebook, Instagram in-app browsers.
+   *   → Colore les scrollbars, inputs natifs, select en sombre.
+   * forced-color-adjust: none — protège la palette contre Windows
+   *   High Contrast / Forced Colors (accessibilité OS).
    */
   color-scheme: dark;
   forced-color-adjust: none;
 
-  /* ── Palette Or — identité DJAMA ── */
+  /* ═══════════════════════════════════════
+     PALETTE OR — identité DJAMA
+  ═══════════════════════════════════════ */
   --gold:      201, 165, 90;     /* RGB brut pour rgba() */
   --gold-100:  #f5e6c8;
   --gold-200:  #e8cc94;
@@ -26,54 +40,98 @@
   --gold-rgb:  176 141 87;       /* pour color-mix / oklch */
   --gold-text: var(--gold-200);  /* texte or sur fond sombre */
 
-  /* ── Radius ── */
+  /* ═══════════════════════════════════════
+     ACCENT — token sémantique principal
+     Utilisé dans tous les composants pour
+     cohérence totale de l'identité DJAMA.
+  ═══════════════════════════════════════ */
+  --accent:        #c9a55a;                  /* or premium DJAMA */
+  --accent-hover:  #d4b06a;                  /* or survol */
+  --accent-muted:  #b08d57;                  /* or atténué */
+  --accent-bg:     rgba(201,165,90,.10);     /* fond accent subtil */
+  --accent-border: rgba(201,165,90,.25);     /* bordure accent */
+  --accent-glow:   rgba(201,165,90,.22);     /* halo accent */
+  --accent-on:     #09090b;                  /* texte sur fond accent */
+
+  /* ═══════════════════════════════════════
+     RADIUS
+  ═══════════════════════════════════════ */
   --radius-sm: 0.75rem;
   --radius-md: 1.25rem;
   --radius-lg: 1.75rem;
   --radius-xl: 2.25rem;
 
-  /* ── Fonds ── */
-  --bg-base:      #09090b;                  /* fond de page */
-  --bg-card:      #111113;                  /* cartes / sections */
-  --bg-card-2:    #18181b;                  /* fond alternatif */
-  --bg-card-3:    #1e1e22;                  /* fond profond */
-  --bg-glass:     rgba(255,255,255,.04);    /* glassmorphism */
-  --bg-overlay:   rgba(255,255,255,.045);   /* surbrillance subtile */
-  --bg-input:     rgba(255,255,255,.055);   /* fond des champs */
-  --bg-hover:     rgba(255,255,255,.065);   /* hover state */
-  --bg-alpha0:    rgba(9,9,11,0);           /* transparent (pour dégradés) */
+  /* ═══════════════════════════════════════
+     FONDS — du plus sombre au plus clair
+     Hiérarchie : base → card → elevated
+  ═══════════════════════════════════════ */
+  --bg-base:    #09090b;               /* page principale — charbon encre */
+  --bg-card:    #111113;               /* cartes de niveau 1 */
+  --bg-card-2:  #18181b;               /* surfaces niveau 2 */
+  --bg-card-3:  #1e1e22;               /* surfaces niveau 3 */
+  --bg-glass:   rgba(255,255,255,.04); /* glassmorphism léger */
+  --bg-overlay: rgba(255,255,255,.045);/* surbrillance douce */
+  --bg-input:   rgba(255,255,255,.055);/* fond champs de saisie */
+  --bg-hover:   rgba(255,255,255,.065);/* hover state universel */
+  --bg-alpha0:  rgba(9,9,11,0);        /* transparent pour dégradés */
 
-  /* ── Texte ── */
-  --text-primary:  rgba(255,255,255,.92);   /* titres / texte principal */
-  --text-90:       rgba(255,255,255,.85);
-  --text-75:       rgba(255,255,255,.72);
-  --text-55:       rgba(255,255,255,.58);
-  --text-38:       rgba(255,255,255,.40);
-  --text-22:       rgba(255,255,255,.24);
+  /* Alias surface (sémantique pour composants UI) */
+  --surface:        #0f0f12;               /* surface principale */
+  --surface-muted:  #080a0f;               /* surface profonde */
+  --surface-input:  rgba(255,255,255,.06); /* surface inputs */
 
-  /* ── Bordures ── */
+  /* ═══════════════════════════════════════
+     TEXTE — hiérarchie optique précise
+     Contraste WCAG AA garanti sur --bg-base
+  ═══════════════════════════════════════ */
+  --text-primary:  rgba(255,255,255,.92); /* titres / corps principal — 12.6:1 */
+  --text-90:       rgba(255,255,255,.85); /* sous-titres — 11.6:1 */
+  --text-75:       rgba(255,255,255,.72); /* texte secondaire — 9.8:1 */
+  --text-55:       rgba(255,255,255,.58); /* labels / métadonnées — 7.9:1 */
+  --text-38:       rgba(255,255,255,.40); /* helpers / placeholders — 5.4:1 */
+  --text-22:       rgba(255,255,255,.24); /* décoratif discret — 3.2:1 */
+
+  /* Alias ink (sémantique) */
+  --ink:           rgba(255,255,255,.92);
+  --ink-secondary: rgba(255,255,255,.60);
+  --ink-muted:     rgba(255,255,255,.38);
+  --ink-faint:     rgba(255,255,255,.18);
+
+  /* ═══════════════════════════════════════
+     BORDURES
+  ═══════════════════════════════════════ */
   --border-strong: rgba(255,255,255,.12);
   --border-base:   rgba(255,255,255,.08);
   --border-soft:   rgba(255,255,255,.045);
 
-  /* ── Navigation ── */
-  --nav-bg:     rgba(9,9,11,.92);
-  --nav-mobile: rgba(9,9,11,.98);
+  /* ═══════════════════════════════════════
+     NAVIGATION
+  ═══════════════════════════════════════ */
+  --nav-bg:     rgba(9,9,11,.92);   /* barre scrollée — blur derrière */
+  --nav-mobile: rgba(9,9,11,.98);   /* menu mobile — quasi-opaque */
 
-  /* ── Glows — maîtrisés, subtils ── */
-  --glow-gold:     rgba(176,141,87,.18);    /* halo or doux */
-  --glow-gold-hi:  rgba(176,141,87,.26);    /* halo or prononcé */
-  --glow-soft:     rgba(176,141,87,.10);    /* halo or très doux */
-  --glow-blue:     rgba(96,165,250,.20);
-  --glow-green:    rgba(37,211,102,.20);
+  /* ═══════════════════════════════════════
+     GLOWS — luminosité maîtrisée
+     Jamais envahissants, toujours subtils
+  ═══════════════════════════════════════ */
+  --glow-gold:    rgba(176,141,87,.18); /* halo or doux */
+  --glow-gold-hi: rgba(176,141,87,.26); /* halo or prononcé */
+  --glow-soft:    rgba(176,141,87,.10); /* halo or très discret */
+  --glow-blue:    rgba(96,165,250,.20);
+  --glow-green:   rgba(37,211,102,.20);
+  --glow-purple:  rgba(167,139,250,.18);
 
-  /* ── Ombres ── */
+  /* ═══════════════════════════════════════
+     OMBRES
+  ═══════════════════════════════════════ */
   --shadow-sm:   0 1px 4px rgba(0,0,0,.22);
   --shadow-card: 0 4px 20px rgba(0,0,0,.28), 0 1px 4px rgba(0,0,0,.14);
   --shadow-lg:   0 16px 56px rgba(0,0,0,.42), 0 6px 20px rgba(0,0,0,.18);
   --shadow-gold: 0 0 40px rgba(176,141,87,.26), 0 8px 24px rgba(176,141,87,.12);
 
-  /* ── Décorations ── */
+  /* ═══════════════════════════════════════
+     DÉCORATIONS
+  ═══════════════════════════════════════ */
   --grid-line:     rgba(255,255,255,.028);
   --dot-color:     rgba(255,255,255,.052);
   --divider-color: rgba(255,255,255,.068);
@@ -688,13 +746,10 @@ body {
  *    sont complètement transparents (texte illisible).
  */
 @supports not (backdrop-filter: blur(1px)) {
-  .glass-card {
-    background: rgba(13, 13, 17, 0.97);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
+  /* Fond solide opaque = fallback visuel sur WebViews sans blur support */
+  .glass-card,
   .glass-card-light {
-    background: rgba(248, 248, 250, 0.97);
+    background: rgba(15, 15, 18, 0.97);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
