@@ -5,6 +5,17 @@
    Source de vérité unique. Modifier ici = changer tout le site.
 ══════════════════════════════════════════════ */
 :root {
+  /*
+   * color-scheme: dark — signal principal aux navigateurs et WebViews.
+   * Désactive l'algorithme "Force Dark" d'Android WebView (Chrome 81+)
+   * utilisé par WhatsApp, Facebook, Instagram in-app browsers.
+   *
+   * forced-color-adjust: none — empêche Windows High Contrast / Forced
+   * Colors de remplacer les couleurs de la palette DJAMA.
+   */
+  color-scheme: dark;
+  forced-color-adjust: none;
+
   /* ── Palette Or — identité DJAMA ── */
   --gold:      201, 165, 90;     /* RGB brut pour rgba() */
   --gold-100:  #f5e6c8;
@@ -69,7 +80,16 @@
 }
 
 /* ── BASE ──────────────────────────────────── */
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  /*
+   * Renforce le signal dark-mode au niveau CSS.
+   * background-color solide = fallback avant que les CSS vars se chargent
+   * (évite le flash blanc / fond transparent dans les WebViews lents).
+   */
+  color-scheme: dark;
+  background-color: #09090b;
+}
 
 body {
   background-color: var(--bg-base);
@@ -78,6 +98,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "ss01", "ss02", "cv01", "kern";
   text-rendering: optimizeLegibility;
+  /*
+   * -webkit-text-size-adjust: 100% — empêche le WebView Android / iOS
+   * de redimensionner automatiquement le texte selon l'orientation.
+   */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* ══════════════════════════════════════════════
@@ -595,4 +621,130 @@ body {
   }
   .shimmer-gold:hover,
   .shimmer-white:hover { background-position: 100% center !important; }
+}
+
+/* ══════════════════════════════════════════════
+   WEBVIEW IN-APP BROWSER COMPAT
+   WhatsApp · Facebook · Instagram · Android
+   ──────────────────────────────────────────────
+   Problèmes ciblés :
+   1. Force Dark Algorithm — Android WebView 10+
+      applique une inversion algorithmique des
+      couleurs si la page ne déclare pas son
+      color-scheme. Résolu par color-scheme: dark
+      sur :root + html + meta viewport.
+
+   2. Rendu light forcé — certains WebViews
+      signalent prefers-color-scheme: light même
+      en mode sombre système. On force le rendu
+      sombre via les overrides ci-dessous.
+
+   3. backdrop-filter non supporté — Android 8–10
+      et Facebook IAB ignorent backdrop-filter,
+      rendant les fonds transparents. Fallback
+      solid background via @supports.
+
+   4. -webkit-background-clip: text — certains
+      WebViews anciens ne clipent pas les dégradés
+      sur le texte (texte invisible). Fallback
+      couleur or solide.
+
+   5. Dégradés inline mal rendus — fallback
+      bg-color solide sur les éléments critiques.
+══════════════════════════════════════════════ */
+
+/*
+ * 1. Override complet si WebView signale prefers-color-scheme: light
+ *    (Force Dark désactivé, mais page pensée dark-only)
+ */
+@media (prefers-color-scheme: light) {
+  html {
+    color-scheme: dark;
+    background-color: #09090b;
+  }
+  body {
+    background-color: #09090b;
+    color: rgba(255, 255, 255, 0.92);
+  }
+  /*
+   * Réaffirme les tokens critiques en cas d'inversion partielle.
+   * Les propriétés CSS custom ne sont pas inversées par Force Dark,
+   * mais certains WebViews peuvent les recalculer.
+   */
+  :root {
+    --bg-base:   #09090b;
+    --bg-card:   #111113;
+    --bg-card-2: #18181b;
+    --bg-card-3: #1e1e22;
+    --text-primary: rgba(255, 255, 255, 0.92);
+    color-scheme: dark;
+  }
+}
+
+/*
+ * 2. Fallback backdrop-filter
+ *    Android WebView ≤ 75 (Android 8–10) et Facebook In-App Browser
+ *    ignorent backdrop-filter/blur. Sans ce fallback, les fonds
+ *    sont complètement transparents (texte illisible).
+ */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-card {
+    background: rgba(13, 13, 17, 0.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass-card-light {
+    background: rgba(248, 248, 250, 0.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .btn-ghost {
+    background: rgba(22, 22, 28, 0.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/*
+ * 3. Fallback gradient texte
+ *    -webkit-background-clip: text non supporté → texte transparent/invisible.
+ *    On remplace par la couleur or solide.
+ */
+@supports not (-webkit-background-clip: text) {
+  .text-gold,
+  .text-gradient-animate {
+    background: none;
+    -webkit-text-fill-color: unset;
+    color: #c9a55a;
+    animation: none;
+  }
+  .shimmer-gold,
+  .shimmer-white {
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    background-clip: unset;
+    -webkit-background-clip: unset;
+  }
+}
+
+/*
+ * 4. Forced Colors (Windows High Contrast, Edge Forced Colors)
+ *    Préserve les couleurs de la charte même sous les modes d'accessibilité
+ *    qui forcent une palette de 4–8 couleurs système.
+ */
+@media (forced-colors: active) {
+  .btn-primary {
+    border: 2px solid ButtonText;
+    forced-color-adjust: none;
+  }
+  .text-gold,
+  .text-gradient-animate {
+    background: none;
+    -webkit-text-fill-color: CanvasText;
+    color: CanvasText;
+  }
+  .glass-card,
+  .card-premium {
+    border: 1px solid ButtonText;
+  }
 }
