@@ -40,11 +40,11 @@ import type { PartnerLogoRow } from "@/types/db";
    marginRight = TILE_GAP (pas CSS gap) → chaque tile = TILE_UNIT px exact
    → -50% = N×TILE_UNIT : boucle mathématiquement sans coupure.
 ──────────────────────────────────────────────────────────────────── */
-const TILE_W    = 196;
-const TILE_GAP  = 24;                  // ← réduit : composition serrée
-const TILE_UNIT = TILE_W + TILE_GAP;   // 220 px
+const TILE_W    = 192;
+const TILE_GAP  = 16;                  // ← serré : densité visuelle forte
+const TILE_UNIT = TILE_W + TILE_GAP;   // 208 px
 const TILE_H    = 80;
-const FILL_MIN  = 7;
+const FILL_MIN  = 8;
 
 function fillTrack(arr: PartnerLogoRow[]): PartnerLogoRow[] {
   if (!arr.length) return arr;
@@ -289,10 +289,10 @@ export default function PartnerLogosSection() {
           aria-hidden
         />
 
-        {/* Ligne 1 → gauche, 46 s */}
-        {ready ? <TickerRow logos={row1} direction="left"  duration={46} /> : <SkeletonRow />}
-        {/* Ligne 2 ← droite, 61 s — écart 15 s = courant organique */}
-        {ready ? <TickerRow logos={row2} direction="right" duration={61} /> : <SkeletonRow />}
+        {/* Ligne 1 → gauche, 20 s — courant vif */}
+        {ready ? <TickerRow logos={row1} direction="left"  duration={20} /> : <SkeletonRow />}
+        {/* Ligne 2 ← droite, 27 s — écart 7 s = flux croisé organique */}
+        {ready ? <TickerRow logos={row2} direction="right" duration={27} /> : <SkeletonRow />}
       </div>
     </section>
   );
