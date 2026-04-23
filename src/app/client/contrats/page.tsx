@@ -284,6 +284,54 @@ export default function ContratsPage() {
     [selected, toast]
   );
 
+  /* ────────────────── create contract (brouillon vide) ────────────────── */
+  const handleCreateContract = useCallback(
+    async (generatedContent = "") => {
+      if (!form.title || !form.client_name) {
+        toast("Titre et nom du client requis", "error");
+        return;
+      }
+      if (!userId) return;
+      setCreating(true);
+      try {
+        const payload = {
+          user_id: userId,
+          title: form.title,
+          client_name: form.client_name,
+          type: form.type,
+          content: generatedContent,
+          status: "brouillon" as ContractStatus,
+          amount: form.amount ? parseFloat(form.amount) : null,
+          start_date: form.start_date || null,
+          end_date: form.end_date || null,
+        };
+        const { data, error } = await supabase
+          .from("contracts")
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw new Error("Erreur lors de la création");
+        const newC = data as Contract;
+        setContracts((prev) => [newC, ...prev]);
+        setShowModal(false);
+        setForm(EMPTY_FORM());
+        selectContract(newC);
+        /* ✅ Un seul toast succès — jamais en même temps qu'une erreur */
+        toast(
+          generatedContent
+            ? "Contrat généré — ouvert en édition ✓"
+            : "Brouillon créé — ouvert en édition ✓",
+          "success"
+        );
+      } catch (err: unknown) {
+        toast(err instanceof Error ? err.message : "Erreur lors de la création", "error");
+      } finally {
+        setCreating(false);
+      }
+    },
+    [form, userId, toast, selectContract]
+  );
+
   /* ────────────────── AI generation ────────────────── */
   const handleGenerate = useCallback(async () => {
     if (!form.title || !form.client_name) {
@@ -305,57 +353,17 @@ export default function ContratsPage() {
           specifics: form.specifics || undefined,
         }),
       });
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
-      setForm((prev) => ({ ...prev, _generated: json.content } as DraftForm & { _generated: string }));
-      toast("Contrat généré avec succès", "success");
-      await handleCreateContract(json.content);
+      const json = await res.json() as { content?: string; error?: string };
+      /* ⚠️ Pas de toast ici — handleCreateContract gère succès ET erreur */
+      if (!res.ok || json.error) throw new Error(json.error ?? "Erreur de génération");
+      await handleCreateContract(json.content ?? "");
     } catch (err: unknown) {
+      /* ❌ Erreur uniquement dans le catch — jamais les deux en même temps */
       toast(err instanceof Error ? err.message : "Erreur de génération", "error");
     } finally {
       setGenerating(false);
     }
-  }, [form, toast]);
-
-  /* ────────────────── create contract ────────────────── */
-  const handleCreateContract = useCallback(
-    async (generatedContent = "") => {
-      if (!form.title || !form.client_name) {
-        toast("Titre et nom du client requis", "error");
-        return;
-      }
-      if (!userId) return;
-      setCreating(true);
-      const payload = {
-        user_id: userId,
-        title: form.title,
-        client_name: form.client_name,
-        type: form.type,
-        content: generatedContent,
-        status: "brouillon" as ContractStatus,
-        amount: form.amount ? parseFloat(form.amount) : null,
-        start_date: form.start_date || null,
-        end_date: form.end_date || null,
-      };
-      const { data, error } = await supabase
-        .from("contracts")
-        .insert(payload)
-        .select()
-        .single();
-      setCreating(false);
-      if (error) {
-        toast("Erreur lors de la création", "error");
-        return;
-      }
-      const newC = data as Contract;
-      setContracts((prev) => [newC, ...prev]);
-      setShowModal(false);
-      setForm(EMPTY_FORM());
-      selectContract(newC);
-      if (!generatedContent) toast("Contrat créé comme brouillon", "success");
-    },
-    [form, userId, toast, selectContract]
-  );
+  }, [form, toast, handleCreateContract]);
 
   /* ═══════════════════════════════════════════
      RENDER
