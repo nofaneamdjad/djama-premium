@@ -198,12 +198,21 @@ export default function ContratsPage() {
   /* ── mobile panel ── */
   const [mobilePanel, setMobilePanel] = useState(false);
 
+  /* ── prestataire info (depuis auth.users) ── */
+  const [userEmail, setUserEmail]     = useState<string | undefined>();
+  const [userFullName, setUserFullName] = useState<string | undefined>();
+
   /* ────────────────── fetch ────────────────── */
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
+      setUserEmail(user.email ?? undefined);
+      /* user_metadata peut contenir full_name selon le provider */
+      const meta = user.user_metadata as Record<string, string> | undefined;
+      setUserFullName(meta?.full_name ?? meta?.name ?? undefined);
+
       const { data, error } = await supabase
         .from("contracts")
         .select("*")
@@ -276,6 +285,7 @@ export default function ContratsPage() {
   const getPDFData = useCallback(() => {
     if (!selected) return null;
     return {
+      /* Contrat */
       title:       selected.title,
       client_name: selected.client_name,
       type:        selected.contract_type,
@@ -284,8 +294,11 @@ export default function ContratsPage() {
       start_date:  selected.start_date,
       end_date:    selected.end_date,
       created_at:  selected.created_at,
+      /* Prestataire — depuis le profil auth */
+      prestataire_nom:   userFullName,
+      prestataire_email: userEmail,
     };
-  }, [selected, editContent]);
+  }, [selected, editContent, userEmail, userFullName]);
 
   const handleDownloadPDF = useCallback(() => {
     const data = getPDFData();
@@ -420,13 +433,14 @@ export default function ContratsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: form.type,
-          client_name: form.client_name,
-          title: form.title,
-          amount: form.amount ? parseFloat(form.amount) : undefined,
-          start_date: form.start_date || undefined,
-          end_date: form.end_date || undefined,
-          specifics: form.specifics || undefined,
+          type:            form.type,
+          client_name:     form.client_name,
+          title:           form.title,
+          amount:          form.amount ? parseFloat(form.amount) : undefined,
+          start_date:      form.start_date || undefined,
+          end_date:        form.end_date || undefined,
+          specifics:       form.specifics || undefined,
+          prestataire_nom: userFullName,   // passé au LLM si disponible
         }),
       });
       const json = await res.json() as { content?: string; error?: string };

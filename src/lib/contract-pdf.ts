@@ -1,97 +1,169 @@
 /**
- * DJAMA — Générateur PDF de contrats (jsPDF)
- * Design premium : header DJAMA, cartes info, contenu sectionné,
- * blocs de signature, pied de page paginé.
+ * Générateur PDF de contrats — document professionnel client-ready
+ * Format A4 juridique · Aucune mention d'outil, d'IA ou de marque tierce
  */
 import { jsPDF } from "jspdf";
 
-/* ═══════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    TYPES
-═══════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════════ */
 export interface ContractPDFData {
-  title: string;
-  client_name: string;
-  type: string;
-  content: string;
-  amount: number | null;
-  start_date: string | null;
-  end_date: string | null;
-  created_at: string;
+  /* Contrat */
+  title:                  string;
+  type:                   string;
+  content:                string;
+  amount:                 number | null;
+  start_date:             string | null;
+  end_date:               string | null;
+  created_at:             string;
+  /* Client */
+  client_name:            string;
+  client_address?:        string;
+  /* Prestataire — tous optionnels, fallback sur lignes vides */
+  prestataire_nom?:       string;
+  prestataire_entreprise?: string;
+  prestataire_adresse?:   string;
+  prestataire_email?:     string;
+  prestataire_siret?:     string;
+  /* Signature */
+  ville_signature?:       string;
 }
 
-export type PDFTheme = "classique";   // les autres à venir
+export type PDFTheme = "classique";   // variantes à venir
 
-/* ═══════════════════════════════════════════════════════
-   PALETTE
-═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   CONSTANTES DESIGN
+═══════════════════════════════════════════════════════════ */
+// Palette — neutre, professionnel, sans couleur de marque
 const C = {
-  gold:        "#C9A55A",
-  goldDark:    "#A8853A",
-  dark:        "#111827",
-  bodyText:    "#374151",
-  gray:        "#6B7280",
-  grayLight:   "#9CA3AF",
-  borderLight: "#E5E0D4",
-  bgCard:      "#FDFBF7",
-  bgNote:      "#F9F6F0",
-  white:       "#FFFFFF",
-  signLine:    "#D1D5DB",
+  black:      "#111111",
+  dark:       "#1F1F1F",
+  body:       "#2D2D2D",
+  mid:        "#555555",
+  light:      "#888888",
+  veryLight:  "#BBBBBB",
+  border:     "#CCCCCC",
+  bgLight:    "#F7F6F3",
+  gold:       "#8B6914",    // doré discret pour 1 seul accent (séparateur titre)
+  white:      "#FFFFFF",
 };
 
-/* ═══════════════════════════════════════════════════════
+// Marges A4 juridiques
+const ML  = 25;             // left  25 mm
+const MR  = 25;             // right 25 mm
+const MT  = 28;             // top   28 mm  (espace running header)
+const MB  = 25;             // bottom 25 mm (espace footer)
+
+// Tailles de police
+const FS = {
+  tiny:    6.5,
+  small:   8,
+  body:    9.5,
+  sub:     10,
+  section: 11,
+  title:   15,
+  h1:      18,
+};
+
+// Interlignage
+const LH = {
+  body:    5.8,   // body line height (mm)
+  section: 7.5,   // section header line height
+};
+
+/* ═══════════════════════════════════════════════════════════
    LABELS
-═══════════════════════════════════════════════════════ */
-const TYPE_LABELS: Record<string, string> = {
-  prestation: "Prestation de services",
-  nda:        "NDA / Confidentialité",
-  cdi:        "Contrat à Durée Indéterminée",
-  cdd:        "Contrat à Durée Déterminée",
-  autre:      "Contrat",
+═══════════════════════════════════════════════════════════ */
+const TYPE_TITLES: Record<string, string> = {
+  prestation: "CONTRAT DE PRESTATION DE SERVICES",
+  nda:        "ACCORD DE CONFIDENTIALITÉ",
+  cdi:        "CONTRAT DE TRAVAIL À DURÉE INDÉTERMINÉE (CDI)",
+  cdd:        "CONTRAT DE TRAVAIL À DURÉE DÉTERMINÉE (CDD)",
+  autre:      "CONTRAT",
 };
 
-/* ═══════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    HELPERS
-═══════════════════════════════════════════════════════ */
-function fmtDate(iso: string): string {
+═══════════════════════════════════════════════════════════ */
+function fmtDateLong(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", {
-    day:   "2-digit",
-    month: "long",
-    year:  "numeric",
+    day: "2-digit", month: "long", year: "numeric",
+  });
+}
+
+function fmtDateShort(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit", month: "2-digit", year: "numeric",
   });
 }
 
 function fmtEur(n: number): string {
   return new Intl.NumberFormat("fr-FR", {
-    style:    "currency",
-    currency: "EUR",
+    style: "currency", currency: "EUR",
   }).format(n);
 }
 
-function todayLabel(): string {
-  return new Date().toLocaleDateString("fr-FR", {
-    day:   "2-digit",
-    month: "long",
-    year:  "numeric",
-  });
+function contractRef(created_at: string): string {
+  const d   = new Date(created_at);
+  const yy  = d.getFullYear();
+  const mm  = String(d.getMonth() + 1).padStart(2, "0");
+  const dd  = String(d.getDate()).padStart(2, "0");
+  return `CTR-${yy}${mm}${dd}`;
 }
 
-/* ═══════════════════════════════════════════════════════
-   SECTION HEADER DETECTION
-═══════════════════════════════════════════════════════ */
+/** Remplace tous les placeholders [XXX] par les vraies données */
+function replacePlaceholders(text: string, d: ContractPDFData): string {
+  const blank = "____________________________";
+  const nom   = d.prestataire_nom       ?? blank;
+  const adr   = d.prestataire_adresse   ?? blank;
+  const siret = d.prestataire_siret     ?? blank;
+  const email = d.prestataire_email     ?? blank;
+  const cli   = d.client_name;
+  const cliA  = d.client_address        ?? blank;
+
+  return text
+    /* Prestataire */
+    .replace(/\[NOM_?PRESTATAIRE\]/gi,      nom)
+    .replace(/\[PRESTATAIRE\]/gi,           nom)
+    .replace(/\[ADRESSE_?PRESTATAIRE\]/gi,  adr)
+    .replace(/\[SIRET\]/gi,                 siret)
+    .replace(/\[EMAIL_?PRESTATAIRE\]/gi,    email)
+    .replace(/\[EMAIL\]/gi,                 email)
+    /* Client */
+    .replace(/\[NOM_?CLIENT\]/gi,           cli)
+    .replace(/\[CLIENT\]/gi,                cli)
+    .replace(/\[ADRESSE_?CLIENT\]/gi,       cliA)
+    /* Montant / dates */
+    .replace(/\[MONTANT\]/gi, d.amount != null ? fmtEur(d.amount) : blank)
+    .replace(/\[DATE_?DÉBUT\]/gi,  d.start_date ? fmtDateLong(d.start_date) : blank)
+    .replace(/\[DATE_?FIN\]/gi,    d.end_date   ? fmtDateLong(d.end_date)   : blank)
+    /* Nettoyage IA / outil */
+    .replace(/généré\s+(automatiquement|par\s+[a-z]+|via\s+[a-z]+)/gi, "établi")
+    .replace(/\b(DJAMA|djama)\b/g, "")
+    .replace(/document\s+généré/gi, "présent document");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DÉTECTION DE TITRE DE SECTION
+═══════════════════════════════════════════════════════════ */
 function isSectionHeader(line: string): boolean {
-  if (!line || line.length > 80) return false;
-  if (/^(ARTICLE|CHAPITRE)\s+\d+/i.test(line)) return true;
-  if (/^[IVX]+\.\s+\S/.test(line)) return true;
-  if (/^\d+\.\s+[A-ZÀÉÈÊËÎÏÔÙÛÜ]/.test(line)) return true;
-  const upper = line.toUpperCase();
-  const alphaCount = upper.replace(/[^A-ZÀ-Ú]/g, "").length;
-  if (upper === line && alphaCount >= 4 && line.length <= 70) return true;
+  if (!line || line.length > 90) return false;
+  if (/^ARTICLE\s+\d+/i.test(line))             return true;
+  if (/^(CHAPITRE|SECTION|TITRE)\s+[IVX\d]/i.test(line)) return true;
+  if (/^[IVX]+\.\s+\S/.test(line))              return true;
+  if (/^\d+\.\s+[A-ZÀÉÈÊËÎÏÔÙÛÜ]/.test(line))  return true;
+  const alphaOnly = line.replace(/[^A-ZÀÉÈÊËÎÏÔÙÛÜ\s]/g, "");
+  if (
+    line === line.toUpperCase()
+    && alphaOnly.replace(/\s/g, "").length >= 4
+    && line.length <= 80
+  ) return true;
   return false;
 }
 
-/* ═══════════════════════════════════════════════════════
-   MAIN EXPORT
-═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   MAIN — generateContractPDF
+═══════════════════════════════════════════════════════════ */
 export function generateContractPDF(
   contract: ContractPDFData,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -99,327 +171,439 @@ export function generateContractPDF(
 ): jsPDF {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  /* ── Dimensions ── */
-  const PW = doc.internal.pageSize.getWidth();   // 210 mm
-  const PH = doc.internal.pageSize.getHeight();  // 297 mm
-  const ML = 20;
-  const MR = 20;
-  const CW = PW - ML - MR;        // 170 mm
-  const BOTTOM_SAFE = 22;         // espace réservé footer
+  const PW = doc.internal.pageSize.getWidth();
+  const PH = doc.internal.pageSize.getHeight();
+  const CW = PW - ML - MR;   // 160 mm
 
-  let y = 0;
+  /* ── Curseur vertical ───────────────────────────────────── */
+  let y     = MT;
+  let isP1  = true;   // sommes-nous sur la page 1 ?
 
-  /* ── Page break helper ── */
+  /* ── Helpers locaux ─────────────────────────────────────── */
+  const newPage = () => {
+    doc.addPage();
+    isP1 = false;
+    y    = MT;        // sous le running header (dessiné en post-process)
+  };
+
   const ensureSpace = (needed: number) => {
-    if (y + needed > PH - BOTTOM_SAFE) {
-      doc.addPage();
-      y = 14;
-    }
+    if (y + needed > PH - MB) newPage();
   };
 
-  /* ── Footer + header bar (appliqués après coup) ── */
-  const decoratePage = (p: number, total: number) => {
-    doc.setPage(p);
-
-    /* Gold top strip */
-    doc.setFillColor(C.gold);
-    doc.rect(0, 0, PW, 3.5, "F");
-
-    /* Footer separator */
-    const fy = PH - 10;
-    doc.setDrawColor(C.borderLight);
-    doc.setLineWidth(0.4);
-    doc.line(ML, fy - 2, PW - MR, fy - 2);
-
-    /* Left: DJAMA */
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(C.gold);
-    doc.text("DJAMA", ML, fy + 2);
-
-    /* Center: title */
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(C.grayLight);
-    const t =
-      contract.title.length > 45
-        ? contract.title.slice(0, 42) + "…"
-        : contract.title;
-    doc.text(t, PW / 2, fy + 2, { align: "center" });
-
-    /* Right: page / total */
-    doc.text(`Page ${p} / ${total}`, PW - MR, fy + 2, { align: "right" });
+  /** Affiche du texte en Times avec le style donné */
+  const bodyText = (
+    text: string,
+    fontSize: number,
+    fontStyle: "normal" | "bold" | "italic" | "bolditalic",
+    color: string,
+    options?: { align?: "left" | "center" | "right"; x?: number }
+  ) => {
+    doc.setFont("times", fontStyle);
+    doc.setFontSize(fontSize);
+    doc.setTextColor(color);
+    const tx = options?.x ?? ML;
+    doc.text(text, tx, y, { align: options?.align ?? "left" });
   };
 
-  /* ═══════════════════════════
-     PAGE 1 — EN-TÊTE
-  ═══════════════════════════ */
+  /** Affiche du texte en Helvetica (UI / labels) */
+  const uiText = (
+    text: string,
+    fontSize: number,
+    fontStyle: "normal" | "bold",
+    color: string,
+    options?: { align?: "left" | "center" | "right"; x?: number }
+  ) => {
+    doc.setFont("helvetica", fontStyle);
+    doc.setFontSize(fontSize);
+    doc.setTextColor(color);
+    const tx = options?.x ?? ML;
+    doc.text(text, tx, y, { align: options?.align ?? "left" });
+  };
+
+  /** Ligne horizontale */
+  const hline = (lw: number, color: string, xStart = ML, xEnd = PW - MR) => {
+    doc.setDrawColor(color);
+    doc.setLineWidth(lw);
+    doc.line(xStart, y, xEnd, y);
+  };
+
+  /** Texte multiligne — retourne le nombre de lignes imprimées */
+  const multilineBody = (
+    text: string,
+    fontSize: number,
+    fontStyle: "normal" | "bold" | "italic",
+    color: string,
+    maxWidth: number = CW,
+    indent: number = 0
+  ): number => {
+    doc.setFont("times", fontStyle);
+    doc.setFontSize(fontSize);
+    doc.setTextColor(color);
+    const lines = doc.splitTextToSize(text, maxWidth - indent) as string[];
+    lines.forEach((line) => {
+      ensureSpace(LH.body);
+      doc.text(line, ML + indent, y);
+      y += LH.body;
+    });
+    return lines.length;
+  };
+
+  /* ════════════════════════════════════════════════════════
+     BLOC 1 — EN-TÊTE PREMIÈRE PAGE
+  ════════════════════════════════════════════════════════ */
   y = 14;
 
-  /* Wordmark DJAMA */
-  doc.setFontSize(17);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(C.gold);
-  doc.text("DJAMA", ML, y);
-
-  /* PRO superscript */
-  const djamaW = doc.getTextWidth("DJAMA");
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(C.gray);
-  doc.text("PRO", ML + djamaW + 1.5, y - 4);
-
-  /* Right: CONTRAT + date */
-  doc.setFontSize(9.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(C.gray);
-  doc.text("CONTRAT", PW - MR, y, { align: "right" });
-
-  doc.setFontSize(7.5);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(C.grayLight);
-  doc.text(`Généré le ${todayLabel()}`, PW - MR, y + 5.5, { align: "right" });
-
-  y += 11;
-
-  /* Separator */
-  doc.setDrawColor(C.borderLight);
-  doc.setLineWidth(0.3);
-  doc.line(ML, y, PW - MR, y);
-  y += 11;
-
-  /* ─ Titre du contrat ─ */
-  doc.setFontSize(19);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(C.dark);
-  const titleLines = doc.splitTextToSize(contract.title, CW) as string[];
-  doc.text(titleLines, ML, y);
-  y += titleLines.length * 7.5 + 3;
-
-  /* Type pill */
-  const typeLabel = (TYPE_LABELS[contract.type] ?? contract.type).toUpperCase();
-  doc.setFontSize(7.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(C.gold);
-  doc.text(`◆  ${typeLabel}`, ML, y);
-  y += 13;
-
-  /* ─ Cartes d'informations ─ */
-  const info: { label: string; value: string }[] = [
-    { label: "CLIENT / COMMANDITAIRE", value: contract.client_name },
-  ];
-  if (contract.amount != null)
-    info.push({ label: "MONTANT HT", value: fmtEur(contract.amount) });
-  if (contract.start_date)
-    info.push({ label: "DATE DE DÉBUT", value: fmtDate(contract.start_date) });
-  if (contract.end_date)
-    info.push({ label: "DATE DE FIN", value: fmtDate(contract.end_date) });
-
-  const CARD_H = 19;
-  const CARD_COLS = Math.min(info.length, 3);
-  const CARD_GAP = 4;
-  const cardW = (CW - (CARD_COLS - 1) * CARD_GAP) / CARD_COLS;
-
-  /* Row 1 */
-  info.slice(0, CARD_COLS).forEach((item, i) => {
-    const cx = ML + i * (cardW + CARD_GAP);
-    doc.setFillColor(C.bgCard);
-    doc.setDrawColor(C.borderLight);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(cx, y, cardW, CARD_H, 2, 2, "FD");
-
-    /* Gold left accent */
-    doc.setFillColor(C.gold);
-    doc.rect(cx, y, 2, CARD_H, "F");
-
-    doc.setFontSize(6.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(C.gray);
-    doc.text(item.label, cx + 5.5, y + 6.5);
-
-    doc.setFontSize(9.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(C.dark);
-    const vLines = doc.splitTextToSize(item.value, cardW - 9) as string[];
-    doc.text(vLines[0] ?? item.value, cx + 5.5, y + 14);
+  const ref   = contractRef(contract.created_at);
+  const today = new Date().toLocaleDateString("fr-FR", {
+    day: "2-digit", month: "long", year: "numeric",
   });
 
-  /* Row 2 (4th item) */
-  if (info.length > 3) {
-    const cy = y + CARD_H + 4;
-    doc.setFillColor(C.bgCard);
-    doc.setDrawColor(C.borderLight);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(ML, cy, cardW, CARD_H, 2, 2, "FD");
-    doc.setFillColor(C.gold);
-    doc.rect(ML, cy, 2, CARD_H, "F");
-    doc.setFontSize(6.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(C.gray);
-    doc.text(info[3].label, ML + 5.5, cy + 6.5);
-    doc.setFontSize(9.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(C.dark);
-    doc.text(info[3].value, ML + 5.5, cy + 14);
-    y += CARD_H * 2 + 10;
-  } else {
-    y += CARD_H + 13;
+  /* -- Colonne gauche : prestataire ─────────────── */
+  const prestNom   = contract.prestataire_nom        ?? "";
+  const prestEntr  = contract.prestataire_entreprise ?? "";
+  const prestAdr   = contract.prestataire_adresse    ?? "";
+  const prestEmail = contract.prestataire_email      ?? "";
+  const prestSiret = contract.prestataire_siret      ?? "";
+
+  // Nom entreprise ou nom prestataire
+  const headerLeft = prestEntr || prestNom || "________________";
+
+  uiText(headerLeft, FS.sub, "bold", C.dark);
+  y += 5;
+  if (prestAdr) {
+    uiText(prestAdr, FS.small, "normal", C.mid);
+    y += 4.5;
+  }
+  if (prestEmail) {
+    uiText(prestEmail, FS.small, "normal", C.mid);
+    y += 4.5;
+  }
+  if (prestSiret) {
+    uiText(`SIRET : ${prestSiret}`, FS.small, "normal", C.mid);
+    y += 4.5;
   }
 
-  /* Separator */
-  doc.setDrawColor(C.borderLight);
-  doc.setLineWidth(0.3);
-  doc.line(ML, y, PW - MR, y);
-  y += 11;
+  /* -- Colonne droite : référence contrat ────────── */
+  const savedY = y;
+  y = 14;
+  uiText(`Réf. : ${ref}`, FS.small, "bold", C.mid, { align: "right", x: PW - MR });
+  y += 4.5;
+  uiText(today, FS.small, "normal", C.light, { align: "right", x: PW - MR });
+  y = Math.max(savedY, y + 2);
 
-  /* ═══════════════════════════
-     CONTENU DU CONTRAT
-  ═══════════════════════════ */
-  const BLH = 5.3;   // body line height
-  const HLH = 6.8;   // header line height
+  y += 4;
 
-  for (const rawLine of contract.content.split("\n")) {
+  /* Séparateur or sous l'entête */
+  hline(0.7, C.gold);
+  y += 8;
+
+  /* ════════════════════════════════════════════════════════
+     BLOC 2 — TITRE DU CONTRAT
+  ════════════════════════════════════════════════════════ */
+  const typeTitle = TYPE_TITLES[contract.type] ?? "CONTRAT";
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(FS.h1);
+  doc.setTextColor(C.black);
+  const titleLines = doc.splitTextToSize(typeTitle, CW) as string[];
+  doc.text(titleLines, PW / 2, y, { align: "center" });
+  y += titleLines.length * 8.5 + 2;
+
+  /* Titre mission (sous-titre, en italique) */
+  if (contract.title && contract.title.toUpperCase() !== typeTitle) {
+    doc.setFont("times", "italic");
+    doc.setFontSize(FS.sub);
+    doc.setTextColor(C.mid);
+    const subLines = doc.splitTextToSize(`"${contract.title}"`, CW) as string[];
+    doc.text(subLines, PW / 2, y, { align: "center" });
+    y += subLines.length * 5.5 + 2;
+  }
+
+  y += 3;
+  hline(0.3, C.border);
+  y += 9;
+
+  /* ════════════════════════════════════════════════════════
+     BLOC 3 — PARTIES
+  ════════════════════════════════════════════════════════ */
+  const blank = "____________________________";
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(FS.body);
+  doc.setTextColor(C.dark);
+  doc.text("Entre les soussignés :", ML, y);
+  y += LH.body + 2;
+
+  /* — Prestataire ─ */
+  multilineBody("D'une part,", FS.body, "italic", C.body);
+  y += 1;
+  multilineBody(prestNom   || blank,          FS.body, "bold",   C.dark);
+  if (prestEntr) multilineBody(prestEntr,     FS.body, "normal", C.body);
+  if (prestAdr)  multilineBody(prestAdr,      FS.body, "normal", C.body);
+  else           multilineBody(blank,         FS.body, "normal", C.body);
+  if (prestSiret) multilineBody(`SIRET : ${prestSiret}`, FS.body, "normal", C.body);
+  y += 1;
+  multilineBody("Ci-après dénommé(e) « le Prestataire »,", FS.body, "italic", C.mid);
+  y += 5;
+
+  /* — Client ─ */
+  multilineBody("Et d'autre part,", FS.body, "italic", C.body);
+  y += 1;
+  multilineBody(contract.client_name || blank, FS.body, "bold", C.dark);
+  multilineBody(contract.client_address || blank, FS.body, "normal", C.body);
+  y += 1;
+  multilineBody("Ci-après dénommé(e) « le Client »,", FS.body, "italic", C.mid);
+  y += 8;
+
+  /* — Infos financières ─ */
+  if (contract.amount != null || contract.start_date || contract.end_date) {
+    /* Petit tableau discret */
+    const infoRows: string[] = [];
+    if (contract.amount    != null) infoRows.push(`Valeur du contrat : ${fmtEur(contract.amount)} HT`);
+    if (contract.start_date)        infoRows.push(`Date de début     : ${fmtDateLong(contract.start_date)}`);
+    if (contract.end_date)          infoRows.push(`Date de fin       : ${fmtDateLong(contract.end_date)}`);
+
+    /* Fond discret */
+    const boxH = infoRows.length * 5.5 + 8;
+    ensureSpace(boxH + 4);
+    doc.setFillColor(C.bgLight);
+    doc.setDrawColor(C.border);
+    doc.setLineWidth(0.25);
+    doc.roundedRect(ML, y, CW, boxH, 2, 2, "FD");
+    y += 6;
+    infoRows.forEach((row) => {
+      doc.setFont("times", "normal");
+      doc.setFontSize(FS.body);
+      doc.setTextColor(C.body);
+      doc.text(row, ML + 5, y);
+      y += 5.5;
+    });
+    y += 4;
+  }
+
+  /* Convenu / arrêté */
+  y += 2;
+  hline(0.3, C.border);
+  y += 6;
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(FS.body);
+  doc.setTextColor(C.dark);
+  doc.text("Il a été convenu et arrêté ce qui suit :", ML, y);
+  y += LH.body + 5;
+  hline(0.3, C.border);
+  y += 8;
+
+  /* ════════════════════════════════════════════════════════
+     BLOC 4 — CORPS DU CONTRAT (articles IA)
+  ════════════════════════════════════════════════════════ */
+  const processedContent = replacePlaceholders(contract.content, contract);
+  const rawLines = processedContent.split("\n");
+
+  for (const rawLine of rawLines) {
     const line = rawLine.trim();
-
     if (!line) {
-      y += 2.5;
+      y += 2;
       continue;
     }
 
     if (isSectionHeader(line)) {
-      ensureSpace(HLH + 10);
-      y += 4;
+      /* Ne jamais commencer un article à < 35 mm du bas */
+      ensureSpace(35);
+      y += 3;
 
-      /* Gold vertical accent */
-      doc.setFillColor(C.gold);
-      doc.rect(ML, y - 4, 2.5, HLH + 2, "F");
-
-      doc.setFontSize(9.5);
+      /* Titre de section en Helvetica bold */
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(FS.section);
       doc.setTextColor(C.dark);
-      const hLines = doc.splitTextToSize(line, CW - 8) as string[];
-      doc.text(hLines, ML + 6, y);
-      y += hLines.length * HLH + 2;
-    } else {
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(C.bodyText);
+      const hLines = doc.splitTextToSize(line, CW) as string[];
+      hLines.forEach((hl) => {
+        ensureSpace(LH.section + 2);
+        doc.text(hl, ML, y);
+        y += LH.section;
+      });
+      y += 3;
 
+      /* Filet sous le titre */
+      doc.setDrawColor(C.border);
+      doc.setLineWidth(0.25);
+      doc.line(ML, y, ML + 50, y);
+      y += 4;
+    } else {
+      /* Corps en Times regular */
+      doc.setFont("times", "normal");
+      doc.setFontSize(FS.body);
+      doc.setTextColor(C.body);
       const tLines = doc.splitTextToSize(line, CW) as string[];
-      ensureSpace(tLines.length * BLH + 2);
-      doc.text(tLines, ML, y);
-      y += tLines.length * BLH + 1.5;
+      tLines.forEach((tl) => {
+        ensureSpace(LH.body + 1);
+        doc.text(tl, ML, y);
+        y += LH.body;
+      });
+      y += 1.5;
     }
   }
 
-  /* ═══════════════════════════
-     SIGNATURES
-  ═══════════════════════════ */
-  const SIG_H = 60;
-  ensureSpace(SIG_H + 30);
-  y += 16;
+  /* ════════════════════════════════════════════════════════
+     BLOC 5 — SIGNATURES
+  ════════════════════════════════════════════════════════ */
+  const SIG_MIN_HEIGHT = 90;
+  ensureSpace(SIG_MIN_HEIGHT);
 
-  /* Header */
-  doc.setFillColor(C.gold);
-  doc.rect(ML, y - 4, 2.5, HLH + 2, "F");
-  doc.setFontSize(9.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(C.dark);
-  doc.text("SIGNATURES", ML + 6, y);
-  y += 12;
+  y += 10;
 
-  const sigW = (CW - 6) / 2;
-  (["LE PRESTATAIRE", "LE CLIENT"] as const).forEach((label, i) => {
-    const sx = ML + i * (sigW + 6);
-
-    /* Box */
-    doc.setFillColor(C.bgCard);
-    doc.setDrawColor(C.borderLight);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(sx, y, sigW, SIG_H, 3, 3, "FD");
-
-    /* Gold top line */
-    doc.setDrawColor(C.gold);
-    doc.setLineWidth(1.2);
-    doc.line(sx + 4, y, sx + sigW - 4, y);
-
-    /* Label */
-    doc.setFontSize(7.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(C.gray);
-    doc.text(label, sx + 7, y + 9);
-
-    doc.setLineWidth(0.3);
-    doc.setDrawColor(C.signLine);
-
-    /* Nom */
-    doc.setFontSize(7.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(C.grayLight);
-    doc.text("Nom et prénom :", sx + 7, y + 22);
-    doc.line(sx + 37, y + 22, sx + sigW - 7, y + 22);
-
-    /* Date */
-    doc.text("Date :", sx + 7, y + 33);
-    doc.line(sx + 22, y + 33, sx + sigW - 7, y + 33);
-
-    /* Signature zone */
-    doc.text("Signature :", sx + 7, y + SIG_H - 8);
-    doc.line(sx + 29, y + SIG_H - 8, sx + sigW - 7, y + SIG_H - 8);
-
-    /* Mention légale fine */
-    doc.setFontSize(6);
-    doc.setTextColor("#C8C3B5");
-    doc.text(
-      "Précéder de « Bon pour accord »",
-      sx + 7,
-      y + SIG_H - 3
-    );
+  /* "Fait à ..." */
+  const ville  = contract.ville_signature ?? "________________";
+  const sigDate = new Date().toLocaleDateString("fr-FR", {
+    day: "2-digit", month: "long", year: "numeric",
   });
 
-  y += SIG_H + 12;
+  doc.setFont("times", "normal");
+  doc.setFontSize(FS.body);
+  doc.setTextColor(C.dark);
+  doc.text(`Fait à ${ville}, le ${sigDate}`, ML, y);
+  y += LH.body + 2;
+  doc.text("En deux exemplaires originaux.", ML, y);
+  y += LH.body + 10;
 
-  /* ─ Note légale ─ */
-  ensureSpace(16);
-  doc.setFillColor(C.bgNote);
-  doc.setDrawColor(C.borderLight);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(ML, y, CW, 14, 2, 2, "FD");
+  /* Deux colonnes : Prestataire | Client */
+  const sigW   = (CW - 10) / 2;
+  const sigX2  = ML + sigW + 10;
 
-  doc.setFillColor(C.gold);
-  doc.rect(ML, y, 2, 14, "F");
+  const sigBlocks = [
+    { label: "LE PRESTATAIRE",  name: prestNom   || blank, x: ML },
+    { label: "LE CLIENT",       name: contract.client_name || blank, x: sigX2 },
+  ] as const;
 
-  doc.setFontSize(6.5);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(C.gray);
-  const noteText = `Document généré le ${todayLabel()} via DJAMA Pro. Fourni à titre indicatif. Faites valider ce contrat par un professionnel du droit avant signature.`;
-  const noteLines = doc.splitTextToSize(noteText, CW - 8) as string[];
-  doc.text(noteLines, ML + 5, y + 5.5);
+  /* Labels */
+  sigBlocks.forEach(({ label, x }) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(FS.small);
+    doc.setTextColor(C.dark);
+    doc.text(label, x, y);
+  });
+  y += 5;
 
-  /* ═══════════════════════════
-     DÉCORATIONS TOUTES PAGES
-  ═══════════════════════════ */
+  /* Nom */
+  sigBlocks.forEach(({ name, x }) => {
+    doc.setFont("times", "italic");
+    doc.setFontSize(FS.body);
+    doc.setTextColor(C.mid);
+    doc.text(name, x, y);
+  });
+  y += 7;
+
+  /* Mention légale */
+  sigBlocks.forEach(({ x }) => {
+    doc.setFont("times", "italic");
+    doc.setFontSize(FS.small);
+    doc.setTextColor(C.light);
+    doc.text("(Lu et approuvé, bon pour accord)", x, y);
+  });
+  y += 9;
+
+  /* Ligne "Signature" */
+  const drawSigField = (label: string, xStart: number, lineLen: number, _y: number) => {
+    doc.setFont("times", "normal");
+    doc.setFontSize(FS.small);
+    doc.setTextColor(C.mid);
+    doc.text(label, xStart, _y);
+    doc.setDrawColor(C.border);
+    doc.setLineWidth(0.3);
+    const labelW = doc.getTextWidth(label) + 3;
+    doc.line(xStart + labelW, _y, xStart + lineLen, _y);
+  };
+
+  /* Signature zone */
+  const sigFieldW = sigW - 4;
+  ensureSpace(40);
+  drawSigField("Signature :", ML, sigFieldW, y);
+  drawSigField("Signature :", sigX2, sigFieldW, y);
+  y += 18;
+
+  /* Nom & qualité */
+  drawSigField("Nom, prénom et qualité :", ML, sigFieldW, y);
+  drawSigField("Nom, prénom et qualité :", sigX2, sigFieldW, y);
+  y += 8;
+
+  /* Date */
+  drawSigField("Date :", ML, 35, y);
+  drawSigField("Date :", sigX2, 35, y);
+  y += 12;
+
+  /* ════════════════════════════════════════════════════════
+     POST-PROCESS — running headers + footers sur toutes les pages
+  ════════════════════════════════════════════════════════ */
   const totalPages = doc.getNumberOfPages();
+  const contractShortTitle = contract.title.length > 40
+    ? contract.title.slice(0, 37) + "…"
+    : contract.title;
+
   for (let p = 1; p <= totalPages; p++) {
-    decoratePage(p, totalPages);
+    doc.setPage(p);
+
+    /* ── Footer ── */
+    const fy = PH - 10;
+    doc.setDrawColor(C.border);
+    doc.setLineWidth(0.25);
+    doc.line(ML, fy - 3, PW - MR, fy - 3);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(FS.tiny);
+    doc.setTextColor(C.light);
+
+    /* Gauche : référence */
+    doc.text(ref, ML, fy + 1);
+
+    /* Centre : page / total */
+    doc.text(`Page ${p} / ${totalPages}`, PW / 2, fy + 1, { align: "center" });
+
+    /* Droite : "Confidentiel" */
+    doc.text("Confidentiel", PW - MR, fy + 1, { align: "right" });
+
+    /* ── Running header (pages 2+) ── */
+    if (p > 1) {
+      const hy = 10;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(FS.tiny);
+      doc.setTextColor(C.veryLight);
+
+      /* Gauche : prestataire */
+      doc.text(headerLeft, ML, hy);
+
+      /* Centre : titre mission */
+      doc.text(contractShortTitle, PW / 2, hy, { align: "center" });
+
+      /* Droite : référence */
+      doc.text(ref, PW - MR, hy, { align: "right" });
+
+      /* Filet */
+      doc.setDrawColor(C.border);
+      doc.setLineWidth(0.2);
+      doc.line(ML, hy + 2, PW - MR, hy + 2);
+    }
   }
 
   return doc;
 }
 
-/* ─────────────────────────────────────────
-   Helpers pratiques côté composant React
-───────────────────────────────────────── */
-export function downloadContractPDF(contract: ContractPDFData): void {
-  const doc = generateContractPDF(contract);
-  const filename = `contrat-${contract.client_name
+/* ═══════════════════════════════════════════════════════════
+   EXPORTS PRATIQUES
+═══════════════════════════════════════════════════════════ */
+export function downloadContractPDF(data: ContractPDFData): void {
+  const doc = generateContractPDF(data);
+  const clientSlug = data.client_name
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")}-${new Date().getFullYear()}.pdf`;
-  doc.save(filename);
+    .replace(/[^a-z0-9-]/g, "");
+  const year = new Date(data.created_at).getFullYear();
+  doc.save(`contrat-${clientSlug}-${year}.pdf`);
 }
 
-export function openContractPDF(contract: ContractPDFData): void {
-  const doc = generateContractPDF(contract);
+export function openContractPDF(data: ContractPDFData): void {
+  const doc = generateContractPDF(data);
   const url = doc.output("bloburl") as unknown as string;
   window.open(url, "_blank");
 }
