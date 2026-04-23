@@ -1,492 +1,732 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { motion } from "framer-motion";
+/**
+ * /client — DJAMA PRO · Coach Business
+ *
+ * UX rule: ouvrir → comprendre quoi faire en 3s → agir en 1 clic → gagner de l'argent.
+ *
+ * 1. HERO          — "Tu peux récupérer X€" (instant, radar)
+ * 2. À FAIRE       — Top 5 actions directes (WA / Email / IA) sans navigation
+ * 3. COACH IA      — Score + 3 actions + 1 insight (auto-chargé)
+ * 4. OUTILS        — Section repliée "Voir tous les outils"
+ * 5. MODALE        — Relance IA bottom-sheet
+ */
+
+import { useState, useEffect, useCallback } from "react";
+import Link                                  from "next/link";
+import { motion, AnimatePresence }           from "framer-motion";
 import {
-  StickyNote, Calendar, ReceiptText, Sparkles,
-  ArrowRight, Shield, ChevronRight,
-  Timer, Users, Wallet, CreditCard, FileText, Star,
+  Flame, Zap, Target, RefreshCw, Send, Copy, Check, X,
+  MessageCircle, Mail, Sparkles, TrendingDown, TrendingUp,
+  Calendar, AlertCircle, ChevronDown, ChevronUp,
+  StickyNote, ReceiptText, Users, Timer,
+  CreditCard, Wallet, FileText, Star, ArrowRight,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import type { NotificationsResponse } from "@/lib/assistant/types";
+import type {
+  RadarItem,      RadarResponse,
+  CoachResponse,  CoachAction,
+  RelanceRequest, RelanceResponse,
+  UrgencyLevel,   CoachActionType,
+} from "@/lib/assistant/types";
 
-const ease = [0.16, 1, 0.3, 1] as const;
-
+/* ════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════ */
+const ease   = [0.16, 1, 0.3, 1] as const;
 const fmtEur = (n: number) =>
   n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
-/* ═══════════════════════════════════════════════
-   OUTILS ACTIFS
-═══════════════════════════════════════════════ */
-type ActiveTool = {
-  id:          string;
-  href:        string;
-  icon:        React.ElementType;
-  label:       string;
-  desc:        string;
-  color:       string;
-  bg:          string;
-  border:      string;
-  hoverBorder: string;
-  glow:        string;
-  tags:        readonly string[];
+/* ════════════════════════════════════════════
+   CONFIG VISUELLE
+════════════════════════════════════════════ */
+const URGENCY: Record<UrgencyLevel, {
+  bg: string; border: string; text: string; dot: string;
+  label: string; badge: string; ctaBg: string;
+}> = {
+  critique: {
+    bg: "bg-red-500/[0.07]",   border: "border-red-500/25",
+    text: "text-red-400",       dot: "bg-red-500",
+    label: "Critique",          badge: "bg-red-500/15 text-red-400 border-red-500/20",
+    ctaBg: "bg-red-500/15 border-red-500/25 text-red-300 hover:bg-red-500/25",
+  },
+  urgent: {
+    bg: "bg-amber-500/[0.07]", border: "border-amber-500/20",
+    text: "text-amber-400",     dot: "bg-amber-400",
+    label: "Urgent",            badge: "bg-amber-500/15 text-amber-400 border-amber-500/20",
+    ctaBg: "bg-amber-500/12 border-amber-500/20 text-amber-300 hover:bg-amber-500/22",
+  },
+  surveiller: {
+    bg: "bg-white/[0.025]",    border: "border-white/[0.07]",
+    text: "text-white/45",      dot: "bg-white/25",
+    label: "Surveiller",        badge: "bg-white/8 text-white/40 border-white/10",
+    ctaBg: "bg-white/6 border-white/10 text-white/50 hover:bg-white/10",
+  },
 };
 
-const ACTIVE_TOOLS: ActiveTool[] = [
-  {
-    id: "notes",
-    href: "/client/notes",
-    icon: StickyNote,
-    label: "Bloc-notes IA",
-    desc: "Notes professionnelles avec résumé et export PDF automatiques.",
-    color: "#c9a55a",
-    bg: "rgba(201,165,90,0.07)",
-    border: "rgba(201,165,90,0.16)",
-    hoverBorder: "rgba(201,165,90,0.45)",
-    glow: "rgba(201,165,90,0.14)",
-    tags: ["Réunion", "Export PDF"],
-  },
-  {
-    id: "planning",
-    href: "/client/planning",
-    icon: Calendar,
-    label: "Planning & Agenda",
-    desc: "Visualisez votre agenda client semaine par semaine.",
-    color: "#60a5fa",
-    bg: "rgba(59,130,246,0.07)",
-    border: "rgba(59,130,246,0.16)",
-    hoverBorder: "rgba(59,130,246,0.45)",
-    glow: "rgba(59,130,246,0.12)",
-    tags: ["Semaine", "RDV"],
-  },
-  {
-    id: "factures",
-    href: "/client/factures",
-    icon: ReceiptText,
-    label: "Factures & Devis",
-    desc: "Générez factures et devis professionnels en PDF.",
-    color: "#4ade80",
-    bg: "rgba(34,197,94,0.07)",
-    border: "rgba(34,197,94,0.16)",
-    hoverBorder: "rgba(34,197,94,0.45)",
-    glow: "rgba(34,197,94,0.12)",
-    tags: ["PDF", "TVA"],
-  },
+const ACTION: Record<CoachActionType, { Icon: React.ElementType; color: string; bg: string }> = {
+  relance_client:        { Icon: Send,       color: "text-red-400",   bg: "bg-red-500/10"   },
+  optimisation_planning: { Icon: Calendar,   color: "text-sky-400",   bg: "bg-sky-500/10"   },
+  opportunite_revenu:    { Icon: TrendingUp, color: "text-amber-400", bg: "bg-amber-500/10" },
+};
+
+const ACTION_LINK: Record<CoachActionType, { href: string; label: string } | null> = {
+  relance_client:        null,
+  optimisation_planning: { href: "/client/planning", label: "Mon planning" },
+  opportunite_revenu:    { href: "/client/factures",  label: "Créer un devis" },
+};
+
+const BADGE_STYLE: Record<string, string> = {
+  "Aujourd'hui":  "bg-red-500/15 text-red-400 border-red-500/20",
+  "Cette semaine":"bg-amber-500/15 text-amber-400 border-amber-500/20",
+  "À planifier":  "bg-white/6 text-white/35 border-white/8",
+};
+
+const SCORE_CFG = (s: number) => ({
+  color: s >= 70 ? "text-emerald-400" : s >= 45 ? "text-amber-400" : "text-red-400",
+  bg:    s >= 70 ? "bg-emerald-500/12 border-emerald-500/25" : s >= 45 ? "bg-amber-500/12 border-amber-500/25" : "bg-red-500/12 border-red-500/25",
+  label: s >= 70 ? "Bonne santé" : s >= 45 ? "À améliorer" : "Danger",
+  bar:   s >= 70 ? "bg-emerald-400" : s >= 45 ? "bg-amber-400" : "bg-red-400",
+});
+
+/* ════════════════════════════════════════════
+   MESSAGES RAPIDES (sans IA)
+════════════════════════════════════════════ */
+const quickMsg = (item: RadarItem) => {
+  const type = item.type === "facture" ? "facture" : "devis";
+  return `Bonjour,\n\nJe vous relance concernant notre ${type} ${item.reference} d'un montant de ${fmtEur(item.amount)}.\n\nPourriez-vous me confirmer la prise en charge ?\n\nCordialement`;
+};
+const quickWa   = (item: RadarItem) =>
+  `https://wa.me/?text=${encodeURIComponent(quickMsg(item))}`;
+const quickMail = (item: RadarItem) =>
+  `mailto:${item.client_email ?? ""}?subject=${encodeURIComponent(`Relance ${item.type === "facture" ? "facture" : "devis"} ${item.reference}`)}&body=${encodeURIComponent(quickMsg(item))}`;
+
+/* ════════════════════════════════════════════
+   DEMO DATA
+════════════════════════════════════════════ */
+const DEMO_RADAR: RadarItem[] = [
+  { id: "d1", type: "facture", label: "", client: "Martin Électricité", reference: "FAC-2024-042", amount: 1_800, urgency: "critique",   days: 23, client_email: null },
+  { id: "d2", type: "devis",   label: "", client: "Dupont Design",      reference: "DEV-2024-018", amount: 1_200, urgency: "urgent",     days: 11, client_email: null },
+  { id: "d3", type: "facture", label: "", client: "Bâtisseurs & Co",    reference: "FAC-2024-039", amount:   650, urgency: "surveiller", days:  6, client_email: null },
 ];
 
-/* ═══════════════════════════════════════════════
-   NOUVEAUX OUTILS ACTIFS
-═══════════════════════════════════════════════ */
-const SECONDARY_TOOLS = [
-  { id: "crm",        href: "/client/crm",        icon: Users,      label: "CRM Client",   desc: "Gérez vos contacts et votre pipeline.",        color: "#60a5fa", border: "rgba(59,130,246,0.18)", hover: "rgba(59,130,246,0.40)" },
-  { id: "chrono",     href: "/client/chrono",     icon: Timer,      label: "Chrono Pro",   desc: "Suivez votre temps par projet et client.",      color: "#a78bfa", border: "rgba(139,92,246,0.18)",  hover: "rgba(139,92,246,0.40)"  },
-  { id: "depenses",   href: "/client/depenses",   icon: CreditCard, label: "Dépenses Pro", desc: "Enregistrez vos dépenses en 1 clic.",           color: "#f97316", border: "rgba(249,115,22,0.18)", hover: "rgba(249,115,22,0.40)"  },
-  { id: "tresorerie", href: "/client/tresorerie", icon: Wallet,     label: "Trésorerie",   desc: "Flux de trésorerie et prévisions en temps réel.",color: "#4ade80", border: "rgba(74,222,128,0.18)", hover: "rgba(74,222,128,0.40)"  },
-  { id: "contrats",   href: "/client/contrats",   icon: FileText,   label: "Contrats IA",  desc: "Générez et gérez vos contrats types avec l'IA.", color: "#c9a55a", border: "rgba(201,165,90,0.18)", hover: "rgba(201,165,90,0.40)"  },
-  { id: "reputation", href: "/client/reputation", icon: Star,       label: "Réputation",   desc: "Collectez et valorisez vos avis clients.",      color: "#f59e0b", border: "rgba(245,158,11,0.18)", hover: "rgba(245,158,11,0.40)"  },
+const DEMO_COACH: CoachResponse = {
+  resume: "3 650€ en attente — relancer Martin Électricité aujourd'hui est la priorité n°1.",
+  score: 58,
+  actions: [
+    { type: "relance_client",     priority: 1, title: "Relancer Martin Électricité",  description: "J+23 — envoyer une relance ferme immédiatement.", impact: "1 800€ récupérables aujourd'hui",  urgency: "haute",   badge: "Aujourd'hui"   },
+    { type: "relance_client",     priority: 2, title: "Relancer Dupont Design",        description: "Devis J+11 — relance = +60% de chances d'acceptation.", impact: "1 200€ potentiels cette semaine", urgency: "haute",   badge: "Aujourd'hui"   },
+    { type: "opportunite_revenu", priority: 3, title: "Proposer un avenant à Bâtisseurs", description: "Client actif — proposer un forfait mensuel récurrent.", impact: "+500€/mois estimés",              urgency: "moyenne", badge: "Cette semaine" },
+  ],
+  insight: "Tes factures restent impayées 18j en moyenne — une relance à J+7 récupère 80% des paiements.",
+  meta: { unpaid_total: 2_450, quotes_total: 1_200, generated_at: new Date().toISOString() },
+};
+
+const LOADING_TEXTS = [
+  "L'IA analyse votre activité...",
+  "Calcul de vos opportunités...",
+  "Identification des priorités...",
+  "Presque prêt...",
 ];
 
-/* ═══════════════════════════════════════════════
-   CARTE OUTIL ACTIF
-═══════════════════════════════════════════════ */
-function ActiveToolCard({
-  tool, delay, isRecent, onOpen,
-}: {
-  tool: ActiveTool; delay: number; isRecent: boolean; onOpen: () => void;
-}) {
-  const Icon = tool.icon;
+/* ════════════════════════════════════════════
+   OUTILS (section repliée)
+════════════════════════════════════════════ */
+const ALL_TOOLS = [
+  { href: "/client/notes",      icon: StickyNote,  label: "Bloc-notes IA",   color: "#c9a55a" },
+  { href: "/client/planning",   icon: Calendar,    label: "Planning",         color: "#60a5fa" },
+  { href: "/client/factures",   icon: ReceiptText, label: "Factures & Devis", color: "#4ade80" },
+  { href: "/client/crm",        icon: Users,       label: "CRM Client",       color: "#60a5fa" },
+  { href: "/client/chrono",     icon: Timer,       label: "Chrono Pro",       color: "#a78bfa" },
+  { href: "/client/depenses",   icon: CreditCard,  label: "Dépenses Pro",     color: "#f97316" },
+  { href: "/client/tresorerie", icon: Wallet,      label: "Trésorerie",       color: "#4ade80" },
+  { href: "/client/contrats",   icon: FileText,    label: "Contrats IA",      color: "#c9a55a" },
+  { href: "/client/reputation", icon: Star,        label: "Réputation",       color: "#f59e0b" },
+];
+
+/* ════════════════════════════════════════════
+   MINI-COMPOSANTS
+════════════════════════════════════════════ */
+function Sk({ h = "h-14", w = "w-full" }: { h?: string; w?: string }) {
+  return <div className={`animate-pulse rounded-2xl bg-white/[0.04] ${h} ${w}`} />;
+}
+
+function UrgentDot({ urgency }: { urgency: UrgencyLevel }) {
+  return <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${URGENCY[urgency].dot} ${urgency === "critique" ? "animate-pulse" : ""}`} />;
+}
+
+function Badge({ text, className = "" }: { text: string; className?: string }) {
+  const base = BADGE_STYLE[text] ?? "bg-white/6 text-white/35 border-white/8";
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.45, ease, delay }}
-      whileHover={{ y: -3, transition: { duration: 0.2, ease } }}
-    >
-      <Link href={tool.href} onClick={onOpen} className="group block h-full">
-        <div
-          className="relative flex h-full flex-col overflow-hidden rounded-2xl border p-5 transition-all duration-300"
-          style={{ background: tool.bg, borderColor: tool.border }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = tool.hoverBorder;
-            el.style.boxShadow = `0 12px 40px ${tool.glow}`;
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = tool.border;
-            el.style.boxShadow = "none";
-          }}
-        >
-          {/* Coin glow */}
-          <div
-            className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-[50px]"
-            style={{ background: tool.color }}
-          />
-
-          {/* Header */}
-          <div className="relative flex items-center justify-between mb-4">
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-xl border"
-              style={{ color: tool.color, background: tool.bg, borderColor: tool.border }}
-            >
-              <Icon size={18} />
-            </div>
-            <div className="flex items-center gap-1.5">
-              {isRecent && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.05] text-white/25 font-bold uppercase tracking-wider">
-                  Récent
-                </span>
-              )}
-              <span
-                className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
-                style={{ color: tool.color, background: "rgba(255,255,255,0.04)", border: `1px solid ${tool.border}` }}
-              >
-                Actif
-              </span>
-            </div>
-          </div>
-
-          <h3 className="relative text-[15px] font-extrabold text-white mb-1.5">{tool.label}</h3>
-          <p className="relative text-xs leading-snug text-white/35 flex-1 mb-4">{tool.desc}</p>
-
-          {/* Tags */}
-          <div className="relative flex flex-wrap gap-1 mb-4">
-            {tool.tags.map((tag) => (
-              <span
-                key={tag}
-                className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                style={{ color: tool.color, background: tool.bg, border: `1px solid ${tool.border}` }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <div
-            className="relative flex items-center gap-1.5 text-xs font-bold transition-all duration-200 group-hover:gap-2.5"
-            style={{ color: tool.color }}
-          >
-            Ouvrir l&apos;outil
-            <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
-          </div>
-        </div>
-      </Link>
-    </motion.div>
+    <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border ${base} ${className}`}>
+      {text === "Aujourd'hui" && <span className="w-1 h-1 rounded-full bg-red-500 mr-1 animate-pulse" />}
+      {text}
+    </span>
   );
 }
 
-/* ═══════════════════════════════════════════════
-   PAGE DASHBOARD
-═══════════════════════════════════════════════ */
-export default function ClientDashboard() {
-  const [ready,          setReady]          = useState(false);
-  const [notifs,         setNotifs]         = useState<NotificationsResponse | null>(null);
-  const [loadingNotifs,  setLoadingNotifs]  = useState(true);
-  const [recentToolIds,  setRecentToolIds]  = useState<string[]>([]);
+/* ════════════════════════════════════════════
+   PAGE PRINCIPALE — COACH
+════════════════════════════════════════════ */
+export default function CoachDashboard() {
 
-  /* Auth */
+  /* ── État ── */
+  const [radar,         setRadar]         = useState<RadarResponse | null>(null);
+  const [coach,         setCoach]         = useState<CoachResponse | null>(null);
+  const [loadingBase,   setLoadingBase]   = useState(true);
+  const [loadingCoach,  setLoadingCoach]  = useState(true);
+  const [loadingTxtIdx, setLoadingTxtIdx] = useState(0);
+  const [toolsOpen,     setToolsOpen]     = useState(false);
+
+  /* ── Relance ── */
+  const [relanceItem,    setRelanceItem]    = useState<RadarItem | null>(null);
+  const [relanceLoading, setRelanceLoading] = useState(false);
+  const [relanceMsg,     setRelanceMsg]     = useState<RelanceResponse | null>(null);
+  const [copied,         setCopied]         = useState(false);
+
+  /* ── Cycling loading text ── */
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { window.location.href = "/login?redirect=/client"; return; }
-      setReady(true);
-    });
+    if (!loadingCoach) return;
+    const t = setInterval(() => setLoadingTxtIdx(i => (i + 1) % LOADING_TEXTS.length), 1_600);
+    return () => clearInterval(t);
+  }, [loadingCoach]);
+
+  /* ── Fetch radar (rapide, sans IA) ── */
+  const fetchBase = useCallback(async () => {
+    setLoadingBase(true);
+    const r = await fetch("/api/assistant/radar").then(r => r.ok ? r.json() : null).catch(() => null);
+    setRadar(r);
+    setLoadingBase(false);
   }, []);
 
-  /* Notifications pour la carte Assistant */
-  useEffect(() => {
-    if (!ready) return;
-    fetch("/api/assistant/notifications")
-      .then(r => r.ok ? r.json() : null)
-      .catch(() => null)
-      .then((data: NotificationsResponse | null) => {
-        setNotifs(data);
-        setLoadingNotifs(false);
-      });
-  }, [ready]);
-
-  /* Outils récemment utilisés (localStorage) */
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("djama_recent_tools");
-      if (raw) {
-        const data = JSON.parse(raw) as { id: string; at: number }[];
-        setRecentToolIds([...data].sort((a, b) => b.at - a.at).map(d => d.id));
-      }
-    } catch { /* ignore */ }
+  /* ── Fetch coach (IA, ~3s) ── */
+  const fetchCoach = useCallback(async () => {
+    setLoadingCoach(true);
+    setCoach(null);
+    const res = await fetch("/api/assistant/coach", { method: "POST" })
+      .then(r => r.ok ? r.json() : null).catch(() => null);
+    setCoach(res);
+    setLoadingCoach(false);
   }, []);
 
-  const trackUsage = (toolId: string) => {
-    try {
-      const raw = localStorage.getItem("djama_recent_tools");
-      const data: { id: string; at: number }[] = raw ? JSON.parse(raw) : [];
-      const filtered = data.filter(d => d.id !== toolId);
-      filtered.push({ id: toolId, at: Date.now() });
-      localStorage.setItem("djama_recent_tools", JSON.stringify(filtered.slice(-10)));
-    } catch { /* ignore */ }
-  };
+  useEffect(() => { fetchBase(); fetchCoach(); }, [fetchBase, fetchCoach]);
 
-  /* Tri par récence */
-  const sortedTools = [...ACTIVE_TOOLS].sort((a, b) => {
-    const ai = recentToolIds.indexOf(a.id);
-    const bi = recentToolIds.indexOf(b.id);
-    if (ai === -1 && bi === -1) return 0;
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
-    return ai - bi;
-  });
+  /* ── Relance IA ── */
+  const openRelance = useCallback(async (item: RadarItem) => {
+    setRelanceItem(item);
+    setRelanceMsg(null);
+    setRelanceLoading(true);
+    setCopied(false);
+    const body: RelanceRequest = {
+      type: item.type, id: item.id, client_name: item.client,
+      reference: item.reference, amount: item.amount, days: item.days,
+    };
+    const res = await fetch("/api/assistant/relance", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(r => r.ok ? r.json() : null).catch(() => null);
+    setRelanceMsg(res);
+    setRelanceLoading(false);
+  }, []);
 
-  if (!ready) {
-    return (
-      <div className="flex flex-1 items-center justify-center py-32">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
-      </div>
-    );
-  }
+  const copyMessage = useCallback(async () => {
+    if (!relanceMsg) return;
+    await navigator.clipboard.writeText(`Objet : ${relanceMsg.subject}\n\n${relanceMsg.message}`).catch(() => null);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2_500);
+  }, [relanceMsg]);
 
+  const closeModal = () => { setRelanceItem(null); setRelanceMsg(null); };
+
+  const mailLink = (m: RelanceResponse, email: string | null) =>
+    `mailto:${email ?? ""}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.message)}`;
+  const waLink = (m: RelanceResponse) =>
+    `https://wa.me/?text=${encodeURIComponent(`${m.subject}\n\n${m.message}`)}`;
+
+  /* ── Données dérivées ── */
+  const loaded     = !loadingBase && !loadingCoach;
+  const hasReal    = (radar?.items?.length ?? 0) > 0 || (coach?.actions?.length ?? 0) > 0;
+  const isDemoMode = loaded && !hasReal;
+
+  const activeRadar = isDemoMode ? DEMO_RADAR : (radar?.items ?? []);
+  const activeCoach = isDemoMode ? DEMO_COACH : coach;
+  const totalAtRisk = isDemoMode ? 3_650       : (radar?.total ?? 0);
+
+  const weeklyLoss = Math.round(
+    activeRadar.reduce((s, item) => {
+      const rate = item.urgency === "critique" ? 0.20 : item.urgency === "urgent" ? 0.08 : 0.02;
+      return s + item.amount * rate;
+    }, 0)
+  );
+
+  /* Top 5 urgents pour "À faire maintenant" */
+  const urgentActions = activeRadar
+    .filter(i => i.urgency === "critique" || i.urgency === "urgent")
+    .slice(0, 5);
+
+  const score    = activeCoach?.score ?? null;
+  const scoreCfg = score !== null ? SCORE_CFG(score) : null;
+
+  /* ════════════════════════════════════════
+     RENDU
+  ════════════════════════════════════════ */
   return (
-    <div className="relative min-h-full bg-[#080a0f]">
+    <div className="min-h-screen bg-[#09090f] text-white pb-28">
 
-      {/* ── Glows + grille ── */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute left-[25%] top-[8%] h-[650px] w-[650px] rounded-full bg-[rgba(176,141,87,0.05)] blur-[160px]" />
-        <div className="absolute bottom-[5%] right-[15%] h-[450px] w-[450px] rounded-full bg-[rgba(59,130,246,0.04)] blur-[130px]" />
-        <div className="absolute bottom-[30%] left-[5%] h-[350px] w-[350px] rounded-full bg-[rgba(139,92,246,0.03)] blur-[100px]" />
-        <div
-          className="absolute inset-0 opacity-[0.013]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
-            backgroundSize: "40px 40px",
-          }}
-        />
+      {/* ─── Header ───────────────────────────── */}
+      <header className="sticky top-0 z-30 bg-[#09090f]/95 backdrop-blur-md border-b border-white/[0.05]">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            </div>
+            <span className="text-sm font-bold tracking-tight">Coach DJAMA</span>
+            {isDemoMode && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/20 font-semibold">
+                Démo
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => { fetchBase(); fetchCoach(); }}
+            disabled={loadingBase || loadingCoach}
+            className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/55 transition-colors disabled:opacity-25 px-3 py-1.5 rounded-lg hover:bg-white/[0.04]"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${(loadingBase || loadingCoach) ? "animate-spin" : ""}`} />
+            Actualiser
+          </button>
+        </div>
+      </header>
+
+      <div className="max-w-2xl mx-auto px-4 pt-5 space-y-5">
+
+        {/* ══════════════════════════════════════
+            1. HERO — impact immédiat
+        ══════════════════════════════════════ */}
+        <div className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.07] via-amber-500/[0.03] to-transparent p-6">
+          <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-amber-500/8 blur-3xl pointer-events-none" />
+
+          {isDemoMode && (
+            <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-sky-500/8 border border-sky-500/15">
+              <Sparkles className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+              <p className="text-xs text-sky-300/70 leading-snug">
+                Exemple — voici ce que DJAMA détectera dès vos premières factures créées.
+              </p>
+            </div>
+          )}
+
+          {loadingBase ? <Sk h="h-8" w="w-64" /> : (
+            <motion.p
+              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+              className="text-lg sm:text-xl font-bold text-white leading-tight mb-3"
+            >
+              Tu peux récupérer{" "}
+              <span className="text-amber-400">{fmtEur(totalAtRisk)}</span>{" "}
+              cette semaine
+            </motion.p>
+          )}
+
+          <div className="flex items-center gap-2 flex-wrap mb-4">
+            {scoreCfg && score !== null && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold ${scoreCfg.bg} ${scoreCfg.color}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${scoreCfg.bar}`} />
+                Score {score}/100 · {scoreCfg.label}
+              </motion.div>
+            )}
+            {loadingCoach && !scoreCfg && <Sk h="h-6" w="w-36" />}
+
+            {!loadingBase && urgentActions.length > 0 && (
+              <span className="flex items-center gap-1.5 text-[11px] text-red-400 bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                {urgentActions.length} action{urgentActions.length > 1 ? "s" : ""} urgente{urgentActions.length > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          {!loadingBase && weeklyLoss >= 50 && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/[0.07] border border-red-500/15"
+            >
+              <TrendingDown className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+              <p className="text-xs text-red-300/80">
+                Sans action, tu perds{" "}
+                <span className="font-bold text-red-400">~{fmtEur(weeklyLoss)}/semaine</span>
+              </p>
+            </motion.div>
+          )}
+        </div>
+
+        {/* ══════════════════════════════════════
+            2. À FAIRE MAINTENANT — actions directes
+        ══════════════════════════════════════ */}
+        {(loadingBase || urgentActions.length > 0) && (
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Flame className="w-3.5 h-3.5 text-red-400" />
+              <h2 className="text-[11px] font-bold uppercase tracking-widest text-white/30">
+                À faire maintenant
+              </h2>
+            </div>
+
+            {loadingBase ? (
+              <div className="space-y-2"><Sk h="h-20" /><Sk h="h-20" /></div>
+            ) : (
+              <div className="space-y-2">
+                {urgentActions.map((item, i) => {
+                  const u = URGENCY[item.urgency];
+                  return (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.06 }}
+                      className={`rounded-2xl border p-4 ${u.bg} ${u.border}`}
+                    >
+                      {/* Ligne 1 : client + montant */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2.5">
+                          <UrgentDot urgency={item.urgency} />
+                          <div>
+                            <p className="text-sm font-bold">{item.client}</p>
+                            <p className="text-[11px] text-white/30">
+                              {item.type === "facture" ? "Facture" : "Devis"} {item.reference} · J+{item.days}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`text-base font-black tabular-nums ${u.text}`}>
+                          {fmtEur(item.amount)}
+                        </span>
+                      </div>
+
+                      {/* Ligne 2 : boutons d'action directe */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* WhatsApp rapide (template pré-construit) */}
+                        <a
+                          href={quickWa(item)}
+                          target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/18 transition-all"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          WhatsApp
+                        </a>
+
+                        {/* Email rapide */}
+                        <a
+                          href={quickMail(item)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold bg-sky-500/10 border border-sky-500/18 text-sky-400 hover:bg-sky-500/18 transition-all"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          Email
+                        </a>
+
+                        {/* Relance IA (message personnalisé) */}
+                        <button
+                          onClick={() => openRelance(item)}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition-all border ${u.ctaBg}`}
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Rédiger avec l&apos;IA
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ══════════════════════════════════════
+            3. COACH IA — analyse + actions
+        ══════════════════════════════════════ */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <h2 className="text-[11px] font-bold uppercase tracking-widest text-white/30">
+                Analyse business
+              </h2>
+            </div>
+            {activeCoach && !loadingCoach && (
+              <button
+                onClick={fetchCoach}
+                className="text-[10px] text-white/20 hover:text-white/40 transition-colors flex items-center gap-1"
+              >
+                <RefreshCw className="w-3 h-3" /> Relancer
+              </button>
+            )}
+          </div>
+
+          {loadingCoach && (
+            <div className="space-y-2.5">
+              <motion.div
+                key={loadingTxtIdx}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-500/[0.05] border border-amber-500/12"
+              >
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}>
+                  <Sparkles className="w-4 h-4 text-amber-400/70 flex-shrink-0" />
+                </motion.div>
+                <p className="text-sm text-amber-400/60">{LOADING_TEXTS[loadingTxtIdx]}</p>
+              </motion.div>
+              <Sk h="h-12" /><Sk h="h-20" /><Sk h="h-20" />
+            </div>
+          )}
+
+          {!loadingCoach && !activeCoach && !isDemoMode && (
+            <button
+              onClick={fetchCoach}
+              className="w-full py-6 rounded-2xl border border-dashed border-white/8 text-sm text-white/25 hover:text-white/45 hover:border-white/15 transition-all flex items-center justify-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" /> Relancer l&apos;analyse
+            </button>
+          )}
+
+          {activeCoach && !loadingCoach && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2.5">
+              {/* Résumé */}
+              <div className="px-4 py-3.5 rounded-2xl bg-white/[0.025] border border-white/[0.06]">
+                <p className="text-sm text-white/60 leading-relaxed">{activeCoach.resume}</p>
+              </div>
+
+              {/* 3 actions */}
+              {activeCoach.actions.map((action: CoachAction, i: number) => {
+                const cfg  = ACTION[action.type] ?? ACTION.relance_client;
+                const link = ACTION_LINK[action.type];
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.07 }}
+                    className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}>
+                        <cfg.Icon className={`w-4 h-4 ${cfg.color}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className="text-sm font-semibold leading-snug">{action.title}</p>
+                          <Badge text={action.badge ?? "Cette semaine"} className="flex-shrink-0 mt-0.5" />
+                        </div>
+                        <p className="text-xs text-white/38 leading-relaxed mb-2">{action.description}</p>
+                        {action.impact && (
+                          <p className={`text-xs font-bold ${cfg.color}`}>→ {action.impact}</p>
+                        )}
+                        {link && (
+                          <Link
+                            href={link.href}
+                            className={`mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold opacity-50 hover:opacity-90 transition-opacity ${cfg.color}`}
+                          >
+                            {link.label} <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+              {/* Insight */}
+              {activeCoach.insight && (
+                <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-sky-500/[0.05] border border-sky-500/12">
+                  <Target className="w-4 h-4 text-sky-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-sky-300/65 leading-relaxed">{activeCoach.insight}</p>
+                </div>
+              )}
+
+              {/* Barre de score */}
+              {scoreCfg && score !== null && (
+                <div className="px-1">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] text-white/18">Santé business</span>
+                    <span className={`text-[10px] font-bold ${scoreCfg.color}`}>{score}/100 · {scoreCfg.label}</span>
+                  </div>
+                  <div className="h-0.5 bg-white/[0.05] rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }} animate={{ width: `${score}%` }}
+                      transition={{ duration: 1.1, ease: "easeOut", delay: 0.3 }}
+                      className={`h-full rounded-full ${scoreCfg.bar}`}
+                    />
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </section>
+
+        {/* ══════════════════════════════════════
+            4. TOUS LES OUTILS (replié par défaut)
+        ══════════════════════════════════════ */}
+        <section className="pb-4">
+          <button
+            onClick={() => setToolsOpen(o => !o)}
+            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] text-[11px] font-bold text-white/25 hover:text-white/45 hover:border-white/10 transition-all"
+          >
+            <span className="flex items-center gap-2">
+              <span className="w-1 h-1 rounded-full bg-white/20" />
+              Voir tous les outils ({ALL_TOOLS.length})
+            </span>
+            {toolsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+
+          <AnimatePresence>
+            {toolsOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.28, ease }}
+                className="overflow-hidden"
+              >
+                <div className="grid grid-cols-3 gap-2 pt-2">
+                  {ALL_TOOLS.map(({ href, icon: Icon, label, color }) => (
+                    <Link
+                      key={href} href={href}
+                      className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/[0.05] bg-white/[0.015] hover:border-white/10 hover:bg-white/[0.03] transition-all group"
+                    >
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/[0.04]"
+                        style={{ color }}>
+                        <Icon size={15} />
+                      </div>
+                      <span className="text-[10px] font-semibold text-white/30 text-center leading-tight group-hover:text-white/50 transition-colors">
+                        {label}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
+
       </div>
 
-      <main className="relative z-10 mx-auto max-w-6xl px-6 py-14">
-
-        {/* ── Welcome ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, ease }}
-          className="mb-10"
-        >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] px-4 py-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-[#c9a55a]">
-            <Sparkles size={9} />
-            Tableau de bord
-          </div>
-          <h2 className="text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">
-            Bonjour 👋
-          </h2>
-          <p className="mt-3 max-w-lg text-base text-white/35">
-            Votre suite d&apos;outils professionnels —{" "}
-            <span className="font-semibold text-white/60">10 outils actifs</span>
-            {" "}disponibles maintenant.
-          </p>
-        </motion.div>
-
-        {/* ════════════════════════════════════════
-            ASSISTANT IA — carte vedette
-        ════════════════════════════════════════ */}
-        <motion.div
-          initial={{ opacity: 0, y: 24, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.55, ease, delay: 0.06 }}
-          className="mb-8"
-        >
-          <Link href="/client/assistant" className="group block">
-            <div
-              className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.2)] p-7 transition-all duration-300"
-              style={{
-                background: "linear-gradient(135deg, rgba(201,165,90,0.09) 0%, rgba(201,165,90,0.03) 60%, transparent 100%)",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.borderColor = "rgba(201,165,90,0.42)";
-                el.style.boxShadow = "0 20px 70px rgba(201,165,90,0.11)";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.borderColor = "rgba(201,165,90,0.2)";
-                el.style.boxShadow = "none";
-              }}
-            >
-              {/* Glows */}
-              <div className="pointer-events-none absolute -top-16 right-8 h-64 w-64 rounded-full bg-[rgba(201,165,90,0.07)] blur-[80px]" />
-              <div className="pointer-events-none absolute -bottom-8 left-16 h-40 w-40 rounded-full bg-[rgba(201,165,90,0.04)] blur-[60px]" />
-
-              <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
-
-                {/* Gauche : icône + info */}
-                <div className="flex items-start gap-5 flex-1 min-w-0">
-                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.10)]">
-                    <Sparkles size={26} className="text-[#c9a55a]" />
-                    {!loadingNotifs && notifs && notifs.urgent_count > 0 && (
-                      <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-[#080a0f]">
-                        {notifs.urgent_count}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h3 className="text-xl font-extrabold text-white">Assistant IA</h3>
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-[rgba(201,165,90,0.15)] border border-[rgba(201,165,90,0.25)] text-[#c9a55a] font-bold uppercase tracking-wider">
-                        Nouveau
-                      </span>
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold uppercase tracking-wider">
-                        Actif
-                      </span>
-                    </div>
-                    <p className="text-sm text-white/38 leading-relaxed mb-3">
-                      Coach business IA · Radar argent perdu · Relances intelligentes
-                    </p>
-
-                    {/* Pill alertes */}
-                    {loadingNotifs ? (
-                      <div className="h-7 w-52 animate-pulse rounded-xl bg-white/[0.04]" />
-                    ) : notifs && notifs.urgent_count > 0 ? (
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/15">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-                        <span className="text-xs font-bold text-red-400">
-                          {notifs.urgent_count} alerte{notifs.urgent_count > 1 ? "s" : ""}
-                          {" "}· {fmtEur(notifs.total_at_risk)} à récupérer
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/12">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                        <span className="text-xs font-semibold text-emerald-400/80">
-                          Aucune alerte — tout est à jour
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Droite : CTA */}
-                <div className="flex sm:flex-col items-center justify-end flex-shrink-0">
-                  <div className="flex items-center gap-2 rounded-2xl border border-[rgba(201,165,90,0.28)] bg-[rgba(201,165,90,0.12)] px-5 py-2.5 text-sm font-bold text-[#c9a55a] transition-all group-hover:bg-[rgba(201,165,90,0.20)] group-hover:gap-3">
-                    Ouvrir
-                    <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </Link>
-        </motion.div>
-
-        {/* ════════════════════════════════════════
-            MES OUTILS
-        ════════════════════════════════════════ */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.18, ease }}
-          className="mb-4 flex items-center gap-3"
-        >
-          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/20">
-            Mes outils
-          </span>
-          <div className="h-px flex-1 bg-white/[0.04]" />
-          <span className="text-[10px] text-white/15">3 actifs</span>
-        </motion.div>
-
-        <div className="mb-12 grid gap-4 grid-cols-2 lg:grid-cols-3">
-          {sortedTools.map((tool, i) => (
-            <ActiveToolCard
-              key={tool.id}
-              tool={tool}
-              delay={0.2 + i * 0.08}
-              isRecent={recentToolIds.length > 0 && recentToolIds[0] === tool.id}
-              onOpen={() => trackUsage(tool.id)}
-            />
-          ))}
-        </div>
-
-        {/* ════════════════════════════════════════
-            NOUVEAUX OUTILS
-        ════════════════════════════════════════ */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.45, ease }}
-          className="mb-4 flex items-center gap-3"
-        >
-          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/20">
-            Nouveaux outils
-          </span>
-          <div className="h-px flex-1 bg-white/[0.04]" />
-          <span className="text-[10px] text-white/15">6 actifs</span>
-        </motion.div>
-
-        <div className="mb-12 grid gap-3 grid-cols-2 sm:grid-cols-3">
-          {SECONDARY_TOOLS.map(({ id, href, icon: Icon, label, desc, color, border, hover }, i) => (
+      {/* ══════════════════════════════════════
+          5. MODALE RELANCE IA
+      ══════════════════════════════════════ */}
+      <AnimatePresence>
+        {relanceItem && (
+          <>
             <motion.div
-              key={id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.38, ease, delay: 0.48 + i * 0.05 }}
-              whileHover={{ y: -2, transition: { duration: 0.18 } }}
-              onClick={() => trackUsage(id)}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="fixed inset-0 bg-black/72 backdrop-blur-sm z-40"
+              onClick={closeModal}
+            />
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 32, stiffness: 270 }}
+              className="fixed bottom-0 inset-x-0 z-50 max-w-2xl mx-auto bg-[#101017] border-t border-white/[0.07] rounded-t-3xl px-5 pb-10 pt-4 max-h-[90vh] overflow-y-auto"
             >
-              <Link href={href} className="group flex flex-col gap-3 overflow-hidden rounded-2xl border p-4 h-full transition-all duration-250"
-                style={{ borderColor: border, background: `rgba(255,255,255,0.018)` }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = hover; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = border; }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border"
-                    style={{ color, borderColor: border, background: `rgba(255,255,255,0.04)` }}>
-                    <Icon size={16} />
+              <div className="w-9 h-1 bg-white/10 rounded-full mx-auto mb-5" />
+
+              {/* Header */}
+              <div className="flex items-start justify-between mb-5">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-[15px]">{relanceItem.client}</h3>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${URGENCY[relanceItem.urgency].badge}`}>
+                      {URGENCY[relanceItem.urgency].label}
+                    </span>
                   </div>
-                  <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
-                    style={{ color, background: "rgba(255,255,255,0.04)", border: `1px solid ${border}` }}>
-                    Actif
-                  </span>
+                  <p className="text-xs text-white/28">
+                    {relanceItem.type === "facture" ? "Facture" : "Devis"} {relanceItem.reference}
+                    <span className="mx-1 opacity-40">·</span>
+                    <span className="font-bold text-amber-400">{fmtEur(relanceItem.amount)}</span>
+                    <span className="mx-1 opacity-40">·</span>J+{relanceItem.days}
+                  </p>
                 </div>
+                <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.05]">
+                  <X className="w-4 h-4 text-white/45" />
+                </button>
+              </div>
 
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-white/80 mb-0.5">{label}</p>
-                  <p className="text-xs text-white/28 leading-snug">{desc}</p>
+              {/* Loading */}
+              {relanceLoading && (
+                <div className="space-y-3">
+                  <motion.div
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-amber-500/[0.05] border border-amber-500/12"
+                  >
+                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}>
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    </motion.div>
+                    <p className="text-sm text-amber-400/60">Rédaction du message en cours...</p>
+                  </motion.div>
+                  <Sk h="h-11" /><Sk h="h-36" /><Sk h="h-28" />
                 </div>
+              )}
 
-                <div className="flex items-center gap-1 text-xs font-semibold transition-all group-hover:gap-1.5"
-                  style={{ color }}>
-                  Ouvrir
-                  <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+              {/* Message généré */}
+              {relanceMsg && !relanceLoading && (
+                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3">
+                    <p className="text-[10px] uppercase tracking-widest text-white/22 font-bold mb-1.5">Objet</p>
+                    <p className="text-sm font-semibold">{relanceMsg.subject}</p>
+                  </div>
+                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3">
+                    <p className="text-[10px] uppercase tracking-widest text-white/22 font-bold mb-2">Message</p>
+                    <p className="text-sm text-white/60 leading-relaxed whitespace-pre-wrap">{relanceMsg.message}</p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    <button
+                      onClick={copyMessage}
+                      className={`flex flex-col items-center gap-1.5 py-4 rounded-2xl text-xs font-bold transition-all border ${copied ? "bg-emerald-500/15 border-emerald-500/25 text-emerald-400" : "bg-white/[0.04] border-white/[0.07] text-white/50 hover:bg-white/[0.07]"}`}
+                    >
+                      <motion.div key={String(copied)} initial={{ scale: 0.7 }} animate={{ scale: 1 }}>
+                        {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                      </motion.div>
+                      {copied ? "Copié !" : "Copier"}
+                    </button>
+                    <a
+                      href={waLink(relanceMsg)} target="_blank" rel="noopener noreferrer"
+                      className="flex flex-col items-center gap-1.5 py-4 rounded-2xl text-xs font-bold bg-emerald-500/10 border border-emerald-500/18 text-emerald-400 hover:bg-emerald-500/18 transition-all"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      WhatsApp
+                    </a>
+                    <a
+                      href={mailLink(relanceMsg, relanceItem.client_email)}
+                      className="flex flex-col items-center gap-1.5 py-4 rounded-2xl text-xs font-bold bg-sky-500/10 border border-sky-500/18 text-sky-400 hover:bg-sky-500/18 transition-all"
+                    >
+                      <Mail className="w-5 h-5" />
+                      Email
+                    </a>
+                  </div>
+
+                  <button
+                    onClick={() => openRelance(relanceItem)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[11px] text-white/20 hover:text-white/40 transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Régénérer
+                  </button>
+                </motion.div>
+              )}
+
+              {/* Erreur */}
+              {!relanceMsg && !relanceLoading && (
+                <div className="text-center py-8">
+                  <AlertCircle className="w-7 h-7 text-white/15 mx-auto mb-3" />
+                  <p className="text-sm text-white/25 mb-4">La génération a échoué.</p>
+                  <button
+                    onClick={() => openRelance(relanceItem)}
+                    className="flex items-center gap-2 mx-auto px-5 py-2.5 rounded-xl bg-white/[0.05] text-sm text-white/45 hover:bg-white/[0.08] transition-colors"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Réessayer
+                  </button>
                 </div>
-              </Link>
+              )}
             </motion.div>
-          ))}
-        </div>
-
-        {/* ── Footer info ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.75, ease }}
-          className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/6 bg-[rgba(15,17,23,0.5)] px-6 py-4"
-        >
-          <div className="flex items-center gap-3">
-            <Shield size={14} className="shrink-0 text-white/20" />
-            <p className="text-xs text-white/35">
-              Accès sécurisé · abonnement{" "}
-              <span className="font-semibold text-[#c9a55a]">11,90 €/mois</span>
-              {" "}· outils exclusifs DJAMA
-            </p>
-          </div>
-          <Link
-            href="/"
-            className="flex items-center gap-1 text-xs text-white/25 transition hover:text-white/50"
-          >
-            Retour au site <ChevronRight size={11} />
-          </Link>
-        </motion.div>
-
-      </main>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
