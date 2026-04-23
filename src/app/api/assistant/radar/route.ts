@@ -43,7 +43,7 @@ export async function GET(): Promise<NextResponse<RadarResponse | { error: strin
     /* ── 1. Factures impayées ── */
     const { data: invoices, error: invErr } = await sb
       .from("invoices")
-      .select("id, reference, client_name, total, issue_date, status")
+      .select("id, reference, client_name, client_email, total, issue_date, status")
       .in("status", ["envoyée", "en retard"])
       .eq("payment_status", "non payée");
 
@@ -52,21 +52,22 @@ export async function GET(): Promise<NextResponse<RadarResponse | { error: strin
     for (const inv of invoices ?? []) {
       const days = daysElapsed(inv.issue_date ?? new Date().toISOString(), now);
       items.push({
-        id:        inv.id,
-        type:      "facture",
-        label:     `Facture impayée — ${inv.reference}`,
-        client:    inv.client_name ?? "Client inconnu",
-        reference: inv.reference   ?? "—",
-        amount:    inv.total        ?? 0,
-        urgency:   computeUrgency(days, inv.total ?? 0),
+        id:           inv.id,
+        type:         "facture",
+        label:        `Facture impayée — ${inv.reference}`,
+        client:       inv.client_name  ?? "Client inconnu",
+        reference:    inv.reference    ?? "—",
+        amount:       inv.total         ?? 0,
+        urgency:      computeUrgency(days, inv.total ?? 0),
         days,
+        client_email: inv.client_email ?? null,
       });
     }
 
     /* ── 2. Devis sans réponse (envoyé depuis > 5j) ── */
     const { data: quotes, error: qErr } = await sb
       .from("quotes")
-      .select("id, reference, client_name, total, created_at")
+      .select("id, reference, client_name, client_email, total, created_at")
       .eq("status", "envoyé");
 
     if (qErr) console.error("[radar] quotes:", qErr.message);
@@ -75,14 +76,15 @@ export async function GET(): Promise<NextResponse<RadarResponse | { error: strin
       const days = daysElapsed(q.created_at, now);
       if (days < 5) continue;  // trop récent — pas encore préoccupant
       items.push({
-        id:        q.id,
-        type:      "devis",
-        label:     `Devis sans réponse — ${q.reference}`,
-        client:    q.client_name ?? "Client inconnu",
-        reference: q.reference   ?? "—",
-        amount:    q.total        ?? 0,
-        urgency:   computeUrgency(days - 5, q.total ?? 0),
+        id:           q.id,
+        type:         "devis",
+        label:        `Devis sans réponse — ${q.reference}`,
+        client:       q.client_name  ?? "Client inconnu",
+        reference:    q.reference    ?? "—",
+        amount:       q.total         ?? 0,
+        urgency:      computeUrgency(days - 5, q.total ?? 0),
         days,
+        client_email: q.client_email ?? null,
       });
     }
 

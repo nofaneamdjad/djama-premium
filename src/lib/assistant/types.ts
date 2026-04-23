@@ -20,14 +20,15 @@ export type DocumentType = "facture" | "devis";
    RADAR ARGENT PERDU
 ════════════════════════════════════════ */
 export interface RadarItem {
-  id:        string;
-  type:      DocumentType;
-  label:     string;
-  client:    string;
-  reference: string;
-  amount:    number;
-  urgency:   UrgencyLevel;
-  days:      number;
+  id:           string;
+  type:         DocumentType;
+  label:        string;
+  client:       string;
+  reference:    string;
+  amount:       number;
+  urgency:      UrgencyLevel;
+  days:         number;
+  client_email: string | null;
 }
 
 export interface RadarResponse {
@@ -62,6 +63,7 @@ export interface CoachAction {
   description: string;
   impact:      string;
   urgency:     "haute" | "moyenne" | "faible";
+  badge:       "Aujourd'hui" | "Cette semaine" | "À planifier";
 }
 
 export interface CoachResponse {
