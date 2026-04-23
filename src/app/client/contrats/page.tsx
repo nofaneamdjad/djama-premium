@@ -32,7 +32,7 @@ interface Contract {
   user_id: string;
   title: string;
   client_name: string;
-  type: ContractType;
+  contract_type: ContractType;   // colonne Supabase : contract_type
   content: string;
   status: ContractStatus;
   amount: number | null;
@@ -278,7 +278,7 @@ export default function ContratsPage() {
     return {
       title:       selected.title,
       client_name: selected.client_name,
-      type:        selected.type,
+      type:        selected.contract_type,
       content:     editContent,
       amount:      selected.amount,
       start_date:  selected.start_date,
@@ -367,15 +367,15 @@ export default function ContratsPage() {
       setCreating(true);
       try {
         const payload = {
-          user_id: userId,
-          title: form.title,
-          client_name: form.client_name,
-          type: form.type,
-          content: generatedContent,
-          status: "brouillon" as ContractStatus,
-          amount: form.amount ? parseFloat(form.amount) : null,
-          start_date: form.start_date || null,
-          end_date: form.end_date || null,
+          user_id:       userId,
+          title:         form.title,
+          client_name:   form.client_name,
+          contract_type: form.type,          // ✅ nom exact de la colonne Supabase
+          content:       generatedContent,
+          status:        "brouillon",         // pas de CHECK constraint → OK
+          amount:        form.amount ? parseFloat(form.amount) : null,
+          start_date:    form.start_date || null,
+          end_date:      form.end_date || null,
         };
         console.log("[contrats] payload →", JSON.stringify(payload, null, 2));
         const { data, error } = await supabase
@@ -523,7 +523,7 @@ export default function ContratsPage() {
                       className="text-xs px-2 py-0.5 rounded-full border font-medium"
                       style={{ color: gold, borderColor: gold + "40", backgroundColor: gold + "15" }}
                     >
-                      {CONTRACT_TYPES[selected.type]}
+                      {CONTRACT_TYPES[selected.contract_type]}
                     </span>
                     <StatusBadge status={selected.status} />
                   </div>
@@ -882,7 +882,7 @@ function ContractCard({
           className="text-xs px-2 py-0.5 rounded-full border font-medium"
           style={{ color: gold + "cc", borderColor: gold + "30", backgroundColor: gold + "0d" }}
         >
-          {CONTRACT_TYPES[contract.type]}
+          {CONTRACT_TYPES[contract.contract_type]}
         </span>
         {contract.amount != null && (
           <span className="text-xs text-white/35">
