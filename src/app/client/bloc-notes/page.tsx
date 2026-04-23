@@ -530,12 +530,21 @@ export default function BlocNotesPage() {
       throw new Error("Pas de connexion internet — vérifiez votre réseau.");
     }
 
+    /* URL absolue basée sur l'origine courante — évite tout mauvais basePath */
+    const url = `${window.location.origin}/api/notes/ai`;
+
     /* ── AbortController 20 s ── */
     const controller = new AbortController();
     const tid = setTimeout(() => controller.abort(), 20_000);
 
+    /* ── Log diagnostic : URL exacte + méthode ── */
+    console.log(
+      `[callAI] ▶ attempt=${attempt} | POST ${url}`,
+      `| action=${body.action} | contenu=${(body.content ?? "").length} car.`,
+    );
+
     try {
-      const res = await fetch("/api/notes/ai", {
+      const res = await fetch(url, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(body),
@@ -543,7 +552,24 @@ export default function BlocNotesPage() {
       });
       clearTimeout(tid);
 
-      /* Parse JSON (même sur 4xx/5xx — le backend retourne toujours { error }) */
+      /* ── Log réponse ── */
+      console.log(`[callAI] ◀ status=${res.status} ok=${res.ok} url=${res.url}`);
+
+      /* ── Check HTTP status avant de parser — évite SyntaxError sur HTML 404 ── */
+      if (!res.ok) {
+        /* Tenter de lire un message JSON d'erreur s'il existe */
+        let serverMsg = "";
+        try {
+          const errJson = await res.json() as { error?: string };
+          serverMsg = errJson.error ?? "";
+        } catch {
+          /* Réponse non-JSON (ex: page HTML Vercel) — on ignore */
+        }
+        const label = serverMsg || `Route introuvable ou non autorisée`;
+        throw new Error(`HTTP ${res.status} — ${label}`);
+      }
+
+      /* ── Parse JSON résultat ── */
       const json = await res.json() as { result?: string; error?: string };
       if (json.error) throw new Error(json.error);
       if (!json.result) throw new Error("Réponse vide — réessayez.");
@@ -561,16 +587,21 @@ export default function BlocNotesPage() {
         throw new Error("Impossible de joindre le serveur IA — vérifiez votre connexion.");
       }
 
+      /* ── Log erreur ── */
+      console.error(`[callAI] ❌ attempt=${attempt}`, err instanceof Error ? err.message : err);
+
       /* ── Retry unique sur erreurs transitoires ── */
       const msg = err instanceof Error ? err.message : "";
       const isTransient =
-        msg.includes("surchargé") ||
-        msg.includes("Délai")     ||
-        msg.includes("connexion") ||
-        msg.includes("Erreur interne Anthropic");
+        msg.includes("surchargé")  ||
+        msg.includes("Délai")      ||
+        msg.includes("connexion")  ||
+        msg.includes("Erreur interne Anthropic") ||
+        msg.includes("503")        ||
+        msg.includes("408");
 
       if (attempt === 0 && isTransient) {
-        /* Pause 1,4 s avant le retry — invisible pour l'utilisateur */
+        console.log("[callAI] ↻ retry dans 1,4 s…");
         await new Promise(r => setTimeout(r, 1_400));
         return callAI(body, 1);
       }
