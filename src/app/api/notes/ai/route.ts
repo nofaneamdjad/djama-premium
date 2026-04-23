@@ -130,6 +130,13 @@ function parseAnthropicError(err: unknown): { message: string; status: number } 
       status: 503,
     };
   }
+  /* 404 Anthropic : modèle inexistant ou déprécié */
+  if (httpStatus === 404) {
+    return {
+      message: "Modèle IA introuvable — le modèle utilisé a peut-être été déprécié par Anthropic.",
+      status: 502,
+    };
+  }
   /* Autres erreurs HTTP Anthropic */
   if (httpStatus !== null) {
     return {
@@ -223,7 +230,7 @@ export async function POST(req: NextRequest) {
       ].filter(Boolean).join("\n");
 
       const message = await client.messages.create({
-        model:      "claude-3-haiku-20240307",
+        model:      "claude-3-5-haiku-20241022",
         max_tokens: 1536,
         system:     CHAT_SYSTEM,
         messages: [{
@@ -248,7 +255,7 @@ export async function POST(req: NextRequest) {
     }
 
     const message = await client.messages.create({
-      model:      "claude-3-haiku-20240307",
+      model:      "claude-3-5-haiku-20241022",
       max_tokens: 1024,
       system:     SYSTEM_PROMPTS[action as Exclude<AiAction, "chat">],
       messages:   [{ role: "user", content: text }],
