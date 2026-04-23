@@ -13,8 +13,13 @@ import {
   RefreshCw,
   Edit2,
   ChevronRight,
+  Download,
+  Eye,
+  Send,
+  Receipt,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { downloadContractPDF, openContractPDF } from "@/lib/contract-pdf";
 
 /* ═══════════════════════════════════════════════════
    TYPES
@@ -267,6 +272,73 @@ export default function ContratsPage() {
     toast("Copié dans le presse-papiers", "success");
   }, [editContent, toast]);
 
+  /* ────────────────── PDF ────────────────── */
+  const getPDFData = useCallback(() => {
+    if (!selected) return null;
+    return {
+      title:       selected.title,
+      client_name: selected.client_name,
+      type:        selected.type,
+      content:     editContent,
+      amount:      selected.amount,
+      start_date:  selected.start_date,
+      end_date:    selected.end_date,
+      created_at:  selected.created_at,
+    };
+  }, [selected, editContent]);
+
+  const handleDownloadPDF = useCallback(() => {
+    const data = getPDFData();
+    if (!data) return;
+    if (!data.content.trim()) {
+      toast("Le contrat est vide — ajoutez du contenu avant de générer le PDF", "error");
+      return;
+    }
+    try {
+      downloadContractPDF(data);
+      toast("PDF téléchargé ✓", "success");
+    } catch (e) {
+      console.error("[pdf] download error", e);
+      toast("Erreur lors de la génération du PDF", "error");
+    }
+  }, [getPDFData, toast]);
+
+  const handleViewPDF = useCallback(() => {
+    const data = getPDFData();
+    if (!data) return;
+    if (!data.content.trim()) {
+      toast("Le contrat est vide — ajoutez du contenu avant de prévisualiser", "error");
+      return;
+    }
+    try {
+      openContractPDF(data);
+    } catch (e) {
+      console.error("[pdf] view error", e);
+      toast("Erreur lors de l'ouverture du PDF", "error");
+    }
+  }, [getPDFData, toast]);
+
+  const handleSendToClient = useCallback(() => {
+    if (!selected) return;
+    const subject = encodeURIComponent(`Contrat : ${selected.title}`);
+    const body = encodeURIComponent(
+      `Bonjour,\n\nVeuillez trouver ci-joint le contrat « ${selected.title} ».\n\nN'hésitez pas à me contacter pour toute question.\n\nCordialement`
+    );
+    window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+    toast("Téléchargez le PDF puis joignez-le à votre email ✓", "info");
+  }, [selected, toast]);
+
+  const handleToFacture = useCallback(() => {
+    if (!selected) return;
+    const params = new URLSearchParams({
+      from:       "contrat",
+      title:      selected.title,
+      client:     selected.client_name,
+      ...(selected.amount != null ? { amount: String(selected.amount) } : {}),
+    });
+    window.location.href = `/client/factures?${params.toString()}`;
+  }, [selected]);
+
   /* ────────────────── delete ────────────────── */
   const handleDelete = useCallback(
     async (id: string) => {
@@ -305,12 +377,16 @@ export default function ContratsPage() {
           start_date: form.start_date || null,
           end_date: form.end_date || null,
         };
+        console.log("[contrats] payload →", JSON.stringify(payload, null, 2));
         const { data, error } = await supabase
           .from("contracts")
           .insert(payload)
           .select()
           .single();
-        if (error) throw new Error("Erreur lors de la création");
+        if (error) {
+          console.error("[contrats] Supabase error →", error);
+          throw new Error(error.message ?? "Erreur lors de la création");
+        }
         const newC = data as Contract;
         setContracts((prev) => [newC, ...prev]);
         setShowModal(false);
@@ -493,6 +569,55 @@ export default function ContratsPage() {
                     {STATUS_STYLES[s].label}
                   </button>
                 ))}
+              </div>
+
+              {/* ── PDF Actions bar ── */}
+              <div className="flex items-center gap-2 px-6 py-2.5 border-b border-white/[0.06] bg-white/[0.015] flex-wrap">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/20 mr-1">PDF</span>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleViewPDF}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                    border border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.07] hover:text-white/90 transition-all"
+                >
+                  <Eye size={12} />
+                  Aperçu
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleDownloadPDF}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    backgroundColor: gold + "18",
+                    color: gold,
+                    border: `1px solid ${gold}35`,
+                  }}
+                >
+                  <Download size={12} />
+                  Télécharger
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleSendToClient}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                    border border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.07] hover:text-white/90 transition-all"
+                >
+                  <Send size={12} />
+                  Envoyer
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleToFacture}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                    border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] hover:text-white/80 transition-all ml-auto"
+                >
+                  <Receipt size={12} />
+                  → Facture
+                </motion.button>
               </div>
 
               {/* textarea */}
