@@ -16,12 +16,13 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link                                          from "next/link";
 import { motion, AnimatePresence }                  from "framer-motion";
 import {
   TrendingUp, Calendar, RefreshCw, Send,
   Copy, Check, X, Target, Sparkles,
   MessageCircle, Mail, Zap, AlertCircle,
-  TrendingDown, Flame,
+  TrendingDown, Flame, ArrowRight,
 } from "lucide-react";
 import type {
   RadarItem,       RadarResponse,
@@ -72,6 +73,13 @@ const BADGE_STYLE: Record<string, string> = {
   "Aujourd'hui":  "bg-red-500/15 text-red-400 border-red-500/20",
   "Cette semaine":"bg-amber-500/15 text-amber-400 border-amber-500/20",
   "À planifier":  "bg-white/6 text-white/35 border-white/8",
+};
+
+/* Liens rapides sur les actions coach */
+const ACTION_LINK: Record<CoachActionType, { href: string; label: string } | null> = {
+  relance_client:        null,                                                    // Radar visible en bas
+  optimisation_planning: { href: "/client/planning", label: "Mon planning" },
+  opportunite_revenu:    { href: "/client/factures",  label: "Créer un devis"  },
 };
 
 const SCORE_CFG = (s: number) => ({
@@ -512,6 +520,16 @@ export default function AssistantPage() {
                             → {action.impact}
                           </p>
                         )}
+                        {ACTION_LINK[action.type] && (
+                          <Link
+                            href={ACTION_LINK[action.type]!.href}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold opacity-50 hover:opacity-90 transition-opacity ${cfg.color}`}
+                          >
+                            {ACTION_LINK[action.type]!.label}
+                            <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -552,7 +570,7 @@ export default function AssistantPage() {
         {/* ═════════════════════════════════════════════
             4. RADAR — tous les dossiers
         ═════════════════════════════════════════════ */}
-        <section>
+        <section id="radar">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[11px] font-bold uppercase tracking-widest text-white/25">
               Argent à récupérer

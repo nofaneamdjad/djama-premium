@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { StickyNote, Calendar, ReceiptText, LayoutDashboard, LogOut, Lock, Clock, CheckCircle2, MessageCircle } from "lucide-react";
+import { StickyNote, Calendar, ReceiptText, LayoutDashboard, LogOut, Lock, Clock, CheckCircle2, MessageCircle, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRequireSubscription } from "@/lib/use-require-subscription";
 import { motion } from "framer-motion";
 
 const NAV = [
-  { href: "/client",          label: "Dashboard",  icon: LayoutDashboard, exact: true },
-  { href: "/client/notes",    label: "Bloc-notes", icon: StickyNote },
-  { href: "/client/planning", label: "Planning",   icon: Calendar },
-  { href: "/client/factures", label: "Factures",   icon: ReceiptText },
+  { href: "/client",           label: "Dashboard",  icon: LayoutDashboard, exact: true },
+  { href: "/client/assistant", label: "Assistant",  icon: Sparkles },
+  { href: "/client/notes",     label: "Bloc-notes", icon: StickyNote },
+  { href: "/client/planning",  label: "Planning",   icon: Calendar },
+  { href: "/client/factures",  label: "Factures",   icon: ReceiptText },
 ];
 
 /* ── Écran en attente d'activation ───────────────────────── */
