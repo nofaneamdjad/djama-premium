@@ -350,8 +350,39 @@ export default function PlanificationPage() {
     } else {
       const { data, error } = await supabase.from("shifts").insert({ ...payload, status: "draft" }).select().single();
       if (error) { showToast("error", error.message); setSavingShift(false); return; }
-      setShifts(prev => [...prev, data as Shift]);
-      showToast("success", "Shift ajouté ✓");
+      const newShift = data as Shift;
+      setShifts(prev => [...prev, newShift]);
+
+      /* ── Email immédiat à l'employé assigné ── */
+      if (newShift.employee_id) {
+        const assignedEmp = employees.find(e => e.id === newShift.employee_id);
+        if (assignedEmp?.email) {
+          fetch("/api/planification/notify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title:      newShift.title,
+              date:       newShift.date,
+              start_time: newShift.start_time,
+              end_time:   newShift.end_time,
+              type:       newShift.type,
+              employee:   assignedEmp.name,
+              role:       assignedEmp.role ?? null,
+              note:       newShift.note ?? null,
+              to_email:   assignedEmp.email,
+            }),
+          })
+            .then(r => r.json())
+            .then(j => console.log("[planif] notify →", j))
+            .catch(e => console.error("[planif] notify erreur:", e));
+
+          showToast("success", `Shift ajouté ✓ · Email envoyé à ${assignedEmp.name}`);
+        } else {
+          showToast("success", "Shift ajouté ✓");
+        }
+      } else {
+        showToast("success", "Shift ajouté ✓");
+      }
     }
 
     setSavingShift(false);
@@ -410,12 +441,16 @@ export default function PlanificationPage() {
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ week_start: weekStart }),
       });
-      const json = await res.json() as { published?: number; emails_sent?: number; error?: string };
+      const json = await res.json() as { published?: number; emails_sent?: number; error?: string; warning?: string };
       if (!res.ok || json.error) throw new Error(json.error ?? "Erreur");
       setShifts(prev => prev.map(s => ({ ...s, status: "published" as const })));
-      showToast("success", json.emails_sent
-        ? `Planning publié ✓ · ${json.emails_sent} email${json.emails_sent > 1 ? "s" : ""} envoyé${json.emails_sent > 1 ? "s" : ""}`
-        : "Planning publié ✓");
+      if (json.warning) {
+        showToast("error", `Planning publié mais : ${json.warning}`);
+      } else {
+        showToast("success", json.emails_sent
+          ? `Planning publié ✓ · ${json.emails_sent} email${json.emails_sent > 1 ? "s" : ""} envoyé${json.emails_sent > 1 ? "s" : ""}`
+          : "Planning publié ✓ (aucun email — vérifiez les adresses)");
+      }
     } catch (e: unknown) {
       showToast("error", e instanceof Error ? e.message : "Erreur publication");
     }
@@ -886,12 +921,13 @@ export default function PlanificationPage() {
                   />
                 </div>
 
-                {/* Info: no email on save */}
+                {/* Info: email behavior */}
                 <div className="flex items-start gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
                   <Info size={11} className="mt-0.5 shrink-0 text-white/25" />
                   <p className="text-[0.62rem] leading-relaxed text-white/30">
-                    Aucun email n&apos;est envoyé à la création ou modification. Les emails partent uniquement lors de la{" "}
-                    <strong className="text-white/50">publication</strong> de la semaine.
+                    Un email est envoyé{" "}
+                    <strong className="text-white/50">immédiatement</strong> à l&apos;employé assigné lors de la création.
+                    La <strong className="text-white/50">publication</strong> envoie un récapitulatif complet de la semaine.
                   </p>
                 </div>
 

@@ -158,10 +158,14 @@ export async function POST(req: NextRequest) {
   const fromEmail = process.env.NOTIFY_FROM_EMAIL ?? "noreply@djama.fr";
   const toEmail   = body.to_email?.trim() || process.env.NOTIFY_TO_EMAIL;
 
+  console.log("[notify] requête reçue — titre:", body.title, "| date:", body.date, "| to:", toEmail ?? "(absent)");
+
   if (!resendKey) {
+    console.error("[notify] RESEND_API_KEY absente");
     return NextResponse.json({ error: "RESEND_API_KEY non configurée." }, { status: 500 });
   }
   if (!toEmail) {
+    console.error("[notify] aucun destinataire");
     return NextResponse.json(
       { error: "Aucun destinataire — renseignez to_email ou NOTIFY_TO_EMAIL." },
       { status: 400 }
@@ -169,14 +173,17 @@ export async function POST(req: NextRequest) {
   }
 
   const { subject, html, text } = buildEmail(body);
+  console.log("[notify] envoi email → to:", toEmail, "| subject:", subject);
 
   try {
     const resend = new Resend(resendKey);
-    const { error } = await resend.emails.send({ from: fromEmail, to: toEmail, subject, html, text });
+    const { data: mailData, error } = await resend.emails.send({ from: fromEmail, to: toEmail, subject, html, text });
     if (error) throw new Error(error.message);
+    console.log("[notify] ✓ email envoyé, id:", mailData?.id);
     return NextResponse.json({ sent: true, to: toEmail });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Erreur inconnue";
+    console.error("[notify] ✗ erreur Resend:", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

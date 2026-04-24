@@ -201,10 +201,14 @@ export async function POST(req: NextRequest) {
     auth:   { persistSession: false },
   });
 
-  const { data: { user }, error: authErr } = await db.auth.getUser();
+  console.log("[publish] token reçu, longueur:", token.length);
+
+  const { data: { user }, error: authErr } = await db.auth.getUser(token);
   if (authErr || !user) {
+    console.error("[publish] auth échouée:", authErr?.message ?? "pas d'utilisateur");
     return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
   }
+  console.log("[publish] utilisateur authentifié:", user.id);
 
   /* ── Body ── */
   let body: { week_start: string };
@@ -227,8 +231,10 @@ export async function POST(req: NextRequest) {
     .order("date").order("start_time");
 
   if (fetchErr) {
+    console.error("[publish] erreur fetch shifts:", fetchErr.message);
     return NextResponse.json({ error: fetchErr.message }, { status: 500 });
   }
+  console.log("[publish] shifts trouvés:", shifts?.length ?? 0, "sur", week_start, "→", week_end);
   if (!shifts || shifts.length === 0) {
     return NextResponse.json({ error: "Aucun shift à publier pour cette semaine." }, { status: 400 });
   }
@@ -242,14 +248,22 @@ export async function POST(req: NextRequest) {
     .lte("date", week_end);
 
   if (updateErr) {
+    console.error("[publish] erreur update status:", updateErr.message);
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
   }
+  console.log("[publish] shifts marqués 'published'");
 
   /* ── Send emails per employee ── */
   let emails_sent = 0;
 
   const resendKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.NOTIFY_FROM_EMAIL ?? "noreply@djama.fr";
+
+  if (!resendKey) {
+    console.warn("[publish] RESEND_API_KEY absente — aucun email ne sera envoyé");
+  } else {
+    console.log("[publish] Resend configuré, from:", fromEmail);
+  }
 
   if (resendKey) {
     /* Unique employee IDs that have at least one shift */
@@ -264,33 +278,47 @@ export async function POST(req: NextRequest) {
         .in("id", empIds);
 
       if (employees) {
+        console.log("[publish] employés à notifier:", employees.length, "—", (employees as EmpRow[]).map(e => e.email ?? "(sans email)").join(", "));
         const resend = new Resend(resendKey);
 
         for (const emp of employees as EmpRow[]) {
-          if (!emp.email) continue;
+          if (!emp.email) {
+            console.log(`[publish] ${emp.name} ignoré (pas d'email)`);
+            continue;
+          }
 
           const empShifts = (shifts as ShiftRow[])
             .filter(s => s.employee_id === emp.id)
             .sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time));
 
-          if (empShifts.length === 0) continue;
+          if (empShifts.length === 0) {
+            console.log(`[publish] ${emp.name} ignoré (aucun shift)`);
+            continue;
+          }
 
+          console.log(`[publish] envoi email → ${emp.email} (${empShifts.length} shift(s))`);
           const { subject, html, text } = buildEmployeeEmail(emp, empShifts, week_start, week_end);
 
           try {
-            const { error: mailErr } = await resend.emails.send({ from: fromEmail, to: emp.email, subject, html, text });
+            const { data: mailData, error: mailErr } = await resend.emails.send({ from: fromEmail, to: emp.email, subject, html, text });
             if (mailErr) {
-              console.error(`[publish] email failed for ${emp.email}:`, mailErr.message);
+              console.error(`[publish] ✗ email échoué pour ${emp.email}:`, mailErr.message);
             } else {
+              console.log(`[publish] ✓ email envoyé à ${emp.email}, id:`, mailData?.id);
               emails_sent++;
             }
           } catch (e) {
-            console.error(`[publish] email exception for ${emp.email}:`, e);
+            console.error(`[publish] exception email pour ${emp.email}:`, e);
           }
         }
       }
     }
   }
 
-  return NextResponse.json({ published: shifts.length, emails_sent });
+  console.log("[publish] terminé — shifts publiés:", shifts.length, "| emails envoyés:", emails_sent);
+  return NextResponse.json({
+    published: shifts.length,
+    emails_sent,
+    ...(!resendKey ? { warning: "RESEND_API_KEY non configurée — aucun email envoyé." } : {}),
+  });
 }
