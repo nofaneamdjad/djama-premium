@@ -20,7 +20,7 @@ import {
   MessageCircle, Mail, Sparkles, TrendingDown, TrendingUp,
   Calendar, AlertCircle, ChevronDown, ChevronUp,
   StickyNote, ReceiptText, Users, Timer,
-  CreditCard, Wallet, FileText, Star, ArrowRight,
+  CreditCard, Wallet, FileText, CalendarRange, ArrowRight,
 } from "lucide-react";
 import type {
   RadarItem,      RadarResponse,
@@ -139,8 +139,8 @@ const ALL_TOOLS = [
   { href: "/client/chrono",     icon: Timer,       label: "Chrono Pro",       color: "#a78bfa" },
   { href: "/client/depenses",   icon: CreditCard,  label: "Dépenses Pro",     color: "#f97316" },
   { href: "/client/tresorerie", icon: Wallet,      label: "Trésorerie",       color: "#4ade80" },
-  { href: "/client/contrats",   icon: FileText,    label: "Contrats IA",      color: "#c9a55a" },
-  { href: "/client/reputation", icon: Star,        label: "Réputation",       color: "#f59e0b" },
+  { href: "/client/contrats",      icon: FileText,     label: "Contrats IA",   color: "#c9a55a" },
+  { href: "/client/planification", icon: CalendarRange, label: "Planification", color: "#38bdf8" },
 ];
 
 /* ════════════════════════════════════════════
