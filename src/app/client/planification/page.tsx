@@ -6,7 +6,7 @@ import {
   CalendarRange, Plus, ChevronLeft, ChevronRight,
   Clock, User, Briefcase, Trash2, X, Loader2,
   CheckCircle2, AlertCircle, CalendarDays, LayoutList,
-  Tag,
+  Tag, Bell, MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -36,6 +36,9 @@ type DraftSlot = {
   employee: string;
   role: string;
   note: string;
+  /* Notifications */
+  notify_email: string;    // email destinataire (optionnel)
+  notify_phone: string;    // WhatsApp (+33…) (optionnel)
 };
 
 type View = "semaine" | "liste";
@@ -117,6 +120,7 @@ function emptyDraft(date?: string): DraftSlot {
     title: "", date: date ?? todayISO(),
     start_time: "09:00", end_time: "10:00",
     type: "tache", employee: "", role: "", note: "",
+    notify_email: "", notify_phone: "",
   };
 }
 
@@ -280,7 +284,7 @@ export default function PlanificationPage() {
     setModalOpen(true);
   };
 
-  /* ── Save slot ── */
+  /* ── Save slot + notify ── */
   const handleSave = async () => {
     if (!draft.title.trim()) { showToast("error", "Titre obligatoire"); return; }
     if (!draft.start_time || !draft.end_time) { showToast("error", "Heures requises"); return; }
@@ -289,6 +293,8 @@ export default function PlanificationPage() {
     }
     if (!userId) return;
     setSaving(true);
+
+    /* 1. Insert Supabase */
     const { data, error } = await supabase
       .from("planning_slots")
       .insert({
@@ -304,13 +310,52 @@ export default function PlanificationPage() {
       })
       .select()
       .single();
-    setSaving(false);
-    if (error) { showToast("error", error.message); return; }
+
+    if (error) {
+      setSaving(false);
+      showToast("error", error.message);
+      return;
+    }
+
     setSlots((prev) => [...prev, data as PlanningSlot].sort((a, b) =>
       a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time)
     ));
     setModalOpen(false);
-    showToast("success", "Créneau ajouté ✓");
+
+    /* 2. Notifications (fire-and-forget — ne bloque pas l'UX) */
+    const notifyPayload: Record<string, string | null | undefined> = {
+      title:      draft.title.trim(),
+      date:       draft.date,
+      start_time: draft.start_time,
+      end_time:   draft.end_time,
+      type:       draft.type,
+      employee:   draft.employee.trim() || null,
+      role:       draft.role.trim() || null,
+      note:       draft.note.trim() || null,
+      to_email:   draft.notify_email.trim() || undefined,
+      to_phone:   draft.notify_phone.trim() || undefined,
+    };
+
+    fetch("/api/planification/notify", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(notifyPayload),
+    })
+      .then(async (r) => {
+        const json = await r.json() as { results?: Record<string, string>; errors?: Record<string, string> };
+        if (json.errors && Object.keys(json.errors).length > 0) {
+          console.warn("[notify] erreurs partielles", json.errors);
+        }
+      })
+      .catch((e) => console.warn("[notify] fetch error", e));
+
+    setSaving(false);
+    showToast(
+      "success",
+      draft.notify_email.trim()
+        ? "Créneau ajouté · notification envoyée ✓"
+        : "Créneau ajouté ✓"
+    );
   };
 
   /* ── Delete ── */
@@ -796,6 +841,47 @@ export default function PlanificationPage() {
                     rows={2}
                     className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-500/40"
                   />
+                </div>
+
+                {/* ── Notifications ── */}
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+                  <p className="flex items-center gap-2 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">
+                    <Bell size={10} /> Notifications (optionnel)
+                  </p>
+
+                  {/* Email */}
+                  <div>
+                    <label className="mb-1.5 block text-[0.6rem] font-semibold text-white/25">
+                      Email destinataire
+                    </label>
+                    <input
+                      type="email"
+                      value={draft.notify_email}
+                      onChange={(e) => setDraft((d) => ({ ...d, notify_email: e.target.value }))}
+                      placeholder="employeur@exemple.fr"
+                      className="w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-sm text-white placeholder:text-white/15 outline-none transition focus:border-sky-500/30"
+                    />
+                    <p className="mt-1 text-[0.58rem] text-white/20">
+                      Laissez vide pour utiliser NOTIFY_TO_EMAIL (variable d&apos;env)
+                    </p>
+                  </div>
+
+                  {/* WhatsApp */}
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-[0.6rem] font-semibold text-white/25">
+                      <MessageCircle size={9} /> WhatsApp (Twilio)
+                    </label>
+                    <input
+                      type="tel"
+                      value={draft.notify_phone}
+                      onChange={(e) => setDraft((d) => ({ ...d, notify_phone: e.target.value }))}
+                      placeholder="+33612345678"
+                      className="w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-sm text-white placeholder:text-white/15 outline-none transition focus:border-sky-500/30"
+                    />
+                    <p className="mt-1 text-[0.58rem] text-white/20">
+                      Requiert TWILIO_* dans les variables d&apos;env
+                    </p>
+                  </div>
                 </div>
 
                 {/* Actions */}
