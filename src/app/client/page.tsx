@@ -1,32 +1,31 @@
 "use client";
 
 /**
- * /client — DJAMA PRO · Coach Business
+ * /client — DJAMA PRO · Copilote Business IA
  *
- * UX rule: ouvrir → comprendre quoi faire en 3s → agir en 1 clic → gagner de l'argent.
- *
- * 1. HERO          — "Tu peux récupérer X€" (instant, radar)
- * 2. À FAIRE       — Top 5 actions directes (WA / Email / IA) sans navigation
- * 3. COACH IA      — Score + 3 actions + 1 insight (auto-chargé)
- * 4. OUTILS        — Section repliée "Voir tous les outils"
- * 5. MODALE        — Relance IA bottom-sheet
+ * Architecture :
+ *  1. KPI bar        — CA ce mois, impayés, score (depuis la première réponse IA)
+ *  2. Alertes        — Radar argent perdu (collapsible)
+ *  3. Chat IA        — Conversation contextuelle avec données réelles
+ *  4. Outils         — Grille collapsible
+ *  5. Input          — Sticky bottom
+ *  6. Modale relance — Bottom-sheet (conservée)
  */
 
-import { useState, useEffect, useCallback } from "react";
-import Link                                  from "next/link";
-import { motion, AnimatePresence }           from "framer-motion";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link                                          from "next/link";
+import { motion, AnimatePresence }                   from "framer-motion";
 import {
-  Flame, Zap, Target, RefreshCw, Send, Copy, Check, X,
-  MessageCircle, Mail, Sparkles, TrendingDown, TrendingUp,
-  Calendar, AlertCircle, ChevronDown, ChevronUp,
-  StickyNote, ReceiptText, Users, Timer,
-  CreditCard, Wallet, FileText, CalendarRange, ArrowRight,
+  Sparkles, Send, RefreshCw, X, Copy, Check, ChevronDown, ChevronUp,
+  MessageCircle, Mail, AlertCircle, TrendingDown, TrendingUp,
+  FileText, Users, Timer, Wallet, CreditCard, ArrowRight, Plus,
+  StickyNote, ReceiptText, Calendar, CalendarRange, Flame,
+  Eye, Zap,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import type {
-  RadarItem,      RadarResponse,
-  CoachResponse,  CoachAction,
-  RelanceRequest, RelanceResponse,
-  UrgencyLevel,   CoachActionType,
+  RadarItem, RadarResponse, RelanceRequest, RelanceResponse,
+  UrgencyLevel, ChatAction, ChatKPIs, ChatApiResponse,
 } from "@/lib/assistant/types";
 
 /* ════════════════════════════════════════════
@@ -36,8 +35,35 @@ const ease   = [0.16, 1, 0.3, 1] as const;
 const fmtEur = (n: number) =>
   n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
 /* ════════════════════════════════════════════
-   CONFIG VISUELLE
+   ICON MAP (pour les actions IA)
+════════════════════════════════════════════ */
+const ICON_MAP: Record<string, React.ElementType> = {
+  AlertCircle, FileText, Users, Timer, Wallet, CreditCard,
+  ArrowRight, Plus, TrendingUp, TrendingDown, Eye, Send, Zap, Sparkles,
+};
+function DynIcon({ name, size = 14, className = "" }: { name?: string; size?: number; className?: string }) {
+  const I = (name && ICON_MAP[name]) ? ICON_MAP[name] : ArrowRight;
+  return <I size={size} className={className} />;
+}
+
+/* ════════════════════════════════════════════
+   CONFIG VISUELLE — ACTIONS IA
+════════════════════════════════════════════ */
+const ACTION_STYLE: Record<string, string> = {
+  primary:   "bg-blue-500/12 border-blue-500/25 text-blue-400 hover:bg-blue-500/22",
+  warning:   "bg-amber-500/12 border-amber-500/25 text-amber-400 hover:bg-amber-500/22",
+  danger:    "bg-red-500/12 border-red-500/25 text-red-400 hover:bg-red-500/22",
+  secondary: "bg-white/[0.04] border-white/10 text-white/50 hover:bg-white/[0.08] hover:text-white/70",
+  ghost:     "border-transparent text-white/30 hover:text-white/55",
+};
+
+/* ════════════════════════════════════════════
+   CONFIG VISUELLE — RADAR
 ════════════════════════════════════════════ */
 const URGENCY: Record<UrgencyLevel, {
   bg: string; border: string; text: string; dot: string;
@@ -63,134 +89,192 @@ const URGENCY: Record<UrgencyLevel, {
   },
 };
 
-const ACTION: Record<CoachActionType, { Icon: React.ElementType; color: string; bg: string }> = {
-  relance_client:        { Icon: Send,       color: "text-red-400",   bg: "bg-red-500/10"   },
-  optimisation_planning: { Icon: Calendar,   color: "text-sky-400",   bg: "bg-sky-500/10"   },
-  opportunite_revenu:    { Icon: TrendingUp, color: "text-amber-400", bg: "bg-amber-500/10" },
-};
-
-const ACTION_LINK: Record<CoachActionType, { href: string; label: string } | null> = {
-  relance_client:        null,
-  optimisation_planning: { href: "/client/planning", label: "Mon planning" },
-  opportunite_revenu:    { href: "/client/factures",  label: "Créer un devis" },
-};
-
-const BADGE_STYLE: Record<string, string> = {
-  "Aujourd'hui":  "bg-red-500/15 text-red-400 border-red-500/20",
-  "Cette semaine":"bg-amber-500/15 text-amber-400 border-amber-500/20",
-  "À planifier":  "bg-white/6 text-white/35 border-white/8",
-};
-
-const SCORE_CFG = (s: number) => ({
-  color: s >= 70 ? "text-emerald-400" : s >= 45 ? "text-amber-400" : "text-red-400",
-  bg:    s >= 70 ? "bg-emerald-500/12 border-emerald-500/25" : s >= 45 ? "bg-amber-500/12 border-amber-500/25" : "bg-red-500/12 border-red-500/25",
-  label: s >= 70 ? "Bonne santé" : s >= 45 ? "À améliorer" : "Danger",
-  bar:   s >= 70 ? "bg-emerald-400" : s >= 45 ? "bg-amber-400" : "bg-red-400",
-});
+/* ════════════════════════════════════════════
+   CONFIG — OUTILS
+════════════════════════════════════════════ */
+const ALL_TOOLS = [
+  { href: "/client/notes",        icon: StickyNote,    label: "Bloc-notes IA",    color: "#c9a55a" },
+  { href: "/client/planning",     icon: Calendar,      label: "Planning",          color: "#60a5fa" },
+  { href: "/client/factures",     icon: ReceiptText,   label: "Factures & Devis",  color: "#4ade80" },
+  { href: "/client/crm",          icon: Users,         label: "CRM Client",        color: "#60a5fa" },
+  { href: "/client/chrono",       icon: Timer,         label: "Chrono Pro",        color: "#a78bfa" },
+  { href: "/client/depenses",     icon: CreditCard,    label: "Dépenses Pro",      color: "#f97316" },
+  { href: "/client/tresorerie",   icon: Wallet,        label: "Trésorerie",        color: "#4ade80" },
+  { href: "/client/contrats",     icon: FileText,      label: "Contrats IA",       color: "#c9a55a" },
+  { href: "/client/planification",icon: CalendarRange, label: "Planification",     color: "#38bdf8" },
+];
 
 /* ════════════════════════════════════════════
-   MESSAGES RAPIDES (sans IA)
+   TYPES LOCAUX
+════════════════════════════════════════════ */
+interface ChatMsg {
+  id:           string;
+  role:         "user" | "assistant";
+  content:      string;
+  actions?:     ChatAction[];
+  suggestions?: string[];
+  loading?:     boolean;
+}
+
+/* ════════════════════════════════════════════
+   MESSAGES RAPIDES RADAR
 ════════════════════════════════════════════ */
 const quickMsg = (item: RadarItem) => {
   const type = item.type === "facture" ? "facture" : "devis";
   return `Bonjour,\n\nJe vous relance concernant notre ${type} ${item.reference} d'un montant de ${fmtEur(item.amount)}.\n\nPourriez-vous me confirmer la prise en charge ?\n\nCordialement`;
 };
-const quickWa   = (item: RadarItem) =>
-  `https://wa.me/?text=${encodeURIComponent(quickMsg(item))}`;
+const quickWa   = (item: RadarItem) => `https://wa.me/?text=${encodeURIComponent(quickMsg(item))}`;
 const quickMail = (item: RadarItem) =>
   `mailto:${item.client_email ?? ""}?subject=${encodeURIComponent(`Relance ${item.type === "facture" ? "facture" : "devis"} ${item.reference}`)}&body=${encodeURIComponent(quickMsg(item))}`;
 
 /* ════════════════════════════════════════════
-   DEMO DATA
+   SOUS-COMPOSANT — SKELETON
 ════════════════════════════════════════════ */
-const DEMO_RADAR: RadarItem[] = [
-  { id: "d1", type: "facture", label: "", client: "Martin Électricité", reference: "FAC-2024-042", amount: 1_800, urgency: "critique",   days: 23, client_email: null },
-  { id: "d2", type: "devis",   label: "", client: "Dupont Design",      reference: "DEV-2024-018", amount: 1_200, urgency: "urgent",     days: 11, client_email: null },
-  { id: "d3", type: "facture", label: "", client: "Bâtisseurs & Co",    reference: "FAC-2024-039", amount:   650, urgency: "surveiller", days:  6, client_email: null },
-];
-
-const DEMO_COACH: CoachResponse = {
-  resume: "3 650€ en attente — relancer Martin Électricité aujourd'hui est la priorité n°1.",
-  score: 58,
-  actions: [
-    { type: "relance_client",     priority: 1, title: "Relancer Martin Électricité",  description: "J+23 — envoyer une relance ferme immédiatement.", impact: "1 800€ récupérables aujourd'hui",  urgency: "haute",   badge: "Aujourd'hui"   },
-    { type: "relance_client",     priority: 2, title: "Relancer Dupont Design",        description: "Devis J+11 — relance = +60% de chances d'acceptation.", impact: "1 200€ potentiels cette semaine", urgency: "haute",   badge: "Aujourd'hui"   },
-    { type: "opportunite_revenu", priority: 3, title: "Proposer un avenant à Bâtisseurs", description: "Client actif — proposer un forfait mensuel récurrent.", impact: "+500€/mois estimés",              urgency: "moyenne", badge: "Cette semaine" },
-  ],
-  insight: "Tes factures restent impayées 18j en moyenne — une relance à J+7 récupère 80% des paiements.",
-  meta: { unpaid_total: 2_450, quotes_total: 1_200, generated_at: new Date().toISOString() },
-};
-
-const LOADING_TEXTS = [
-  "L'IA analyse votre activité...",
-  "Calcul de vos opportunités...",
-  "Identification des priorités...",
-  "Presque prêt...",
-];
-
-/* ════════════════════════════════════════════
-   OUTILS (section repliée)
-════════════════════════════════════════════ */
-const ALL_TOOLS = [
-  { href: "/client/notes",      icon: StickyNote,  label: "Bloc-notes IA",   color: "#c9a55a" },
-  { href: "/client/planning",   icon: Calendar,    label: "Planning",         color: "#60a5fa" },
-  { href: "/client/factures",   icon: ReceiptText, label: "Factures & Devis", color: "#4ade80" },
-  { href: "/client/crm",        icon: Users,       label: "CRM Client",       color: "#60a5fa" },
-  { href: "/client/chrono",     icon: Timer,       label: "Chrono Pro",       color: "#a78bfa" },
-  { href: "/client/depenses",   icon: CreditCard,  label: "Dépenses Pro",     color: "#f97316" },
-  { href: "/client/tresorerie", icon: Wallet,      label: "Trésorerie",       color: "#4ade80" },
-  { href: "/client/contrats",      icon: FileText,     label: "Contrats IA",   color: "#c9a55a" },
-  { href: "/client/planification", icon: CalendarRange, label: "Planification", color: "#38bdf8" },
-];
-
-/* ════════════════════════════════════════════
-   MINI-COMPOSANTS
-════════════════════════════════════════════ */
-function Sk({ h = "h-14", w = "w-full" }: { h?: string; w?: string }) {
+function Sk({ h = "h-10", w = "w-full" }: { h?: string; w?: string }) {
   return <div className={`animate-pulse rounded-2xl bg-white/[0.04] ${h} ${w}`} />;
 }
 
-function UrgentDot({ urgency }: { urgency: UrgencyLevel }) {
-  return <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${URGENCY[urgency].dot} ${urgency === "critique" ? "animate-pulse" : ""}`} />;
-}
-
-function Badge({ text, className = "" }: { text: string; className?: string }) {
-  const base = BADGE_STYLE[text] ?? "bg-white/6 text-white/35 border-white/8";
+/* ════════════════════════════════════════════
+   SOUS-COMPOSANT — BOUTON ACTION IA
+════════════════════════════════════════════ */
+function ActionBtn({ action }: { action: ChatAction }) {
+  const style = ACTION_STYLE[action.variant] ?? ACTION_STYLE.secondary;
+  const cls   = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${style}`;
+  if (action.href) {
+    return (
+      <Link href={action.href} className={cls}>
+        <DynIcon name={action.icon} size={12} />
+        {action.label}
+      </Link>
+    );
+  }
   return (
-    <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border ${base} ${className}`}>
-      {text === "Aujourd'hui" && <span className="w-1 h-1 rounded-full bg-red-500 mr-1 animate-pulse" />}
-      {text}
-    </span>
+    <button className={cls}>
+      <DynIcon name={action.icon} size={12} />
+      {action.label}
+    </button>
   );
 }
 
 /* ════════════════════════════════════════════
-   PAGE PRINCIPALE — COACH
+   SOUS-COMPOSANT — BULLE DE MESSAGE
 ════════════════════════════════════════════ */
-export default function CoachDashboard() {
+function MessageBubble({
+  msg,
+  onSuggestion,
+}: {
+  msg:          ChatMsg;
+  onSuggestion: (text: string) => void;
+}) {
+  if (msg.role === "user") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 12 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.22, ease }}
+        className="flex justify-end"
+      >
+        <div className="max-w-[82%] rounded-3xl rounded-br-lg bg-[rgba(99,102,241,0.14)] border border-[rgba(99,102,241,0.22)] px-4 py-3">
+          <p className="text-sm text-white/88 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+        </div>
+      </motion.div>
+    );
+  }
 
-  /* ── État ── */
-  const [radar,         setRadar]         = useState<RadarResponse | null>(null);
-  const [coach,         setCoach]         = useState<CoachResponse | null>(null);
-  const [loadingBase,   setLoadingBase]   = useState(true);
-  const [loadingCoach,  setLoadingCoach]  = useState(true);
-  const [loadingTxtIdx, setLoadingTxtIdx] = useState(0);
-  const [toolsOpen,     setToolsOpen]     = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.25, ease }}
+      className="flex gap-3"
+    >
+      {/* Avatar IA */}
+      <div className="w-8 h-8 rounded-xl bg-amber-500/14 border border-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+        <Sparkles size={13} className="text-amber-400" />
+      </div>
 
-  /* ── Relance ── */
+      <div className="flex-1 min-w-0">
+        {/* Texte */}
+        <div className="rounded-3xl rounded-tl-lg bg-white/[0.03] border border-white/[0.07] px-4 py-3 mb-2.5">
+          {msg.loading ? (
+            <div className="flex items-center gap-1.5 py-1">
+              {[0, 1, 2].map(i => (
+                <motion.div
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full bg-amber-400/50"
+                  animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.1, 0.8] }}
+                  transition={{ delay: i * 0.18, repeat: Infinity, duration: 1.1 }}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-white/78 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+          )}
+        </div>
+
+        {/* Actions */}
+        {!msg.loading && msg.actions && msg.actions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2.5">
+            {msg.actions.map((a, i) => <ActionBtn key={i} action={a} />)}
+          </div>
+        )}
+
+        {/* Suggestions */}
+        {!msg.loading && msg.suggestions && msg.suggestions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {msg.suggestions.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => onSuggestion(s)}
+                className="text-[11px] px-3 py-1.5 rounded-full border border-white/[0.08] text-white/35 hover:text-white/65 hover:border-white/18 transition-all"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+/* ════════════════════════════════════════════
+   PAGE PRINCIPALE
+════════════════════════════════════════════ */
+export default function CoachPage() {
+
+  /* ── Chat ── */
+  const [messages,  setMessages]  = useState<ChatMsg[]>([]);
+  const [input,     setInput]     = useState("");
+  const [sending,   setSending]   = useState(false);
+  const [kpis,      setKpis]      = useState<ChatKPIs | null>(null);
+  const bottomRef  = useRef<HTMLDivElement>(null);
+  const inputRef   = useRef<HTMLTextAreaElement>(null);
+  const msgHistory = useRef<ChatMsg[]>([]);
+
+  /* ── Radar ── */
+  const [radar,       setRadar]       = useState<RadarResponse | null>(null);
+  const [loadingBase, setLoadingBase] = useState(true);
+  const [alertsOpen,  setAlertsOpen]  = useState(true);
+
+  /* ── Relance modal ── */
   const [relanceItem,    setRelanceItem]    = useState<RadarItem | null>(null);
   const [relanceLoading, setRelanceLoading] = useState(false);
   const [relanceMsg,     setRelanceMsg]     = useState<RelanceResponse | null>(null);
   const [copied,         setCopied]         = useState(false);
 
-  /* ── Cycling loading text ── */
-  useEffect(() => {
-    if (!loadingCoach) return;
-    const t = setInterval(() => setLoadingTxtIdx(i => (i + 1) % LOADING_TEXTS.length), 1_600);
-    return () => clearInterval(t);
-  }, [loadingCoach]);
+  /* ── Outils ── */
+  const [toolsOpen, setToolsOpen] = useState(false);
 
-  /* ── Fetch radar (rapide, sans IA) ── */
+  /* ── Sync ref messages ── */
+  useEffect(() => { msgHistory.current = messages; }, [messages]);
+
+  /* ── Auto-scroll ── */
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  /* ── Fetch radar ── */
   const fetchBase = useCallback(async () => {
     setLoadingBase(true);
     const r = await fetch("/api/assistant/radar").then(r => r.ok ? r.json() : null).catch(() => null);
@@ -198,17 +282,119 @@ export default function CoachDashboard() {
     setLoadingBase(false);
   }, []);
 
-  /* ── Fetch coach (IA, ~3s) ── */
-  const fetchCoach = useCallback(async () => {
-    setLoadingCoach(true);
-    setCoach(null);
-    const res = await fetch("/api/assistant/coach", { method: "POST" })
-      .then(r => r.ok ? r.json() : null).catch(() => null);
-    setCoach(res);
-    setLoadingCoach(false);
+  /* ── Send to chat API ── */
+  const sendToAPI = useCallback(async (
+    text:    string,
+    history: Array<{ role: "user" | "assistant"; content: string }>,
+    aiId:    string,
+  ) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await fetch("/api/assistant/chat", {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ message: text, history }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data: ChatApiResponse = await res.json();
+
+      setMessages(prev => prev.map(m =>
+        m.id === aiId
+          ? { ...m, content: data.text, actions: data.actions, suggestions: data.suggestions, loading: false }
+          : m,
+      ));
+
+      if (data.kpis) setKpis(data.kpis);
+
+    } catch {
+      setMessages(prev => prev.map(m =>
+        m.id === aiId
+          ? { ...m, content: "Je n'ai pas pu analyser ta situation. Vérifie ta connexion et réessaie.", loading: false }
+          : m,
+      ));
+    } finally {
+      setSending(false);
+    }
   }, []);
 
-  useEffect(() => { fetchBase(); fetchCoach(); }, [fetchBase, fetchCoach]);
+  /* ── Init ── */
+  useEffect(() => {
+    fetchBase();
+
+    const initId = uid();
+    setMessages([{ id: initId, role: "assistant", content: "", loading: true }]);
+    setSending(true);
+
+    sendToAPI(
+      "Analyse ma situation business actuelle. Donne-moi un résumé avec les chiffres clés et l'alerte principale.",
+      [],
+      initId,
+    );
+  }, [fetchBase, sendToAPI]);
+
+  /* ── Refresh ── */
+  const handleRefresh = useCallback(() => {
+    const initId = uid();
+    setMessages([{ id: initId, role: "assistant", content: "", loading: true }]);
+    setKpis(null);
+    setSending(true);
+    fetchBase();
+    sendToAPI(
+      "Analyse ma situation business actuelle. Donne-moi un résumé avec les chiffres clés et l'alerte principale.",
+      [],
+      initId,
+    );
+  }, [fetchBase, sendToAPI]);
+
+  /* ── Envoyer un message ── */
+  const handleSend = useCallback(async (text?: string) => {
+    const msg = (text ?? input).trim();
+    if (!msg || sending) return;
+
+    const userId = uid();
+    const aiId   = uid();
+
+    /* Historique AVANT l'ajout du nouveau message */
+    const history = msgHistory.current
+      .filter(m => !m.loading)
+      .map(m => ({ role: m.role, content: m.content }));
+
+    setMessages(prev => [
+      ...prev,
+      { id: userId, role: "user",      content: msg },
+      { id: aiId,   role: "assistant", content: "", loading: true },
+    ]);
+    setInput("");
+    setSending(true);
+
+    /* Reset hauteur textarea */
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
+
+    await sendToAPI(msg, history, aiId);
+  }, [input, sending, sendToAPI]);
+
+  /* ── Keyboard ── */
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setInput(e.target.value);
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 128) + "px";
+  }
 
   /* ── Relance IA ── */
   const openRelance = useCallback(async (item: RadarItem) => {
@@ -228,348 +414,224 @@ export default function CoachDashboard() {
     setRelanceLoading(false);
   }, []);
 
-  const copyMessage = useCallback(async () => {
+  const copyRelance = useCallback(async () => {
     if (!relanceMsg) return;
     await navigator.clipboard.writeText(`Objet : ${relanceMsg.subject}\n\n${relanceMsg.message}`).catch(() => null);
     setCopied(true);
     setTimeout(() => setCopied(false), 2_500);
   }, [relanceMsg]);
 
-  const closeModal = () => { setRelanceItem(null); setRelanceMsg(null); };
+  const closeRelance = () => { setRelanceItem(null); setRelanceMsg(null); };
 
   const mailLink = (m: RelanceResponse, email: string | null) =>
     `mailto:${email ?? ""}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.message)}`;
-  const waLink = (m: RelanceResponse) =>
+  const waLink   = (m: RelanceResponse) =>
     `https://wa.me/?text=${encodeURIComponent(`${m.subject}\n\n${m.message}`)}`;
 
   /* ── Données dérivées ── */
-  const loaded     = !loadingBase && !loadingCoach;
-  const hasReal    = (radar?.items?.length ?? 0) > 0 || (coach?.actions?.length ?? 0) > 0;
-  const isDemoMode = loaded && !hasReal;
-
-  const activeRadar = isDemoMode ? DEMO_RADAR : (radar?.items ?? []);
-  const activeCoach = isDemoMode ? DEMO_COACH : coach;
-  const totalAtRisk = isDemoMode ? 3_650       : (radar?.total ?? 0);
-
-  const weeklyLoss = Math.round(
-    activeRadar.reduce((s, item) => {
-      const rate = item.urgency === "critique" ? 0.20 : item.urgency === "urgent" ? 0.08 : 0.02;
-      return s + item.amount * rate;
-    }, 0)
-  );
-
-  /* Top 5 urgents pour "À faire maintenant" */
-  const urgentActions = activeRadar
-    .filter(i => i.urgency === "critique" || i.urgency === "urgent")
-    .slice(0, 5);
-
-  const score    = activeCoach?.score ?? null;
-  const scoreCfg = score !== null ? SCORE_CFG(score) : null;
+  const urgentItems = (radar?.items ?? []).filter(i => i.urgency === "critique" || i.urgency === "urgent").slice(0, 5);
+  const hasAlerts   = !loadingBase && urgentItems.length > 0;
 
   /* ════════════════════════════════════════
      RENDU
   ════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#09090f] text-white pb-28">
+    <div className="min-h-screen bg-[#09090f] text-white pb-40">
 
-      {/* ─── Header ───────────────────────────── */}
-      <header className="sticky top-0 z-30 bg-[#09090f]/95 backdrop-blur-md border-b border-white/[0.05]">
+      {/* ── HEADER ─────────────────────────────── */}
+      <header className="sticky top-0 z-30 bg-[#09090f]/96 backdrop-blur-md border-b border-white/[0.05]">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/14 border border-amber-500/20 flex items-center justify-center">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             </div>
-            <span className="text-sm font-bold tracking-tight">Coach DJAMA</span>
-            {isDemoMode && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/20 font-semibold">
-                Démo
+            <span className="text-sm font-bold tracking-tight">Copilote IA</span>
+            {kpis && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${
+                kpis.score >= 70
+                  ? "bg-emerald-500/12 border-emerald-500/22 text-emerald-400"
+                  : kpis.score >= 45
+                    ? "bg-amber-500/12 border-amber-500/22 text-amber-400"
+                    : "bg-red-500/12 border-red-500/22 text-red-400"
+              }`}>
+                Score {kpis.score}/100
               </span>
             )}
           </div>
           <button
-            onClick={() => { fetchBase(); fetchCoach(); }}
-            disabled={loadingBase || loadingCoach}
+            onClick={handleRefresh}
+            disabled={sending}
             className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/55 transition-colors disabled:opacity-25 px-3 py-1.5 rounded-lg hover:bg-white/[0.04]"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${(loadingBase || loadingCoach) ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${sending ? "animate-spin" : ""}`} />
             Actualiser
           </button>
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 pt-5 space-y-5">
-
-        {/* ══════════════════════════════════════
-            1. HERO — impact immédiat
-        ══════════════════════════════════════ */}
-        <div className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.07] via-amber-500/[0.03] to-transparent p-6">
-          <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-amber-500/8 blur-3xl pointer-events-none" />
-
-          {isDemoMode && (
-            <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-sky-500/8 border border-sky-500/15">
-              <Sparkles className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
-              <p className="text-xs text-sky-300/70 leading-snug">
-                Exemple — voici ce que DJAMA détectera dès vos premières factures créées.
-              </p>
-            </div>
-          )}
-
-          {loadingBase ? <Sk h="h-8" w="w-64" /> : (
-            <motion.p
-              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-              className="text-lg sm:text-xl font-bold text-white leading-tight mb-3"
-            >
-              Tu peux récupérer{" "}
-              <span className="text-amber-400">{fmtEur(totalAtRisk)}</span>{" "}
-              cette semaine
-            </motion.p>
-          )}
-
-          <div className="flex items-center gap-2 flex-wrap mb-4">
-            {scoreCfg && score !== null && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold ${scoreCfg.bg} ${scoreCfg.color}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${scoreCfg.bar}`} />
-                Score {score}/100 · {scoreCfg.label}
-              </motion.div>
-            )}
-            {loadingCoach && !scoreCfg && <Sk h="h-6" w="w-36" />}
-
-            {!loadingBase && urgentActions.length > 0 && (
-              <span className="flex items-center gap-1.5 text-[11px] text-red-400 bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20 font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                {urgentActions.length} action{urgentActions.length > 1 ? "s" : ""} urgente{urgentActions.length > 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-
-          {!loadingBase && weeklyLoss >= 50 && (
-            <motion.div
-              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/[0.07] border border-red-500/15"
-            >
-              <TrendingDown className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-              <p className="text-xs text-red-300/80">
-                Sans action, tu perds{" "}
-                <span className="font-bold text-red-400">~{fmtEur(weeklyLoss)}/semaine</span>
-              </p>
-            </motion.div>
-          )}
-        </div>
-
-        {/* ══════════════════════════════════════
-            2. À FAIRE MAINTENANT — actions directes
-        ══════════════════════════════════════ */}
-        {(loadingBase || urgentActions.length > 0) && (
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <Flame className="w-3.5 h-3.5 text-red-400" />
-              <h2 className="text-[11px] font-bold uppercase tracking-widest text-white/30">
-                À faire maintenant
-              </h2>
-            </div>
-
-            {loadingBase ? (
-              <div className="space-y-2"><Sk h="h-20" /><Sk h="h-20" /></div>
-            ) : (
-              <div className="space-y-2">
-                {urgentActions.map((item, i) => {
-                  const u = URGENCY[item.urgency];
-                  return (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.06 }}
-                      className={`rounded-2xl border p-4 ${u.bg} ${u.border}`}
-                    >
-                      {/* Ligne 1 : client + montant */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2.5">
-                          <UrgentDot urgency={item.urgency} />
-                          <div>
-                            <p className="text-sm font-bold">{item.client}</p>
-                            <p className="text-[11px] text-white/30">
-                              {item.type === "facture" ? "Facture" : "Devis"} {item.reference} · J+{item.days}
-                            </p>
-                          </div>
-                        </div>
-                        <span className={`text-base font-black tabular-nums ${u.text}`}>
-                          {fmtEur(item.amount)}
-                        </span>
-                      </div>
-
-                      {/* Ligne 2 : boutons d'action directe */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* WhatsApp rapide (template pré-construit) */}
-                        <a
-                          href={quickWa(item)}
-                          target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/18 transition-all"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          WhatsApp
-                        </a>
-
-                        {/* Email rapide */}
-                        <a
-                          href={quickMail(item)}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold bg-sky-500/10 border border-sky-500/18 text-sky-400 hover:bg-sky-500/18 transition-all"
-                        >
-                          <Mail className="w-3.5 h-3.5" />
-                          Email
-                        </a>
-
-                        {/* Relance IA (message personnalisé) */}
-                        <button
-                          onClick={() => openRelance(item)}
-                          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition-all border ${u.ctaBg}`}
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          Rédiger avec l&apos;IA
-                        </button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+      {/* ── KPI BAR ─────────────────────────────── */}
+      <AnimatePresence>
+        {kpis && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="sticky top-14 z-20 bg-[#09090f]/92 backdrop-blur-sm border-b border-white/[0.04]"
+          >
+            <div className="max-w-2xl mx-auto px-4 py-2 flex items-center gap-3 overflow-x-auto scrollbar-none text-xs">
+              {/* CA */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-white/28 font-medium">CA</span>
+                <span className="font-bold text-white/80">{fmtEur(kpis.ca_this_month)}</span>
+                {kpis.ca_last_month > 0 && (
+                  <span className={`flex items-center gap-0.5 font-bold ${kpis.ca_change_pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                    {kpis.ca_change_pct >= 0
+                      ? <TrendingUp size={11} />
+                      : <TrendingDown size={11} />
+                    }
+                    {Math.abs(kpis.ca_change_pct)}%
+                  </span>
+                )}
               </div>
-            )}
+              <span className="text-white/8 shrink-0">│</span>
+
+              {/* Impayés */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-white/28 font-medium">Impayés</span>
+                <span className={`font-bold ${kpis.unpaid_count > 0 ? "text-red-400" : "text-emerald-400"}`}>
+                  {kpis.unpaid_count > 0
+                    ? `${kpis.unpaid_count} · ${fmtEur(kpis.unpaid_total)}`
+                    : "0 ✓"
+                  }
+                </span>
+              </div>
+              <span className="text-white/8 shrink-0">│</span>
+
+              {/* Score */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-white/28 font-medium">Santé</span>
+                <span className={`font-bold ${
+                  kpis.score >= 70 ? "text-emerald-400" : kpis.score >= 45 ? "text-amber-400" : "text-red-400"
+                }`}>
+                  {kpis.score}/100
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MAIN CONTENT ─────────────────────────────── */}
+      <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
+
+        {/* ══ ALERTES RADAR ══ */}
+        {(loadingBase || hasAlerts) && (
+          <section>
+            <button
+              onClick={() => setAlertsOpen(o => !o)}
+              className="w-full flex items-center justify-between px-1 py-1 mb-2 group"
+            >
+              <div className="flex items-center gap-2">
+                <Flame className={`w-3.5 h-3.5 ${loadingBase ? "text-white/25" : "text-red-400"}`} />
+                <span className="text-[11px] font-bold uppercase tracking-widest text-white/28">
+                  {loadingBase ? "Chargement…" : `${urgentItems.length} action${urgentItems.length > 1 ? "s" : ""} urgente${urgentItems.length > 1 ? "s" : ""}`}
+                </span>
+              </div>
+              {!loadingBase && (
+                alertsOpen
+                  ? <ChevronUp className="w-3.5 h-3.5 text-white/20" />
+                  : <ChevronDown className="w-3.5 h-3.5 text-white/20" />
+              )}
+            </button>
+
+            <AnimatePresence>
+              {alertsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25, ease }}
+                  className="space-y-2 overflow-hidden"
+                >
+                  {loadingBase ? (
+                    <><Sk h="h-20" /><Sk h="h-20" /></>
+                  ) : (
+                    urgentItems.map((item, i) => {
+                      const u = URGENCY[item.urgency];
+                      return (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.06 }}
+                          className={`rounded-2xl border p-4 ${u.bg} ${u.border}`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2.5">
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${u.dot} ${item.urgency === "critique" ? "animate-pulse" : ""}`} />
+                              <div>
+                                <p className="text-sm font-bold">{item.client}</p>
+                                <p className="text-[11px] text-white/30">
+                                  {item.type === "facture" ? "Facture" : "Devis"} {item.reference} · J+{item.days}
+                                </p>
+                              </div>
+                            </div>
+                            <span className={`text-base font-black tabular-nums ${u.text}`}>
+                              {fmtEur(item.amount)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <a
+                              href={quickWa(item)} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/18 transition-all"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />WhatsApp
+                            </a>
+                            <a
+                              href={quickMail(item)}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold bg-sky-500/10 border border-sky-500/18 text-sky-400 hover:bg-sky-500/18 transition-all"
+                            >
+                              <Mail className="w-3.5 h-3.5" />Email
+                            </a>
+                            <button
+                              onClick={() => openRelance(item)}
+                              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition-all border ${u.ctaBg}`}
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />Rédiger avec l&apos;IA
+                            </button>
+                          </div>
+                        </motion.div>
+                      );
+                    })
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </section>
         )}
 
-        {/* ══════════════════════════════════════
-            3. COACH IA — analyse + actions
-        ══════════════════════════════════════ */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <h2 className="text-[11px] font-bold uppercase tracking-widest text-white/30">
-                Analyse business
-              </h2>
-            </div>
-            {activeCoach && !loadingCoach && (
-              <button
-                onClick={fetchCoach}
-                className="text-[10px] text-white/20 hover:text-white/40 transition-colors flex items-center gap-1"
-              >
-                <RefreshCw className="w-3 h-3" /> Relancer
-              </button>
-            )}
-          </div>
-
-          {loadingCoach && (
-            <div className="space-y-2.5">
-              <motion.div
-                key={loadingTxtIdx}
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-500/[0.05] border border-amber-500/12"
-              >
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}>
-                  <Sparkles className="w-4 h-4 text-amber-400/70 flex-shrink-0" />
-                </motion.div>
-                <p className="text-sm text-amber-400/60">{LOADING_TEXTS[loadingTxtIdx]}</p>
-              </motion.div>
-              <Sk h="h-12" /><Sk h="h-20" /><Sk h="h-20" />
-            </div>
-          )}
-
-          {!loadingCoach && !activeCoach && !isDemoMode && (
-            <button
-              onClick={fetchCoach}
-              className="w-full py-6 rounded-2xl border border-dashed border-white/8 text-sm text-white/25 hover:text-white/45 hover:border-white/15 transition-all flex items-center justify-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" /> Relancer l&apos;analyse
-            </button>
-          )}
-
-          {activeCoach && !loadingCoach && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2.5">
-              {/* Résumé */}
-              <div className="px-4 py-3.5 rounded-2xl bg-white/[0.025] border border-white/[0.06]">
-                <p className="text-sm text-white/60 leading-relaxed">{activeCoach.resume}</p>
-              </div>
-
-              {/* 3 actions */}
-              {activeCoach.actions.map((action: CoachAction, i: number) => {
-                const cfg  = ACTION[action.type] ?? ACTION.relance_client;
-                const link = ACTION_LINK[action.type];
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.07 }}
-                    className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}>
-                        <cfg.Icon className={`w-4 h-4 ${cfg.color}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <p className="text-sm font-semibold leading-snug">{action.title}</p>
-                          <Badge text={action.badge ?? "Cette semaine"} className="flex-shrink-0 mt-0.5" />
-                        </div>
-                        <p className="text-xs text-white/38 leading-relaxed mb-2">{action.description}</p>
-                        {action.impact && (
-                          <p className={`text-xs font-bold ${cfg.color}`}>→ {action.impact}</p>
-                        )}
-                        {link && (
-                          <Link
-                            href={link.href}
-                            className={`mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold opacity-50 hover:opacity-90 transition-opacity ${cfg.color}`}
-                          >
-                            {link.label} <ArrowRight className="w-3 h-3" />
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-
-              {/* Insight */}
-              {activeCoach.insight && (
-                <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-sky-500/[0.05] border border-sky-500/12">
-                  <Target className="w-4 h-4 text-sky-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-sky-300/65 leading-relaxed">{activeCoach.insight}</p>
-                </div>
-              )}
-
-              {/* Barre de score */}
-              {scoreCfg && score !== null && (
-                <div className="px-1">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] text-white/18">Santé business</span>
-                    <span className={`text-[10px] font-bold ${scoreCfg.color}`}>{score}/100 · {scoreCfg.label}</span>
-                  </div>
-                  <div className="h-0.5 bg-white/[0.05] rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }} animate={{ width: `${score}%` }}
-                      transition={{ duration: 1.1, ease: "easeOut", delay: 0.3 }}
-                      className={`h-full rounded-full ${scoreCfg.bar}`}
-                    />
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
+        {/* ══ CHAT ══ */}
+        <section className="space-y-4">
+          <AnimatePresence initial={false}>
+            {messages.map(msg => (
+              <MessageBubble
+                key={msg.id}
+                msg={msg}
+                onSuggestion={text => handleSend(text)}
+              />
+            ))}
+          </AnimatePresence>
+          <div ref={bottomRef} />
         </section>
 
-        {/* ══════════════════════════════════════
-            4. TOUS LES OUTILS (replié par défaut)
-        ══════════════════════════════════════ */}
-        <section className="pb-4">
+        {/* ══ OUTILS ══ */}
+        <section className="pt-2 pb-4">
           <button
             onClick={() => setToolsOpen(o => !o)}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] text-[11px] font-bold text-white/25 hover:text-white/45 hover:border-white/10 transition-all"
+            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] text-[11px] font-bold text-white/22 hover:text-white/40 hover:border-white/10 transition-all"
           >
             <span className="flex items-center gap-2">
-              <span className="w-1 h-1 rounded-full bg-white/20" />
-              Voir tous les outils ({ALL_TOOLS.length})
+              <span className="w-1 h-1 rounded-full bg-white/18" />
+              Tous les outils ({ALL_TOOLS.length})
             </span>
             {toolsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
@@ -589,11 +651,10 @@ export default function CoachDashboard() {
                       key={href} href={href}
                       className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/[0.05] bg-white/[0.015] hover:border-white/10 hover:bg-white/[0.03] transition-all group"
                     >
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/[0.04]"
-                        style={{ color }}>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/[0.04]" style={{ color }}>
                         <Icon size={15} />
                       </div>
-                      <span className="text-[10px] font-semibold text-white/30 text-center leading-tight group-hover:text-white/50 transition-colors">
+                      <span className="text-[10px] font-semibold text-white/28 text-center leading-tight group-hover:text-white/50 transition-colors">
                         {label}
                       </span>
                     </Link>
@@ -606,9 +667,36 @@ export default function CoachDashboard() {
 
       </div>
 
-      {/* ══════════════════════════════════════
-          5. MODALE RELANCE IA
-      ══════════════════════════════════════ */}
+      {/* ══ INPUT STICKY ══════════════════════════════ */}
+      <div className="fixed bottom-0 inset-x-0 z-30 bg-[#09090f]/96 backdrop-blur-xl border-t border-white/[0.05]">
+        <div className="max-w-2xl mx-auto px-4 py-3">
+          <div className="flex items-end gap-2.5 bg-white/[0.04] border border-white/[0.09] rounded-2xl px-4 py-2.5 focus-within:border-white/18 transition-colors">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Pose ta question business…"
+              rows={1}
+              disabled={sending}
+              className="flex-1 bg-transparent text-sm text-white placeholder:text-white/22 outline-none resize-none leading-relaxed max-h-32 scrollbar-none disabled:opacity-40"
+              style={{ height: "24px" }}
+            />
+            <button
+              onClick={() => handleSend()}
+              disabled={!input.trim() || sending}
+              className="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/25 text-amber-400 hover:bg-amber-500/30 transition-all disabled:opacity-25 disabled:cursor-not-allowed shrink-0 mb-0.5"
+            >
+              <Send size={14} />
+            </button>
+          </div>
+          <p className="text-center text-[10px] text-white/14 mt-1.5">
+            Entrée pour envoyer · Maj+Entrée pour saut de ligne
+          </p>
+        </div>
+      </div>
+
+      {/* ══ MODALE RELANCE IA ══════════════════════════════ */}
       <AnimatePresence>
         {relanceItem && (
           <>
@@ -616,7 +704,7 @@ export default function CoachDashboard() {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
               className="fixed inset-0 bg-black/72 backdrop-blur-sm z-40"
-              onClick={closeModal}
+              onClick={closeRelance}
             />
             <motion.div
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
@@ -625,7 +713,6 @@ export default function CoachDashboard() {
             >
               <div className="w-9 h-1 bg-white/10 rounded-full mx-auto mb-5" />
 
-              {/* Header */}
               <div className="flex items-start justify-between mb-5">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -641,12 +728,11 @@ export default function CoachDashboard() {
                     <span className="mx-1 opacity-40">·</span>J+{relanceItem.days}
                   </p>
                 </div>
-                <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.05]">
+                <button onClick={closeRelance} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.05]">
                   <X className="w-4 h-4 text-white/45" />
                 </button>
               </div>
 
-              {/* Loading */}
               {relanceLoading && (
                 <div className="space-y-3">
                   <motion.div
@@ -657,13 +743,12 @@ export default function CoachDashboard() {
                     <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}>
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     </motion.div>
-                    <p className="text-sm text-amber-400/60">Rédaction du message en cours...</p>
+                    <p className="text-sm text-amber-400/60">Rédaction en cours…</p>
                   </motion.div>
-                  <Sk h="h-11" /><Sk h="h-36" /><Sk h="h-28" />
+                  <Sk h="h-11" /><Sk h="h-36" />
                 </div>
               )}
 
-              {/* Message généré */}
               {relanceMsg && !relanceLoading && (
                 <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                   <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3">
@@ -674,10 +759,9 @@ export default function CoachDashboard() {
                     <p className="text-[10px] uppercase tracking-widest text-white/22 font-bold mb-2">Message</p>
                     <p className="text-sm text-white/60 leading-relaxed whitespace-pre-wrap">{relanceMsg.message}</p>
                   </div>
-
                   <div className="grid grid-cols-3 gap-2 pt-1">
                     <button
-                      onClick={copyMessage}
+                      onClick={copyRelance}
                       className={`flex flex-col items-center gap-1.5 py-4 rounded-2xl text-xs font-bold transition-all border ${copied ? "bg-emerald-500/15 border-emerald-500/25 text-emerald-400" : "bg-white/[0.04] border-white/[0.07] text-white/50 hover:bg-white/[0.07]"}`}
                     >
                       <motion.div key={String(copied)} initial={{ scale: 0.7 }} animate={{ scale: 1 }}>
@@ -689,18 +773,15 @@ export default function CoachDashboard() {
                       href={waLink(relanceMsg)} target="_blank" rel="noopener noreferrer"
                       className="flex flex-col items-center gap-1.5 py-4 rounded-2xl text-xs font-bold bg-emerald-500/10 border border-emerald-500/18 text-emerald-400 hover:bg-emerald-500/18 transition-all"
                     >
-                      <MessageCircle className="w-5 h-5" />
-                      WhatsApp
+                      <MessageCircle className="w-5 h-5" />WhatsApp
                     </a>
                     <a
                       href={mailLink(relanceMsg, relanceItem.client_email)}
                       className="flex flex-col items-center gap-1.5 py-4 rounded-2xl text-xs font-bold bg-sky-500/10 border border-sky-500/18 text-sky-400 hover:bg-sky-500/18 transition-all"
                     >
-                      <Mail className="w-5 h-5" />
-                      Email
+                      <Mail className="w-5 h-5" />Email
                     </a>
                   </div>
-
                   <button
                     onClick={() => openRelance(relanceItem)}
                     className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[11px] text-white/20 hover:text-white/40 transition-colors"
@@ -710,7 +791,6 @@ export default function CoachDashboard() {
                 </motion.div>
               )}
 
-              {/* Erreur */}
               {!relanceMsg && !relanceLoading && (
                 <div className="text-center py-8">
                   <AlertCircle className="w-7 h-7 text-white/15 mx-auto mb-3" />

@@ -96,3 +96,41 @@ export interface NotificationsResponse {
   total_at_risk:  number;
   urgent_count:   number;
 }
+
+/* ════════════════════════════════════════
+   COPILOTE BUSINESS — CHAT IA
+════════════════════════════════════════ */
+export type ChatActionVariant = "primary" | "secondary" | "warning" | "danger" | "ghost";
+
+export interface ChatAction {
+  label:   string;
+  icon?:   string;           // nom d'icône lucide (ex: "AlertCircle")
+  href?:   string;           // lien de navigation
+  variant: ChatActionVariant;
+}
+
+export interface ChatKPIs {
+  ca_this_month:  number;
+  ca_last_month:  number;
+  ca_change_pct:  number;    // % entier (peut être négatif)
+  unpaid_count:   number;
+  unpaid_total:   number;
+  score:          number;    // 0-100
+}
+
+export interface ChatHistoryItem {
+  role:    "user" | "assistant";
+  content: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  history: ChatHistoryItem[];
+}
+
+export interface ChatApiResponse {
+  text:         string;
+  actions?:     ChatAction[];
+  suggestions?: string[];
+  kpis?:        ChatKPIs;   // uniquement sur le premier message (init)
+}
