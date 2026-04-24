@@ -32,9 +32,17 @@ export interface PdfData {
   subject:         string;
   items:           PdfLineItem[];
   subtotal:        number;
+  discount_rate?:  number | null;
+  discount?:       number | null;
   tax_rate:        number;
   tax_amount:      number;
   total:           number;
+  deposit?:        number | null;
+  deposit_label?:  string | null;
+  rib_titulaire?:  string | null;
+  rib_iban?:       string | null;
+  rib_bic?:        string | null;
+  rib_banque?:     string | null;
   notes?:          string | null;
   footer_text?:    string | null;
   company?:        Partial<CompanySettings>;

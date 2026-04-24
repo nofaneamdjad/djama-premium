@@ -8,7 +8,7 @@ import type { CompanySettings } from "./companySettings";
 // ─── Template type ────────────────────────────────────────────────────────────
 
 export type TemplateType =
-  | "modern"    // actuel — header sombre, accents dorés
+  | "modern"    // header sombre, accents dorés
   | "minimal"   // tout blanc, lignes fines, épuré
   | "classic"   // bleu marine corporate, traditionnel
   | "premium"   // fond sombre intégral, texte or, luxe
@@ -21,6 +21,8 @@ export interface PdfLineItem {
   quantity:    number;
   unit_price:  number;
   total:       number;
+  /** Taux TVA spécifique à cette ligne (optionnel — sinon utilise data.tax_rate) */
+  tax_rate?:   number | null;
 }
 
 // ─── Data passée aux templates ────────────────────────────────────────────────
@@ -32,20 +34,44 @@ export interface PdfTemplateData {
   issue_date:      string;
   valid_until?:    string | null;
   due_date?:       string | null;
+
+  /* Émetteur */
+  company?:        Partial<CompanySettings>;
+
+  /* Client */
   client_name:     string;
   client_email:    string;
   client_phone?:   string | null;
   client_company?: string | null;
   client_address?: string | null;
+
+  /* Objet du document */
   subject:         string;
+
+  /* Lignes */
   items:           PdfLineItem[];
-  subtotal:        number;
+
+  /* Totaux */
+  subtotal:        number;   // HT brut (avant remise)
+  discount_rate?:  number | null;  // % remise
+  discount?:       number | null;  // montant remise HT
   tax_rate:        number;
   tax_amount:      number;
-  total:           number;
+  total:           number;         // TTC (après remise, avant acompte)
+
+  /* Acompte */
+  deposit?:        number | null;
+  deposit_label?:  string | null;
+
+  /* Coordonnées bancaires */
+  rib_titulaire?:  string | null;
+  rib_iban?:       string | null;
+  rib_bic?:        string | null;
+  rib_banque?:     string | null;
+
+  /* Notes et pied de page */
   notes?:          string | null;
   footer_text?:    string | null;
-  company?:        Partial<CompanySettings>;
 }
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -58,35 +84,35 @@ export interface PdfTheme {
 
   // Header
   headerBg:          RGB;
-  headerH:           number;   // hauteur en mm
+  headerH:           number;
   headerNameColor:   RGB;
-  headerSubColor:    RGB;      // couleur du sous-titre (FACTURE / DEVIS)
+  headerSubColor:    RGB;
   headerRefColor:    RGB;
   headerDateColor:   RGB;
 
-  // Corps du document
+  // Corps
   bodyBg:            RGB;
   bodyText:          RGB;
   mutedText:         RGB;
 
-  // Labels de section ("DE", "FACTURÉ À")
+  // Labels
   labelColor:        RGB;
-  sectionNameColor:  RGB;      // nom entreprise / nom client
+  sectionNameColor:  RGB;
 
-  // Bloc "Objet"
+  // Objet
   subjectBg:         RGB;
   subjectText:       RGB;
 
   // Tableau
   tableHeaderBg:     RGB;
   tableHeaderText:   RGB;
-  tableRowAlt:       RGB | null; // null = pas de zébra
-  tableBorder:       RGB | null; // null = pas de bordure
+  tableRowAlt:       RGB | null;
+  tableBorder:       RGB | null;
   tableText:         RGB;
 
   // Totaux
-  totalLineBg:       RGB | null; // fond sous-total / TVA (null = transparent)
-  totalBoxBg:        RGB;        // fond du total TTC
+  totalLineBg:       RGB | null;
+  totalBoxBg:        RGB;
   totalBoxText:      RGB;
 
   // Footer
