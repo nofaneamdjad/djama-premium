@@ -393,10 +393,13 @@ export default function PlanificationPage() {
   const handleSaveEmployee = async () => {
     const d = empDraft;
     if (!d.name.trim()) { showToast("error", "Nom obligatoire"); return; }
+    if (!d.email.trim()) { showToast("error", "Email obligatoire — nécessaire pour les notifications de planning"); return; }
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(d.email.trim())) { showToast("error", "Adresse email invalide"); return; }
     if (!userId) return;
     setSavingEmp(true);
 
-    const payload = { user_id: userId, name: d.name.trim(), email: d.email.trim() || null, role: d.role.trim() || null, color: d.color };
+    const payload = { user_id: userId, name: d.name.trim(), email: d.email.trim(), role: d.role.trim() || null, color: d.color };
 
     if (editEmpId) {
       const { data, error } = await supabase.from("employees").update(payload).eq("id", editEmpId).select().single();
@@ -441,7 +444,7 @@ export default function PlanificationPage() {
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ week_start: weekStart }),
       });
-      const json = await res.json() as { published?: number; emails_sent?: number; error?: string; warning?: string };
+      const json = await res.json() as { published?: number; emails_sent?: number; error?: string; warning?: string; missing_email?: string[] };
       if (!res.ok || json.error) throw new Error(json.error ?? "Erreur");
       setShifts(prev => prev.map(s => ({ ...s, status: "published" as const })));
       if (json.warning) {
@@ -903,10 +906,30 @@ export default function PlanificationPage() {
                           <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: emp.color }} />
                           {emp.name}
                           {emp.role && <span className="opacity-50">· {emp.role}</span>}
+                          {!emp.email && (
+                            <span title="Pas d'email — aucune notification" className="ml-0.5 text-amber-400/70">⚠</span>
+                          )}
                         </button>
                       ))}
                     </div>
                   )}
+                  {/* Warn if selected employee has no email */}
+                  {shiftDraft.employee_id && (() => {
+                    const sel = employees.find(e => e.id === shiftDraft.employee_id);
+                    if (!sel || sel.email) return null;
+                    return (
+                      <div className="mt-2 flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2">
+                        <AlertCircle size={12} className="shrink-0 text-amber-400" />
+                        <p className="text-[0.62rem] text-amber-300/70">
+                          <strong>{sel.name}</strong> n&apos;a pas d&apos;email — aucune notification ne sera envoyée.{" "}
+                          <button onClick={() => { setShiftModal(false); setTimeout(() => { setEditEmpId(sel.id); setEmpDraft({ name: sel.name, email: "", role: sel.role ?? "", color: sel.color }); setEmpModal(true); }, 150); }}
+                            className="underline hover:text-amber-300 transition">
+                            Ajouter son email
+                          </button>
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Note */}
@@ -990,11 +1013,16 @@ export default function PlanificationPage() {
                   </div>
                   <div>
                     <label className={labelCls}>
-                      Email <span className="text-white/20 normal-case tracking-normal">(notifications planning)</span>
+                      Email <span style={{ color: ACCENT }}>*</span>
+                      <span className="ml-1 text-white/20 normal-case tracking-normal">(requis — notifications planning)</span>
                     </label>
                     <input type="email" value={empDraft.email}
                       onChange={e => setEmpDraft(d => ({ ...d, email: e.target.value }))}
-                      placeholder="marie@exemple.fr" className={inputCls} />
+                      placeholder="marie@exemple.fr"
+                      className={`${inputCls} ${empDraft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(empDraft.email) ? "border-red-500/40 focus:border-red-500/60" : ""}`} />
+                    {empDraft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(empDraft.email) && (
+                      <p className="mt-1 text-[0.6rem] text-red-400/70">Adresse email invalide</p>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">
@@ -1022,7 +1050,7 @@ export default function PlanificationPage() {
                     </button>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                       onClick={handleSaveEmployee}
-                      disabled={savingEmp || !empDraft.name.trim()}
+                      disabled={savingEmp || !empDraft.name.trim() || !empDraft.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(empDraft.email)}
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white transition disabled:opacity-40"
                       style={{ background: `linear-gradient(135deg,${ACCENT}cc,#0ea5e9)`, boxShadow: `0 4px 16px ${ACCENT}30` }}
                     >
@@ -1041,43 +1069,76 @@ export default function PlanificationPage() {
           PUBLISH CONFIRM MODAL
       ══════════════════════════════════════════ */}
       <AnimatePresence>
-        {pubModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div
-              initial={{ scale: 0.93, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.25, ease }}
-              className="w-full max-w-sm rounded-[1.75rem] border border-white/[0.08] bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
-            >
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-sky-500/20 bg-sky-500/10">
-                <Send size={18} className="text-sky-400" />
-              </div>
-              <h3 className="text-base font-extrabold text-white">Publier la semaine ?</h3>
-              <p className="mt-2 text-sm leading-relaxed text-white/40">
-                <span className="font-semibold text-white/60">{shifts.length} shift{shifts.length > 1 ? "s" : ""}</span> vont être publiés.
-                {(() => {
-                  const empCount = employees.filter(e => e.email && shifts.some(s => s.employee_id === e.id)).length;
-                  return empCount > 0 ? (
+        {pubModal && (() => {
+          /* employees with shifts this week but no email */
+          const assignedIds = new Set(shifts.map(s => s.employee_id).filter(Boolean));
+          const missingEmail = employees.filter(e => assignedIds.has(e.id) && !e.email);
+          const canPublish   = missingEmail.length === 0;
+          const willEmail    = employees.filter(e => assignedIds.has(e.id) && e.email).length;
+          return (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+              <motion.div
+                initial={{ scale: 0.93, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.25, ease }}
+                className="w-full max-w-sm rounded-[1.75rem] border border-white/[0.08] bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
+              >
+                <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl border ${canPublish ? "border-sky-500/20 bg-sky-500/10" : "border-red-500/20 bg-red-500/10"}`}>
+                  {canPublish ? <Send size={18} className="text-sky-400" /> : <AlertCircle size={18} className="text-red-400" />}
+                </div>
+                <h3 className="text-base font-extrabold text-white">Publier la semaine ?</h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/40">
+                  <span className="font-semibold text-white/60">{shifts.length} shift{shifts.length > 1 ? "s" : ""}</span> vont être publiés.
+                  {canPublish && willEmail > 0 && (
                     <> Un email sera envoyé à{" "}
-                      <span className="font-semibold text-white/60">{empCount} employé{empCount > 1 ? "s" : ""}</span> avec leur planning personnel.
+                      <span className="font-semibold text-white/60">{willEmail} employé{willEmail > 1 ? "s" : ""}</span> avec leur planning personnel.
                     </>
-                  ) : <> Aucun email (aucun employé avec email assigné).</>;
-                })()}
-              </p>
-              <div className="mt-5 flex gap-3">
-                <button onClick={() => setPubModal(false)}
-                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-semibold text-white/50 hover:border-white/15 transition">
-                  Annuler
-                </button>
-                <button onClick={handlePublish}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition"
-                  style={{ background: "linear-gradient(135deg,#0ea5e9,#38bdf8)", boxShadow: "0 4px 16px rgba(56,189,248,0.25)" }}>
-                  <Send size={13} /> Publier &amp; Envoyer
-                </button>
-              </div>
+                  )}
+                </p>
+
+                {/* Blocking error — missing emails */}
+                {missingEmail.length > 0 && (
+                  <div className="mt-3 rounded-xl border border-red-500/25 bg-red-500/[0.07] p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle size={12} className="shrink-0 text-red-400" />
+                      <p className="text-[0.65rem] font-bold text-red-400 uppercase tracking-wider">Email manquant — publication bloquée</p>
+                    </div>
+                    <p className="text-[0.62rem] text-red-300/60 mb-2">
+                      Les employés suivants ont des shifts assignés mais <strong>aucun email</strong>. Ajoutez leur email avant de publier :
+                    </p>
+                    <ul className="space-y-1">
+                      {missingEmail.map(emp => (
+                        <li key={emp.id} className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold text-white/60">
+                            <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: emp.color }} />
+                            {emp.name}{emp.role && <span className="text-white/30 font-normal">· {emp.role}</span>}
+                          </span>
+                          <button
+                            onClick={() => { setPubModal(false); setTimeout(() => { setEditEmpId(emp.id); setEmpDraft({ name: emp.name, email: "", role: emp.role ?? "", color: emp.color }); setEmpModal(true); }, 150); }}
+                            className="text-[0.6rem] font-bold text-sky-400 hover:text-sky-300 transition underline">
+                            Ajouter email
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="mt-5 flex gap-3">
+                  <button onClick={() => setPubModal(false)}
+                    className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-semibold text-white/50 hover:border-white/15 transition">
+                    Annuler
+                  </button>
+                  <button onClick={handlePublish} disabled={!canPublish}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{ background: canPublish ? "linear-gradient(135deg,#0ea5e9,#38bdf8)" : "rgba(255,255,255,0.06)", boxShadow: canPublish ? "0 4px 16px rgba(56,189,248,0.25)" : "none" }}>
+                    <Send size={13} /> Publier &amp; Envoyer
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          );
+        })()}
       </AnimatePresence>
 
       {/* ══ DELETE CONFIRM ══ */}

@@ -265,11 +265,31 @@ export async function POST(req: NextRequest) {
     console.log("[publish] Resend configuré, from:", fromEmail);
   }
 
+  /* Collect employee IDs that have at least one shift — validate emails */
+  const assignedEmpIds = [...new Set(
+    (shifts as ShiftRow[]).filter(s => s.employee_id != null).map(s => s.employee_id as string)
+  )];
+
+  /* Pre-flight: check that all assigned employees have an email */
+  if (assignedEmpIds.length > 0) {
+    const { data: empCheck } = await db
+      .from("employees")
+      .select("id,name,email")
+      .in("id", assignedEmpIds);
+
+    const missingEmail = (empCheck ?? []).filter((e: { email: string | null }) => !e.email);
+    if (missingEmail.length > 0) {
+      const names = missingEmail.map((e: { name: string }) => e.name).join(", ");
+      console.error("[publish] bloqué — email manquant pour:", names);
+      return NextResponse.json({
+        error: `Email manquant pour : ${names}. Ajoutez leur adresse email avant de publier.`,
+        missing_email: missingEmail.map((e: { name: string }) => e.name),
+      }, { status: 422 });
+    }
+  }
+
   if (resendKey) {
-    /* Unique employee IDs that have at least one shift */
-    const empIds = [...new Set(
-      (shifts as ShiftRow[]).filter(s => s.employee_id != null).map(s => s.employee_id as string)
-    )];
+    const empIds = assignedEmpIds;
 
     if (empIds.length > 0) {
       const { data: employees } = await db
