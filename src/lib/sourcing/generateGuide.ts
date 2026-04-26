@@ -1,12 +1,14 @@
 /**
- * generateGuide — Génère un PDF guide professionnel depuis une conversation Sourcing IA.
+ * generateGuide — PDF guide professionnel depuis une conversation Sourcing IA.
  *
- * Design : fond blanc, header bleu, typographie propre, sections colorées.
- * Côté client uniquement (jsPDF chargé dynamiquement).
+ * Design : rapport d'entreprise sobre — blanc, navy, bleu accentué.
+ * - Couverture : titre, sous-titre, séparateur, date, sommaire
+ * - Pages : running header discret, chapitres, sections structurées, footer
+ * - Aucune mention "IA" / "Copilote" / "DJAMA PRO" dans le contenu
  */
 
 /* ─────────────────────────────────────────────────────────
-   TYPES
+   TYPES PUBLICS
 ───────────────────────────────────────────────────────── */
 export interface GuideItem {
   name?:        string;
@@ -29,414 +31,401 @@ export interface GuideMessage {
 }
 
 /* ─────────────────────────────────────────────────────────
-   HELPERS COULEURS
-───────────────────────────────────────────────────────── */
-type RGB = [number, number, number];
-const C_BLUE_700:  RGB = [29, 78, 216];
-const C_BLUE_600:  RGB = [37, 99, 235];
-const C_BLUE_100:  RGB = [219, 234, 254];
-const C_BLUE_50:   RGB = [239, 246, 255];
-const C_BLUE_200:  RGB = [191, 219, 254];
-const C_AMBER_600: RGB = [217, 119, 6];
-const C_AMBER_50:  RGB = [255, 251, 235];
-const C_AMBER_200: RGB = [253, 230, 138];
-const C_SLATE_950: RGB = [2, 6, 23];
-const C_SLATE_700: RGB = [51, 65, 85];
-const C_SLATE_500: RGB = [100, 116, 139];
-const C_SLATE_200: RGB = [226, 232, 240];
-const C_SLATE_50:  RGB = [248, 250, 252];
-const C_WHITE:     RGB = [255, 255, 255];
-const C_GREEN_600: RGB = [22, 163, 74];
-
-/* ─────────────────────────────────────────────────────────
    GÉNÉRATEUR PRINCIPAL
 ───────────────────────────────────────────────────────── */
 export async function generateGuide(
   messages: GuideMessage[],
-  title     = "Guide Sourcing & Marchés",
+  rawTitle  = "Guide Sourcing & Marches",
 ): Promise<void> {
   const { jsPDF } = await import("jspdf");
-
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
+  /* ── Dimensions ── */
   const W  = 210;
   const H  = 297;
-  const ML = 18;
-  const MR = 18;
-  const MB = 18;
-  const CW = W - ML - MR;   // 174 mm
+  const ML = 20;          // marge gauche
+  const MR = 20;          // marge droite
+  const CW = W - ML - MR; // 170 mm de contenu
+  const FOOT_Y = H - 18;  // ligne footer
 
-  let y    = 0;
-  let page = 1;
+  let y = 0;
 
-  /* ── Helpers ── */
-  function set(color: RGB) { doc.setTextColor(color[0], color[1], color[2]); }
-  function fill(color: RGB) { doc.setFillColor(color[0], color[1], color[2]); }
-  function draw(color: RGB) { doc.setDrawColor(color[0], color[1], color[2]); }
+  /* ── Palette ── */
+  type RGB = [number, number, number];
+  const NAVY:  RGB = [15,  23,  42];
+  const N800:  RGB = [30,  41,  59];
+  const N700:  RGB = [51,  65,  85];
+  const BLUE:  RGB = [37,  99, 235];
+  const B100:  RGB = [219, 234, 254];
+  const S500:  RGB = [100, 116, 139];
+  const S300:  RGB = [203, 213, 225];
+  const S100:  RGB = [241, 245, 249];
+  const AMBER: RGB = [217, 119,   6];
+  const A50:   RGB = [255, 251, 235];
+  const A200:  RGB = [253, 230, 138];
+  const GREEN: RGB = [22,  163,  74];
+  const WHITE: RGB = [255, 255, 255];
 
-  function text(str: string, x: number, cy: number, opts?: Parameters<typeof doc.text>[3]) {
-    doc.text(str, x, cy, opts);
-  }
+  /* ── Helpers couleurs ── */
+  function sc(c: RGB)  { doc.setTextColor(c[0], c[1], c[2]); }
+  function sf(c: RGB)  { doc.setFillColor(c[0], c[1], c[2]); }
+  function sd(c: RGB)  { doc.setDrawColor(c[0], c[1], c[2]); }
 
-  function wrapText(str: string, maxW: number, fontSize: number): string[] {
-    doc.setFontSize(fontSize);
+  /* ── Wrap ── */
+  function wrap(str: string, maxW: number, fs: number): string[] {
+    doc.setFontSize(fs);
     return doc.splitTextToSize(str, maxW) as string[];
   }
 
-  function checkPage(needed = 20) {
-    if (y + needed > H - MB - 16) {
+  /* ── Titre court (max N chars, coupe sur espace) ── */
+  function short(q: string, max = 60): string {
+    if (q.length <= max) return q;
+    const cut = q.slice(0, max);
+    const sp  = cut.lastIndexOf(" ");
+    return (sp > 15 ? cut.slice(0, sp) : cut) + "...";
+  }
+
+  /* ── Saut de page si nécessaire ── */
+  function guard(needed = 20) {
+    if (y + needed > FOOT_Y - 6) {
       doc.addPage();
-      page++;
-      y = 22;
-      drawRunningHeader();
+      y = 18;
+      runHead();
     }
   }
 
-  function drawRunningHeader() {
-    fill(C_BLUE_700);
-    doc.rect(0, 0, W, 7, "F");
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "bold");
-    set(C_WHITE);
-    text("DJAMA PRO — SOURCING IA & MARCHES", ML, 4.8);
-    const dateStr = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
-    text(dateStr, W - MR, 4.8, { align: "right" });
+  /* ── Running header (pages 2+) ── */
+  function runHead() {
+    sf(S100);
+    doc.rect(0, 0, W, 9, "F");
+    sd(S300); doc.setLineWidth(0.25);
+    doc.line(0, 9, W, 9);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal"); sc(S500);
+    doc.text(short(rawTitle, 72), ML, 6);
+    const d = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+    doc.text(d, W - MR, 6, { align: "right" });
+    y = 19;
   }
 
-  function pageFooter() {
+  /* ── Footers (toutes pages sauf couverture) ── */
+  function applyFooters() {
     const total = doc.getNumberOfPages();
-    for (let p = 1; p <= total; p++) {
+    for (let p = 2; p <= total; p++) {
       doc.setPage(p);
-      draw(C_SLATE_200);
-      doc.setLineWidth(0.3);
-      doc.line(ML, H - MB, W - MR, H - MB);
-      doc.setFontSize(7.5);
-      doc.setFont("helvetica", "normal");
-      set(C_SLATE_500);
-      text("DJAMA Pro · Sourcing IA & Marches", ML, H - MB + 4.5);
-      text(`Page ${p} / ${total}`, W - MR, H - MB + 4.5, { align: "right" });
+      sd(S300); doc.setLineWidth(0.25);
+      doc.line(ML, FOOT_Y, W - MR, FOOT_Y);
+      doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); sc(S500);
+      doc.text("Guide professionnel · Sourcing & Marches", ML, FOOT_Y + 5);
+      doc.text(`Page ${p - 1} / ${total - 1}`, W - MR, FOOT_Y + 5, { align: "right" });
     }
   }
 
-  /* ─────────────────────────────────────────────────────────
-     PAGE DE COUVERTURE
-  ───────────────────────────────────────────────────────── */
-  /* Header dégradé simulé */
-  fill(C_BLUE_600);
-  doc.rect(0, 0, W, 52, "F");
-  fill(C_BLUE_700);
-  doc.rect(0, 42, W, 10, "F");
+  /* ── Heading de section ── */
+  function secHead(title: string) {
+    guard(16);
+    sf(BLUE); doc.rect(ML, y, 3, 9, "F");
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); sc(NAVY);
+    doc.text(title, ML + 7, y + 6.4);
+    y += 13;
+  }
 
-  /* Logo / App name */
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  set(C_BLUE_100);
-  text("DJAMA PRO", W - MR, 10, { align: "right" });
+  /* ── Heading de chapitre ── */
+  function chapHead(question: string, n: number) {
+    // On anticipe : si peu d'espace, saut de page avant le séparateur
+    const pageBefore = doc.getNumberOfPages();
+    guard(36);
+    const pageAfter = doc.getNumberOfPages();
 
-  /* Étiquette */
-  doc.setFontSize(9.5);
-  doc.setFont("helvetica", "normal");
-  set(C_BLUE_200);
-  text("SOURCING IA & MARCHES", ML, 22);
+    if (n > 1 && pageBefore === pageAfter) {
+      // Séparateur entre chapitres uniquement si on n'a pas changé de page
+      sd(B100); doc.setLineWidth(0.5);
+      doc.line(ML, y, W - MR, y);
+      y += 10;
+    }
 
-  /* Titre principal */
-  doc.setFontSize(20);
-  doc.setFont("helvetica", "bold");
-  set(C_WHITE);
-  const titleLines = wrapText(title, CW, 20);
-  doc.text(titleLines, ML, 35);
+    doc.setFontSize(8.5); doc.setFont("helvetica", "bold"); sc(BLUE);
+    doc.text(`CHAPITRE ${n}`, ML, y);
+    y += 6;
 
-  /* Date cover */
+    const lines = wrap(question, CW, 15);
+    doc.setFontSize(15); doc.setFont("helvetica", "bold"); sc(NAVY);
+    doc.text(lines.slice(0, 3), ML, y);
+    y += Math.min(lines.length, 3) * 7.5 + 3;
+
+    sd(B100); doc.setLineWidth(0.6);
+    doc.line(ML, y, ML + 40, y);
+    y += 9;
+  }
+
+  /* ════════════════════════════════════════════
+     COUVERTURE
+  ════════════════════════════════════════════ */
+
+  // Barre navy top
+  sf(NAVY); doc.rect(0, 0, W, 4, "F");
+  sf(BLUE);  doc.rect(0, 4, W, 2, "F");
+
+  y = 28;
+
+  // Label catégorie
+  doc.setFontSize(9); doc.setFont("helvetica", "bold"); sc(BLUE);
+  doc.text("GUIDE PROFESSIONNEL", ML, y);
+  y += 9;
+
+  // Titre principal
+  const titleLines = wrap(short(rawTitle, 120), CW, 23);
+  doc.setFontSize(23); doc.setFont("helvetica", "bold"); sc(NAVY);
+  doc.text(titleLines.slice(0, 3), ML, y);
+  y += Math.min(titleLines.length, 3) * 11 + 5;
+
+  // Sous-titre = premier texte IA
+  const firstIA   = messages.find(m => m.role === "assistant");
+  const subText   = firstIA?.content?.trim()
+    ? short(firstIA.content.trim(), 130)
+    : "Methode de recherche, verification et selection de fournisseurs.";
+  const subLines  = wrap(subText, CW, 11);
+  doc.setFontSize(11); doc.setFont("helvetica", "normal"); sc(S500);
+  doc.text(subLines.slice(0, 3), ML, y);
+  y += Math.min(subLines.length, 3) * 6 + 12;
+
+  // Filet décoratif bicolore
+  sf(BLUE);  doc.rect(ML,      y, 28,        1.2, "F");
+  sf(B100);  doc.rect(ML + 30, y, CW - 30,   1.2, "F");
+  y += 9;
+
+  // Date
   const coverDate = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-  doc.setFontSize(8.5);
-  doc.setFont("helvetica", "normal");
-  set(C_BLUE_200);
-  text(`Genere le ${coverDate}`, ML, 48.5);
+  doc.setFontSize(9); doc.setFont("helvetica", "normal"); sc(S500);
+  doc.text(`Document du ${coverDate}`, ML, y);
+  y += 22;
 
-  y = 68;
+  // ── Sommaire ──
+  const userQs = messages.filter(m => m.role === "user").slice(0, 8);
+  if (userQs.length > 0) {
+    const rowH  = 10;
+    const tocH  = 11 + userQs.length * rowH + 6;
 
-  /* Encadré intro */
-  fill(C_BLUE_50);
-  draw(C_BLUE_200);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(ML, y, CW, 22, 3, 3, "FD");
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  set(C_BLUE_700);
-  text("Ce guide a ete genere par le Copilote Sourcing IA de DJAMA Pro.", ML + 5, y + 8);
-  doc.setFont("helvetica", "normal");
-  const aiCount = messages.filter(m => m.role === "assistant").length;
-  text(`Il contient ${aiCount} analyse${aiCount > 1 ? "s" : ""} basee${aiCount > 1 ? "s" : ""} sur vos questions.`, ML + 5, y + 14.5);
+    sf(S100); sd(S300); doc.setLineWidth(0.3);
+    doc.roundedRect(ML, y, CW, tocH, 3, 3, "FD");
 
-  y += 30;
+    // En-tête sommaire (bandeau navy)
+    sf(N800);
+    doc.roundedRect(ML, y, CW, 9, 3, 3, "F");
+    doc.rect(ML, y + 5, CW, 4, "F");           // coins bas carrés
+    doc.setFontSize(8.5); doc.setFont("helvetica", "bold"); sc(WHITE);
+    doc.text("SOMMAIRE", ML + 7, y + 6.3);
+    y += 12;
 
-  /* Sommaire rapide */
-  const userQuestions = messages.filter(m => m.role === "user").map(m => m.content);
-  if (userQuestions.length > 0) {
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    set(C_SLATE_950);
-    text("Sujets traites dans ce guide", ML, y);
-    y += 8;
-
-    userQuestions.forEach((q, i) => {
-      checkPage(10);
-      fill(C_SLATE_50);
-      draw(C_SLATE_200);
-      doc.rect(ML, y, CW, 7.5, "FD");
-
-      /* Numero */
-      fill(C_BLUE_600);
-      doc.circle(ML + 4.5, y + 3.75, 2.5, "F");
-      doc.setFontSize(7.5);
-      doc.setFont("helvetica", "bold");
-      set(C_WHITE);
-      text(String(i + 1), ML + 4.5, y + 4.8, { align: "center" });
-
-      /* Question tronquée */
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      set(C_SLATE_700);
-      const qShort = q.length > 90 ? q.slice(0, 87) + "..." : q;
-      text(qShort, ML + 11, y + 4.8);
-      y += 9;
+    userQs.forEach((q, i) => {
+      doc.setFontSize(9); doc.setFont("helvetica", "normal"); sc(N700);
+      doc.text(`${i + 1}.`, ML + 7, y);
+      doc.text(short(q.content, 88), ML + 14, y);
+      y += rowH;
     });
+    y += 5;
   }
 
-  /* ─────────────────────────────────────────────────────────
-     CONTENU — QUESTIONS / RÉPONSES
-  ───────────────────────────────────────────────────────── */
-  let qIndex = 0;
+  // Barre navy bottom couverture
+  sf(NAVY); doc.rect(0, H - 13, W, 13, "F");
+  sf(BLUE);  doc.rect(0, H - 13, W, 2,  "F");
+  doc.setFontSize(8); doc.setFont("helvetica", "normal");
+  doc.setTextColor(130, 140, 165);
+  doc.text("Guide professionnel · Sourcing & Marches", ML, H - 5);
+  doc.text(String(new Date().getFullYear()), W - MR, H - 5, { align: "right" });
 
-  messages.forEach((msg, msgIdx) => {
+  /* ════════════════════════════════════════════
+     PAGES DE CONTENU
+  ════════════════════════════════════════════ */
+  doc.addPage();
+  runHead();
 
-    /* ── QUESTION utilisateur ── */
+  let chapNum = 0;
+
+  for (const msg of messages) {
+
+    /* ── Question → titre de chapitre ── */
     if (msg.role === "user") {
-      qIndex++;
-      checkPage(28);
-
-      /* Séparateur entre Q/R */
-      if (msgIdx > 0) {
-        draw(C_SLATE_200);
-        doc.setLineWidth(0.3);
-        doc.line(ML, y, W - MR, y);
-        y += 8;
-      }
-
-      /* Bandeau question */
-      fill(C_BLUE_600);
-      draw(C_BLUE_600);
-      doc.roundedRect(ML, y, CW, 9, 2, 2, "F");
-
-      doc.setFontSize(7.5);
-      doc.setFont("helvetica", "bold");
-      set(C_WHITE);
-      text(`QUESTION ${qIndex}`, ML + 3, y + 5.8);
-
-      y += 11;
-
-      /* Texte question */
-      const qLines = wrapText(msg.content, CW, 10.5);
-      doc.setFontSize(10.5);
-      doc.setFont("helvetica", "bold");
-      set(C_SLATE_950);
-      doc.text(qLines, ML, y);
-      y += qLines.length * 5.5 + 7;
+      chapNum++;
+      chapHead(msg.content, chapNum);
     }
 
-    /* ── RÉPONSE IA ── */
+    /* ── Réponse → contenu structuré ── */
     if (msg.role === "assistant") {
 
-      /* Texte d'introduction */
+      // Intro (max 4 lignes)
       if (msg.content?.trim()) {
-        checkPage(15);
-        const introLines = wrapText(msg.content, CW, 10);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "italic");
-        set(C_SLATE_700);
-        doc.text(introLines, ML, y);
-        y += introLines.length * 5 + 7;
+        const lines = wrap(msg.content.trim(), CW, 10.5);
+        const show  = lines.slice(0, 4);
+        guard(show.length * 5.5 + 6);
+        doc.setFontSize(10.5); doc.setFont("helvetica", "normal"); sc(N700);
+        doc.text(show, ML, y);
+        y += show.length * 5.5 + 10;
       }
 
-      /* Sections structurées */
-      (msg.sections ?? []).forEach(section => {
-        checkPage(20);
+      // Sections
+      for (const section of (msg.sections ?? [])) {
+        secHead(section.title);
 
-        /* Titre de section */
-        fill(C_SLATE_50);
-        draw(C_SLATE_200);
-        doc.setLineWidth(0.3);
-        doc.rect(ML, y, CW, 8.5, "FD");
+        for (let idx = 0; idx < section.items.length; idx++) {
+          const item = section.items[idx];
 
-        fill(C_BLUE_600);
-        doc.rect(ML, y, 3, 8.5, "F");
-
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "bold");
-        set(C_SLATE_950);
-        text(section.title, ML + 6, y + 5.8);
-        y += 11;
-
-        /* Items selon le type */
-        section.items.forEach((item, itemIdx) => {
-
-          /* ── supplier_list ── */
+          /* ─── supplier_list ─── */
           if (section.type === "supplier_list") {
-            const descLines = item.description ? wrapText(item.description, CW - 10, 9) : [];
-            const tipLines  = item.tip          ? wrapText("Conseil : " + item.tip, CW - 10, 8.5) : [];
-            const boxH = 9 + (descLines.length > 0 ? descLines.length * 4.5 + 3 : 0) + (tipLines.length > 0 ? tipLines.length * 4.3 + 4 : 0);
-            checkPage(boxH + 6);
+            const desc  = item.description ? wrap(item.description, CW - 16, 9)   : [];
+            const tip   = item.tip         ? wrap("Conseil : " + item.tip, CW - 20, 8.5) : [];
+            const metaH = (item.country || item.type) ? 5 : 0;
+            const boxH  = 8 + metaH
+                        + (desc.length ? desc.length * 4.5 + 3 : 0)
+                        + (tip.length  ? tip.length  * 4.5 + 8 : 0)
+                        + 4;
+            guard(boxH + 5);
 
-            fill(C_WHITE);
-            draw(C_SLATE_200);
-            doc.setLineWidth(0.3);
-            doc.roundedRect(ML, y, CW, boxH, 2, 2, "FD");
+            // Carte
+            sf(WHITE); sd(S300); doc.setLineWidth(0.3);
+            doc.roundedRect(ML, y, CW, boxH, 2.5, 2.5, "FD");
 
-            /* Nom */
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "bold");
-            set(C_SLATE_950);
-            text(item.name ?? "", ML + 4, y + 6);
+            // Barre gauche bleue
+            sf(BLUE);
+            doc.rect(ML, y, 3.5, boxH, "F");
+            doc.roundedRect(ML, y, 3.5, Math.min(boxH, 5), 1.5, 1.5, "F");
 
-            /* Pays + Type */
+            let iy = y + 6;
+
+            // Nom
+            doc.setFontSize(10.5); doc.setFont("helvetica", "bold"); sc(NAVY);
+            doc.text(item.name ?? "", ML + 8, iy);
+
+            // Pays / type
             if (item.country || item.type) {
-              doc.setFontSize(8);
-              doc.setFont("helvetica", "normal");
-              set(C_SLATE_500);
-              text(`${item.country ?? ""}${item.country && item.type ? " — " : ""}${item.type ?? ""}`, ML + 4, y + 11);
-              let subY = y + 15;
-              if (descLines.length) {
-                doc.setFontSize(9);
-                set(C_SLATE_700);
-                doc.setFont("helvetica", "normal");
-                doc.text(descLines, ML + 4, subY);
-                subY += descLines.length * 4.5 + 2;
-              }
-              if (tipLines.length) {
-                fill(C_AMBER_50);
-                draw(C_AMBER_200);
-                doc.roundedRect(ML + 2, subY - 1, CW - 4, tipLines.length * 4.3 + 4, 1.5, 1.5, "FD");
-                doc.setFontSize(8.5);
-                doc.setFont("helvetica", "bold");
-                set(C_AMBER_600);
-                doc.text(tipLines, ML + 5, subY + 3);
-              }
-            } else {
-              let subY = y + 9;
-              if (descLines.length) {
-                doc.setFontSize(9);
-                set(C_SLATE_700);
-                doc.setFont("helvetica", "normal");
-                doc.text(descLines, ML + 4, subY);
-                subY += descLines.length * 4.5 + 2;
-              }
-              if (tipLines.length) {
-                fill(C_AMBER_50);
-                draw(C_AMBER_200);
-                doc.roundedRect(ML + 2, subY - 1, CW - 4, tipLines.length * 4.3 + 4, 1.5, 1.5, "FD");
-                doc.setFontSize(8.5);
-                doc.setFont("helvetica", "bold");
-                set(C_AMBER_600);
-                doc.text(tipLines, ML + 5, subY + 3);
-              }
+              iy += 5;
+              doc.setFontSize(8); doc.setFont("helvetica", "normal"); sc(S500);
+              doc.text([item.country, item.type].filter(Boolean).join("  ·  "), ML + 8, iy);
             }
+
+            // Description
+            if (desc.length) {
+              iy += 5;
+              doc.setFontSize(9); doc.setFont("helvetica", "normal"); sc(N700);
+              doc.text(desc, ML + 8, iy);
+              iy += desc.length * 4.5;
+            }
+
+            // Tip
+            if (tip.length) {
+              iy += 5;
+              sf(A50); sd(A200); doc.setLineWidth(0.25);
+              doc.roundedRect(ML + 5, iy - 2, CW - 10, tip.length * 4.5 + 7, 1.5, 1.5, "FD");
+              doc.setFontSize(8.5); doc.setFont("helvetica", "bold"); sc(AMBER);
+              doc.text(tip, ML + 9, iy + 3.5);
+            }
+
             y += boxH + 4;
 
-          /* ── steps ── */
+          /* ─── steps ─── */
           } else if (section.type === "steps") {
-            const stepName  = (item.name ?? "").replace(/^\d+\.\s*/, "");
-            const descLines = item.description ? wrapText(item.description, CW - 16, 9) : [];
-            const rowH = 9 + (descLines.length > 0 ? descLines.length * 4.5 + 2 : 0);
-            checkPage(rowH + 4);
+            const name  = (item.name ?? "").replace(/^\d+\.\s*/, "");
+            const nL    = wrap(name, CW - 18, 10.5);
+            const dL    = item.description ? wrap(item.description, CW - 18, 9) : [];
+            const rowH  = Math.max(13, nL.length * 5.5 + (dL.length ? dL.length * 4.5 + 3 : 0) + 4);
+            guard(rowH + 5);
 
-            /* Cercle numéro */
-            fill(C_BLUE_600);
-            doc.circle(ML + 5, y + 5, 4, "F");
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "bold");
-            set(C_WHITE);
-            text(String(itemIdx + 1), ML + 5, y + 6.5, { align: "center" });
+            // Cercle numéroté
+            sf(BLUE);
+            doc.circle(ML + 5.5, y + 5.5, 4.5, "F");
+            doc.setFontSize(9.5); doc.setFont("helvetica", "bold"); sc(WHITE);
+            doc.text(String(idx + 1), ML + 5.5, y + 7, { align: "center" });
 
-            /* Titre de l'étape */
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "bold");
-            set(C_SLATE_950);
-            text(stepName, ML + 13, y + 5.5);
-
-            if (descLines.length) {
-              doc.setFontSize(9);
-              doc.setFont("helvetica", "normal");
-              set(C_SLATE_700);
-              doc.text(descLines, ML + 13, y + 11);
+            // Connecteur vertical (sauf dernier)
+            if (idx < section.items.length - 1) {
+              sd(B100); doc.setLineWidth(0.8);
+              doc.line(ML + 5.5, y + 10.5, ML + 5.5, y + rowH + 3);
             }
-            y += rowH + 3;
 
-          /* ── checklist ── */
+            // Texte
+            let sy = y + 5;
+            doc.setFontSize(10.5); doc.setFont("helvetica", "bold"); sc(NAVY);
+            doc.text(nL, ML + 14, sy);
+            sy += nL.length * 5.5;
+
+            if (dL.length) {
+              doc.setFontSize(9); doc.setFont("helvetica", "normal"); sc(N700);
+              doc.text(dL, ML + 14, sy + 2);
+            }
+            y += rowH + 4;
+
+          /* ─── checklist ─── */
           } else if (section.type === "checklist") {
-            const itemLines = wrapText(item.name ?? "", CW - 12, 9.5);
-            checkPage(itemLines.length * 4.8 + 5);
+            const lines = wrap(item.name ?? "", CW - 14, 9.5);
+            const rH    = lines.length * 5.2 + 4;
+            guard(rH + 3);
 
-            draw(C_BLUE_200);
-            doc.setLineWidth(0.4);
-            doc.roundedRect(ML + 1, y + 0.5, 5, 5, 1, 1, "D");
+            // Case à cocher
+            sd(BLUE); doc.setLineWidth(0.45);
+            doc.roundedRect(ML + 1, y + 0.8, 5, 5, 1, 1, "D");
 
-            /* Check mark visuel */
-            doc.setLineWidth(0.7);
-            set(C_GREEN_600);
-            doc.line(ML + 2.2, y + 3.2, ML + 3.3, y + 4.5);
-            doc.line(ML + 3.3, y + 4.5, ML + 5.3, y + 2);
+            // Coche verte
+            sd(GREEN); doc.setLineWidth(0.75);
+            doc.line(ML + 2.1, y + 3.4, ML + 3.3, y + 4.9);
+            doc.line(ML + 3.3, y + 4.9, ML + 5.6, y + 2.2);
 
-            doc.setFontSize(9.5);
-            doc.setFont("helvetica", "normal");
-            set(C_SLATE_700);
-            doc.text(itemLines, ML + 11, y + 4.5);
-            y += itemLines.length * 4.8 + 3.5;
+            doc.setFontSize(9.5); doc.setFont("helvetica", "normal"); sc(N700);
+            doc.text(lines, ML + 11, y + 4.8);
+            y += rH;
 
-          /* ── tips ── */
+            if (item.description) {
+              const dL = wrap(item.description, CW - 14, 8.5);
+              guard(dL.length * 4.5 + 2);
+              doc.setFontSize(8.5); doc.setFont("helvetica", "italic"); sc(S500);
+              doc.text(dL, ML + 11, y);
+              y += dL.length * 4.5 + 2;
+            }
+
+          /* ─── tips ─── */
           } else if (section.type === "tips") {
-            const descLines = item.description ? wrapText(item.description, CW - 10, 9) : [];
-            const boxH = 11 + (descLines.length > 0 ? descLines.length * 4.5 + 2 : 0);
-            checkPage(boxH + 5);
+            const nL    = wrap(item.name ?? "", CW - 14, 9.5);
+            const dL    = item.description ? wrap(item.description, CW - 14, 9) : [];
+            const boxH  = 6 + nL.length * 5.5 + (dL.length ? dL.length * 4.5 + 3 : 0) + 5;
+            guard(boxH + 5);
 
-            fill(C_AMBER_50);
-            draw(C_AMBER_200);
-            doc.setLineWidth(0.3);
-            doc.roundedRect(ML, y, CW, boxH, 2, 2, "FD");
+            sf(A50); sd(A200); doc.setLineWidth(0.3);
+            doc.roundedRect(ML, y, CW, boxH, 2.5, 2.5, "FD");
 
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "bold");
-            set(C_AMBER_600);
-            text(item.name ?? "", ML + 5, y + 7);
+            // Barre gauche ambrée
+            sf(AMBER);
+            doc.rect(ML, y, 3.5, boxH, "F");
+            doc.roundedRect(ML, y, 3.5, Math.min(boxH, 5), 1.5, 1.5, "F");
 
-            if (descLines.length) {
-              doc.setFontSize(9);
-              doc.setFont("helvetica", "normal");
-              set(C_SLATE_700);
-              doc.text(descLines, ML + 5, y + 12.5);
+            let ty = y + 6;
+            doc.setFontSize(9.5); doc.setFont("helvetica", "bold"); sc(AMBER);
+            doc.text(nL, ML + 8, ty);
+            ty += nL.length * 5.5 + 2;
+
+            if (dL.length) {
+              doc.setFontSize(9); doc.setFont("helvetica", "normal"); sc(N700);
+              doc.text(dL, ML + 8, ty);
             }
             y += boxH + 4;
 
-          /* ── text ── */
+          /* ─── text ─── */
           } else {
-            const tLines = wrapText((item.name ?? "") + (item.description ? " " + item.description : ""), CW, 10);
-            checkPage(tLines.length * 5 + 4);
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            set(C_SLATE_700);
-            doc.text(tLines, ML, y);
-            y += tLines.length * 5 + 4;
+            const content = [item.name ?? "", item.description ?? ""].filter(Boolean).join(" — ");
+            const lines   = wrap(content, CW, 10);
+            guard(lines.length * 5.5 + 4);
+            doc.setFontSize(10); doc.setFont("helvetica", "normal"); sc(N700);
+            doc.text(lines, ML, y);
+            y += lines.length * 5.5 + 4;
           }
-        }); // end items
+        } // items
 
-        y += 6; // espace inter-section
-      }); // end sections
+        y += 7; // espacement inter-section
+      } // sections
+
+      y += 6;
     }
-  }); // end messages
+  } // messages
 
-  /* ── Footers toutes pages ── */
-  pageFooter();
+  applyFooters();
 
-  /* ── Téléchargement ── */
   const fname = `guide-sourcing-${new Date().toISOString().slice(0, 10)}.pdf`;
   doc.save(fname);
 }
