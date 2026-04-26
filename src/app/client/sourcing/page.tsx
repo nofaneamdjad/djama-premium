@@ -445,16 +445,45 @@ export default function SourcingPage() {
         throw new Error(errData?.error ?? `Erreur serveur (${res.status})`);
       }
 
-      const data: SourcingApiResponse = await res.json();
+      const rawData = await res.json() as SourcingApiResponse;
+
+      /* ── Safety: si text est du JSON brut (fallback route déclenché), le re-parser ── */
+      let resolved = rawData;
+      if (typeof rawData.text === "string") {
+        const t = rawData.text.trim();
+        if (t.startsWith("{")) {
+          try {
+            const inner = JSON.parse(t) as SourcingApiResponse;
+            if (inner.text !== undefined || (inner.sections && inner.sections.length > 0)) {
+              resolved = {
+                text:        inner.text        ?? "",
+                sections:    inner.sections    ?? [],
+                actions:     inner.actions     ?? rawData.actions     ?? [],
+                suggestions: inner.suggestions ?? rawData.suggestions ?? [],
+              };
+            }
+          } catch { /* pas du JSON valide — afficher comme texte normal */ }
+        }
+      }
+
+      /* ── Normaliser les types de section (minuscules, fallback "text") ── */
+      const VALID = ["supplier_list", "steps", "checklist", "tips", "text"] as const;
+      type ValidType = typeof VALID[number];
+      const normSections: SourcingSection[] = (resolved.sections ?? []).map(s => ({
+        ...s,
+        type: (VALID.includes((s.type ?? "").toLowerCase() as ValidType)
+          ? (s.type ?? "").toLowerCase()
+          : "text") as ValidType,
+      }));
 
       setMessages(prev => prev.map(m =>
         m.id === aiId
           ? {
               ...m,
-              content:     data.text ?? "",
-              sections:    data.sections,
-              actions:     data.actions,
-              suggestions: data.suggestions,
+              content:     resolved.text        ?? "",
+              sections:    normSections,
+              actions:     resolved.actions     ?? [],
+              suggestions: resolved.suggestions ?? [],
               loading:     false,
             }
           : m,

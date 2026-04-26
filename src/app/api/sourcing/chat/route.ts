@@ -142,19 +142,29 @@ export async function POST(req: NextRequest) {
 
     console.log(`[sourcing/chat] reponse brute (${raw.length} chars):`, raw.slice(0, 200));
 
-    /* ── Extraction JSON — avec fallback texte brut ── */
+    /* ── Extraction JSON — avec fallback propre ── */
     let parsed: Record<string, unknown>;
 
     try {
-      const match = raw.match(/\{[\s\S]*\}/);
+      /* 1. Supprimer les blocs markdown éventuels (```json ... ```) */
+      let src = raw;
+      const codeBlock = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+      if (codeBlock) src = codeBlock[1].trim();
+
+      /* 2. Extraire le premier objet JSON complet */
+      const match = src.match(/\{[\s\S]*\}/);
       if (!match) throw new Error("Aucun JSON trouve dans la reponse");
       parsed = JSON.parse(match[0]) as Record<string, unknown>;
       console.log("[sourcing/chat] JSON parse OK, cles:", Object.keys(parsed).join(", "));
     } catch (parseErr) {
-      /* Fallback : renvoyer le texte brut comme message simple */
-      console.warn("[sourcing/chat] JSON parse echoue, fallback texte brut:", parseErr);
+      console.warn("[sourcing/chat] JSON parse echoue, fallback:", parseErr);
+      /* Ne jamais mettre le JSON brut dans text — extraire le champ text si possible */
+      const textMatch = raw.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      const fallbackText = textMatch
+        ? textMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"')
+        : "Je n'ai pas pu generer une reponse structuree. Reformule ta question.";
       parsed = {
-        text: raw || "Je n'ai pas pu generer une reponse structuree. Reformule ta question.",
+        text:     fallbackText,
         sections: [],
         actions:  [{ label: "Telecharger le guide PDF", icon: "Download", type: "generate_pdf", variant: "primary" }],
         suggestions: ["Peux-tu reformuler ?", "Donne plus de details ?"],
