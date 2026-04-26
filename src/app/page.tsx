@@ -313,6 +313,91 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════
+          1.5 IMPACT — plateforme unifiée
+      ══════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden bg-[#09090b] pb-24 pt-16 sm:pb-32 sm:pt-20">
+        {/* Glow central */}
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2">
+          <div className="mx-auto h-[500px] w-full max-w-[900px] rounded-full bg-[rgba(201,165,90,0.055)] blur-[140px]" />
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 44 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 mx-auto max-w-5xl px-6 text-center"
+        >
+          {/* ── Heading ── */}
+          <h2 className="text-[2.15rem] font-black leading-[1.08] tracking-tight text-white sm:text-[4rem] lg:text-[5.5rem]">
+            <span className="block">Tout votre business</span>
+            <span className="block">
+              sur{" "}
+              {/* Highlighted "une seule plateforme" */}
+              <span className="relative inline-block">
+                {/* Animated underline / marker */}
+                <motion.span
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute -bottom-1 left-0 h-[4px] w-full origin-left rounded-full sm:h-[6px]"
+                  style={{
+                    background: `linear-gradient(90deg, ${GOLD} 0%, rgba(201,165,90,0.25) 100%)`,
+                    boxShadow: `0 0 18px rgba(201,165,90,0.35)`,
+                  }}
+                />
+                <span className="text-[#c9a55a]">une seule plateforme</span>
+              </span>
+              {"."}
+            </span>
+          </h2>
+
+          {/* ── Subtext ── */}
+          <motion.p
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="mx-auto mt-7 max-w-md text-[1.1rem] leading-[1.75] text-white/45 sm:text-[1.3rem]"
+          >
+            Simple, efficace et{" "}
+            <span className="font-bold text-white/78 underline decoration-[#60a5fa] decoration-[2px] underline-offset-[5px] sm:decoration-[3px]">
+              abordable
+            </span>
+            .
+          </motion.p>
+
+          {/* ── CTAs ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.55, delay: 0.42, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center"
+          >
+            <Link
+              href="/services"
+              className="btn-primary group relative overflow-hidden px-8 py-4 text-[0.95rem]"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                Voir les services
+                <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </span>
+              <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
+            </Link>
+            <Link
+              href="/espace-client"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/[.1] bg-white/[.03] px-8 py-4 text-[0.95rem] font-semibold text-white/55 transition-all duration-200 hover:border-white/[.2] hover:bg-white/[.06] hover:text-white/82"
+            >
+              Découvrir DJAMA Pro
+              <ArrowRight size={15} className="text-white/30 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
           2. STATS — dark glassmorphism
       ══════════════════════════════════════════════ */}
       <section className="border-y border-white/[.05] bg-[#0f0f13] py-10 sm:py-14">
