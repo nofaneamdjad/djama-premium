@@ -178,9 +178,19 @@ export default function CoachingIAPage() {
           {/* Sous-titre */}
           <FadeReveal delay={0.45} className="mt-6">
             <p className="mx-auto max-w-2xl text-base text-white/50 md:text-lg">
-              20 cours structurés, 8h d'accompagnement personnalisé avec un coach,
-              des outils concrets — pour transformer l'IA en avantage réel dans votre activité.
+              Apprenez à utiliser l'IA pour gagner du temps, des clients et automatiser votre business.
             </p>
+          </FadeReveal>
+
+          {/* Urgence */}
+          <FadeReveal delay={0.56}>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[rgba(244,63,94,0.35)] bg-[rgba(244,63,94,0.1)] px-4 py-1.5 text-xs font-bold text-[#f87171]">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#f87171] opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#f87171]" />
+              </span>
+              Places limitées — inscriptions ouvertes ce mois
+            </div>
           </FadeReveal>
 
           {/* Stats */}
@@ -204,7 +214,7 @@ export default function CoachingIAPage() {
               >
                 <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                 <span className="relative flex items-center gap-2">
-                  Réserver ce coaching <ArrowRight size={15} />
+                  Commencer maintenant → <ArrowRight size={15} />
                 </span>
               </Link>
               <a
@@ -546,7 +556,7 @@ export default function CoachingIAPage() {
                     <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                     <span className="relative flex items-center gap-2">
                       <Brain size={16} />
-                      Réserver ce coaching
+                      Commencer maintenant →
                       <ArrowRight size={15} className="transition-transform duration-300 group-hover:translate-x-0.5" />
                     </span>
                   </Link>

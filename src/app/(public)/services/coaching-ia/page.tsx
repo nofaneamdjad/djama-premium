@@ -75,12 +75,39 @@ function CoachingCheckoutButton({ label = "Rejoindre le coaching — 190€" }: 
    DONNÉES
 ───────────────────────────────────────────────────────── */
 const OUTCOMES = [
-  { icon: Brain,      color: "#a78bfa", label: "Comprendre et démystifier l'IA" },
-  { icon: Target,     color: "#c9a55a", label: "Construire des prompts professionnels" },
-  { icon: Zap,        color: "#4ade80", label: "Automatiser vos tâches répétitives" },
-  { icon: Globe,      color: "#60a5fa", label: "Maîtriser les meilleurs outils IA" },
-  { icon: BarChart3,  color: "#fb923c", label: "Créer votre stratégie IA business" },
-  { icon: TrendingUp, color: "#f472b6", label: "Gagner 5 à 15h par semaine" },
+  { icon: Zap,        color: "#f9a826", label: "Générer emails, devis et contrats en 30 secondes" },
+  { icon: Clock,      color: "#a78bfa", label: "Gagner 5 à 15h de travail par semaine" },
+  { icon: Target,     color: "#c9a55a", label: "Prospecter et trouver des clients avec l'IA" },
+  { icon: TrendingUp, color: "#4ade80", label: "Créer du contenu marketing 10× plus vite" },
+  { icon: BarChart3,  color: "#60a5fa", label: "Analyser vos données business en secondes" },
+  { icon: Bot,        color: "#f472b6", label: "Déléguer vos tâches répétitives à des agents IA" },
+];
+
+const WHY = [
+  {
+    icon: Target,
+    color: "#a78bfa",
+    title: "Conçue pour les entrepreneurs",
+    desc: "Pas pour les ingénieurs. Chaque exemple vient du terrain : freelances, PME, consultants.",
+  },
+  {
+    icon: Zap,
+    color: "#f9a826",
+    title: "Applicable dès le module 1",
+    desc: "Vous repartez avec des outils utilisables immédiatement. Pas de théorie creuse.",
+  },
+  {
+    icon: Users,
+    color: "#4ade80",
+    title: "Accompagnement humain inclus",
+    desc: "Un coach réel, pas juste un chatbot. Session individuelle pour débloquer votre situation.",
+  },
+  {
+    icon: TrendingUp,
+    color: "#60a5fa",
+    title: "ROI en moins d'une semaine",
+    desc: "La formation se rembourse en quelques heures de travail économisées. Garanti.",
+  },
 ];
 
 const INCLUDED = [
@@ -273,7 +300,7 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
           {loading ? (
             <><Loader2 size={18} className="animate-spin" /> Redirection…</>
           ) : (
-            <><CreditCard size={18} /> Payer par carte — 190€</>
+            <><Zap size={18} /> Commencer maintenant →</>
           )}
         </button>
       )}
@@ -449,18 +476,34 @@ export default function CoachingIAPage() {
           </h1>
 
           <FadeReveal delay={0.5} as="p" className="mx-auto mt-6 max-w-2xl text-lg leading-[1.8] text-white/50">
-            Un programme complet en 5 modules pour comprendre, utiliser et automatiser l&apos;IA dans votre activité. Avec assistant IA pédagogique, exercices pratiques et session coaching individuel.
+            Apprenez à utiliser l&apos;IA pour gagner du temps, des clients et automatiser votre business.
           </FadeReveal>
 
-          <FadeReveal delay={0.68} className="mt-10 flex flex-wrap justify-center gap-3">
-            <a href="#offre" className="btn-primary px-8 py-4 text-base" style={{
-              background:  "linear-gradient(135deg,#a78bfa,#7c6fcd)",
-              boxShadow:   "0 8px 32px rgba(167,139,250,0.3)",
-              border:      "none",
-            }}>
-              <Wallet size={17} /> Rejoindre le coaching
+          {/* Urgence */}
+          <FadeReveal delay={0.62}>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-[rgba(244,63,94,0.35)] bg-[rgba(244,63,94,0.1)] px-4 py-1.5 text-xs font-bold text-[#f87171]">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#f87171] opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#f87171]" />
+              </span>
+              Places limitées — inscriptions ouvertes ce mois
+            </div>
+          </FadeReveal>
+
+          <FadeReveal delay={0.68} className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+            <a href="#offre"
+              className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl px-8 py-4 text-base font-extrabold text-white sm:w-auto"
+              style={{
+                background: "linear-gradient(135deg,#a78bfa,#7c6fcd)",
+                boxShadow:  "0 8px 32px rgba(167,139,250,0.35)",
+              }}
+            >
+              <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+              <span className="relative flex items-center gap-2">
+                <Zap size={17} /> Commencer maintenant →
+              </span>
             </a>
-            <a href="#programme" className="btn-ghost px-8 py-4 text-base">
+            <a href="#programme" className="btn-ghost w-full justify-center px-8 py-4 text-base sm:w-auto">
               Voir le programme <ArrowRight size={16} />
             </a>
           </FadeReveal>
@@ -492,12 +535,15 @@ export default function CoachingIAPage() {
             className="mb-14 text-center"
           >
             <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
-              <Sparkles size={10} /> Résultats concrets
+              <Sparkles size={10} /> Bénéfices concrets
             </motion.span>
             <h2 className="display-section text-[#09090b]">
               Ce que vous allez{" "}
-              <span className="text-[#a78bfa]">apprendre.</span>
+              <span className="text-[#a78bfa]">pouvoir faire.</span>
             </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#6b7280]">
+              Dès la fin de la formation, ces capacités font partie de votre quotidien.
+            </p>
           </motion.div>
 
           <motion.div
@@ -620,6 +666,82 @@ export default function CoachingIAPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════
+          3.5 POURQUOI CETTE FORMATION ?
+      ════════════════════════════════════════════════════ */}
+      <section className="bg-white py-12 sm:py-20">
+        <div className="mx-auto max-w-5xl px-6">
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
+            className="mb-12 text-center"
+          >
+            <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
+              <Award size={10} /> Pourquoi choisir cette formation ?
+            </motion.span>
+            <h2 className="display-section text-[#09090b]">
+              Pas une formation comme{" "}
+              <span className="text-[#a78bfa]">les autres.</span>
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#6b7280]">
+              La majorité des formations IA sont trop techniques, trop théoriques ou déjà obsolètes. Voici ce qui différencie DJAMA.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainerFast}
+            className="grid gap-5 sm:grid-cols-2"
+          >
+            {WHY.map(({ icon: Icon, color, title, desc }) => (
+              <motion.div
+                key={title}
+                variants={cardReveal}
+                className="group flex gap-5 rounded-2xl border border-black/[0.07] bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+              >
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: `${color}18`, border: `1px solid ${color}28` }}
+                >
+                  <Icon size={20} style={{ color }} />
+                </div>
+                <div>
+                  <h3 className="mb-1.5 text-base font-extrabold text-[#09090b]">{title}</h3>
+                  <p className="text-sm leading-relaxed text-[#6b7280]">{desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Bannière résumé */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.6, ease }}
+            className="mt-10 overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.2)] bg-gradient-to-r from-[#0d0a1a] to-[#12102a] px-8 py-6"
+          >
+            <div className="flex flex-col items-center gap-5 sm:flex-row sm:justify-between">
+              <div>
+                <p className="text-sm font-bold text-white/80">Formation certifiée DJAMA</p>
+                <p className="mt-0.5 text-xs text-white/35">Contenu mis à jour chaque trimestre · Applicable dès le 1er jour</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                {[
+                  { val: "5",    label: "modules" },
+                  { val: "17",   label: "chapitres" },
+                  { val: "8h",   label: "coaching" },
+                  { val: "190€", label: "seulement" },
+                ].map(({ val, label }) => (
+                  <div key={label} className="flex flex-col items-center">
+                    <span className="text-xl font-black" style={{ color: ACCENT }}>{val}</span>
+                    <span className="text-[0.62rem] uppercase tracking-wider text-white/30">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════
           4. TÉMOIGNAGES
       ════════════════════════════════════════════════════ */}
       <section className="bg-white py-12 sm:py-24">
@@ -689,19 +811,28 @@ export default function CoachingIAPage() {
             <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#a78bfa] to-transparent" />
 
             <div className="relative px-8 py-10">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-[#a78bfa]">
-                <Brain size={9} /> Coaching IA · Formation complète
+              {/* Urgence */}
+              <div className="mb-5 flex items-center justify-between">
+                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-[#a78bfa]">
+                  <Brain size={9} /> Formation complète
+                </div>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(244,63,94,0.35)] bg-[rgba(244,63,94,0.1)] px-3 py-1 text-[0.65rem] font-bold text-[#f87171]">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#f87171] opacity-60" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#f87171]" />
+                  </span>
+                  Places limitées
+                </div>
               </div>
 
               <div className="mb-1 flex items-end gap-1.5">
-                <span className="text-[4rem] font-black leading-none text-white">190</span>
-                <div className="mb-2.5 flex flex-col leading-none">
-                  <span className="text-2xl font-black text-white">€</span>
-                  <span className="mt-1 text-xs text-white/35">/ 3 mois</span>
-                </div>
+                <span className="text-[4rem] font-black leading-none text-white">190€</span>
               </div>
-              <p className="mb-7 text-sm text-white/35">
-                Paiement unique · Accès 3 mois · Sans abonnement
+              <p className="mb-1 text-base font-bold text-white/70">
+                pour 3 mois d&apos;accès complet
+              </p>
+              <p className="mb-7 text-xs text-white/30">
+                Paiement unique · Sans abonnement · Accès immédiat
               </p>
 
               <div className="divider-gold mb-7" style={{ background: "rgba(167,139,250,0.15)" }} />
@@ -836,16 +967,20 @@ export default function CoachingIAPage() {
           transition={{ duration: 0.65, ease }}
           className="relative z-10 mx-auto max-w-xl px-6 text-center"
         >
-          <span className="badge badge-gold-dark mb-6 inline-flex">
-            <Sparkles size={10} /> Commencez aujourd&apos;hui
-          </span>
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(244,63,94,0.35)] bg-[rgba(244,63,94,0.1)] px-4 py-1.5 text-xs font-bold text-[#f87171]">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#f87171] opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#f87171]" />
+            </span>
+            Places limitées — Inscriptions ouvertes ce mois
+          </div>
           <h2 className="display-section text-white">
             Votre avantage compétitif,{" "}
             <span style={{ color: ACCENT }}>c&apos;est maintenant.</span>
           </h2>
           <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-white/40">
-            190€ pour 3 mois de formation, d&apos;outils et d&apos;accompagnement.
-            Moins que 2 heures de travail économisées en une semaine.
+            190€ pour 3 mois d&apos;accès complet. Moins que 2 heures de travail
+            économisées en une semaine.
           </p>
           <div className="mt-10">
             <PaymentSelector user={user} />
@@ -855,6 +990,7 @@ export default function CoachingIAPage() {
             <span>✓ 5 modules + 17 chapitres</span>
             <span>✓ Assistant IA inclus</span>
             <span>✓ 1 session coaching</span>
+            <span>✓ Places limitées</span>
           </div>
         </motion.div>
       </section>
