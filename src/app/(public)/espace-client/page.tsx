@@ -6,7 +6,7 @@ import { Suspense, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import {
-  FileText, CalendarDays, StickyNote, Brain, Timer, CreditCard, Globe,
+  FileText, CalendarRange, StickyNote, Brain, Timer, CreditCard, Globe,
   CheckCircle2, ArrowRight, Sparkles, Shield, Zap, Lock, Wallet,
   AlertTriangle, MessageCircle, Users,
 } from "lucide-react";
@@ -58,12 +58,12 @@ const TOOLS = [
     chips: ["Export PDF", "Logo perso", "Numérotation", "TVA"],
   },
   {
-    icon: CalendarDays,
-    title: "Planning / Agenda",
-    desc: "Gérez votre agenda en vue Jour, Semaine ou Mois avec rappels et gestion des RDV.",
+    icon: CalendarRange,
+    title: "Agenda & Planification",
+    desc: "Organisez vos rendez-vous, équipes et tâches en toute simplicité.",
     color: "#60a5fa",
     rgb: "96,165,250",
-    chips: ["Jour / Semaine / Mois", "Rappels", "RDV", "Intuitif"],
+    chips: ["Rendez-vous", "Équipes", "Tâches", "Intuitif"],
   },
   {
     icon: StickyNote,
@@ -132,11 +132,11 @@ const TOOLS = [
 ] as const;
 
 const INCLUS = [
-  "Accès à tous les 10 outils inclus",
+  "Accès à tous les 11 outils inclus",
   "Coach Business IA (analyse vos données réelles)",
   "Factures & devis illimités",
   "CRM & gestion contacts / prospects",
-  "Planning / agenda complet",
+  "Agenda & Planification (RDV, équipes, tâches)",
   "Chrono & suivi de temps par projet",
   "Dépenses & frais professionnels",
   "Trésorerie & flux financiers",
@@ -304,7 +304,7 @@ export default function EspaceClientPage() {
               <Sparkles size={10} /> Ce qui est inclus
             </span>
             <h2 className="display-section text-white">
-              10 outils,{" "}
+              11 outils,{" "}
               <span className="text-gold">un seul abonnement.</span>
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-base text-white/45">

@@ -15,7 +15,7 @@ import {
   Globe, Brain, MessageCircle,
   LayoutDashboard, Smartphone, Palette, Briefcase,
   LineChart, GraduationCap, Code2, BarChart3,
-  Receipt, CalendarDays, StickyNote, Timer, CreditCard, Gem,
+  Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem,
   Network, Landmark,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
@@ -115,7 +115,7 @@ const STAT_COLORS  = [GOLD, "#60a5fa", "#4ade80", "#a78bfa"] as const;
 
 const ESPACE_TOOLS = [
   { icon: Receipt,      color: GOLD,       title: "Factures & devis",    desc: "Créez et envoyez des documents professionnels en quelques clics." },
-  { icon: CalendarDays, color: "#60a5fa",  title: "Agenda & planning",   desc: "Gérez vos rendez-vous et organisez vos journées sans effort." },
+  { icon: CalendarRange, color: "#60a5fa",  title: "Agenda & Planification", desc: "Organisez vos rendez-vous, équipes et tâches en toute simplicité." },
   { icon: StickyNote,   color: "#4ade80",  title: "Bloc-notes pro",      desc: "Notez vos idées, tâches et mémos en un endroit centralisé." },
   { icon: Brain,        color: "#a78bfa",  title: "Coach Business IA",   desc: "Analyse vos données et vous guide avec des conseils précis et actionnables." },
   { icon: Users2,       color: "#22d3ee",  title: "CRM Client",          desc: "Gérez contacts, prospects et clients actifs avec statut et historique." },
@@ -136,7 +136,7 @@ const ESPACE_BENEFITS = [
 ] as const;
 
 const ESPACE_PILLARS = [
-  { val: "10",      label: "outils inclus",    color: GOLD      },
+  { val: "11",      label: "outils inclus",    color: GOLD      },
   { val: "11,90€",  label: "par mois",         color: "#60a5fa" },
   { val: "0",       label: "engagement",       color: "#4ade80" },
   { val: "✓",       label: "accès immédiat",   color: "#a78bfa" },
@@ -493,7 +493,7 @@ function HomeContent() {
             {/* ── Left : outils + bénéfices ── */}
             <div>
               <motion.p variants={fadeIn} className="mb-5 text-[0.62rem] font-black uppercase tracking-[.24em] text-white/25">
-                10 outils inclus dans l'abonnement
+                Tous les outils pour gérer votre business
               </motion.p>
 
               {/* Tool cards */}
@@ -586,7 +586,7 @@ function HomeContent() {
                   {[
                     { label: "10 outils inclus (Coach IA, CRM, Chrono…)", highlight: false },
                     { label: "Factures & devis illimités",                highlight: false },
-                    { label: "Agenda & planning intégré",                 highlight: false },
+                    { label: "Agenda & Planification intégré",             highlight: false },
                     { label: "Trésorerie, Dépenses & Contrats IA",        highlight: false },
                     { label: "Sourcing IA & marchés publics / privés",    highlight: false },
                     { label: "Accès immédiat après paiement",             highlight: true  },
