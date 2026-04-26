@@ -14,7 +14,7 @@ import { motion, AnimatePresence }                   from "framer-motion";
 import {
   Search, Send, RefreshCw, X, Download, ChevronRight,
   Building2, ListChecks, Lightbulb, FileText,
-  CheckCircle2, Factory, Sparkles, Package,
+  CheckCircle2, Factory, Sparkles, Package, AlertCircle,
 } from "lucide-react";
 import type { GuideMessage, GuideSection, GuideItem } from "@/lib/sourcing/generateGuide";
 
@@ -59,6 +59,8 @@ interface ChatMsg {
   actions?:     SourcingAction[];
   suggestions?: string[];
   loading?:     boolean;
+  isError?:     boolean;   // message d'erreur — exclu de l'historique
+  retryText?:   string;    // texte user à renvoyer pour retry
 }
 
 /* ════════════════════════════════════════════
@@ -276,10 +278,12 @@ function MessageBubble({
   msg,
   onSuggestion,
   onPdf,
+  onRetry,
 }: {
   msg:          ChatMsg;
   onSuggestion: (text: string) => void;
   onPdf:        () => void;
+  onRetry:      (text: string) => void;
 }) {
   if (msg.role === "user") {
     return (
@@ -304,14 +308,21 @@ function MessageBubble({
       className="flex gap-3"
     >
       {/* Avatar IA */}
-      <div className="w-8 h-8 rounded-xl bg-blue-500/14 border border-blue-500/22 flex items-center justify-center shrink-0 mt-0.5">
-        <Search size={13} className="text-blue-400" />
+      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border ${
+        msg.isError
+          ? "bg-red-500/10 border-red-500/20"
+          : "bg-blue-500/14 border-blue-500/22"
+      }`}>
+        {msg.isError
+          ? <AlertCircle size={13} className="text-red-400" />
+          : <Search size={13} className="text-blue-400" />
+        }
       </div>
 
       <div className="flex-1 min-w-0">
-        {/* Bulle */}
-        <div className="rounded-3xl rounded-tl-lg bg-white/[0.03] border border-white/[0.07] px-4 py-4 mb-2.5">
-          {msg.loading ? (
+        {/* ── Bulle chargement ── */}
+        {msg.loading && (
+          <div className="rounded-3xl rounded-tl-lg bg-white/[0.03] border border-white/[0.07] px-4 py-4 mb-2.5">
             <div className="flex items-center gap-1.5 py-1">
               {[0, 1, 2].map(i => (
                 <motion.div
@@ -322,10 +333,41 @@ function MessageBubble({
                 />
               ))}
             </div>
-          ) : (
-            <div>
+          </div>
+        )}
+
+        {/* ── Bulle erreur ── */}
+        {!msg.loading && msg.isError && (
+          <div className="rounded-3xl rounded-tl-lg bg-red-500/[0.06] border border-red-500/20 px-4 py-3.5 mb-2.5">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-300 mb-1">
+                  Service temporairement indisponible
+                </p>
+                <p className="text-xs text-red-300/60 leading-relaxed mb-3">
+                  {msg.content}
+                </p>
+                {msg.retryText && (
+                  <button
+                    onClick={() => onRetry(msg.retryText!)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/12 border border-red-500/22 text-red-400 text-[11px] font-bold hover:bg-red-500/20 transition-all"
+                  >
+                    <RefreshCw size={11} />
+                    Réessayer
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Bulle réponse normale ── */}
+        {!msg.loading && !msg.isError && (
+          <>
+            <div className="rounded-3xl rounded-tl-lg bg-white/[0.03] border border-white/[0.07] px-4 py-4 mb-2.5">
               {msg.content && (
-                <p className="text-sm text-white/75 leading-relaxed whitespace-pre-wrap mb-0">
+                <p className="text-sm text-white/75 leading-relaxed whitespace-pre-wrap">
                   {msg.content}
                 </p>
               )}
@@ -333,31 +375,31 @@ function MessageBubble({
                 <SectionBlock key={i} section={section} />
               ))}
             </div>
-          )}
-        </div>
 
-        {/* Actions */}
-        {!msg.loading && (msg.actions ?? []).length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-2.5">
-            {(msg.actions ?? []).map((a, i) => (
-              <ActionBtn key={i} action={a} onPdf={onPdf} />
-            ))}
-          </div>
-        )}
+            {/* Actions */}
+            {(msg.actions ?? []).length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2.5">
+                {(msg.actions ?? []).map((a, i) => (
+                  <ActionBtn key={i} action={a} onPdf={onPdf} />
+                ))}
+              </div>
+            )}
 
-        {/* Suggestions */}
-        {!msg.loading && (msg.suggestions ?? []).length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {(msg.suggestions ?? []).map((s, i) => (
-              <button
-                key={i}
-                onClick={() => onSuggestion(s)}
-                className="text-[11px] px-3 py-1.5 rounded-full border border-white/[0.08] text-white/35 hover:text-white/65 hover:border-white/18 transition-all"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+            {/* Suggestions */}
+            {(msg.suggestions ?? []).length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {(msg.suggestions ?? []).map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => onSuggestion(s)}
+                    className="text-[11px] px-3 py-1.5 rounded-full border border-white/[0.08] text-white/35 hover:text-white/65 hover:border-white/18 transition-all"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </motion.div>
@@ -398,7 +440,10 @@ export default function SourcingPage() {
         body:    JSON.stringify({ message: text, history }),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null) as SourcingApiResponse | null;
+        throw new Error(errData?.error ?? `Erreur serveur (${res.status})`);
+      }
 
       const data: SourcingApiResponse = await res.json();
 
@@ -414,10 +459,11 @@ export default function SourcingPage() {
             }
           : m,
       ));
-    } catch {
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : "Erreur inconnue. Réessaie dans un instant.";
       setMessages(prev => prev.map(m =>
         m.id === aiId
-          ? { ...m, content: "Une erreur est survenue. Réessaie dans un instant.", loading: false }
+          ? { ...m, content: errMsg, isError: true, retryText: text, loading: false }
           : m,
       ));
     } finally {
@@ -434,7 +480,7 @@ export default function SourcingPage() {
     const aiId   = uid();
 
     const history = msgHistory.current
-      .filter(m => !m.loading)
+      .filter(m => !m.loading && !m.isError && m.content.trim().length > 0)
       .map(m => ({ role: m.role, content: m.content }));
 
     setMessages(prev => [
@@ -613,6 +659,7 @@ export default function SourcingPage() {
                   msg={msg}
                   onSuggestion={text => handleSend(text)}
                   onPdf={handleGeneratePdf}
+                  onRetry={text => handleSend(text)}
                 />
               ))}
             </AnimatePresence>
