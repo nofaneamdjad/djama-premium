@@ -20,7 +20,7 @@ import {
   MessageCircle, Mail, AlertCircle, TrendingDown, TrendingUp,
   FileText, Users, Timer, Wallet, CreditCard, ArrowRight, Plus,
   StickyNote, ReceiptText, Calendar, CalendarRange, Flame,
-  Eye, Zap,
+  Eye, Zap, Search,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -102,6 +102,7 @@ const ALL_TOOLS = [
   { href: "/client/tresorerie",   icon: Wallet,        label: "Trésorerie",        color: "#4ade80" },
   { href: "/client/contrats",     icon: FileText,      label: "Contrats IA",       color: "#c9a55a" },
   { href: "/client/planification",icon: CalendarRange, label: "Planification",     color: "#38bdf8" },
+  { href: "/client/sourcing",     icon: Search,        label: "Sourcing IA",       color: "#818cf8" },
 ];
 
 /* ════════════════════════════════════════════
