@@ -426,9 +426,14 @@ export default function EspaceClientPage() {
             <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
 
             <div className="relative px-8 py-10">
-              {/* Label */}
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.28)] bg-[rgba(201,165,90,0.09)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-[#c9a55a]">
-                <Sparkles size={9} /> Abonnement mensuel
+              {/* En-tête card */}
+              <div className="mb-6">
+                <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest text-[#c9a55a]">
+                  <Sparkles size={8} /> Abonnement mensuel
+                </div>
+                <h3 className="text-[1.25rem] font-extrabold leading-snug text-white">
+                  Accédez à tous les outils DJAMA
+                </h3>
               </div>
 
               {/* Prix */}
@@ -442,7 +447,7 @@ export default function EspaceClientPage() {
                 </div>
               </div>
               <p className="mb-7 text-sm text-white/35">
-                Sans engagement · Résiliable à tout moment · Accès immédiat
+                11 outils inclus • Mise à jour continue
               </p>
 
               {/* Divider doré */}
@@ -466,33 +471,12 @@ export default function EspaceClientPage() {
               </ul>
 
               {/* ── Stripe ── */}
-              <StripeButton label="S'abonner — 11,90€ / mois" />
+              <StripeButton label="Commencer maintenant →" />
 
-              {/* Message rassurant */}
-              <div className="mt-6 rounded-xl border border-[rgba(201,165,90,0.14)] bg-[rgba(201,165,90,0.06)] px-4 py-3.5">
-                <p className="text-center text-xs leading-relaxed text-[#d4b87a]">
-                  🔒 Paiement 100&nbsp;% sécurisé · Vos accès vous sont envoyés
-                  par email sous quelques minutes · Aucun frais caché ·
-                  Résiliable à tout moment.
-                </p>
-              </div>
-
-              {/* Badges confiance inline */}
-              <div className="mt-5 flex flex-wrap justify-center gap-5">
-                {[
-                  { icon: Lock,    label: "Sécurisé" },
-                  { icon: Zap,     label: "Immédiat" },
-                  { icon: Shield,  label: "RGPD" },
-                ].map(({ icon: Icon, label }) => (
-                  <div
-                    key={label}
-                    className="flex items-center gap-1.5 text-[0.68rem] text-white/30"
-                  >
-                    <Icon size={11} className="text-[#c9a55a]" />
-                    {label}
-                  </div>
-                ))}
-              </div>
+              {/* Trust ligne */}
+              <p className="mt-5 text-center text-[0.72rem] text-white/28">
+                Paiement sécurisé • Accès immédiat • Sans engagement
+              </p>
             </div>
           </motion.div>
         </div>
@@ -552,29 +536,28 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          5. DÉJÀ ABONNÉ
+          5. DÉJÀ CLIENT
       ══════════════════════════════════════════════ */}
-      <section className="mx-auto max-w-4xl px-6 py-10 sm:py-20 text-center">
+      <section className="mx-auto max-w-md px-6 pb-14 pt-2 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={viewport}
-          transition={{ duration: 0.55, ease }}
-          className="rounded-[1.5rem] border border-white/[.08] bg-[#111113] px-8 py-10"
+          transition={{ duration: 0.45, ease }}
+          className="rounded-2xl border border-white/[.05] bg-white/[.018] px-6 py-6"
         >
-          <p className="mb-1 text-base font-bold text-white">
-            Déjà abonné ?
+          <p className="mb-1 text-sm font-semibold text-white/55">
+            Déjà client DJAMA ?
           </p>
-          <p className="mb-6 text-sm text-white/45">
-            Connectez-vous pour accéder directement à votre espace et vos outils.
+          <p className="mb-4 text-[0.8rem] text-white/30">
+            Accédez à votre espace et retrouvez tous vos outils.
           </p>
           <Link
             href="/login"
-            className="btn-primary inline-flex items-center gap-2 px-7 py-3.5 text-sm"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/[.1] bg-white/[.03] px-5 py-2.5 text-sm font-semibold text-white/50 transition-all duration-200 hover:border-white/[.2] hover:text-white/80"
           >
-            <Lock size={14} />
-            Accéder à mon espace client
-            <ArrowRight size={14} />
+            Accéder à mon espace
+            <ArrowRight size={13} />
           </Link>
         </motion.div>
       </section>
