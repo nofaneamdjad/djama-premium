@@ -105,9 +105,9 @@ const QUICKSTART = [
     color: "#a78bfa",
     bg:    "rgba(167,139,250,0.08)",
     border:"rgba(167,139,250,0.18)",
-    label: "Marchés publics France",
-    desc:  "BOAMP, seuils, procédures 2024",
-    question: "Explique-moi les marchés publics en France en 2024 : comment participer, quels seuils, quelles procédures et comment augmenter mes chances de gagner.",
+    label: "Marchés publics & privés",
+    desc:  "Plateformes, seuils, procédures, stratégie",
+    question: "Comment accéder aux marchés publics et privés ? Quelles plateformes utiliser selon le pays, quels seuils s'appliquent et comment préparer un dossier gagnant ?",
   },
 ];
 
@@ -323,13 +323,12 @@ function MessageBubble({
         {/* ── Bulle chargement ── */}
         {msg.loading && (
           <div className="rounded-3xl rounded-tl-lg bg-white/[0.03] border border-white/[0.07] px-4 py-4 mb-2.5">
-            <div className="flex items-center gap-1.5 py-1">
+            <div className="flex items-center gap-2 py-1">
               {[0, 1, 2].map(i => (
-                <motion.div
+                <span
                   key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-blue-400/50"
-                  animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.1, 0.8] }}
-                  transition={{ delay: i * 0.18, repeat: Infinity, duration: 1.1 }}
+                  className="w-2 h-2 rounded-full bg-blue-400/65 animate-bounce"
+                  style={{ animationDelay: `${i * 0.18}s`, animationDuration: "0.9s" }}
                 />
               ))}
             </div>
