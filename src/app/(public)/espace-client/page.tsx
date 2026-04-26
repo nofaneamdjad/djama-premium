@@ -6,7 +6,7 @@ import { Suspense, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import {
-  FileText, CalendarDays, StickyNote, LayoutDashboard, FolderOpen,
+  FileText, CalendarDays, StickyNote, Brain, Timer, CreditCard, Globe,
   CheckCircle2, ArrowRight, Sparkles, Shield, Zap, Lock, Wallet,
   AlertTriangle, MessageCircle, Users,
 } from "lucide-react";
@@ -74,30 +74,75 @@ const TOOLS = [
     chips: ["Par catégorie", "Export PDF", "Sauvegarde auto", "Épuré"],
   },
   {
-    icon: LayoutDashboard,
-    title: "Tableau de bord",
-    desc: "Vue d'ensemble de votre activité et accès rapide à tous vos outils DJAMA.",
+    icon: Brain,
+    title: "Coach Business IA",
+    desc: "Analyse vos données réelles — CA, impayés, clients inactifs — et vous guide chaque jour.",
     color: "#a78bfa",
     rgb: "167,139,250",
-    chips: ["Vue globale", "Accès rapide", "Résumé", "Perso"],
+    chips: ["IA", "Coach", "Analyse", "Proactif"],
   },
   {
-    icon: FolderOpen,
-    title: "Documents",
-    desc: "Retrouvez tous vos documents générés, classés et stockés en sécurité.",
+    icon: Users,
+    title: "CRM Client",
+    desc: "Gérez vos contacts, prospects et clients actifs avec statut, suivi et historique.",
+    color: "#22d3ee",
+    rgb: "34,211,238",
+    chips: ["Contacts", "Prospects", "Actifs", "Historique"],
+  },
+  {
+    icon: Timer,
+    title: "Chrono Pro",
+    desc: "Suivez votre temps par projet et client, mesurez votre rentabilité réelle.",
     color: "#fb923c",
     rgb: "251,146,60",
-    chips: ["Classement", "Historique", "PDF", "Sécurisé"],
+    chips: ["Par projet", "Par client", "Rentabilité", "Export"],
+  },
+  {
+    icon: CreditCard,
+    title: "Dépenses Pro",
+    desc: "Enregistrez vos frais professionnels par catégorie et suivez vos sorties de trésorerie.",
+    color: "#f43f5e",
+    rgb: "244,63,94",
+    chips: ["Frais pro", "Catégories", "Trésorerie", "Historique"],
+  },
+  {
+    icon: Wallet,
+    title: "Trésorerie",
+    desc: "Visualisez votre solde, vos entrées/sorties et anticipez vos flux de trésorerie.",
+    color: "#34d399",
+    rgb: "52,211,153",
+    chips: ["Solde", "Entrées", "Sorties", "Prévisions"],
+  },
+  {
+    icon: Shield,
+    title: "Contrats IA",
+    desc: "Générez des contrats professionnels personnalisés en quelques secondes grâce à l'IA.",
+    color: "#eab308",
+    rgb: "234,179,8",
+    chips: ["IA", "Personnalisé", "PDF", "Professionnel"],
+  },
+  {
+    icon: Globe,
+    title: "Sourcing IA",
+    desc: "Trouvez des fournisseurs mondiaux, accédez aux marchés publics & privés via l'IA.",
+    color: "#f59e0b",
+    rgb: "245,158,11",
+    chips: ["Mondial", "Marchés publics", "IA", "B2B"],
   },
 ] as const;
 
 const INCLUS = [
-  "Accès à tous les 5 outils inclus",
-  "Générateur de factures et devis PDF",
+  "Accès à tous les 10 outils inclus",
+  "Coach Business IA (analyse vos données réelles)",
+  "Factures & devis illimités",
+  "CRM & gestion contacts / prospects",
   "Planning / agenda complet",
+  "Chrono & suivi de temps par projet",
+  "Dépenses & frais professionnels",
+  "Trésorerie & flux financiers",
+  "Contrats IA générés en un clic",
+  "Sourcing IA & marchés publics / privés",
   "Bloc-notes professionnel",
-  "Tableau de bord personnel",
-  "Stockage et gestion de documents",
   "Accès immédiat après paiement",
   "Sans engagement — résiliable à tout moment",
 ];
@@ -205,8 +250,8 @@ export default function EspaceClientPage() {
             as="p"
             className="mx-auto mt-6 max-w-xl text-lg leading-[1.8] text-white/50"
           >
-            Un abonnement mensuel simple pour accéder à vos outils de gestion —
-            factures, agenda, notes et plus encore. Toujours disponibles, toujours à jour.
+            Un abonnement mensuel simple pour accéder à vos 10 outils de gestion —
+            Coach IA, CRM, Trésorerie, Contrats, Sourcing et bien plus encore. Toujours disponibles, toujours à jour.
           </FadeReveal>
 
           {/* CTA */}
@@ -259,7 +304,7 @@ export default function EspaceClientPage() {
               <Sparkles size={10} /> Ce qui est inclus
             </span>
             <h2 className="display-section text-white">
-              5 outils,{" "}
+              10 outils,{" "}
               <span className="text-gold">un seul abonnement.</span>
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-base text-white/45">
@@ -268,7 +313,7 @@ export default function EspaceClientPage() {
             </p>
           </motion.div>
 
-          {/* Grid 5 tool cards — dark preview cards */}
+          {/* Grid 10 tool cards — dark preview cards */}
           <motion.div
             initial="hidden"
             whileInView="visible"

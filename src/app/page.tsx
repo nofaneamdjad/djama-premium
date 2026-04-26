@@ -15,7 +15,7 @@ import {
   Globe, Brain, MessageCircle,
   LayoutDashboard, Smartphone, Palette, Briefcase,
   LineChart, GraduationCap, Code2, BarChart3,
-  Receipt, CalendarDays, StickyNote, FolderOpen, Gem,
+  Receipt, CalendarDays, StickyNote, Timer, CreditCard, Gem,
   Network, Landmark,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
@@ -114,11 +114,16 @@ const STAT_ICONS   = [Users2, LineChart, Zap, HeartHandshake] as const;
 const STAT_COLORS  = [GOLD, "#60a5fa", "#4ade80", "#a78bfa"] as const;
 
 const ESPACE_TOOLS = [
-  { icon: Receipt,         color: GOLD,       title: "Factures & devis",       desc: "Créez et envoyez des documents professionnels en quelques clics." },
-  { icon: CalendarDays,    color: "#60a5fa",  title: "Agenda & planning",      desc: "Gérez vos rendez-vous et organisez vos journées sans effort." },
-  { icon: StickyNote,      color: "#a78bfa",  title: "Bloc-notes pro",         desc: "Notez vos idées, tâches et mémos en un endroit centralisé." },
-  { icon: LayoutDashboard, color: "#4ade80",  title: "Tableau de bord",        desc: "Pilotez votre activité avec une vue claire et complète." },
-  { icon: FolderOpen,      color: GOLD,       title: "Espace documents",       desc: "Stockez et retrouvez vos fichiers clients en toute sécurité." },
+  { icon: Receipt,      color: GOLD,       title: "Factures & devis",    desc: "Créez et envoyez des documents professionnels en quelques clics." },
+  { icon: CalendarDays, color: "#60a5fa",  title: "Agenda & planning",   desc: "Gérez vos rendez-vous et organisez vos journées sans effort." },
+  { icon: StickyNote,   color: "#4ade80",  title: "Bloc-notes pro",      desc: "Notez vos idées, tâches et mémos en un endroit centralisé." },
+  { icon: Brain,        color: "#a78bfa",  title: "Coach Business IA",   desc: "Analyse vos données et vous guide avec des conseils précis et actionnables." },
+  { icon: Users2,       color: "#22d3ee",  title: "CRM Client",          desc: "Gérez contacts, prospects et clients actifs avec statut et historique." },
+  { icon: Timer,        color: "#fb923c",  title: "Chrono Pro",          desc: "Suivez votre temps par projet et client, mesurez votre rentabilité." },
+  { icon: CreditCard,   color: "#f43f5e",  title: "Dépenses Pro",        desc: "Enregistrez vos frais professionnels par catégorie et suivez vos sorties." },
+  { icon: TrendingUp,   color: "#34d399",  title: "Trésorerie",          desc: "Visualisez vos flux, anticipez votre solde et pilotez vos finances." },
+  { icon: Shield,       color: "#eab308",  title: "Contrats IA",         desc: "Générez des contrats professionnels personnalisés en quelques secondes." },
+  { icon: Globe,        color: "#f59e0b",  title: "Sourcing IA",         desc: "Trouvez des fournisseurs mondiaux et accédez aux marchés publics & privés." },
 ] as const;
 
 const ESPACE_BENEFITS = [
@@ -131,7 +136,7 @@ const ESPACE_BENEFITS = [
 ] as const;
 
 const ESPACE_PILLARS = [
-  { val: "5",       label: "outils inclus",    color: GOLD      },
+  { val: "10",      label: "outils inclus",    color: GOLD      },
   { val: "11,90€",  label: "par mois",         color: "#60a5fa" },
   { val: "0",       label: "engagement",       color: "#4ade80" },
   { val: "✓",       label: "accès immédiat",   color: "#a78bfa" },
@@ -400,7 +405,7 @@ function HomeContent() {
             {/* ── Left : outils + bénéfices ── */}
             <div>
               <motion.p variants={fadeIn} className="mb-5 text-[0.62rem] font-black uppercase tracking-[.24em] text-white/25">
-                5 outils inclus dans l'abonnement
+                10 outils inclus dans l'abonnement
               </motion.p>
 
               {/* Tool cards */}
@@ -427,14 +432,6 @@ function HomeContent() {
                   </motion.div>
                 ))}
 
-                {/* Badge "+ à venir" dans la 6e cellule */}
-                <motion.div variants={cardReveal}
-                  className="flex items-center justify-center rounded-2xl border border-dashed border-white/[.09] bg-transparent px-4 py-4"
-                >
-                  <p className="text-center text-[0.72rem] font-bold text-white/22">
-                    + nouvelles fonctionnalités<br />régulièrement
-                  </p>
-                </motion.div>
               </motion.div>
 
               {/* Bénéfices */}
@@ -499,13 +496,13 @@ function HomeContent() {
                 {/* Features list */}
                 <div className="space-y-2.5 px-7 py-6">
                   {[
-                    { label: "Factures & devis illimités",      highlight: false },
-                    { label: "Agenda & planning intégré",       highlight: false },
-                    { label: "Bloc-notes professionnel",        highlight: false },
-                    { label: "Tableau de bord centralisé",      highlight: false },
-                    { label: "Espace documents sécurisé",       highlight: false },
-                    { label: "Accès immédiat après paiement",   highlight: true  },
-                    { label: "Support DJAMA inclus",            highlight: true  },
+                    { label: "10 outils inclus (Coach IA, CRM, Chrono…)", highlight: false },
+                    { label: "Factures & devis illimités",                highlight: false },
+                    { label: "Agenda & planning intégré",                 highlight: false },
+                    { label: "Trésorerie, Dépenses & Contrats IA",        highlight: false },
+                    { label: "Sourcing IA & marchés publics / privés",    highlight: false },
+                    { label: "Accès immédiat après paiement",             highlight: true  },
+                    { label: "Support DJAMA inclus",                      highlight: true  },
                   ].map(({ label, highlight }) => (
                     <div key={label} className="flex items-center gap-3">
                       <CheckCircle2 size={14} className="shrink-0"
