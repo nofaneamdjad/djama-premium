@@ -629,6 +629,234 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════
+          3.5 COMPARAISON — vs autres outils
+      ══════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden bg-[#0c0b13] py-20 sm:py-28">
+        {/* Glows directionnels */}
+        <div className="pointer-events-none absolute -left-32 top-1/3 h-[400px] w-[400px] rounded-full bg-[rgba(239,68,68,0.04)] blur-[120px]" />
+        <div className="pointer-events-none absolute -right-32 top-1/3 h-[400px] w-[400px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[120px]" />
+
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+          className="relative z-10 mx-auto max-w-5xl px-6"
+        >
+          {/* ── Header ── */}
+          <div className="mb-14 text-center">
+            <motion.div variants={fadeIn}
+              className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.32)] bg-[rgba(201,165,90,.09)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em] text-[#c9a55a]">
+              <Zap size={11} /> Pourquoi DJAMA
+            </motion.div>
+            <h2 className="display-section text-white">
+              <MultiLineReveal
+                lines={["Remplacez tous vos outils", "par une seule plateforme."]}
+                highlight={1} stagger={0.1} wordStagger={0.04}
+                lineClassName="justify-center text-white"
+              />
+            </h2>
+            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/40">
+              Moins de coûts. Moins de complexité.{" "}
+              <span className="font-semibold text-white/65">Plus de performance.</span>
+            </FadeReveal>
+          </div>
+
+          {/* ── Grille comparaison ── */}
+          <motion.div
+            variants={staggerContainerFast}
+            className="mb-6 grid items-center gap-4 lg:grid-cols-[1fr_52px_1fr]"
+          >
+            {/* ── Colonne gauche — autres outils ── */}
+            <motion.div variants={cardReveal}
+              className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(239,68,68,0.18)] bg-white/[.025] p-6"
+            >
+              {/* Barre accent rouge */}
+              <div className="absolute inset-x-0 top-0 h-[2.5px] bg-gradient-to-r from-transparent via-[rgba(239,68,68,0.5)] to-transparent" />
+
+              {/* En-tête */}
+              <div className="mb-5 flex items-start justify-between">
+                <div>
+                  <p className="mb-0.5 text-[0.62rem] font-black uppercase tracking-[.2em] text-[rgba(239,68,68,0.65)]">
+                    Plusieurs outils séparés
+                  </p>
+                  <p className="text-[0.76rem] text-white/30">8 abonnements à gérer</p>
+                </div>
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.08)]">
+                  <span className="text-[0.72rem] font-black text-[rgba(239,68,68,0.6)]">✕</span>
+                </div>
+              </div>
+
+              {/* Badges marques */}
+              <div className="mb-5 flex flex-wrap gap-1.5">
+                {[
+                  ["Asana",      "#F06A6A"],
+                  ["QuickBooks", "#2CA01C"],
+                  ["Shopify",    "#96BF48"],
+                  ["Salesforce", "#00A1E0"],
+                  ["Slack",      "#E01E5A"],
+                  ["Notion",     "#888888"],
+                  ["DocuSign",   "#DCAE1D"],
+                  ["WordPress",  "#21759B"],
+                ].map(([name, color]) => (
+                  <span key={name}
+                    className="rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold"
+                    style={{ background: `${color}18`, color: `${color}cc`, border: `1px solid ${color}2e` }}
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+
+              {/* Points de douleur */}
+              <div className="mb-5 space-y-1.5">
+                {[
+                  "Interfaces multiples à apprendre",
+                  "Intégrations fragiles et coûteuses",
+                  "Données dispersées entre outils",
+                  "Support fragmenté par prestataire",
+                ].map(pt => (
+                  <div key={pt} className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgba(239,68,68,0.4)]" />
+                    <span className="text-[0.75rem] text-white/28">{pt}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="my-4 h-px bg-white/[.05]" />
+
+              {/* Prix */}
+              <p className="mb-1 text-[0.64rem] font-bold uppercase tracking-[.14em] text-white/20">
+                Coût cumulé estimé
+              </p>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[2.4rem] font-black leading-none tracking-tight text-white/32 line-through">
+                  66&nbsp;637
+                </span>
+                <span className="text-base font-black text-white/22">€</span>
+                <span className="text-sm text-white/18">/ an</span>
+              </div>
+              <p className="mt-2 text-[0.7rem] font-semibold text-[rgba(239,68,68,0.55)]">
+                Coûts cumulés élevés • Gestion complexe
+              </p>
+            </motion.div>
+
+            {/* ── Connecteur VS ── */}
+            <div className="flex items-center justify-center py-2 lg:py-0">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[.07] bg-white/[.025]">
+                <span className="text-[0.65rem] font-black tracking-wider text-white/22">VS</span>
+              </div>
+            </div>
+
+            {/* ── Colonne droite — DJAMA ── */}
+            <motion.div variants={cardReveal}
+              className="relative overflow-hidden rounded-[1.75rem] border p-6"
+              style={{ borderColor: "rgba(201,165,90,.28)", background: "rgba(201,165,90,.025)", boxShadow: "0 0 80px rgba(201,165,90,.08)" }}
+            >
+              {/* Glow interne */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(201,165,90,0.13),transparent)]" />
+              {/* Barre or top */}
+              <div className="absolute inset-x-0 top-0 h-[2.5px] bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
+
+              <div className="relative">
+                {/* En-tête */}
+                <div className="mb-5 flex items-start justify-between">
+                  <div>
+                    <p className="mb-0.5 text-[0.62rem] font-black uppercase tracking-[.2em]" style={{ color: GOLD }}>
+                      DJAMA — Tout-en-un
+                    </p>
+                    <p className="text-[0.76rem] text-white/30">11 outils · 1 abonnement</p>
+                  </div>
+                  <div className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[0.6rem] font-black uppercase tracking-wider"
+                    style={{ borderColor: "rgba(201,165,90,.3)", background: "rgba(201,165,90,.1)", color: GOLD }}>
+                    <CheckCircle2 size={9} /> Recommandé
+                  </div>
+                </div>
+
+                {/* Features */}
+                <div className="mb-5 space-y-1.5">
+                  {[
+                    "Tous vos outils réunis en un espace",
+                    "Automatisation intégrée nativement",
+                    "Gestion centralisée et simplifiée",
+                    "Support DJAMA inclus",
+                  ].map(f => (
+                    <div key={f} className="flex items-center gap-2">
+                      <CheckCircle2 size={12} className="shrink-0" style={{ color: GOLD }} />
+                      <span className="text-[0.75rem] text-white/65">{f}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="my-4 h-px bg-gradient-to-r from-transparent via-[rgba(201,165,90,0.18)] to-transparent" />
+
+                {/* Prix */}
+                <p className="mb-1 text-[0.64rem] font-bold uppercase tracking-[.14em]" style={{ color: "rgba(201,165,90,.6)" }}>
+                  Abonnement tout inclus
+                </p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-[2.4rem] font-black leading-none tracking-tight text-white">
+                    11,90
+                  </span>
+                  <span className="text-base font-black" style={{ color: GOLD }}>€</span>
+                  <span className="text-sm text-white/35">/ mois</span>
+                </div>
+                <p className="mt-2 text-[0.7rem] font-semibold" style={{ color: "rgba(201,165,90,.65)" }}>
+                  Tous vos outils réunis • Automatisation intégrée • Gestion centralisée
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* ── Bloc économies ── */}
+          <FadeReveal delay={0.3}>
+            <div className="relative mb-6 overflow-hidden rounded-[1.5rem] border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.04)] px-7 py-7 text-center">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_55%_80%_at_50%_0%,rgba(52,211,153,0.1),transparent)]" />
+              <div className="relative">
+                <p className="mb-2 text-[0.62rem] font-black uppercase tracking-[.24em] text-[rgba(52,211,153,0.55)]">
+                  Économie annuelle estimée
+                </p>
+                <p className="text-[2.8rem] font-black leading-none tracking-tight text-[#34d399] sm:text-[3.8rem]">
+                  − 63&nbsp;781€ / an
+                </p>
+                <p className="mt-3 text-[0.82rem] text-white/32">
+                  Avec une solution simple, automatisée et tout-en-un
+                </p>
+              </div>
+            </div>
+          </FadeReveal>
+
+          {/* ── Positionnement ── */}
+          <FadeReveal delay={0.38}>
+            <div className="mb-10 flex flex-wrap items-center justify-center gap-2.5">
+              {[
+                { label: "Moins cher que vos outils actuels", icon: TrendingUp },
+                { label: "Plus simple",                       icon: Zap        },
+                { label: "Automatisé",                        icon: Sparkles   },
+              ].map(({ label, icon: Icon }) => (
+                <div key={label}
+                  className="flex items-center gap-2 rounded-full border border-white/[.07] bg-white/[.03] px-4 py-2 text-[0.78rem] font-semibold text-white/50"
+                >
+                  <Icon size={13} style={{ color: GOLD }} />
+                  {label}
+                </div>
+              ))}
+            </div>
+          </FadeReveal>
+
+          {/* ── CTA ── */}
+          <FadeReveal delay={0.45} className="flex justify-center">
+            <Link href="/espace-client"
+              className="btn-primary group relative overflow-hidden px-9 py-4 text-[0.95rem]">
+              <span className="relative z-10 flex items-center gap-2">
+                Passer à DJAMA
+                <ArrowRight size={15} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </span>
+              <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
+            </Link>
+          </FadeReveal>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
           4. ACCOMPAGNEMENT — Fournisseurs & Marchés
       ══════════════════════════════════════════════ */}
       <section className="relative overflow-hidden bg-[#09090b] py-20 sm:py-28">
