@@ -1,23 +1,27 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, Circle, BookOpen, ChevronRight, ChevronDown,
   Bot, Send, Loader2, User, Sparkles, Calendar, Mail,
   Clock, Award, Target, TrendingUp, MessageSquare,
   ArrowRight, Lock, Play, RotateCcw, ChevronLeft,
-  CreditCard, Landmark,
+  CreditCard, Landmark, Brain, Lightbulb, Download,
+  Star, Maximize2, Minimize2, Copy, Check, X,
+  FileText, Zap, HelpCircle, BookMarked, Rocket,
 } from "lucide-react";
 import { COACHING_MODULES, getNextChapter, type Module, type Chapter } from "@/lib/coaching-content";
 import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
 
 const ease = [0.16, 1, 0.3, 1] as const;
+const ACCENT = "#a78bfa";
 
 /* ─────────────────────────────────────────────────────────
-   PROGRESS (localStorage)
+   STORAGE — Progress
 ───────────────────────────────────────────────────────── */
 const STORAGE_KEY = "djama_coaching_progress";
+const FAV_KEY     = "djama_coaching_favorites";
 
 function loadProgress(): Set<string> {
   if (typeof window === "undefined") return new Set();
@@ -26,33 +30,370 @@ function loadProgress(): Set<string> {
     return new Set(raw ? JSON.parse(raw) as string[] : []);
   } catch { return new Set(); }
 }
-
-function saveProgress(completed: Set<string>) {
+function saveProgress(s: Set<string>) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...s])); } catch {}
+}
+function loadFavorites(): Set<string> {
+  if (typeof window === "undefined") return new Set();
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...completed]));
-  } catch { /* storage full or unavailable */ }
+    const raw = localStorage.getItem(FAV_KEY);
+    return new Set(raw ? JSON.parse(raw) as string[] : []);
+  } catch { return new Set(); }
+}
+function saveFavorites(s: Set<string>) {
+  try { localStorage.setItem(FAV_KEY, JSON.stringify([...s])); } catch {}
 }
 
 /* ─────────────────────────────────────────────────────────
-   VIEWS
+   TYPES
 ───────────────────────────────────────────────────────── */
-type View = "dashboard" | "chapter" | "assistant" | "booking";
+type View      = "chapter" | "assistant" | "booking" | "favorites";
+type AiAction  = "summarize" | "simplify";
 
 /* ─────────────────────────────────────────────────────────
-   COMPOSANT : MODULE SIDEBAR ITEM
+   UTILITY — CopyButton
+───────────────────────────────────────────────────────── */
+function CopyButton({ text, className = "" }: { text: string; className?: string }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <button
+      onClick={copy}
+      title="Copier"
+      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[0.65rem] font-semibold transition-all ${
+        copied
+          ? "border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.1)] text-[#34d399]"
+          : "border-white/[0.1] bg-white/[0.04] text-white/40 hover:border-white/[0.2] hover:text-white/70"
+      } ${className}`}
+    >
+      {copied ? <><Check size={10} /> Copié !</> : <><Copy size={10} /> Copier</>}
+    </button>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — AI Tools Bar
+───────────────────────────────────────────────────────── */
+function AiToolsBar({
+  chapter, module, onOpenAssistant,
+}: {
+  chapter:         Chapter;
+  module:          Module;
+  onOpenAssistant: (q: string) => void;
+}) {
+  const [loading,     setLoading]     = useState(false);
+  const [activeAction, setActiveAction] = useState<AiAction | null>(null);
+  const [result,      setResult]      = useState<string | null>(null);
+  const [error,       setError]       = useState<string | null>(null);
+  const [question,    setQuestion]    = useState("");
+  const [askOpen,     setAskOpen]     = useState(false);
+
+  async function callAi(action: AiAction) {
+    if (loading) return;
+    setActiveAction(action);
+    setLoading(true);
+    setResult(null);
+    setError(null);
+
+    const context = [
+      chapter.intro,
+      ...(chapter.keyPoints?.map((kp) => `${kp.title}: ${kp.text}`) ?? []),
+      chapter.example ?? "",
+      ...(chapter.tips ?? []),
+    ].filter(Boolean).join("\n\n").slice(0, 3000);
+
+    try {
+      const res = await fetch("/api/coaching-ia/ai-tools", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ action, context, chapterTitle: chapter.title }),
+      });
+      const data = await res.json() as { result?: string; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Erreur");
+      setResult(data.result ?? "");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur. Réessayez.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handlePdf() {
+    const content = [
+      `${module.emoji} ${module.title}`,
+      `Chapitre : ${chapter.title}`,
+      `Durée : ${chapter.duration}`,
+      "",
+      "─── Introduction ───",
+      chapter.intro,
+      "",
+      ...(chapter.keyPoints?.flatMap((kp, i) => [
+        `${i + 1}. ${kp.title}`,
+        kp.text,
+        "",
+      ]) ?? []),
+      chapter.example ? ["─── Exemple concret ───", chapter.example, ""].join("\n") : "",
+      ...(chapter.tips ? ["─── À retenir ───", ...chapter.tips.map((t) => `• ${t}`), ""] : []),
+      ...(chapter.actions ? ["─── Actions à faire ───", ...chapter.actions.map((a) => `☐ ${a}`), ""] : []),
+    ].filter(Boolean).join("\n");
+
+    const win = window.open("", "_blank", "width=820,height=700");
+    if (!win) return;
+    win.document.write(`
+      <!DOCTYPE html><html lang="fr"><head>
+      <meta charset="UTF-8"/>
+      <title>${chapter.title} — DJAMA Coaching IA</title>
+      <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+             color:#111;max-width:700px;margin:2rem auto;padding:0 1.5rem;line-height:1.7}
+        .badge{display:inline-block;background:#f3f0ff;color:#7c3aed;
+               border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;
+               letter-spacing:.06em;text-transform:uppercase;margin-bottom:1.2rem}
+        h1{font-size:1.6rem;font-weight:800;margin-bottom:.3rem}
+        .meta{font-size:.75rem;color:#888;margin-bottom:2rem}
+        h2{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+           color:#9ca3af;margin:1.8rem 0 .8rem}
+        p{font-size:.925rem;color:#374151;margin-bottom:.6rem}
+        .key-point{border-left:3px solid #a78bfa;padding:.7rem 1rem;
+                   background:#f8f7ff;margin:.6rem 0;border-radius:0 8px 8px 0}
+        .key-point strong{display:block;font-size:.8rem;font-weight:700;
+                          color:#5b21b6;margin-bottom:.25rem}
+        .key-point p{color:#4b5563;font-size:.85rem}
+        .example-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;
+                     padding:.85rem 1rem;margin:1rem 0}
+        .example-box .label{font-size:.65rem;font-weight:700;color:#d97706;
+                             text-transform:uppercase;letter-spacing:.1em;margin-bottom:.4rem}
+        .tip{display:flex;align-items:flex-start;gap:.6rem;margin:.4rem 0;font-size:.85rem;color:#374151}
+        .tip::before{content:"✓";color:#10b981;font-weight:700;flex-shrink:0}
+        .action{display:flex;align-items:flex-start;gap:.6rem;margin:.4rem 0;
+                font-size:.85rem;color:#374151}
+        .action::before{content:"☐";color:#6d28d9;font-weight:700;flex-shrink:0}
+        .footer{margin-top:3rem;padding-top:1rem;border-top:1px solid #e5e7eb;
+                font-size:.7rem;color:#9ca3af;text-align:center}
+        @media print{body{margin:0}button{display:none}}
+      </style>
+      </head><body>
+      <div class="badge">Coaching IA DJAMA — ${module.emoji} ${module.title}</div>
+      <h1>${chapter.title}</h1>
+      <p class="meta">Durée estimée : ${chapter.duration} · Formation DJAMA</p>
+      <h2>Introduction</h2>
+      <p>${chapter.intro}</p>
+      ${chapter.keyPoints ? `
+        <h2>Points clés</h2>
+        ${chapter.keyPoints.map((kp, i) => `
+          <div class="key-point">
+            <strong>${i + 1}. ${kp.title}</strong>
+            <p>${kp.text}</p>
+          </div>`).join("")}` : ""}
+      ${chapter.example ? `
+        <div class="example-box">
+          <div class="label">💡 Exemple concret</div>
+          <p>${chapter.example}</p>
+        </div>` : ""}
+      ${chapter.tips ? `
+        <h2>À retenir</h2>
+        ${chapter.tips.map((t) => `<div class="tip">${t}</div>`).join("")}` : ""}
+      ${chapter.actions ? `
+        <h2>Actions à faire maintenant</h2>
+        ${chapter.actions.map((a) => `<div class="action">${a}</div>`).join("")}` : ""}
+      <div class="footer">DJAMA Coaching IA · djama.fr · ${new Date().toLocaleDateString("fr-FR")}</div>
+      <script>window.onload=()=>window.print();<\/script>
+      </body></html>`);
+    win.document.close();
+  }
+
+  const TOOLS = [
+    {
+      action:  "summarize" as AiAction,
+      icon:    Brain,
+      label:   "Résumer avec IA",
+      color:   "#a78bfa",
+      colorBg: "rgba(167,139,250,0.1)",
+      border:  "rgba(167,139,250,0.25)",
+    },
+    {
+      action:  "simplify" as AiAction,
+      icon:    Lightbulb,
+      label:   "Expliquer simplement",
+      color:   "#f9a826",
+      colorBg: "rgba(249,168,38,0.1)",
+      border:  "rgba(249,168,38,0.25)",
+    },
+  ];
+
+  return (
+    <div className="mb-8">
+      {/* Tool buttons */}
+      <div className="flex flex-wrap gap-2">
+        {TOOLS.map(({ action, icon: Icon, label, color, colorBg, border }) => (
+          <button
+            key={action}
+            onClick={() => {
+              if (activeAction === action && (result || error)) {
+                setResult(null); setError(null); setActiveAction(null);
+              } else {
+                callAi(action);
+              }
+            }}
+            disabled={loading && activeAction !== action}
+            className="flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[0.72rem] font-semibold transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ borderColor: border, background: colorBg, color }}
+          >
+            {loading && activeAction === action
+              ? <Loader2 size={12} className="animate-spin" />
+              : <Icon size={12} />
+            }
+            {label}
+          </button>
+        ))}
+
+        <button
+          onClick={() => setAskOpen((p) => !p)}
+          className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[0.72rem] font-semibold transition-all hover:scale-[1.02] ${
+            askOpen
+              ? "border-[rgba(96,165,250,0.4)] bg-[rgba(96,165,250,0.15)] text-[#60a5fa]"
+              : "border-[rgba(96,165,250,0.2)] bg-[rgba(96,165,250,0.07)] text-[#60a5fa]"
+          }`}
+        >
+          <HelpCircle size={12} /> Poser une question
+        </button>
+
+        <button
+          onClick={handlePdf}
+          className="flex items-center gap-1.5 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3.5 py-2 text-[0.72rem] font-semibold text-white/40 transition-all hover:scale-[1.02] hover:border-white/[0.2] hover:text-white/65"
+        >
+          <Download size={12} /> Télécharger PDF
+        </button>
+      </div>
+
+      {/* AI Result panel */}
+      <AnimatePresence>
+        {(loading || result || error) && activeAction !== null && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease }}
+            className="overflow-hidden"
+          >
+            <div className="mt-3 overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.05)]">
+              {/* Result header */}
+              <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[rgba(167,139,250,0.15)]">
+                    <Bot size={12} className="text-[#a78bfa]" />
+                  </div>
+                  <span className="text-[0.65rem] font-bold uppercase tracking-widest text-[#a78bfa]">
+                    {activeAction === "summarize" ? "✨ Résumé IA" : "💡 Explication simple"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {result && <CopyButton text={result} />}
+                  <button
+                    onClick={() => { setResult(null); setError(null); setActiveAction(null); }}
+                    className="rounded-lg p-1 text-white/30 transition hover:bg-white/[0.06] hover:text-white/60"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              </div>
+              {/* Result content */}
+              <div className="px-4 py-4 text-sm leading-[1.75] text-white/70" style={{ whiteSpace: "pre-wrap" }}>
+                {loading
+                  ? (
+                    <div className="flex items-center gap-3 text-white/40">
+                      <div className="flex gap-1">
+                        {[0, 1, 2].map((i) => (
+                          <div key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#a78bfa]"
+                            style={{ animationDelay: `${i * 0.15}s` }} />
+                        ))}
+                      </div>
+                      Génération en cours…
+                    </div>
+                  )
+                  : error
+                    ? <p className="text-red-400">{error}</p>
+                    : result
+                }
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Ask question panel */}
+      <AnimatePresence>
+        {askOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease }}
+            className="overflow-hidden"
+          >
+            <div className="mt-3 rounded-2xl border border-[rgba(96,165,250,0.2)] bg-[rgba(96,165,250,0.05)] p-4">
+              <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-[#60a5fa]">
+                ❓ Posez votre question sur ce cours
+              </p>
+              <div className="flex gap-2">
+                <textarea
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder={`Ex : "Je n'ai pas bien compris la partie sur ${chapter.keyPoints?.[0]?.title ?? chapter.title}…"`}
+                  rows={2}
+                  className="flex-1 resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-[rgba(96,165,250,0.35)] transition-colors"
+                />
+                <button
+                  onClick={() => {
+                    if (!question.trim()) return;
+                    onOpenAssistant(
+                      `[Cours : ${module.title} — ${chapter.title}]\n\n${question.trim()}`
+                    );
+                    setQuestion("");
+                    setAskOpen(false);
+                  }}
+                  disabled={!question.trim()}
+                  className="self-end flex items-center gap-1.5 rounded-xl bg-[rgba(96,165,250,0.2)] px-3.5 py-2 text-xs font-bold text-[#60a5fa] transition hover:bg-[rgba(96,165,250,0.3)] disabled:opacity-40"
+                >
+                  <Send size={13} /> Envoyer
+                </button>
+              </div>
+              <p className="mt-2 text-[0.6rem] text-white/25">
+                L&apos;assistant IA pédagogique vous répondra dans le panneau Assistant
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — Module Sidebar Item
 ───────────────────────────────────────────────────────── */
 function ModuleSidebarItem({
-  module, completed, total, expanded, onToggle, onSelectChapter, selectedChapterId,
+  module, completed, total, expanded, onToggle,
+  onSelectChapter, selectedChapterId, favorites,
 }: {
-  module: Module;
-  completed: number;
-  total: number;
-  expanded: boolean;
-  onToggle: () => void;
-  onSelectChapter: (chapterId: string) => void;
+  module:            Module;
+  completed:         number;
+  total:             number;
+  expanded:          boolean;
+  onToggle:          () => void;
+  onSelectChapter:   (chapterId: string) => void;
   selectedChapterId: string | null;
+  favorites:         Set<string>;
 }) {
-  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const pct          = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const isModuleDone = completed === total && total > 0;
+
   return (
     <div>
       <button
@@ -61,20 +402,23 @@ function ModuleSidebarItem({
       >
         <span className="text-lg">{module.emoji}</span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold text-white/80">
-            M{module.id} · {module.title}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-xs font-semibold text-white/80">
+              M{module.id} · {module.title}
+            </p>
+            {isModuleDone && (
+              <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-widest"
+                style={{ background: `rgba(${module.rgb},0.15)`, color: `rgb(${module.rgb})` }}>
+                ✓
+              </span>
+            )}
+          </div>
           <div className="mt-1 flex items-center gap-2">
             <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.08]">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${pct}%`,
-                  background: `rgb(${module.rgb})`,
-                }}
-              />
+              <div className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${pct}%`, background: `rgb(${module.rgb})` }} />
             </div>
-            <span className="text-[0.6rem] text-white/30">{pct}%</span>
+            <span className="text-[0.55rem] text-white/25">{pct}%</span>
           </div>
         </div>
         <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
@@ -95,27 +439,30 @@ function ModuleSidebarItem({
               {module.chapters.map((ch) => {
                 const isDone   = completed > module.chapters.indexOf(ch);
                 const selected = selectedChapterId === ch.id;
+                const isFav    = favorites.has(ch.id);
                 return (
-                  <button
-                    key={ch.id}
-                    onClick={() => onSelectChapter(ch.id)}
+                  <button key={ch.id} onClick={() => onSelectChapter(ch.id)}
                     className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-all ${
                       selected
                         ? "bg-white/[0.08] text-white"
                         : "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
                     }`}
                   >
-                    {isDone ? (
-                      <CheckCircle2 size={11} style={{ color: `rgb(${module.rgb})`, flexShrink: 0 }} />
-                    ) : (
-                      <Circle size={11} className="shrink-0 text-white/20" />
-                    )}
-                    <span className="truncate text-[0.68rem]">{ch.title}</span>
-                    <span className={`ml-auto shrink-0 text-[0.55rem] ${
-                      ch.type === "exercise" ? "text-[#f9a826]" : ch.type === "quiz" ? "text-[#60a5fa]" : "text-white/20"
-                    }`}>
-                      {ch.type === "exercise" ? "✍️" : ch.type === "quiz" ? "❓" : "📖"}
-                    </span>
+                    {isDone
+                      ? <CheckCircle2 size={11} style={{ color: `rgb(${module.rgb})`, flexShrink: 0 }} />
+                      : <Circle size={11} className="shrink-0 text-white/20" />
+                    }
+                    <span className="flex-1 truncate text-[0.68rem]">{ch.title}</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isFav && <Star size={9} className="fill-[#f9a826] text-[#f9a826]" />}
+                      <span className={`text-[0.55rem] ${
+                        ch.type === "exercise" ? "text-[#f9a826]"
+                        : ch.type === "quiz"   ? "text-[#60a5fa]"
+                        : "text-white/20"
+                      }`}>
+                        {ch.type === "exercise" ? "✍️" : ch.type === "quiz" ? "❓" : "📖"}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
@@ -128,38 +475,36 @@ function ModuleSidebarItem({
 }
 
 /* ─────────────────────────────────────────────────────────
-   COMPOSANT : CHAPTER VIEWER
+   COMPOSANT — Chapter Viewer (redesigné)
 ───────────────────────────────────────────────────────── */
 function ChapterViewer({
-  module, chapter, isCompleted, onComplete, onNext, onAskAssistant,
+  module, chapter, isCompleted, isFavorite,
+  onComplete, onNext, onToggleFavorite, onAskAssistant,
 }: {
-  module: Module;
-  chapter: Chapter;
-  isCompleted: boolean;
-  onComplete: () => void;
-  onNext: () => void;
-  onAskAssistant: (q: string) => void;
+  module:           Module;
+  chapter:          Chapter;
+  isCompleted:      boolean;
+  isFavorite:       boolean;
+  onComplete:       () => void;
+  onNext:           () => void;
+  onToggleFavorite: () => void;
+  onAskAssistant:   (q: string) => void;
 }) {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="mb-3 flex items-center gap-2">
-          <span
-            className="rounded-full px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest"
-            style={{
-              background: `rgba(${module.rgb},0.12)`,
-              color:       `rgb(${module.rgb})`,
-              border:      `1px solid rgba(${module.rgb},0.2)`,
-            }}
-          >
-            Module {module.id} · {module.emoji} {module.title}
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
+
+      {/* ── En-tête chapitre ── */}
+      <div className="mb-7">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="rounded-full px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest"
+            style={{ background: `rgba(${module.rgb},0.12)`, color: `rgb(${module.rgb})`, border: `1px solid rgba(${module.rgb},0.22)` }}>
+            {module.emoji} M{module.id} · {module.title}
           </span>
-          <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[0.6rem] text-white/30">
-            {chapter.duration}
+          <span className="flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[0.6rem] text-white/35">
+            <Clock size={9} /> {chapter.duration}
           </span>
           {chapter.type !== "lesson" && (
-            <span className={`rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${
+            <span className={`rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold ${
               chapter.type === "exercise"
                 ? "bg-[rgba(249,168,38,0.1)] text-[#f9a826]"
                 : "bg-[rgba(96,165,250,0.1)] text-[#60a5fa]"
@@ -167,67 +512,90 @@ function ChapterViewer({
               {chapter.type === "exercise" ? "✍️ Exercice" : "❓ Quiz"}
             </span>
           )}
+          {isCompleted && (
+            <span className="rounded-full bg-[rgba(52,211,153,0.1)] px-2.5 py-0.5 text-[0.6rem] font-semibold text-[#34d399]">
+              ✓ Terminé
+            </span>
+          )}
         </div>
-        <h1 className="text-2xl font-bold text-white">{chapter.title}</h1>
-        {isCompleted && (
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[rgba(52,211,153,0.1)] px-3 py-1 text-xs font-semibold text-[#34d399]">
-            <CheckCircle2 size={12} /> Chapitre terminé
-          </div>
-        )}
+
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-[1.5rem] font-extrabold leading-snug text-white">{chapter.title}</h1>
+          <button
+            onClick={onToggleFavorite}
+            title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+            className={`mt-0.5 shrink-0 rounded-xl border p-2 transition-all hover:scale-110 ${
+              isFavorite
+                ? "border-[rgba(249,168,38,0.4)] bg-[rgba(249,168,38,0.12)] text-[#f9a826]"
+                : "border-white/[0.08] bg-transparent text-white/25 hover:border-[rgba(249,168,38,0.3)] hover:text-[#f9a826]"
+            }`}
+          >
+            <Star size={14} className={isFavorite ? "fill-[#f9a826]" : ""} />
+          </button>
+        </div>
       </div>
 
-      {/* Intro */}
-      <p className="mb-8 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-5 py-4 text-sm leading-relaxed text-white/65 italic">
-        {chapter.intro}
-      </p>
+      {/* ── AI Tools Bar ── */}
+      <AiToolsBar chapter={chapter} module={module} onOpenAssistant={onAskAssistant} />
 
-      {/* Key points */}
+      {/* ── Introduction ── */}
+      <div className="mb-8 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.02] px-6 py-5">
+        <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/25 mb-3">
+          Introduction
+        </p>
+        <p className="text-[0.95rem] leading-[1.85] text-white/65 italic">{chapter.intro}</p>
+      </div>
+
+      {/* ── Points clés ── */}
       {chapter.keyPoints && chapter.keyPoints.length > 0 && (
-        <div className="mb-8 space-y-4">
-          {chapter.keyPoints.map(({ title, text }, i) => (
-            <motion.div
-              key={title}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, ease, delay: i * 0.08 }}
-              className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5"
-            >
-              <div className="mb-2 flex items-center gap-2">
-                <div
-                  className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
-                  style={{ background: `rgba(${module.rgb},0.15)`, color: `rgb(${module.rgb})` }}
-                >
-                  {i + 1}
+        <div className="mb-8">
+          <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-white/25">
+            📌 Points clés
+          </p>
+          <div className="space-y-3">
+            {chapter.keyPoints.map(({ title, text }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.35, ease, delay: i * 0.07 }}
+                className="group rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.05]"
+              >
+                <div className="mb-2.5 flex items-center gap-3">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black"
+                    style={{ background: `rgba(${module.rgb},0.15)`, color: `rgb(${module.rgb})` }}>
+                    {i + 1}
+                  </div>
+                  <h3 className="text-sm font-bold text-white">{title}</h3>
                 </div>
-                <h3 className="text-sm font-semibold text-white">{title}</h3>
-              </div>
-              <p className="ml-8 text-sm leading-relaxed text-white/55">{text}</p>
-            </motion.div>
-          ))}
+                <p className="ml-10 text-sm leading-[1.75] text-white/55">{text}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Exemple concret */}
+      {/* ── Exemple concret ── */}
       {chapter.example && (
-        <div className="mb-8 rounded-2xl border border-[rgba(201,165,90,0.18)] bg-[rgba(201,165,90,0.05)] p-5">
-          <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-widest text-[#c9a55a]">
+        <div className="mb-8 rounded-2xl border border-[rgba(201,165,90,0.2)] bg-gradient-to-br from-[rgba(201,165,90,0.06)] to-[rgba(201,165,90,0.03)] p-5">
+          <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-[#c9a55a]">
             💡 Exemple concret
           </p>
-          <p className="text-sm leading-relaxed text-[#c9a55a]/80">{chapter.example}</p>
+          <p className="text-sm leading-[1.75] text-[#c9a55a]/80">{chapter.example}</p>
         </div>
       )}
 
-      {/* Exercice / Quiz */}
+      {/* ── Exercice / Quiz ── */}
       {chapter.exercise && (
-        <div className="mb-8 rounded-2xl border border-[rgba(249,168,38,0.2)] bg-[rgba(249,168,38,0.05)] p-5">
+        <div className="mb-8 rounded-2xl border border-[rgba(249,168,38,0.22)] bg-[rgba(249,168,38,0.05)] p-5">
           <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-[#f9a826]">
-            ✍️ {chapter.type === "quiz" ? "Quiz" : "Exercice pratique"}
+            {chapter.type === "quiz" ? "❓ Quiz" : "✍️ Exercice pratique"}
           </p>
-          <p className="mb-5 text-sm leading-relaxed text-white/60">{chapter.exercise.prompt}</p>
+          <p className="mb-5 text-sm leading-[1.75] text-white/65">{chapter.exercise.prompt}</p>
           <div className="space-y-2">
             {chapter.exercise.hints.map((hint, i) => (
               <div key={i} className="flex items-start gap-3 rounded-xl bg-white/[0.04] p-3">
-                <span className="mt-0.5 text-[0.65rem] font-bold text-[#f9a826]">
+                <span className="mt-0.5 text-[0.62rem] font-black text-[#f9a826]">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <p className="text-sm text-white/60">{hint}</p>
@@ -235,7 +603,9 @@ function ChapterViewer({
             ))}
           </div>
           <button
-            onClick={() => onAskAssistant(`Je travaille sur l'exercice "${chapter.title}". Peux-tu m'aider avec : ${chapter.exercise?.prompt.slice(0, 100)}…`)}
+            onClick={() => onAskAssistant(
+              `[Exercice : ${chapter.title}]\n\nJe travaille sur cet exercice :\n"${chapter.exercise?.prompt.slice(0, 150)}"\n\nPeux-tu m'aider ?`
+            )}
             className="mt-4 flex items-center gap-2 rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] px-4 py-2 text-xs font-semibold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.14)]"
           >
             <Bot size={13} /> Demander à l&apos;assistant IA
@@ -243,34 +613,75 @@ function ChapterViewer({
         </div>
       )}
 
-      {/* Tips */}
-      {chapter.tips && chapter.tips.length > 0 && (
-        <div className="mb-8 space-y-2">
-          <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-white/30">
-            💎 À retenir
+      {/* ── Templates à copier ── */}
+      {chapter.templates && chapter.templates.length > 0 && (
+        <div className="mb-8">
+          <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-white/25">
+            📋 Templates prêts à copier
           </p>
-          {chapter.tips.map((tip, i) => (
-            <div key={i} className="flex items-start gap-3 rounded-xl bg-white/[0.03] px-4 py-3">
-              <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-[#34d399]" />
-              <p className="text-sm text-white/55">{tip}</p>
-            </div>
-          ))}
+          <div className="space-y-3">
+            {chapter.templates.map((template, i) => (
+              <div key={i} className="rounded-2xl border border-[rgba(96,165,250,0.18)] bg-[rgba(96,165,250,0.05)] overflow-hidden">
+                <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+                  <span className="text-[0.62rem] font-bold uppercase tracking-widest text-[#60a5fa]">
+                    Template {i + 1}
+                  </span>
+                  <CopyButton text={template} />
+                </div>
+                <pre className="px-4 py-3 text-xs leading-[1.8] text-white/55 whitespace-pre-wrap break-words font-mono">
+                  {template}
+                </pre>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Actions */}
+      {/* ── À retenir ── */}
+      {chapter.tips && chapter.tips.length > 0 && (
+        <div className="mb-8 rounded-2xl border border-[rgba(52,211,153,0.18)] bg-[rgba(52,211,153,0.04)] p-5">
+          <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-[#34d399]">
+            🧠 À retenir
+          </p>
+          <ul className="space-y-2.5">
+            {chapter.tips.map((tip, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#34d399]" />
+                <p className="text-sm leading-[1.7] text-white/60">{tip}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ── Actions à faire ── */}
+      {chapter.actions && chapter.actions.length > 0 && (
+        <div className="mb-8 rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.05)] p-5">
+          <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-[#a78bfa]">
+            🚀 Actions à faire maintenant
+          </p>
+          <ul className="space-y-2.5">
+            {chapter.actions.map((action, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <Rocket size={14} className="mt-0.5 shrink-0 text-[#a78bfa]" />
+                <p className="text-sm leading-[1.7] text-white/65">{action}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ── Actions nav ── */}
       <div className="flex flex-col gap-3 border-t border-white/[0.07] pt-6 sm:flex-row">
         {!isCompleted ? (
-          <button
-            onClick={onComplete}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3 text-sm font-bold text-white shadow-[0_4px_24px_rgba(167,139,250,0.25)] transition hover:shadow-[0_4px_32px_rgba(167,139,250,0.4)]"
+          <button onClick={onComplete}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(167,139,250,0.25)] transition hover:shadow-[0_4px_36px_rgba(167,139,250,0.4)]"
           >
             <CheckCircle2 size={16} /> Marquer comme terminé
           </button>
         ) : (
-          <button
-            onClick={onNext}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] py-3 text-sm font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.15)]"
+          <button onClick={onNext}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.1)] py-3.5 text-sm font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.18)]"
           >
             Chapitre suivant <ArrowRight size={15} />
           </button>
@@ -281,20 +692,29 @@ function ChapterViewer({
 }
 
 /* ─────────────────────────────────────────────────────────
-   COMPOSANT : ASSISTANT IA
+   COMPOSANT — Assistant IA (mis à jour)
 ───────────────────────────────────────────────────────── */
 type Msg = { role: "user" | "assistant"; content: string };
 
-function AssistantPanel({ currentContext }: { currentContext?: string }) {
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role:    "assistant",
-      content: "Bonjour ! 👋 Je suis votre assistant pédagogique IA. Posez-moi vos questions sur le programme, les concepts IA, ou demandez-moi de l'aide pour les exercices.",
-    },
-  ]);
-  const [input,   setInput]   = useState("");
+function AssistantPanel({
+  currentContext, initMessage, onInitConsumed,
+}: {
+  currentContext?: string;
+  initMessage?:    string;
+  onInitConsumed:  () => void;
+}) {
+  const [messages, setMessages] = useState<Msg[]>([{
+    role:    "assistant",
+    content: "Bonjour ! 👋 Je suis votre assistant pédagogique IA. Posez-moi vos questions sur le programme, les concepts IA, ou demandez-moi de l'aide pour les exercices.",
+  }]);
+  const [input,   setInput]   = useState(initMessage ?? "");
   const [loading, setLoading] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+
+  /* Pré-remplir si initMessage change */
+  useEffect(() => {
+    if (initMessage) { setInput(initMessage); }
+  }, [initMessage]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -303,6 +723,7 @@ function AssistantPanel({ currentContext }: { currentContext?: string }) {
   async function sendMessage(text?: string) {
     const content = (text ?? input).trim();
     if (!content || loading) return;
+    onInitConsumed();
 
     const newMessages: Msg[] = [...messages, { role: "user", content }];
     setMessages(newMessages);
@@ -313,10 +734,7 @@ function AssistantPanel({ currentContext }: { currentContext?: string }) {
       const res = await fetch("/api/coaching-ia/assistant", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          messages: newMessages,
-          context:  currentContext,
-        }),
+        body:    JSON.stringify({ messages: newMessages, context: currentContext }),
       });
       const data = await res.json() as { reply?: string; error?: string };
       setMessages([...newMessages, {
@@ -324,10 +742,7 @@ function AssistantPanel({ currentContext }: { currentContext?: string }) {
         content: data.reply ?? data.error ?? "Erreur de réponse.",
       }]);
     } catch {
-      setMessages([...newMessages, {
-        role:    "assistant",
-        content: "Une erreur est survenue. Réessayez dans un moment.",
-      }]);
+      setMessages([...newMessages, { role: "assistant", content: "Erreur. Réessayez dans un instant." }]);
     } finally {
       setLoading(false);
     }
@@ -342,7 +757,6 @@ function AssistantPanel({ currentContext }: { currentContext?: string }) {
 
   return (
     <div className="flex h-[calc(100vh-56px)] flex-col">
-      {/* Header */}
       <div className="border-b border-white/[0.07] px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.15)]">
@@ -352,19 +766,15 @@ function AssistantPanel({ currentContext }: { currentContext?: string }) {
             <h2 className="text-sm font-bold text-white">Assistant Pédagogique IA</h2>
             <p className="text-[0.65rem] text-white/30">Spécialisé sur le programme Coaching IA DJAMA</p>
           </div>
-          <div className="ml-auto flex h-2 w-2 rounded-full bg-[#34d399] shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+          <div className="ml-auto h-2 w-2 rounded-full bg-[#34d399] shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
-        {/* Suggestions initiales */}
         {messages.length === 1 && (
           <div className="grid grid-cols-2 gap-2">
             {SUGGESTIONS.map((s) => (
-              <button
-                key={s}
-                onClick={() => sendMessage(s)}
+              <button key={s} onClick={() => sendMessage(s)}
                 className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-left text-xs text-white/50 transition hover:border-white/[0.14] hover:text-white/80"
               >
                 {s}
@@ -372,37 +782,25 @@ function AssistantPanel({ currentContext }: { currentContext?: string }) {
             ))}
           </div>
         )}
-
         {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-          >
-            <div
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-                msg.role === "user"
-                  ? "bg-[rgba(201,165,90,0.2)]"
-                  : "bg-[rgba(167,139,250,0.15)]"
-              }`}
-            >
+          <div key={i} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+            <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+              msg.role === "user" ? "bg-[rgba(201,165,90,0.2)]" : "bg-[rgba(167,139,250,0.15)]"
+            }`}>
               {msg.role === "user"
                 ? <User size={13} className="text-[#c9a55a]" />
                 : <Bot size={13} className="text-[#a78bfa]" />
               }
             </div>
-            <div
-              className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                msg.role === "user"
-                  ? "bg-[rgba(201,165,90,0.12)] text-white/80"
-                  : "border border-white/[0.07] bg-white/[0.04] text-white/70"
-              }`}
-              style={{ whiteSpace: "pre-wrap" }}
-            >
+            <div className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              msg.role === "user"
+                ? "bg-[rgba(201,165,90,0.12)] text-white/80"
+                : "border border-white/[0.07] bg-white/[0.04] text-white/70"
+            }`} style={{ whiteSpace: "pre-wrap" }}>
               {msg.content}
             </div>
           </div>
         ))}
-
         {loading && (
           <div className="flex gap-3">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgba(167,139,250,0.15)]">
@@ -410,41 +808,28 @@ function AssistantPanel({ currentContext }: { currentContext?: string }) {
             </div>
             <div className="flex items-center gap-1.5 rounded-2xl border border-white/[0.07] bg-white/[0.04] px-4 py-3">
               {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#a78bfa]"
-                  style={{ animationDelay: `${i * 0.15}s` }}
-                />
+                <div key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#a78bfa]"
+                  style={{ animationDelay: `${i * 0.15}s` }} />
               ))}
             </div>
           </div>
         )}
-
         <div ref={endRef} />
       </div>
 
-      {/* Input */}
       <div className="border-t border-white/[0.07] px-4 py-3">
-        <div className="flex items-end gap-2 rounded-2xl border border-white/[0.09] bg-white/[0.04] px-4 py-3 focus-within:border-[rgba(167,139,250,0.4)]">
+        <div className="flex items-end gap-2 rounded-2xl border border-white/[0.09] bg-white/[0.04] px-4 py-3 focus-within:border-[rgba(167,139,250,0.4)] transition-colors">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-              }
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
             placeholder="Posez votre question…"
             rows={1}
             className="flex-1 resize-none bg-transparent text-sm text-white placeholder-white/25 outline-none"
             style={{ maxHeight: "120px" }}
           />
-          <button
-            onClick={() => sendMessage()}
-            disabled={!input.trim() || loading}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#a78bfa] text-white transition disabled:opacity-40"
-          >
+          <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#a78bfa] text-white transition disabled:opacity-40">
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
           </button>
         </div>
@@ -457,7 +842,78 @@ function AssistantPanel({ currentContext }: { currentContext?: string }) {
 }
 
 /* ─────────────────────────────────────────────────────────
-   COMPOSANT : RÉSERVATION EXPERT
+   COMPOSANT — Panneau Favoris
+───────────────────────────────────────────────────────── */
+function FavoritesPanel({
+  favorites, onSelectChapter,
+}: {
+  favorites:       Set<string>;
+  onSelectChapter: (moduleId: string, chapterId: string) => void;
+}) {
+  const favChapters = COACHING_MODULES.flatMap((m) =>
+    m.chapters
+      .filter((c) => favorites.has(c.id))
+      .map((c) => ({ module: m, chapter: c }))
+  );
+
+  if (favChapters.length === 0) {
+    return (
+      <div className="flex h-[calc(100vh-56px)] flex-col items-center justify-center gap-4 text-center px-6">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03]">
+          <Star size={28} className="text-white/20" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-white/50">Aucun favori</p>
+          <p className="mt-1 text-xs text-white/25">
+            Cliquez sur ⭐ dans n&apos;importe quel cours pour le sauvegarder ici.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8">
+      <div className="mb-6">
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(249,168,38,0.25)] bg-[rgba(249,168,38,0.08)] px-3 py-1 text-xs font-bold text-[#f9a826]">
+          <Star size={11} className="fill-[#f9a826]" /> {favChapters.length} favoris
+        </div>
+        <h2 className="text-xl font-bold text-white">Vos cours mis en favoris</h2>
+        <p className="mt-1.5 text-sm text-white/35">Reprenez rapidement là où vous étiez.</p>
+      </div>
+
+      <div className="space-y-3">
+        {favChapters.map(({ module, chapter }) => (
+          <motion.button
+            key={chapter.id}
+            onClick={() => onSelectChapter(module.id, chapter.id)}
+            whileHover={{ x: 4 }}
+            transition={{ duration: 0.18 }}
+            className="group flex w-full items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 text-left transition-all hover:border-white/[0.12] hover:bg-white/[0.05]"
+          >
+            <span className="text-2xl">{module.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <p className="mb-0.5 text-[0.62rem] font-bold uppercase tracking-widest"
+                style={{ color: module.color }}>
+                M{module.id} · {module.title}
+              </p>
+              <p className="truncate font-semibold text-white">{chapter.title}</p>
+              <div className="mt-1 flex items-center gap-2 text-[0.6rem] text-white/30">
+                <Clock size={9} /> {chapter.duration}
+                <span>·</span>
+                <span>{chapter.type === "exercise" ? "✍️ Exercice" : chapter.type === "quiz" ? "❓ Quiz" : "📖 Cours"}</span>
+              </div>
+            </div>
+            <ArrowRight size={14} className="mt-1 shrink-0 text-white/20 transition-transform group-hover:translate-x-0.5 group-hover:text-white/50" />
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — Booking Panel (inchangé)
 ───────────────────────────────────────────────────────── */
 function BookingPanel() {
   const [name,         setName]         = useState("");
@@ -471,25 +927,19 @@ function BookingPanel() {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !availability) return;
     setSending(true);
-
     try {
       await fetch("/api/rdv", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          parentName:   name,
-          studentName:  "Coaching IA",
-          email:        email.trim(),
-          level:        "Coaching IA",
-          subject:      goal || "Session de coaching IA",
-          availability,
-          message:      goal,
+          parentName:  name, studentName: "Coaching IA",
+          email:       email.trim(), level: "Coaching IA",
+          subject:     goal || "Session de coaching IA",
+          availability, message: goal,
         }),
       });
       setSent(true);
-    } finally {
-      setSending(false);
-    }
+    } finally { setSending(false); }
   }
 
   const SLOTS = [
@@ -513,12 +963,11 @@ function BookingPanel() {
         </p>
       </div>
 
-      {/* Bénéfices */}
       <div className="mb-8 grid grid-cols-3 gap-3">
         {[
-          { icon: Target,    label: "Objectifs revus",   color: "#a78bfa" },
-          { icon: TrendingUp, label: "Progression mesurée", color: "#4ade80" },
-          { icon: Award,     label: "Plan ajusté",       color: "#c9a55a" },
+          { icon: Target,     label: "Objectifs revus",      color: "#a78bfa" },
+          { icon: TrendingUp, label: "Progression mesurée",  color: "#4ade80" },
+          { icon: Award,      label: "Plan ajusté",          color: "#c9a55a" },
         ].map(({ icon: Icon, label, color }) => (
           <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 text-center">
             <Icon size={18} className="mx-auto mb-1.5" style={{ color }} />
@@ -529,100 +978,51 @@ function BookingPanel() {
 
       <AnimatePresence mode="wait">
         {sent ? (
-          <motion.div
-            key="sent"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.06)] p-8 text-center"
-          >
+          <motion.div key="sent" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+            className="rounded-2xl border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.06)] p-8 text-center">
             <CheckCircle2 size={40} className="mx-auto mb-4 text-[#34d399]" />
             <h3 className="mb-2 text-lg font-bold text-white">Demande envoyée !</h3>
-            <p className="text-sm text-white/50">
-              L&apos;équipe DJAMA vous contacte sous 24h pour confirmer la date et l&apos;heure de la session.
-            </p>
+            <p className="text-sm text-white/50">L&apos;équipe DJAMA vous contacte sous 24h pour confirmer la session.</p>
           </motion.div>
         ) : (
           <motion.form key="form" onSubmit={handleSubmit} className="space-y-4">
-            {/* Nom */}
-            <div>
-              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">
-                Votre nom
-              </label>
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-                <User size={14} className="text-white/25" />
-                <input
-                  type="text"
-                  placeholder="Prénom Nom"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="flex-1 bg-transparent text-sm text-white placeholder-white/20 outline-none"
-                />
+            {[
+              { label: "Votre nom", icon: User, type: "text", value: name, setter: setName, placeholder: "Prénom Nom" },
+              { label: "Email", icon: Mail, type: "email", value: email, setter: setEmail, placeholder: "votre@email.fr" },
+            ].map(({ label, icon: Icon, type, value, setter, placeholder }) => (
+              <div key={label}>
+                <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">{label}</label>
+                <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                  <Icon size={14} className="text-white/25" />
+                  <input type={type} placeholder={placeholder} value={value}
+                    onChange={(e) => setter(e.target.value)} required
+                    className="flex-1 bg-transparent text-sm text-white placeholder-white/20 outline-none" />
+                </div>
               </div>
-            </div>
-
-            {/* Email */}
+            ))}
             <div>
-              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">
-                Email
-              </label>
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-                <Mail size={14} className="text-white/25" />
-                <input
-                  type="email"
-                  placeholder="votre@email.fr"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="flex-1 bg-transparent text-sm text-white placeholder-white/20 outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Disponibilité */}
-            <div>
-              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">
-                Disponibilité préférée
-              </label>
+              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">Disponibilité</label>
               <div className="relative flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
                 <Clock size={14} className="shrink-0 text-white/25" />
-                <select
-                  value={availability}
-                  onChange={(e) => setAvailability(e.target.value)}
-                  required
+                <select value={availability} onChange={(e) => setAvailability(e.target.value)} required
                   style={{ color: availability ? "white" : "rgba(255,255,255,0.2)" }}
-                  className="flex-1 appearance-none bg-transparent text-sm outline-none [&>option]:bg-[#111113] [&>option]:text-white"
-                >
+                  className="flex-1 appearance-none bg-transparent text-sm outline-none [&>option]:bg-[#111113] [&>option]:text-white">
                   <option value="" disabled>Quand êtes-vous disponible ?</option>
-                  {SLOTS.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
+                  {SLOTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
                 <ChevronDown size={12} className="pointer-events-none shrink-0 text-white/20" />
               </div>
             </div>
-
-            {/* Objectif */}
             <div>
-              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">
-                Objectif de la session (optionnel)
-              </label>
+              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">Objectif (optionnel)</label>
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-                <textarea
-                  placeholder="Ex : je bloque sur module 3, je veux revoir ma stratégie IA, je veux un retour sur mes automatisations…"
-                  value={goal}
-                  onChange={(e) => setGoal(e.target.value)}
-                  rows={3}
-                  className="w-full resize-none bg-transparent text-sm text-white placeholder-white/20 outline-none"
-                />
+                <textarea placeholder="Ex : je bloque sur module 3, je veux revoir ma stratégie IA…"
+                  value={goal} onChange={(e) => setGoal(e.target.value)} rows={3}
+                  className="w-full resize-none bg-transparent text-sm text-white placeholder-white/20 outline-none" />
               </div>
             </div>
-
-            <button
-              type="submit"
-              disabled={!name.trim() || !email.trim() || !availability || sending}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(167,139,250,0.2)] transition hover:shadow-[0_4px_32px_rgba(167,139,250,0.35)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            <button type="submit" disabled={!name.trim() || !email.trim() || !availability || sending}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(167,139,250,0.2)] transition hover:shadow-[0_4px_32px_rgba(167,139,250,0.35)] disabled:cursor-not-allowed disabled:opacity-50">
               {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               {sending ? "Envoi…" : "Réserver ma session"}
             </button>
@@ -634,19 +1034,19 @@ function BookingPanel() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   COMPOSANT : PREVIEW GATE
+   COMPOSANT — Preview Gate (inchangé)
 ───────────────────────────────────────────────────────── */
 type PaymentTab = "carte" | "paypal" | "virement";
 
 function PreviewGate({ user }: {
   user: { id: string; email: string | undefined; name: string | undefined } | null;
 }) {
-  const [payTab,       setPayTab]       = useState<PaymentTab>("carte");
-  const [loadingPay,   setLoadingPay]   = useState(false);
-  const [virEmail,     setVirEmail]     = useState(user?.email ?? "");
-  const [virName,      setVirName]      = useState(user?.name ?? "");
-  const [virSent,      setVirSent]      = useState(false);
-  const [virSending,   setVirSending]   = useState(false);
+  const [payTab,     setPayTab]     = useState<PaymentTab>("carte");
+  const [loadingPay, setLoadingPay] = useState(false);
+  const [virEmail,   setVirEmail]   = useState(user?.email ?? "");
+  const [virName,    setVirName]    = useState(user?.name  ?? "");
+  const [virSent,    setVirSent]    = useState(false);
+  const [virSending, setVirSending] = useState(false);
 
   const firstModule  = COACHING_MODULES[0];
   const freeChapter  = firstModule.chapters[0];
@@ -658,9 +1058,7 @@ function PreviewGate({ user }: {
       const res = await fetch("/api/checkout/coaching-ia", { method: "POST" });
       const data = await res.json() as { url?: string };
       if (data.url) window.location.href = data.url;
-    } finally {
-      setLoadingPay(false);
-    }
+    } finally { setLoadingPay(false); }
   }
 
   async function handlePayPal() {
@@ -669,9 +1067,7 @@ function PreviewGate({ user }: {
       const res = await fetch("/api/checkout/coaching-ia/paypal", { method: "POST" });
       const data = await res.json() as { url?: string };
       if (data.url) window.location.href = data.url;
-    } finally {
-      setLoadingPay(false);
-    }
+    } finally { setLoadingPay(false); }
   }
 
   async function handleVirement(e: React.FormEvent) {
@@ -680,85 +1076,60 @@ function PreviewGate({ user }: {
     setVirSending(true);
     try {
       await fetch("/api/checkout/coaching-ia/virement", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: virEmail.trim(), name: virName.trim() }),
       });
       setVirSent(true);
-    } finally {
-      setVirSending(false);
-    }
+    } finally { setVirSending(false); }
   }
 
   return (
     <div className="min-h-screen bg-[#07080e] px-4 py-10 md:px-8">
-      {/* Header */}
       <div className="mx-auto mb-10 max-w-5xl text-center">
         <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.07)] px-4 py-1.5 text-xs font-bold tracking-widest text-[#a78bfa] uppercase">
           <Lock size={11} /> Accès restreint
         </div>
-        <h1 className="mt-3 text-3xl font-bold text-white md:text-4xl">
-          Coaching IA DJAMA
-        </h1>
+        <h1 className="mt-3 text-3xl font-bold text-white md:text-4xl">Coaching IA DJAMA</h1>
         <p className="mt-3 text-sm text-white/45 max-w-md mx-auto">
-          Débloquez les 5 modules complets, l&apos;assistant pédagogique IA et les sessions de coaching individuel.
+          Débloquez les {COACHING_MODULES.length} modules complets, l&apos;assistant pédagogique IA et les sessions de coaching individuel.
         </p>
       </div>
 
       <div className="mx-auto max-w-5xl flex flex-col gap-8 lg:flex-row lg:items-start">
-
-        {/* ── LEFT : Preview contenu ─────────────────── */}
         <div className="flex-1 min-w-0 space-y-4">
-
-          {/* Module 1 Chapitre 1 — aperçu gratuit */}
+          {/* Free preview */}
           <div className="rounded-2xl border border-[rgba(96,165,250,0.2)] bg-white/[0.03] overflow-hidden">
             <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
               <span className="text-lg">{firstModule.emoji}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-[0.65rem] font-bold uppercase tracking-widest text-[#60a5fa]">
-                  Module 1 · {firstModule.title}
-                </p>
-                <p className="truncate text-sm font-semibold text-white mt-0.5">
-                  {freeChapter.title}
-                </p>
+                <p className="text-[0.65rem] font-bold uppercase tracking-widest text-[#60a5fa]">Module 1 · {firstModule.title}</p>
+                <p className="truncate text-sm font-semibold text-white mt-0.5">{freeChapter.title}</p>
               </div>
-              <span className="shrink-0 rounded-full border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.08)] px-2.5 py-1 text-[0.6rem] font-bold text-[#34d399]">
-                Aperçu gratuit
-              </span>
+              <span className="shrink-0 rounded-full border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.08)] px-2.5 py-1 text-[0.6rem] font-bold text-[#34d399]">Aperçu gratuit</span>
             </div>
             <div className="px-5 py-5">
-              <p className="text-sm leading-relaxed text-white/60 italic">
-                {freeChapter.intro}
-              </p>
+              <p className="text-sm leading-relaxed text-white/60 italic">{freeChapter.intro}</p>
               <div className="mt-4 flex items-center gap-2 text-[0.65rem] text-white/25">
-                <Clock size={10} /> {freeChapter.duration}
-                <span className="mx-1">·</span>
-                <BookOpen size={10} /> Leçon
+                <Clock size={10} /> {freeChapter.duration}<span className="mx-1">·</span><BookOpen size={10} /> Leçon
               </div>
             </div>
           </div>
 
-          {/* Modules 2–5 verrouillés */}
-          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/25 px-1">
-            Modules inclus dans l&apos;accès complet
-          </p>
+          {/* Locked modules */}
+          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/25 px-1">Modules inclus dans l&apos;accès complet</p>
           {lockedModules.map((mod) => (
             <div key={mod.id} className="relative rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
-              {/* Lock overlay */}
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[#07080e]/60 backdrop-blur-[2px]">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.06]">
                   <Lock size={14} className="text-white/40" />
                 </div>
                 <span className="text-[0.65rem] font-semibold text-white/35">Accès complet requis</span>
               </div>
-              {/* Blurred content */}
               <div className="pointer-events-none select-none opacity-40 blur-[2px] px-5 py-4">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-xl">{mod.emoji}</span>
                   <div>
-                    <p className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: mod.color }}>
-                      Module {mod.id}
-                    </p>
+                    <p className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: mod.color }}>Module {mod.id}</p>
                     <p className="text-sm font-semibold text-white">{mod.title}</p>
                   </div>
                   <span className="ml-auto text-[0.6rem] text-white/30">{mod.duration}</span>
@@ -766,14 +1137,10 @@ function PreviewGate({ user }: {
                 <p className="text-xs text-white/40 leading-relaxed">{mod.tagline}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {mod.chapters.slice(0, 3).map((ch) => (
-                    <span key={ch.id} className="rounded-lg bg-white/[0.04] px-2.5 py-1 text-[0.6rem] text-white/30">
-                      {ch.title}
-                    </span>
+                    <span key={ch.id} className="rounded-lg bg-white/[0.04] px-2.5 py-1 text-[0.6rem] text-white/30">{ch.title}</span>
                   ))}
                   {mod.chapters.length > 3 && (
-                    <span className="rounded-lg bg-white/[0.04] px-2.5 py-1 text-[0.6rem] text-white/25">
-                      +{mod.chapters.length - 3} chapitres
-                    </span>
+                    <span className="rounded-lg bg-white/[0.04] px-2.5 py-1 text-[0.6rem] text-white/25">+{mod.chapters.length - 3} chapitres</span>
                   )}
                 </div>
               </div>
@@ -781,26 +1148,25 @@ function PreviewGate({ user }: {
           ))}
         </div>
 
-        {/* ── RIGHT : Panneau paiement ───────────────── */}
+        {/* Payment panel */}
         <div className="lg:sticky lg:top-10 lg:w-[340px] shrink-0">
           <div className="rounded-2xl border border-white/[0.09] bg-white/[0.03] overflow-hidden">
-
-            {/* En-tête */}
             <div className="border-b border-white/[0.07] px-6 py-5">
               <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.07)] px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-widest text-[#a78bfa]">
-                <Sparkles size={9} /> Accès à vie
+                <Sparkles size={9} /> Accès complet
               </div>
               <h2 className="mt-2 text-lg font-bold text-white">Débloquer l&apos;accès complet</h2>
               <div className="mt-3 flex items-end gap-2">
                 <span className="text-4xl font-extrabold text-white">190€</span>
-                <span className="mb-1 text-xs text-white/35">paiement unique</span>
+                <span className="mb-1 text-xs text-white/35">paiement unique · 3 mois</span>
               </div>
               <ul className="mt-4 space-y-1.5">
                 {[
-                  "5 modules · 17 chapitres",
+                  `${COACHING_MODULES.length} modules · ${COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0)} chapitres`,
                   "Assistant pédagogique IA",
+                  "Outils IA dans chaque cours (résumé, simplification)",
                   "Sessions de coaching individuel",
-                  "Accès à vie + mises à jour",
+                  "Accès 3 mois + mises à jour",
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-2 text-xs text-white/55">
                     <CheckCircle2 size={11} className="shrink-0 text-[#34d399]" /> {item}
@@ -808,137 +1174,77 @@ function PreviewGate({ user }: {
                 ))}
               </ul>
             </div>
-
-            {/* Onglets méthode de paiement */}
             <div className="px-6 pt-5">
               <div className="mb-4 flex gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
                 {([
-                  { key: "carte",    icon: <CreditCard size={12} />, label: "Carte"   },
+                  { key: "carte",    icon: <CreditCard size={12} />, label: "Carte"    },
                   { key: "paypal",   icon: <span className="text-[0.65rem] font-extrabold text-[#0070BA]">PP</span>, label: "PayPal" },
                   { key: "virement", icon: <Landmark size={12} />,   label: "Virement" },
                 ] as { key: PaymentTab; icon: React.ReactNode; label: string }[]).map(({ key, icon, label }) => (
-                  <button
-                    key={key}
-                    onClick={() => setPayTab(key)}
+                  <button key={key} onClick={() => setPayTab(key)}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[0.65rem] font-semibold transition-all ${
                       payTab === key
                         ? "bg-[rgba(167,139,250,0.15)] text-[#a78bfa] border border-[rgba(167,139,250,0.25)]"
                         : "text-white/35 hover:text-white/65"
-                    }`}
-                  >
+                    }`}>
                     {icon} {label}
                   </button>
                 ))}
               </div>
 
-              {/* Tab : Carte (Stripe) */}
               {payTab === "carte" && (
                 <div className="pb-6">
-                  <p className="mb-4 text-xs text-white/40 leading-relaxed">
-                    Paiement sécurisé via Stripe. CB, Visa, Mastercard — vos données ne nous parviennent jamais.
-                  </p>
-                  <button
-                    onClick={handleStripe}
-                    disabled={loadingPay}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(167,139,250,0.25)] transition hover:shadow-[0_4px_32px_rgba(167,139,250,0.4)] disabled:opacity-60"
-                  >
-                    {loadingPay
-                      ? <Loader2 size={15} className="animate-spin" />
-                      : <CreditCard size={15} />
-                    }
-                    {loadingPay ? "Redirection…" : "Payer par carte — 190€"}
+                  <p className="mb-4 text-xs text-white/40 leading-relaxed">Paiement sécurisé via Stripe. Vos données ne nous parviennent jamais.</p>
+                  <button onClick={handleStripe} disabled={loadingPay}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(167,139,250,0.25)] transition hover:shadow-[0_4px_32px_rgba(167,139,250,0.4)] disabled:opacity-60">
+                    {loadingPay ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
+                    {loadingPay ? "Redirection…" : "Commencer maintenant → 190€"}
                   </button>
                 </div>
               )}
-
-              {/* Tab : PayPal */}
               {payTab === "paypal" && (
                 <div className="pb-6">
-                  <p className="mb-4 text-xs text-white/40 leading-relaxed">
-                    Vous serez redirigé vers PayPal pour finaliser votre paiement de 190€.
-                  </p>
-                  <button
-                    onClick={handlePayPal}
-                    disabled={loadingPay}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0070BA] py-3.5 text-sm font-bold text-white shadow-[0_4px_20px_rgba(0,112,186,0.3)] transition hover:bg-[#005ea6] hover:shadow-[0_4px_28px_rgba(0,112,186,0.4)] disabled:opacity-60"
-                  >
-                    {loadingPay
-                      ? <Loader2 size={15} className="animate-spin" />
-                      : <span className="text-base font-black leading-none">PayPal</span>
-                    }
+                  <p className="mb-4 text-xs text-white/40 leading-relaxed">Vous serez redirigé vers PayPal pour finaliser votre paiement.</p>
+                  <button onClick={handlePayPal} disabled={loadingPay}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0070BA] py-3.5 text-sm font-bold text-white transition hover:bg-[#005ea6] disabled:opacity-60">
+                    {loadingPay ? <Loader2 size={15} className="animate-spin" /> : <span className="text-base font-black leading-none">PayPal</span>}
                     {loadingPay ? "Redirection…" : "Payer via PayPal — 190€"}
                   </button>
                 </div>
               )}
-
-              {/* Tab : Virement */}
               {payTab === "virement" && (
                 <div className="pb-6">
                   <AnimatePresence mode="wait">
                     {virSent ? (
-                      <motion.div
-                        key="sent"
-                        initial={{ opacity: 0, scale: 0.97 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="rounded-2xl border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.06)] px-5 py-6 text-center"
-                      >
+                      <motion.div key="sent" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+                        className="rounded-2xl border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.06)] px-5 py-6 text-center">
                         <CheckCircle2 size={32} className="mx-auto mb-3 text-[#34d399]" />
                         <p className="text-sm font-semibold text-white">Demande enregistrée</p>
-                        <p className="mt-1.5 text-xs leading-relaxed text-white/45">
-                          Nous activons votre accès sous 24h à réception du virement.
-                        </p>
+                        <p className="mt-1.5 text-xs leading-relaxed text-white/45">Accès activé sous 24h à réception.</p>
                       </motion.div>
                     ) : (
                       <motion.form key="form" onSubmit={handleVirement} className="space-y-3">
-                        {/* IBAN info */}
-                        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[0.65rem] text-white/45 leading-relaxed space-y-0.5">
+                        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[0.65rem] text-white/45 space-y-0.5">
                           <p>Virement de <span className="font-bold text-white/70">190€</span></p>
                           <p>IBAN : <span className="font-mono text-white/65">FR76 3000 6000 0112 3456 7890 189</span></p>
-                          <p>BIC : <span className="font-mono text-white/65">AGRIFRPP</span></p>
                           <p>Référence : <span className="font-semibold text-[#a78bfa]">Coaching IA [votre email]</span></p>
                         </div>
-
-                        {/* Email */}
-                        <div>
-                          <label className="mb-1 block text-[0.6rem] font-semibold uppercase tracking-widest text-white/30">
-                            Votre email
-                          </label>
-                          <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
-                            <Mail size={12} className="text-white/25" />
-                            <input
-                              type="email"
-                              required
-                              placeholder="votre@email.fr"
-                              value={virEmail}
-                              onChange={(e) => setVirEmail(e.target.value)}
-                              className="flex-1 bg-transparent text-xs text-white placeholder-white/20 outline-none"
-                            />
+                        {[
+                          { label: "Email", type: "email", value: virEmail, setter: setVirEmail, placeholder: "votre@email.fr", icon: Mail },
+                          { label: "Nom complet", type: "text", value: virName, setter: setVirName, placeholder: "Prénom Nom", icon: User },
+                        ].map(({ label, type, value, setter, placeholder, icon: Icon }) => (
+                          <div key={label}>
+                            <label className="mb-1 block text-[0.6rem] font-semibold uppercase tracking-widest text-white/30">{label}</label>
+                            <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
+                              <Icon size={12} className="text-white/25" />
+                              <input type={type} required placeholder={placeholder} value={value}
+                                onChange={(e) => setter(e.target.value)}
+                                className="flex-1 bg-transparent text-xs text-white placeholder-white/20 outline-none" />
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Nom complet */}
-                        <div>
-                          <label className="mb-1 block text-[0.6rem] font-semibold uppercase tracking-widest text-white/30">
-                            Nom complet
-                          </label>
-                          <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
-                            <User size={12} className="text-white/25" />
-                            <input
-                              type="text"
-                              required
-                              placeholder="Prénom Nom"
-                              value={virName}
-                              onChange={(e) => setVirName(e.target.value)}
-                              className="flex-1 bg-transparent text-xs text-white placeholder-white/20 outline-none"
-                            />
-                          </div>
-                        </div>
-
-                        <button
-                          type="submit"
-                          disabled={!virEmail.trim() || !virName.trim() || virSending}
-                          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.1)] py-3 text-xs font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.18)] disabled:opacity-50"
-                        >
+                        ))}
+                        <button type="submit" disabled={!virEmail.trim() || !virName.trim() || virSending}
+                          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.1)] py-3 text-xs font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.18)] disabled:opacity-50">
                           {virSending ? <Loader2 size={13} className="animate-spin" /> : <Landmark size={13} />}
                           {virSending ? "Envoi…" : "Confirmer ma demande de virement"}
                         </button>
@@ -959,30 +1265,33 @@ function PreviewGate({ user }: {
    PAGE PRINCIPALE
 ───────────────────────────────────────────────────────── */
 export default function EspaceCoachingIA() {
-  /* ── Access gate ────────────────────────────────────────── */
   const { access, user } = useCoachingIAAccess();
 
   /* ── State ─────────────────────────────────────────────── */
-  const [completed,          setCompleted]         = useState<Set<string>>(new Set());
-  const [selectedModuleId,   setSelectedModuleId]  = useState<string>("1");
-  const [selectedChapterId,  setSelectedChapterId] = useState<string | null>("1.1");
-  const [expandedModules,    setExpandedModules]   = useState<Set<string>>(new Set(["1"]));
-  const [view,               setView]              = useState<View>("chapter");
-  const [sidebarOpen,        setSidebarOpen]       = useState(true);
-  const [assistantInitMsg,   setAssistantInitMsg]  = useState<string | undefined>();
+  const [completed,         setCompleted]         = useState<Set<string>>(new Set());
+  const [favorites,         setFavorites]         = useState<Set<string>>(new Set());
+  const [selectedModuleId,  setSelectedModuleId]  = useState<string>("1");
+  const [selectedChapterId, setSelectedChapterId] = useState<string | null>("1.1");
+  const [expandedModules,   setExpandedModules]   = useState<Set<string>>(new Set(["1"]));
+  const [view,              setView]              = useState<View>("chapter");
+  const [sidebarOpen,       setSidebarOpen]       = useState(true);
+  const [focusMode,         setFocusMode]         = useState(false);
+  const [assistantInitMsg,  setAssistantInitMsg]  = useState<string | undefined>();
 
-  /* ── Charger progress depuis localStorage ────────────── */
+  /* ── Load from localStorage ────────────────────────────── */
   useEffect(() => {
     setCompleted(loadProgress());
+    setFavorites(loadFavorites());
   }, []);
 
   /* ── Helpers ───────────────────────────────────────────── */
   const currentModule  = COACHING_MODULES.find((m) => m.id === selectedModuleId)!;
   const currentChapter = currentModule?.chapters.find((c) => c.id === selectedChapterId) ?? currentModule?.chapters[0];
 
-  const totalChapters     = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
-  const completedCount    = completed.size;
-  const overallPct        = Math.round((completedCount / totalChapters) * 100);
+  const totalChapters  = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
+  const completedCount = completed.size;
+  const overallPct     = Math.round((completedCount / totalChapters) * 100);
+  const favCount       = favorites.size;
 
   function toggleModule(id: string) {
     setExpandedModules((prev) => {
@@ -1006,6 +1315,14 @@ export default function EspaceCoachingIA() {
     saveProgress(next);
   }
 
+  function toggleFavorite() {
+    if (!selectedChapterId) return;
+    const next = new Set(favorites);
+    next.has(selectedChapterId) ? next.delete(selectedChapterId) : next.add(selectedChapterId);
+    setFavorites(next);
+    saveFavorites(next);
+  }
+
   function goNext() {
     if (!selectedModuleId || !selectedChapterId) return;
     const nxt = getNextChapter(selectedModuleId, selectedChapterId);
@@ -1020,39 +1337,41 @@ export default function EspaceCoachingIA() {
     setView("assistant");
   }
 
-  /* ── Nav gauche sur mobile ────────────────────────────── */
   const currentContext = currentChapter
     ? `Module ${selectedModuleId} "${currentModule?.title}" — Chapitre "${currentChapter.title}"`
     : undefined;
 
-  /* ── Access gate early returns ──────────────────────────── */
+  /* ── Access gate ──────────────────────────────────────── */
   if (access === "loading") return null;
-
-  /* DEV bypass — NEXT_PUBLIC_DEV_BYPASS_COACHING=true dans .env.local */
   const devBypass = process.env.NEXT_PUBLIC_DEV_BYPASS_COACHING === "true";
   if (access === "preview" && !devBypass) return <PreviewGate user={user} />;
 
-  return (
-    <div className="flex h-[calc(100vh-56px)] overflow-hidden">
+  const TAB_ITEMS: { key: View; icon: React.ElementType; label: string; badge?: number }[] = [
+    { key: "chapter",   icon: BookOpen,    label: "Cours" },
+    { key: "assistant", icon: Bot,         label: "Assistant IA" },
+    { key: "favorites", icon: Star,        label: "Favoris", badge: favCount || undefined },
+    { key: "booking",   icon: Calendar,    label: "Réserver" },
+  ];
 
-      {/* ════════════════════════════════════════════════════
-          SIDEBAR GAUCHE
-      ════════════════════════════════════════════════════ */}
+  return (
+    <div className={`flex overflow-hidden transition-all duration-300 ${focusMode ? "h-screen" : "h-[calc(100vh-56px)]"}`}>
+
+      {/* ── SIDEBAR ─────────────────────────────────────────── */}
       <AnimatePresence>
-        {sidebarOpen && (
+        {sidebarOpen && !focusMode && (
           <motion.aside
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 240, opacity: 1 }}
+            animate={{ width: 248, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease }}
             className="flex shrink-0 flex-col overflow-hidden border-r border-white/[0.06] bg-[#07080e]"
-            style={{ width: 240 }}
+            style={{ width: 248 }}
           >
-            {/* Progression globale */}
+            {/* Progress global */}
             <div className="border-b border-white/[0.06] px-4 py-4">
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">
-                  Progression
+                <span className="text-[0.62rem] font-semibold uppercase tracking-widest text-white/30">
+                  Progression globale
                 </span>
                 <span className="text-[0.65rem] font-bold text-[#a78bfa]">{overallPct}%</span>
               </div>
@@ -1064,8 +1383,8 @@ export default function EspaceCoachingIA() {
                   transition={{ duration: 0.6, ease }}
                 />
               </div>
-              <p className="mt-1.5 text-[0.6rem] text-white/20">
-                {completedCount} / {totalChapters} chapitres
+              <p className="mt-1.5 text-[0.58rem] text-white/20">
+                {completedCount}/{totalChapters} chapitres · {COACHING_MODULES.length} modules
               </p>
             </div>
 
@@ -1083,129 +1402,165 @@ export default function EspaceCoachingIA() {
                     onToggle={() => toggleModule(m.id)}
                     onSelectChapter={(cId) => selectChapter(m.id, cId)}
                     selectedChapterId={selectedChapterId}
+                    favorites={favorites}
                   />
                 );
               })}
             </div>
 
-            {/* Actions raccourcis */}
+            {/* Sidebar bottom shortcuts */}
             <div className="border-t border-white/[0.06] space-y-1 px-2 py-3">
-              <button
-                onClick={() => setView("assistant")}
+              <button onClick={() => setView("assistant")}
                 className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
                   view === "assistant"
                     ? "bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
                     : "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
-                }`}
-              >
+                }`}>
                 <Bot size={14} /> Assistant IA
               </button>
-              <button
-                onClick={() => setView("booking")}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
-                  view === "booking"
-                    ? "bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
+              <button onClick={() => setView("favorites")}
+                className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
+                  view === "favorites"
+                    ? "bg-[rgba(249,168,38,0.1)] text-[#f9a826]"
                     : "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
-                }`}
-              >
-                <Calendar size={14} /> Réserver une session
+                }`}>
+                <span className="flex items-center gap-3"><Star size={14} /> Favoris</span>
+                {favCount > 0 && (
+                  <span className="rounded-full bg-[rgba(249,168,38,0.15)] px-1.5 py-0.5 text-[0.55rem] font-bold text-[#f9a826]">
+                    {favCount}
+                  </span>
+                )}
               </button>
             </div>
           </motion.aside>
         )}
       </AnimatePresence>
 
-      {/* ════════════════════════════════════════════════════
-          CONTENU PRINCIPAL
-      ════════════════════════════════════════════════════ */}
+      {/* ── CONTENU PRINCIPAL ────────────────────────────────── */}
       <main className="flex flex-1 flex-col overflow-hidden">
 
         {/* Toolbar */}
-        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-2.5">
+        <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2">
+
+          {/* Toggle sidebar / focus mode */}
           <button
-            onClick={() => setSidebarOpen((p) => !p)}
+            onClick={() => focusMode ? setFocusMode(false) : setSidebarOpen((p) => !p)}
+            title={focusMode ? "Quitter le mode focus" : sidebarOpen ? "Masquer le menu" : "Afficher le menu"}
             className="rounded-lg p-1.5 text-white/30 transition hover:bg-white/[0.05] hover:text-white/70"
-            title={sidebarOpen ? "Masquer le menu" : "Afficher le menu"}
           >
-            {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+            {focusMode
+              ? <Minimize2 size={15} />
+              : sidebarOpen ? <ChevronLeft size={15} /> : <ChevronRight size={15} />
+            }
           </button>
 
           <div className="h-4 w-px bg-white/[0.08]" />
 
-          {/* Onglets */}
-          {(["chapter", "assistant", "booking"] as const).map((v) => {
-            const icons = { chapter: BookOpen, assistant: Bot, booking: Calendar } as const;
-            const labels = { chapter: "Cours", assistant: "Assistant IA", booking: "Réserver" } as const;
-            const Icon = icons[v];
-            return (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                  view === v
-                    ? "border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
-                    : "text-white/35 hover:bg-white/[0.04] hover:text-white/65"
-                }`}
-              >
-                <Icon size={13} /> {labels[v]}
-              </button>
-            );
-          })}
+          {/* Tabs */}
+          {TAB_ITEMS.map(({ key, icon: Icon, label, badge }) => (
+            <button
+              key={key}
+              onClick={() => setView(key)}
+              className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                view === key
+                  ? "border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
+                  : "text-white/35 hover:bg-white/[0.04] hover:text-white/65"
+              }`}
+            >
+              <Icon size={13} /> {label}
+              {badge !== undefined && badge > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#f9a826] text-[0.5rem] font-black text-black">
+                  {badge}
+                </span>
+              )}
+            </button>
+          ))}
 
-          {/* Chapitre actuel */}
-          {view === "chapter" && currentChapter && (
-            <span className="ml-2 truncate text-[0.65rem] text-white/25">
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Current chapter breadcrumb */}
+          {view === "chapter" && currentChapter && !focusMode && (
+            <span className="hidden truncate text-[0.62rem] text-white/20 sm:block max-w-[200px]">
               {currentChapter.title}
             </span>
+          )}
+
+          {/* Focus mode button */}
+          {view === "chapter" && (
+            <button
+              onClick={() => { setFocusMode((p) => !p); if (!focusMode) setSidebarOpen(false); }}
+              title={focusMode ? "Quitter le mode concentration" : "Mode concentration"}
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[0.65rem] font-medium transition-all ${
+                focusMode
+                  ? "border-[rgba(96,165,250,0.35)] bg-[rgba(96,165,250,0.1)] text-[#60a5fa]"
+                  : "border-white/[0.08] text-white/30 hover:border-white/[0.15] hover:text-white/60"
+              }`}
+            >
+              <Maximize2 size={12} />
+              {focusMode ? "Quitter focus" : "🧘 Focus"}
+            </button>
           )}
         </div>
 
         {/* Vue principale */}
-        <div className="flex-1 overflow-y-auto">
+        <div className={`flex-1 overflow-y-auto ${focusMode ? "bg-[#07080e]" : ""}`}>
           <AnimatePresence mode="wait">
+
             {view === "chapter" && currentChapter && (
-              <motion.div
-                key={`chapter-${currentChapter.id}`}
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
-                transition={{ duration: 0.25, ease }}
+              <motion.div key={`chapter-${currentChapter.id}`}
+                initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
+                className={focusMode ? "mx-auto max-w-2xl" : ""}
               >
                 <ChapterViewer
                   module={currentModule}
                   chapter={currentChapter}
                   isCompleted={completed.has(currentChapter.id)}
+                  isFavorite={favorites.has(currentChapter.id)}
                   onComplete={markCompleted}
                   onNext={goNext}
+                  onToggleFavorite={toggleFavorite}
                   onAskAssistant={openAssistantWith}
                 />
               </motion.div>
             )}
 
             {view === "assistant" && (
-              <motion.div
-                key="assistant"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
-                transition={{ duration: 0.25, ease }}
+              <motion.div key="assistant"
+                initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
                 className="h-full"
               >
-                <AssistantPanel currentContext={currentContext} />
+                <AssistantPanel
+                  currentContext={currentContext}
+                  initMessage={assistantInitMsg}
+                  onInitConsumed={() => setAssistantInitMsg(undefined)}
+                />
+              </motion.div>
+            )}
+
+            {view === "favorites" && (
+              <motion.div key="favorites"
+                initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
+              >
+                <FavoritesPanel
+                  favorites={favorites}
+                  onSelectChapter={selectChapter}
+                />
               </motion.div>
             )}
 
             {view === "booking" && (
-              <motion.div
-                key="booking"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
-                transition={{ duration: 0.25, ease }}
+              <motion.div key="booking"
+                initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
               >
                 <BookingPanel />
               </motion.div>
             )}
+
           </AnimatePresence>
         </div>
       </main>

@@ -25,6 +25,8 @@ export interface Chapter {
   example?:    string;
   exercise?:   Exercise;
   tips?:       string[];
+  actions?:    string[];   // "🚀 Actions à faire maintenant"
+  templates?:  string[];   // prompts/templates prêts à copier
 }
 
 export interface Module {
@@ -479,9 +481,148 @@ const M5: Module = {
 };
 
 /* ══════════════════════════════════════════════════════════════
+   MODULE 6 — QUELLE IA UTILISER SELON VOTRE BESOIN ?
+   (Module bonus — comparatif & guide de choix)
+══════════════════════════════════════════════════════════════ */
+const M6: Module = {
+  id:          "6",
+  title:       "Quelle IA utiliser ?",
+  emoji:       "🎯",
+  tagline:     "Choisir le bon outil selon votre besoin",
+  color:       "#f59e0b",
+  rgb:         "245,158,11",
+  description: "Comparatif clair des principales IA (ChatGPT, Claude, Gemini, Midjourney…). Tableau de cas d'usage pour choisir le bon outil sans perdre de temps.",
+  duration:    "~45 min",
+  chapters: [
+    {
+      id:       "6.1",
+      title:    "Vue d'ensemble des IA disponibles",
+      type:     "lesson",
+      duration: "15 min",
+      intro:    "Le marché des IA évolue très vite. Mais chaque outil a une spécialité. Connaître ces spécialités vous permet de choisir le bon en 10 secondes — et de multiplier votre productivité sans vous disperser.",
+      keyPoints: [
+        {
+          title: "ChatGPT (OpenAI) — Le couteau suisse",
+          text:  "Polyvalent, excellent pour la conversation, la génération de contenu et les tâches courantes. GPT-4o est inclus dans l'abonnement Plus. Le choix par défaut pour 80% des besoins.",
+        },
+        {
+          title: "Claude (Anthropic) — Le roi de la rédaction & du code",
+          text:  "Supérieur pour les textes longs, les analyses complexes et le code. Contexte de 200 000 tokens — idéal pour analyser des contrats, des rapports ou générer du code structuré. Ton plus naturel et moins robotique.",
+        },
+        {
+          title: "Gemini (Google) — L'intégré Google",
+          text:  "Intégré nativement dans Google Workspace (Docs, Sheets, Gmail). Fort sur la recherche web en temps réel et l'analyse d'images. Incontournable si vous travaillez dans l'écosystème Google.",
+        },
+        {
+          title: "Midjourney / DALL-E / Adobe Firefly — Les créatifs visuels",
+          text:  "Spécialisés dans la création d'images. Midjourney pour l'art et les visuels pro, DALL-E pour les illustrations simples intégrées à ChatGPT, Firefly pour l'intégration Adobe et la cohérence de marque.",
+        },
+        {
+          title: "Perplexity AI — Le moteur de recherche IA",
+          text:  "Moteur de recherche avec IA intégrée qui cite ses sources. Idéal pour la veille, la recherche factuelle récente et les questions nécessitant des informations à jour. Alternative puissante à Google.",
+        },
+      ],
+      example: "Un freelance consultant bien équipé utilise : ChatGPT chaque matin pour ses emails et tâches courantes, Claude pour ses propositions commerciales et rapports longs, Perplexity pour sa veille secteur, et Canva IA pour ses présentations clients. Stack mensuel : ~30€.",
+      tips: [
+        "Utilisez ChatGPT pour 80% de vos tâches quotidiennes",
+        "Basculez sur Claude pour les analyses complexes et longs documents",
+        "Gemini si vous travaillez déjà dans l'écosystème Google",
+        "Midjourney pour la création visuelle professionnelle",
+        "Perplexity pour toute question nécessitant une information récente",
+      ],
+      actions: [
+        "Créez un compte gratuit sur ChatGPT, Claude et Perplexity cette semaine",
+        "Testez la même tâche sur 2 IA différentes et comparez les résultats",
+        "Identifiez vos 3 cas d'usage principaux et assignez un outil à chacun",
+      ],
+    },
+    {
+      id:       "6.2",
+      title:    "Tableau comparatif : quel outil pour quel besoin ?",
+      type:     "lesson",
+      duration: "20 min",
+      intro:    "Un guide de référence rapide pour ne plus vous demander 'quelle IA utiliser ?'. Organisé par cas d'usage business courants — à mettre en favoris.",
+      keyPoints: [
+        {
+          title: "✍️ Rédaction de contenu (articles, posts, newsletters)",
+          text:  "Claude > ChatGPT pour les textes longs et professionnels. Claude produit un style plus naturel et cohérent. Utilisez le prompt persona + briefing détaillé. Pour les posts courts et réseaux sociaux : ChatGPT est suffisant.",
+        },
+        {
+          title: "🔍 Recherche et veille",
+          text:  "Perplexity AI en priorité — cite ses sources, mise à jour en temps réel. ChatGPT avec Browsing comme alternative. Gemini avec Google Search pour les actualités très récentes. Évitez d'utiliser Claude ou ChatGPT sans browsing pour des faits récents.",
+        },
+        {
+          title: "💻 Code et automatisation",
+          text:  "Claude > GitHub Copilot > ChatGPT. Claude comprend des bases de code très larges et propose des architectures propres. Copilot pour l'autocomplétion in-IDE. ChatGPT pour les scripts ponctuels. Cursor (avec Claude intégré) pour les projets complets.",
+        },
+        {
+          title: "🎨 Présentation, visuels et créatifs",
+          text:  "Gamma.app pour les slides (transforme un texte en présentation professionnelle), Canva IA pour les visuels de marque, Midjourney pour l'art et la photographie IA, Adobe Firefly pour l'intégration Creative Suite. Ces outils font en 5 min ce qui prenait 2h.",
+        },
+        {
+          title: "📊 Analyse de données et rapports",
+          text:  "ChatGPT avec Code Interpreter pour analyser des fichiers CSV/Excel, générer des graphiques et extraire des insights. Claude pour analyser de longs rapports PDF. NotebookLM (Google) pour travailler sur vos propres documents de référence.",
+        },
+        {
+          title: "🤝 Relation client et communication",
+          text:  "ChatGPT pour les templates d'emails et réponses clients. Claude pour les propositions commerciales et contrats. Pour automatiser les réponses : Intercom IA, Zendesk IA, ou construire un chatbot avec Make + GPT-4.",
+        },
+      ],
+      example: "Une PME e-commerce de 5 personnes utilise : Shopify Magic (IA intégrée) pour les fiches produits, ChatGPT pour les emails et SAV courant, Midjourney pour les visuels produits, et Make + GPT-4 pour classifier automatiquement les demandes clients. ROI estimé : 15h/semaine économisées.",
+      tips: [
+        "Ne cherchez pas le 'meilleur' outil absolu — cherchez le bon outil pour la bonne tâche",
+        "Testez la même tâche sur 2 IA différentes pour développer votre jugement",
+        "Les outils intégrés à vos logiciels existants sont souvent les plus efficaces",
+        "Constituez votre stack de 3-4 outils complémentaires max et maîtrisez-les",
+      ],
+      actions: [
+        "Listez vos 5 tâches les plus chronophages et assignez un outil IA à chacune",
+        "Calculez votre gain de temps potentiel par semaine (en heures)",
+        "Choisissez 1 seul outil à maîtriser cette semaine",
+      ],
+      templates: [
+        "Comparaison d'outils IA :\nTâche : [DÉCRIVEZ VOTRE TÂCHE]\nContexte : [VOTRE SECTEUR / BESOIN SPÉCIFIQUE]\nContraintes : [BUDGET, TEMPS, NIVEAU TECHNIQUE]\n\nQuel outil IA me recommandes-tu et pourquoi ?",
+        "Je suis [VOTRE MÉTIER]. Mes 3 tâches les plus répétitives sont :\n1. [TÂCHE 1] (~[X] heures/semaine)\n2. [TÂCHE 2] (~[X] heures/semaine)\n3. [TÂCHE 3] (~[X] heures/semaine)\n\nPour chacune, recommande l'outil IA le plus adapté avec un exemple de prompt.",
+      ],
+    },
+    {
+      id:       "6.3",
+      title:    "Construire votre stack IA personnel",
+      type:     "exercise",
+      duration: "10 min",
+      intro:    "Maintenant que vous connaissez les outils, construisez votre configuration personnelle. En 15 minutes, vous aurez un plan clair pour les 3-4 IA qui vont transformer votre quotidien.",
+      exercise: {
+        prompt: "Construisez votre Stack IA Personnel en répondant aux 4 questions ci-dessous. Utilisez l'assistant IA pour affiner chaque réponse — c'est la mise en pratique de ce module.",
+        hints: [
+          "Question 1 — Mes 5 tâches les plus répétitives dans mon activité : listez-les avec le temps passé par semaine",
+          "Question 2 — Pour chaque tâche, quel outil IA peut me faire gagner du temps ? (utilisez le tableau du chapitre 6.2)",
+          "Question 3 — Quel est mon budget IA mensuel réaliste ? (beaucoup d'outils sont gratuits, un stack efficace coûte ~20-50€/mois)",
+          "Question 4 — Par quel outil je commence CETTE semaine ? (choisissez 1 seul pour commencer)",
+          "Bonus : estimez le temps économisé par semaine si vous maîtrisez votre stack dans 30 jours",
+        ],
+      },
+      tips: [
+        "Le stack idéal coûte souvent moins de 50€/mois pour un indépendant",
+        "Commencez par 1 outil, maîtrisez-le complètement, puis ajoutez-en un second",
+        "L'IA la plus efficace est celle que vous utilisez réellement — pas la plus puissante",
+        "Réévaluez votre stack tous les 3 mois — l'écosystème évolue vite",
+      ],
+      actions: [
+        "Créez votre liste de stack IA dans un document et partagez-la avec votre équipe",
+        "Planifiez 30 min/jour pendant 7 jours pour maîtriser votre premier outil",
+        "Rejoignez la session de coaching mensuelle DJAMA pour affiner votre stack",
+      ],
+      templates: [
+        "Mon Stack IA Personnel :\n\n🔵 Outil principal : ChatGPT Plus\n→ Cas d'usage : [VOS TÂCHES COURANTES]\n→ Temps économisé estimé : [X]h/semaine\n\n🟣 Outil spécialisé : Claude Pro\n→ Cas d'usage : [ANALYSES, DOCUMENTS LONGS]\n→ Temps économisé estimé : [X]h/semaine\n\n🟡 Outil visuel : [OUTIL CHOISI]\n→ Cas d'usage : [CRÉATIONS VISUELLES]\n\nBudget total : [X]€/mois\nROI estimé : [X]h/semaine économisées",
+      ],
+    },
+  ],
+};
+
+/* ══════════════════════════════════════════════════════════════
    EXPORT
 ══════════════════════════════════════════════════════════════ */
-export const COACHING_MODULES: Module[] = [M1, M2, M3, M4, M5];
+export const COACHING_MODULES: Module[] = [M1, M2, M3, M4, M5, M6];
 
 export const TOTAL_CHAPTERS = COACHING_MODULES.reduce(
   (acc, m) => acc + m.chapters.length,
