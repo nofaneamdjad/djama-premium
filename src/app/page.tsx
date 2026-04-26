@@ -169,8 +169,8 @@ function HomeContent() {
   const heroTitle1       = get("hero.title1")          || h.hero.titleLines[0];
   const heroTitle2       = get("hero.title2")          || h.hero.titleLines[1];
   const heroSubtitle     = get("hero.subtitle")        || h.hero.subtitle;
-  const ctaPrimText      = get("cta.primary.text")     || h.hero.cta1;
-  const ctaPrimHref      = get("cta.primary.href")     || "/contact";
+  const ctaPrimText      = get("cta.primary.text")     || "Voir nos services";
+  const ctaPrimHref      = get("cta.primary.href")     || "/services";
   const ctaSecText       = get("cta.secondary.text")   || h.hero.cta2;
   const ctaSecHref       = get("cta.secondary.href")   || "/services";
   const ctaFinalTitle1   = get("cta.final.title1")     || h.cta.titleLines[0];
@@ -227,17 +227,20 @@ function HomeContent() {
               </FadeReveal>
 
               {/* CTAs */}
-              <FadeReveal delay={0.7} className="mt-9 flex flex-wrap gap-3">
+              <FadeReveal delay={0.7} className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link href={ctaPrimHref}
-                  className="btn-primary group relative overflow-hidden px-7 py-[0.9rem] text-[0.925rem]">
-                  <span className="relative z-10 flex items-center gap-2">
+                  className="btn-primary group relative w-full overflow-hidden px-7 py-[0.9rem] text-[0.925rem] sm:w-auto">
+                  <span className="relative z-10 flex items-center justify-center gap-2">
                     {ctaPrimText} <ArrowRight size={15} className="transition-transform duration-300 group-hover:translate-x-1" />
                   </span>
                   <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
                 </Link>
-                <Link href={ctaSecHref} className="btn-ghost px-7 py-[0.9rem] text-[0.925rem]">
+                <Link href={ctaSecHref} className="btn-ghost w-full justify-center px-7 py-[0.9rem] text-[0.925rem] sm:w-auto">
                   {ctaSecText}
                 </Link>
+              </FadeReveal>
+              <FadeReveal delay={0.78} as="p" className="mt-3 text-[0.8rem] text-white/30">
+                Découvrez nos solutions et comment DJAMA peut vous accompagner
               </FadeReveal>
 
               {/* Social proof */}
@@ -701,20 +704,18 @@ function HomeContent() {
           </motion.div>
 
           {/* ── CTA global ── */}
-          <FadeReveal delay={0.35} className="mt-12 flex flex-col items-center gap-4 text-center">
-            <p className="text-[0.88rem] text-white/32">
-              Besoin d&apos;un conseil personnalisé ?{" "}
-              <span className="font-semibold text-white/55">Échangeons directement.</span>
-            </p>
-            <Link href="/contact"
+          <FadeReveal delay={0.35} className="mt-12 flex flex-col items-center gap-3 text-center">
+            <Link href="/services"
               className="btn-primary group relative overflow-hidden px-8 py-[0.9rem] text-[0.92rem]">
               <span className="relative z-10 flex items-center gap-2">
-                <HeartHandshake size={15} />
-                Discuter de mon projet
+                Voir nos services
                 <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
               </span>
               <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
             </Link>
+            <p className="text-[0.8rem] text-white/30">
+              Découvrez nos solutions et comment DJAMA peut vous accompagner
+            </p>
           </FadeReveal>
 
         </motion.div>
