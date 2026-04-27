@@ -368,7 +368,7 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
                   <div className="min-w-0 flex-1">
                     <p className="text-[0.6rem] font-semibold uppercase tracking-wider text-white/25">{label}</p>
                     <p
-                      className={`mt-0.5 text-xs font-semibold ${mono ? "font-mono tracking-wide" : ""}`}
+                      className={`mt-0.5 text-xs font-semibold ${mono ? "font-mono tracking-wide break-all sm:break-normal" : ""}`}
                       style={{ color: highlight ? ACCENT : "rgba(255,255,255,0.75)" }}
                     >
                       {value}
@@ -510,18 +510,33 @@ export default function CoachingIAPage() {
 
   return (
     <>
-    <div className="bg-[#07080e]">
+    {/* ── Sticky CTA mobile (toujours visible en bas) ── */}
+    <div className="fixed inset-x-0 bottom-0 z-50 sm:hidden">
+      <div className="border-t border-white/[0.08] bg-[#07080e]/96 px-4 pb-4 pt-3 backdrop-blur-md">
+        <a
+          href="#offre"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_8px_24px_rgba(167,139,250,0.4)]"
+        >
+          <Zap size={15} /> Commencer maintenant — 190€
+        </a>
+        <p className="mt-1.5 text-center text-[0.6rem] text-white/25">
+          🔒 Paiement sécurisé · Accès immédiat
+        </p>
+      </div>
+    </div>
+
+    <div className="overflow-x-hidden bg-[#07080e]">
 
       {/* ════════════════════════════════════════════════════
           1. HERO
       ════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pb-14 pt-24 sm:pb-28 sm:pt-36">
+      <section className="relative overflow-hidden pb-28 pt-24 sm:pb-28 sm:pt-36">
         <div className="hero-grid absolute inset-0 opacity-30" />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[600px] w-[700px] rounded-full bg-[rgba(167,139,250,0.09)] blur-[100px]" />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
+        <div className="relative z-10 mx-auto max-w-4xl px-4 text-center sm:px-6">
           {/* Fil d'Ariane */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -607,10 +622,40 @@ export default function CoachingIAPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════
+          1.5  STATS — PREUVE SOCIALE
+      ════════════════════════════════════════════════════ */}
+      <section className="bg-[#07080e] pb-10 pt-2">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.55, ease }}
+            className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+          >
+            {[
+              { value: "+2h",     sub: "économisées par jour",  color: "#a78bfa" },
+              { value: "< 1 sem", sub: "pour rentabiliser",     color: "#4ade80" },
+              { value: "190€",    sub: "paiement unique",       color: ACCENT    },
+              { value: "3 mois",  sub: "d'accès complet",       color: "#60a5fa" },
+            ].map(({ value, sub, color }) => (
+              <div
+                key={sub}
+                className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3 py-5 text-center"
+              >
+                <span className="text-2xl font-black sm:text-3xl" style={{ color }}>{value}</span>
+                <span className="mt-1 text-[0.62rem] leading-snug text-white/35">{sub}</span>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════
           2. CE QUE VOUS ALLEZ APPRENDRE
       ════════════════════════════════════════════════════ */}
       <section className="bg-white py-12 sm:py-24">
-        <div className="mx-auto max-w-5xl px-6">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
             className="mb-14 text-center"
@@ -656,7 +701,7 @@ export default function CoachingIAPage() {
       <section id="programme" className="bg-[#07080e] py-12 sm:py-24">
         <div className="pointer-events-none absolute left-[5%] h-[400px] w-[600px] rounded-full bg-[rgba(167,139,250,0.04)] blur-[80px]" />
 
-        <div className="relative z-10 mx-auto max-w-3xl px-6">
+        <div className="relative z-10 mx-auto max-w-3xl px-4 sm:px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
             className="mb-12 text-center"
@@ -750,7 +795,7 @@ export default function CoachingIAPage() {
           3.5 POURQUOI CETTE FORMATION ?
       ════════════════════════════════════════════════════ */}
       <section className="bg-white py-12 sm:py-20">
-        <div className="mx-auto max-w-5xl px-6">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
             className="mb-12 text-center"
@@ -826,7 +871,7 @@ export default function CoachingIAPage() {
           4. TÉMOIGNAGES
       ════════════════════════════════════════════════════ */}
       <section className="bg-white py-12 sm:py-24">
-        <div className="mx-auto max-w-5xl px-6">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
             className="mb-12 text-center"
@@ -878,7 +923,7 @@ export default function CoachingIAPage() {
           5. OFFRE & TARIF
       ════════════════════════════════════════════════════ */}
       <section id="offre" className="bg-[#07080e] py-12 sm:py-24">
-        <div className="mx-auto max-w-lg px-6">
+        <div className="mx-auto max-w-lg px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 28, scale: 0.97 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
@@ -891,7 +936,7 @@ export default function CoachingIAPage() {
             </div>
             <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#a78bfa] to-transparent" />
 
-            <div className="relative px-8 py-10">
+            <div className="relative px-5 py-8 sm:px-8 sm:py-10">
               {/* Urgence */}
               <div className="mb-5 flex items-center justify-between">
                 <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-[#a78bfa]">
@@ -906,14 +951,20 @@ export default function CoachingIAPage() {
                 </div>
               </div>
 
-              <div className="mb-1 flex items-end gap-1.5">
-                <span className="text-[4rem] font-black leading-none text-white">190€</span>
+              <div className="mb-1 flex items-end gap-2">
+                <span className="text-[3.5rem] font-black leading-none text-white sm:text-[4rem]">190€</span>
+                <span className="mb-2 rounded-full border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.08)] px-2 py-0.5 text-[0.62rem] font-bold text-[#4ade80]">
+                  ✓ Garanti 7j
+                </span>
               </div>
               <p className="mb-1 text-base font-bold text-white/70">
                 pour 3 mois d&apos;accès complet
               </p>
-              <p className="mb-7 text-xs text-white/30">
+              <p className="mb-1 text-xs text-white/30">
                 Paiement unique · Sans abonnement · Accès immédiat
+              </p>
+              <p className="mb-7 text-[0.68rem] text-white/20">
+                = moins que 2h de consulting à 100€/h
               </p>
 
               <div className="divider-gold mb-7" style={{ background: "rgba(167,139,250,0.15)" }} />
@@ -929,19 +980,23 @@ export default function CoachingIAPage() {
 
               <PaymentSelector user={user} />
 
-              <p className="mt-4 text-center text-[0.7rem] text-white/20">
-                🔒 Paiement sécurisé · Accès immédiat après paiement
-              </p>
+              {/* Garantie satisfait ou remboursé */}
+              <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-[rgba(74,222,128,0.18)] bg-[rgba(74,222,128,0.05)] px-4 py-3">
+                <Shield size={13} style={{ color: "#4ade80" }} />
+                <p className="text-xs font-semibold text-[#4ade80]">
+                  Satisfait ou remboursé sous 7 jours — sans justification
+                </p>
+              </div>
 
-              {/* Badges */}
-              <div className="mt-6 flex justify-center gap-5">
+              {/* Badges de confiance */}
+              <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2">
                 {[
-                  { icon: Lock,   label: "Sécurisé" },
-                  { icon: Zap,    label: "Immédiat" },
-                  { icon: Shield, label: "Garanti" },
+                  { icon: Lock,        label: "Paiement sécurisé"  },
+                  { icon: Zap,         label: "Accès immédiat"      },
+                  { icon: Shield,      label: "Remboursé si besoin" },
                 ].map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex items-center gap-1.5 text-[0.65rem] text-white/25">
-                    <Icon size={11} className="text-[#a78bfa]" />
+                  <div key={label} className="flex items-center gap-1.5 text-[0.63rem] text-white/25">
+                    <Icon size={10} className="text-[#a78bfa]" />
                     {label}
                   </div>
                 ))}
@@ -955,8 +1010,8 @@ export default function CoachingIAPage() {
           6. ENTREPRISES
       ════════════════════════════════════════════════════ */}
       <section className="bg-white py-12 sm:py-24">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0d0a1a] via-[#12102a] to-[#0f0d1f] p-10 sm:p-14">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0d0a1a] via-[#12102a] to-[#0f0d1f] p-6 sm:rounded-[2.5rem] sm:p-14">
             <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
               {/* Left */}
               <div>
@@ -999,7 +1054,7 @@ export default function CoachingIAPage() {
           7. FAQ
       ════════════════════════════════════════════════════ */}
       <section className="bg-[#07080e] py-12 sm:py-24">
-        <div className="mx-auto max-w-2xl px-6">
+        <div className="mx-auto max-w-2xl px-4 sm:px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
             className="mb-12 text-center"
@@ -1036,7 +1091,7 @@ export default function CoachingIAPage() {
       {/* ════════════════════════════════════════════════════
           8. CTA FINAL
       ════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#07080e] py-12 sm:py-24">
+      <section className="relative overflow-hidden bg-[#07080e] pb-32 pt-12 sm:pb-24 sm:pt-24">
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[500px] w-[700px] rounded-full bg-[rgba(167,139,250,0.07)] blur-[100px]" />
         </div>
@@ -1046,7 +1101,7 @@ export default function CoachingIAPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={viewport}
           transition={{ duration: 0.65, ease }}
-          className="relative z-10 mx-auto max-w-xl px-6 text-center"
+          className="relative z-10 mx-auto max-w-xl px-4 sm:px-6 text-center"
         >
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(244,63,94,0.35)] bg-[rgba(244,63,94,0.1)] px-4 py-1.5 text-xs font-bold text-[#f87171]">
             <span className="relative flex h-2 w-2">
@@ -1066,11 +1121,12 @@ export default function CoachingIAPage() {
           <div className="mt-10">
             <PaymentSelector user={user} />
           </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-5 text-xs text-white/20">
+          <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-5 text-xs text-white/20">
             <span>✓ Accès immédiat</span>
             <span>✓ 5 modules + 17 chapitres</span>
             <span>✓ Assistant IA inclus</span>
             <span>✓ 1 session coaching</span>
+            <span>✓ Garanti 7 jours</span>
             <span>✓ Places limitées</span>
           </div>
         </motion.div>
