@@ -9,7 +9,7 @@ import {
   Zap, Shield, Award, Target, Clock, BookOpen,
   Bot, Calendar, Star, Lock, Globe, BarChart3, MessageSquare,
   CreditCard, Landmark, Banknote, ChevronRight,
-  Copy, Check,
+  Copy, Check, Mail,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
@@ -122,32 +122,30 @@ const INCLUDED = [
   "Certificat de complétion DJAMA",
 ];
 
-const TESTIMONIALS = [
+/* Cas concrets Avant / Après */
+const BEFORE_AFTER = [
   {
-    name:    "Sarah M.",
-    role:    "Consultante indépendante",
-    text:    "J'ai économisé 2h par jour dès la fin du module 2. Le ROI en moins d'une semaine.",
-    rating:  5,
-    avatar:  "S",
-    color:   "#a78bfa",
+    color:  "#a78bfa",
+    emoji:  "📄",
+    task:   "Rédiger une proposition commerciale",
+    before: "2 heures de rédaction, structure imparfaite, relances oubliées",
+    after:  "8 minutes avec un prompt structuré → document professionnel prêt à envoyer",
   },
   {
-    name:    "Thomas R.",
-    role:    "Gérant de PME",
-    text:    "Formation concrète, exemples adaptés au business. Mes équipes sont maintenant autonomes sur l'IA.",
-    rating:  5,
-    avatar:  "T",
-    color:   "#c9a55a",
+    color:  "#4ade80",
+    emoji:  "📱",
+    task:   "Créer du contenu pour les réseaux",
+    before: "Panne d'inspiration le lundi, 1 post par semaine max, temps perdu",
+    after:  "10 idées + 3 textes rédigés en 20 minutes avec l'IA comme co-auteur",
   },
   {
-    name:    "Layla B.",
-    role:    "Freelance marketing",
-    text:    "L'assistant IA dans l'espace membre est incroyable. Je l'utilise encore aujourd'hui pour affiner mes prompts.",
-    rating:  5,
-    avatar:  "L",
-    color:   "#4ade80",
+    color:  "#60a5fa",
+    emoji:  "🎯",
+    task:   "Prospecter de nouveaux clients",
+    before: "Emails froids génériques, taux de réponse < 5%, démarchage épuisant",
+    after:  "Séquences personnalisées générées par IA, recherche déléguée, gain de temps massif",
   },
-];
+] as const;
 
 const ENTERPRISE_FEATURES = [
   { icon: Users,     label: "Formation pour 5 à 50 personnes" },
@@ -868,53 +866,162 @@ export default function CoachingIAPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════
-          4. TÉMOIGNAGES
+          4A. CAS CONCRETS — AVANT / APRÈS
       ════════════════════════════════════════════════════ */}
-      <section className="bg-white py-12 sm:py-24">
+      <section className="bg-white py-12 sm:py-20">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
             className="mb-12 text-center"
           >
             <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
-              <Star size={10} /> Ce qu&apos;ils en disent
+              <Zap size={10} /> Résultats concrets
             </motion.span>
             <h2 className="display-section text-[#09090b]">
-              Ils ont{" "}
-              <span className="text-[#a78bfa]">transformé leur activité.</span>
+              Ce que ça change{" "}
+              <span className="text-[#a78bfa]">en pratique.</span>
             </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#6b7280]">
+              Des exemples réels de ce que vous pourrez faire dès la fin de la formation.
+            </p>
           </motion.div>
 
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainerFast}
             className="grid gap-5 sm:grid-cols-3"
           >
-            {TESTIMONIALS.map(({ name, role, text, rating, avatar, color }) => (
+            {BEFORE_AFTER.map(({ color, emoji, task, before, after }) => (
               <motion.div
-                key={name}
+                key={task}
                 variants={cardReveal}
-                className="rounded-2xl border border-black/[0.07] bg-white p-6 shadow-sm"
+                className="overflow-hidden rounded-2xl border border-black/[0.07] bg-white shadow-sm"
               >
-                <div className="mb-3 flex">
-                  {Array.from({ length: rating }).map((_, i) => (
-                    <Star key={i} size={13} style={{ color: "#f9a826" }} className="fill-current" />
-                  ))}
+                {/* En-tête tâche */}
+                <div className="border-b border-black/[0.06] px-5 py-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">{emoji}</span>
+                    <p className="text-sm font-bold text-[#09090b]">{task}</p>
+                  </div>
                 </div>
-                <p className="mb-5 text-sm leading-relaxed text-[#374151] italic">&ldquo;{text}&rdquo;</p>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
-                    style={{ background: color }}
-                  >
-                    {avatar}
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-[#09090b]">{name}</p>
-                    <p className="text-[0.65rem] text-[#6b7280]">{role}</p>
-                  </div>
+                {/* Avant */}
+                <div className="border-b border-black/[0.04] bg-[#fef2f2] px-5 py-4">
+                  <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-widest text-red-400">
+                    Avant la formation
+                  </p>
+                  <p className="text-xs leading-relaxed text-[#6b7280]">{before}</p>
+                </div>
+                {/* Après */}
+                <div className="px-5 py-4" style={{ background: `${color}09` }}>
+                  <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-widest" style={{ color }}>
+                    Après la formation
+                  </p>
+                  <p className="text-xs font-semibold leading-relaxed text-[#1f2937]">{after}</p>
                 </div>
               </motion.div>
             ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════
+          4B. À PROPOS DU FORMATEUR
+      ════════════════════════════════════════════════════ */}
+      <section className="bg-[#07080e] py-12 sm:py-20">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.6, ease }}
+            className="overflow-hidden rounded-[2rem] border border-white/[0.09] bg-white/[0.03]"
+          >
+            <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[#a78bfa] to-transparent" />
+            <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:p-10">
+              {/* Avatar / initiales */}
+              <div className="shrink-0">
+                <div className="flex h-20 w-20 items-center justify-center rounded-[1.25rem] border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.1)] text-2xl font-black text-[#a78bfa]">
+                  AN
+                </div>
+              </div>
+              {/* Bio */}
+              <div className="flex-1">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-bold text-white">Amdjad Nofane</h3>
+                  <span className="rounded-full border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-widest text-[#a78bfa]">
+                    Fondateur DJAMA
+                  </span>
+                </div>
+                <p className="mb-4 text-sm leading-relaxed text-white/50">
+                  Entrepreneur et formateur spécialisé en IA appliquée aux PME et freelances.
+                  Fondateur de DJAMA, j&apos;accompagne des professionnels à utiliser l&apos;IA
+                  concrètement — sans jargon, avec des cas réels issus du terrain.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href="/contact"
+                    className="flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/60 transition hover:border-white/[0.2] hover:text-white/90"
+                  >
+                    <Mail size={12} /> Contacter directement
+                  </a>
+                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-2 text-xs text-white/30">
+                    <Globe size={11} /> djama.space
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════
+          4C. TÉMOIGNAGES CLIENTS VÉRIFIÉS
+      ════════════════════════════════════════════════════ */}
+      <section className="bg-white py-12 sm:py-20">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
+            className="mb-10 text-center"
+          >
+            <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
+              <Shield size={10} /> Avis vérifiés
+            </motion.span>
+            <h2 className="display-section text-[#09090b]">
+              Ce qu&apos;en disent{" "}
+              <span className="text-[#a78bfa]">les clients réels.</span>
+            </h2>
+          </motion.div>
+
+          {/* État vide — aucun avis pour l'instant */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.5, ease }}
+            className="overflow-hidden rounded-2xl border border-dashed border-[#d1d5db] bg-[#f9fafb]"
+          >
+            <div className="flex flex-col items-center gap-5 px-6 py-12 text-center sm:py-16">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e5e7eb] bg-white shadow-sm">
+                <Star size={24} className="text-[#d1d5db]" />
+              </div>
+              <div>
+                <p className="text-base font-bold text-[#09090b]">Aucun avis pour l&apos;instant</p>
+                <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-[#6b7280]">
+                  Nous n&apos;affichons que des avis de clients réels et vérifiés.
+                  Soyez le premier à partager votre expérience après la formation.
+                </p>
+              </div>
+              <div className="flex flex-col items-center gap-2 sm:flex-row">
+                <a
+                  href="/contact"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#09090b] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#1f2937]"
+                >
+                  <Mail size={13} /> Partager mon avis après la formation
+                </a>
+              </div>
+              <p className="text-[0.65rem] text-[#9ca3af]">
+                🔒 Seuls les avis de clients ayant accédé à la plateforme sont publiés
+              </p>
+            </div>
           </motion.div>
         </div>
       </section>
