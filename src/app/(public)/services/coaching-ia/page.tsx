@@ -479,7 +479,7 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
       <div className="mt-4 flex items-center justify-center gap-2">
         <div className="h-px flex-1 bg-white/[0.06]" />
         <Link
-          href="/coaching-ia/espace"
+          href="/login?redirect=/coaching-ia/espace"
           className="group flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.72rem] font-medium text-white/30 transition-all hover:bg-white/[0.04] hover:text-white/60"
         >
           <Lock size={10} className="transition-colors group-hover:text-[#a78bfa]" />

@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Eye, EyeOff, Lock, Mail, AlertCircle,
   ArrowRight, RefreshCw, CheckCircle2,
@@ -54,7 +54,11 @@ function AuthField({
 
 /* ── Page principale ───────────────────────────── */
 export default function LoginPage() {
-  const router = useRouter();
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  /* Destination après connexion — ?redirect=/coaching-ia/espace etc. */
+  const redirectTo   = searchParams.get("redirect") ?? "/client";
+
   const [email,       setEmail]       = useState("");
   const [password,    setPassword]    = useState("");
   const [showPwd,     setShowPwd]     = useState(false);
@@ -64,6 +68,15 @@ export default function LoginPage() {
   const [error,       setError]       = useState("");
   const [errorType,   setErrorType]   = useState<"credentials" | "other" | null>(null);
   const [resendOk,    setResendOk]    = useState(false);
+
+  /* Si une session est déjà active, rediriger directement */
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        window.location.href = redirectTo;
+      }
+    });
+  }, [redirectTo]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -119,12 +132,13 @@ export default function LoginPage() {
       /* ── 2. MODE TEST : redirection directe sans vérif abonnement
          TODO: réactiver le check clients table quand prêt           */
       const needsReset = data.session.user.user_metadata?.needs_password_reset === true;
-      console.log("[Login] ✅ Connecté :", data.session.user.email, "→", needsReset ? "/definir-mot-de-passe" : "/client");
+      const dest       = needsReset ? "/definir-mot-de-passe" : redirectTo;
+      console.log("[Login] ✅ Connecté :", data.session.user.email, "→", dest);
 
       /* ── 3. Redirection ─────────────────────────── */
       setPhase("redirecting");
       willRedirect = true;
-      window.location.href = needsReset ? "/definir-mot-de-passe" : "/client";
+      window.location.href = dest;
 
     } catch (err) {
       console.error("[Login] ❌ Exception :", err);

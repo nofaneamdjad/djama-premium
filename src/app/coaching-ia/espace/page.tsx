@@ -1483,7 +1483,19 @@ export default function EspaceCoachingIA() {
     : undefined;
 
   /* ── Access gate ──────────────────────────────────────── */
-  if (access === "loading") return null;
+  if (access === "loading") return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[#07080e]">
+      <div className="relative flex h-16 w-16 items-center justify-center">
+        <div className="absolute inset-0 animate-ping rounded-full bg-[rgba(167,139,250,0.15)]" />
+        <div className="absolute inset-2 animate-spin rounded-full border-2 border-transparent border-t-[#a78bfa]" />
+        <Brain size={22} className="relative text-[#a78bfa]" />
+      </div>
+      <div className="text-center">
+        <p className="text-sm font-semibold text-white/60">Vérification de votre accès…</p>
+        <p className="mt-1 text-xs text-white/25">Authentification en cours</p>
+      </div>
+    </div>
+  );
   /* Virement ou paiement en attente de confirmation admin */
   if (access === "pending") return <PendingGate user={user} />;
   const devBypass = process.env.NEXT_PUBLIC_DEV_BYPASS_COACHING === "true";
