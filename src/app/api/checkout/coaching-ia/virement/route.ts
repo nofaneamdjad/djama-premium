@@ -31,26 +31,42 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Email requis" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase       = getSupabaseAdmin();
+  const normalizedEmail = email.trim().toLowerCase();
+  const now            = new Date().toISOString();
 
-  /* Upsert en table clients — statut "en attente de virement" */
-  const { error } = await supabase.from("clients").upsert(
+  /* 1. Upsert en table clients — statut "en attente de virement" */
+  const { error: clientsErr } = await supabase.from("clients").upsert(
     {
-      email:                        email.trim().toLowerCase(),
+      email:                        normalizedEmail,
       full_name:                    fullName?.trim() || null,
       coaching_ia_active:           false,
       coaching_ia_pending_transfer: true,
       coaching_ia_payment_method:   "virement",
-      updated_at:                   new Date().toISOString(),
+      updated_at:                   now,
     },
     { onConflict: "email" }
   );
 
-  if (error) {
-    console.error("[Virement] ❌ upsert error:", error.message);
+  if (clientsErr) {
+    console.error("[Virement] ❌ clients upsert error:", clientsErr.message);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 
-  console.log("[Virement] ✅ Demande enregistrée →", email.trim());
+  /* 2. Upsert en table user_access — source "virement" + coaching_ia = false
+        Seul un INSERT est effectué si la ligne n'existe pas encore.
+        Si une ligne existe déjà (ex: access actif), on ne l'écrase pas. */
+  await supabase.from("user_access").upsert(
+    {
+      email:       normalizedEmail,
+      name:        fullName?.trim() || null,
+      coaching_ia: false,
+      source:      "virement",
+      updated_at:  now,
+    },
+    { onConflict: "email", ignoreDuplicates: true }
+  );
+
+  console.log("[Virement] ✅ Demande enregistrée →", normalizedEmail);
   return NextResponse.json({ success: true });
 }

@@ -10,6 +10,7 @@ import {
   CreditCard, Landmark, Brain, Lightbulb, Download,
   Star, Maximize2, Minimize2, Copy, Check, X,
   FileText, Zap, HelpCircle, BookMarked, Rocket,
+  Shield, RefreshCw,
 } from "lucide-react";
 import { COACHING_MODULES, getNextChapter, type Module, type Chapter } from "@/lib/coaching-content";
 import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
@@ -1034,6 +1035,144 @@ function BookingPanel() {
 }
 
 /* ─────────────────────────────────────────────────────────
+   COMPOSANT — Pending Gate
+   Affiché quand l'utilisateur a soumis un paiement (virement)
+   mais que l'admin n'a pas encore activé l'accès.
+───────────────────────────────────────────────────────── */
+function PendingGate({
+  user,
+}: {
+  user: { id: string; email: string | undefined; name: string | undefined } | null;
+}) {
+  const STEPS = [
+    { icon: Landmark,       color: "#60a5fa", label: "Vous avez effectué votre virement",          done: true  },
+    { icon: Clock,          color: "#f9a826", label: "Nous vérifions la réception du paiement",    done: false },
+    { icon: CheckCircle2,   color: "#34d399", label: "Activation de votre accès (24–48h ouvrés)",  done: false },
+  ];
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#07080e] px-4 py-12">
+      <div className="w-full max-w-md">
+
+        {/* Icône centrale */}
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="relative mb-5">
+            <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-[rgba(249,168,38,0.25)] bg-[rgba(249,168,38,0.08)]">
+              <Clock size={36} style={{ color: "#f9a826" }} />
+            </div>
+            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-[rgba(249,168,38,0.4)] bg-[#07080e]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#f9a826]" />
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold text-white">Paiement en cours de vérification</h1>
+          <p className="mt-2.5 text-sm leading-relaxed text-white/45">
+            Votre virement a bien été enregistré. Notre équipe l&apos;activera dès réception du paiement.
+          </p>
+          {user?.email && (
+            <div className="mt-3 flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5">
+              <Mail size={11} className="text-white/30" />
+              <span className="text-xs text-white/50">{user.email}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Étapes */}
+        <div className="mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03]">
+          <div className="border-b border-white/[0.06] px-5 py-3.5">
+            <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Statut de votre accès</p>
+          </div>
+          <div className="divide-y divide-white/[0.05]">
+            {STEPS.map(({ icon: Icon, color, label, done }, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all"
+                  style={{
+                    background: done ? `rgba(52,211,153,0.12)` : `rgba(${color === "#f9a826" ? "249,168,38" : "96,165,250"},0.08)`,
+                    border:     done ? `1px solid rgba(52,211,153,0.25)` : `1px solid rgba(255,255,255,0.08)`,
+                  }}
+                >
+                  {done
+                    ? <CheckCircle2 size={15} style={{ color: "#34d399" }} />
+                    : <Icon size={15} style={{ color }} />
+                  }
+                </div>
+                <p className={`text-sm ${done ? "font-semibold text-white/75" : "text-white/40"}`}>{label}</p>
+                {i === 1 && (
+                  <span className="ml-auto flex items-center gap-1.5 rounded-full border border-[rgba(249,168,38,0.3)] bg-[rgba(249,168,38,0.08)] px-2.5 py-0.5 text-[0.6rem] font-bold text-[#f9a826]">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#f9a826] opacity-60" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#f9a826]" />
+                    </span>
+                    En cours
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Coordonnées du virement (rappel) */}
+        <div className="mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+          <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-3.5">
+            <Landmark size={14} style={{ color: "#60a5fa" }} />
+            <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Rappel — coordonnées du virement</p>
+          </div>
+          <div className="space-y-2.5 px-5 py-4 text-xs">
+            {[
+              { label: "Bénéficiaire", value: "EI AMDJAD Nofane",                  mono: false },
+              { label: "IBAN",         value: "FR76 4061 8804 5900 0406 3964 945", mono: true  },
+              { label: "BIC",          value: "BOUSFRPPXXX",                        mono: true  },
+              { label: "Montant",      value: "190,00 €",                           mono: false },
+              { label: "Référence",    value: "COACHING-IA",                        mono: true  },
+            ].map(({ label, value, mono }) => (
+              <div key={label} className="flex items-center justify-between gap-3">
+                <span className="text-white/30">{label}</span>
+                <span className={`font-semibold text-white/65 ${mono ? "font-mono tracking-wide" : ""}`}>{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bandeau rassurant */}
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+          {[
+            { icon: Shield,  label: "Accès sécurisé",       color: "#34d399" },
+            { icon: Clock,   label: "Activation sous 24–48h", color: "#60a5fa" },
+            { icon: Zap,     label: "Email de confirmation", color: "#a78bfa" },
+          ].map(({ icon: Icon, label, color }) => (
+            <div key={label} className="flex items-center gap-1.5 text-[0.63rem] text-white/40">
+              <Icon size={9} style={{ color }} />
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-2.5">
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.04] py-3 text-sm font-semibold text-white/60 transition hover:border-white/[0.18] hover:text-white/90"
+          >
+            <RefreshCw size={14} /> Vérifier mon accès
+          </button>
+          <a
+            href="/contact"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.07)] py-3 text-sm font-semibold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.12)]"
+          >
+            <Mail size={14} /> Contacter le support
+          </a>
+        </div>
+
+        <p className="mt-6 text-center text-[0.65rem] text-white/20">
+          Une fois votre paiement confirmé, vous recevrez un email avec votre lien d&apos;accès.
+        </p>
+
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    COMPOSANT — Preview Gate (inchangé)
 ───────────────────────────────────────────────────────── */
 type PaymentTab = "carte" | "paypal" | "virement";
@@ -1225,9 +1364,11 @@ function PreviewGate({ user }: {
                     ) : (
                       <motion.form key="form" onSubmit={handleVirement} className="space-y-3">
                         <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[0.65rem] text-white/45 space-y-0.5">
-                          <p>Virement de <span className="font-bold text-white/70">190€</span></p>
-                          <p>IBAN : <span className="font-mono text-white/65">FR76 3000 6000 0112 3456 7890 189</span></p>
-                          <p>Référence : <span className="font-semibold text-[#a78bfa]">Coaching IA [votre email]</span></p>
+                          <p>Bénéficiaire : <span className="font-semibold text-white/70">EI AMDJAD Nofane</span></p>
+                          <p>IBAN : <span className="font-mono text-white/65">FR76 4061 8804 5900 0406 3964 945</span></p>
+                          <p>BIC : <span className="font-mono text-white/65">BOUSFRPPXXX</span></p>
+                          <p>Montant : <span className="font-bold text-white/70">190,00 €</span></p>
+                          <p>Référence : <span className="font-semibold text-[#a78bfa]">COACHING-IA</span></p>
                         </div>
                         {[
                           { label: "Email", type: "email", value: virEmail, setter: setVirEmail, placeholder: "votre@email.fr", icon: Mail },
@@ -1343,6 +1484,8 @@ export default function EspaceCoachingIA() {
 
   /* ── Access gate ──────────────────────────────────────── */
   if (access === "loading") return null;
+  /* Virement ou paiement en attente de confirmation admin */
+  if (access === "pending") return <PendingGate user={user} />;
   const devBypass = process.env.NEXT_PUBLIC_DEV_BYPASS_COACHING === "true";
   if (access === "preview" && !devBypass) return <PreviewGate user={user} />;
 

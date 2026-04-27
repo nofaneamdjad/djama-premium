@@ -24,7 +24,12 @@ function getSupabaseAdmin() {
 
 function isAuthorized(req: NextRequest): boolean {
   const token = req.headers.get("x-admin-token");
-  return !!token && token === process.env.ADMIN_SECRET;
+  if (!token) return false;
+  // Accepte ADMIN_SECRET (server-only) OU NEXT_PUBLIC_ADMIN_PASS (frontend)
+  const secret  = process.env.ADMIN_SECRET          ?? "";
+  const pubPass = process.env.NEXT_PUBLIC_ADMIN_PASS ?? "";
+  return (secret  !== "" && token === secret) ||
+         (pubPass !== "" && token === pubPass);
 }
 
 /* ── GET ────────────────────────────────────────────────────── */
@@ -118,13 +123,26 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const now = new Date().toISOString();
+
     await supabase.from("clients").update({
       user_id:                      userId,
       coaching_ia_active:           true,
       coaching_ia_expires:          expiresAt,
       coaching_ia_pending_transfer: false,
-      updated_at:                   new Date().toISOString(),
+      updated_at:                   now,
     }).eq("email", email);
+
+    /* Mettre à jour user_access (source de vérité du hook) */
+    await supabase.from("user_access").upsert(
+      {
+        email:       email.toLowerCase(),
+        coaching_ia: true,
+        source:      "virement",
+        updated_at:  now,
+      },
+      { onConflict: "email" }
+    );
 
     /* Générer lien + envoyer email */
     let accessLink = `${SITE_URL}/coaching-ia/espace`;
@@ -159,10 +177,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const now = new Date().toISOString();
+
     await supabase.from("clients").update({
       coaching_ia_active: false,
-      updated_at:         new Date().toISOString(),
+      updated_at:         now,
     }).eq("email", email);
+
+    /* Révoquer aussi dans user_access */
+    await supabase.from("user_access").update({
+      coaching_ia: false,
+      updated_at:  now,
+    }).eq("email", email.toLowerCase());
 
     console.log("[Admin] 🔴 Coaching IA désactivé →", email);
     return NextResponse.json({ success: true, message: `Accès désactivé pour ${email}` });

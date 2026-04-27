@@ -60,7 +60,7 @@ export function useRequireCoachingIA() {
       if (
         access &&
         !access.coaching_ia &&
-        (access.source === "stripe" || access.source === "paypal")
+        (access.source === "stripe" || access.source === "paypal" || access.source === "virement")
       ) {
         if (!cancelled) { setUser(userObj); setPending(true); }
         return;
@@ -76,7 +76,7 @@ export function useRequireCoachingIA() {
       /* Fallback legacy clients table */
       const { data: client } = await supabase
         .from("clients")
-        .select("coaching_ia_active")
+        .select("coaching_ia_active, coaching_ia_pending_transfer")
         .eq("email", authUser.email ?? "")
         .maybeSingle();
 
@@ -84,6 +84,12 @@ export function useRequireCoachingIA() {
 
       if (client?.coaching_ia_active) {
         if (!cancelled) { setUser(userObj); setReady(true); }
+        return;
+      }
+
+      /* Virement en attente admin */
+      if (client?.coaching_ia_pending_transfer) {
+        if (!cancelled) { setUser(userObj); setPending(true); }
         return;
       }
 
@@ -159,7 +165,7 @@ export function useCoachingIAAccess() {
       if (
         access &&
         !access.coaching_ia &&
-        (access.source === "stripe" || access.source === "paypal")
+        (access.source === "stripe" || access.source === "paypal" || access.source === "virement")
       ) {
         if (!cancelled) { setUser(userObj); setAccess("pending"); }
         return;
@@ -173,7 +179,7 @@ export function useCoachingIAAccess() {
 
       const { data: client } = await supabase
         .from("clients")
-        .select("coaching_ia_active")
+        .select("coaching_ia_active, coaching_ia_pending_transfer")
         .eq("email", authUser.email ?? "")
         .maybeSingle();
 
@@ -182,10 +188,18 @@ export function useCoachingIAAccess() {
       if (client?.coaching_ia_active) {
         setUser(userObj);
         setAccess("full");
-      } else {
-        setUser(userObj);
-        setAccess("preview");
+        return;
       }
+
+      /* Virement en attente de confirmation admin (via table clients) */
+      if (client?.coaching_ia_pending_transfer) {
+        setUser(userObj);
+        setAccess("pending");
+        return;
+      }
+
+      setUser(userObj);
+      setAccess("preview");
     }
 
     check();
