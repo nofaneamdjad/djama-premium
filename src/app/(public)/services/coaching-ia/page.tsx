@@ -9,6 +9,7 @@ import {
   Zap, Shield, Award, Target, Clock, BookOpen,
   Bot, Calendar, Star, Lock, Globe, BarChart3, MessageSquare,
   CreditCard, Landmark, Banknote, ChevronRight,
+  Copy, Check,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainer, staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
@@ -226,14 +227,20 @@ function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean
    COMPOSANT — Sélecteur de paiement (Stripe / Virement)
 ───────────────────────────────────────────────────────── */
 function PaymentSelector({ user }: { user?: { id?: string; email?: string } | null }) {
-  const [tab, setTab] = useState<"stripe" | "virement">("stripe");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // virement form state
-  const [vEmail, setVEmail] = useState(user?.email ?? "");
-  const [vName, setVName] = useState("");
-  const [vSent, setVSent] = useState(false);
-  const [vSending, setVSending] = useState(false);
+  const [tab,         setTab]         = useState<"stripe" | "virement">("stripe");
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState<string | null>(null);
+  const [vEmail,      setVEmail]      = useState(user?.email ?? "");
+  const [vName,       setVName]       = useState("");
+  const [vSent,       setVSent]       = useState(false);
+  const [vSending,    setVSending]    = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  function copyToClipboard(text: string, field: string) {
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  }
 
   async function handleStripe() {
     setLoading(true); setError(null);
@@ -262,13 +269,23 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
   }
 
   const TABS = [
-    { id: "stripe",   label: "💳 Carte bancaire", icon: CreditCard },
-    { id: "virement", label: "🏦 Virement",        icon: Landmark   },
+    { id: "stripe",   label: "💳 Carte bancaire" },
+    { id: "virement", label: "🏦 Virement"        },
+  ] as const;
+
+  /* Coordonnées bancaires */
+  const BANK_ROWS = [
+    { label: "Bénéficiaire", value: "EI AMDJAD Nofane",              copy: "EI AMDJAD Nofane",              field: "beneficiaire", mono: false, highlight: false },
+    { label: "IBAN",         value: "FR76 4061 8804 5900 0406 3964 945", copy: "FR7640618804590004063964945", field: "iban",         mono: true,  highlight: false },
+    { label: "BIC",          value: "BOUSFRPPXXX",                    copy: "BOUSFRPPXXX",                   field: "bic",          mono: true,  highlight: false },
+    { label: "Banque",       value: "BoursoBank",                     copy: "BoursoBank",                    field: "banque",       mono: false, highlight: false },
+    { label: "Référence",    value: "COACHING-IA",                    copy: "COACHING-IA",                   field: "reference",    mono: true,  highlight: true  },
   ] as const;
 
   return (
     <div className="w-full">
-      {/* Tab row */}
+
+      {/* ── Onglets ── */}
       <div className="mb-4 flex gap-2">
         {TABS.map(({ id, label }) => {
           const active = tab === id;
@@ -289,7 +306,7 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
         })}
       </div>
 
-      {/* Stripe tab */}
+      {/* ── Stripe ── */}
       {tab === "stripe" && (
         <button
           onClick={handleStripe}
@@ -305,97 +322,160 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
         </button>
       )}
 
-      {/* Virement tab */}
+      {/* ── Virement ── */}
       {tab === "virement" && (
-        <div className="space-y-4">
-          {/* Bank details box */}
-          <div
-            className="rounded-2xl border p-4 text-xs space-y-2"
-            style={{ borderColor: `rgba(${ACCENT_RGB},0.2)`, background: `rgba(${ACCENT_RGB},0.05)` }}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <Landmark size={14} style={{ color: ACCENT }} />
-              <span className="font-bold text-white/70 text-[0.72rem] uppercase tracking-widest">Coordonnées bancaires</span>
+        <div className="space-y-3">
+
+          {/* Titre + sous-titre */}
+          <div className="mb-1 text-center">
+            <p className="text-xs font-bold text-white/60">💳 Paiement par virement bancaire</p>
+            <p className="mt-0.5 text-[0.68rem] text-white/30">
+              Effectuez votre virement puis confirmez pour activer votre accès
+            </p>
+          </div>
+
+          {/* ── Carte coordonnées bancaires ── */}
+          <div className="overflow-hidden rounded-2xl border border-white/[0.1] bg-white/[0.04] transition-all hover:border-white/[0.14]">
+
+            {/* Header de la carte */}
+            <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
+              <div
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                style={{ background: `rgba(${ACCENT_RGB},0.12)`, border: `1px solid rgba(${ACCENT_RGB},0.22)` }}
+              >
+                <Landmark size={15} style={{ color: ACCENT }} />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-white/80">Coordonnées bancaires</p>
+                <p className="text-[0.62rem] text-white/30">BoursoBank · Virement SEPA</p>
+              </div>
+              {/* Montant en évidence */}
+              <div
+                className="rounded-xl px-3 py-1.5"
+                style={{ background: `rgba(${ACCENT_RGB},0.1)`, border: `1px solid rgba(${ACCENT_RGB},0.25)` }}
+              >
+                <span className="text-sm font-black" style={{ color: ACCENT }}>190,00 €</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-white/35">Bénéficiaire</span>
-              <span className="font-semibold text-white/80">DJAMA</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-white/35">IBAN</span>
-              <span className="font-mono font-semibold text-white/80">FR76 XXXX XXXX XXXX XXXX XXXX XXX</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-white/35">BIC</span>
-              <span className="font-mono font-semibold text-white/80">XXXXXXXX</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-white/35">Montant</span>
-              <span className="font-bold text-white/80">190,00 €</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-white/35">Référence</span>
-              <span className="font-mono font-semibold" style={{ color: ACCENT }}>COACHING-IA</span>
+
+            {/* Lignes d'infos */}
+            <div className="divide-y divide-white/[0.05]">
+              {BANK_ROWS.map(({ label, value, copy, field, mono, highlight }) => (
+                <div
+                  key={field}
+                  className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-white/[0.03]"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[0.6rem] font-semibold uppercase tracking-wider text-white/25">{label}</p>
+                    <p
+                      className={`mt-0.5 text-xs font-semibold ${mono ? "font-mono tracking-wide" : ""}`}
+                      style={{ color: highlight ? ACCENT : "rgba(255,255,255,0.75)" }}
+                    >
+                      {value}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(copy, field)}
+                    title={`Copier ${label}`}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-all hover:scale-105 active:scale-95"
+                    style={{
+                      borderColor: copiedField === field ? "rgba(74,222,128,0.35)" : "rgba(255,255,255,0.09)",
+                      background:  copiedField === field ? "rgba(74,222,128,0.1)"  : "rgba(255,255,255,0.04)",
+                    }}
+                  >
+                    {copiedField === field
+                      ? <Check size={11} style={{ color: "#4ade80" }} />
+                      : <Copy  size={11} className="text-white/25" />
+                    }
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Confirmation form */}
+          {/* ── Bandeau rassurant ── */}
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+            {([
+              { icon: Shield, label: "Paiement sécurisé",      color: "#4ade80" },
+              { icon: Clock,  label: "Activation sous 24–48h", color: "#60a5fa" },
+              { icon: Zap,    label: "Aucun frais caché",       color: ACCENT    },
+            ] as const).map(({ icon: Icon, label, color }) => (
+              <div key={label} className="flex items-center gap-1.5 text-[0.63rem] text-white/40">
+                <Icon size={9} style={{ color }} />
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Après le virement ── */}
           {vSent ? (
-            <div
-              className="rounded-2xl border p-4 text-center text-sm"
-              style={{ borderColor: "rgba(74,222,128,0.25)", background: "rgba(74,222,128,0.07)", color: "#4ade80" }}
-            >
-              ✅ Confirmation reçue ! Votre accès sera activé dès réception du virement (1–2 jours ouvrés).
+            <div className="rounded-2xl border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.06)] p-5 text-center">
+              <div className="mb-2 text-2xl">✅</div>
+              <p className="text-sm font-bold text-green-400">Confirmation reçue !</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-white/40">
+                Votre accès sera activé sous 24 à 48h dès réception du virement.
+              </p>
             </div>
           ) : (
-            <form onSubmit={handleVirement} className="space-y-3">
-              <p className="text-[0.72rem] text-white/35 leading-relaxed">
-                Effectuez le virement puis confirmez ci-dessous — votre accès sera activé sous 1–2 jours ouvrés.
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <div
+                  className="flex h-6 w-6 items-center justify-center rounded-lg text-xs"
+                  style={{ background: `rgba(${ACCENT_RGB},0.12)` }}
+                >
+                  📧
+                </div>
+                <p className="text-xs font-bold text-white/60">Après votre virement</p>
+              </div>
+              <p className="mb-3.5 text-[0.68rem] leading-relaxed text-white/30">
+                Entrez votre email pour que nous puissions activer votre accès dès réception du paiement.
               </p>
-              <input
-                type="email"
-                required
-                placeholder="Votre adresse e-mail"
-                value={vEmail}
-                onChange={(e) => setVEmail(e.target.value)}
-                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[rgba(167,139,250,0.4)] transition-colors"
-              />
-              <input
-                type="text"
-                placeholder="Votre nom complet (optionnel)"
-                value={vName}
-                onChange={(e) => setVName(e.target.value)}
-                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[rgba(167,139,250,0.4)] transition-colors"
-              />
-              <button
-                type="submit"
-                disabled={vSending || !vEmail.trim()}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border py-3.5 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50"
-                style={{
-                  borderColor: `rgba(${ACCENT_RGB},0.4)`,
-                  background:  `rgba(${ACCENT_RGB},0.1)`,
-                  color:       ACCENT,
-                }}
-              >
-                {vSending ? (
-                  <><Loader2 size={15} className="animate-spin" /> Envoi…</>
-                ) : (
-                  <><Banknote size={15} /> Confirmer mon virement</>
-                )}
-              </button>
-            </form>
+              <form onSubmit={handleVirement} className="space-y-2.5">
+                <input
+                  type="email"
+                  required
+                  placeholder="Votre adresse e-mail"
+                  value={vEmail}
+                  onChange={(e) => setVEmail(e.target.value)}
+                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-colors focus:border-[rgba(167,139,250,0.4)]"
+                />
+                <input
+                  type="text"
+                  placeholder="Votre nom complet (optionnel)"
+                  value={vName}
+                  onChange={(e) => setVName(e.target.value)}
+                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-colors focus:border-[rgba(167,139,250,0.4)]"
+                />
+                <button
+                  type="submit"
+                  disabled={vSending || !vEmail.trim()}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    background: `linear-gradient(135deg, rgba(${ACCENT_RGB},0.2), rgba(${ACCENT_RGB},0.1))`,
+                    border:     `1px solid rgba(${ACCENT_RGB},0.35)`,
+                    color:      ACCENT,
+                  }}
+                >
+                  {vSending
+                    ? <><Loader2 size={15} className="animate-spin" /> Envoi…</>
+                    : <><Banknote size={15} /> Confirmer mon virement</>
+                  }
+                </button>
+              </form>
+            </div>
           )}
         </div>
       )}
 
-      {/* Error display */}
+      {/* ── Erreur ── */}
       {error && (
         <p className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-xs text-red-400">
           {error}
         </p>
       )}
 
-      {/* Lien espace privé — utilisateurs déjà inscrits */}
+      {/* ── Lien espace privé ── */}
       <div className="mt-4 flex items-center justify-center gap-2">
         <div className="h-px flex-1 bg-white/[0.06]" />
         <Link
@@ -408,6 +488,7 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
         </Link>
         <div className="h-px flex-1 bg-white/[0.06]" />
       </div>
+
     </div>
   );
 }
