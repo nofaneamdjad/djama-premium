@@ -69,14 +69,12 @@ export default function LoginPage() {
   const [errorType,   setErrorType]   = useState<"credentials" | "other" | null>(null);
   const [resendOk,    setResendOk]    = useState(false);
 
-  /* Si une session est déjà active, rediriger directement */
+  /* Déconnecte toute session active dès que la page login s'affiche.
+     Garantit que l'utilisateur DOIT entrer ses identifiants,
+     même s'il avait une session Supabase en mémoire. */
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        window.location.href = redirectTo;
-      }
-    });
-  }, [redirectTo]);
+    supabase.auth.signOut();
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
