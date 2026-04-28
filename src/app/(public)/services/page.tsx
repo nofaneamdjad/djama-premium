@@ -323,11 +323,19 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
         {/* Overlay — whole card is clickable */}
         <Link href={href} className="absolute inset-0 z-0" aria-label={service.title} tabIndex={-1} />
 
-        {isSiteVitrine ? (
+        {isSiteVitrine || isAppMobile || isSiteEcommerce ? (
           <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
             <Image
-              src="/services-vitrine.jpg"
-              alt="Création de site vitrine professionnel — DJAMA"
+              src={
+                isSiteVitrine  ? "/services-vitrine.jpg"    :
+                isAppMobile    ? "/services-app-mobile.jpg" :
+                                 "/services-ecommerce.jpg"
+              }
+              alt={
+                isSiteVitrine  ? "Création de site vitrine professionnel — DJAMA"  :
+                isAppMobile    ? "Application mobile sur mesure iOS/Android — DJAMA" :
+                                 "Site e-commerce performant & sécurisé — DJAMA"
+              }
               fill
               className="object-cover object-top"
               sizes="(max-width: 640px) 100vw, 480px"
