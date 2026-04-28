@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -477,79 +478,16 @@ function OutilsBlock({ lang }: { lang: "fr" | "en" }) {
           style={{ background: `linear-gradient(90deg, transparent, rgba(${cfg.accentRgb},0.9), transparent)` }}
         />
 
-        {/* ── Header visuel ── */}
-        <div className={`relative flex items-center overflow-hidden bg-gradient-to-br ${cfg.bg} px-6 py-7 sm:px-8`}>
-          {/* Dot grid */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.05) 1.5px, transparent 0)",
-              backgroundSize: "24px 24px",
-            }}
+        {/* ── Header visuel — image ── */}
+        <div className="relative overflow-hidden" style={{ aspectRatio: "16/6.5" }}>
+          <Image
+            src="/services-outils.jpg"
+            alt="Documents & Outils professionnels inclus — DJAMA"
+            fill
+            className="object-cover object-center"
+            sizes="(max-width: 640px) 100vw, 900px"
+            priority
           />
-          {/* Glow orb */}
-          <motion.div
-            className="pointer-events-none absolute left-0 top-1/2 h-[200px] w-[400px] -translate-y-1/2 rounded-full blur-3xl"
-            style={{ background: cfg.glow }}
-            animate={{ scale: [1, 1.08, 1], opacity: [0.6, 0.9, 0.6] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          />
-          {/* Bottom separator */}
-          <div
-            className="absolute inset-x-0 bottom-0 h-px"
-            style={{ background: `linear-gradient(90deg, transparent, ${cfg.border}, transparent)` }}
-          />
-
-          {/* Icon */}
-          <div
-            className="relative z-10 mr-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border"
-            style={{ background: `rgba(${cfg.accentRgb},0.12)`, borderColor: cfg.border }}
-          >
-            <BadgeCheck size={26} style={{ color: cfg.accent }} />
-          </div>
-
-          {/* Text */}
-          <div className="relative z-10 flex-1 min-w-0">
-            <p className="text-[0.6rem] font-black uppercase tracking-[0.15em]" style={{ color: `rgba(${cfg.accentRgb},0.55)` }}>
-              {lang === "fr" ? "Documents & Outils" : "Documents & Tools"}
-            </p>
-            <h2 className="mt-0.5 text-xl font-extrabold text-white">
-              {lang === "fr" ? "Outils professionnels inclus" : "Professional tools included"}
-            </h2>
-            <p className="mt-1 text-sm text-white/45">
-              {lang === "fr"
-                ? "Tous les outils essentiels pour gérer votre activité depuis un seul espace."
-                : "All essential tools to manage your business from one place."}
-            </p>
-          </div>
-
-          {/* Badge right — desktop only */}
-          <div className="relative z-10 ml-6 hidden shrink-0 flex-col items-end gap-1.5 sm:flex">
-            <span
-              className="rounded-full border px-3 py-1 text-[0.6rem] font-bold"
-              style={{
-                borderColor: `rgba(${cfg.accentRgb},0.28)`,
-                background: `rgba(${cfg.accentRgb},0.1)`,
-                color: cfg.accent,
-              }}
-            >
-              ◈ {lang === "fr" ? "Inclus dans l'abonnement" : "Included in subscription"}
-            </span>
-            <span className="text-[0.6rem] text-white/22">11 outils · Accès immédiat</span>
-          </div>
-        </div>
-
-        {/* ── Bandeau "inclus" ── */}
-        <div
-          className="flex items-center justify-center gap-1.5 py-1.5 text-[0.6rem] font-black uppercase tracking-[0.15em]"
-          style={{
-            background: `rgba(${cfg.accentRgb},0.08)`,
-            color: cfg.accent,
-            borderBottom: `1px solid rgba(${cfg.accentRgb},0.14)`,
-          }}
-        >
-          <span className="h-1 w-1 rounded-full" style={{ background: cfg.accent }} />
-          {lang === "en" ? "Included in subscription" : "Inclus dans l'abonnement"}
         </div>
 
         {/* ── Corps ── */}
