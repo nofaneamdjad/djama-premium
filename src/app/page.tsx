@@ -255,56 +255,64 @@ function HomeContent() {
             </div>
 
             {/* Right: ecosystem visual */}
+            {/* ── Carte vidéo hero ── */}
             <motion.aside
-              initial={{ opacity: 0, y: 28, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.85, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              initial={{ opacity: 0, x: 40, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="hidden lg:block"
-              style={{ animation: "float 9s ease-in-out infinite 1s" }}
+              style={{ animation: "float 9s ease-in-out infinite 1.2s" }}
             >
-              <div className="overflow-hidden rounded-[1.6rem] border border-white/[.1] bg-white/[.03] shadow-[0_32px_80px_rgba(0,0,0,.55),inset_0_1px_0_rgba(255,255,255,.06)] backdrop-blur-xl">
+              <div className="overflow-hidden rounded-[1.8rem] border border-white/[.12] bg-[#0d0d10] shadow-[0_40px_100px_rgba(0,0,0,.65),0_0_0_1px_rgba(255,255,255,.04),inset_0_1px_0_rgba(255,255,255,.07)]">
+
                 {/* Window chrome */}
                 <div className="flex items-center gap-2 border-b border-white/[.06] bg-white/[.025] px-4 py-3">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(248,113,113,.45)]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(251,191,36,.45)]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(74,222,128,.45)]" />
-                  <p className="ml-auto text-[0.58rem] font-bold uppercase tracking-[.18em] text-white/22">DJAMA · Écosystème</p>
+                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(248,113,113,.5)]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(251,191,36,.5)]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(74,222,128,.5)]" />
+                  <p className="ml-auto text-[0.58rem] font-bold uppercase tracking-[.18em] text-white/20">
+                    DJAMA · Vision
+                  </p>
                 </div>
-                {/* 4-pillar grid */}
-                <div className="grid grid-cols-2 gap-2.5 p-3.5">
-                  {([
-                    { icon: Globe,           color: "#60a5fa", border: "rgba(96,165,250,.22)",  bg: "rgba(96,165,250,.07)",  label: "Présence digitale",  sub: "Sites · Apps · Design" },
-                    { icon: LayoutDashboard, color: GOLD,      border: `rgba(${GOLDR},.25)`,    bg: `rgba(${GOLDR},.07)`,    label: "Outils & Gestion",   sub: "11 outils · 11,90€/mois" },
-                    { icon: HeartHandshake,  color: "#f59e0b", border: "rgba(245,158,11,.22)",  bg: "rgba(245,158,11,.07)",  label: "Accompagnement",     sub: "Conseil · Sourcing" },
-                    { icon: Brain,           color: "#a78bfa", border: "rgba(167,139,250,.22)", bg: "rgba(167,139,250,.07)", label: "IA & Formation",     sub: "Coaching · Assistant" },
-                  ] as const).map(({ icon: Icon, color, border, bg, label, sub }) => (
-                    <div key={label}
-                      className="relative rounded-2xl border p-3 transition-all duration-200 hover:brightness-110"
-                      style={{ borderColor: border, background: bg }}
-                    >
-                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl border"
-                        style={{ background: `${color}20`, borderColor: `${color}35` }}>
-                        <Icon size={15} style={{ color }} />
-                      </div>
-                      <p className="text-[0.7rem] font-extrabold leading-tight text-white/85">{label}</p>
-                      <p className="mt-0.5 text-[0.58rem] text-white/35">{sub}</p>
+
+                {/* Vidéo */}
+                <div className="relative overflow-hidden">
+                  <video
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    poster="/hero-showcase-poster.jpg"
+                    className="w-full object-cover"
+                    style={{ maxHeight: "300px", display: "block" }}
+                  >
+                    <source src="/hero-showcase.mp4" type="video/mp4" />
+                  </video>
+
+                  {/* Gradient overlay bas */}
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0d0d10] to-transparent" />
+
+                  {/* Badge live en haut à droite */}
+                  <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/[.12] bg-black/60 px-2.5 py-1 backdrop-blur-sm">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#34d399]" />
+                    <span className="text-[0.58rem] font-bold uppercase tracking-[.14em] text-white/60">Live</span>
+                  </div>
+                </div>
+
+                {/* Bas de carte : stats rapides */}
+                <div className="grid grid-cols-3 divide-x divide-white/[.05] border-t border-white/[.06]">
+                  {[
+                    { value: "50+",  label: "Clients" },
+                    { value: "100+", label: "Missions" },
+                    { value: "24h",  label: "Réponse" },
+                  ].map(({ value, label }) => (
+                    <div key={label} className="flex flex-col items-center py-3.5">
+                      <span className="text-[1.05rem] font-black leading-none" style={{ color: GOLD }}>{value}</span>
+                      <span className="mt-0.5 text-[0.58rem] text-white/30">{label}</span>
                     </div>
                   ))}
                 </div>
-                {/* Connector pill */}
-                <div className="mx-3.5 mb-3 flex items-center justify-center gap-2 rounded-xl border border-white/[.06] bg-white/[.02] py-2">
-                  <div className="h-1.5 w-1.5 rounded-full" style={{ background: GOLD }} />
-                  <span className="text-[0.58rem] font-bold uppercase tracking-[.12em] text-white/28">4 piliers · 1 écosystème connecté</span>
-                  <div className="h-1.5 w-1.5 rounded-full" style={{ background: GOLD }} />
-                </div>
-                {/* Footer */}
-                <div className="border-t border-white/[.06] bg-gradient-to-r from-[rgba(201,165,90,.06)] to-transparent px-4 py-4 text-center">
-                  <p className="text-[2.2rem] font-black leading-none tracking-tight" style={{ color: GOLD }}>50+</p>
-                  <p className="mt-1 text-[0.68rem] text-white/30">entrepreneurs dans l&apos;écosystème depuis 2022</p>
-                  <div className="mt-2 flex justify-center gap-0.5">
-                    {[...Array(5)].map((_, i) => <Star key={i} size={9} className="fill-[#c9a55a] text-[#c9a55a]" />)}
-                  </div>
-                </div>
+
               </div>
             </motion.aside>
           </div>
