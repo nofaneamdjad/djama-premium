@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Zones privées — pas d'indexation
+Disallow: /admin/
+Disallow: /client/
+Disallow: /api/
+Disallow: /coaching-ia/espace/
+Disallow: /definir-mot-de-passe
+Disallow: /update-password
+Disallow: /reset-password
+Disallow: /paiement-confirme
+
+# Sitemap
+Sitemap: https://djama.space/sitemap.xml

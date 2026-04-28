@@ -3,10 +3,67 @@ import "./globals.css";
 import SplashScreen    from "@/components/SplashScreen";
 import { WebViewBanner } from "@/components/WebViewBanner";
 
+const BASE_URL = "https://djama.space";
+
 export const metadata: Metadata = {
-  title: "DJAMA — Services digitaux & outils pro",
+  // ── Titre ─────────────────────────────────────────────────────────
+  title: {
+    default: "DJAMA — L'écosystème digital pour entrepreneurs",
+    template: "%s | DJAMA",
+  },
+
+  // ── Description ───────────────────────────────────────────────────
   description:
-    "Sites, apps, montage, factures/devis, accompagnement URSSAF — une solution complète.",
+    "Présence digitale, outils de gestion, accompagnement expert et IA réunis en un seul écosystème. Rejoignez 50+ entrepreneurs qui font grandir leur activité avec DJAMA.",
+
+  // ── Canonical & robots ────────────────────────────────────────────
+  metadataBase: new URL(BASE_URL),
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large" },
+  },
+
+  // ── Open Graph ────────────────────────────────────────────────────
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: BASE_URL,
+    siteName: "DJAMA",
+    title: "DJAMA — L'écosystème digital pour entrepreneurs",
+    description:
+      "Présence digitale, outils de gestion, accompagnement expert et IA réunis en un seul écosystème. 50+ entrepreneurs accompagnés depuis 2022.",
+    images: [
+      {
+        url: "/logo.png",
+        width: 512,
+        height: 512,
+        alt: "DJAMA — L'écosystème digital",
+      },
+    ],
+  },
+
+  // ── Twitter / X ───────────────────────────────────────────────────
+  twitter: {
+    card: "summary",
+    title: "DJAMA — L'écosystème digital pour entrepreneurs",
+    description:
+      "Présence digitale, outils de gestion, accompagnement expert et IA réunis en un seul écosystème.",
+    images: ["/logo.png"],
+  },
+
+  // ── Autres ────────────────────────────────────────────────────────
+  keywords: [
+    "agence digitale", "création site web", "application mobile",
+    "outils gestion entreprise", "coaching IA", "automatisation business",
+    "factures en ligne", "espace client", "entrepreneur", "freelance",
+    "DJAMA", "djama.space",
+  ],
+  authors: [{ name: "DJAMA", url: BASE_URL }],
+  creator: "DJAMA",
+  publisher: "DJAMA",
+  category: "Business & Technology",
 };
 
 /**
