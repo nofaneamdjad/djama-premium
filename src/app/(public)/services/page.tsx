@@ -324,7 +324,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
         <Link href={href} className="absolute inset-0 z-0" aria-label={service.title} tabIndex={-1} />
 
         {isSiteVitrine ? (
-          <div className="relative overflow-hidden" style={{ height: "200px" }}>
+          <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
             <Image
               src="/services-vitrine.jpg"
               alt="Création de site vitrine professionnel — DJAMA"
@@ -332,7 +332,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
               className="object-cover object-top"
               sizes="(max-width: 640px) 100vw, 480px"
             />
-            <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#09090b] to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#09090b] to-transparent" />
           </div>
         ) : (
           <CardVisual icon={Icon} config={config} />
@@ -492,7 +492,7 @@ function OutilsBlock({ lang }: { lang: "fr" | "en" }) {
         />
 
         {/* ── Header visuel — image ── */}
-        <div className="relative overflow-hidden" style={{ aspectRatio: "16/6.5" }}>
+        <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
           <Image
             src="/services-outils.jpg"
             alt="Documents & Outils professionnels inclus — DJAMA"
