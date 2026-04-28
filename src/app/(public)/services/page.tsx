@@ -323,7 +323,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
         {/* Overlay — whole card is clickable */}
         <Link href={href} className="absolute inset-0 z-0" aria-label={service.title} tabIndex={-1} />
 
-        {isSiteVitrine || isAppMobile || isSiteEcommerce || isAutomatisationIA || isPlateformeWeb || isMontageVideo || isRetouchePhoto || isVisuelsPublicitaires || isMarchesPublics || isAssistanceAdmin || isDeclarationsUrssaf || isFournisseurs || isCreationAutoEntre ? (
+        {isSiteVitrine || isAppMobile || isSiteEcommerce || isAutomatisationIA || isPlateformeWeb || isMontageVideo || isRetouchePhoto || isVisuelsPublicitaires || isMarchesPublics || isAssistanceAdmin || isDeclarationsUrssaf || isFournisseurs || isCreationAutoEntre || isCoachingIA || isSoutienScolaire ? (
           <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
             <Image
               src={
@@ -339,7 +339,9 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
                 isAssistanceAdmin      ? "/services-assistance-admin.jpg"      :
                 isDeclarationsUrssaf   ? "/services-declarations-urssaf.jpg"   :
                 isFournisseurs         ? "/services-fournisseurs.jpg"          :
-                                         "/services-creation-auto-entre.jpg"
+                isCreationAutoEntre    ? "/services-creation-auto-entre.jpg"   :
+                isCoachingIA           ? "/services-coaching-ia.jpg"           :
+                                         "/services-soutien-scolaire.jpg"
               }
               alt={
                 isSiteVitrine          ? "Création de site vitrine — DJAMA"              :
@@ -354,7 +356,9 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
                 isAssistanceAdmin      ? "Assistance administrative — DJAMA"             :
                 isDeclarationsUrssaf   ? "Déclarations URSSAF simplifiées — DJAMA"       :
                 isFournisseurs         ? "Recherche fournisseurs internationaux — DJAMA" :
-                                         "Création auto-entrepreneur — DJAMA"
+                isCreationAutoEntre    ? "Création auto-entrepreneur — DJAMA"            :
+                isCoachingIA           ? "Coaching IA — DJAMA"                           :
+                                         "Soutien scolaire — DJAMA"
               }
               fill
               className="object-cover object-top"
