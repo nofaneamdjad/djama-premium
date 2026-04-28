@@ -323,28 +323,38 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
         {/* Overlay — whole card is clickable */}
         <Link href={href} className="absolute inset-0 z-0" aria-label={service.title} tabIndex={-1} />
 
-        {isSiteVitrine || isAppMobile || isSiteEcommerce || isAutomatisationIA || isPlateformeWeb || isMontageVideo || isRetouchePhoto || isVisuelsPublicitaires ? (
+        {isSiteVitrine || isAppMobile || isSiteEcommerce || isAutomatisationIA || isPlateformeWeb || isMontageVideo || isRetouchePhoto || isVisuelsPublicitaires || isMarchesPublics || isAssistanceAdmin || isDeclarationsUrssaf || isFournisseurs || isCreationAutoEntre ? (
           <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
             <Image
               src={
-                isSiteVitrine        ? "/services-vitrine.jpg"          :
-                isAppMobile          ? "/services-app-mobile.jpg"       :
-                isSiteEcommerce      ? "/services-ecommerce.jpg"        :
-                isAutomatisationIA   ? "/services-automatisation.jpg"   :
-                isPlateformeWeb      ? "/services-plateforme.jpg"       :
-                isMontageVideo       ? "/services-montage-video.jpg"    :
-                isRetouchePhoto      ? "/services-retouche-photo.jpg"   :
-                                       "/services-visuels-pub.jpg"
+                isSiteVitrine          ? "/services-vitrine.jpg"               :
+                isAppMobile            ? "/services-app-mobile.jpg"            :
+                isSiteEcommerce        ? "/services-ecommerce.jpg"             :
+                isAutomatisationIA     ? "/services-automatisation.jpg"        :
+                isPlateformeWeb        ? "/services-plateforme.jpg"            :
+                isMontageVideo         ? "/services-montage-video.jpg"         :
+                isRetouchePhoto        ? "/services-retouche-photo.jpg"        :
+                isVisuelsPublicitaires ? "/services-visuels-pub.jpg"           :
+                isMarchesPublics       ? "/services-marches-publics.jpg"       :
+                isAssistanceAdmin      ? "/services-assistance-admin.jpg"      :
+                isDeclarationsUrssaf   ? "/services-declarations-urssaf.jpg"   :
+                isFournisseurs         ? "/services-fournisseurs.jpg"          :
+                                         "/services-creation-auto-entre.jpg"
               }
               alt={
-                isSiteVitrine        ? "Création de site vitrine — DJAMA"          :
-                isAppMobile          ? "Application mobile iOS/Android — DJAMA"    :
-                isSiteEcommerce      ? "Site e-commerce performant — DJAMA"        :
-                isAutomatisationIA   ? "Automatisation & IA — DJAMA"               :
-                isPlateformeWeb      ? "Plateforme web sur mesure — DJAMA"         :
-                isMontageVideo       ? "Montage vidéo professionnel — DJAMA"       :
-                isRetouchePhoto      ? "Retouche photo professionnelle — DJAMA"    :
-                                       "Visuels publicitaires percutants — DJAMA"
+                isSiteVitrine          ? "Création de site vitrine — DJAMA"              :
+                isAppMobile            ? "Application mobile iOS/Android — DJAMA"        :
+                isSiteEcommerce        ? "Site e-commerce performant — DJAMA"            :
+                isAutomatisationIA     ? "Automatisation & IA — DJAMA"                   :
+                isPlateformeWeb        ? "Plateforme web sur mesure — DJAMA"             :
+                isMontageVideo         ? "Montage vidéo professionnel — DJAMA"           :
+                isRetouchePhoto        ? "Retouche photo professionnelle — DJAMA"        :
+                isVisuelsPublicitaires ? "Visuels publicitaires percutants — DJAMA"      :
+                isMarchesPublics       ? "Marchés publics & privés — DJAMA"              :
+                isAssistanceAdmin      ? "Assistance administrative — DJAMA"             :
+                isDeclarationsUrssaf   ? "Déclarations URSSAF simplifiées — DJAMA"       :
+                isFournisseurs         ? "Recherche fournisseurs internationaux — DJAMA" :
+                                         "Création auto-entrepreneur — DJAMA"
               }
               fill
               className="object-cover object-top"
