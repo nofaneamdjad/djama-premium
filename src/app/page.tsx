@@ -183,7 +183,7 @@ function HomeContent() {
         <div className="pointer-events-none absolute bottom-[5%] left-[35%] h-[300px] w-[300px] animate-float rounded-full bg-[rgba(96,165,250,.04)] blur-[90px]" />
 
         <div className="relative z-10 mx-auto max-w-6xl px-6 pb-40 pt-44 lg:pb-48 lg:pt-52">
-          <div className="grid items-center gap-12 lg:grid-cols-[1fr_300px]">
+          <div className="grid items-center gap-10 lg:grid-cols-[1fr_320px]">
 
             {/* Left: copy */}
             <div>
@@ -257,10 +257,10 @@ function HomeContent() {
             {/* Right: ecosystem visual */}
             {/* ── Carte vidéo hero ── */}
             <motion.aside
-              initial={{ opacity: 0, x: 40, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
+              initial={{ opacity: 0, y: 32, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="hidden lg:block"
+              className="w-full max-w-sm mx-auto lg:max-w-none lg:mx-0"
               style={{ animation: "float 9s ease-in-out infinite 1.2s" }}
             >
               <div className="overflow-hidden rounded-[1.8rem] border border-white/[.12] bg-[#0d0d10] shadow-[0_40px_100px_rgba(0,0,0,.65),0_0_0_1px_rgba(255,255,255,.04),inset_0_1px_0_rgba(255,255,255,.07)]">
