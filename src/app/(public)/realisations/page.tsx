@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import {
@@ -9,6 +10,7 @@ import {
   Globe2, Star, TrendingUp, Shield, FileText,
   Lock, EyeOff, Code2, Wrench, HeartHandshake,
   MessageCircle, ReceiptText, Globe,
+  Timer, Briefcase,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import {
@@ -163,6 +165,80 @@ function toDisplay(r: RealisationRow): ProjectDisplay {
 }
 
 /* ══════════════════════════════════════════════════
+   ÉTUDES DE CAS — IMPACT FINANCIER
+══════════════════════════════════════════════════ */
+const CASE_STUDIES = [
+  {
+    id: "cs1",
+    icon: Briefcase,
+    profile: "Consultant IT freelance",
+    sector: "Services B2B · Indépendant",
+    color: "#c9a55a",
+    rgb: "201,165,90",
+    solution: "DJAMA Pro",
+    solutionHref: "/abonnement",
+    problem: "5 abonnements séparés (facturation, CRM, agenda, comptabilité, contrats) pour 90€/mois — interfaces multiples, données dispersées, 3h/semaine perdues en admin.",
+    after: "Migration sur DJAMA Pro : 11 outils centralisés, 1 seul espace, accès immédiat — tout synchronisé.",
+    stats: [
+      { value: "-78€",  label: "économisés / mois",    icon: TrendingUp, color: "#34d399"  },
+      { value: "-2h30", label: "admin / semaine",      icon: Timer,      color: "#60a5fa"  },
+      { value: "12",    label: "factures auto / an",   icon: Zap,        color: "#c9a55a"  },
+    ],
+  },
+  {
+    id: "cs2",
+    icon: Globe,
+    profile: "Artisan plombier",
+    sector: "BTP · Services locaux",
+    color: "#60a5fa",
+    rgb: "96,165,250",
+    solution: "Site vitrine",
+    solutionHref: "/services/site-vitrine",
+    problem: "Zéro présence en ligne, acquisition 100% bouche-à-oreille. Périodes creuses de -40% de CA en été et en janvier.",
+    after: "Site vitrine professionnel livré en 10 jours, référencement local Google Maps, formulaire de devis intégré.",
+    stats: [
+      { value: "+35%",    label: "contacts entrants",  icon: TrendingUp, color: "#34d399"  },
+      { value: "3 mois",  label: "pour rentabiliser",  icon: Zap,        color: "#60a5fa"  },
+      { value: "+8 000€", label: "de CA en 6 mois",    icon: Star,       color: "#c9a55a"  },
+    ],
+  },
+  {
+    id: "cs3",
+    icon: ShoppingCart,
+    profile: "Vendeuse e-commerce mode",
+    sector: "Retail · Indépendant",
+    color: "#a78bfa",
+    rgb: "167,139,250",
+    solution: "Coaching IA",
+    solutionHref: "/services/coaching-ia",
+    problem: "2h/jour perdues sur rédaction de fiches produits, emails et posts réseaux sociaux — sans outil IA ni méthode.",
+    after: "Formation Coaching IA DJAMA (190€) : maîtrise de ChatGPT et Claude, prompts métier prêts à l'emploi.",
+    stats: [
+      { value: "-1h30", label: "rédaction / jour",         icon: Timer,      color: "#4ade80"  },
+      { value: "3×",    label: "fiches produits plus vite", icon: Zap,        color: "#a78bfa"  },
+      { value: "+22%",  label: "de conversion boutique",   icon: TrendingUp, color: "#c9a55a"  },
+    ],
+  },
+  {
+    id: "cs4",
+    icon: Globe2,
+    profile: "Distributeur multi-produits",
+    sector: "Commerce · PME 5 pers.",
+    color: "#f59e0b",
+    rgb: "245,158,11",
+    solution: "Sourcing international",
+    solutionHref: "/services/recherche-fournisseurs",
+    problem: "Marges commerciales bloquées à 18% avec fournisseurs locaux. Coûts d'achat trop élevés pour rester compétitif face aux grandes enseignes.",
+    after: "Sourcing DJAMA : 3 fournisseurs internationaux qualifiés, mise en relation directe, négociation incluse.",
+    stats: [
+      { value: "+20 pts", label: "de marge brute",      icon: TrendingUp,  color: "#34d399"  },
+      { value: "-24 000€",label: "d'achats / an",       icon: Star,        color: "#f59e0b"  },
+      { value: "38%",     label: "marge atteinte",      icon: CheckCircle2, color: "#c9a55a" },
+    ],
+  },
+] as const;
+
+/* ══════════════════════════════════════════════════
    FILTRES
 ══════════════════════════════════════════════════ */
 const FILTERS: { id: FilterId | "all"; label: string; icon: React.ElementType }[] = [
@@ -276,11 +352,12 @@ function ServiceVisual({ project }: { project: ProjectDisplay }) {
 function MediaImage({ project }: { project: ProjectDisplay }) {
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src={project.imageUrl!}
         alt={project.name}
-        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+        fill
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        className="object-cover transition-transform duration-700 group-hover:scale-105"
       />
       {/* Voile gradient en bas */}
       <div
@@ -310,8 +387,7 @@ function MediaVideo({ project }: { project: ProjectDisplay }) {
     return (
       <div className="relative h-full w-full bg-black">
         {thumbnail && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumbnail} alt={project.name} className="absolute inset-0 h-full w-full object-cover opacity-60" />
+          <Image src={thumbnail} alt={project.name} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover opacity-60" />
         )}
         <video
           src={embed.src}
@@ -331,8 +407,7 @@ function MediaVideo({ project }: { project: ProjectDisplay }) {
     <div className="relative h-full w-full bg-black">
       {/* Thumbnail cliquable + iframe au hover */}
       {thumbnail ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={thumbnail} alt={project.name} className="h-full w-full object-cover" />
+        <Image src={thumbnail} alt={project.name} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
       ) : (
         <iframe
           src={embed.src}
@@ -550,7 +625,7 @@ export default function RealisationsPage() {
 
           <h1 className="display-hero text-white">
             <MultiLineReveal
-              lines={["Des réalisations concrètes,", "pensées pour durer."]}
+              lines={["Des missions avec impact,", "des résultats mesurables."]}
               highlight={1}
               stagger={0.16}
               wordStagger={0.06}
@@ -560,17 +635,17 @@ export default function RealisationsPage() {
           </h1>
 
           <FadeReveal delay={0.65} as="p" className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-white/40">
-            Sites, apps, outils SaaS, accompagnement administratif et sourcing international —
-            un aperçu des missions réalisées pour nos clients.
+            Sites, apps, coaching IA, sourcing, accompagnement — des missions avec un impact financier
+            concret et mesurable. Résultats réels, clients anonymisés.
           </FadeReveal>
 
           {/* Stats */}
           <FadeReveal delay={0.82} className="mt-12 flex flex-wrap justify-center gap-6 border-t border-white/[0.07] pt-10">
             {[
-              { value: "6+",  label: "Projets visibles",         color: "#c9a55a" },
-              { value: "50+", label: "Clients accompagnés",      color: "#34d399" },
-              { value: "5",   label: "Catégories de missions",   color: "#60a5fa" },
-              { value: "3+",  label: "Pays & marchés couverts",  color: "#a78bfa" },
+              { value: "50+",   label: "Clients accompagnés",    color: "#c9a55a" },
+              { value: "100+", label: "Missions livrées",       color: "#34d399" },
+              { value: "3 ans",label: "d'expérience",           color: "#60a5fa" },
+              { value: "3+",   label: "Pays & marchés",         color: "#a78bfa" },
             ].map(({ value, label, color }) => (
               <div key={label} className="text-center">
                 <p className="text-3xl font-black" style={{ color }}>{value}</p>
@@ -579,6 +654,109 @@ export default function RealisationsPage() {
             ))}
           </FadeReveal>
         </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          IMPACT FINANCIER — ÉTUDES DE CAS
+      ══════════════════════════════════════════ */}
+      <section className="relative overflow-hidden bg-[#0b0914] py-20 sm:py-28">
+        {/* Glows */}
+        <div className="pointer-events-none absolute left-0 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.06)] blur-[120px]" />
+        <div className="pointer-events-none absolute right-0 top-2/3 h-[300px] w-[300px] translate-x-1/2 rounded-full bg-[rgba(167,139,250,.05)] blur-[100px]" />
+
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+          className="relative z-10 mx-auto max-w-6xl px-6"
+        >
+          {/* Header */}
+          <div className="mb-14 text-center">
+            <motion.div variants={fadeIn}
+              className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(52,211,153,.3)] bg-[rgba(52,211,153,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em] text-[#34d399]"
+            >
+              <TrendingUp size={11} />
+              Résultats concrets &amp; mesurés
+            </motion.div>
+            <motion.h2 variants={fadeIn} className="display-section text-white">
+              Impact financier réel.
+            </motion.h2>
+            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/40">
+              Chaque mission vise un retour sur investissement concret. Voici 4 exemples représentatifs — noms et détails anonymisés pour respecter la confidentialité.
+            </FadeReveal>
+          </div>
+
+          {/* Case study cards — grille 2×2 */}
+          <motion.div variants={staggerContainerFast} className="grid gap-5 sm:grid-cols-2">
+            {CASE_STUDIES.map(({ id, icon: Icon, profile, sector, color, rgb, solution, solutionHref, problem, after, stats }) => (
+              <motion.div key={id} variants={cardReveal}
+                whileHover={{ y: -6, transition: { duration: 0.3, ease } }}
+                className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border transition-all duration-300 hover:shadow-[0_24px_60px_rgba(0,0,0,.45)]"
+                style={{ borderColor: `rgba(${rgb},.22)`, background: "rgba(255,255,255,.025)" }}
+              >
+                {/* Top accent */}
+                <div className="h-[2.5px] w-full transition-all duration-300 group-hover:h-[4px]"
+                  style={{ background: `linear-gradient(90deg,transparent,${color},transparent)` }} />
+                {/* Glow interne */}
+                <div className="pointer-events-none absolute inset-0 rounded-[1.75rem] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
+                  style={{ background: `radial-gradient(ellipse at 50% -10%, rgba(${rgb},.12) 0%, transparent 65%)` }} />
+
+                <div className="relative flex flex-1 flex-col p-6">
+                  {/* Header profil */}
+                  <div className="mb-5 flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border"
+                        style={{ background: `rgba(${rgb},.12)`, borderColor: `rgba(${rgb},.28)`, boxShadow: `0 0 14px rgba(${rgb},.18)` }}>
+                        <Icon size={20} style={{ color }} />
+                      </div>
+                      <div>
+                        <p className="text-[0.88rem] font-extrabold text-white/88">{profile}</p>
+                        <p className="text-[0.7rem] text-white/35">{sector}</p>
+                      </div>
+                    </div>
+                    <Link href={solutionHref}
+                      className="shrink-0 rounded-full border px-3 py-1 text-[0.62rem] font-black uppercase tracking-[.16em] transition-all duration-200 hover:brightness-125"
+                      style={{ borderColor: `rgba(${rgb},.3)`, background: `rgba(${rgb},.08)`, color }}>
+                      {solution}
+                    </Link>
+                  </div>
+
+                  {/* 3 stats chiffrées */}
+                  <div className="mb-5 grid grid-cols-3 gap-2.5">
+                    {stats.map(({ value, label, icon: StatIcon, color: statColor }) => (
+                      <div key={label}
+                        className="flex flex-col items-center rounded-2xl border border-white/[.06] bg-white/[.03] px-2 py-3.5 text-center"
+                      >
+                        <StatIcon size={13} className="mb-1.5 shrink-0" style={{ color: statColor }} />
+                        <p className="text-[1.05rem] font-black leading-none" style={{ color: statColor }}>{value}</p>
+                        <p className="mt-1 text-[0.58rem] leading-tight text-white/35">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Avant → Après */}
+                  <div className="mt-auto space-y-2">
+                    <div className="flex items-start gap-2.5 rounded-xl border border-[rgba(239,68,68,.15)] bg-[rgba(239,68,68,.04)] px-3.5 py-3">
+                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[rgba(239,68,68,.2)] text-[0.55rem] font-black text-[rgba(239,68,68,.8)]">✕</span>
+                      <p className="text-[0.78rem] leading-relaxed text-white/45">{problem}</p>
+                    </div>
+                    <div className="flex items-start gap-2.5 rounded-xl border border-[rgba(52,211,153,.18)] bg-[rgba(52,211,153,.04)] px-3.5 py-3">
+                      <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#34d399]" />
+                      <p className="text-[0.78rem] leading-relaxed text-white/65">{after}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Disclaimer */}
+          <FadeReveal delay={0.4} className="mt-8 flex justify-center">
+            <p className="flex items-center gap-2 text-center text-[0.72rem] text-white/22">
+              <Shield size={11} className="shrink-0" />
+              Résultats basés sur des missions réelles — noms, secteurs et chiffres partiellement anonymisés pour respecter la confidentialité client.
+            </p>
+          </FadeReveal>
+        </motion.div>
       </section>
 
       {/* ══════════════════════════════════════════
