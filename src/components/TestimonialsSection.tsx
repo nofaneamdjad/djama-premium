@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Star, Quote } from "lucide-react";
+import Image from "next/image";
 import { staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
 
 export type Testimonial = {
@@ -116,6 +117,38 @@ export default function TestimonialsSection({
           >
             <Star size={10} fill="#c9a55a" /> {badge}
           </motion.div>
+
+          {/* Photo équipe / clients */}
+          <motion.div
+            variants={fadeIn}
+            className="relative mx-auto mb-8 overflow-hidden rounded-[1.4rem]"
+            style={{
+              maxWidth: "560px",
+              aspectRatio: "16/6",
+              border: "1px solid rgba(201,165,90,.2)",
+              boxShadow: "0 30px 80px rgba(0,0,0,.5), 0 0 60px rgba(201,165,90,.06)",
+            }}
+          >
+            <Image
+              src="/testimonials-team.jpg"
+              alt="Clients DJAMA — portraits"
+              fill
+              className="object-cover object-center"
+              sizes="(max-width: 640px) 90vw, 560px"
+            />
+            {/* Stars overlay centré */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/30 backdrop-blur-[1px]">
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={18} fill="#c9a55a" style={{ color: "#c9a55a" }} />
+                ))}
+              </div>
+              <p className="text-[0.7rem] font-black uppercase tracking-[.2em] text-white/70">
+                +50 clients satisfaits
+              </p>
+            </div>
+          </motion.div>
+
           <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">
             {title}
           </motion.h2>
