@@ -8,7 +8,6 @@ import { LanguageProvider } from "@/lib/language-context";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import {
   ArrowRight, Mail, Star, Zap, Users2, Shield,
@@ -354,34 +353,6 @@ function HomeContent() {
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#09090b] to-transparent" />
       </section>
 
-      {/* ══════════════════════════════════════════════
-          SHOWCASE PHOTO
-      ══════════════════════════════════════════════ */}
-      <section className="relative bg-[#09090b] py-10 sm:py-14">
-        <div className="mx-auto max-w-md px-6 sm:max-w-lg">
-          <motion.div
-            initial={{ opacity: 0, y: 40, scale: 0.97 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-            viewport={{ once: true, amount: 0.2 }}
-            className="relative overflow-hidden rounded-[2rem] bg-[#0a0a0a]"
-            style={{
-              aspectRatio: "4/5",
-              border: `1px solid rgba(${GOLDR},.22)`,
-              boxShadow: `0 50px 120px rgba(0,0,0,.6), 0 0 80px rgba(${GOLDR},.08)`,
-            }}
-          >
-            <Image
-              src="/hero-showcase-poster.jpg"
-              alt="DJAMA · Connect your dream — technologie & innovation"
-              fill
-              className="object-contain"
-              sizes="(max-width: 640px) 90vw, 480px"
-              priority
-            />
-          </motion.div>
-        </div>
-      </section>
 
       {/* ══════════════════════════════════════════════
           1.5 LES 4 PILIERS DE L'ÉCOSYSTÈME
