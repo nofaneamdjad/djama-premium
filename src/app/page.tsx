@@ -73,15 +73,6 @@ const ECOSYSTEM = [
   { icon: GraduationCap,  color: "#a78bfa",  bg: "rgba(167,139,250,.09)",   border: "rgba(167,139,250,.2)",    category: "Formation",                   services: ["Soutien scolaire"] },
 ] as const;
 
-const HERO_SERVICE_GROUPS = [
-  { color: "#60a5fa",  items: ["Création de sites web", "Sites e-commerce", "Applications mobiles", "Plateformes sur mesure"] },
-  { color: GOLD,       items: ["Factures automatiques", "Devis automatiques", "Agenda / planning", "Bloc-notes"] },
-  { color: "#a78bfa",  items: ["Automatisation & IA", "Coaching IA"] },
-  { color: GOLD,       items: ["Visuels publicitaires", "Montage vidéo", "Retouche photo"] },
-  { color: "#60a5fa",  items: ["Auto-entrepreneur", "Déclarations URSSAF", "Assist. administrative"] },
-  { color: "#4ade80",  items: ["Recherche fournisseurs", "Marchés publics"] },
-  { color: "#a78bfa",  items: ["Soutien scolaire"] },
-] as const;
 
 const SOLUTIONS_TABLE = [
   { icon: Globe,          color: GOLD,       besoin: "Présence en ligne",    solution: "Création de sites web premium",                 resultat: "Une image professionnelle et plus de crédibilité" },
@@ -169,7 +160,7 @@ function HomeContent() {
   const heroTitle1       = get("hero.title1")          || h.hero.titleLines[0];
   const heroTitle2       = get("hero.title2")          || h.hero.titleLines[1];
   const heroSubtitle     = get("hero.subtitle")        || h.hero.subtitle;
-  const ctaPrimText      = get("cta.primary.text")     || "Voir nos services";
+  const ctaPrimText      = get("cta.primary.text")     || "Découvrir l'écosystème";
   const ctaPrimHref      = get("cta.primary.href")     || "/services";
   const ctaSecText       = get("cta.secondary.text")   || h.hero.cta2;
   const ctaSecHref       = get("cta.secondary.href")   || "/services";
@@ -240,7 +231,7 @@ function HomeContent() {
                 </Link>
               </FadeReveal>
               <FadeReveal delay={0.78} as="p" className="mt-3 text-[0.8rem] text-white/30">
-                Découvrez nos solutions et comment DJAMA peut vous accompagner
+                Présence digitale · Outils pros · Accompagnement · IA — tout connecté.
               </FadeReveal>
 
               {/* Social proof */}
@@ -262,7 +253,7 @@ function HomeContent() {
               </FadeReveal>
             </div>
 
-            {/* Right: floating service panel */}
+            {/* Right: ecosystem visual */}
             <motion.aside
               initial={{ opacity: 0, y: 28, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -276,29 +267,39 @@ function HomeContent() {
                   <span className="h-2.5 w-2.5 rounded-full bg-[rgba(248,113,113,.45)]" />
                   <span className="h-2.5 w-2.5 rounded-full bg-[rgba(251,191,36,.45)]" />
                   <span className="h-2.5 w-2.5 rounded-full bg-[rgba(74,222,128,.45)]" />
-                  <p className="ml-auto text-[0.58rem] font-bold uppercase tracking-[.18em] text-white/22">DJAMA · Services</p>
+                  <p className="ml-auto text-[0.58rem] font-bold uppercase tracking-[.18em] text-white/22">DJAMA · Écosystème</p>
                 </div>
-                <div className="px-4 py-4 space-y-2.5">
-                  {HERO_SERVICE_GROUPS.map((group, gi) => (
-                    <div key={gi}>
-                      {gi > 0 && <div className="mb-2.5 h-px bg-white/[.05]" />}
-                      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
-                        {group.items.map((item) => (
-                          <div key={item} className="group/s flex items-start gap-1.5 py-[3px] cursor-default">
-                            <div className="mt-[5px] h-[5px] w-[5px] shrink-0 rounded-full transition-all duration-200 group-hover/s:scale-150 group-hover/s:shadow-[0_0_4px_currentColor]"
-                              style={{ background: group.color }} />
-                            <span className="text-[0.65rem] leading-[1.35] text-white/48 transition-colors duration-200 group-hover/s:text-white/82">
-                              {item}
-                            </span>
-                          </div>
-                        ))}
+                {/* 4-pillar grid */}
+                <div className="grid grid-cols-2 gap-2.5 p-3.5">
+                  {([
+                    { icon: Globe,           color: "#60a5fa", border: "rgba(96,165,250,.22)",  bg: "rgba(96,165,250,.07)",  label: "Présence digitale",  sub: "Sites · Apps · Design" },
+                    { icon: LayoutDashboard, color: GOLD,      border: `rgba(${GOLDR},.25)`,    bg: `rgba(${GOLDR},.07)`,    label: "Outils & Gestion",   sub: "11 outils · 11,90€/mois" },
+                    { icon: HeartHandshake,  color: "#f59e0b", border: "rgba(245,158,11,.22)",  bg: "rgba(245,158,11,.07)",  label: "Accompagnement",     sub: "Conseil · Sourcing" },
+                    { icon: Brain,           color: "#a78bfa", border: "rgba(167,139,250,.22)", bg: "rgba(167,139,250,.07)", label: "IA & Formation",     sub: "Coaching · Assistant" },
+                  ] as const).map(({ icon: Icon, color, border, bg, label, sub }) => (
+                    <div key={label}
+                      className="relative rounded-2xl border p-3 transition-all duration-200 hover:brightness-110"
+                      style={{ borderColor: border, background: bg }}
+                    >
+                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl border"
+                        style={{ background: `${color}20`, borderColor: `${color}35` }}>
+                        <Icon size={15} style={{ color }} />
                       </div>
+                      <p className="text-[0.7rem] font-extrabold leading-tight text-white/85">{label}</p>
+                      <p className="mt-0.5 text-[0.58rem] text-white/35">{sub}</p>
                     </div>
                   ))}
                 </div>
+                {/* Connector pill */}
+                <div className="mx-3.5 mb-3 flex items-center justify-center gap-2 rounded-xl border border-white/[.06] bg-white/[.02] py-2">
+                  <div className="h-1.5 w-1.5 rounded-full" style={{ background: GOLD }} />
+                  <span className="text-[0.58rem] font-bold uppercase tracking-[.12em] text-white/28">4 piliers · 1 écosystème connecté</span>
+                  <div className="h-1.5 w-1.5 rounded-full" style={{ background: GOLD }} />
+                </div>
+                {/* Footer */}
                 <div className="border-t border-white/[.06] bg-gradient-to-r from-[rgba(201,165,90,.06)] to-transparent px-4 py-4 text-center">
                   <p className="text-[2.2rem] font-black leading-none tracking-tight" style={{ color: GOLD }}>50+</p>
-                  <p className="mt-1 text-[0.68rem] text-white/30">clients accompagnés depuis 2022</p>
+                  <p className="mt-1 text-[0.68rem] text-white/30">entrepreneurs dans l&apos;écosystème depuis 2022</p>
                   <div className="mt-2 flex justify-center gap-0.5">
                     {[...Array(5)].map((_, i) => <Star key={i} size={9} className="fill-[#c9a55a] text-[#c9a55a]" />)}
                   </div>
@@ -313,87 +314,144 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          1.5 IMPACT — plateforme unifiée
+          1.5 LES 4 PILIERS DE L'ÉCOSYSTÈME
       ══════════════════════════════════════════════ */}
       <section className="relative overflow-hidden bg-[#09090b] pb-24 pt-16 sm:pb-32 sm:pt-20">
-        {/* Glow central */}
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2">
-          <div className="mx-auto h-[500px] w-full max-w-[900px] rounded-full bg-[rgba(201,165,90,0.055)] blur-[140px]" />
-        </div>
+        {/* Glows */}
+        <div className="pointer-events-none absolute left-1/3 top-0 h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.05)] blur-[140px]" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-[300px] w-[400px] translate-x-1/4 translate-y-1/4 rounded-full bg-[rgba(167,139,250,.04)] blur-[100px]" />
 
         <motion.div
-          initial={{ opacity: 0, y: 44 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 mx-auto max-w-5xl px-6 text-center"
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+          className="relative z-10 mx-auto max-w-6xl px-6"
         >
-          {/* ── Heading ── */}
-          <h2 className="text-[2.15rem] font-black leading-[1.08] tracking-tight text-white sm:text-[4rem] lg:text-[5.5rem]">
-            <span className="block">Tout votre business</span>
-            <span className="block">
-              sur{" "}
-              {/* Highlighted "une seule plateforme" */}
-              <span className="relative inline-block">
-                {/* Animated underline / marker */}
-                <motion.span
-                  initial={{ scaleX: 0 }}
-                  whileInView={{ scaleX: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute -bottom-1 left-0 h-[4px] w-full origin-left rounded-full sm:h-[6px]"
-                  style={{
-                    background: `linear-gradient(90deg, ${GOLD} 0%, rgba(201,165,90,0.25) 100%)`,
-                    boxShadow: `0 0 18px rgba(201,165,90,0.35)`,
-                  }}
-                />
-                <span className="text-[#c9a55a]">une seule plateforme</span>
-              </span>
-              {"."}
-            </span>
-          </h2>
+          {/* Header */}
+          <div className="mb-12 text-center">
+            <motion.div variants={fadeIn} className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]" style={{ color: GOLD }}>
+              <Network size={11} />
+              L&apos;écosystème DJAMA
+            </motion.div>
+            <h2 className="display-section text-white">
+              <MultiLineReveal
+                lines={["4 piliers connectés,", "1 seul écosystème."]}
+                highlight={1} stagger={0.1} wordStagger={0.04}
+                lineClassName="justify-center text-white"
+              />
+            </h2>
+            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/40">
+              Chaque pilier est autonome — et encore plus puissant combiné avec les autres. Choisissez votre point d&apos;entrée, construisez votre écosystème.
+            </FadeReveal>
+          </div>
 
-          {/* ── Subtext ── */}
-          <motion.p
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="mx-auto mt-7 max-w-md text-[1.1rem] leading-[1.75] text-white/45 sm:text-[1.3rem]"
-          >
-            Simple, efficace et{" "}
-            <span className="font-bold text-white/78 underline decoration-[#60a5fa] decoration-[2px] underline-offset-[5px] sm:decoration-[3px]">
-              abordable
-            </span>
-            .
-          </motion.p>
-
-          {/* ── CTAs ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.55, delay: 0.42, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center"
-          >
-            <Link
-              href="/services"
-              className="btn-primary group relative overflow-hidden px-8 py-4 text-[0.95rem]"
-            >
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                Voir les services
-                <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
-              </span>
-              <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
-            </Link>
-            <Link
-              href="/espace-client"
-              className="flex items-center justify-center gap-2 rounded-2xl border border-white/[.1] bg-white/[.03] px-8 py-4 text-[0.95rem] font-semibold text-white/55 transition-all duration-200 hover:border-white/[.2] hover:bg-white/[.06] hover:text-white/82"
-            >
-              Découvrir DJAMA Pro
-              <ArrowRight size={15} className="text-white/30 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </Link>
+          {/* 4 Pillar cards */}
+          <motion.div variants={staggerContainerFast} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {([
+              {
+                num: "01",
+                icon: Globe,
+                color: "#60a5fa",
+                border: "rgba(96,165,250,.22)",
+                bg: "rgba(96,165,250,.08)",
+                title: "Présence & Création",
+                desc: "Sites vitrine, e-commerce, applications mobiles et plateformes sur mesure — votre visage digital, fait pour convertir.",
+                items: ["Sites web premium", "E-commerce", "Applications mobiles", "Design & montage"],
+                cta: "Explorer",
+                href: "/services",
+              },
+              {
+                num: "02",
+                icon: LayoutDashboard,
+                color: GOLD,
+                border: `rgba(${GOLDR},.25)`,
+                bg: `rgba(${GOLDR},.08)`,
+                title: "Outils & Gestion",
+                desc: "11 outils pros réunis en une plateforme : factures, CRM, agenda, trésorerie — gérez tout depuis un espace.",
+                items: ["Factures & devis", "CRM & clients", "Trésorerie", "Contrats IA"],
+                cta: "Démarrer à 11,90€",
+                href: "/espace-client",
+              },
+              {
+                num: "03",
+                icon: HeartHandshake,
+                color: "#f59e0b",
+                border: "rgba(245,158,11,.22)",
+                bg: "rgba(245,158,11,.08)",
+                title: "Accompagnement",
+                desc: "Conseil stratégique, sourcing international, marchés publics et administratif — un partenaire de confiance.",
+                items: ["Conseil & stratégie", "Sourcing international", "Marchés publics", "Admin & URSSAF"],
+                cta: "Prendre contact",
+                href: "/contact",
+              },
+              {
+                num: "04",
+                icon: Brain,
+                color: "#a78bfa",
+                border: "rgba(167,139,250,.22)",
+                bg: "rgba(167,139,250,.08)",
+                title: "IA & Formation",
+                desc: "Assistant IA intégré, coaching IA intensif et automatisation de vos process — prenez une longueur d'avance.",
+                items: ["Assistant IA DJAMA", "Coaching IA (190€)", "Automatisation", "Outils IA inclus"],
+                cta: "Voir le coaching IA",
+                href: "/services/coaching-ia",
+              },
+            ] as const).map(({ num, icon: Icon, color, border, bg, title, desc, items, cta, href }) => (
+              <motion.div key={title} variants={cardReveal}
+                whileHover={{ y: -8, transition: { duration: 0.3, ease } }}
+                className="group relative flex flex-col overflow-hidden rounded-[1.5rem] border transition-all duration-300 hover:shadow-[0_24px_60px_rgba(0,0,0,.45)]"
+                style={{ borderColor: border, background: "rgba(255,255,255,.025)" }}
+              >
+                {/* Top accent */}
+                <div className="h-[2.5px] w-full transition-all duration-300 group-hover:h-[4px]"
+                  style={{ background: `linear-gradient(90deg,transparent,${color},transparent)` }} />
+                {/* Inner glow */}
+                <div className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
+                  style={{ background: `radial-gradient(ellipse at 50% -10%, ${color}18 0%, transparent 60%)` }} />
+                <div className="relative flex flex-1 flex-col p-5">
+                  {/* Icon + num */}
+                  <div className="mb-4 flex items-start justify-between">
+                    <motion.div
+                      className="flex h-12 w-12 items-center justify-center rounded-2xl border"
+                      style={{ background: bg, borderColor: border, boxShadow: `0 0 16px ${color}22` }}
+                      whileHover={{ scale: 1.12, boxShadow: `0 0 30px ${color}50` }}
+                      transition={{ duration: 0.22 }}
+                    >
+                      <Icon size={21} style={{ color }} />
+                    </motion.div>
+                    <span className="text-[0.6rem] font-black opacity-40" style={{ color }}>{num}</span>
+                  </div>
+                  <h3 className="text-[0.95rem] font-extrabold text-white/90">{title}</h3>
+                  <p className="mt-2 flex-1 text-[0.8rem] leading-relaxed text-white/42">{desc}</p>
+                  {/* Feature list */}
+                  <ul className="mt-4 flex flex-col gap-1.5">
+                    {items.map(item => (
+                      <li key={item} className="flex items-center gap-2 text-[0.75rem] text-white/45">
+                        <div className="h-1 w-1 shrink-0 rounded-full" style={{ background: color }} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  {/* CTA */}
+                  <Link href={href}
+                    className="group/btn mt-5 flex items-center justify-center gap-2 rounded-xl border py-2.5 text-[0.78rem] font-bold transition-all duration-200 hover:brightness-125"
+                    style={{ borderColor: `${color}35`, background: `${color}0e`, color }}
+                  >
+                    {cta}
+                    <ArrowRight size={13} className="transition-transform duration-200 group-hover/btn:translate-x-1" />
+                  </Link>
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
+
+          {/* Connection note */}
+          <FadeReveal delay={0.38} className="mt-10 flex justify-center">
+            <div className="flex items-center gap-3 rounded-full border border-white/[.07] bg-white/[.025] px-6 py-2.5">
+              <Zap size={12} style={{ color: GOLD }} />
+              <span className="text-[0.78rem] font-medium text-white/35">Combinez les piliers pour des résultats décuplés</span>
+              <Zap size={12} style={{ color: GOLD }} />
+            </div>
+          </FadeReveal>
         </motion.div>
       </section>
 
@@ -1054,13 +1112,13 @@ function HomeContent() {
             </motion.div>
             <h2 className="display-section text-white">
               <MultiLineReveal
-                lines={["Tout ce dont vous avez besoin,", "réuni en une seule plateforme."]}
+                lines={["Chaque pilier, en détail —", "tout l'écosystème DJAMA."]}
                 highlight={1} stagger={0.1} wordStagger={0.04}
                 lineClassName="justify-center text-white"
               />
             </h2>
             <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/40">
-              De la création digitale à la formation, en passant par l'automatisation — DJAMA couvre l'intégralité de votre présence et de votre activité.
+              Quatre composantes complémentaires — création, outils, accompagnement, IA — qui forment une infrastructure digitale complète pour votre activité.
             </FadeReveal>
           </div>
 
