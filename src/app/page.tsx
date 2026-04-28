@@ -184,7 +184,7 @@ function HomeContent() {
         <div className="pointer-events-none absolute bottom-[5%] left-[35%] h-[300px] w-[300px] animate-float rounded-full bg-[rgba(96,165,250,.04)] blur-[90px]" />
 
         <div className="relative z-10 mx-auto max-w-6xl px-6 pb-40 pt-44 lg:pb-48 lg:pt-52">
-          <div className="grid items-center gap-10 lg:grid-cols-[1fr_320px]">
+          <div className="grid items-center gap-10">
 
             {/* Left: copy */}
             <div>
@@ -256,97 +256,6 @@ function HomeContent() {
             </div>
 
             {/* Right: ecosystem visual */}
-            {/* ── Carte vidéo hero ── */}
-            <motion.aside
-              initial={{ opacity: 0, y: 32, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-sm mx-auto lg:max-w-none lg:mx-0"
-              style={{ animation: "float 9s ease-in-out infinite 1.2s" }}
-            >
-              <div
-                className="overflow-hidden rounded-[1.8rem] bg-[#0d0d10]"
-                style={{
-                  border: `1px solid rgba(${GOLDR},.28)`,
-                  boxShadow: `0 40px_100px rgba(0,0,0,.65), 0 0 0 1px rgba(${GOLDR},.06), inset 0 1px 0 rgba(${GOLDR},.1)`,
-                }}
-              >
-
-                {/* Window chrome — gold */}
-                <div
-                  className="flex items-center gap-2 px-4 py-3"
-                  style={{
-                    borderBottom: `1px solid rgba(${GOLDR},.12)`,
-                    background: `rgba(${GOLDR},.05)`,
-                  }}
-                >
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: `rgba(${GOLDR},.35)` }} />
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: `rgba(${GOLDR},.55)` }} />
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: `rgba(${GOLDR},.8)` }} />
-                  <p className="ml-auto text-[0.58rem] font-bold uppercase tracking-[.18em]" style={{ color: GOLD }}>
-                    DJAMA · Vision
-                  </p>
-                </div>
-
-                {/* Vidéo */}
-                <div className="relative overflow-hidden">
-                  <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    poster="/hero-showcase-poster.jpg"
-                    className="w-full object-cover"
-                    style={{ maxHeight: "300px", display: "block" }}
-                  >
-                    <source src="/hero-showcase.mp4" type="video/mp4" />
-                  </video>
-
-                  {/* Gradient overlay bas gold */}
-                  <div
-                    className="absolute inset-x-0 bottom-0 h-20"
-                    style={{ background: `linear-gradient(to top, #0d0d10, transparent)` }}
-                  />
-
-                  {/* Badge live */}
-                  <div
-                    className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 backdrop-blur-sm"
-                    style={{
-                      border: `1px solid rgba(${GOLDR},.25)`,
-                      background: `rgba(13,13,16,.75)`,
-                    }}
-                  >
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#34d399]" />
-                    <span className="text-[0.58rem] font-bold uppercase tracking-[.14em]" style={{ color: GOLD }}>Live</span>
-                  </div>
-                </div>
-
-                {/* Bas de carte : stats rapides */}
-                <div
-                  className="grid grid-cols-3"
-                  style={{
-                    borderTop: `1px solid rgba(${GOLDR},.12)`,
-                    background: `rgba(${GOLDR},.03)`,
-                  }}
-                >
-                  {[
-                    { value: "50+",  label: "Clients" },
-                    { value: "100+", label: "Missions" },
-                    { value: "24h",  label: "Réponse" },
-                  ].map(({ value, label }, i) => (
-                    <div
-                      key={label}
-                      className="flex flex-col items-center py-3.5"
-                      style={i < 2 ? { borderRight: `1px solid rgba(${GOLDR},.1)` } : {}}
-                    >
-                      <span className="text-[1.05rem] font-black leading-none" style={{ color: GOLD }}>{value}</span>
-                      <span className="mt-0.5 text-[0.58rem] text-white/30">{label}</span>
-                    </div>
-                  ))}
-                </div>
-
-              </div>
-            </motion.aside>
           </div>
         </div>
 
