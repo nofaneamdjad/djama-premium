@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/lib/language-context";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import {
   ArrowRight, Mail, Star, Zap, Users2, Shield,
@@ -296,6 +297,29 @@ function HomeContent() {
                   <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/[.12] bg-black/60 px-2.5 py-1 backdrop-blur-sm">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#34d399]" />
                     <span className="text-[0.58rem] font-bold uppercase tracking-[.14em] text-white/60">Live</span>
+                  </div>
+                </div>
+
+                {/* Photo showcase */}
+                <div className="relative overflow-hidden border-t border-white/[.06]" style={{ height: "110px" }}>
+                  <Image
+                    src="/hero-showcase-poster.jpg"
+                    alt="DJAMA · Connect your dream — technologie & innovation"
+                    fill
+                    className="object-cover object-center"
+                    sizes="(max-width: 640px) 384px, 420px"
+                  />
+                  {/* Overlay dégradé */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-[#0d0d10]/80" />
+                  {/* Label bas */}
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 py-2">
+                    <p className="text-[0.6rem] font-black uppercase tracking-[.2em] text-white/50">Connect Your Dream</p>
+                    <span
+                      className="rounded-full border px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-[.12em]"
+                      style={{ borderColor: `rgba(${GOLDR},.3)`, color: GOLD, background: `rgba(${GOLDR},.08)` }}
+                    >
+                      Vision 2025
+                    </span>
                   </div>
                 </div>
 
