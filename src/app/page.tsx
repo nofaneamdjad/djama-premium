@@ -1326,7 +1326,119 @@ function HomeContent() {
       <PartnerLogosSection />
 
       {/* ══════════════════════════════════════════════
-          8. ASSISTANT IA — section premium consolidée
+          8. COACHING IA — teaser section
+      ══════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden bg-[#0b0914] py-16 sm:py-24">
+        {/* Glows */}
+        <div className="pointer-events-none absolute left-0 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(167,139,250,.07)] blur-[110px]" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-[300px] w-[300px] translate-x-1/4 translate-y-1/4 rounded-full bg-[rgba(201,165,90,.05)] blur-[80px]" />
+
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+          className="relative z-10 mx-auto max-w-5xl px-6"
+        >
+          <div className="grid items-center gap-10 lg:grid-cols-[1fr_360px] lg:gap-16">
+
+            {/* ── Colonne texte ── */}
+            <div>
+              <motion.div variants={fadeIn} className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,.3)] bg-[rgba(167,139,250,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.2em] text-[#a78bfa]">
+                <Brain size={11} /> Formation IA · Nouveau
+              </motion.div>
+
+              <motion.h2 variants={fadeIn} className="display-section text-white">
+                Coaching IA{" "}
+                <span className="text-[#a78bfa]">DJAMA</span>
+              </motion.h2>
+
+              <FadeReveal delay={0.15} as="p" className="mt-4 max-w-md text-base leading-relaxed text-white/45">
+                Apprenez à utiliser l&apos;IA pour gagner du temps, automatiser vos tâches et vendre mieux.
+              </FadeReveal>
+
+              {/* Points clés */}
+              <motion.ul
+                variants={staggerContainerFast}
+                className="mt-7 space-y-2.5"
+              >
+                {[
+                  "6 modules · 20 chapitres",
+                  "Assistant IA pédagogique inclus",
+                  "4h d'accompagnement expert",
+                  "Accès complet pendant 3 mois",
+                  "Paiement unique : 190€",
+                ].map((item) => (
+                  <motion.li key={item} variants={fadeIn} className="flex items-center gap-3 text-[0.9rem] text-white/65">
+                    <CheckCircle2 size={14} className="shrink-0" style={{ color: "#a78bfa" }} />
+                    {item}
+                  </motion.li>
+                ))}
+              </motion.ul>
+
+              <FadeReveal delay={0.4} className="mt-8">
+                <Link
+                  href="/services/coaching-ia"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-[rgba(167,139,250,.35)] bg-[rgba(167,139,250,.12)] px-7 py-3.5 text-[0.925rem] font-bold text-[#a78bfa] transition-all hover:border-[rgba(167,139,250,.6)] hover:bg-[rgba(167,139,250,.2)] hover:text-white"
+                >
+                  Découvrir le coaching IA <ArrowRight size={15} />
+                </Link>
+              </FadeReveal>
+            </div>
+
+            {/* ── Colonne carte visuelle ── */}
+            <FadeReveal delay={0.2}>
+              <div className="relative overflow-hidden rounded-3xl border border-[rgba(167,139,250,.22)] bg-white/[.03] p-6 shadow-[0_32px_64px_rgba(0,0,0,.3)]">
+                {/* Barre de couleur en haut */}
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#a78bfa] to-transparent" />
+
+                {/* Header */}
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(167,139,250,.15)]">
+                    <Brain size={20} style={{ color: "#a78bfa" }} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-white">Coaching IA DJAMA</p>
+                    <p className="text-xs text-white/35">Formation complète · Paiement unique</p>
+                  </div>
+                </div>
+
+                {/* Prix */}
+                <div className="mb-5 flex items-end gap-2">
+                  <span className="text-[2.8rem] font-black leading-none text-white">190€</span>
+                  <span className="mb-1.5 text-sm font-semibold text-white/40">/ 3 mois</span>
+                </div>
+
+                {/* Grille de stats */}
+                <div className="mb-5 grid grid-cols-2 gap-2">
+                  {[
+                    { val: "6",    sub: "modules",             color: "#a78bfa" },
+                    { val: "20",   sub: "chapitres",           color: "#60a5fa" },
+                    { val: "4h",   sub: "accompagnement",      color: "#4ade80" },
+                    { val: "3",    sub: "mois d'accès",        color: "#f9a826" },
+                  ].map(({ val, sub, color }) => (
+                    <div
+                      key={sub}
+                      className="flex flex-col items-center rounded-xl border border-white/[.06] bg-white/[.03] px-3 py-3 text-center"
+                    >
+                      <span className="text-xl font-black leading-none" style={{ color }}>{val}</span>
+                      <span className="mt-1 text-[0.6rem] text-white/35">{sub}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Garantie */}
+                <div className="flex items-center justify-center gap-2 rounded-xl border border-[rgba(74,222,128,.18)] bg-[rgba(74,222,128,.05)] px-4 py-2.5">
+                  <Shield size={12} style={{ color: "#4ade80" }} />
+                  <span className="text-[0.72rem] font-semibold text-[#4ade80]">Satisfait ou remboursé 7 jours</span>
+                </div>
+              </div>
+            </FadeReveal>
+
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          9. ASSISTANT IA — section premium consolidée
       ══════════════════════════════════════════════ */}
       <section className="relative overflow-hidden bg-[#0d0b1a] py-20 sm:py-28">
         {/* Glows */}
