@@ -172,6 +172,7 @@ function HomeContent() {
 
   /* ── Carrousel hero ── */
   const HERO_IMAGES = [
+    { src: "/hero-team.jpg",      alt: "DJAMA · L'équipe — Digital, Création, Accompagnement, Coaching" },
     { src: "/hero-dashboard.jpg", alt: "DJAMA · Dashboard digital — activité & revenus" },
     { src: "/hero-vr.jpg",        alt: "DJAMA · Innovation — technologie & vision"       },
   ];
