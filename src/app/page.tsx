@@ -9,7 +9,7 @@ import { LanguageProvider } from "@/lib/language-context";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Mail, Star, Zap, Users2, Shield,
   CheckCircle2, Sparkles, TrendingUp, HeartHandshake,
@@ -170,6 +170,23 @@ function HomeContent() {
   const ctaFinalTitle2   = get("cta.final.title2")     || h.cta.titleLines[1];
   const ctaFinalSubtitle = get("cta.final.subtitle")   || h.cta.subtitle;
 
+  /* ── Carrousel hero ── */
+  const HERO_IMAGES = [
+    { src: "/hero-dashboard.jpg", alt: "DJAMA · Dashboard digital — activité & revenus" },
+    { src: "/hero-vr.jpg",        alt: "DJAMA · Innovation — technologie & vision"       },
+  ];
+  const [heroIdx, setHeroIdx] = useState(0);
+  const [dir, setDir]         = useState(1); // 1 = droite→gauche, -1 = gauche→droite
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setDir(1);
+      setHeroIdx(i => (i + 1) % HERO_IMAGES.length);
+    }, 4000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="bg-[#09090b]">
 
@@ -255,7 +272,7 @@ function HomeContent() {
               </FadeReveal>
             </div>
 
-            {/* Right: dashboard image */}
+            {/* Right: carrousel animé dashboard ↔ VR */}
             <motion.aside
               initial={{ opacity: 0, y: 32, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -263,6 +280,7 @@ function HomeContent() {
               className="w-full max-w-sm mx-auto lg:max-w-none lg:mx-0"
               style={{ animation: "float 9s ease-in-out infinite 1.2s" }}
             >
+              {/* Cadre fixe */}
               <div
                 className="relative overflow-hidden rounded-[1.8rem]"
                 style={{
@@ -271,14 +289,40 @@ function HomeContent() {
                   aspectRatio: "16/10",
                 }}
               >
-                <Image
-                  src="/hero-dashboard.jpg"
-                  alt="DJAMA · Dashboard digital — activité & revenus"
-                  fill
-                  className="object-cover object-center"
-                  sizes="(max-width: 640px) 384px, 420px"
-                  priority
-                />
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={heroIdx}
+                    initial={{ opacity: 0, x: dir * 60 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: dir * -60 }}
+                    transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src={HERO_IMAGES[heroIdx].src}
+                      alt={HERO_IMAGES[heroIdx].alt}
+                      fill
+                      className="object-cover object-center"
+                      sizes="(max-width: 640px) 384px, 420px"
+                      priority
+                    />
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Indicateurs */}
+                <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+                  {HERO_IMAGES.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setDir(i > heroIdx ? 1 : -1); setHeroIdx(i); }}
+                      className="h-1.5 rounded-full transition-all duration-300"
+                      style={{
+                        width: i === heroIdx ? "20px" : "6px",
+                        background: i === heroIdx ? GOLD : `rgba(${GOLDR},.35)`,
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
             </motion.aside>
           </div>
@@ -286,35 +330,6 @@ function HomeContent() {
 
         {/* Fade to next section */}
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#09090b] to-transparent" />
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          SHOWCASE PHOTO VR
-      ══════════════════════════════════════════════ */}
-      <section className="relative bg-[#09090b] py-10 sm:py-16">
-        <div className="mx-auto max-w-5xl px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 40, scale: 0.97 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-            viewport={{ once: true, amount: 0.2 }}
-            className="relative overflow-hidden rounded-[2rem] bg-[#0a0a0a]"
-            style={{
-              aspectRatio: "16/9",
-              border: `1px solid rgba(${GOLDR},.22)`,
-              boxShadow: `0 50px 120px rgba(0,0,0,.6), 0 0 80px rgba(${GOLDR},.1)`,
-            }}
-          >
-            <Image
-              src="/hero-vr.jpg"
-              alt="DJAMA · Innovation digitale — technologie & vision"
-              fill
-              className="object-cover object-center"
-              sizes="(max-width: 640px) 100vw, 960px"
-              priority
-            />
-          </motion.div>
-        </div>
       </section>
 
       {/* ══════════════════════════════════════════════
