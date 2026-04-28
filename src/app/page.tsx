@@ -364,7 +364,7 @@ function HomeContent() {
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
             viewport={{ once: true, amount: 0.2 }}
-            className="relative overflow-hidden rounded-[2rem]"
+            className="relative overflow-hidden rounded-[2rem] bg-[#0a0a0a]"
             style={{
               aspectRatio: "4/5",
               border: `1px solid rgba(${GOLDR},.22)`,
@@ -375,7 +375,7 @@ function HomeContent() {
               src="/hero-showcase-poster.jpg"
               alt="DJAMA · Connect your dream — technologie & innovation"
               fill
-              className="object-cover object-top"
+              className="object-contain"
               sizes="(max-width: 640px) 90vw, 480px"
               priority
             />
