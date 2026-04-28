@@ -32,6 +32,24 @@ const nextConfig: NextConfig = {
    *   resend, stripe    → mêmes raisons
    */
   serverExternalPackages: ["resend", "stripe", "@anthropic-ai/sdk"],
+
+  // ── Headers anti-cache pour forcer le navigateur à toujours
+  //    récupérer la dernière version depuis Vercel ────────────────────
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+          { key: "Pragma",  value: "no-cache" },
+          { key: "Expires", value: "0" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
