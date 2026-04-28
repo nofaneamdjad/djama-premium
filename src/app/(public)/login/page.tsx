@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -53,7 +54,7 @@ function AuthField({
 }
 
 /* ── Page principale ───────────────────────────── */
-export default function LoginPage() {
+function LoginPageInner() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   /* Destination après connexion — ?redirect=/coaching-ia/espace etc. */
@@ -366,5 +367,13 @@ export default function LoginPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#080a0f]" />}>
+      <LoginPageInner />
+    </Suspense>
   );
 }
