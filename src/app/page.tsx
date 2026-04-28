@@ -184,7 +184,7 @@ function HomeContent() {
         <div className="pointer-events-none absolute bottom-[5%] left-[35%] h-[300px] w-[300px] animate-float rounded-full bg-[rgba(96,165,250,.04)] blur-[90px]" />
 
         <div className="relative z-10 mx-auto max-w-6xl px-6 pb-40 pt-44 lg:pb-48 lg:pt-52">
-          <div className="grid items-center gap-10">
+          <div className="grid items-center gap-10 lg:grid-cols-[1fr_420px]">
 
             {/* Left: copy */}
             <div>
@@ -255,7 +255,32 @@ function HomeContent() {
               </FadeReveal>
             </div>
 
-            {/* Right: ecosystem visual */}
+            {/* Right: dashboard image */}
+            <motion.aside
+              initial={{ opacity: 0, y: 32, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-sm mx-auto lg:max-w-none lg:mx-0"
+              style={{ animation: "float 9s ease-in-out infinite 1.2s" }}
+            >
+              <div
+                className="relative overflow-hidden rounded-[1.8rem]"
+                style={{
+                  border: `1px solid rgba(${GOLDR},.28)`,
+                  boxShadow: `0 40px 100px rgba(0,0,0,.65), 0 0 0 1px rgba(${GOLDR},.06), inset 0 1px 0 rgba(${GOLDR},.1)`,
+                  aspectRatio: "16/10",
+                }}
+              >
+                <Image
+                  src="/hero-dashboard.jpg"
+                  alt="DJAMA · Dashboard digital — activité & revenus"
+                  fill
+                  className="object-cover object-center"
+                  sizes="(max-width: 640px) 384px, 420px"
+                  priority
+                />
+              </div>
+            </motion.aside>
           </div>
         </div>
 
