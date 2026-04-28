@@ -299,7 +299,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
             : "0 2px 16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
         }}
         whileHover={{
-          y: -10,
+          y: -8,
           boxShadow: config.hoverShadow,
           borderColor: config.border,
         }}
@@ -404,10 +404,10 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
           ) : (
             <Link
               href={href}
-              className="group/cta relative z-[1] mt-5 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300"
+              className="group/cta relative z-[1] mt-5 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3.5 text-sm font-bold transition-all duration-300"
               style={{
-                background: `rgba(${config.accentRgb}, 0.08)`,
-                border: `1px solid rgba(${config.accentRgb}, 0.18)`,
+                background: `rgba(${config.accentRgb}, 0.10)`,
+                border: `1px solid rgba(${config.accentRgb}, 0.28)`,
                 color: config.accent,
               }}
             >
@@ -415,10 +415,179 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
               <ChevronRight size={16} className="transition-transform duration-300 group-hover/cta:translate-x-1" />
               <span
                 className="absolute inset-0 -translate-x-full rounded-xl transition-transform duration-500 group-hover/cta:translate-x-0"
-                style={{ background: `rgba(${config.accentRgb}, 0.10)` }}
+                style={{ background: `rgba(${config.accentRgb}, 0.14)` }}
               />
             </Link>
           )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   OUTILS BLOCK — bloc unique pour Documents & Outils
+───────────────────────────────────────────────────────── */
+const OUTILS_LIST = [
+  "Factures & Devis PDF",
+  "Planning",
+  "Planification",
+  "Bloc-notes IA",
+  "CRM Client",
+  "Chrono Pro",
+  "Dépenses Pro",
+  "Trésorerie",
+  "Contrats IA",
+  "Sourcing IA",
+  "Coach Business IA",
+] as const;
+
+function OutilsBlock({ lang }: { lang: "fr" | "en" }) {
+  const cfg = CAT_CONFIG["Documents & Outils"];
+
+  return (
+    <motion.div
+      variants={cardRevealBlur}
+      className="group relative sm:col-span-2 xl:col-span-3"
+    >
+      {/* Gradient border bloom on hover */}
+      <div
+        className="pointer-events-none absolute -inset-[1px] rounded-[1.8rem] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        style={{
+          background: `linear-gradient(145deg, rgba(${cfg.accentRgb},0.45) 0%, transparent 45%, rgba(${cfg.accentRgb},0.18) 100%)`,
+        }}
+      />
+
+      <motion.div
+        className="relative overflow-hidden rounded-[1.75rem] border bg-[#09090b]"
+        style={{
+          borderColor: cfg.border,
+          boxShadow: `0 4px 28px rgba(${cfg.accentRgb},0.11), inset 0 1px 0 rgba(255,255,255,0.04)`,
+        }}
+        whileHover={{ y: -6, boxShadow: cfg.hoverShadow }}
+        transition={{ duration: 0.38, ease }}
+      >
+        {/* Shimmer sweep */}
+        <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[1.75rem]">
+          <div className="absolute inset-y-0 -left-[60%] w-[40%] -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent transition-all duration-700 ease-out group-hover:left-[160%]" />
+        </div>
+        {/* Top edge glow on hover */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          style={{ background: `linear-gradient(90deg, transparent, rgba(${cfg.accentRgb},0.9), transparent)` }}
+        />
+
+        {/* ── Header visuel ── */}
+        <div className={`relative flex items-center overflow-hidden bg-gradient-to-br ${cfg.bg} px-6 py-7 sm:px-8`}>
+          {/* Dot grid */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.05) 1.5px, transparent 0)",
+              backgroundSize: "24px 24px",
+            }}
+          />
+          {/* Glow orb */}
+          <motion.div
+            className="pointer-events-none absolute left-0 top-1/2 h-[200px] w-[400px] -translate-y-1/2 rounded-full blur-3xl"
+            style={{ background: cfg.glow }}
+            animate={{ scale: [1, 1.08, 1], opacity: [0.6, 0.9, 0.6] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          />
+          {/* Bottom separator */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-px"
+            style={{ background: `linear-gradient(90deg, transparent, ${cfg.border}, transparent)` }}
+          />
+
+          {/* Icon */}
+          <div
+            className="relative z-10 mr-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border"
+            style={{ background: `rgba(${cfg.accentRgb},0.12)`, borderColor: cfg.border }}
+          >
+            <BadgeCheck size={26} style={{ color: cfg.accent }} />
+          </div>
+
+          {/* Text */}
+          <div className="relative z-10 flex-1 min-w-0">
+            <p className="text-[0.6rem] font-black uppercase tracking-[0.15em]" style={{ color: `rgba(${cfg.accentRgb},0.55)` }}>
+              {lang === "fr" ? "Documents & Outils" : "Documents & Tools"}
+            </p>
+            <h2 className="mt-0.5 text-xl font-extrabold text-white">
+              {lang === "fr" ? "Outils professionnels inclus" : "Professional tools included"}
+            </h2>
+            <p className="mt-1 text-sm text-white/45">
+              {lang === "fr"
+                ? "Tous les outils essentiels pour gérer votre activité depuis un seul espace."
+                : "All essential tools to manage your business from one place."}
+            </p>
+          </div>
+
+          {/* Badge right — desktop only */}
+          <div className="relative z-10 ml-6 hidden shrink-0 flex-col items-end gap-1.5 sm:flex">
+            <span
+              className="rounded-full border px-3 py-1 text-[0.6rem] font-bold"
+              style={{
+                borderColor: `rgba(${cfg.accentRgb},0.28)`,
+                background: `rgba(${cfg.accentRgb},0.1)`,
+                color: cfg.accent,
+              }}
+            >
+              ◈ {lang === "fr" ? "Inclus dans l'abonnement" : "Included in subscription"}
+            </span>
+            <span className="text-[0.6rem] text-white/22">11 outils · Accès immédiat</span>
+          </div>
+        </div>
+
+        {/* ── Bandeau "inclus" ── */}
+        <div
+          className="flex items-center justify-center gap-1.5 py-1.5 text-[0.6rem] font-black uppercase tracking-[0.15em]"
+          style={{
+            background: `rgba(${cfg.accentRgb},0.08)`,
+            color: cfg.accent,
+            borderBottom: `1px solid rgba(${cfg.accentRgb},0.14)`,
+          }}
+        >
+          <span className="h-1 w-1 rounded-full" style={{ background: cfg.accent }} />
+          {lang === "en" ? "Included in subscription" : "Inclus dans l'abonnement"}
+        </div>
+
+        {/* ── Corps ── */}
+        <div className="p-6 sm:p-8">
+          {/* Grille d'outils */}
+          <div className="mb-7 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-2.5">
+            {OUTILS_LIST.map((tool) => (
+              <div
+                key={tool}
+                className="flex items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-2.5 transition-all hover:border-[rgba(52,211,153,0.22)] hover:bg-[rgba(52,211,153,0.05)]"
+              >
+                <CheckCircle2 size={11} className="shrink-0" style={{ color: cfg.accent }} />
+                <span className="truncate text-[0.77rem] font-semibold text-white/60">{tool}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[0.72rem] text-white/28">
+              {lang === "fr"
+                ? "Accès depuis votre espace client · Synchronisation en temps réel"
+                : "Access from your client space · Real-time sync"}
+            </p>
+            <Link
+              href="/abonnement"
+              className="group/cta relative z-[1] inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-6 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
+              style={{ background: cfg.accent, color: "#09090b" }}
+            >
+              {lang === "fr" ? "Accéder aux outils" : "Access tools"}
+              <motion.span
+                animate={{ x: [0, 3, 0] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <ChevronRight size={16} />
+              </motion.span>
+            </Link>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -777,9 +946,17 @@ export default function ServicesPage() {
                 variants={staggerContainerFast}
                 className="mt-12 grid items-start gap-6 sm:grid-cols-2 xl:grid-cols-3"
               >
-                {filtered.map((service) => (
-                  <ServiceCard key={service.id} service={service} lang={lang} />
-                ))}
+                {/* Bloc Outils — affiché en tête, pleine largeur */}
+                {(activeCategory === "all" || activeCategory === "Documents & Outils") && (
+                  <OutilsBlock lang={lang} />
+                )}
+
+                {/* Autres services (Documents & Outils exclus) */}
+                {filtered
+                  .filter((sv) => sv.category !== "Documents & Outils")
+                  .map((service) => (
+                    <ServiceCard key={service.id} service={service} lang={lang} />
+                  ))}
               </motion.div>
             </AnimatePresence>
           )}
