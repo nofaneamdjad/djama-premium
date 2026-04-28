@@ -83,18 +83,10 @@ export default function Navbar() {
             >
               <motion.div
                 style={{ filter: "brightness(0) invert(1)" }}
-                animate={{
-                  filter: [
-                    "brightness(0) invert(1)",
-                    "brightness(0) invert(1) drop-shadow(0 0 22px rgba(201,165,90,0.65))",
-                    "brightness(0) invert(1)",
-                  ],
-                }}
-                transition={{ duration: 1.6, delay: 0.9, ease: [0.4, 0, 0.2, 1], times: [0, 0.5, 1] }}
                 whileHover={{
-                  scale: 1.06,
-                  filter: "brightness(0) invert(1) drop-shadow(0 0 14px rgba(201,165,90,0.5))",
-                  transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                  scale: 1.05,
+                  filter: "brightness(0) invert(1) drop-shadow(0 0 12px rgba(201,165,90,0.4))",
+                  transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] },
                 }}
                 whileTap={{ scale: 0.95, transition: { duration: 0.12 } }}
               >

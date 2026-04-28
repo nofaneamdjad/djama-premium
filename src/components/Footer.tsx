@@ -266,8 +266,32 @@ export default function Footer() {
         </motion.div>
       </motion.div>
 
-      {/* ── Barre légale ─────────────────────── */}
+      {/* ── Mini CTA strip ───────────────────── */}
       <div className="border-t border-white/[0.05]">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
+          <p className="text-[0.8rem] font-semibold text-white/40">
+            Un projet en tête ?{" "}
+            <span className="text-white/60">Obtenez un devis gratuit sous 24h.</span>
+          </p>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.35)] bg-[rgba(201,165,90,0.08)] px-4 py-2 text-[0.75rem] font-bold text-[#c9a55a] transition-all duration-200 hover:border-[rgba(201,165,90,0.6)] hover:bg-[rgba(201,165,90,0.14)]"
+            >
+              Demander un devis <ArrowUpRight size={12} />
+            </Link>
+            <Link
+              href="/offres"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[0.75rem] font-bold text-white/40 transition-all duration-200 hover:border-white/[0.16] hover:text-white/65"
+            >
+              Voir les tarifs
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Barre légale ─────────────────────── */}
+      <div className="border-t border-white/[0.04]">
         <div className="mx-auto max-w-6xl px-4 py-4">
 
           {/* Liens légaux + copyright */}

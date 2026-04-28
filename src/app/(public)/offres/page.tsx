@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import {
   ArrowRight, CheckCircle2, Sparkles, Star,
@@ -196,11 +196,22 @@ function FaqItem({ q, a, idx }: { q: string; a: string; idx: number }) {
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
         />
       </button>
-      {open && (
-        <div className="border-t border-white/[.05] px-6 py-4">
-          <p className="text-[0.86rem] leading-relaxed text-white/50">{a}</p>
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="answer"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-white/[.05] px-6 py-4">
+              <p className="text-[0.86rem] leading-relaxed text-white/50">{a}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
