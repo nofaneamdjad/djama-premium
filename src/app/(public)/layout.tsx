@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AssistantDJAMA from "@/components/AssistantDJAMA";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import { LanguageProvider } from "@/lib/language-context";
 
 export default function PublicLayout({
@@ -14,6 +15,7 @@ export default function PublicLayout({
       <main>{children}</main>
       <Footer />
       <AssistantDJAMA />
+      <WhatsAppButton />
     </LanguageProvider>
   );
 }

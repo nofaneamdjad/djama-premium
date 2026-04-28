@@ -26,6 +26,7 @@ import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import PartnerLogosSection from "@/components/PartnerLogosSection";
+import TestimonialsSection from "@/components/TestimonialsSection";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD = "#c9a55a";
@@ -1160,16 +1161,23 @@ function HomeContent() {
             ))}
           </motion.div>
 
-          {/* 50+ counter */}
-          <motion.div variants={fadeIn} className="mt-16 flex flex-col items-center gap-3">
-            <div className="h-px w-24 bg-white/[.07]" />
-            <p className="text-[4rem] font-black leading-none tracking-tight" style={{ color: GOLD }}>
-              <CountUp to={50} suffix="+" />
-            </p>
-            <p className="text-[0.82rem] text-white/35">clients accompagnés depuis 2022</p>
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => <Star key={i} size={11} className="fill-[#c9a55a] text-[#c9a55a]" />)}
+          {/* Trust bar */}
+          <motion.div variants={fadeIn} className="mt-16">
+            <div className="h-px w-full bg-white/[.05]" />
+            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 py-8">
+              {[
+                { value: "50+",  label: "clients accompagnés" },
+                { value: "100+", label: "missions livrées" },
+                { value: "3+",   label: "ans d'expérience" },
+                { value: "4",    label: "pays couverts" },
+              ].map(({ value, label }) => (
+                <div key={label} className="flex flex-col items-center gap-1">
+                  <span className="text-2xl font-black" style={{ color: GOLD }}>{value}</span>
+                  <span className="text-[0.72rem] text-white/30">{label}</span>
+                </div>
+              ))}
             </div>
+            <div className="h-px w-full bg-white/[.05]" />
           </motion.div>
         </motion.div>
       </section>
@@ -1644,7 +1652,12 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          9. CTA FINAL
+          9. TÉMOIGNAGES
+      ══════════════════════════════════════════════ */}
+      <TestimonialsSection />
+
+      {/* ══════════════════════════════════════════════
+          10. CTA FINAL
       ══════════════════════════════════════════════ */}
       <section className="mx-auto max-w-6xl px-6 pb-24 pt-20">
         <motion.div

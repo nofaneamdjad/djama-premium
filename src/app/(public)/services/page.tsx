@@ -680,6 +680,35 @@ function CategoryFilter({
 }
 
 /* ─────────────────────────────────────────────────────────
+   DONNÉES STATIQUES FALLBACK
+   Utilisées quand Supabase retourne 0 résultats ou échoue.
+───────────────────────────────────────────────────────── */
+const NOW = new Date().toISOString();
+const STATIC_SERVICES: ServiceRow[] = [
+  /* ── Digital ── */
+  { id:"s1",  slug:"site-vitrine",                 title:"Site vitrine",                         category:"Digital",             price:"Dès 490 €",       description:"Site professionnel jusqu'à 5 pages, responsive, SEO local, formulaire de contact intégré.\nLivraison en 10 jours ouvrés.\nRévisions incluses.", active:true, sort_order:1,  created_at:NOW },
+  { id:"s2",  slug:"site-ecommerce",               title:"Site e-commerce",                      category:"Digital",             price:"Dès 990 €",       description:"Boutique en ligne complète, catalogue produits, paiement sécurisé, gestion des commandes et des stocks.\nIntégration Stripe / PayPal.", active:true, sort_order:2,  created_at:NOW },
+  { id:"s3",  slug:"application-mobile",           title:"Application mobile",                   category:"Digital",             price:"Dès 1 900 €",     description:"Application iOS & Android ou React Native, design sur mesure, notifications push, espace utilisateur.\nLivraison en 4 à 8 semaines.", active:true, sort_order:3,  created_at:NOW },
+  { id:"s4",  slug:"plateforme-web-sur-mesure",    title:"Plateforme web sur mesure",            category:"Digital",             price:"Dès 3 500 €",     description:"SaaS, outil métier, dashboard, marketplace — architecture et développement complets.\nBackend Node.js / Next.js, base de données, API.", active:true, sort_order:4,  created_at:NOW },
+  { id:"s5",  slug:"automatisation-ia",            title:"Automatisation & IA",                  category:"Digital",             price:"Dès 490 €",       description:"Création de workflows automatisés, chatbots IA, bots de traitement de données et intégrations métier sur mesure.\nMake, n8n, OpenAI, Claude.", active:true, sort_order:5,  created_at:NOW },
+  /* ── Création de contenu ── */
+  { id:"s6",  slug:"visuels-publicitaires",        title:"Visuels publicitaires",                category:"Création de contenu", price:"Dès 290 €",       description:"Affiches, flyers, visuels réseaux sociaux, identité visuelle et branding complet.\nFormats print et digital.", active:true, sort_order:6,  created_at:NOW },
+  { id:"s7",  slug:"montage-video",                title:"Montage vidéo",                        category:"Création de contenu", price:"Dès 190 €",       description:"Reels, teasers, vidéos institutionnelles, sous-titrage automatique, transitions et effets pro.\nLivraison en 5 jours.", active:true, sort_order:7,  created_at:NOW },
+  { id:"s8",  slug:"retouche-photo",               title:"Retouche photo",                       category:"Création de contenu", price:"Dès 49 €",        description:"Retouche professionnelle, fond blanc, mise en lumière, détourage, correction colorimétrique.\nIdéal e-commerce et profils pros.", active:true, sort_order:8,  created_at:NOW },
+  /* ── Documents & Outils ── */
+  { id:"s9",  slug:"outils-pro",                   title:"DJAMA Pro — 11 outils",                category:"Documents & Outils",  price:"11,90 €/mois",    description:"Accès à 11 outils pros : facturation, CRM, agenda, trésorerie, contrats IA, sourcing, bloc-notes.\nSans engagement — résiliable à tout moment.", active:true, sort_order:9,  created_at:NOW },
+  /* ── Accompagnement ── */
+  { id:"s10", slug:"creation-auto-entrepreneur",   title:"Création auto-entrepreneur",           category:"Accompagnement",      price:"Dès 49 €",        description:"Immatriculation complète, choix du statut juridique, conseil personnalisé et démarches administratives.\nRéponse sous 24h.", active:true, sort_order:10, created_at:NOW },
+  { id:"s11", slug:"declarations-urssaf",          title:"Déclarations URSSAF",                  category:"Accompagnement",      price:"Dès 29 €/mois",   description:"Déclarations mensuelles ou trimestrielles, suivi des cotisations sociales, assistance en cas de contrôle.\nSuivi personnalisé.", active:true, sort_order:11, created_at:NOW },
+  { id:"s12", slug:"assistance-administrative",    title:"Assistance administrative",            category:"Accompagnement",      price:"Sur devis",       description:"Rédaction de courriers, démarches administratives complexes, gestion documentaire professionnelle.\nPour entreprises et particuliers.", active:true, sort_order:12, created_at:NOW },
+  { id:"s13", slug:"recherche-fournisseurs",       title:"Recherche fournisseurs internationaux",category:"Accompagnement",      price:"Sur devis",       description:"Identification, sélection et mise en relation avec des fournisseurs qualifiés à l'international (Asie, Europe, Afrique).\nNégociation incluse.", active:true, sort_order:13, created_at:NOW },
+  { id:"s14", slug:"marches-publics",              title:"Marchés publics & privés",             category:"Accompagnement",      price:"Sur devis",       description:"Veille sur les appels d'offres, constitution de dossiers de candidature complets, conseil stratégique.\nTaux de réussite élevé.", active:true, sort_order:14, created_at:NOW },
+  /* ── Coaching ── */
+  { id:"s15", slug:"coaching-ia",                  title:"Coaching IA",                          category:"Coaching",            price:"190 € unique",    description:"Formation complète : 6 modules, 20 chapitres, 4h d'accompagnement expert, accès 3 mois.\nGarantie satisfait ou remboursé 7 jours.", active:true, sort_order:15, created_at:NOW },
+  { id:"s16", slug:"soutien-scolaire",             title:"Soutien scolaire",                     category:"Coaching",            price:"14 €/heure",      description:"Cours particuliers toutes matières, collège et lycée, présentiel ou en ligne.\nSuivi régulier et progression garantie.", active:true, sort_order:16, created_at:NOW },
+];
+
+/* ─────────────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────────────── */
 export default function ServicesPage() {
@@ -700,12 +729,12 @@ export default function ServicesPage() {
         }
         return res.json() as Promise<ServiceRow[]>;
       })
-      .then((d) => { setRows(d); setFetchErr(null); })
+      .then((d) => { setRows(d.length > 0 ? d : STATIC_SERVICES); setFetchErr(null); })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
-        console.error("[ServicesPage] /api/services échoué :", msg);
-        setFetchErr(msg);
-        setRows([]);
+        console.error("[ServicesPage] /api/services échoué — fallback statique :", msg);
+        setFetchErr(null); // on masque l'erreur, le fallback est suffisant
+        setRows(STATIC_SERVICES);
       })
       .finally(() => setLoading(false));
   }, []);

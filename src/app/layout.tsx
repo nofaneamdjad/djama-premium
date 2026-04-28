@@ -84,25 +84,83 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
+/* ── Schema.org JSON-LD ─────────────────────────────────── */
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${BASE_URL}/#organization`,
+      name: "DJAMA",
+      url: BASE_URL,
+      logo: { "@type": "ImageObject", url: `${BASE_URL}/logo.png` },
+      contactPoint: [
+        { "@type": "ContactPoint", telephone: "+262693520520", contactType: "customer service", availableLanguage: ["French"] },
+        { "@type": "ContactPoint", contactType: "technical support", email: "contact@djama.space" },
+      ],
+      sameAs: ["https://instagram.com/djama.space"],
+      foundingDate: "2022",
+      description: "Écosystème digital pour entrepreneurs : création de sites web, outils de gestion, accompagnement administratif et coaching IA.",
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${BASE_URL}/#website`,
+      url: BASE_URL,
+      name: "DJAMA",
+      publisher: { "@id": `${BASE_URL}/#organization` },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: { "@type": "EntryPoint", urlTemplate: `${BASE_URL}/services?q={search_term_string}` },
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Quels services propose DJAMA ?",
+          acceptedAnswer: { "@type": "Answer", text: "DJAMA propose la création de sites web, applications mobiles, outils de gestion professionnels (facturation, agenda, CRM), coaching IA, soutien scolaire, automatisation et accompagnement administratif." },
+        },
+        {
+          "@type": "Question",
+          name: "Quel est le prix de l'abonnement DJAMA Pro ?",
+          acceptedAnswer: { "@type": "Answer", text: "L'abonnement DJAMA Pro est à 11,90 € par mois, sans engagement. Il inclut 11 outils professionnels : facturation, CRM, agenda, trésorerie, contrats IA et plus." },
+        },
+        {
+          "@type": "Question",
+          name: "DJAMA propose-t-il du coaching IA ?",
+          acceptedAnswer: { "@type": "Answer", text: "Oui. Le coaching IA DJAMA est une formation complète de 6 modules et 20 chapitres, au prix unique de 190 €, avec 4h d'accompagnement expert et une garantie satisfait ou remboursé de 7 jours." },
+        },
+        {
+          "@type": "Question",
+          name: "Sous quel délai DJAMA répond-il ?",
+          acceptedAnswer: { "@type": "Answer", text: "DJAMA s'engage à répondre à toute demande de devis ou de contact sous 24 heures. WhatsApp disponible pour les demandes urgentes." },
+        },
+      ],
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    /*
-     * style inline sur <html> : assure le fond sombre même avant que
-     * globals.css soit parsé (flash blanc dans certains WebViews).
-     * colorScheme répété ici pour les navigateurs qui ignorent la balise meta.
-     */
     <html
       lang="fr"
       style={{ colorScheme: "dark", backgroundColor: "#09090b" }}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body>
         <SplashScreen />
         {children}
-        {/* Bandeau "Ouvrir dans le navigateur" pour les in-app browsers */}
         <WebViewBanner />
       </body>
     </html>
