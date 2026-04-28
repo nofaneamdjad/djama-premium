@@ -264,14 +264,26 @@ function HomeContent() {
               className="w-full max-w-sm mx-auto lg:max-w-none lg:mx-0"
               style={{ animation: "float 9s ease-in-out infinite 1.2s" }}
             >
-              <div className="overflow-hidden rounded-[1.8rem] border border-white/[.12] bg-[#0d0d10] shadow-[0_40px_100px_rgba(0,0,0,.65),0_0_0_1px_rgba(255,255,255,.04),inset_0_1px_0_rgba(255,255,255,.07)]">
+              <div
+                className="overflow-hidden rounded-[1.8rem] bg-[#0d0d10]"
+                style={{
+                  border: `1px solid rgba(${GOLDR},.28)`,
+                  boxShadow: `0 40px_100px rgba(0,0,0,.65), 0 0 0 1px rgba(${GOLDR},.06), inset 0 1px 0 rgba(${GOLDR},.1)`,
+                }}
+              >
 
-                {/* Window chrome */}
-                <div className="flex items-center gap-2 border-b border-white/[.06] bg-white/[.025] px-4 py-3">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(248,113,113,.5)]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(251,191,36,.5)]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[rgba(74,222,128,.5)]" />
-                  <p className="ml-auto text-[0.58rem] font-bold uppercase tracking-[.18em] text-white/20">
+                {/* Window chrome — gold */}
+                <div
+                  className="flex items-center gap-2 px-4 py-3"
+                  style={{
+                    borderBottom: `1px solid rgba(${GOLDR},.12)`,
+                    background: `rgba(${GOLDR},.05)`,
+                  }}
+                >
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: `rgba(${GOLDR},.35)` }} />
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: `rgba(${GOLDR},.55)` }} />
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: `rgba(${GOLDR},.8)` }} />
+                  <p className="ml-auto text-[0.58rem] font-bold uppercase tracking-[.18em]" style={{ color: GOLD }}>
                     DJAMA · Vision
                   </p>
                 </div>
@@ -290,24 +302,43 @@ function HomeContent() {
                     <source src="/hero-showcase.mp4" type="video/mp4" />
                   </video>
 
-                  {/* Gradient overlay bas */}
-                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0d0d10] to-transparent" />
+                  {/* Gradient overlay bas gold */}
+                  <div
+                    className="absolute inset-x-0 bottom-0 h-20"
+                    style={{ background: `linear-gradient(to top, #0d0d10, transparent)` }}
+                  />
 
-                  {/* Badge live en haut à droite */}
-                  <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/[.12] bg-black/60 px-2.5 py-1 backdrop-blur-sm">
+                  {/* Badge live */}
+                  <div
+                    className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 backdrop-blur-sm"
+                    style={{
+                      border: `1px solid rgba(${GOLDR},.25)`,
+                      background: `rgba(13,13,16,.75)`,
+                    }}
+                  >
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#34d399]" />
-                    <span className="text-[0.58rem] font-bold uppercase tracking-[.14em] text-white/60">Live</span>
+                    <span className="text-[0.58rem] font-bold uppercase tracking-[.14em]" style={{ color: GOLD }}>Live</span>
                   </div>
                 </div>
 
                 {/* Bas de carte : stats rapides */}
-                <div className="grid grid-cols-3 divide-x divide-white/[.05] border-t border-white/[.06]">
+                <div
+                  className="grid grid-cols-3"
+                  style={{
+                    borderTop: `1px solid rgba(${GOLDR},.12)`,
+                    background: `rgba(${GOLDR},.03)`,
+                  }}
+                >
                   {[
                     { value: "50+",  label: "Clients" },
                     { value: "100+", label: "Missions" },
                     { value: "24h",  label: "Réponse" },
-                  ].map(({ value, label }) => (
-                    <div key={label} className="flex flex-col items-center py-3.5">
+                  ].map(({ value, label }, i) => (
+                    <div
+                      key={label}
+                      className="flex flex-col items-center py-3.5"
+                      style={i < 2 ? { borderRight: `1px solid rgba(${GOLDR},.1)` } : {}}
+                    >
                       <span className="text-[1.05rem] font-black leading-none" style={{ color: GOLD }}>{value}</span>
                       <span className="mt-0.5 text-[0.58rem] text-white/30">{label}</span>
                     </div>
@@ -327,42 +358,27 @@ function HomeContent() {
           SHOWCASE PHOTO
       ══════════════════════════════════════════════ */}
       <section className="relative bg-[#09090b] py-10 sm:py-14">
-        <div className="mx-auto max-w-5xl px-6">
+        <div className="mx-auto max-w-md px-6 sm:max-w-lg">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, y: 40, scale: 0.97 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
             viewport={{ once: true, amount: 0.2 }}
-            className="relative overflow-hidden rounded-[1.8rem] border border-white/[.08] shadow-[0_40px_100px_rgba(0,0,0,.55)]"
-            style={{ height: "340px" }}
+            className="relative overflow-hidden rounded-[2rem]"
+            style={{
+              aspectRatio: "4/5",
+              border: `1px solid rgba(${GOLDR},.22)`,
+              boxShadow: `0 50px_120px rgba(0,0,0,.6), 0 0 80px rgba(${GOLDR},.08)`,
+            }}
           >
             <Image
               src="/hero-showcase-poster.jpg"
               alt="DJAMA · Connect your dream — technologie & innovation"
               fill
-              className="object-cover object-center"
-              sizes="(max-width: 640px) 100vw, 960px"
+              className="object-cover object-top"
+              sizes="(max-width: 640px) 90vw, 480px"
               priority
             />
-            {/* Overlay sombre bas */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#09090b]/85 via-[#09090b]/20 to-transparent" />
-            {/* Contenu bas */}
-            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-8 pb-7">
-              <div>
-                <p className="text-[0.62rem] font-black uppercase tracking-[.22em]" style={{ color: GOLD }}>
-                  DJAMA Vision
-                </p>
-                <p className="mt-1 text-xl font-extrabold text-white sm:text-2xl">
-                  Connect Your Dream.
-                </p>
-              </div>
-              <span
-                className="rounded-full border px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[.14em]"
-                style={{ borderColor: `rgba(${GOLDR},.35)`, color: GOLD, background: `rgba(${GOLDR},.1)` }}
-              >
-                2025
-              </span>
-            </div>
           </motion.div>
         </div>
       </section>
