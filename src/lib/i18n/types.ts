@@ -3,6 +3,7 @@ export interface Translations {
     home: string;
     services: string;
     projects: string;
+    offres: string;
     contact: string;
     clientArea: string;
     freeQuote: string;

@@ -20,6 +20,7 @@ export default function Navbar() {
   const NAV_LINKS = [
     { href: "/",              label: dict.nav.home       },
     { href: "/services",      label: dict.nav.services   },
+    { href: "/offres",        label: dict.nav.offres     },
     { href: "/realisations",  label: dict.nav.projects   },
     { href: "/contact",       label: dict.nav.contact    },
     { href: "/espace-client", label: dict.nav.clientArea },
