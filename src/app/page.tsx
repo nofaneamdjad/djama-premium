@@ -300,29 +300,6 @@ function HomeContent() {
                   </div>
                 </div>
 
-                {/* Photo showcase */}
-                <div className="relative overflow-hidden border-t border-white/[.06]" style={{ height: "110px" }}>
-                  <Image
-                    src="/hero-showcase-poster.jpg"
-                    alt="DJAMA · Connect your dream — technologie & innovation"
-                    fill
-                    className="object-cover object-center"
-                    sizes="(max-width: 640px) 384px, 420px"
-                  />
-                  {/* Overlay dégradé */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-[#0d0d10]/80" />
-                  {/* Label bas */}
-                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 py-2">
-                    <p className="text-[0.6rem] font-black uppercase tracking-[.2em] text-white/50">Connect Your Dream</p>
-                    <span
-                      className="rounded-full border px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-[.12em]"
-                      style={{ borderColor: `rgba(${GOLDR},.3)`, color: GOLD, background: `rgba(${GOLDR},.08)` }}
-                    >
-                      Vision 2025
-                    </span>
-                  </div>
-                </div>
-
                 {/* Bas de carte : stats rapides */}
                 <div className="grid grid-cols-3 divide-x divide-white/[.05] border-t border-white/[.06]">
                   {[
@@ -344,6 +321,50 @@ function HomeContent() {
 
         {/* Fade to next section */}
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#09090b] to-transparent" />
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          SHOWCASE PHOTO
+      ══════════════════════════════════════════════ */}
+      <section className="relative bg-[#09090b] py-10 sm:py-14">
+        <div className="mx-auto max-w-5xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, amount: 0.2 }}
+            className="relative overflow-hidden rounded-[1.8rem] border border-white/[.08] shadow-[0_40px_100px_rgba(0,0,0,.55)]"
+            style={{ height: "340px" }}
+          >
+            <Image
+              src="/hero-showcase-poster.jpg"
+              alt="DJAMA · Connect your dream — technologie & innovation"
+              fill
+              className="object-cover object-center"
+              sizes="(max-width: 640px) 100vw, 960px"
+              priority
+            />
+            {/* Overlay sombre bas */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#09090b]/85 via-[#09090b]/20 to-transparent" />
+            {/* Contenu bas */}
+            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-8 pb-7">
+              <div>
+                <p className="text-[0.62rem] font-black uppercase tracking-[.22em]" style={{ color: GOLD }}>
+                  DJAMA Vision
+                </p>
+                <p className="mt-1 text-xl font-extrabold text-white sm:text-2xl">
+                  Connect Your Dream.
+                </p>
+              </div>
+              <span
+                className="rounded-full border px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[.14em]"
+                style={{ borderColor: `rgba(${GOLDR},.35)`, color: GOLD, background: `rgba(${GOLDR},.1)` }}
+              >
+                2025
+              </span>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
       {/* ══════════════════════════════════════════════
