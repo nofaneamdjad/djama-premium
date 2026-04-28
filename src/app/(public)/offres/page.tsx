@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import {
   ArrowRight, CheckCircle2, Sparkles, Star,
-  Zap, Brain, Globe, LayoutDashboard, Smartphone,
-  ShoppingCart, Palette, Briefcase, Building2,
+  Zap, Brain, Globe, LayoutDashboard,
+  Palette, Briefcase, Building2,
   TrendingUp, HeartHandshake, MessageCircle,
   Shield, ChevronDown, Network, Receipt,
-  Users, Globe2,
+  Users,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import {
@@ -35,14 +35,14 @@ const PROFILES = [
     color: GOLD,
     rgb: GOLDR,
     badge: "Le plus populaire",
-    pitch: "L'essentiel pour lancer et gérer votre activité seul. Des outils pros à prix accessible, payez à la mission.",
-    startingFrom: "11,90€",
+    pitch: "L'essentiel pour lancer et gérer votre activité seul.",
+    startingFrom: "11,90 €",
     startingUnit: "/mois",
     recommended: [
-      { name: "DJAMA Pro", desc: "11 outils de gestion tout-en-un", price: "11,90€/mois", href: "/espace-client", highlight: true },
-      { name: "Site vitrine",   desc: "Présence digitale professionnelle",  price: "À partir de 490€",  href: "/services/site-vitrine",              highlight: false },
-      { name: "Coaching IA",    desc: "Maîtrisez l'IA pour votre business", price: "190€ unique",        href: "/services/coaching-ia",               highlight: false },
-      { name: "Création AE",    desc: "Immatriculation + conseil statut",   price: "À partir de 49€",   href: "/services/creation-auto-entrepreneur", highlight: false },
+      { name: "DJAMA Pro",     price: "11,90 €/mois",  href: "/espace-client",                highlight: true  },
+      { name: "Site vitrine",  price: "Dès 490 €",      href: "/services/site-vitrine",        highlight: false },
+      { name: "Coaching IA",   price: "190 € unique",   href: "/services/coaching-ia",         highlight: false },
+      { name: "Création AE",   price: "Dès 49 €",       href: "/services/creation-auto-entrepreneur", highlight: false },
     ],
   },
   {
@@ -53,14 +53,14 @@ const PROFILES = [
     color: "#60a5fa",
     rgb: "96,165,250",
     badge: null,
-    pitch: "Digitalisez votre activité avec des outils sur mesure. Sites, apps, sourcing et accompagnement stratégique.",
-    startingFrom: "11,90€",
-    startingUnit: "/mois",
+    pitch: "Digitalisez votre activité avec des outils sur mesure.",
+    startingFrom: "490 €",
+    startingUnit: "/ projet",
     recommended: [
-      { name: "DJAMA Pro",         desc: "11 outils de gestion tout-en-un",     price: "11,90€/mois",       href: "/espace-client",                highlight: false },
-      { name: "Site e-commerce",   desc: "Boutique en ligne + paiement",         price: "À partir de 990€",  href: "/services/site-ecommerce",       highlight: false },
-      { name: "Application mobile",desc: "App iOS & Android",                    price: "À partir de 1 900€",href: "/services/application-mobile",   highlight: false },
-      { name: "Sourcing international", desc: "Fournisseurs qualifiés + négo.", price: "Sur devis",          href: "/services/recherche-fournisseurs",highlight: false },
+      { name: "Site e-commerce",        price: "Dès 990 €",      href: "/services/site-ecommerce",        highlight: false },
+      { name: "Application mobile",     price: "Dès 1 900 €",    href: "/services/application-mobile",    highlight: false },
+      { name: "DJAMA Pro",              price: "11,90 €/mois",   href: "/espace-client",                  highlight: false },
+      { name: "Sourcing international", price: "Sur devis",       href: "/services/recherche-fournisseurs",highlight: false },
     ],
   },
   {
@@ -71,14 +71,14 @@ const PROFILES = [
     color: "#a78bfa",
     rgb: "167,139,250",
     badge: null,
-    pitch: "Production visuelle, automatisation IA et plateformes sur mesure. L'expertise technique pour des projets ambitieux.",
-    startingFrom: "190€",
+    pitch: "Production visuelle, IA et plateformes pour projets ambitieux.",
+    startingFrom: "190 €",
     startingUnit: "/ projet",
     recommended: [
-      { name: "Visuels publicitaires",  desc: "Affiches, flyers, réseaux sociaux",  price: "À partir de 290€",   href: "/services/visuels-publicitaires",     highlight: false },
-      { name: "Montage vidéo",          desc: "Reels, teasers, clips",               price: "À partir de 190€",   href: "/services/montage-video",             highlight: false },
-      { name: "Plateforme sur mesure",  desc: "SaaS, dashboard, outil métier",       price: "À partir de 3 500€", href: "/services/plateforme-web-sur-mesure", highlight: false },
-      { name: "Automatisation IA",      desc: "Workflows, bots, IA sur mesure",      price: "À partir de 490€",   href: "/services/automatisation-ia",         highlight: false },
+      { name: "Visuels publicitaires", price: "Dès 290 €",    href: "/services/visuels-publicitaires",    highlight: false },
+      { name: "Montage vidéo",         price: "Dès 190 €",    href: "/services/montage-video",            highlight: false },
+      { name: "Plateforme sur mesure", price: "Dès 3 500 €",  href: "/services/plateforme-web-sur-mesure",highlight: false },
+      { name: "Automatisation IA",     price: "Dès 490 €",    href: "/services/automatisation-ia",        highlight: false },
     ],
   },
 ] as const;
@@ -90,7 +90,13 @@ const ALL_SERVICES = [
     rgb: GOLDR,
     icon: LayoutDashboard,
     services: [
-      { name: "DJAMA Pro — abonnement mensuel", desc: "11 outils pros réunis : factures, CRM, agenda, trésorerie, contrats IA, sourcing…", price: "11,90€/mois", tag: "Sans engagement", href: "/espace-client" },
+      {
+        name: "DJAMA Pro — abonnement mensuel",
+        desc: "11 outils pros : factures, CRM, agenda, trésorerie, contrats IA, sourcing…",
+        price: "11,90 €/mois",
+        tag: "Sans engagement",
+        href: "/espace-client",
+      },
     ],
   },
   {
@@ -99,10 +105,10 @@ const ALL_SERVICES = [
     rgb: "96,165,250",
     icon: Globe,
     services: [
-      { name: "Site vitrine",              desc: "Site pro jusqu'à 5 pages, responsive, formulaire de contact, référencement local",       price: "À partir de 490€",   tag: "Livraison 10 j.",   href: "/services/site-vitrine" },
-      { name: "Site e-commerce",           desc: "Boutique en ligne, catalogue produits, paiement sécurisé, gestion des commandes",         price: "À partir de 990€",   tag: null,                href: "/services/site-ecommerce" },
-      { name: "Application mobile",        desc: "App native iOS & Android ou React Native, design sur mesure",                             price: "À partir de 1 900€", tag: null,                href: "/services/application-mobile" },
-      { name: "Plateforme web sur mesure", desc: "SaaS, outil métier, dashboard, marketplace — architecture et développement complets",     price: "À partir de 3 500€", tag: null,                href: "/services/plateforme-web-sur-mesure" },
+      { name: "Site vitrine",              desc: "Site pro jusqu'à 5 pages, responsive, formulaire de contact, SEO local",     price: "Dès 490 €",    tag: "Livraison 10 j.", href: "/services/site-vitrine" },
+      { name: "Site e-commerce",           desc: "Boutique en ligne, catalogue, paiement sécurisé, gestion des commandes",     price: "Dès 990 €",    tag: null,              href: "/services/site-ecommerce" },
+      { name: "Application mobile",        desc: "App iOS & Android ou React Native, design sur mesure",                       price: "Dès 1 900 €",  tag: null,              href: "/services/application-mobile" },
+      { name: "Plateforme web sur mesure", desc: "SaaS, outil métier, dashboard, marketplace — dev complet",                   price: "Dès 3 500 €",  tag: null,              href: "/services/plateforme-web-sur-mesure" },
     ],
   },
   {
@@ -111,8 +117,8 @@ const ALL_SERVICES = [
     rgb: "167,139,250",
     icon: Brain,
     services: [
-      { name: "Coaching IA",        desc: "Formation : 6 modules · 20 chapitres · 4h accompagnement expert · accès 3 mois",  price: "190€ — paiement unique",  tag: "Garantie 7 jours", href: "/services/coaching-ia" },
-      { name: "Automatisation IA",  desc: "Création de workflows, chatbots, bots IA et automatisations métier sur mesure",    price: "À partir de 490€",        tag: null,               href: "/services/automatisation-ia" },
+      { name: "Coaching IA",       desc: "6 modules · 20 chapitres · 4 h d'accompagnement · accès 3 mois",    price: "190 €",      tag: "Garantie 7 j.", href: "/services/coaching-ia" },
+      { name: "Automatisation IA", desc: "Workflows, chatbots, bots IA et automatisations métier sur mesure",  price: "Dès 490 €",  tag: null,            href: "/services/automatisation-ia" },
     ],
   },
   {
@@ -121,9 +127,9 @@ const ALL_SERVICES = [
     rgb: "244,114,182",
     icon: Palette,
     services: [
-      { name: "Visuels publicitaires", desc: "Affiches, flyers, visuels réseaux sociaux, identité visuelle, branding",             price: "À partir de 290€", tag: null, href: "/services/visuels-publicitaires" },
-      { name: "Montage vidéo",         desc: "Reels, teasers, vidéos institutionnelles, sous-titrage, transitions pro",             price: "À partir de 190€", tag: null, href: "/services/montage-video" },
-      { name: "Retouche photo",        desc: "Retouche professionnelle, fond blanc, mise en lumière, détourage",                    price: "À partir de 49€",  tag: null, href: "/services/retouche-photo" },
+      { name: "Visuels publicitaires", desc: "Affiches, flyers, réseaux sociaux, identité visuelle, branding",         price: "Dès 290 €", tag: null, href: "/services/visuels-publicitaires" },
+      { name: "Montage vidéo",         desc: "Reels, teasers, vidéos institutionnelles, sous-titrage",                  price: "Dès 190 €", tag: null, href: "/services/montage-video" },
+      { name: "Retouche photo",        desc: "Retouche pro, fond blanc, mise en lumière, détourage",                    price: "Dès 49 €",  tag: null, href: "/services/retouche-photo" },
     ],
   },
   {
@@ -132,10 +138,10 @@ const ALL_SERVICES = [
     rgb: "245,158,11",
     icon: HeartHandshake,
     services: [
-      { name: "Création auto-entrepreneur",  desc: "Immatriculation, choix du statut juridique, conseil et démarches complètes",      price: "À partir de 49€",     tag: null,               href: "/services/creation-auto-entrepreneur" },
-      { name: "Déclarations URSSAF",         desc: "Déclarations mensuelles ou trimestrielles, suivi des cotisations, assistance",     price: "À partir de 29€/mois", tag: null,               href: "/services/declarations-urssaf" },
-      { name: "Assistance administrative",   desc: "Courriers, démarches administratives, gestion des documents professionnels",      price: "Sur devis",            tag: null,               href: "/services/assistance-administrative" },
-      { name: "Soutien scolaire",            desc: "Cours particuliers toutes matières, collège et lycée, à domicile ou en ligne",    price: "14€/heure",            tag: null,               href: "/services/soutien-scolaire" },
+      { name: "Création auto-entrepreneur",  desc: "Immatriculation, choix du statut, conseil et démarches complètes",        price: "Dès 49 €",       tag: null, href: "/services/creation-auto-entrepreneur" },
+      { name: "Déclarations URSSAF",         desc: "Déclarations mensuelles ou trimestrielles, suivi des cotisations",         price: "Dès 29 €/mois",  tag: null, href: "/services/declarations-urssaf" },
+      { name: "Assistance administrative",   desc: "Courriers, démarches, gestion des documents professionnels",               price: "Sur devis",       tag: null, href: "/services/assistance-administrative" },
+      { name: "Soutien scolaire",            desc: "Cours particuliers toutes matières, collège & lycée, présentiel ou online", price: "14 €/heure",     tag: null, href: "/services/soutien-scolaire" },
     ],
   },
   {
@@ -144,8 +150,8 @@ const ALL_SERVICES = [
     rgb: "52,211,153",
     icon: TrendingUp,
     services: [
-      { name: "Sourcing international",  desc: "Recherche, sélection et mise en relation avec des fournisseurs à l'international",  price: "Sur devis", tag: null, href: "/services/recherche-fournisseurs" },
-      { name: "Marchés publics & privés",desc: "Aide aux appels d'offres, constitution de dossiers de candidature, conseil",        price: "Sur devis", tag: null, href: "/services/marches-publics" },
+      { name: "Sourcing international",  desc: "Recherche et mise en relation avec des fournisseurs qualifiés à l'international", price: "Sur devis", tag: null, href: "/services/recherche-fournisseurs" },
+      { name: "Marchés publics & privés", desc: "Aide aux appels d'offres, constitution de dossiers, conseil stratégique",        price: "Sur devis", tag: null, href: "/services/marches-publics" },
     ],
   },
 ] as const;
@@ -153,45 +159,47 @@ const ALL_SERVICES = [
 const FAQ = [
   {
     q: "Les prix incluent-ils la maintenance et le support ?",
-    a: "L'abonnement DJAMA Pro (11,90€/mois) inclut le support DJAMA et les mises à jour des outils. Pour les créations web et apps, un devis de maintenance peut être établi séparément selon vos besoins.",
+    a: "L'abonnement DJAMA Pro (11,90 €/mois) inclut le support et les mises à jour des outils. Pour les créations web, un devis de maintenance peut être établi séparément.",
   },
   {
     q: "Puis-je cumuler plusieurs services ?",
-    a: "Absolument. La plupart de nos clients combinent le DJAMA Pro (base de gestion) avec une création web et/ou du coaching IA. Nous proposons des tarifs dégressifs sur les packs combinés — contactez-nous pour un devis personnalisé.",
+    a: "Absolument. La plupart des clients combinent DJAMA Pro avec une création web et du coaching IA. Nous proposons des tarifs dégressifs sur les packs combinés.",
   },
   {
     q: "Y a-t-il un engagement minimum ?",
-    a: "L'abonnement DJAMA Pro est sans engagement, résiliable à tout moment. Les prestations ponctuelles (site, app, visuels) sont payées à la livraison selon le devis signé. Le Coaching IA bénéficie d'une garantie satisfait ou remboursé 7 jours.",
+    a: "DJAMA Pro est sans engagement, résiliable à tout moment. Les prestations ponctuelles sont payées à la livraison. Le Coaching IA bénéficie d'une garantie 7 jours.",
   },
   {
     q: "Comment obtenir un devis pour les services 'Sur devis' ?",
-    a: "Remplissez le formulaire de contact ou envoyez-nous un message WhatsApp avec votre besoin. Nous vous répondons sous 24h avec une première estimation, puis un devis détaillé après un appel découverte gratuit de 30 minutes.",
+    a: "Remplissez le formulaire de contact ou écrivez-nous sur WhatsApp. Nous répondons sous 24h avec une première estimation, puis un devis après un appel découverte gratuit.",
   },
 ] as const;
 
 /* ══════════════════════════════════════════════════════
-   COMPOSANT FAQ ITEM
+   FAQ ITEM
 ══════════════════════════════════════════════════════ */
 function FaqItem({ q, a, idx }: { q: string; a: string; idx: number }) {
   const [open, setOpen] = useState(false);
   return (
     <motion.div
       variants={fadeIn}
-      className="overflow-hidden rounded-2xl border border-white/[.07] bg-white/[.025] transition-all duration-200 hover:border-white/[.12]"
+      className="overflow-hidden rounded-2xl border border-white/[.07] bg-white/[.025] transition-colors duration-200 hover:border-white/[.12]"
     >
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
       >
         <div className="flex items-center gap-3">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[0.6rem] font-black"
-            style={{ background: `rgba(${GOLDR},.12)`, color: GOLD }}>
+          <span
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[0.6rem] font-black"
+            style={{ background: `rgba(${GOLDR},.12)`, color: GOLD }}
+          >
             {String(idx + 1).padStart(2, "0")}
           </span>
-          <span className="text-[0.92rem] font-bold text-white/82">{q}</span>
+          <span className="text-sm font-semibold text-white/80">{q}</span>
         </div>
         <ChevronDown
-          size={16}
+          size={15}
           className="shrink-0 text-white/30 transition-transform duration-300"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
         />
@@ -203,11 +211,11 @@ function FaqItem({ q, a, idx }: { q: string; a: string; idx: number }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.3, ease }}
             className="overflow-hidden"
           >
             <div className="border-t border-white/[.05] px-6 py-4">
-              <p className="text-[0.86rem] leading-relaxed text-white/50">{a}</p>
+              <p className="text-sm leading-relaxed text-white/50">{a}</p>
             </div>
           </motion.div>
         )}
@@ -224,21 +232,21 @@ export default function OffresPage() {
   const active = PROFILES.find((p) => p.id === activeProfile)!;
 
   return (
-    <div className="bg-[#09090b] w-full overflow-x-hidden">
+    <div className="w-full overflow-x-hidden bg-[#09090b]">
 
-      {/* ══ HERO ══════════════════════════════════════════════ */}
+      {/* ══════════════════════ HERO ══════════════════════════ */}
       <section className="hero-dark hero-grid relative overflow-hidden">
         <div className="pointer-events-none absolute -left-32 -top-16 h-[500px] w-[500px] animate-float-slow rounded-full bg-[rgba(201,165,90,.06)] blur-[130px]" />
         <div className="pointer-events-none absolute right-[-60px] top-[30%] h-[350px] w-[350px] animate-float-delayed rounded-full bg-[rgba(167,139,250,.05)] blur-[100px]" />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-6 pb-28 pt-36 text-center">
+        <div className="relative z-10 mx-auto max-w-4xl px-6 pb-28 pt-36 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.55, ease }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease }}
             className="mb-7"
           >
-            <span className="badge badge-gold-dark relative inline-flex items-center gap-1.5">
+            <span className="badge badge-gold-dark inline-flex items-center gap-1.5">
               <Sparkles size={10} />
               Tarifs transparents &amp; profils adaptés
             </span>
@@ -255,20 +263,24 @@ export default function OffresPage() {
             />
           </h1>
 
-          <FadeReveal delay={0.55} as="p" className="mx-auto mt-6 max-w-[520px] text-[1.05rem] leading-[1.85] text-white/50">
+          <FadeReveal
+            delay={0.55}
+            as="p"
+            className="mx-auto mt-6 max-w-[500px] text-base leading-[1.85] text-white/50"
+          >
             Indépendant, PME ou créatif — trouvez les services DJAMA qui correspondent
             à vos besoins et votre budget. Pas de surprise, pas d&apos;engagement caché.
           </FadeReveal>
 
-          {/* Badges preuves */}
-          <FadeReveal delay={0.7} className="mt-9 flex flex-wrap items-center justify-center gap-3">
+          <FadeReveal delay={0.7} className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
             {[
-              { icon: Shield,      label: "Sans engagement"   },
-              { icon: Zap,         label: "Accès immédiat"    },
-              { icon: MessageCircle, label: "Devis en 24h"   },
-              { icon: Star,        label: "50+ clients"        },
+              { icon: Shield,        label: "Sans engagement" },
+              { icon: Zap,           label: "Accès immédiat"  },
+              { icon: MessageCircle, label: "Devis en 24h"    },
+              { icon: Star,          label: "50+ clients"     },
             ].map(({ icon: Icon, label }) => (
-              <span key={label}
+              <span
+                key={label}
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/[.08] bg-white/[.03] px-3.5 py-1.5 text-[0.78rem] font-semibold text-white/45"
               >
                 <Icon size={12} style={{ color: GOLD }} />
@@ -281,9 +293,9 @@ export default function OffresPage() {
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#09090b] to-transparent" />
       </section>
 
-      {/* ══ SÉLECTEUR DE PROFIL ══════════════════════════════ */}
+      {/* ══════════════════════ PROFILS ═══════════════════════ */}
       <section className="relative overflow-hidden bg-[#0e0b18] py-20 sm:py-28">
-        <div className="pointer-events-none absolute left-1/3 top-0 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.04)] blur-[150px]" />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.035)] blur-[160px]" />
 
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
@@ -292,7 +304,8 @@ export default function OffresPage() {
         >
           {/* Header */}
           <div className="mb-12 text-center">
-            <motion.div variants={fadeIn}
+            <motion.div
+              variants={fadeIn}
               className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]"
               style={{ color: GOLD }}
             >
@@ -308,18 +321,19 @@ export default function OffresPage() {
           </div>
 
           {/* Tabs */}
-          <motion.div variants={fadeIn} className="mb-10 flex flex-wrap items-center justify-center gap-2">
+          <motion.div variants={fadeIn} className="mb-8 flex flex-wrap items-center justify-center gap-2">
             {PROFILES.map((p) => {
               const isActive = activeProfile === p.id;
               return (
-                <button key={p.id}
+                <button
+                  key={p.id}
                   onClick={() => setActiveProfile(p.id)}
-                  className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-[0.82rem] font-bold transition-all duration-200"
+                  className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all duration-200"
                   style={{
-                    borderColor: isActive ? `rgba(${p.rgb},.45)` : "rgba(255,255,255,.08)",
+                    borderColor: isActive ? `rgba(${p.rgb},.5)`   : "rgba(255,255,255,.08)",
                     background:  isActive ? `rgba(${p.rgb},.12)` : "rgba(255,255,255,.03)",
-                    color: isActive ? p.color : "rgba(255,255,255,.4)",
-                    boxShadow: isActive ? `0 0 20px rgba(${p.rgb},.15)` : "none",
+                    color:       isActive ? p.color               : "rgba(255,255,255,.4)",
+                    boxShadow:   isActive ? `0 0 18px rgba(${p.rgb},.15)` : "none",
                   }}
                 >
                   <p.icon size={14} />
@@ -330,119 +344,168 @@ export default function OffresPage() {
           </motion.div>
 
           {/* Pack actif */}
-          <motion.div
-            key={active.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease }}
-          >
-            <div className="relative overflow-hidden rounded-[2rem] border"
-              style={{ borderColor: `rgba(${active.rgb},.3)`, background: `rgba(${active.rgb},.03)` }}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={active.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.35, ease }}
             >
-              {/* Top bar */}
-              <div className="h-[3px] w-full"
-                style={{ background: `linear-gradient(90deg,transparent,${active.color},transparent)` }} />
-              {/* Top glow */}
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-52"
-                style={{ background: `radial-gradient(ellipse 80% 80% at 50% 0%, rgba(${active.rgb},.1), transparent)` }} />
+              <div
+                className="relative overflow-hidden rounded-3xl border"
+                style={{
+                  borderColor: `rgba(${active.rgb},.25)`,
+                  background: `rgba(${active.rgb},.03)`,
+                }}
+              >
+                {/* Top accent bar */}
+                <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg,transparent,${active.color},transparent)` }} />
+                {/* Top glow */}
+                <div
+                  className="pointer-events-none absolute inset-x-0 top-0 h-48"
+                  style={{ background: `radial-gradient(ellipse 80% 100% at 50% 0%, rgba(${active.rgb},.09), transparent)` }}
+                />
 
-              <div className="relative grid gap-8 p-8 lg:grid-cols-[1fr_auto]">
-                {/* Left: description */}
-                <div>
-                  <div className="mb-5 flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border"
-                      style={{ background: `rgba(${active.rgb},.14)`, borderColor: `rgba(${active.rgb},.3)`, boxShadow: `0 0 20px rgba(${active.rgb},.22)` }}>
-                      <active.icon size={26} style={{ color: active.color }} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-2xl font-extrabold text-white">{active.label}</h3>
-                        {active.badge && (
-                          <span className="rounded-full border px-2.5 py-0.5 text-[0.6rem] font-black uppercase tracking-[.16em]"
-                            style={{ borderColor: `rgba(${active.rgb},.4)`, background: `rgba(${active.rgb},.12)`, color: active.color }}>
-                            {active.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[0.82rem] text-white/35">{active.sublabel}</p>
-                    </div>
-                  </div>
-                  <p className="mb-7 max-w-md text-[0.95rem] leading-relaxed text-white/50">{active.pitch}</p>
+                <div className="relative grid gap-0 lg:grid-cols-[1fr_280px]">
 
-                  {/* Services recommandés */}
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {active.recommended.map(({ name, desc, price, href, highlight }) => (
-                      <Link key={name} href={href}
-                        className="group/s relative flex items-start gap-3.5 overflow-hidden rounded-2xl border p-4 transition-all duration-200 hover:brightness-110"
+                  {/* ─── Left : info + services ─── */}
+                  <div className="p-8 lg:pr-10">
+
+                    {/* Profile header */}
+                    <div className="mb-6 flex items-center gap-4">
+                      <div
+                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border"
                         style={{
-                          borderColor: highlight ? `rgba(${active.rgb},.4)` : "rgba(255,255,255,.07)",
-                          background:  highlight ? `rgba(${active.rgb},.07)` : "rgba(255,255,255,.025)",
+                          background:   `rgba(${active.rgb},.14)`,
+                          borderColor:  `rgba(${active.rgb},.3)`,
+                          boxShadow:    `0 0 20px rgba(${active.rgb},.2)`,
                         }}
                       >
-                        {highlight && (
-                          <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px]"
-                            style={{ background: `linear-gradient(90deg,transparent,${active.color},transparent)` }} />
-                        )}
-                        <CheckCircle2 size={15} className="mt-0.5 shrink-0"
-                          style={{ color: highlight ? active.color : "rgba(255,255,255,.2)" }} />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[0.88rem] font-bold text-white/88">{name}</p>
-                          <p className="mt-0.5 text-[0.72rem] text-white/38">{desc}</p>
+                        <active.icon size={26} style={{ color: active.color }} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2.5">
+                          <h3 className="text-xl font-extrabold text-white">{active.label}</h3>
+                          {active.badge && (
+                            <span
+                              className="rounded-full border px-2.5 py-0.5 text-[0.6rem] font-black uppercase tracking-[.14em]"
+                              style={{
+                                borderColor: `rgba(${active.rgb},.4)`,
+                                background:  `rgba(${active.rgb},.12)`,
+                                color:       active.color,
+                              }}
+                            >
+                              {active.badge}
+                            </span>
+                          )}
                         </div>
-                        <div className="shrink-0 text-right">
-                          <p className="text-[0.78rem] font-black" style={{ color: active.color }}>{price}</p>
-                          <ArrowRight size={11} className="ml-auto mt-1 opacity-0 transition-opacity group-hover/s:opacity-100"
-                            style={{ color: active.color }} />
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+                        <p className="mt-0.5 text-sm text-white/35">{active.sublabel}</p>
+                      </div>
+                    </div>
 
-                {/* Right: starting from + CTA */}
-                <div className="flex flex-col items-center justify-center gap-5 rounded-[1.5rem] border border-white/[.06] bg-white/[.02] px-8 py-8 text-center lg:min-w-[220px]">
-                  <p className="text-[0.62rem] font-black uppercase tracking-[.22em] text-white/30">
-                    À partir de
-                  </p>
-                  <div>
-                    <p className="text-[3.2rem] font-black leading-none tracking-tight text-white">
-                      {active.startingFrom}
+                    <p className="mb-8 text-[0.95rem] leading-relaxed text-white/50">{active.pitch}</p>
+
+                    {/* Services recommandés — grille alignée */}
+                    <p className="mb-3 text-[0.68rem] font-black uppercase tracking-[.2em] text-white/25">
+                      Services recommandés
                     </p>
-                    <p className="mt-1 text-[0.72rem] font-semibold text-white/35">{active.startingUnit}</p>
+                    <div className="overflow-hidden rounded-2xl border border-white/[.06]">
+                      {active.recommended.map(({ name, price, href, highlight }, i) => (
+                        <Link
+                          key={name}
+                          href={href}
+                          className={`group flex items-center justify-between gap-4 px-5 py-3.5 transition-all duration-200 hover:bg-white/[.035] ${
+                            i !== active.recommended.length - 1 ? "border-b border-white/[.05]" : ""
+                          } ${highlight ? "bg-white/[.025]" : ""}`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <CheckCircle2
+                              size={14}
+                              className="shrink-0"
+                              style={{ color: highlight ? active.color : "rgba(255,255,255,.2)" }}
+                            />
+                            <span
+                              className="text-sm font-semibold leading-tight text-white/80 group-hover:text-white truncate"
+                            >
+                              {name}
+                            </span>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span
+                              className="text-sm font-black whitespace-nowrap"
+                              style={{ color: active.color }}
+                            >
+                              {price}
+                            </span>
+                            <ArrowRight
+                              size={12}
+                              className="opacity-0 transition-opacity group-hover:opacity-60"
+                              style={{ color: active.color }}
+                            />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                  <Link href="/contact?besoin=devis"
-                    className="btn-primary group relative w-full overflow-hidden py-3 text-[0.88rem]"
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                      Obtenir un devis
-                      <ArrowRight size={13} className="transition-transform duration-300 group-hover:translate-x-1" />
-                    </span>
-                    <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
-                  </Link>
-                  <Link href="/espace-client"
-                    className="w-full rounded-xl border border-white/[.08] bg-white/[.03] py-2.5 text-center text-[0.82rem] font-semibold text-white/45 transition-all duration-200 hover:border-white/[.15] hover:text-white/70"
-                  >
-                    Voir DJAMA Pro
-                  </Link>
-                  <p className="text-[0.62rem] text-white/20">Sans engagement · Réponse sous 24h</p>
+
+                  {/* ─── Right : price + CTA ─── */}
+                  <div className="flex flex-col items-center justify-center gap-5 border-t border-white/[.06] p-8 text-center lg:border-l lg:border-t-0">
+                    <div>
+                      <p className="mb-2 text-[0.62rem] font-black uppercase tracking-[.22em] text-white/25">
+                        À partir de
+                      </p>
+                      <p className="text-[3rem] font-black leading-none tracking-tight text-white">
+                        {active.startingFrom}
+                      </p>
+                      <p className="mt-1.5 text-[0.75rem] font-semibold text-white/35">
+                        {active.startingUnit}
+                      </p>
+                    </div>
+
+                    <Link
+                      href="/contact?besoin=devis"
+                      className="btn-primary group relative w-full max-w-[200px] overflow-hidden py-3 text-sm"
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        Obtenir un devis
+                        <ArrowRight size={13} className="transition-transform duration-300 group-hover:translate-x-1" />
+                      </span>
+                      <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
+                    </Link>
+
+                    <Link
+                      href="/espace-client"
+                      className="w-full max-w-[200px] rounded-xl border border-white/[.08] bg-white/[.03] py-2.5 text-center text-sm font-semibold text-white/40 transition-all duration-200 hover:border-white/[.14] hover:text-white/65"
+                    >
+                      Voir DJAMA Pro
+                    </Link>
+
+                    <p className="text-[0.62rem] text-white/20">
+                      Sans engagement · Réponse sous 24h
+                    </p>
+                  </div>
+
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
       </section>
 
-      {/* ══ TOUS LES TARIFS ══════════════════════════════════ */}
+      {/* ══════════════════════ TARIFS ════════════════════════ */}
       <section className="relative overflow-hidden bg-[#09090b] py-20 sm:py-28">
         <div className="pointer-events-none absolute right-[-80px] top-[20%] h-[350px] w-[350px] rounded-full bg-[rgba(96,165,250,.04)] blur-[100px]" />
 
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
-          className="relative z-10 mx-auto max-w-6xl px-6"
+          className="relative z-10 mx-auto max-w-5xl px-6"
         >
+          {/* Header */}
           <div className="mb-14 text-center">
-            <motion.div variants={fadeIn}
+            <motion.div
+              variants={fadeIn}
               className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]"
               style={{ color: GOLD }}
             >
@@ -455,51 +518,82 @@ export default function OffresPage() {
                 lineClassName="justify-center text-white"
               />
             </h2>
-            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/40">
-              Tarifs indicatifs — les projets sur devis font l&apos;objet d&apos;une estimation gratuite sous 24h.
+            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/40">
+              Tarifs indicatifs — les projets &quot;Sur devis&quot; font l&apos;objet d&apos;une estimation gratuite sous 24h.
             </FadeReveal>
           </div>
 
-          <motion.div variants={staggerContainerFast} className="space-y-6">
+          {/* Table par catégorie */}
+          <motion.div variants={staggerContainerFast} className="space-y-4">
             {ALL_SERVICES.map(({ category, color, rgb, icon: CatIcon, services }) => (
-              <motion.div key={category} variants={cardReveal}
-                className="overflow-hidden rounded-[1.5rem] border border-white/[.07] bg-white/[.025]"
+              <motion.div
+                key={category}
+                variants={cardReveal}
+                className="overflow-hidden rounded-2xl border border-white/[.07] bg-white/[.02]"
               >
-                {/* Category header */}
-                <div className="flex items-center gap-3 border-b border-white/[.06] px-6 py-4"
-                  style={{ background: `rgba(${rgb},.04)` }}>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border"
-                    style={{ background: `rgba(${rgb},.12)`, borderColor: `rgba(${rgb},.28)` }}>
-                    <CatIcon size={16} style={{ color }} />
+                {/* En-tête catégorie */}
+                <div
+                  className="flex items-center gap-3 border-b border-white/[.06] px-5 py-3.5"
+                  style={{ background: `rgba(${rgb},.04)` }}
+                >
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-xl border"
+                    style={{ background: `rgba(${rgb},.12)`, borderColor: `rgba(${rgb},.28)` }}
+                  >
+                    <CatIcon size={14} style={{ color }} />
                   </div>
-                  <h3 className="text-[0.82rem] font-extrabold uppercase tracking-[.16em]" style={{ color }}>
+                  <h3
+                    className="text-[0.72rem] font-extrabold uppercase tracking-[.18em]"
+                    style={{ color }}
+                  >
                     {category}
                   </h3>
                 </div>
 
-                {/* Service rows */}
+                {/* Lignes de service — 2 colonnes fixes : [info] [prix] */}
                 <div className="divide-y divide-white/[.04]">
                   {services.map(({ name, desc, price, tag, href }) => (
-                    <Link key={name} href={href}
-                      className="group flex flex-col items-start gap-2 px-6 py-4 transition-all duration-200 hover:bg-white/[.025] sm:flex-row sm:items-center sm:gap-4"
+                    <Link
+                      key={name}
+                      href={href}
+                      className="group flex items-center gap-4 px-5 py-4 transition-all duration-200 hover:bg-white/[.025]"
                     >
-                      <div className="flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[0.9rem] font-bold text-white/82 transition-colors group-hover:text-white">
+                      {/* Colonne 1 : nom + desc */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 leading-none">
+                          <span className="text-[0.9rem] font-semibold text-white/80 transition-colors group-hover:text-white">
                             {name}
                           </span>
                           {tag && (
-                            <span className="rounded-full border px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-[.12em]"
-                              style={{ borderColor: `rgba(${rgb},.3)`, background: `rgba(${rgb},.08)`, color }}>
+                            <span
+                              className="rounded-full border px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-[.1em]"
+                              style={{
+                                borderColor: `rgba(${rgb},.3)`,
+                                background:  `rgba(${rgb},.08)`,
+                                color,
+                              }}
+                            >
                               {tag}
                             </span>
                           )}
                         </div>
-                        <p className="mt-0.5 text-[0.78rem] leading-snug text-white/35">{desc}</p>
+                        <p className="mt-1 text-[0.78rem] leading-snug text-white/35">
+                          {desc}
+                        </p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-3">
-                        <span className="text-[0.92rem] font-black" style={{ color }}>{price}</span>
-                        <ArrowRight size={13} className="opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100 group-hover:text-white/50" />
+
+                      {/* Colonne 2 : prix — largeur fixe, toujours aligné à droite */}
+                      <div className="flex shrink-0 items-center gap-2.5">
+                        <span
+                          className="w-[120px] text-right text-[0.88rem] font-black"
+                          style={{ color }}
+                        >
+                          {price}
+                        </span>
+                        <ArrowRight
+                          size={13}
+                          className="shrink-0 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-50"
+                        />
                       </div>
                     </Link>
                   ))}
@@ -509,12 +603,16 @@ export default function OffresPage() {
           </motion.div>
 
           {/* Note devis */}
-          <FadeReveal delay={0.35} className="mt-8 flex justify-center">
+          <FadeReveal delay={0.3} className="mt-8 flex justify-center">
             <div className="flex items-center gap-2.5 rounded-2xl border border-white/[.06] bg-white/[.02] px-5 py-3">
               <MessageCircle size={13} style={{ color: GOLD }} />
               <p className="text-[0.78rem] text-white/35">
-                Tous les tarifs &quot;Sur devis&quot; font l&apos;objet d&apos;une estimation gratuite —
-                <Link href="/contact" className="ml-1 font-semibold underline underline-offset-2 transition-colors hover:text-white/65" style={{ color: GOLD }}>
+                Devis gratuit pour tous les services &quot;Sur devis&quot; —{" "}
+                <Link
+                  href="/contact"
+                  className="font-semibold underline underline-offset-2 transition-colors hover:text-white/65"
+                  style={{ color: GOLD }}
+                >
                   contactez-nous
                 </Link>
               </p>
@@ -523,7 +621,7 @@ export default function OffresPage() {
         </motion.div>
       </section>
 
-      {/* ══ FAQ TARIFS ════════════════════════════════════════ */}
+      {/* ══════════════════════ FAQ ═══════════════════════════ */}
       <section className="relative overflow-hidden bg-[#0c0b13] py-20 sm:py-24">
         <div className="pointer-events-none absolute left-[-60px] top-1/2 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-[rgba(167,139,250,.05)] blur-[90px]" />
 
@@ -533,13 +631,14 @@ export default function OffresPage() {
           className="relative z-10 mx-auto max-w-3xl px-6"
         >
           <div className="mb-10 text-center">
-            <motion.div variants={fadeIn}
+            <motion.div
+              variants={fadeIn}
               className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/[.08] bg-white/[.03] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em] text-white/35"
             >
-              <Sparkles size={10} /> FAQ
+              <Sparkles size={10} /> Questions fréquentes
             </motion.div>
-            <motion.h2 variants={fadeIn} className="text-2xl font-extrabold text-white/90 sm:text-3xl">
-              Questions fréquentes sur les tarifs
+            <motion.h2 variants={fadeIn} className="text-2xl font-extrabold text-white sm:text-3xl">
+              Tout ce que vous devez savoir sur les tarifs
             </motion.h2>
           </div>
 
@@ -551,7 +650,7 @@ export default function OffresPage() {
         </motion.div>
       </section>
 
-      {/* ══ CTA FINAL ════════════════════════════════════════ */}
+      {/* ══════════════════════ CTA FINAL ═════════════════════ */}
       <section className="mx-auto max-w-5xl px-6 pb-24 pt-10">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
@@ -575,24 +674,26 @@ export default function OffresPage() {
               />
             </h2>
 
-            <FadeReveal delay={0.26} as="p" className="mx-auto mt-5 max-w-md text-[1rem] leading-[1.82] text-white/40">
+            <FadeReveal delay={0.26} as="p" className="mx-auto mt-5 max-w-md text-base leading-[1.8] text-white/40">
               Appel découverte gratuit · Devis sous 24h · Sans engagement
             </FadeReveal>
 
             <FadeReveal delay={0.4} className="mt-10 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/contact"
-                className="btn-primary group relative overflow-hidden px-8 py-[0.95rem] text-[0.925rem]"
+              <Link
+                href="/contact"
+                className="btn-primary group relative overflow-hidden px-8 py-[0.9rem] text-sm"
               >
                 <span className="relative z-10 flex items-center gap-2">
                   Obtenir un devis gratuit
-                  <ArrowRight size={15} className="transition-transform duration-300 group-hover:translate-x-1" />
+                  <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
                 </span>
                 <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
               </Link>
-              <Link href="/espace-client"
-                className="btn-ghost px-8 py-[0.95rem] text-[0.925rem]"
+              <Link
+                href="/espace-client"
+                className="btn-ghost px-8 py-[0.9rem] text-sm"
               >
-                Essayer DJAMA Pro — 11,90€/mois
+                Essayer DJAMA Pro — 11,90 €/mois
               </Link>
             </FadeReveal>
           </div>
