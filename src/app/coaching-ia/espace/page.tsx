@@ -49,7 +49,7 @@ function saveFavorites(s: Set<string>) {
    TYPES
 ───────────────────────────────────────────────────────── */
 type View      = "chapter" | "assistant" | "booking" | "favorites";
-type AiAction  = "summarize" | "simplify";
+type AiAction  = "summarize" | "simplify" | "quiz" | "action_plan" | "create_prompt";
 
 /* ─────────────────────────────────────────────────────────
    UTILITY — CopyButton
@@ -226,6 +226,30 @@ function AiToolsBar({
       colorBg: "rgba(249,168,38,0.1)",
       border:  "rgba(249,168,38,0.25)",
     },
+    {
+      action:  "quiz" as AiAction,
+      icon:    BookMarked,
+      label:   "Générer un quiz",
+      color:   "#34d399",
+      colorBg: "rgba(52,211,153,0.1)",
+      border:  "rgba(52,211,153,0.25)",
+    },
+    {
+      action:  "action_plan" as AiAction,
+      icon:    Rocket,
+      label:   "Plan d'action",
+      color:   "#f87171",
+      colorBg: "rgba(248,113,113,0.1)",
+      border:  "rgba(248,113,113,0.25)",
+    },
+    {
+      action:  "create_prompt" as AiAction,
+      icon:    Zap,
+      label:   "Créer des prompts",
+      color:   "#38bdf8",
+      colorBg: "rgba(56,189,248,0.1)",
+      border:  "rgba(56,189,248,0.25)",
+    },
   ];
 
   return (
@@ -291,7 +315,11 @@ function AiToolsBar({
                     <Bot size={12} className="text-[#a78bfa]" />
                   </div>
                   <span className="text-[0.65rem] font-bold uppercase tracking-widest text-[#a78bfa]">
-                    {activeAction === "summarize" ? "✨ Résumé IA" : "💡 Explication simple"}
+                    {activeAction === "summarize"    ? "✨ Résumé IA"
+                     : activeAction === "simplify"  ? "💡 Explication simple"
+                     : activeAction === "quiz"       ? "🧠 Quiz interactif"
+                     : activeAction === "action_plan"? "🎯 Plan d'action"
+                     : "⚡ Prompts prêts à l'emploi"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
