@@ -254,12 +254,22 @@ function HomeContent() {
               </FadeReveal>
 
               {/* Social proof */}
-              <FadeReveal delay={0.85} className="mt-10 flex items-center gap-5 border-t border-white/[.07] pt-9">
-                <div className="flex -space-x-2">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} style={{ zIndex: 5 - i }}
-                      className="h-8 w-8 rounded-full border-2 border-[#09090b] bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f] shadow-[0_0_0_1px_rgba(201,165,90,.3)]" />
-                  ))}
+              <FadeReveal delay={0.85} className="mt-10 flex items-center gap-4 border-t border-white/[.07] pt-9">
+                {/* Photo équipe en avatars superposés */}
+                <div
+                  className="relative h-10 w-[110px] shrink-0 overflow-hidden rounded-full"
+                  style={{
+                    border: "2px solid rgba(201,165,90,.4)",
+                    boxShadow: "0 0 0 1px rgba(201,165,90,.15)",
+                  }}
+                >
+                  <Image
+                    src="/testimonials-team.jpg"
+                    alt="Clients DJAMA"
+                    fill
+                    className="object-cover object-center"
+                    sizes="110px"
+                  />
                 </div>
                 <div>
                   <div className="mb-1 flex items-center gap-0.5">
