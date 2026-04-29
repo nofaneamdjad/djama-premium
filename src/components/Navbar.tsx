@@ -82,22 +82,20 @@ export default function Navbar() {
               style={{ display: "flex", alignItems: "center" }}
             >
               <motion.div
-                style={{ filter: "brightness(0) invert(1)" }}
                 whileHover={{
                   scale: 1.05,
-                  filter: "brightness(0) invert(1) drop-shadow(0 0 12px rgba(201,165,90,0.4))",
+                  filter: "drop-shadow(0 0 12px rgba(201,165,90,0.4))",
                   transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] },
                 }}
                 whileTap={{ scale: 0.95, transition: { duration: 0.12 } }}
               >
                 <Image
-                  src={data.media.logo}
+                  src="/logo-navbar.png"
                   alt="Logo DJAMA"
-                  width={220}
-                  height={72}
+                  width={280}
+                  height={92}
                   priority
-                  className="h-14 md:h-[60px] w-auto object-contain"
-                  style={{ filter: "brightness(0) invert(1)" }}
+                  className="h-16 md:h-[68px] w-auto object-contain"
                 />
               </motion.div>
             </motion.div>
