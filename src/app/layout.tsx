@@ -46,7 +46,7 @@ export const metadata: Metadata = {
 
   // ── Twitter / X ───────────────────────────────────────────────────
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "DJAMA — L'écosystème digital pour entrepreneurs",
     description:
       "Présence digitale, outils de gestion, accompagnement expert et IA réunis en un seul écosystème.",
@@ -55,10 +55,18 @@ export const metadata: Metadata = {
 
   // ── Autres ────────────────────────────────────────────────────────
   keywords: [
-    "agence digitale", "création site web", "application mobile",
-    "outils gestion entreprise", "coaching IA", "automatisation business",
-    "factures en ligne", "espace client", "entrepreneur", "freelance",
-    "DJAMA", "djama.space",
+    // Marque
+    "DJAMA", "djama.space", "djama space",
+    // Services clés
+    "création site web", "agence digitale", "application mobile",
+    "coaching IA", "automatisation business", "intelligence artificielle entrepreneur",
+    "outils gestion entreprise", "factures en ligne", "espace client",
+    "soutien scolaire", "accompagnement administratif", "auto-entrepreneur URSSAF",
+    "recherche fournisseurs", "marchés publics", "freelance",
+    // Localisation
+    "La Réunion", "Comores", "France", "Belgique",
+    "agence digitale La Réunion", "création site web La Réunion",
+    "coaching IA Réunion", "développement web Réunion",
   ],
   authors: [{ name: "DJAMA", url: BASE_URL }],
   creator: "DJAMA",
@@ -88,25 +96,71 @@ export const viewport: Viewport = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
+    /* ── Organisation + Service professionnel ── */
     {
-      "@type": "Organization",
+      "@type": ["Organization", "ProfessionalService"],
       "@id": `${BASE_URL}/#organization`,
       name: "DJAMA",
       url: BASE_URL,
-      logo: { "@type": "ImageObject", url: `${BASE_URL}/logo.png` },
+      logo: {
+        "@type": "ImageObject",
+        url: `${BASE_URL}/logo.png`,
+        width: 512,
+        height: 512,
+      },
+      image: `${BASE_URL}/logo.png`,
+      telephone: "+262693520520",
+      email: "contact@djama.space",
       contactPoint: [
-        { "@type": "ContactPoint", telephone: "+262693520520", contactType: "customer service", availableLanguage: ["French"] },
-        { "@type": "ContactPoint", contactType: "technical support", email: "contact@djama.space" },
+        {
+          "@type": "ContactPoint",
+          telephone: "+262693520520",
+          contactType: "customer service",
+          availableLanguage: ["French"],
+          contactOption: "TollFree",
+        },
+        {
+          "@type": "ContactPoint",
+          contactType: "technical support",
+          email: "contact@djama.space",
+        },
       ],
-      sameAs: ["https://instagram.com/djama.space"],
+      sameAs: [
+        "https://instagram.com/djama.space",
+        "https://djama.space",
+      ],
       foundingDate: "2022",
-      description: "Écosystème digital pour entrepreneurs : création de sites web, outils de gestion, accompagnement administratif et coaching IA.",
+      description:
+        "Écosystème digital pour entrepreneurs : création de sites web, outils de gestion, accompagnement administratif et coaching IA.",
+      areaServed: [
+        { "@type": "Place", name: "La Réunion" },
+        { "@type": "Place", name: "Comores" },
+        { "@type": "Place", name: "France" },
+        { "@type": "Place", name: "Belgique" },
+      ],
+      hasOfferCatalog: {
+        "@type": "OfferCatalog",
+        name: "Services DJAMA",
+        itemListElement: [
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "Création de site web" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "Application mobile" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "Coaching IA" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "Outils de gestion professionnels", price: "11.90", priceCurrency: "EUR" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "Accompagnement administratif" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "Soutien scolaire" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "Automatisation & IA" } },
+        ],
+      },
+      priceRange: "€€",
     },
+
+    /* ── WebSite avec SearchAction ── */
     {
       "@type": "WebSite",
       "@id": `${BASE_URL}/#website`,
       url: BASE_URL,
       name: "DJAMA",
+      inLanguage: "fr-FR",
       publisher: { "@id": `${BASE_URL}/#organization` },
       potentialAction: {
         "@type": "SearchAction",
@@ -114,6 +168,8 @@ const jsonLd = {
         "query-input": "required name=search_term_string",
       },
     },
+
+    /* ── FAQ enrichie ── */
     {
       "@type": "FAQPage",
       mainEntity: [
@@ -136,6 +192,16 @@ const jsonLd = {
           "@type": "Question",
           name: "Sous quel délai DJAMA répond-il ?",
           acceptedAnswer: { "@type": "Answer", text: "DJAMA s'engage à répondre à toute demande de devis ou de contact sous 24 heures. WhatsApp disponible pour les demandes urgentes." },
+        },
+        {
+          "@type": "Question",
+          name: "DJAMA est-il disponible à La Réunion et aux Comores ?",
+          acceptedAnswer: { "@type": "Answer", text: "Oui. DJAMA accompagne des clients à La Réunion, aux Comores, en France et en Belgique. Tout se fait à distance, en visio et par messagerie, sans déplacement nécessaire." },
+        },
+        {
+          "@type": "Question",
+          name: "Comment créer un site web avec DJAMA ?",
+          acceptedAnswer: { "@type": "Answer", text: "Envoyez votre demande via le formulaire de contact ou WhatsApp. DJAMA analyse votre besoin, propose un devis sous 24h, puis conçoit et livre votre site en 7 à 14 jours." },
         },
       ],
     },
