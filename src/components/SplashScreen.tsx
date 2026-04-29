@@ -8,6 +8,12 @@ export default function SplashScreen() {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    // Afficher uniquement à la première visite de la session
+    if (sessionStorage.getItem("djama_splash_seen")) {
+      setVisible(false);
+      return;
+    }
+    sessionStorage.setItem("djama_splash_seen", "1");
     document.body.style.overflow = "hidden";
     const t = setTimeout(() => setVisible(false), 2500);
     return () => {

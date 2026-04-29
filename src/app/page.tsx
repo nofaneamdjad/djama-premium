@@ -1381,7 +1381,7 @@ function HomeContent() {
               />
             </h2>
             <FadeReveal delay={0.18} as="p" className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/40">
-              Depuis 2022, DJAMA accompagne entrepreneurs, entreprises et créateurs dans leurs projets digitaux.
+              DJAMA accompagne entrepreneurs, PME et créateurs dans leurs projets digitaux — 100+ projets livrés, 50+ clients satisfaits.
             </FadeReveal>
           </div>
 
@@ -1686,7 +1686,50 @@ function HomeContent() {
       <TestimonialsSection />
 
       {/* ══════════════════════════════════════════════
-          10. CTA FINAL
+          10. FAQ
+      ══════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden bg-[#09090b] py-20 sm:py-24">
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[350px] w-[500px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.04)] blur-[120px]" />
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainerFast}
+          className="relative z-10 mx-auto max-w-3xl px-6"
+        >
+          <motion.div variants={fadeIn} className="mb-10 text-center">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]" style={{ color: "#c9a55a" }}>
+              Questions fréquentes
+            </div>
+            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">Tout ce que vous voulez savoir.</h2>
+            <p className="mx-auto mt-3 max-w-md text-sm text-white/40">Des réponses claires, sans jargon.</p>
+          </motion.div>
+
+          {[
+            { q: "Quels sont vos délais de livraison ?", a: "Un site vitrine est livré en 7 à 14 jours. Une application mobile ou une plateforme sur mesure prend 3 à 8 semaines selon la complexité. Vous recevez des mises à jour régulières tout au long du projet." },
+            { q: "Est-ce que je peux tester DJAMA Pro sans engagement ?", a: "Oui. L'abonnement DJAMA Pro à 11,90€/mois est sans engagement et résiliable à tout moment en un clic. Accès immédiat après paiement." },
+            { q: "Comment se passe la demande de devis ?", a: "Cliquez sur \"Démarrer un projet\" ou contactez-nous via WhatsApp. Nous répondons sous 24h avec une estimation claire, sans surprise cachée." },
+            { q: "Les services sont-ils disponibles à l'international ?", a: "Oui. Nous accompagnons des clients en France, en Belgique, aux Comores, à La Réunion et dans d'autres pays. Tout se fait à distance, en visio et par messagerie." },
+            { q: "Proposez-vous un suivi après livraison ?", a: "Absolument. Chaque projet inclut une période de support post-livraison. Pour un suivi continu, l'abonnement DJAMA Pro donne accès à notre assistance dédiée." },
+            { q: "Le coaching IA est-il adapté aux débutants ?", a: "Oui. Le coaching IA est conçu pour tous les niveaux — débutants complets comme professionnels qui veulent aller plus vite. Les modules progressent étape par étape." },
+          ].map(({ q, a }, i) => (
+            <motion.details
+              key={i}
+              variants={cardReveal}
+              className="group border-b border-white/[.07] py-5 last:border-0"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[0.95rem] font-semibold text-white/85 transition hover:text-white">
+                {q}
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/[.12] text-white/40 transition group-open:rotate-45 group-open:border-[rgba(201,165,90,.4)] group-open:text-[#c9a55a]" style={{ transition: "transform .3s ease, color .2s, border-color .2s" }}>
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-white/45">{a}</p>
+            </motion.details>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          11. CTA FINAL
       ══════════════════════════════════════════════ */}
       <section className="mx-auto max-w-6xl px-6 pb-24 pt-20">
         <motion.div

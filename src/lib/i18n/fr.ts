@@ -23,8 +23,8 @@ export const fr: Translations = {
       socialProof: "+50 clients font confiance à DJAMA",
     },
     stats: [
-      { value: "50+",  label: "Clients accompagnés",      sub: "depuis 2022" },
-      { value: "2022", label: "Projets réalisés depuis",  sub: "sites, apps, outils, design" },
+      { value: "50+",  label: "Clients accompagnés",      sub: "entrepreneurs & entreprises" },
+      { value: "100+", label: "Projets livrés",           sub: "sites, apps, outils, design" },
       { value: "100%", label: "Solutions sur mesure",     sub: "adaptées à chaque besoin" },
       { value: "∞",    label: "Support & accompagnement", sub: "humain, disponible" },
     ],

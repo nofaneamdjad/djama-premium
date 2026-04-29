@@ -23,8 +23,8 @@ export const en: Translations = {
       socialProof: "+50 clients trust DJAMA",
     },
     stats: [
-      { value: "50+",  label: "Clients supported",       sub: "since 2022" },
-      { value: "2022", label: "Projects delivered since", sub: "websites, apps, tools, design" },
+      { value: "50+",  label: "Clients supported",       sub: "entrepreneurs & businesses" },
+      { value: "100+", label: "Projects delivered",       sub: "websites, apps, tools, design" },
       { value: "100%", label: "Tailored solutions",       sub: "crafted for every need" },
       { value: "∞",    label: "Support & guidance",       sub: "human, available" },
     ],

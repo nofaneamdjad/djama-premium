@@ -92,7 +92,7 @@ export default function AssistantDJAMA() {
                 <div className="flex items-center gap-3">
                   <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]">
                     <Bot size={16} className="text-[#09090b]" />
-                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#09090b] bg-green-400" />
+                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#09090b] bg-[#c9a55a]" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white">Assistant DJAMA</p>
@@ -228,9 +228,9 @@ export default function AssistantDJAMA() {
 
           {/* Ping d'attention */}
           {!open && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-400 text-[0.45rem] font-black text-green-900">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
-              <span className="relative h-3 w-3 rounded-full bg-green-400" />
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#c9a55a]">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9a55a] opacity-60" />
+              <span className="relative h-3 w-3 rounded-full bg-[#c9a55a]" />
             </span>
           )}
         </motion.button>
