@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
-import { Menu, X, ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
+import { ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import { useLanguage } from "@/lib/language-context";
 import { ShimmerText } from "@/components/ui/HoverText";
@@ -163,22 +163,40 @@ export default function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.88 }}
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex md:hidden items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.05] p-2.5 text-white/80 backdrop-blur-sm transition-colors hover:bg-white/[0.09] hover:text-white"
+            className="flex md:hidden items-center justify-center p-2"
             aria-label="Menu"
           >
-            <AnimatePresence mode="wait" initial={false}>
+            <span className="flex flex-col items-center justify-center w-7 h-7 gap-0 relative">
+              {/* Barre haut */}
               <motion.span
-                key={menuOpen ? "x" : "menu"}
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {menuOpen ? <X size={19} /> : <Menu size={19} />}
-              </motion.span>
-            </AnimatePresence>
+                animate={menuOpen
+                  ? { rotate: 45, y: 9, width: "28px" }
+                  : { rotate: 0,  y: 0, width: "28px" }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute block rounded-full bg-white"
+                style={{ height: "3px", top: "3px", originX: "50%", originY: "50%" }}
+              />
+              {/* Barre milieu */}
+              <motion.span
+                animate={menuOpen
+                  ? { opacity: 0, scaleX: 0 }
+                  : { opacity: 1, scaleX: 1 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="absolute block rounded-full bg-white"
+                style={{ height: "3px", width: "20px", top: "50%", marginTop: "-1.5px" }}
+              />
+              {/* Barre bas */}
+              <motion.span
+                animate={menuOpen
+                  ? { rotate: -45, y: -9, width: "28px" }
+                  : { rotate: 0,   y: 0,  width: "28px" }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute block rounded-full bg-white"
+                style={{ height: "3px", bottom: "3px", originX: "50%", originY: "50%" }}
+              />
+            </span>
           </motion.button>
         </div>
       </motion.header>
