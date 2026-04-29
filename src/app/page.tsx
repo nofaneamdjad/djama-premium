@@ -14,8 +14,8 @@ import {
   ArrowRight, Mail, Star, Zap, Users2, Shield,
   CheckCircle2, Sparkles, TrendingUp, HeartHandshake,
   Globe, Brain, MessageCircle,
-  LayoutDashboard, Smartphone, Palette, Briefcase,
-  LineChart, GraduationCap, Code2, BarChart3,
+  LayoutDashboard,
+  LineChart, Code2, BarChart3,
   Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem,
   Network, Landmark,
 } from "lucide-react";
@@ -64,25 +64,6 @@ function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
 /* ─────────────────────────────────────────────────────
    Données
 ───────────────────────────────────────────────────── */
-const ECOSYSTEM = [
-  { icon: LayoutDashboard, color: GOLD,       bg: `rgba(${GOLDR},.09)`,      border: `rgba(${GOLDR},.2)`,       category: "Plateforme SaaS",             services: ["Factures automatiques", "Devis automatiques", "Agenda / planning", "Bloc-notes"] },
-  { icon: Brain,           color: "#a78bfa",  bg: "rgba(167,139,250,.09)",   border: "rgba(167,139,250,.2)",    category: "IA & Automatisation",         services: ["Coaching IA", "Automatisation business", "Assistant IA"] },
-  { icon: Globe,           color: "#60a5fa",  bg: "rgba(96,165,250,.09)",    border: "rgba(96,165,250,.2)",     category: "Création web",                services: ["Site vitrine", "Site e-commerce"] },
-  { icon: Smartphone,      color: "#4ade80",  bg: "rgba(74,222,128,.08)",    border: "rgba(74,222,128,.18)",    category: "Développement digital",       services: ["Application mobile", "Plateforme / outil web sur mesure"] },
-  { icon: Palette,         color: GOLD,       bg: `rgba(${GOLDR},.09)`,      border: `rgba(${GOLDR},.2)`,       category: "Création visuelle",           services: ["Visuels publicitaires", "Montage vidéo", "Retouche photo"] },
-  { icon: Briefcase,       color: "#60a5fa",  bg: "rgba(96,165,250,.09)",    border: "rgba(96,165,250,.2)",     category: "Business & administratif",    services: ["Création auto-entrepreneur", "Déclarations URSSAF", "Assistance administrative"] },
-  { icon: LineChart,       color: "#4ade80",  bg: "rgba(74,222,128,.08)",    border: "rgba(74,222,128,.18)",    category: "Développement business",      services: ["Recherche de fournisseurs internationaux", "Marchés publics & privés"] },
-  { icon: GraduationCap,  color: "#a78bfa",  bg: "rgba(167,139,250,.09)",   border: "rgba(167,139,250,.2)",    category: "Formation",                   services: ["Soutien scolaire"] },
-] as const;
-
-
-const SOLUTIONS_TABLE = [
-  { icon: Globe,          color: GOLD,       besoin: "Présence en ligne",    solution: "Création de sites web premium",                 resultat: "Une image professionnelle et plus de crédibilité" },
-  { icon: Shield,         color: "#60a5fa",  besoin: "Gestion quotidienne",  solution: "Outils, dashboard et espace client",             resultat: "Un pilotage simple, clair et centralisé" },
-  { icon: Zap,            color: "#a78bfa",  besoin: "Productivité",         solution: "Automatisation et intelligence artificielle",    resultat: "Gain de temps et meilleures décisions" },
-  { icon: TrendingUp,     color: "#4ade80",  besoin: "Croissance",           solution: "Applications, plateformes et outils sur mesure", resultat: "Une structure digitale qui évolue avec vous" },
-  { icon: HeartHandshake, color: GOLD,       besoin: "Accompagnement",       solution: "Support humain + assistant IA",                  resultat: "Des réponses rapides et une meilleure orientation" },
-] as const;
 
 const SCHEMA_STEPS = [
   { num: "01", icon: Sparkles,   color: GOLD,       bg: `rgba(${GOLDR},.12)`,      border: `rgba(${GOLDR},.22)`,      title: "Idée / besoin",               desc: "Vous arrivez avec un besoin, un projet ou un problème à résoudre." },
@@ -172,7 +153,6 @@ function HomeContent() {
 
   /* ── Carrousel hero ── */
   const HERO_IMAGES = [
-    { src: "/hero-team.jpg",      alt: "DJAMA · L'équipe — Digital, Création, Accompagnement, Coaching" },
     { src: "/hero-dashboard.jpg", alt: "DJAMA · Dashboard digital — activité & revenus" },
     { src: "/hero-vr.jpg",        alt: "DJAMA · Innovation — technologie & vision"       },
   ];
@@ -1119,156 +1099,6 @@ function HomeContent() {
             </p>
           </FadeReveal>
 
-        </motion.div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          5. ÉCOSYSTÈME DIGITAL
-      ══════════════════════════════════════════════ */}
-      <section className="py-20 sm:py-28">
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={staggerContainer}
-          className="mx-auto max-w-6xl px-6"
-        >
-          {/* Titre */}
-          <div className="mb-14 text-center">
-            <motion.div variants={fadeIn} className="mb-5 flex items-center justify-center gap-3">
-              <div className="h-px flex-1 max-w-[80px] bg-white/[.07]" />
-              <p className="text-[0.67rem] font-black uppercase tracking-[.28em] text-white/30">
-                DJAMA <span style={{ color: GOLD }}>·</span> ÉCOSYSTÈME DIGITAL
-              </p>
-              <div className="h-px flex-1 max-w-[80px] bg-white/[.07]" />
-            </motion.div>
-            <h2 className="display-section text-white">
-              <MultiLineReveal
-                lines={["Chaque pilier, en détail —", "tout l'écosystème DJAMA."]}
-                highlight={1} stagger={0.1} wordStagger={0.04}
-                lineClassName="justify-center text-white"
-              />
-            </h2>
-            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/40">
-              Quatre composantes complémentaires — création, outils, accompagnement, IA — qui forment une infrastructure digitale complète pour votre activité.
-            </FadeReveal>
-          </div>
-
-          {/* Grid */}
-          <motion.div variants={staggerContainerFast} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {ECOSYSTEM.map(({ icon: Icon, color, bg, border, category, services }) => (
-              <motion.div key={category} variants={cardReveal}
-                whileHover={{ y: -6, transition: { duration: 0.35, ease } }}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,.5)]"
-                style={{ borderColor: border, background: "rgba(255,255,255,.025)" }}>
-                {/* Glow top */}
-                <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-400 group-hover:opacity-100"
-                  style={{ background: `radial-gradient(ellipse at 50% -20%, ${color}1c 0%, transparent 65%)` }} />
-                {/* Top bar */}
-                <div className="h-[2px] w-full transition-all duration-300 group-hover:h-[3px]"
-                  style={{ background: `linear-gradient(90deg,${color},${color}44)` }} />
-                <div className="relative flex flex-1 flex-col p-5">
-                  <div className="mb-4 flex items-center gap-2.5">
-                    <motion.div
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-                      style={{ background: bg, border: `1.5px solid ${border}`, boxShadow: `0 0 14px ${color}20` }}
-                      whileHover={{ scale: 1.14, boxShadow: `0 0 24px ${color}50` }}
-                      transition={{ duration: 0.22 }}
-                    >
-                      <Icon size={19} style={{ color }} />
-                    </motion.div>
-                    <h3 className="text-[0.83rem] font-extrabold text-white/88">{category}</h3>
-                  </div>
-                  <ul className="flex flex-col gap-2">
-                    {services.map((s) => (
-                      <li key={s} className="flex items-center gap-2 text-[0.78rem] text-white/40 transition-colors duration-200 group-hover:text-white/65">
-                        <div className="h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-200 group-hover:scale-110" style={{ background: color }} />
-                        {s}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Trust bar */}
-          <motion.div variants={fadeIn} className="mt-16">
-            <div className="h-px w-full bg-white/[.05]" />
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 py-8">
-              {[
-                { value: "50+",  label: "clients accompagnés" },
-                { value: "100+", label: "missions livrées" },
-                { value: "3+",   label: "ans d'expérience" },
-                { value: "4",    label: "pays couverts" },
-              ].map(({ value, label }) => (
-                <div key={label} className="flex flex-col items-center gap-1">
-                  <span className="text-2xl font-black" style={{ color: GOLD }}>{value}</span>
-                  <span className="text-[0.72rem] text-white/30">{label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="h-px w-full bg-white/[.05]" />
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          4. SOLUTIONS (dark, visual cards)
-      ══════════════════════════════════════════════ */}
-      <section className="bg-[#0e0b18] py-20 sm:py-28">
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={staggerContainer}
-          className="mx-auto max-w-5xl px-6"
-        >
-          <div className="mb-14 text-center">
-            <motion.span variants={fadeIn} className="badge badge-gold-dark">
-              <Sparkles size={10} /> Plateforme complète
-            </motion.span>
-            <h2 className="display-section mt-4 text-white">
-              <MultiLineReveal
-                lines={["Une seule plateforme pour piloter", "votre présence digitale."]}
-                highlight={1} stagger={0.1} wordStagger={0.045}
-                lineClassName="justify-center text-white"
-              />
-            </h2>
-            <FadeReveal delay={0.18} as="p" className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/40">
-              DJAMA réunit les outils essentiels pour créer, automatiser, gérer et développer votre activité depuis un seul espace.
-            </FadeReveal>
-          </div>
-
-          <motion.div variants={staggerContainerFast} className="flex flex-col gap-3">
-            {SOLUTIONS_TABLE.map(({ icon: Icon, color, besoin, solution, resultat }, i) => (
-              <motion.div key={besoin} variants={cardReveal}
-                whileHover={{ x: 4, transition: { duration: 0.25, ease } }}
-                className="group relative grid grid-cols-[auto_1fr] items-center gap-4 overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.03] px-5 py-4 transition-all duration-300 hover:border-white/[.15] hover:bg-white/[.05]">
-                {/* Left accent bar */}
-                <div className="absolute left-0 top-0 h-full w-[3px] opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-l-2xl"
-                  style={{ background: color }} />
-                {/* Icon */}
-                <motion.div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border"
-                  style={{ background: `${color}16`, borderColor: `${color}32`, boxShadow: `0 0 12px ${color}20` }}
-                  whileHover={{ scale: 1.12, boxShadow: `0 0 24px ${color}50` }}
-                  transition={{ duration: 0.22 }}
-                >
-                  <Icon size={20} style={{ color }} />
-                </motion.div>
-                {/* Content — responsive */}
-                <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-                  <span className="text-sm font-bold text-white/70 sm:w-36 shrink-0">{besoin}</span>
-                  <span className="flex-1 text-sm font-bold transition-colors duration-200" style={{ color }}>{solution}</span>
-                  <div className="flex items-center gap-1.5 sm:w-52 shrink-0">
-                    <CheckCircle2 size={13} className="shrink-0 text-[#4ade80]" />
-                    <span className="text-[0.78rem] leading-snug text-white/40">{resultat}</span>
-                  </div>
-                </div>
-                {/* Row number */}
-                <span className="pointer-events-none absolute right-5 text-4xl font-black opacity-[.04] select-none" style={{ color }}>
-                  0{i + 1}
-                </span>
-              </motion.div>
-            ))}
-          </motion.div>
         </motion.div>
       </section>
 

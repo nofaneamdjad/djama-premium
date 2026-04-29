@@ -45,21 +45,20 @@ export default function SplashScreen() {
             <motion.div
               animate={{
                 filter: [
-                  "brightness(0) invert(1) drop-shadow(0 0 0px rgba(201,165,90,0))",
-                  "brightness(0) invert(1) drop-shadow(0 0 28px rgba(201,165,90,0.7))",
-                  "brightness(0) invert(1) drop-shadow(0 0 6px rgba(201,165,90,0.15))",
+                  "drop-shadow(0 0 0px rgba(201,165,90,0))",
+                  "drop-shadow(0 0 28px rgba(201,165,90,0.7))",
+                  "drop-shadow(0 0 6px rgba(201,165,90,0.15))",
                 ],
               }}
               transition={{ duration: 1.5, delay: 0.75, ease: "easeOut", times: [0, 0.45, 1] }}
             >
               <Image
-                src="/logo.png"
+                src="/logo-navbar.png"
                 alt="DJAMA"
-                width={320}
-                height={104}
+                width={435}
+                height={97}
                 priority
                 className="w-44 sm:w-52 h-auto object-contain"
-                style={{ filter: "brightness(0) invert(1)" }}
               />
             </motion.div>
           </motion.div>
