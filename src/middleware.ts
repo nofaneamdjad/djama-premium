@@ -3,20 +3,26 @@ import { NextResponse, type NextRequest } from "next/server";
 /**
  * Middleware — Accès aux outils DJAMA
  *
- * MODE TEST : middleware entièrement bypassé.
- * La protection auth est gérée côté client dans chaque page.
- *
- * TODO (réactiver après tests) :
- *   Utiliser @supabase/supabase-js côté serveur pour lire la session,
- *   puis vérifier : clients.email + clients.abonnement + clients.statut.
- *
- * NOTE : @supabase/ssr v0.9.0 est incompatible avec les clés
- *        sb_publishable_* — c'est pourquoi on bypasse ici.
+ * - Client / planning routes: accès libre (protection côté client)
+ * - Admin routes: vérifie le cookie httpOnly djama_admin_tok
  */
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function middleware(_request: NextRequest) {
-  /* Accès libre — la page /client protège elle-même via supabase.auth.getUser() côté client */
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // ── Admin protection ──────────────────────────────────────────────────────
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    const ADMIN_PASS =
+      process.env.ADMIN_PASS ?? process.env.NEXT_PUBLIC_ADMIN_PASS ?? "djama2024";
+
+    const tok = request.cookies.get("djama_admin_tok")?.value;
+
+    if (tok !== ADMIN_PASS) {
+      const loginUrl = new URL("/admin/login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
   return NextResponse.next();
 }
 
@@ -26,5 +32,6 @@ export const config = {
     "/client/:path*",
     "/planning-agenda",
     "/planning-agenda/:path*",
+    "/admin/:path*",
   ],
 };

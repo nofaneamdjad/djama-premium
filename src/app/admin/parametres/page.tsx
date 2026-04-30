@@ -5,7 +5,7 @@ import {
   Save, Loader2, Check, X, AlertCircle,
   Instagram, Facebook, Linkedin, Youtube, Twitter, Globe,
   Phone, Mail, MapPin, Clock, MousePointerClick, Palette,
-  Link2, ToggleLeft, ToggleRight, Settings,
+  Link2, ToggleLeft, ToggleRight, Settings, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { SiteSettingRow, SocialLinkRow, SocialPlatform } from "@/types/db";
@@ -94,12 +94,26 @@ const SETTINGS_SECTIONS = [
     icon: Palette,
     color: "#c9a55a",
     fields: [
-      { key: "site.name",        label: "Nom du site",    icon: Palette, placeholder: "DJAMA" },
-      { key: "site.tagline",     label: "Tagline",        icon: Palette, placeholder: "Création digitale & accompagnement" },
-      { key: "site.description", label: "Description SEO",icon: Palette, placeholder: "Description courte du site" },
+      { key: "site.name",          label: "Nom du site",       icon: Palette, placeholder: "DJAMA" },
+      { key: "site.tagline",       label: "Tagline",           icon: Palette, placeholder: "Création digitale & accompagnement" },
+      { key: "site.description",   label: "Description SEO",   icon: Palette, placeholder: "Description courte du site" },
+      { key: "site.primary_color", label: "Couleur principale",icon: Palette, placeholder: "#c9a55a", isColor: true },
+      { key: "site.accent_color",  label: "Couleur d'accent",  icon: Palette, placeholder: "#09090b", isColor: true },
     ],
   },
-];
+] as const satisfies Array<{
+  id: string;
+  title: string;
+  icon: React.ElementType;
+  color: string;
+  fields: Array<{
+    key: string;
+    label: string;
+    icon: React.ElementType;
+    placeholder: string;
+    isColor?: boolean;
+  }>;
+}>;
 
 // ── Skeleton ──────────────────────────────────────────────────────
 
@@ -359,17 +373,26 @@ export default function AdminParametres() {
           </div>
         </div>
 
-        <button
-          onClick={saveAll}
-          disabled={saving}
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-[#c9a55a] px-5 py-2.5 text-[0.84rem] font-bold text-[#09090b] transition-all hover:bg-[#d4b16a] active:scale-[0.97] disabled:opacity-60"
-        >
-          {saving ? (
-            <><Loader2 size={14} className="animate-spin" /> Sauvegarde…</>
-          ) : (
-            <><Save size={14} /> Sauvegarder tout</>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={load}
+            disabled={saving || loading}
+            className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[0.82rem] font-semibold text-white/45 transition-all hover:bg-white/[0.06] hover:text-white/70 disabled:opacity-40"
+          >
+            <RefreshCw size={13} /> Réinitialiser
+          </button>
+          <button
+            onClick={saveAll}
+            disabled={saving}
+            className="flex shrink-0 items-center gap-2 rounded-xl bg-[#c9a55a] px-5 py-2.5 text-[0.84rem] font-bold text-[#09090b] transition-all hover:bg-[#d4b16a] active:scale-[0.97] disabled:opacity-60"
+          >
+            {saving ? (
+              <><Loader2 size={14} className="animate-spin" /> Sauvegarde…</>
+            ) : (
+              <><Save size={14} /> Sauvegarder tout</>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* ── Settings sections ───────────────────────────────────── */}
@@ -397,19 +420,38 @@ export default function AdminParametres() {
                 const dbRow = rows.find(r => r.key === f.key);
                 const label = dbRow?.label ?? f.label;
                 const FieldIcon = f.icon;
+                const isColor = (f as { isColor?: boolean }).isColor;
                 return (
                   <div key={f.key}>
                     <label className="mb-1.5 flex items-center gap-1.5 text-[0.73rem] font-semibold uppercase tracking-[0.07em] text-white/30">
                       <FieldIcon size={11} />
                       {label}
                     </label>
-                    <input
-                      type="text"
-                      value={valuesMap[f.key] ?? ""}
-                      onChange={e => handleChange(f.key, e.target.value)}
-                      placeholder={f.placeholder}
-                      className="w-full rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.04)] px-4 py-3 text-[0.84rem] text-white/80 outline-none transition-colors placeholder:text-white/20 focus:border-[rgba(201,165,90,0.35)] focus:bg-[rgba(255,255,255,0.06)]"
-                    />
+                    {isColor ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={valuesMap[f.key] || f.placeholder || "#c9a55a"}
+                          onChange={e => handleChange(f.key, e.target.value)}
+                          className="h-11 w-14 cursor-pointer rounded-xl border border-white/[0.08] bg-transparent p-0.5"
+                        />
+                        <input
+                          type="text"
+                          value={valuesMap[f.key] ?? ""}
+                          onChange={e => handleChange(f.key, e.target.value)}
+                          placeholder={f.placeholder}
+                          className="flex-1 rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.04)] px-4 py-3 text-[0.84rem] text-white/80 outline-none transition-colors placeholder:text-white/20 focus:border-[rgba(201,165,90,0.35)] focus:bg-[rgba(255,255,255,0.06)]"
+                        />
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={valuesMap[f.key] ?? ""}
+                        onChange={e => handleChange(f.key, e.target.value)}
+                        placeholder={f.placeholder}
+                        className="w-full rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.04)] px-4 py-3 text-[0.84rem] text-white/80 outline-none transition-colors placeholder:text-white/20 focus:border-[rgba(201,165,90,0.35)] focus:bg-[rgba(255,255,255,0.06)]"
+                      />
+                    )}
                   </div>
                 );
               })}
@@ -465,7 +507,14 @@ export default function AdminParametres() {
       </div>
 
       {/* ── Bottom save button ───────────────────────────────────── */}
-      <div className="flex justify-end pb-2">
+      <div className="flex items-center justify-end gap-2 pb-2">
+        <button
+          onClick={load}
+          disabled={saving || loading}
+          className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[0.82rem] font-semibold text-white/45 transition-all hover:bg-white/[0.06] hover:text-white/70 disabled:opacity-40"
+        >
+          <RefreshCw size={13} /> Réinitialiser
+        </button>
         <button
           onClick={saveAll}
           disabled={saving}

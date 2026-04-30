@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   Calendar, CheckCircle, XCircle, Clock,
   Loader2, RefreshCw, X, Search,
+  LayoutGrid, CalendarDays, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -64,6 +65,99 @@ function isUpcoming(iso: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Calendar View
+// ---------------------------------------------------------------------------
+
+function CalendarView({
+  reservations,
+  month,
+  onMonthChange,
+}: {
+  reservations: Reservation[];
+  month: Date;
+  onMonthChange: (d: Date) => void;
+}) {
+  const year = month.getFullYear();
+  const mon  = month.getMonth();
+  const firstDay = new Date(year, mon, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, mon + 1, 0).getDate();
+  const today = new Date();
+
+  // Group reservations by date
+  const byDate: Record<string, Reservation[]> = {};
+  for (const r of reservations) {
+    if (!r.scheduled_at) continue;
+    const d = new Date(r.scheduled_at);
+    if (d.getFullYear() === year && d.getMonth() === mon) {
+      const key = d.getDate().toString();
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(r);
+    }
+  }
+
+  const days: (number | null)[] = [];
+  // Start from Monday: convert getDay() (0=Sun) to Monday-first
+  const startOffset = (firstDay + 6) % 7;
+  for (let i = 0; i < startOffset; i++) days.push(null);
+  for (let i = 1; i <= daysInMonth; i++) days.push(i);
+  // Pad to complete last week
+  while (days.length % 7 !== 0) days.push(null);
+
+  const monthLabel = month.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  const isToday = (d: number) => today.getFullYear() === year && today.getMonth() === mon && today.getDate() === d;
+
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-[#18181c] overflow-hidden">
+      {/* Calendar header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+        <button onClick={() => onMonthChange(new Date(year, mon - 1, 1))} className="flex h-8 w-8 items-center justify-center rounded-xl text-white/35 hover:bg-white/[0.06] hover:text-white/65 transition-colors">
+          <ChevronLeft size={16} />
+        </button>
+        <p className="text-[0.92rem] font-black text-white capitalize">{monthLabel}</p>
+        <button onClick={() => onMonthChange(new Date(year, mon + 1, 1))} className="flex h-8 w-8 items-center justify-center rounded-xl text-white/35 hover:bg-white/[0.06] hover:text-white/65 transition-colors">
+          <ChevronRight size={16} />
+        </button>
+      </div>
+      {/* Day labels */}
+      <div className="grid grid-cols-7 border-b border-white/[0.04]">
+        {["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"].map(d => (
+          <div key={d} className="py-2.5 text-center text-[0.66rem] font-bold uppercase tracking-[0.08em] text-white/20">{d}</div>
+        ))}
+      </div>
+      {/* Days grid */}
+      <div className="grid grid-cols-7">
+        {days.map((d, i) => {
+          if (!d) return <div key={i} className="min-h-[80px] border-b border-r border-white/[0.04]" />;
+          const dayReservations = byDate[d.toString()] ?? [];
+          return (
+            <div key={i} className={`min-h-[80px] border-b border-r border-white/[0.04] p-2 transition-colors hover:bg-white/[0.02] ${isToday(d) ? "bg-[rgba(201,165,90,0.04)]" : ""}`}>
+              <div className={`mb-1.5 flex h-6 w-6 items-center justify-center rounded-full text-[0.75rem] font-bold ${isToday(d) ? "bg-[#c9a55a] text-[#09090b]" : "text-white/30"}`}>
+                {d}
+              </div>
+              <div className="space-y-0.5">
+                {dayReservations.slice(0, 3).map(r => (
+                  <div key={r.id} className={`truncate rounded-md px-1.5 py-0.5 text-[0.6rem] font-semibold ${
+                    r.status === "confirmé"   ? "bg-[rgba(74,222,128,0.12)] text-[#4ade80]" :
+                    r.status === "en attente" ? "bg-[rgba(251,191,36,0.12)] text-[#fbbf24]" :
+                    r.status === "annulé"     ? "bg-[rgba(248,113,113,0.10)] text-[#f87171]" :
+                    "bg-white/[0.06] text-white/35"
+                  }`}>
+                    {new Date(r.scheduled_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} {r.client_name}
+                  </div>
+                ))}
+                {dayReservations.length > 3 && (
+                  <div className="text-[0.58rem] text-white/25">+{dayReservations.length - 3} autres</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -74,6 +168,8 @@ export default function AdminReservations() {
   const [updating,     setUpdating]     = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("tous");
   const [search,       setSearch]       = useState("");
+  const [view,         setView]         = useState<"cards" | "calendar">("cards");
+  const [calMonth,     setCalMonth]     = useState(() => new Date());
 
   const loadRef = useRef(false);
 
@@ -195,7 +291,7 @@ export default function AdminReservations() {
         </div>
       )}
 
-      {/* Filter tabs + search */}
+      {/* Filter tabs + search + view toggle */}
       <div className="flex items-center gap-2 flex-wrap">
         {tabs.map(t => (
           <button
@@ -224,6 +320,15 @@ export default function AdminReservations() {
             className="w-48 rounded-xl border border-white/[0.07] bg-[#18181c] py-2 pl-8 pr-3 text-[0.8rem] text-white placeholder-white/20 outline-none transition-colors focus:border-[rgba(201,165,90,0.35)]"
           />
         </div>
+        {/* View toggle */}
+        <div className="flex items-center gap-1.5 rounded-xl border border-white/[0.07] bg-[#18181c] p-1">
+          <button onClick={() => setView("cards")} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-semibold transition-all ${view === "cards" ? "bg-[rgba(201,165,90,0.13)] text-[#c9a55a]" : "text-white/35 hover:text-white/60"}`}>
+            <LayoutGrid size={13} /> Cartes
+          </button>
+          <button onClick={() => setView("calendar")} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-semibold transition-all ${view === "calendar" ? "bg-[rgba(201,165,90,0.13)] text-[#c9a55a]" : "text-white/35 hover:text-white/60"}`}>
+            <CalendarDays size={13} /> Calendrier
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -231,6 +336,12 @@ export default function AdminReservations() {
         <div className="flex items-center justify-center py-20">
           <Loader2 size={24} className="animate-spin text-[#c9a55a]" />
         </div>
+      ) : view === "calendar" ? (
+        <CalendarView
+          reservations={reservations}
+          month={calMonth}
+          onMonthChange={setCalMonth}
+        />
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#18181c] py-16">
           <Calendar size={32} className="text-white/15" />

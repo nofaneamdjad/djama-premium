@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   LayoutDashboard, Users, CreditCard, Shield, FileText,
   Calendar, Briefcase, Star, Edit3, Settings, LogOut,
@@ -27,23 +27,14 @@ const NAV = [
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname  = usePathname();
-  const router    = useRouter();
-  const [open,    setOpen]    = useState(false);
-  const [authed,  setAuthed]  = useState(false);
+  const pathname = usePathname();
+  const router   = useRouter();
+  const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (pathname === "/admin/login") { setAuthed(true); return; }
-    const ok = typeof window !== "undefined" && localStorage.getItem("djama_admin") === "ok";
-    if (!ok) router.replace("/admin/login");
-    else setAuthed(true);
-  }, [pathname, router]);
-
-  if (!authed) return null;
   if (pathname === "/admin/login") return <>{children}</>;
 
-  const logout = () => {
-    localStorage.removeItem("djama_admin");
+  const logout = async () => {
+    await fetch("/api/admin/auth", { method: "DELETE" });
     router.replace("/admin/login");
   };
 

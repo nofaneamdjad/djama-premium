@@ -4,6 +4,59 @@ import { useEffect, useState } from "react";
 import { Search, UserPlus, MoreHorizontal, Mail, Shield, RefreshCw, Loader2, Users } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 
+// ─── Pagination ───────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 20;
+
+function Pagination({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (totalPages <= 1) return null;
+
+  const visible = new Set<number>();
+  visible.add(1);
+  visible.add(totalPages);
+  for (let p = Math.max(1, page - 1); p <= Math.min(totalPages, page + 1); p++) visible.add(p);
+  const pageNums = Array.from(visible).sort((a, b) => a - b);
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 pt-2 pb-4">
+      <button
+        onClick={() => onChange(page - 1)}
+        disabled={page === 1}
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.07] text-[0.8rem] text-white/35 transition-colors hover:border-white/[0.15] hover:text-white/65 disabled:opacity-30"
+      >
+        ←
+      </button>
+      {pageNums.map((p, i) => {
+        const prev = pageNums[i - 1];
+        return (
+          <div key={p} className="flex items-center gap-1.5">
+            {prev && p - prev > 1 && <span className="text-[0.75rem] text-white/20">…</span>}
+            <button
+              onClick={() => onChange(p)}
+              className={`flex h-8 min-w-[2rem] items-center justify-center rounded-xl px-2 text-[0.8rem] font-semibold transition-all ${
+                p === page
+                  ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a] border border-[rgba(201,165,90,0.3)]"
+                  : "border border-white/[0.07] text-white/35 hover:border-white/[0.15] hover:text-white/65"
+              }`}
+            >
+              {p}
+            </button>
+          </div>
+        );
+      })}
+      <button
+        onClick={() => onChange(page + 1)}
+        disabled={page === totalPages}
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.07] text-[0.8rem] text-white/35 transition-colors hover:border-white/[0.15] hover:text-white/65 disabled:opacity-30"
+      >
+        →
+      </button>
+      <span className="ml-2 text-[0.73rem] text-white/20">{total} total · page {page}/{totalPages}</span>
+    </div>
+  );
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Client = {
@@ -70,6 +123,7 @@ export default function AdminClients() {
   const [loading,  setLoading]  = useState(true);
   const [clients,  setClients]  = useState<DisplayClient[]>([]);
   const [filterStatus, setFilterStatus] = useState<"tous" | "actif" | "inactif">("tous");
+  const [page, setPage] = useState(1);
 
   async function fetchClients(silent = false) {
     if (!silent) setLoading(true);
@@ -141,6 +195,11 @@ export default function AdminClients() {
     const matchFilter = filterStatus === "tous" || c.status === filterStatus;
     return matchSearch && matchFilter;
   });
+
+  // Reset page when filters change
+  useEffect(() => setPage(1), [search, filterStatus]);
+
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const actifCount  = clients.filter(c => c.status === "actif").length;
   const inactifCount = clients.filter(c => c.status === "inactif").length;
@@ -242,7 +301,7 @@ export default function AdminClients() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {filtered.map(c => (
+                {paginated.map(c => (
                   <tr key={c.id} className="group transition-colors hover:bg-white/[0.02]">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
@@ -300,6 +359,7 @@ export default function AdminClients() {
           </div>
         )}
       </div>
+      <Pagination page={page} total={filtered.length} onChange={setPage} />
     </div>
   );
 }

@@ -11,19 +11,28 @@ export default function AdminLogin() {
   const [error,    setError]    = useState(false);
   const [loading,  setLoading]  = useState(false);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      if (password === (process.env.NEXT_PUBLIC_ADMIN_PASS ?? "djama2024")) {
-        localStorage.setItem("djama_admin", "ok");
+    setError(false);
+    try {
+      const res = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
         router.replace("/admin");
       } else {
         setError(true);
-        setLoading(false);
         setTimeout(() => setError(false), 2500);
+        setLoading(false);
       }
-    }, 600);
+    } catch {
+      setError(true);
+      setTimeout(() => setError(false), 2500);
+      setLoading(false);
+    }
   }
 
   return (
