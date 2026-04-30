@@ -330,7 +330,7 @@ export default function PlanningAgendaPage() {
       if (error) showToast("error", error.message);
       else {
         setEvents(p => p.map(e => e.id === modal.id ? (data as AgendaEvent) : e));
-        showToast("success", "Événement modifié.");
+        showToast("success", `"${form.title}" mis à jour.`);
         setModal(false);
       }
     } else {
@@ -342,7 +342,7 @@ export default function PlanningAgendaPage() {
           a.event_date.localeCompare(b.event_date) ||
           (a.event_time ?? "").localeCompare(b.event_time ?? "")
         ));
-        showToast("success", "Événement ajouté.");
+        showToast("success", `"${form.title}" planifié${form.event_time ? ` à ${form.event_time}` : ""}.`);
         setModal(false);
       }
     }
