@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import SplashScreen    from "@/components/SplashScreen";
 import { WebViewBanner } from "@/components/WebViewBanner";
+import PWAManager from "@/components/PWAManager";
 
 const BASE_URL = "https://djama.space";
 
@@ -72,6 +73,21 @@ export const metadata: Metadata = {
   creator: "DJAMA",
   publisher: "DJAMA",
   category: "Business & Technology",
+
+  // ── PWA / Apple ───────────────────────────────────────────────────
+  appleWebApp: {
+    capable: true,
+    title: "DJAMA",
+    statusBarStyle: "black-translucent",
+    startupImage: "/icons/apple-touch-icon.png",
+  },
+  icons: {
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+  },
 };
 
 /**
@@ -228,6 +244,7 @@ export default function RootLayout({
         <SplashScreen />
         {children}
         <WebViewBanner />
+        <PWAManager />
       </body>
     </html>
   );

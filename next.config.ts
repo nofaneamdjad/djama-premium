@@ -37,15 +37,28 @@ const nextConfig: NextConfig = {
   //    récupérer la dernière version depuis Vercel ────────────────────
   async headers() {
     return [
+      /* ── Service Worker — doit être revalidé mais pas bloqué ── */
       {
-        source: "/(.*)",
+        source: "/sw.js",
         headers: [
-          {
-            key: "Cache-Control",
-            value: "no-cache, no-store, must-revalidate",
-          },
-          { key: "Pragma",  value: "no-cache" },
-          { key: "Expires", value: "0" },
+          { key: "Cache-Control",          value: "public, max-age=0, must-revalidate" },
+          { key: "Service-Worker-Allowed",  value: "/" },
+        ],
+      },
+      /* ── Icônes PWA — mise en cache longue durée ── */
+      {
+        source: "/icons/(.*)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      /* ── Toutes les autres routes — no-cache ── */
+      {
+        source: "/((?!sw\\.js|icons/).*)",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Pragma",        value: "no-cache" },
+          { key: "Expires",       value: "0" },
         ],
       },
     ];
