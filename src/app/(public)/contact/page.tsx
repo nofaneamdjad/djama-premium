@@ -15,7 +15,6 @@ import { staggerContainer, staggerContainerFast, cardReveal, cardRevealBlur, fad
 import { getSiteData } from "@/lib/site-data";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { supabase } from "@/lib/supabase";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const siteData = getSiteData();
@@ -204,25 +203,31 @@ function ContactPageContent() {
     setSending(true);
     setSendError(null);
 
-    const { error } = await supabase
-      .from("contact_messages")
-      .insert([{
-        name:     name.trim(),
-        email:    email.trim(),
-        phone:    null,
-        source:   "contact",
-        message:  message.trim(),
-        status:   "nouveau",
-        metadata: { subject: subject.trim() || null, budget: budget || null },
-      }]);
+    try {
+      const res = await fetch("/api/contact", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          name:    name.trim(),
+          email:   email.trim(),
+          subject: subject.trim() || null,
+          budget:  budget || null,
+          message: message.trim(),
+        }),
+      });
 
-    setSending(false);
-    if (error) {
-      console.error("Contact insert error:", error);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? "Erreur serveur");
+      }
+
+      setSent(true);
+    } catch (err) {
+      console.error("Contact submit error:", err);
       setSendError("Impossible d'envoyer le message. Veuillez réessayer ou nous contacter directement.");
-      return;
+    } finally {
+      setSending(false);
     }
-    setSent(true);
   }
 
   const canSubmit = name.trim() && isEmailValid(email) && subject && message.trim().length > 10;
