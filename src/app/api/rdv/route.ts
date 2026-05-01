@@ -148,28 +148,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, warn: "email_skipped" });
   }
 
-  try {
-    /* Email admin */
-    await getResend().emails.send({
-      from:    getFrom(),
-      to:      getContact(),
-      subject: `[DJAMA] Nouveau RDV soutien — ${studentName} (${subject}, ${level})`,
-      html:    buildAdminEmail(data),
-    });
+  // Resend v6 retourne { data, error } au lieu de throw
+  const resend = getResend();
 
-    /* Email confirmation client */
-    await getResend().emails.send({
-      from:    getFrom(),
-      to:      email,
-      subject: "Votre demande de soutien scolaire DJAMA — Confirmation",
-      html:    buildConfirmEmail(data),
-    });
+  const { error: adminErr } = await resend.emails.send({
+    from:    getFrom(),
+    to:      getContact(),
+    subject: `[DJAMA] Nouveau RDV soutien — ${studentName} (${subject}, ${level})`,
+    html:    buildAdminEmail(data),
+  });
+  if (adminErr) console.error("[RDV] Admin email error:", adminErr);
 
-    console.log("[RDV] ✅ Demande envoyée →", email, `(${subject} - ${level})`);
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[RDV] ❌ Resend error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
+  const { error: clientErr } = await resend.emails.send({
+    from:    getFrom(),
+    to:      email,
+    subject: "Votre demande de soutien scolaire DJAMA — Confirmation",
+    html:    buildConfirmEmail(data),
+  });
+  if (clientErr) console.error("[RDV] Client email error:", clientErr);
+
+  console.log("[RDV] ✅ Demande envoyée →", email, `(${subject} - ${level})`);
+  return NextResponse.json({ ok: true });
 }

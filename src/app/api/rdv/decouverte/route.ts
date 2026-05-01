@@ -195,27 +195,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, warn: "email_skipped" });
   }
 
-  try {
-    await Promise.all([
-      getResend().emails.send({
-        from:    getFrom(),
-        to:      getAdminEmail(),
-        subject: `[DJAMA] Appel découverte — ${fullName} · ${slot}`,
-        html:    buildAdminHtml(data),
-      }),
-      getResend().emails.send({
-        from:    getFrom(),
-        to:      email,
-        subject: `Votre appel découverte DJAMA est confirmé — ${slot}`,
-        html:    buildConfirmHtml(data),
-      }),
-    ]);
+  // Resend v6 retourne { data, error } au lieu de throw
+  const resend = getResend();
 
-    console.log("[Découverte RDV] ✅ Emails envoyés →", email, `(${slot})`);
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[Découverte RDV] ❌ Resend error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
+  const [adminRes, clientRes] = await Promise.all([
+    resend.emails.send({
+      from:    getFrom(),
+      to:      getAdminEmail(),
+      subject: `[DJAMA] Appel découverte — ${fullName} · ${slot}`,
+      html:    buildAdminHtml(data),
+    }),
+    resend.emails.send({
+      from:    getFrom(),
+      to:      email,
+      subject: `Votre appel découverte DJAMA est confirmé — ${slot}`,
+      html:    buildConfirmHtml(data),
+    }),
+  ]);
+
+  if (adminRes.error)  console.error("[Découverte RDV] Admin email error:",  adminRes.error);
+  if (clientRes.error) console.error("[Découverte RDV] Client email error:", clientRes.error);
+
+  console.log("[Découverte RDV] ✅ Emails envoyés →", email, `(${slot})`);
+  return NextResponse.json({ ok: true });
 }

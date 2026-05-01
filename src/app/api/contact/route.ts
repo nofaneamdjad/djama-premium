@@ -223,31 +223,23 @@ export async function POST(req: NextRequest) {
       message: message.trim(),
     };
 
-    try {
-      // Email notification à l'admin
-      await resend.emails.send({
-        from:     FROM_EMAIL(),
-        to:       CONTACT_EMAIL(),
-        replyTo:  email.trim(),
-        subject:  `[DJAMA Contact] ${emailData.subject} — ${emailData.name}`,
-        html:     adminEmail(emailData),
-      });
-    } catch (err) {
-      // Ne bloque pas la réponse si l'email admin échoue
-      console.error("[POST /api/contact] Admin email error:", err);
-    }
+    // Resend v6 retourne { data, error } au lieu de throw — il faut vérifier error
+    const { error: adminErr } = await resend.emails.send({
+      from:     FROM_EMAIL(),
+      to:       CONTACT_EMAIL(),
+      replyTo:  email.trim(),
+      subject:  `[DJAMA Contact] ${emailData.subject} — ${emailData.name}`,
+      html:     adminEmail(emailData),
+    });
+    if (adminErr) console.error("[POST /api/contact] Admin email error:", adminErr);
 
-    try {
-      // Email de confirmation au client
-      await resend.emails.send({
-        from:    FROM_EMAIL(),
-        to:      email.trim(),
-        subject: `Votre message a bien été reçu — DJAMA`,
-        html:    confirmEmail({ name: name.trim(), subject: emailData.subject }),
-      });
-    } catch (err) {
-      console.error("[POST /api/contact] Confirm email error:", err);
-    }
+    const { error: clientErr } = await resend.emails.send({
+      from:    FROM_EMAIL(),
+      to:      email.trim(),
+      subject: `Votre message a bien été reçu — DJAMA`,
+      html:    confirmEmail({ name: name.trim(), subject: emailData.subject }),
+    });
+    if (clientErr) console.error("[POST /api/contact] Confirm email error:", clientErr);
   } else {
     console.warn("[POST /api/contact] RESEND_API_KEY manquant — emails non envoyés");
   }
