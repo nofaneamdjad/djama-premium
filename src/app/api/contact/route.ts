@@ -2,13 +2,13 @@
  * POST /api/contact
  *
  * 1. Enregistre le message dans Supabase (contact_messages)
- * 2. Envoie un email de notification à contact@djama.space
- * 3. Envoie un email de confirmation au client
+ * 2. Envoie un email de notification à admin@djama.space
+ * 3. Envoie un email de confirmation au client (depuis contact@djama.space)
  *
  * Variables d'environnement requises :
  *   RESEND_API_KEY       → clé API Resend (resend.com)
- *   RESEND_FROM          → ex: "DJAMA <noreply@djama.space>"
- *   CONTACT_EMAIL        → ex: "contact@djama.space"
+ *   RESEND_FROM          → "DJAMA <contact@djama.space>"
+ *   CONTACT_EMAIL        → "admin@djama.space"
  *   SUPABASE_SERVICE_ROLE_KEY
  */
 
@@ -28,8 +28,8 @@ function getResend() {
   if (!key) return null;
   return new Resend(key);
 }
-const FROM_EMAIL    = () => process.env.RESEND_FROM?.trim()   ?? "DJAMA <noreply@djama.space>";
-const CONTACT_EMAIL = () => process.env.CONTACT_EMAIL?.trim() ?? "contact@djama.space";
+const FROM_EMAIL    = () => process.env.RESEND_FROM?.trim()   ?? "DJAMA <contact@djama.space>";
+const CONTACT_EMAIL = () => process.env.CONTACT_EMAIL?.trim() ?? "admin@djama.space";
 
 // ── Couleurs ──────────────────────────────────────────────────────────
 const GOLD = "#c9a55a";
