@@ -56,7 +56,7 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
 }
 import {
   Receipt, Plus, Pencil, Trash2, X, Loader2, Download,
-  RefreshCw, Check, CreditCard,
+  RefreshCw, Check, CreditCard, FileDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { InvoiceRow, InvoiceStatus, InvoicePaymentStatus, TemplateType } from "@/types/db";
@@ -144,6 +144,26 @@ const EMPTY: InvForm = {
 
 function newItem(): FormItem {
   return { _key: crypto.randomUUID(), description: "", quantity: 1, unit_price: 0, total: 0 };
+}
+
+// ─────────────────────────────────────────────────────────────
+// CSV Export
+// ─────────────────────────────────────────────────────────────
+function exportCSV(invoices: InvoiceRow[]) {
+  const headers = ["Référence", "Client", "Email", "Sujet", "Total TTC", "Statut", "Paiement", "Échéance", "Date émission"];
+  const rows = invoices.map(inv => [
+    inv.reference, inv.client_name, inv.client_email, inv.subject,
+    inv.total.toFixed(2), inv.status, inv.payment_status,
+    fmtDate(inv.due_date), fmtDate(inv.issue_date),
+  ]);
+  const csv = [headers, ...rows]
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement("a"), { href: url, download: `factures_${new Date().toISOString().split("T")[0]}.csv` });
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -410,12 +430,23 @@ export default function AdminFactures() {
             encaissé
           </p>
         </div>
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 rounded-2xl bg-[#c9a55a] px-4 py-2.5 text-[0.83rem] font-bold text-[#1a1308] transition-opacity hover:opacity-90"
-        >
-          <Plus size={14} /> Nouvelle facture
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => exportCSV(displayed)}
+            disabled={loading || displayed.length === 0}
+            title="Exporter en CSV"
+            className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-[0.83rem] text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70 disabled:opacity-40"
+          >
+            <FileDown size={14} />
+            CSV
+          </button>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 rounded-2xl bg-[#c9a55a] px-4 py-2.5 text-[0.83rem] font-bold text-[#1a1308] transition-opacity hover:opacity-90"
+          >
+            <Plus size={14} /> Nouvelle facture
+          </button>
+        </div>
       </div>
 
       {/* Filtres */}

@@ -23,13 +23,9 @@ function getSupabaseAdmin() {
 }
 
 function isAuthorized(req: NextRequest): boolean {
-  const token = req.headers.get("x-admin-token");
-  if (!token) return false;
-  // Accepte ADMIN_SECRET (server-only) OU NEXT_PUBLIC_ADMIN_PASS (frontend)
-  const secret  = process.env.ADMIN_SECRET          ?? "";
-  const pubPass = process.env.NEXT_PUBLIC_ADMIN_PASS ?? "";
-  return (secret  !== "" && token === secret) ||
-         (pubPass !== "" && token === pubPass);
+  const ADMIN_PASS = process.env.ADMIN_PASS ?? process.env.NEXT_PUBLIC_ADMIN_PASS ?? "djama2024";
+  const tok = req.cookies.get("djama_admin_tok")?.value;
+  return tok === ADMIN_PASS;
 }
 
 /* ── GET ────────────────────────────────────────────────────── */

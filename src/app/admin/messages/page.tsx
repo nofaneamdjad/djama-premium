@@ -67,7 +67,24 @@ import {
   RefreshCw,
   Loader2,
   InboxIcon,
+  Download,
 } from "lucide-react";
+
+function exportCSV(messages: ContactMessageRow[]) {
+  const headers = ["Nom", "Email", "Téléphone", "Source", "Sujet", "Statut", "Date", "Message"];
+  const rows = messages.map(m => [
+    m.name, m.email, m.phone ?? "", m.source, m.subject ?? "", m.status,
+    formatDate(m.created_at), m.message,
+  ]);
+  const csv = [headers, ...rows]
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement("a"), { href: url, download: `messages_${new Date().toISOString().split("T")[0]}.csv` });
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -655,14 +672,25 @@ export default function AdminMessages() {
               {total} message{total !== 1 ? "s" : ""} reçu{total !== 1 ? "s" : ""}
             </p>
           </div>
-          <button
-            onClick={() => fetchDirect(true)}
-            disabled={refreshing || loading}
-            className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-[0.82rem] font-semibold text-white/55 transition-all hover:bg-white/[0.07] hover:text-white/80 disabled:opacity-50"
-          >
-            <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
-            Actualiser
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => exportCSV(filtered)}
+              disabled={loading || filtered.length === 0}
+              title="Exporter en CSV"
+              className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-[0.82rem] font-semibold text-white/55 transition-all hover:bg-white/[0.07] hover:text-white/80 disabled:opacity-50"
+            >
+              <Download size={13} />
+              CSV
+            </button>
+            <button
+              onClick={() => fetchDirect(true)}
+              disabled={refreshing || loading}
+              className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-[0.82rem] font-semibold text-white/55 transition-all hover:bg-white/[0.07] hover:text-white/80 disabled:opacity-50"
+            >
+              <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
+              Actualiser
+            </button>
+          </div>
         </div>
 
         {/* ── Stats cards */}

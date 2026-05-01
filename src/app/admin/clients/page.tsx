@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, UserPlus, MoreHorizontal, Mail, Shield, RefreshCw, Loader2, Users } from "lucide-react";
+import { Search, UserPlus, MoreHorizontal, Mail, Shield, RefreshCw, Loader2, Users, Download, X, Check } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
@@ -116,14 +116,166 @@ function initials(name: string) {
   return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?";
 }
 
+// ─── CSV Export ───────────────────────────────────────────────────────────────
+
+function exportCSV(clients: DisplayClient[]) {
+  const headers = ["Nom", "Email", "Source", "Statut", "Accès / Offres", "Date"];
+  const rows = clients.map(c => [
+    c.name, c.email, c.source, c.status,
+    c.badges.join(" | "),
+    formatDate(c.createdAt),
+  ]);
+  const csv = [headers, ...rows]
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement("a"), { href: url, download: `clients_${new Date().toISOString().split("T")[0]}.csv` });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Create Client Modal ──────────────────────────────────────────────────────
+
+type CreateForm = {
+  name: string; email: string; phone: string;
+  source: string; espace_premium: boolean; coaching_ia: boolean;
+  soutien_scolaire: boolean; outils_saas: boolean; notes: string;
+};
+
+const EMPTY_FORM: CreateForm = {
+  name: "", email: "", phone: "", source: "manual",
+  espace_premium: false, coaching_ia: false,
+  soutien_scolaire: false, outils_saas: false, notes: "",
+};
+
+function CreateClientModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.email.trim()) {
+      setError("Nom et email sont requis.");
+      return;
+    }
+    setSaving(true); setError(null);
+    try {
+      const supabase = getSupabase();
+      const { error: dbErr } = await supabase.from("user_access").insert([{
+        name:             form.name.trim(),
+        email:            form.email.trim().toLowerCase(),
+        phone:            form.phone.trim() || null,
+        source:           form.source,
+        espace_premium:   form.espace_premium,
+        coaching_ia:      form.coaching_ia,
+        soutien_scolaire: form.soutien_scolaire,
+        outils_saas:      form.outils_saas,
+        notes:            form.notes.trim() || null,
+      }]);
+      if (dbErr) throw dbErr;
+      onCreated();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de la création.";
+      setError(msg);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inp = "w-full rounded-xl border border-white/[0.07] bg-[#111115] px-4 py-2.5 text-[0.84rem] text-white/80 placeholder:text-white/20 outline-none focus:border-[rgba(201,165,90,0.4)] transition-colors";
+  const chk = "flex items-center gap-2.5 text-[0.82rem] text-white/55 cursor-pointer";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-white/[0.08] bg-[#18181c] shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
+          <h2 className="text-[0.98rem] font-black text-white">Ajouter un client</h2>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.04] text-white/35 hover:bg-white/[0.08] hover:text-white/70 transition-colors">
+            <X size={15} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Nom *</label>
+              <input className={inp} placeholder="Jean Dupont" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Email *</label>
+              <input type="email" className={inp} placeholder="jean@email.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Téléphone</label>
+              <input className={inp} placeholder="+33 6 …" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Source</label>
+              <select className={inp} value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value }))}>
+                <option value="manual">Manuel</option>
+                <option value="contact">Contact</option>
+                <option value="devis">Devis</option>
+                <option value="stripe">Stripe</option>
+                <option value="migrated">Migré</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <p className="mb-2.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Accès</p>
+            <div className="grid grid-cols-2 gap-2.5">
+              {([
+                ["espace_premium",   "Espace premium"  ],
+                ["coaching_ia",      "Coaching IA"     ],
+                ["soutien_scolaire", "Soutien scolaire"],
+                ["outils_saas",      "Outils SaaS"     ],
+              ] as [keyof CreateForm, string][]).map(([key, label]) => (
+                <label key={key} className={chk}>
+                  <input
+                    type="checkbox"
+                    checked={form[key] as boolean}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))}
+                    className="h-4 w-4 rounded accent-[#c9a55a]"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Notes</label>
+            <textarea rows={2} className={inp} placeholder="Notes internes…" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+          </div>
+          {error && (
+            <p className="rounded-xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-3 py-2 text-[0.78rem] text-[#f87171]">{error}</p>
+          )}
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.83rem] font-semibold text-white/40 hover:text-white/70 transition-colors">
+              Annuler
+            </button>
+            <button type="submit" disabled={saving} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#c9a55a] py-2.5 text-[0.83rem] font-bold text-[#1a1308] transition-opacity hover:opacity-90 disabled:opacity-50">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              Créer le client
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminClients() {
-  const [search,   setSearch]   = useState("");
-  const [loading,  setLoading]  = useState(true);
-  const [clients,  setClients]  = useState<DisplayClient[]>([]);
+  const [search,       setSearch]       = useState("");
+  const [loading,      setLoading]      = useState(true);
+  const [clients,      setClients]      = useState<DisplayClient[]>([]);
   const [filterStatus, setFilterStatus] = useState<"tous" | "actif" | "inactif">("tous");
-  const [page, setPage] = useState(1);
+  const [page,         setPage]         = useState(1);
+  const [showCreate,   setShowCreate]   = useState(false);
 
   async function fetchClients(silent = false) {
     if (!silent) setLoading(true);
@@ -217,6 +369,15 @@ export default function AdminClients() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => exportCSV(filtered)}
+            disabled={loading || filtered.length === 0}
+            title="Exporter en CSV"
+            className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-[0.8rem] text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70 disabled:opacity-40"
+          >
+            <Download size={13} />
+            CSV
+          </button>
+          <button
             onClick={() => fetchClients(true)}
             disabled={loading}
             className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-[0.8rem] text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70 disabled:opacity-40"
@@ -224,7 +385,10 @@ export default function AdminClients() {
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
             Actualiser
           </button>
-          <button className="flex shrink-0 items-center gap-2 rounded-xl bg-[#c9a55a] px-4 py-2.5 text-[0.82rem] font-bold text-[#1a1308] transition-opacity hover:opacity-90">
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex shrink-0 items-center gap-2 rounded-xl bg-[#c9a55a] px-4 py-2.5 text-[0.82rem] font-bold text-[#1a1308] transition-opacity hover:opacity-90"
+          >
             <UserPlus size={14} /> Ajouter
           </button>
         </div>
@@ -360,6 +524,12 @@ export default function AdminClients() {
         )}
       </div>
       <Pagination page={page} total={filtered.length} onChange={setPage} />
+      {showCreate && (
+        <CreateClientModal
+          onClose={() => setShowCreate(false)}
+          onCreated={() => { setShowCreate(false); fetchClients(true); }}
+        />
+      )}
     </div>
   );
 }

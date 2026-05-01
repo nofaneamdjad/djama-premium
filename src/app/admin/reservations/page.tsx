@@ -237,11 +237,14 @@ export default function AdminReservations() {
   const cancelled  = reservations.filter(r => r.status === "annulé").length;
   const upcoming   = reservations.filter(r => r.status === "confirmé" && isUpcoming(r.scheduled_at)).length;
 
+  const terminated = reservations.filter(r => r.status === "terminé").length;
+
   const tabs: { key: FilterStatus; label: string; count: number }[] = [
     { key: "tous",       label: "Tous",       count: reservations.length },
     { key: "confirmé",   label: "Confirmés",  count: confirmed },
     { key: "en attente", label: "En attente", count: pending },
     { key: "annulé",     label: "Annulés",    count: cancelled },
+    { key: "terminé",    label: "Terminés",   count: terminated },
   ];
 
   return (

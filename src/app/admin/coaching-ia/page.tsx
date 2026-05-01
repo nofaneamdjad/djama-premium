@@ -12,8 +12,6 @@ import {
    Tableau de bord admin — gestion des accès Coaching IA DJAMA
 ─────────────────────────────────────────────────────────────── */
 
-const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_PASS ?? "";
-
 interface Client {
   email:                        string;
   full_name:                    string | null;
@@ -65,9 +63,7 @@ export default function AdminCoachingIA() {
     if (search.trim()) params.set("email", search.trim());
     params.set("status", filter);
 
-    const res = await fetch(`/api/admin/coaching-ia?${params}`, {
-      headers: { "x-admin-token": ADMIN_TOKEN },
-    });
+    const res = await fetch(`/api/admin/coaching-ia?${params}`);
     const data = await res.json() as { clients?: Client[] };
     setClients(data.clients ?? []);
     setLoading(false);
@@ -88,7 +84,7 @@ export default function AdminCoachingIA() {
 
     const res = await fetch("/api/admin/coaching-ia", {
       method:  "POST",
-      headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_TOKEN },
+      headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ action, email }),
     });
     const data = await res.json() as { success?: boolean; message?: string; error?: string };
@@ -106,8 +102,7 @@ export default function AdminCoachingIA() {
   const expired  = clients.filter((c) => c.coaching_ia_active && isExpired(c.coaching_ia_expires)).length;
 
   return (
-    <div className="min-h-screen bg-[#07080e] px-4 py-8">
-      <div className="mx-auto max-w-6xl">
+    <div className="space-y-6">
 
         {/* Header */}
         <div className="mb-8">
@@ -317,7 +312,6 @@ export default function AdminCoachingIA() {
           </button>
         </div>
 
-      </div>
     </div>
   );
 }
