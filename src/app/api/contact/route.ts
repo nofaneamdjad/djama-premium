@@ -192,8 +192,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nom, email et message sont requis" }, { status: 400 });
   }
 
-  // ── 1. Enregistrer dans Supabase ──────────────────────────────
-  const { error: dbErr } = await supabaseAdmin
+  // ── 1. Enregistrer dans Supabase (non-bloquant) ──────────────
+  // On ne bloque PAS l'envoi d'emails si Supabase échoue
+  supabaseAdmin
     .from("contact_messages")
     .insert([{
       name:     name.trim(),
@@ -204,12 +205,13 @@ export async function POST(req: NextRequest) {
       message:  message.trim(),
       status:   "nouveau",
       metadata: { budget: budget || null },
-    }]);
-
-  if (dbErr) {
-    console.error("[POST /api/contact] DB error:", dbErr);
-    return NextResponse.json({ error: "Impossible d'enregistrer le message" }, { status: 500 });
-  }
+    }])
+    .then(({ error: dbErr }) => {
+      if (dbErr) console.error("[POST /api/contact] DB error:", dbErr.message);
+    })
+    .catch((err: unknown) => {
+      console.error("[POST /api/contact] DB exception:", err);
+    });
 
   // ── 2. Envoyer les emails via Resend ──────────────────────────
   const resend = getResend();
