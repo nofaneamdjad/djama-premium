@@ -7,18 +7,17 @@ import { useRouter } from "next/navigation";
 import { Globe, LayoutDashboard, ArrowRight } from "lucide-react";
 
 export default function SplashScreen() {
-  const [visible,     setVisible]     = useState(true);
+  const [visible,     setVisible]     = useState(false); // false SSR → évite flash/hydration mismatch
   const [showChoices, setShowChoices] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Une seule fois par session
-    if (sessionStorage.getItem("djama_splash_seen")) {
-      setVisible(false);
-      return;
-    }
+    // Première visite de la session uniquement
+    if (sessionStorage.getItem("djama_splash_seen")) return;
+
     sessionStorage.setItem("djama_splash_seen", "1");
     document.body.style.overflow = "hidden";
+    setVisible(true); // monté côté client uniquement
 
     // Après l'animation d'intro → afficher les choix
     const t = setTimeout(() => setShowChoices(true), 1900);
