@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { downloadContractPDF, openContractPDF } from "@/lib/contract-pdf";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import { fmtDate, fmtEur } from "@/lib/format";
 
 /* ═══════════════════════════════════════════════════
@@ -108,66 +109,12 @@ const EMPTY_FORM = (): DraftForm => ({
   specifics: "",
 });
 
-/* ═══════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════ */
-type ToastType = "success" | "error" | "info";
-interface ToastMsg {
-  id: number;
-  type: ToastType;
-  text: string;
-}
-
-function Toast({ toasts, remove }: { toasts: ToastMsg[]; remove: (id: number) => void }) {
-  return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
-      <AnimatePresence>
-        {toasts.map((t) => (
-          <motion.div
-            key={t.id}
-            initial={{ opacity: 0, y: 16, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-            transition={{ duration: 0.35, ease }}
-            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium shadow-xl backdrop-blur-sm
-              ${t.type === "success" ? "bg-emerald-500/15 border-emerald-500/25 text-emerald-300" : ""}
-              ${t.type === "error" ? "bg-red-500/15 border-red-500/25 text-red-300" : ""}
-              ${t.type === "info" ? "bg-white/10 border-white/15 text-white/80" : ""}
-            `}
-          >
-            <span>{t.text}</span>
-            <button
-              onClick={() => remove(t.id)}
-              className="ml-2 opacity-60 hover:opacity-100 transition-opacity"
-            >
-              <X size={14} />
-            </button>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function useToast() {
-  const [toasts, setToasts] = useState<ToastMsg[]>([]);
-  const counter = useRef(0);
-  const add = useCallback((text: string, type: ToastType = "info") => {
-    const id = ++counter.current;
-    setToasts((prev) => [...prev, { id, type, text }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
-  }, []);
-  const remove = useCallback((id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-  return { toasts, add, remove };
-}
 
 /* ═══════════════════════════════════════════════════
    PAGE
 ═══════════════════════════════════════════════════ */
 export default function ContratsPage() {
-  const { toasts, add: toast, remove: removeToast } = useToast();
+  const { toasts, add: toast, remove: removeToast } = useToastStack();
 
   /* ── data ── */
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -468,7 +415,7 @@ export default function ContratsPage() {
 
   return (
     <div className="min-h-screen bg-[#080a0f] text-white">
-      <Toast toasts={toasts} remove={removeToast} />
+      <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* ── Header ── */}
       <div className="border-b border-white/[0.06] px-6 py-5 flex items-center justify-between">
