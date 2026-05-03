@@ -471,6 +471,7 @@ export default function AdminFactures() {
         ))}
         <button
           onClick={() => { loadedRef.current = false; load(); }}
+          aria-label="Rafraîchir les factures"
           className="ml-auto text-white/20 hover:text-white/50 transition-colors"
         >
           <RefreshCw size={13} />
@@ -551,7 +552,7 @@ export default function AdminFactures() {
               <h2 className="text-[1rem] font-black text-white">
                 {modal === "add" ? "Nouvelle facture" : "Modifier la facture"}
               </h2>
-              <button onClick={() => setModal(null)} className="text-white/30 hover:text-white/70">
+              <button onClick={() => setModal(null)} aria-label="Fermer" className="text-white/30 hover:text-white/70">
                 <X size={18} />
               </button>
             </div>
@@ -633,6 +634,7 @@ export default function AdminFactures() {
                           <td className="w-24 px-2 py-2 text-right text-[0.82rem] font-semibold text-white/60">{fmtEur(item.total)}</td>
                           <td className="w-8 px-2 py-2 text-center">
                             <button type="button" onClick={() => setForm(f => ({ ...f, items: f.items.filter(i => i._key !== item._key) }))}
+                              aria-label="Supprimer la ligne"
                               className="text-white/15 hover:text-[#f87171] transition-colors"><X size={12} /></button>
                           </td>
                         </tr>

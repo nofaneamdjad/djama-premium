@@ -7,6 +7,7 @@ import {
   Check, X, Film, Upload, Link as LinkIcon, Search,
   ArrowUp, ArrowDown,
 } from "lucide-react";
+import NextImage from "next/image";
 import { getSupabase } from "@/lib/supabase";
 import type { VideoProjectRow, VideoCategory, VideoStatus } from "@/types/db";
 
@@ -231,10 +232,10 @@ export default function AdminMontageVideoPage() {
             <div key={p.id}
               className="flex items-center gap-4 rounded-xl border border-white/[.07] bg-white/[.04] px-4 py-3 transition-all hover:bg-white/[.07]">
               {/* Thumbnail */}
-              <div className="h-12 w-20 shrink-0 overflow-hidden rounded-lg"
+              <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded-lg"
                 style={{ background: "rgba(225,29,72,.1)", border: "1px solid rgba(255,255,255,.06)" }}>
                 {p.thumbnail_url ? (
-                  <img src={p.thumbnail_url} alt={p.title} className="h-full w-full object-cover" />
+                  <NextImage fill src={p.thumbnail_url} alt={p.title} className="object-cover" sizes="80px" />
                 ) : (
                   <div className="flex h-full items-center justify-center">
                     <Film size={14} className="text-white/20" />
@@ -258,7 +259,7 @@ export default function AdminMontageVideoPage() {
                 </div>
               </div>
               {/* Status toggle */}
-              <button onClick={() => handleToggle(p)} className="shrink-0 transition-opacity hover:opacity-80">
+              <button onClick={() => handleToggle(p)} aria-label={p.status === "published" ? "Dépublier" : "Publier"} className="shrink-0 transition-opacity hover:opacity-80">
                 {p.status === "published"
                   ? <ToggleRight size={22} style={{ color: ACCENT }} />
                   : <ToggleLeft size={22} className="text-white/30" />}
@@ -268,21 +269,21 @@ export default function AdminMontageVideoPage() {
               </span>
               {/* Reorder */}
               <div className="flex flex-col gap-0.5">
-                <button onClick={() => handleReorder(p.id, "up")} disabled={idx === 0}
+                <button onClick={() => handleReorder(p.id, "up")} disabled={idx === 0} aria-label="Monter"
                   className="p-0.5 text-white/20 hover:text-white/60 disabled:opacity-20 transition-colors">
                   <ArrowUp size={12} />
                 </button>
-                <button onClick={() => handleReorder(p.id, "down")} disabled={idx === displayed.length - 1}
+                <button onClick={() => handleReorder(p.id, "down")} disabled={idx === displayed.length - 1} aria-label="Descendre"
                   className="p-0.5 text-white/20 hover:text-white/60 disabled:opacity-20 transition-colors">
                   <ArrowDown size={12} />
                 </button>
               </div>
               {/* Actions */}
-              <button onClick={() => openEdit(p)}
+              <button onClick={() => openEdit(p)} aria-label="Modifier la vidéo"
                 className="rounded-lg border border-white/[.08] p-2 text-white/50 transition-all hover:border-white/20 hover:text-white">
                 <Pencil size={13} />
               </button>
-              <button onClick={() => setConfirmDelete(p.id)}
+              <button onClick={() => setConfirmDelete(p.id)} aria-label="Supprimer la vidéo"
                 className="rounded-lg border border-red-500/20 p-2 text-red-400/60 transition-all hover:border-red-500/40 hover:text-red-400">
                 <Trash2 size={13} />
               </button>
@@ -300,7 +301,7 @@ export default function AdminMontageVideoPage() {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/[.08] px-5 py-4">
               <h2 className="text-base font-bold text-white">{modal.id ? "Modifier le projet" : "Nouveau projet vidéo"}</h2>
-              <button onClick={() => setModal(null)} className="text-white/40 hover:text-white transition-colors">
+              <button onClick={() => setModal(null)} aria-label="Fermer" className="text-white/40 hover:text-white transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -352,8 +353,9 @@ export default function AdminMontageVideoPage() {
                 <label className="mb-1.5 block text-xs font-medium text-white/60">Miniature (thumbnail)</label>
                 {modal.thumbnail_url ? (
                   <div className="relative mb-2 overflow-hidden rounded-xl" style={{ aspectRatio: "16/9" }}>
-                    <img src={modal.thumbnail_url} alt="thumbnail" className="h-full w-full object-cover" />
+                    <NextImage fill src={modal.thumbnail_url} alt="thumbnail" className="object-cover" sizes="(max-width: 768px) 100vw, 600px" />
                     <button onClick={() => setModal(m => m ? { ...m, thumbnail_url: "" } : m)}
+                      aria-label="Supprimer la miniature"
                       className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white/80 hover:text-white transition-colors">
                       <X size={13} />
                     </button>

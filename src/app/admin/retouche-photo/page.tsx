@@ -7,6 +7,7 @@ import {
   Check, X, Camera, Upload, Link as LinkIcon, Search,
   ArrowUp, ArrowDown, Image,
 } from "lucide-react";
+import NextImage from "next/image";
 import { getSupabase } from "@/lib/supabase";
 import type { PhotoRetouchRow, PhotoRetouchCategory, PhotoRetouchStatus } from "@/types/db";
 
@@ -187,7 +188,7 @@ export default function AdminRetouchePhotoPage() {
         <label className="mb-1.5 block text-xs font-medium text-white/60">{label}</label>
         {value ? (
           <div className="relative mb-2 overflow-hidden rounded-xl" style={{ aspectRatio: "4/3" }}>
-            <img src={value} alt={label} className="h-full w-full object-cover" />
+            <NextImage fill src={value} alt={label} className="object-cover" sizes="(max-width: 768px) 100vw, 480px" />
             <button onClick={() => onChange("")}
               className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white/80 hover:text-white transition-colors">
               <X size={13} />
@@ -272,7 +273,7 @@ export default function AdminRetouchePhotoPage() {
               {/* Thumbnail après */}
               <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg"
                 style={{ background: "rgba(236,72,153,.08)", border: "1px solid rgba(255,255,255,.06)" }}>
-                <img src={p.after_url} alt={p.title} className="h-full w-full object-cover" />
+                <NextImage fill src={p.after_url} alt={p.title} className="object-cover" sizes="64px" />
                 {p.before_url && (
                   <div className="absolute left-0.5 top-0.5 rounded px-1 text-[6px] font-bold text-white"
                     style={{ background: `rgba(236,72,153,.8)` }}>A/A</div>

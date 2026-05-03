@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -139,13 +140,15 @@ function BeforeAfterSlider({ before, after, title, category }: {
         onTouchEnd={() => setDragging(false)}
       >
         {/* Après — fond permanent, pleine largeur */}
-        <img src={after} alt="Après retouche"
-          className="absolute inset-0 h-full w-full object-cover"
+        <NextImage fill src={after} alt="Après retouche"
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 50vw"
           draggable={false} />
         {/* Avant — clipPath depuis la gauche */}
-        <img src={before} alt="Avant retouche"
-          className="absolute inset-0 h-full w-full object-cover"
+        <NextImage fill src={before} alt="Avant retouche"
+          className="object-cover"
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+          sizes="(max-width: 768px) 100vw, 50vw"
           draggable={false} />
         {/* Ligne de séparation */}
         <div className="pointer-events-none absolute inset-y-0 w-[2px] bg-white shadow-[0_0_10px_rgba(0,0,0,.6)]"
@@ -577,8 +580,9 @@ export default function RetouchePhotoPage() {
                     transition={{ delay: i * 0.05, duration: 0.4, ease }}
                     className="group relative overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.04]"
                     style={{ aspectRatio: "1" }}>
-                    <img src={proj.after_url} alt={proj.title}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <NextImage fill src={proj.after_url} alt={proj.title}
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" />
                     {/* Hover overlay */}
                     <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                       <p className="text-sm font-bold text-white">{proj.title}</p>

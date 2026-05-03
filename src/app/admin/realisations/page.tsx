@@ -256,10 +256,10 @@ export default function AdminRealisations() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <button onClick={() => openEdit(p)} className="text-white/25 transition-colors hover:text-[#60a5fa]">
+                        <button onClick={() => openEdit(p)} aria-label="Modifier le projet" className="text-white/25 transition-colors hover:text-[#60a5fa]">
                           <Pencil size={14} />
                         </button>
-                        <button onClick={() => setConfirmDel(p.id)} className="text-white/25 transition-colors hover:text-[#f87171]">
+                        <button onClick={() => setConfirmDel(p.id)} aria-label="Supprimer le projet" className="text-white/25 transition-colors hover:text-[#f87171]">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -286,7 +286,7 @@ export default function AdminRealisations() {
               <h2 className="text-[1rem] font-black text-white">
                 {modal === "add" ? "Nouveau projet" : "Modifier le projet"}
               </h2>
-              <button onClick={() => setModal(null)} className="text-white/30 hover:text-white/70">
+              <button onClick={() => setModal(null)} aria-label="Fermer" className="text-white/30 hover:text-white/70">
                 <X size={18} />
               </button>
             </div>
@@ -437,7 +437,7 @@ export default function AdminRealisations() {
                       className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1 text-[0.75rem] text-white/60"
                     >
                       {h}
-                      <button onClick={() => removeHighlight(i)} className="text-white/30 hover:text-white/70">
+                      <button onClick={() => removeHighlight(i)} aria-label="Retirer ce point fort" className="text-white/30 hover:text-white/70">
                         <X size={10} />
                       </button>
                     </span>

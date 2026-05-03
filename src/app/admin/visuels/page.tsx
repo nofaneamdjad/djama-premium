@@ -5,6 +5,7 @@ import {
   Plus, Pencil, Trash2, X, Loader2, Check,
   Image, Upload, ToggleLeft, ToggleRight,
 } from "lucide-react";
+import NextImage from "next/image";
 import { getSupabase } from "@/lib/supabase";
 import type { VisualRow, VisualCategory, VisualStatus } from "@/types/db";
 
@@ -232,10 +233,10 @@ export default function AdminVisuels() {
               {items.map(item => (
                 <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-4 py-3">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/[0.08] shrink-0"
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/[0.08] shrink-0"
                       style={{ background: "rgba(255,255,255,.05)" }}>
                       {item.image_url
-                        ? <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                        ? <NextImage fill src={item.image_url} alt={item.title} className="object-cover" sizes="48px" />
                         : <div className="w-full h-full flex items-center justify-center"><Image size={16} className="text-white/20" /></div>
                       }
                     </div>
@@ -258,6 +259,7 @@ export default function AdminVisuels() {
                   </td>
                   <td className="px-4 py-3">
                     <button onClick={() => toggleStatus(item)}
+                      aria-label={item.status === "published" ? "Dépublier" : "Publier"}
                       className="flex items-center gap-1.5 transition-opacity hover:opacity-80">
                       {item.status === "published"
                         ? <ToggleRight size={20} style={{ color: "#4ade80" }} />
@@ -269,11 +271,11 @@ export default function AdminVisuels() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => openEdit(item)}
+                      <button onClick={() => openEdit(item)} aria-label="Modifier le visuel"
                         className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.08] hover:bg-white/[0.06] text-white/50 hover:text-white transition-all">
                         <Pencil size={13} />
                       </button>
-                      <button onClick={() => setConfirmDel(item.id)}
+                      <button onClick={() => setConfirmDel(item.id)} aria-label="Supprimer le visuel"
                         className="w-8 h-8 rounded-lg flex items-center justify-center border border-red-500/20 hover:bg-red-500/10 text-red-400/50 hover:text-red-400 transition-all">
                         <Trash2 size={13} />
                       </button>
@@ -297,7 +299,7 @@ export default function AdminVisuels() {
               <h2 className="font-extrabold text-white">
                 {modal === "add" ? "Ajouter un visuel" : "Modifier le visuel"}
               </h2>
-              <button onClick={() => setModal(null)}
+              <button onClick={() => setModal(null)} aria-label="Fermer"
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.06] transition-all">
                 <X size={16} />
               </button>
@@ -311,7 +313,7 @@ export default function AdminVisuels() {
                 <label className="block text-xs font-bold text-white/50 mb-2">Image *</label>
                 {form.image_url ? (
                   <div className="relative rounded-xl overflow-hidden border border-white/[0.1]" style={{ aspectRatio: "1/1", maxWidth: 160 }}>
-                    <img src={form.image_url} alt="preview" className="w-full h-full object-cover" />
+                    <NextImage fill src={form.image_url} alt="preview" className="object-cover" sizes="160px" />
                     <button
                       onClick={() => setForm(f => ({ ...f, image_url: "" }))}
                       className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-all">

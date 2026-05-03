@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -418,8 +419,9 @@ export default function MontageVideoPage() {
                     className="group relative overflow-hidden rounded-2xl border border-white/[.1] bg-white/[.05]"
                     style={{ aspectRatio: proj.format === "9:16" ? "9/16" : "16/9" }}>
                     {proj.thumbnail_url ? (
-                      <img src={proj.thumbnail_url} alt={proj.title}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      <Image fill src={proj.thumbnail_url} alt={proj.title}
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                     ) : (
                       <div className="absolute inset-0" style={{ background: `linear-gradient(135deg,rgba(${AR},.2),rgba(${PR},.1))` }} />
                     )}

@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 /**
  * PartnerLogosSection — Section partenaires premium fond blanc vivant.
  *
@@ -109,12 +111,13 @@ function LogoTile({ logo, index }: { logo: PartnerLogoRow; index: number }) {
         drop-shadow très léger → contraste sur fond clair même pour les logos clairs.
         opacity-[0.90] au repos → 100 % au hover.
       */}
-      <img
+      <Image
         src={logo.logo_url}
         alt={logo.name}
         title={logo.name}
+        width={150}
+        height={46}
         draggable={false}
-        loading="lazy"
         className={[
           "relative z-10 object-contain select-none",
           "h-9 w-auto sm:h-10 md:h-[2.875rem]",
@@ -128,7 +131,7 @@ function LogoTile({ logo, index }: { logo: PartnerLogoRow; index: number }) {
         style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.10))" }}
         onError={e => {
           /* Image inaccessible → tile invisible mais la place reste (pas de saut) */
-          const img = e.currentTarget;
+          const img = e.currentTarget as HTMLImageElement;
           img.style.opacity = "0";
           img.style.pointerEvents = "none";
         }}
