@@ -6,13 +6,26 @@
  */
 
 /**
- * Formate un nombre en euros (fr-FR).
+ * Formate un nombre en euros (fr-FR), avec les centimes.
  * @example fmtEur(1234.5) → "1 234,50 €"
  */
 export function fmtEur(n: number): string {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
+  }).format(n);
+}
+
+/**
+ * Formate un nombre en euros (fr-FR), sans les centimes.
+ * Utile pour les totaux et statistiques de tableau de bord.
+ * @example fmtEurInt(1234.5) → "1 235 €"
+ */
+export function fmtEurInt(n: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
   }).format(n);
 }
 

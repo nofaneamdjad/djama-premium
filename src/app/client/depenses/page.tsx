@@ -14,34 +14,17 @@ import {
   X,
   Check,
   ChevronDown,
-  CheckCircle2,
-  AlertCircle,
   Loader2,
   Receipt,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { fmtEurInt, fmtDate } from "@/lib/format";
+import Toast, { type ToastData } from "@/components/ui/Toast";
 
 /* ═══════════════════════════════════════════════════════════
    CONSTANTES
 ═══════════════════════════════════════════════════════════ */
 const ease = [0.16, 1, 0.3, 1] as const;
-
-const fmtEur = (n: number) =>
-  n.toLocaleString("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  });
-
-const fmtDate = (iso: string) => {
-  if (!iso) return "—";
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(y, m - 1, d));
-};
 
 const MONTH_NAMES = [
   "Janvier","Février","Mars","Avril","Mai","Juin",
@@ -75,45 +58,6 @@ interface Expense {
   created_at: string;
 }
 
-interface ToastState {
-  type: "success" | "error";
-  msg: string;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════════════ */
-function Toast({ toast, onClose }: { toast: ToastState; onClose: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 4000);
-    return () => clearTimeout(t);
-  }, [onClose]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 8 }}
-      transition={{ duration: 0.28, ease }}
-      className={`fixed bottom-6 right-6 z-50 flex max-w-sm items-start gap-3 rounded-2xl border px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl ${
-        toast.type === "success"
-          ? "border-green-500/20 bg-[rgba(15,23,42,0.97)] text-green-300"
-          : "border-red-500/20 bg-[rgba(15,23,42,0.97)] text-red-300"
-      }`}
-    >
-      {toast.type === "success" ? (
-        <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-green-400" />
-      ) : (
-        <AlertCircle size={15} className="mt-0.5 shrink-0 text-red-400" />
-      )}
-      <span className="flex-1 text-sm font-medium leading-snug">{toast.msg}</span>
-      <button onClick={onClose} className="ml-1 shrink-0 text-white/30 hover:text-white/60">
-        <X size={12} />
-      </button>
-    </motion.div>
-  );
-}
-
 /* ═══════════════════════════════════════════════════════════
    PAGE PRINCIPALE
 ═══════════════════════════════════════════════════════════ */
@@ -125,7 +69,7 @@ export default function DepensesPage() {
   const [loading,     setLoading]     = useState(true);
   const [submitting,  setSubmitting]  = useState(false);
   const [deletingId,  setDeletingId]  = useState<string | null>(null);
-  const [toast,       setToast]       = useState<ToastState | null>(null);
+  const [toast,       setToast]       = useState<ToastData | null>(null);
 
   /* Month selector */
   const [viewYear,  setViewYear]  = useState(today.getFullYear());
@@ -138,7 +82,7 @@ export default function DepensesPage() {
   const [formAmount,   setFormAmount]   = useState("");
 
   /* ── Helpers ── */
-  const showToast = (type: "success" | "error", msg: string) => setToast({ type, msg });
+  const showToast = (type: "success" | "error", msg: string) => setToast({ type, msg } as ToastData);
 
   const monthStart = useMemo(() => {
     const d = new Date(viewYear, viewMonth, 1);
@@ -441,7 +385,7 @@ export default function DepensesPage() {
                   Total dépenses ce mois
                 </p>
                 <p className="text-2xl font-black" style={{ color: "#f97316" }}>
-                  {fmtEur(totalMonth)}
+                  {fmtEurInt(totalMonth)}
                 </p>
               </div>
               <span className="text-xs text-white/30">
@@ -464,7 +408,7 @@ export default function DepensesPage() {
                         style={{ color: cat.color }}
                       >
                         <Icon size={10} />
-                        {cat.label} · {fmtEur(total)}
+                        {cat.label} · {fmtEurInt(total)}
                       </span>
                     );
                   })}
@@ -516,7 +460,7 @@ export default function DepensesPage() {
                         {cat.label}
                       </span>
                       <span className="ml-auto text-xs font-bold" style={{ color: cat.color }}>
-                        {fmtEur(catTotal)}
+                        {fmtEurInt(catTotal)}
                       </span>
                     </div>
 
@@ -552,7 +496,7 @@ export default function DepensesPage() {
 
                               {/* Amount */}
                               <span className="shrink-0 text-sm font-extrabold" style={{ color: "#f97316" }}>
-                                {fmtEur(expense.amount)}
+                                {fmtEurInt(expense.amount)}
                               </span>
 
                               {/* Delete */}

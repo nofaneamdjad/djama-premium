@@ -19,12 +19,7 @@ import type {
   RelanceRequest, RelanceResponse,
   UrgencyLevel,
 } from "@/lib/assistant/types";
-
-/* ════════════════════════════════════════════
-   CONFIG
-════════════════════════════════════════════ */
-const fmtEur = (n: number) =>
-  n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+import { fmtEurInt } from "@/lib/format";
 
 const URGENCY: Record<UrgencyLevel, {
   bg: string; border: string; text: string; dot: string;
@@ -53,7 +48,7 @@ const URGENCY: Record<UrgencyLevel, {
 /* ── Messages rapides sans IA ── */
 const quickMsg = (item: RadarItem) => {
   const type = item.type === "facture" ? "facture" : "devis";
-  return `Bonjour,\n\nJe vous relance concernant notre ${type} ${item.reference} d'un montant de ${fmtEur(item.amount)}.\n\nPourriez-vous me confirmer la prise en charge ?\n\nCordialement`;
+  return `Bonjour,\n\nJe vous relance concernant notre ${type} ${item.reference} d'un montant de ${fmtEurInt(item.amount)}.\n\nPourriez-vous me confirmer la prise en charge ?\n\nCordialement`;
 };
 const quickWa   = (item: RadarItem) =>
   `https://wa.me/?text=${encodeURIComponent(quickMsg(item))}`;
@@ -174,7 +169,7 @@ export default function RadarPage() {
             className="flex items-center justify-between px-5 py-4 rounded-2xl bg-white/[0.025] border border-white/[0.06]"
           >
             <div>
-              <p className="text-xl font-black text-white">{fmtEur(total)}</p>
+              <p className="text-xl font-black text-white">{fmtEurInt(total)}</p>
               <p className="text-xs text-white/30 mt-0.5">{items.length} dossier{items.length > 1 ? "s" : ""} à traiter</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -237,7 +232,7 @@ export default function RadarPage() {
                       </div>
                     </div>
                     <span className={`text-base font-black tabular-nums ${u.text}`}>
-                      {fmtEur(item.amount)}
+                      {fmtEurInt(item.amount)}
                     </span>
                   </div>
 
@@ -299,7 +294,7 @@ export default function RadarPage() {
                   <p className="text-xs text-white/28">
                     {relanceItem.type === "facture" ? "Facture" : "Devis"} {relanceItem.reference}
                     <span className="mx-1 opacity-40">·</span>
-                    <span className="font-bold text-amber-400">{fmtEur(relanceItem.amount)}</span>
+                    <span className="font-bold text-amber-400">{fmtEurInt(relanceItem.amount)}</span>
                     <span className="mx-1 opacity-40">·</span>J+{relanceItem.days}
                   </p>
                 </div>

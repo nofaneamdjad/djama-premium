@@ -4,11 +4,13 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ReceiptText, Plus, Trash2, FileDown, Save, X, Search,
-  CheckCircle2, AlertCircle, Loader2, ArrowLeft, ChevronDown,
+  Loader2, ArrowLeft, ChevronDown,
   RefreshCw, Building2, User, FileText, Send, BadgeCheck,
   AlertTriangle, ImagePlus, Palette, Landmark, Eye, Percent,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { fmtEur, fmtDate } from "@/lib/format";
+import Toast, { type ToastData } from "@/components/ui/Toast";
 import type { TemplateType }      from "@/lib/pdf/types";
 import type { PreviewData }       from "@/components/invoice/shared";
 import { TemplateSelector }       from "@/components/invoice/TemplateSelector";
@@ -142,15 +144,6 @@ function calcTotals(items: DocItem[], remise_pct = 0, acompte = 0) {
 }
 function r2(n: number) { return Math.round(n * 100) / 100; }
 
-function fmtEur(n: number) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
-}
-function fmtDate(iso: string) {
-  if (!iso) return "—";
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Intl.DateTimeFormat("fr-FR", { day:"2-digit", month:"short", year:"numeric" })
-    .format(new Date(y, m - 1, d));
-}
 function newNumero(type: DocType, docs: Document[]): string {
   const prefix = type === "facture" ? "FAC" : "DEV";
   const n = docs.filter(d => d.type === type).length + 1;
@@ -291,24 +284,6 @@ function StatutBadge({ statut }: { statut: DocStatut }) {
   );
 }
 
-function Toast({ toast, onClose }: { toast: { type:"success"|"error"; msg:string }; onClose: ()=>void }) {
-  useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }, [onClose]);
-  return (
-    <motion.div initial={{ opacity:0, y:24, scale:0.95 }} animate={{ opacity:1, y:0, scale:1 }}
-      exit={{ opacity:0, y:8 }} transition={{ duration:0.28, ease }}
-      className={`fixed bottom-6 right-6 z-50 flex max-w-sm items-start gap-3 rounded-2xl border px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl ${
-        toast.type === "success"
-          ? "border-green-500/20 bg-[rgba(15,23,42,0.97)] text-green-300"
-          : "border-red-500/20 bg-[rgba(15,23,42,0.97)] text-red-300"}`}>
-      {toast.type === "success"
-        ? <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-green-400"/>
-        : <AlertCircle  size={15} className="mt-0.5 shrink-0 text-red-400"/>}
-      <span className="flex-1 text-sm font-medium leading-snug">{toast.msg}</span>
-      <button onClick={onClose} className="ml-1 shrink-0 text-white/30 hover:text-white/60"><X size={12}/></button>
-    </motion.div>
-  );
-}
-
 function DInput({ label, value, onChange, placeholder, type="text", small }:
   { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; type?:string; small?:boolean }) {
   const [focused, setFocused] = useState(false);
@@ -427,7 +402,7 @@ export default function FacturesPage() {
   const [saving,      setSaving]      = useState(false);
   const [deleting,    setDeleting]    = useState(false);
   const [converting,  setConverting]  = useState(false);
-  const [toast,       setToast]       = useState<{ type:"success"|"error"; msg:string }|null>(null);
+  const [toast,       setToast]       = useState<ToastData | null>(null);
   const [query,       setQuery]       = useState("");
   const [filterType,  setFilterType]  = useState<"tous"|DocType>("tous");
   const [mobileView,  setMobileView]  = useState<"list"|"editor">("list");
@@ -454,7 +429,7 @@ export default function FacturesPage() {
 
   useEffect(() => { fetchDocs(); }, [fetchDocs]);
 
-  function showToast(type: "success"|"error", msg: string) { setToast({ type, msg }); }
+  function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
 
   /* ── Ouvrir ── */
   async function openDoc(doc: Document) {

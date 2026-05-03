@@ -28,13 +28,12 @@ import type {
   RadarItem, RadarResponse, RelanceRequest, RelanceResponse,
   UrgencyLevel, ChatAction, ChatKPIs, ChatApiResponse,
 } from "@/lib/assistant/types";
+import { fmtEurInt } from "@/lib/format";
 
 /* ════════════════════════════════════════════
    HELPERS
 ════════════════════════════════════════════ */
 const ease   = [0.16, 1, 0.3, 1] as const;
-const fmtEur = (n: number) =>
-  n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
@@ -157,7 +156,7 @@ interface ChatMsg {
 ════════════════════════════════════════════ */
 const quickMsg = (item: RadarItem) => {
   const t = item.type === "facture" ? "facture" : "devis";
-  return `Bonjour,\n\nJe vous relance concernant notre ${t} ${item.reference} d'un montant de ${fmtEur(item.amount)}.\n\nPourriez-vous me confirmer la prise en charge ?\n\nCordialement`;
+  return `Bonjour,\n\nJe vous relance concernant notre ${t} ${item.reference} d'un montant de ${fmtEurInt(item.amount)}.\n\nPourriez-vous me confirmer la prise en charge ?\n\nCordialement`;
 };
 const quickWa   = (item: RadarItem) => `https://wa.me/?text=${encodeURIComponent(quickMsg(item))}`;
 const quickMail = (item: RadarItem) =>
@@ -473,7 +472,7 @@ export default function ClientPage() {
             <div className="max-w-2xl mx-auto px-4 py-2 flex items-center gap-3 overflow-x-auto scrollbar-none text-xs">
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className="text-white/28 font-medium">CA</span>
-                <span className="font-bold text-white/80">{fmtEur(kpis.ca_this_month)}</span>
+                <span className="font-bold text-white/80">{fmtEurInt(kpis.ca_this_month)}</span>
                 {kpis.ca_last_month > 0 && (
                   <span className={`flex items-center gap-0.5 font-bold ${kpis.ca_change_pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                     {kpis.ca_change_pct >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
@@ -485,7 +484,7 @@ export default function ClientPage() {
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className="text-white/28 font-medium">Impayés</span>
                 <span className={`font-bold ${kpis.unpaid_count > 0 ? "text-red-400" : "text-emerald-400"}`}>
-                  {kpis.unpaid_count > 0 ? `${kpis.unpaid_count} · ${fmtEur(kpis.unpaid_total)}` : "0 ✓"}
+                  {kpis.unpaid_count > 0 ? `${kpis.unpaid_count} · ${fmtEurInt(kpis.unpaid_total)}` : "0 ✓"}
                 </span>
               </div>
               <span className="text-white/8 shrink-0">│</span>
@@ -578,7 +577,7 @@ export default function ClientPage() {
                                 </p>
                               </div>
                             </div>
-                            <span className={`text-base font-black tabular-nums ${u.text}`}>{fmtEur(item.amount)}</span>
+                            <span className={`text-base font-black tabular-nums ${u.text}`}>{fmtEurInt(item.amount)}</span>
                           </div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <a href={quickWa(item)} target="_blank" rel="noopener noreferrer"
@@ -720,7 +719,7 @@ export default function ClientPage() {
                   <p className="text-xs text-white/28">
                     {relanceItem.type === "facture" ? "Facture" : "Devis"} {relanceItem.reference}
                     <span className="mx-1 opacity-40">·</span>
-                    <span className="font-bold text-amber-400">{fmtEur(relanceItem.amount)}</span>
+                    <span className="font-bold text-amber-400">{fmtEurInt(relanceItem.amount)}</span>
                     <span className="mx-1 opacity-40">·</span>J+{relanceItem.days}
                   </p>
                 </div>

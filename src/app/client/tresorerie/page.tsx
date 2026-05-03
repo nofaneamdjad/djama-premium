@@ -9,10 +9,8 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle2,
-  AlertCircle,
   ChevronDown,
   Loader2,
-  X,
   ArrowRight,
   ReceiptText,
   Receipt,
@@ -26,27 +24,13 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { fmtEurInt, fmtDateShort } from "@/lib/format";
+import Toast, { type ToastData } from "@/components/ui/Toast";
 
 /* ═══════════════════════════════════════════════════════════
    CONSTANTES
 ═══════════════════════════════════════════════════════════ */
 const ease = [0.16, 1, 0.3, 1] as const;
-
-const fmtEur = (n: number) =>
-  n.toLocaleString("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  });
-
-const fmtDate = (iso: string | null) => {
-  if (!iso) return "—";
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-  }).format(new Date(y, m - 1, d));
-};
 
 const MONTH_NAMES = [
   "Janvier","Février","Mars","Avril","Mai","Juin",
@@ -92,45 +76,6 @@ interface Expense {
   amount: number;
 }
 
-interface ToastState {
-  type: "success" | "error";
-  msg: string;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════════════ */
-function Toast({ toast, onClose }: { toast: ToastState; onClose: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 4000);
-    return () => clearTimeout(t);
-  }, [onClose]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 8 }}
-      transition={{ duration: 0.28, ease }}
-      className={`fixed bottom-6 right-6 z-50 flex max-w-sm items-start gap-3 rounded-2xl border px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl ${
-        toast.type === "success"
-          ? "border-green-500/20 bg-[rgba(15,23,42,0.97)] text-green-300"
-          : "border-red-500/20 bg-[rgba(15,23,42,0.97)] text-red-300"
-      }`}
-    >
-      {toast.type === "success" ? (
-        <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-green-400" />
-      ) : (
-        <AlertCircle size={15} className="mt-0.5 shrink-0 text-red-400" />
-      )}
-      <span className="flex-1 text-sm font-medium leading-snug">{toast.msg}</span>
-      <button onClick={onClose} className="ml-1 shrink-0 text-white/30 hover:text-white/60">
-        <X size={12} />
-      </button>
-    </motion.div>
-  );
-}
-
 /* ═══════════════════════════════════════════════════════════
    KPI CARD
 ═══════════════════════════════════════════════════════════ */
@@ -170,7 +115,7 @@ function KpiCard({ label, value, icon: Icon, color, bg, border, loading, subtitl
           className="text-2xl font-black tracking-tight"
           style={{ color: negative && value < 0 ? "#f87171" : color }}
         >
-          {fmtEur(value)}
+          {fmtEurInt(value)}
         </p>
       )}
       {subtitle && <p className="mt-1 text-[0.65rem] text-white/25">{subtitle}</p>}
@@ -188,14 +133,14 @@ export default function TresoreriePage() {
   const [invoices,    setInvoices]    = useState<Invoice[]>([]);
   const [expenses,    setExpenses]    = useState<Expense[]>([]);
   const [loading,     setLoading]     = useState(true);
-  const [toast,       setToast]       = useState<ToastState | null>(null);
+  const [toast,       setToast]       = useState<ToastData | null>(null);
 
   /* Month selector */
   const [viewYear,  setViewYear]  = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
   /* ── Helpers ── */
-  const showToast = (type: "success" | "error", msg: string) => setToast({ type, msg });
+  const showToast = (type: "success" | "error", msg: string) => setToast({ type, msg } as ToastData);
 
   const monthStart = useMemo(() => {
     return new Date(viewYear, viewMonth, 1).toISOString().slice(0, 10);
@@ -429,8 +374,8 @@ export default function TresoreriePage() {
               />
             </div>
             <div className="mt-2 flex items-center justify-between text-[0.6rem] text-white/25">
-              <span>Dépenses : {fmtEur(totalDepenses)}</span>
-              <span>Encaissé : {fmtEur(encaisse)}</span>
+              <span>Dépenses : {fmtEurInt(totalDepenses)}</span>
+              <span>Encaissé : {fmtEurInt(encaisse)}</span>
             </div>
           </motion.div>
         </AnimatePresence>
@@ -549,13 +494,13 @@ export default function TresoreriePage() {
                               className="shrink-0 text-[0.6rem] font-semibold"
                               style={{ color: urgencyColor }}
                             >
-                              {fmtDate(inv.due_date)}
+                              {fmtDateShort(inv.due_date)}
                             </span>
                           )}
 
                           {/* Amount */}
                           <span className="shrink-0 text-xs font-extrabold text-white/80">
-                            {fmtEur(inv.total)}
+                            {fmtEurInt(inv.total)}
                           </span>
 
                           {/* Relancer link */}
@@ -577,7 +522,7 @@ export default function TresoreriePage() {
               {unpaidInvoices.length > 0 && (
                 <div className="mt-4 flex items-center justify-between border-t border-white/6 pt-3">
                   <span className="text-xs text-white/30">Total en attente</span>
-                  <span className="text-sm font-extrabold text-amber-400">{fmtEur(enAttente)}</span>
+                  <span className="text-sm font-extrabold text-amber-400">{fmtEurInt(enAttente)}</span>
                 </div>
               )}
             </motion.div>
@@ -653,13 +598,13 @@ export default function TresoreriePage() {
                                 {cat.label}
                               </span>
                               <span className="text-[0.55rem] text-white/20">·</span>
-                              <span className="text-[0.6rem] text-white/30">{fmtDate(exp.date)}</span>
+                              <span className="text-[0.6rem] text-white/30">{fmtDateShort(exp.date)}</span>
                             </div>
                           </div>
 
                           {/* Amount */}
                           <span className="shrink-0 text-xs font-extrabold" style={{ color: "#f97316" }}>
-                            {fmtEur(exp.amount)}
+                            {fmtEurInt(exp.amount)}
                           </span>
                         </motion.div>
                       );
@@ -673,7 +618,7 @@ export default function TresoreriePage() {
                 <div className="mt-4 flex items-center justify-between border-t border-white/6 pt-3">
                   <span className="text-xs text-white/30">Total dépenses</span>
                   <span className="text-sm font-extrabold" style={{ color: "#f97316" }}>
-                    {fmtEur(totalDepenses)}
+                    {fmtEurInt(totalDepenses)}
                   </span>
                 </div>
               )}

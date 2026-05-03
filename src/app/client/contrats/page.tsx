@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { downloadContractPDF, openContractPDF } from "@/lib/contract-pdf";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { fmtDate, fmtEur } from "@/lib/format";
 
 /* ═══════════════════════════════════════════════════
    TYPES
@@ -160,16 +161,6 @@ function useToast() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
   return { toasts, add, remove };
-}
-
-/* ═══════════════════════════════════════════════════
-   HELPERS
-═══════════════════════════════════════════════════ */
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
-}
-function fmtEur(n: number) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
 }
 
 /* ═══════════════════════════════════════════════════
