@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { z } from "zod";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("checkout");
+
+const CheckoutSchema = z.object({
+  userId:    z.string().uuid().optional(),
+  userEmail: z.string().email().optional(),
+}).optional();
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/checkout
@@ -59,13 +68,16 @@ export async function POST(req: Request) {
     process.env.NEXT_PUBLIC_SITE_URL ??
     "http://localhost:3000";
 
-  /* Récupérer l'ID/email utilisateur si déjà connecté */
+  /* Récupérer et valider le body (optionnel) */
   let userId: string | undefined;
   let userEmail: string | undefined;
   try {
-    const body = await req.json();
-    userId    = body.userId    ?? undefined;
-    userEmail = body.userEmail ?? undefined;
+    const raw = await req.json();
+    const parsed = CheckoutSchema.safeParse(raw);
+    if (parsed.success && parsed.data) {
+      userId    = parsed.data.userId;
+      userEmail = parsed.data.userEmail;
+    }
   } catch {
     /* body absent ou non-JSON → pas grave, on continue sans */
   }
@@ -103,7 +115,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Erreur inconnue";
-    console.error("[Stripe] Checkout error:", message);
+    log.error("Stripe checkout session error", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

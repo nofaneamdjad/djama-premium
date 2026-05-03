@@ -15,7 +15,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }              from "@supabase/supabase-js";
 import { Resend }                    from "resend";
+import { z }                         from "zod";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { createLogger }              from "@/lib/logger";
+
+const log = createLogger("contact");
+
+const ContactSchema = z.object({
+  name:    z.string().min(2, "Nom trop court").max(100).trim(),
+  email:   z.string().email("Email invalide").max(200).trim(),
+  subject: z.string().max(200).trim().optional().default("Demande de contact"),
+  budget:  z.string().max(100).trim().optional().default(""),
+  message: z.string().min(10, "Message trop court").max(5000).trim(),
+  phone:   z.string().max(30).trim().optional(),
+});
 
 // ── Supabase admin ────────────────────────────────────────────────────
 const supabaseAdmin = createClient(
@@ -189,22 +202,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: {
-    name?: string; email?: string; subject?: string;
-    budget?: string; message?: string; phone?: string;
-  };
-
+  let raw: unknown;
   try {
-    body = await req.json();
+    raw = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
 
-  const { name, email, subject, budget, message, phone } = body;
-
-  if (!name?.trim() || !email?.trim() || !message?.trim()) {
-    return NextResponse.json({ error: "Nom, email et message sont requis" }, { status: 400 });
+  const parsed = ContactSchema.safeParse(raw);
+  if (!parsed.success) {
+    const msg = parsed.error.errors[0]?.message ?? "Données invalides";
+    return NextResponse.json({ error: msg }, { status: 422 });
   }
+
+  const { name, email, subject, budget, message, phone } = parsed.data;
 
   // ── 1. Enregistrer dans Supabase (non-bloquant) ──────────────
   // On ne bloque PAS l'envoi d'emails si Supabase échoue
@@ -222,9 +233,9 @@ export async function POST(req: NextRequest) {
           status:   "nouveau",
           metadata: { budget: budget || null },
         }]);
-      if (dbErr) console.error("[POST /api/contact] DB error:", dbErr.message);
+      if (dbErr) log.error("DB insert error", dbErr.message);
     } catch (err) {
-      console.error("[POST /api/contact] DB exception:", err);
+      log.error("DB exception", err);
     }
   })();
 
@@ -248,7 +259,7 @@ export async function POST(req: NextRequest) {
       subject:  `[DJAMA Contact] ${emailData.subject} — ${emailData.name}`,
       html:     adminEmail(emailData),
     });
-    if (adminErr) console.error("[POST /api/contact] Admin email error:", adminErr);
+    if (adminErr) log.error("Admin email error", adminErr);
 
     const { error: clientErr } = await resend.emails.send({
       from:    FROM_EMAIL(),
@@ -256,9 +267,9 @@ export async function POST(req: NextRequest) {
       subject: `Votre message a bien été reçu — DJAMA`,
       html:    confirmEmail({ name: name.trim(), subject: emailData.subject }),
     });
-    if (clientErr) console.error("[POST /api/contact] Confirm email error:", clientErr);
+    if (clientErr) log.error("Confirm email error", clientErr);
   } else {
-    console.warn("[POST /api/contact] RESEND_API_KEY manquant — emails non envoyés");
+    log.warn("RESEND_API_KEY manquant — emails non envoyés");
   }
 
   return NextResponse.json({ ok: true });

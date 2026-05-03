@@ -1,13 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { verifyAdminToken } from "@/lib/admin-token";
 
 /**
  * Middleware — Accès aux outils DJAMA
  *
  * - Client / planning routes: accès libre (protection côté client)
- * - Admin routes: vérifie le cookie httpOnly djama_admin_tok
+ * - Admin routes: vérifie le cookie httpOnly djama_admin_tok (token HMAC)
  */
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ── Admin protection ──────────────────────────────────────────────────────
@@ -17,7 +18,10 @@ export function middleware(request: NextRequest) {
 
     const tok = request.cookies.get("djama_admin_tok")?.value;
 
-    if (tok !== ADMIN_PASS) {
+    // Vérification via HMAC — le cookie ne contient plus le mot de passe brut
+    const valid = tok ? await verifyAdminToken(tok, ADMIN_PASS) : false;
+
+    if (!valid) {
       const loginUrl = new URL("/admin/login", request.url);
       return NextResponse.redirect(loginUrl);
     }
