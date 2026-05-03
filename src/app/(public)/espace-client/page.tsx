@@ -8,11 +8,11 @@ import { motion } from "framer-motion";
 import {
   FileText, CalendarRange, StickyNote, Brain, Timer, CreditCard, Globe,
   CheckCircle2, ArrowRight, Sparkles, Shield, Zap, Lock, Wallet,
-  AlertTriangle, MessageCircle, Users, LogIn, Star, TrendingUp,
+  AlertTriangle, MessageCircle, Users, LogIn, Star, BadgeCheck,
+  ChevronRight,
 } from "lucide-react";
-import StripeButton  from "@/components/ui/StripeButton";
-import { FadeReveal } from "@/components/ui/WordReveal";
-import { staggerContainerFast, cardReveal, viewport, staggerContainer, fadeIn } from "@/lib/animations";
+import StripeButton from "@/components/ui/StripeButton";
+import { staggerContainerFast, cardReveal, viewport } from "@/lib/animations";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -21,8 +21,7 @@ const ease = [0.16, 1, 0.3, 1] as const;
 ───────────────────────────────────────────────────────── */
 function AccessBanner() {
   const params = useSearchParams();
-  const show   = params.get("acces") === "requis";
-  if (!show) return null;
+  if (params.get("acces") !== "requis") return null;
   return (
     <motion.div
       initial={{ opacity: 0, y: -14 }}
@@ -46,166 +45,11 @@ function AccessBanner() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   DONNÉES
-───────────────────────────────────────────────────────── */
-const TOOLS = [
-  {
-    icon: FileText,
-    title: "Factures & Devis",
-    desc: "Créez des documents professionnels avec logo, TVA et export PDF en quelques secondes.",
-    color: "#c9a55a",
-    rgb: "201,165,90",
-    chips: ["Export PDF", "Logo perso", "Numérotation", "TVA"],
-  },
-  {
-    icon: CalendarRange,
-    title: "Agenda & Planification",
-    desc: "Organisez vos rendez-vous, équipes et tâches en toute simplicité.",
-    color: "#60a5fa",
-    rgb: "96,165,250",
-    chips: ["Rendez-vous", "Équipes", "Tâches", "Intuitif"],
-  },
-  {
-    icon: StickyNote,
-    title: "Bloc-notes pro",
-    desc: "Notes par catégorie, sauvegarde automatique et export PDF en un clic.",
-    color: "#4ade80",
-    rgb: "74,222,128",
-    chips: ["Par catégorie", "Export PDF", "Sauvegarde auto", "Épuré"],
-  },
-  {
-    icon: Brain,
-    title: "Coach Business IA",
-    desc: "Analyse vos données réelles — CA, impayés, clients inactifs — et vous guide chaque jour.",
-    color: "#a78bfa",
-    rgb: "167,139,250",
-    chips: ["IA", "Coach", "Analyse", "Proactif"],
-  },
-  {
-    icon: Users,
-    title: "CRM Client",
-    desc: "Gérez vos contacts, prospects et clients actifs avec statut, suivi et historique.",
-    color: "#22d3ee",
-    rgb: "34,211,238",
-    chips: ["Contacts", "Prospects", "Actifs", "Historique"],
-  },
-  {
-    icon: Timer,
-    title: "Chrono Pro",
-    desc: "Suivez votre temps par projet et client, mesurez votre rentabilité réelle.",
-    color: "#fb923c",
-    rgb: "251,146,60",
-    chips: ["Par projet", "Par client", "Rentabilité", "Export"],
-  },
-  {
-    icon: CreditCard,
-    title: "Dépenses Pro",
-    desc: "Enregistrez vos frais professionnels par catégorie et suivez vos sorties de trésorerie.",
-    color: "#f43f5e",
-    rgb: "244,63,94",
-    chips: ["Frais pro", "Catégories", "Trésorerie", "Historique"],
-  },
-  {
-    icon: Wallet,
-    title: "Trésorerie",
-    desc: "Visualisez votre solde, vos entrées/sorties et anticipez vos flux de trésorerie.",
-    color: "#34d399",
-    rgb: "52,211,153",
-    chips: ["Solde", "Entrées", "Sorties", "Prévisions"],
-  },
-  {
-    icon: Shield,
-    title: "Contrats IA",
-    desc: "Générez des contrats professionnels personnalisés en quelques secondes grâce à l'IA.",
-    color: "#eab308",
-    rgb: "234,179,8",
-    chips: ["IA", "Personnalisé", "PDF", "Professionnel"],
-  },
-  {
-    icon: Globe,
-    title: "Sourcing IA",
-    desc: "Trouvez des fournisseurs mondiaux, accédez aux marchés publics & privés via l'IA.",
-    color: "#f59e0b",
-    rgb: "245,158,11",
-    chips: ["Mondial", "Marchés publics", "IA", "B2B"],
-  },
-] as const;
-
-const INCLUS = [
-  "Accès à tous les 11 outils inclus",
-  "Coach Business IA (analyse vos données réelles)",
-  "Factures & devis illimités",
-  "CRM & gestion contacts / prospects",
-  "Agenda & Planification (RDV, équipes, tâches)",
-  "Chrono & suivi de temps par projet",
-  "Dépenses & frais professionnels",
-  "Trésorerie & flux financiers",
-  "Contrats IA générés en un clic",
-  "Sourcing IA & marchés publics / privés",
-  "Bloc-notes professionnel",
-  "Accès immédiat après paiement",
-  "Sans engagement — résiliable à tout moment",
-];
-
-const TRUST = [
-  {
-    icon: Lock,
-    color: "#c9a55a",
-    rgb: "201,165,90",
-    title: "Paiement sécurisé",
-    desc: "Stripe chiffré SSL. Vos données bancaires ne nous parviennent jamais directement.",
-  },
-  {
-    icon: Zap,
-    color: "#4ade80",
-    rgb: "74,222,128",
-    title: "Accès immédiat",
-    desc: "Vos accès sont envoyés par email dans les minutes qui suivent votre paiement.",
-  },
-  {
-    icon: Shield,
-    color: "#60a5fa",
-    rgb: "96,165,250",
-    title: "Données protégées",
-    desc: "Vos informations sont chiffrées et hébergées en sécurité. RGPD respecté.",
-  },
-  {
-    icon: MessageCircle,
-    color: "#a78bfa",
-    rgb: "167,139,250",
-    title: "Support humain",
-    desc: "Une question ? Notre équipe répond sous 24h — par email ou WhatsApp.",
-  },
-] as const;
-
-const TESTIMONIALS = [
-  {
-    name: "Karim B.",
-    role: "Consultant indépendant",
-    text: "DJAMA a remplacé 4 outils différents. Depuis que j'utilise le Coach IA, j'ai arrêté de perdre du temps à analyser mes chiffres.",
-    stars: 5,
-  },
-  {
-    name: "Sofia M.",
-    role: "Graphiste freelance",
-    text: "Les factures PDF sont impeccables. Mes clients me demandent souvent avec quel outil je les génère. Ça fait la différence.",
-    stars: 5,
-  },
-  {
-    name: "Thomas D.",
-    role: "Artisan entrepreneur",
-    text: "La trésorerie en temps réel, c'est ce dont j'avais besoin. Je vois d'un coup d'œil où j'en suis chaque matin.",
-    stars: 5,
-  },
-] as const;
-
-/* ─────────────────────────────────────────────────────────
    Redirection automatique si déjà abonné
 ───────────────────────────────────────────────────────── */
 function AlreadySubscribedRedirect() {
   const params = useSearchParams();
   const router = useRouter();
-
   useEffect(() => {
     if (params.get("annule") === "1" || params.get("acces") === "requis") return;
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -217,182 +61,296 @@ function AlreadySubscribedRedirect() {
       if (active) router.replace("/client");
     });
   }, [params, router]);
-
   return null;
 }
+
+/* ─────────────────────────────────────────────────────────
+   DONNÉES
+───────────────────────────────────────────────────────── */
+const TOOLS = [
+  { icon: FileText,    title: "Factures & Devis",     desc: "Créez des documents pro avec logo, TVA et export PDF.",            color: "#c9a55a", rgb: "201,165,90"  },
+  { icon: CalendarRange, title: "Agenda",             desc: "Rendez-vous, équipes et tâches organisés en un seul endroit.",     color: "#60a5fa", rgb: "96,165,250"  },
+  { icon: Brain,       title: "Coach Business IA",    desc: "Analyse vos données réelles et vous guide chaque jour.",          color: "#a78bfa", rgb: "167,139,250" },
+  { icon: Users,       title: "CRM Client",           desc: "Contacts, prospects et historique client centralisés.",           color: "#22d3ee", rgb: "34,211,238"  },
+  { icon: Wallet,      title: "Trésorerie",           desc: "Solde, flux et prévisions financières en temps réel.",           color: "#34d399", rgb: "52,211,153"  },
+  { icon: Timer,       title: "Chrono Pro",           desc: "Temps par projet et client pour mesurer votre rentabilité.",      color: "#fb923c", rgb: "251,146,60"  },
+  { icon: CreditCard,  title: "Dépenses Pro",         desc: "Frais professionnels classés par catégorie et suivis.",          color: "#f43f5e", rgb: "244,63,94"   },
+  { icon: Shield,      title: "Contrats IA",          desc: "Contrats personnalisés générés en quelques secondes.",           color: "#eab308", rgb: "234,179,8"   },
+  { icon: Globe,       title: "Sourcing IA",          desc: "Fournisseurs mondiaux, marchés publics & privés via l'IA.",      color: "#f59e0b", rgb: "245,158,11"  },
+  { icon: StickyNote,  title: "Bloc-notes pro",       desc: "Notes par catégorie avec export PDF et sauvegarde auto.",        color: "#4ade80", rgb: "74,222,128"  },
+] as const;
+
+const INCLUS = [
+  "Accès immédiat aux 11 outils",
+  "Coach Business IA — analyse de vos données réelles",
+  "Factures & devis illimités avec export PDF",
+  "CRM, contacts, prospects et historique",
+  "Agenda, RDV, planification d'équipe",
+  "Trésorerie, dépenses et flux financiers",
+  "Contrats IA générés en un clic",
+  "Sourcing IA — marchés publics & fournisseurs",
+  "Chrono par projet et par client",
+  "Bloc-notes professionnel avec catégories",
+  "Sans engagement — résiliable à tout moment",
+] as const;
+
+const STEPS = [
+  { n: "01", title: "Choisissez votre offre", desc: "Un seul plan à 11,90€/mois, tout inclus." },
+  { n: "02", title: "Créez votre compte",    desc: "Accès envoyé par email en moins de 2 minutes." },
+  { n: "03", title: "Utilisez vos outils",   desc: "Tableau de bord prêt dès la première connexion." },
+] as const;
+
+const REVIEWS = [
+  { initial: "K", name: "Karim B.", role: "Consultant indépendant", text: "DJAMA a remplacé 4 outils d'un coup. Le Coach IA m'a aidé à voir où je perdais du temps." },
+  { initial: "S", name: "Sofia M.", role: "Graphiste freelance",    text: "Mes factures sont impeccables. Les clients me demandent toujours quel outil j'utilise." },
+  { initial: "T", name: "Thomas D.", role: "Artisan entrepreneur",  text: "La trésorerie en temps réel, c'est exactement ce dont j'avais besoin pour piloter mon activité." },
+] as const;
 
 /* ─────────────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────────────── */
 export default function EspaceClientPage() {
   return (
-    <div className="bg-[#09090b]">
+    <div className="bg-[#09090b] text-white">
       <Suspense>
         <AlreadySubscribedRedirect />
         <AccessBanner />
       </Suspense>
 
       {/* ══════════════════════════════════════════════
-          1. HERO
+          HERO
       ══════════════════════════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden pb-20 pt-24 sm:pb-36 sm:pt-44">
+      <section className="relative overflow-hidden pt-28 pb-24 sm:pt-44 sm:pb-40">
+        {/* Fond grille subtile */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
         {/* Glows */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[560px] w-[700px] rounded-full bg-[rgba(176,141,87,0.10)] blur-[110px]" />
-        </div>
-        <div className="pointer-events-none absolute right-0 top-1/3 h-[300px] w-[300px] rounded-full bg-[rgba(96,165,250,0.04)] blur-[80px]" />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,0.07)] blur-[130px]" />
+        <div className="pointer-events-none absolute -left-20 top-1/2 h-[400px] w-[400px] rounded-full bg-[rgba(96,165,250,0.04)] blur-[100px]" />
+        <div className="pointer-events-none absolute -right-20 top-1/3 h-[350px] w-[350px] rounded-full bg-[rgba(167,139,250,0.04)] blur-[100px]" />
 
-        <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
+        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
           {/* Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.92 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, ease }}
-            className="mb-7 inline-flex items-center gap-2 rounded-full border border-[rgba(176,141,87,0.30)] bg-[rgba(176,141,87,0.10)] px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#c9a55a]"
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.28)] bg-[rgba(201,165,90,0.08)] px-5 py-2 text-[0.7rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]"
           >
-            <Sparkles size={10} />
+            <Sparkles size={9} />
             Espace Client DJAMA
           </motion.div>
 
-          {/* Titre */}
+          {/* Headline */}
           <motion.h1
-            initial={{ opacity: 0, y: 28 }}
+            initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.75, ease, delay: 0.1 }}
-            className="display-hero text-white"
+            transition={{ duration: 0.8, ease, delay: 0.1 }}
+            className="text-[2.6rem] font-black leading-[1.1] tracking-tight text-white sm:text-[4rem] lg:text-[5rem]"
           >
-            Vos outils pros,{" "}
-            <span className="text-gold">tout-en-un.</span>
+            Gérez votre activité.{" "}
+            <br className="hidden sm:block" />
+            <span
+              className="bg-gradient-to-r from-[#c9a55a] via-[#e8c97a] to-[#c9a55a] bg-clip-text text-transparent"
+              style={{ backgroundSize: "200% auto" }}
+            >
+              Tout en un seul endroit.
+            </span>
           </motion.h1>
 
-          <FadeReveal
-            delay={0.45}
-            as="p"
-            className="mx-auto mt-6 max-w-xl text-lg leading-[1.8] text-white/50"
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease, delay: 0.35 }}
+            className="mx-auto mt-6 max-w-xl text-base leading-[1.85] text-white/45 sm:text-lg"
           >
-            Un abonnement mensuel simple pour accéder à 11 outils de gestion —
-            Coach IA, CRM, Trésorerie, Contrats, Sourcing et bien plus encore.
-          </FadeReveal>
+            11 outils professionnels réunis en un seul abonnement — factures, CRM, trésorerie,
+            Coach IA, contrats et bien plus encore.
+          </motion.p>
 
-          {/* CTAs */}
-          <FadeReveal delay={0.62} className="mt-10 flex flex-wrap justify-center gap-3">
-            <Link href="#abonnement" className="btn-primary px-8 py-4 text-base">
-              <Wallet size={17} />
+          {/* CTA bloc */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, ease, delay: 0.52 }}
+            className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+          >
+            <Link
+              href="#abonnement"
+              className="group flex items-center gap-2.5 rounded-2xl bg-[#c9a55a] px-9 py-4 text-sm font-bold text-[#09090b] shadow-[0_8px_32px_rgba(201,165,90,0.35)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_40px_rgba(201,165,90,0.5)]"
+            >
+              <Wallet size={16} />
               S&apos;abonner — 11,90€/mois
+              <ChevronRight size={15} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <Link href="#outils" className="btn-ghost px-8 py-4 text-base">
-              Voir les outils <ArrowRight size={16} />
+            <Link
+              href="#outils"
+              className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-9 py-4 text-sm font-semibold text-white/70 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+            >
+              Découvrir les outils
+              <ArrowRight size={14} />
             </Link>
-          </FadeReveal>
+          </motion.div>
 
-          {/* Trust strip */}
-          <FadeReveal
-            delay={0.82}
-            className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
+          {/* Micro-trust */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.75 }}
+            className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
           >
             {[
-              { icon: Zap,           text: "Accès immédiat" },
-              { icon: Lock,          text: "Paiement sécurisé" },
-              { icon: CheckCircle2,  text: "Sans engagement" },
-              { icon: Users,         text: "+50 abonnés actifs" },
+              { icon: Zap,          text: "Accès immédiat" },
+              { icon: Lock,         text: "Paiement Stripe" },
+              { icon: BadgeCheck,   text: "Sans engagement" },
+              { icon: Users,        text: "+50 abonnés" },
             ].map(({ icon: Icon, text }) => (
-              <span key={text} className="flex items-center gap-1.5 text-xs text-white/30">
-                <Icon size={11} className="text-[#c9a55a]" />
+              <span key={text} className="flex items-center gap-1.5 text-[0.72rem] text-white/28">
+                <Icon size={10} className="text-[#c9a55a]" />
                 {text}
               </span>
             ))}
-          </FadeReveal>
+          </motion.div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#09090b] to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#09090b] to-transparent" />
       </section>
 
       {/* ══════════════════════════════════════════════
-          2. BLOC — DÉJÀ ABONNÉ (très visible)
+          DÉJÀ ABONNÉ — carte login immédiate
       ══════════════════════════════════════════════ */}
-      <section className="bg-[#09090b] pb-10 pt-0 sm:pb-16">
-        <div className="mx-auto max-w-3xl px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
-            transition={{ duration: 0.6, ease }}
-            className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.22)] bg-[#111113]"
-            style={{ boxShadow: "0 0 60px rgba(201,165,90,0.06), 0 20px 60px rgba(0,0,0,0.35)" }}
+      <section className="px-6 pb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport}
+          transition={{ duration: 0.6, ease }}
+          className="mx-auto max-w-2xl"
+        >
+          <div
+            className="relative overflow-hidden rounded-[1.6rem] border border-[rgba(201,165,90,0.25)]"
+            style={{ background: "linear-gradient(135deg, #111113 0%, #16141a 100%)", boxShadow: "0 0 0 1px rgba(255,255,255,0.03) inset, 0 24px 64px rgba(0,0,0,0.4)" }}
           >
-            {/* Accent line top */}
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-[#c9a55a]/50 to-transparent" />
+            {/* Accent top */}
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-[#c9a55a]/60 to-transparent" />
+            {/* Glow intérieur */}
+            <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(ellipse_at_top_right,rgba(201,165,90,0.07),transparent_70%)]" />
 
-            {/* Glow */}
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute left-1/2 top-0 h-[160px] w-[400px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,0.06)] blur-[60px]" />
-            </div>
-
-            <div className="relative flex flex-col items-center gap-6 px-8 py-9 sm:flex-row sm:justify-between">
-              {/* Left */}
-              <div className="flex items-center gap-5">
+            <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+              <div className="flex items-center gap-4">
                 <div
-                  className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.28)]"
-                  style={{ background: "rgba(201,165,90,0.10)", boxShadow: "0 0 20px rgba(201,165,90,0.18)" }}
+                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.25)]"
+                  style={{ background: "rgba(201,165,90,0.10)" }}
                 >
-                  <LogIn size={22} className="text-[#c9a55a]" />
+                  <LogIn size={19} className="text-[#c9a55a]" />
                 </div>
                 <div>
-                  <p className="text-base font-extrabold text-white sm:text-lg">
-                    Déjà abonné ?
+                  <p className="text-[0.95rem] font-extrabold text-white">
+                    Vous avez déjà un compte ?
                   </p>
-                  <p className="mt-0.5 text-sm text-white/40">
-                    Accédez directement à votre espace de gestion.
+                  <p className="mt-0.5 text-[0.78rem] text-white/38">
+                    Connectez-vous pour accéder à votre tableau de bord.
                   </p>
                 </div>
               </div>
 
-              {/* Right */}
               <Link
                 href="/login"
-                className="group flex w-full items-center justify-center gap-2.5 rounded-xl border border-[rgba(201,165,90,0.35)] bg-[rgba(201,165,90,0.10)] px-7 py-3.5 text-sm font-bold text-[#c9a55a] transition-all duration-200 hover:bg-[rgba(201,165,90,0.18)] hover:border-[rgba(201,165,90,0.55)] hover:shadow-[0_0_24px_rgba(201,165,90,0.18)] sm:w-auto"
+                className="group flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgba(201,165,90,0.40)] bg-[rgba(201,165,90,0.12)] px-6 py-3 text-sm font-bold text-[#c9a55a] transition-all duration-200 hover:border-[rgba(201,165,90,0.65)] hover:bg-[rgba(201,165,90,0.20)] sm:w-auto"
               >
                 Se connecter
-                <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+                <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* ══════════════════════════════════════════════
-          3. OUTILS
+          COMMENT ÇA MARCHE
       ══════════════════════════════════════════════ */}
-      <section id="outils" className="bg-[#0f0f13] py-14 sm:py-28">
-        <div className="mx-auto max-w-6xl px-6">
-          {/* Header */}
+      <section className="border-y border-white/[0.05] bg-[#0c0c0f] py-16 sm:py-20">
+        <div className="mx-auto max-w-4xl px-6">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport}
-            transition={{ duration: 0.6, ease }}
-            className="mb-14 text-center"
+            transition={{ duration: 0.5, ease }}
+            className="mb-12 text-center"
           >
-            <span className="badge badge-gold-dark mb-4 inline-flex">
-              <Sparkles size={10} /> Ce qui est inclus
-            </span>
-            <h2 className="display-section text-white">
-              11 outils,{" "}
-              <span className="text-gold">un seul abonnement.</span>
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-base text-white/45">
-              Conçus pour les indépendants et entrepreneurs qui veulent aller
-              vite sans sacrifier la qualité.
+            <p className="text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
+              3 étapes
             </p>
+            <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+              Prêt en moins de 2 minutes.
+            </h2>
           </motion.div>
 
-          {/* Grid */}
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={viewport}
             variants={staggerContainerFast}
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-px sm:grid-cols-3"
+            style={{ background: "rgba(255,255,255,0.05)", borderRadius: "1.5rem", overflow: "hidden" }}
+          >
+            {STEPS.map(({ n, title, desc }, i) => (
+              <motion.div
+                key={n}
+                variants={cardReveal}
+                className="flex flex-col gap-3 bg-[#0c0c0f] px-8 py-8"
+              >
+                <span
+                  className="text-[2.2rem] font-black leading-none"
+                  style={{ color: i === 0 ? "#c9a55a" : "rgba(255,255,255,0.10)" }}
+                >
+                  {n}
+                </span>
+                <h3 className="text-[0.92rem] font-extrabold text-white">{title}</h3>
+                <p className="text-[0.78rem] leading-relaxed text-white/38">{desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          OUTILS
+      ══════════════════════════════════════════════ */}
+      <section id="outils" className="py-16 sm:py-28">
+        <div className="mx-auto max-w-6xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.55, ease }}
+            className="mb-14 text-center"
+          >
+            <p className="mb-3 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
+              Ce qui est inclus
+            </p>
+            <h2 className="text-2xl font-black text-white sm:text-4xl">
+              10 outils,{" "}
+              <span className="text-[#c9a55a]">un seul abonnement.</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-sm text-white/40">
+              Conçus pour les indépendants et entrepreneurs qui veulent aller vite
+              sans sacrifier la qualité.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            variants={staggerContainerFast}
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
           >
             {TOOLS.map((tool) => {
               const Icon = tool.icon;
@@ -400,119 +358,189 @@ export default function EspaceClientPage() {
                 <motion.div
                   key={tool.title}
                   variants={cardReveal}
-                  className="group overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#09090b] transition-all duration-300 hover:-translate-y-1"
-                  style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}
-                  whileHover={{
-                    boxShadow: `0 16px 48px rgba(${tool.rgb}, 0.14)`,
-                    borderColor: `rgba(${tool.rgb}, 0.3)`,
-                  }}
+                  className="group flex flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0f0f13] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.12]"
+                  whileHover={{ boxShadow: `0 12px 40px rgba(${tool.rgb}, 0.12)` }}
                   transition={{ duration: 0.3, ease }}
                 >
+                  {/* Icon */}
                   <div
-                    className="h-[2px] w-full"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border"
+                    style={{
+                      background: `rgba(${tool.rgb}, 0.12)`,
+                      borderColor: `rgba(${tool.rgb}, 0.25)`,
+                    }}
+                  >
+                    <Icon size={18} style={{ color: tool.color }} />
+                  </div>
+                  <div>
+                    <p className="text-[0.82rem] font-extrabold text-white">{tool.title}</p>
+                    <p className="mt-1 text-[0.72rem] leading-relaxed text-white/38">{tool.desc}</p>
+                  </div>
+                  {/* Accent bas */}
+                  <div
+                    className="mt-auto h-px w-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                     style={{ background: `linear-gradient(90deg, ${tool.color}, transparent)` }}
                   />
-                  <div className="p-6">
-                    <motion.div
-                      className="mb-4 inline-flex h-[52px] w-[52px] items-center justify-center rounded-2xl border"
-                      style={{
-                        background: `rgba(${tool.rgb}, 0.14)`,
-                        borderColor: `rgba(${tool.rgb}, 0.30)`,
-                        boxShadow: `0 0 16px rgba(${tool.rgb}, 0.22)`,
-                      }}
-                      whileHover={{ scale: 1.13, boxShadow: `0 0 28px rgba(${tool.rgb}, 0.55)` }}
-                      transition={{ duration: 0.22 }}
-                    >
-                      <Icon size={22} style={{ color: tool.color }} />
-                    </motion.div>
-                    <h3 className="text-base font-extrabold text-white">{tool.title}</h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-white/40">{tool.desc}</p>
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {tool.chips.map((chip) => (
-                        <span
-                          key={chip}
-                          className="rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider"
-                          style={{
-                            background: `rgba(${tool.rgb}, 0.1)`,
-                            color: tool.color,
-                            border: `1px solid rgba(${tool.rgb}, 0.2)`,
-                          }}
-                        >
-                          {chip}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
                 </motion.div>
               );
             })}
           </motion.div>
 
-          {/* CTA sous les outils */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport}
-            transition={{ duration: 0.55, ease, delay: 0.2 }}
-            className="mt-14 text-center"
+            transition={{ duration: 0.5, ease, delay: 0.2 }}
+            className="mt-12 text-center"
           >
-            <Link href="#abonnement" className="btn-primary px-8 py-3.5 text-sm">
-              <Wallet size={16} />
-              S&apos;abonner — accès à tout pour 11,90€/mois{" "}
-              <ArrowRight size={14} />
+            <Link
+              href="#abonnement"
+              className="group inline-flex items-center gap-2 rounded-2xl bg-[#c9a55a] px-8 py-3.5 text-sm font-bold text-[#09090b] shadow-[0_8px_28px_rgba(201,165,90,0.30)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_36px_rgba(201,165,90,0.45)]"
+            >
+              <Wallet size={15} />
+              Accéder à tous les outils — 11,90€/mois
+              <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           </motion.div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════
-          4. STAT STRIP
+          PRICING
       ══════════════════════════════════════════════ */}
-      <section className="border-y border-white/[0.05] bg-[#09090b] py-10">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewport}
-          variants={staggerContainerFast}
-          className="mx-auto flex max-w-4xl flex-col items-center justify-around gap-8 px-6 sm:flex-row"
-        >
-          {[
-            { value: "11", label: "Outils inclus", icon: Sparkles },
-            { value: "+50", label: "Abonnés actifs", icon: Users },
-            { value: "11,90€", label: "Par mois tout compris", icon: Wallet },
-            { value: "< 2 min", label: "Prise en main", icon: Zap },
-          ].map(({ value, label, icon: Icon }) => (
+      <section id="abonnement" className="bg-[#0c0c0f] py-16 sm:py-28">
+        <div className="mx-auto max-w-5xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.55, ease }}
+            className="mb-12 text-center"
+          >
+            <p className="mb-3 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
+              Tarif unique
+            </p>
+            <h2 className="text-2xl font-black text-white sm:text-4xl">
+              Tout inclus.{" "}
+              <span className="text-[#c9a55a]">Aucune surprise.</span>
+            </h2>
+          </motion.div>
+
+          <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+            {/* ── Inclus list ── */}
             <motion.div
-              key={label}
-              variants={cardReveal}
-              className="flex flex-col items-center gap-2 text-center"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={viewport}
+              transition={{ duration: 0.6, ease }}
+              className="flex flex-col justify-center gap-3 rounded-[1.75rem] border border-white/[0.06] bg-[#0f0f13] p-8"
             >
-              <Icon size={14} className="text-[#c9a55a]/60" />
-              <span className="text-3xl font-black text-white">{value}</span>
-              <span className="text-xs text-white/35">{label}</span>
+              <p className="mb-2 text-[0.7rem] font-bold uppercase tracking-widest text-white/30">
+                Ce que vous obtenez
+              </p>
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                {INCLUS.map((item) => (
+                  <div key={item} className="flex items-start gap-2.5">
+                    <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-[#c9a55a]" />
+                    <span className="text-[0.8rem] leading-snug text-white/65">{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-4 border-t border-white/[0.06] pt-6">
+                {[
+                  { icon: Zap,     text: "Accès immédiat" },
+                  { icon: Lock,    text: "Stripe SSL" },
+                  { icon: Shield,  text: "RGPD" },
+                  { icon: MessageCircle, text: "Support 24h" },
+                ].map(({ icon: Icon, text }) => (
+                  <span key={text} className="flex items-center gap-1.5 text-[0.72rem] text-white/32">
+                    <Icon size={11} className="text-[#c9a55a]/70" />
+                    {text}
+                  </span>
+                ))}
+              </div>
             </motion.div>
-          ))}
-        </motion.div>
+
+            {/* ── Carte prix ── */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={viewport}
+              transition={{ duration: 0.6, ease, delay: 0.1 }}
+              className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.30)]"
+              style={{ background: "linear-gradient(160deg, #14120e 0%, #111113 100%)", boxShadow: "0 0 60px rgba(201,165,90,0.08), 0 30px 80px rgba(0,0,0,0.5)" }}
+            >
+              {/* Top bar */}
+              <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
+              {/* Glow */}
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(201,165,90,0.10),transparent_70%)]" />
+
+              <div className="relative flex flex-col gap-0 p-8">
+                {/* Badge */}
+                <div className="mb-5 inline-flex w-fit items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-3 py-1 text-[0.6rem] font-bold uppercase tracking-widest text-[#c9a55a]">
+                  <Sparkles size={7} /> Abonnement mensuel
+                </div>
+
+                {/* Prix */}
+                <div className="flex items-start gap-1">
+                  <span className="mt-3 text-lg font-bold text-[#c9a55a]">€</span>
+                  <span className="text-[5.5rem] font-black leading-none tracking-tighter text-white">
+                    11,90
+                  </span>
+                </div>
+                <p className="mt-1 text-[0.75rem] text-white/35">par mois · tout compris</p>
+
+                <div className="my-6 h-px w-full bg-gradient-to-r from-[#c9a55a]/20 to-transparent" />
+
+                {/* Quick list */}
+                <ul className="mb-7 space-y-2">
+                  {["11 outils inclus", "Coach Business IA", "Mises à jour continues", "Sans engagement"].map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-[0.78rem] text-white/60">
+                      <CheckCircle2 size={12} className="text-[#c9a55a]" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA */}
+                <StripeButton label="Commencer maintenant →" />
+
+                <p className="mt-4 text-center text-[0.65rem] text-white/22">
+                  Paiement sécurisé • Accès immédiat • Résiliable à tout moment
+                </p>
+
+                {/* Login séparateur */}
+                <div className="mt-5 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-white/[0.06]" />
+                  <Link href="/login" className="text-[0.7rem] font-semibold text-[#c9a55a]/70 transition hover:text-[#c9a55a]">
+                    Déjà abonné ? Se connecter →
+                  </Link>
+                  <div className="h-px flex-1 bg-white/[0.06]" />
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
       </section>
 
       {/* ══════════════════════════════════════════════
-          5. TÉMOIGNAGES
+          AVIS
       ══════════════════════════════════════════════ */}
-      <section className="bg-[#0f0f13] py-14 sm:py-24">
-        <div className="mx-auto max-w-6xl px-6">
+      <section className="py-16 sm:py-24">
+        <div className="mx-auto max-w-5xl px-6">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport}
-            transition={{ duration: 0.6, ease }}
+            transition={{ duration: 0.5, ease }}
             className="mb-12 text-center"
           >
-            <span className="badge badge-gold-dark mb-4 inline-flex">
-              <Star size={10} /> Ils utilisent DJAMA
-            </span>
-            <h2 className="display-section text-white">
-              Ce qu&apos;en disent{" "}
-              <span className="text-gold">nos abonnés.</span>
+            <p className="mb-3 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
+              Avis clients
+            </p>
+            <h2 className="text-2xl font-black text-white sm:text-3xl">
+              Ce qu&apos;ils en pensent.
             </h2>
           </motion.div>
 
@@ -521,28 +549,27 @@ export default function EspaceClientPage() {
             whileInView="visible"
             viewport={viewport}
             variants={staggerContainerFast}
-            className="grid gap-5 sm:grid-cols-3"
+            className="grid gap-4 sm:grid-cols-3"
           >
-            {TESTIMONIALS.map((t) => (
+            {REVIEWS.map((r) => (
               <motion.div
-                key={t.name}
+                key={r.name}
                 variants={cardReveal}
-                className="flex flex-col gap-4 rounded-[1.5rem] border border-white/[0.07] bg-[#09090b] p-7 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.03]"
+                className="flex flex-col gap-4 rounded-2xl border border-white/[0.06] bg-[#0f0f13] p-6 transition-all duration-300 hover:border-white/[0.10]"
               >
-                {/* Stars */}
                 <div className="flex gap-0.5">
-                  {Array.from({ length: t.stars }).map((_, i) => (
-                    <Star key={i} size={12} className="fill-[#c9a55a] text-[#c9a55a]" />
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={11} className="fill-[#c9a55a] text-[#c9a55a]" />
                   ))}
                 </div>
-                <p className="text-sm leading-relaxed text-white/60">&ldquo;{t.text}&rdquo;</p>
-                <div className="mt-auto flex items-center gap-3 border-t border-white/[0.06] pt-4">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(201,165,90,0.12)] text-sm font-bold text-[#c9a55a]">
-                    {t.name[0]}
+                <p className="text-[0.8rem] leading-relaxed text-white/52">&ldquo;{r.text}&rdquo;</p>
+                <div className="mt-auto flex items-center gap-3 border-t border-white/[0.05] pt-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.12)] text-xs font-black text-[#c9a55a]">
+                    {r.initial}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white">{t.name}</p>
-                    <p className="text-xs text-white/35">{t.role}</p>
+                    <p className="text-[0.78rem] font-bold text-white">{r.name}</p>
+                    <p className="text-[0.68rem] text-white/30">{r.role}</p>
                   </div>
                 </div>
               </motion.div>
@@ -552,196 +579,41 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          6. CARTE ABONNEMENT
+          CTA FINAL
       ══════════════════════════════════════════════ */}
-      <section id="abonnement" className="bg-[#09090b] py-14 sm:py-28">
-        <div className="mx-auto max-w-lg px-6">
-          {/* Header section */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
-            transition={{ duration: 0.5, ease }}
-            className="mb-10 text-center"
-          >
-            <span className="badge badge-gold-dark mb-4 inline-flex">
-              <TrendingUp size={10} /> Offre unique
-            </span>
-            <h2 className="display-section text-white">
-              Simple, transparent,{" "}
-              <span className="text-gold">sans surprise.</span>
-            </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm text-white/40">
-              Un seul tarif. Tous les outils. Pas de fonctionnalités cachées derrière un plan supérieur.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 28, scale: 0.97 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={viewport}
-            transition={{ duration: 0.75, ease }}
-            className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.30)] bg-[#111113]"
-            style={{ boxShadow: "0 0 80px rgba(201,165,90,0.08), 0 40px 100px rgba(0,0,0,0.5)" }}
-          >
-            {/* Glow interne */}
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="h-[320px] w-[440px] rounded-full bg-[rgba(176,141,87,0.09)] blur-[80px]" />
-            </div>
-
-            {/* Filet doré top */}
-            <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
-
-            <div className="relative px-8 py-11">
-              {/* Badges ligne */}
-              <div className="mb-6 flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest text-[#c9a55a]">
-                  <Sparkles size={8} /> Abonnement mensuel
-                </div>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(74,222,128,0.22)] bg-[rgba(74,222,128,0.06)] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest text-[#4ade80]">
-                  <CheckCircle2 size={8} /> Sans engagement
-                </div>
-              </div>
-
-              <h3 className="text-xl font-extrabold leading-snug text-white">
-                Accédez à tous les outils DJAMA
-              </h3>
-              <p className="mt-1.5 text-sm text-white/35">
-                11 outils • Mises à jour continues • Résiliable à tout moment
-              </p>
-
-              {/* Prix */}
-              <div className="my-8 flex items-end gap-2">
-                <span className="text-[5rem] font-black leading-none tracking-tight text-white">
-                  11,90
-                </span>
-                <div className="mb-4 flex flex-col leading-none">
-                  <span className="text-3xl font-black text-[#c9a55a]">€</span>
-                  <span className="mt-1 text-xs text-white/35">/ mois</span>
-                </div>
-              </div>
-
-              {/* Divider doré */}
-              <div className="divider-gold mb-8" />
-
-              {/* Inclus */}
-              <ul className="mb-9 space-y-3">
-                {INCLUS.map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-sm text-[#e5e7eb]">
-                    <CheckCircle2 size={14} className="mt-0.5 shrink-0" style={{ color: "#c9a55a" }} />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-
-              {/* ── Stripe ── */}
-              <StripeButton label="Commencer maintenant →" />
-
-              {/* Trust ligne */}
-              <p className="mt-5 text-center text-[0.72rem] text-white/28">
-                Paiement sécurisé via Stripe • Accès immédiat • Sans engagement
-              </p>
-
-              {/* Lien connexion */}
-              <div className="mt-6 flex items-center justify-center gap-2">
-                <div className="h-px flex-1 bg-white/[0.06]" />
-                <p className="text-[0.72rem] text-white/28">
-                  Déjà abonné ?{" "}
-                  <Link href="/login" className="font-bold text-[#c9a55a] hover:underline">
-                    Se connecter →
-                  </Link>
-                </p>
-                <div className="h-px flex-1 bg-white/[0.06]" />
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          7. SECTION CONFIANCE
-      ══════════════════════════════════════════════ */}
-      <section className="hero-dark relative overflow-hidden py-14 sm:py-24">
-        <div className="pointer-events-none absolute left-[15%] top-0 h-[280px] w-[340px] rounded-full bg-[rgba(201,165,90,0.05)] blur-[70px]" />
-
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewport}
-          variants={staggerContainer}
-          className="relative z-10 mx-auto max-w-6xl px-6"
-        >
-          <div className="mb-14 text-center">
-            <motion.span variants={fadeIn} className="badge badge-gold-dark mb-4 inline-flex">
-              <Shield size={10} /> Votre abonnement, sans risque
-            </motion.span>
-            <h2 className="display-section text-white">
-              Conçu pour vous{" "}
-              <span className="text-gold">faire confiance.</span>
-            </h2>
-          </div>
-
-          <motion.div
-            variants={staggerContainerFast}
-            className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            {TRUST.map(({ icon: Icon, color, rgb, title, desc }) => (
-              <motion.div
-                key={title}
-                variants={cardReveal}
-                className="group rounded-[1.5rem] border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:bg-white/[0.06]"
-              >
-                <motion.div
-                  className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border"
-                  style={{
-                    background: `rgba(${rgb}, 0.14)`,
-                    borderColor: `rgba(${rgb}, 0.28)`,
-                    boxShadow: `0 0 14px rgba(${rgb}, 0.20)`,
-                  }}
-                  whileHover={{ scale: 1.12, boxShadow: `0 0 26px rgba(${rgb}, 0.52)` }}
-                  transition={{ duration: 0.22 }}
-                >
-                  <Icon size={21} style={{ color }} />
-                </motion.div>
-                <h3 className="text-sm font-extrabold text-white">{title}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-white/40">{desc}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          8. CTA FINAL
-      ══════════════════════════════════════════════ */}
-      <section className="bg-[#09090b] py-14 sm:py-24">
-        <div className="mx-auto max-w-2xl px-6 text-center">
+      <section className="border-t border-white/[0.05] bg-[#0c0c0f] py-16 sm:py-24">
+        <div className="relative mx-auto max-w-2xl px-6 text-center">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[300px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(201,165,90,0.06)] blur-[90px]" />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport}
             transition={{ duration: 0.6, ease }}
+            className="relative"
           >
-            <div className="pointer-events-none absolute inset-x-0 flex justify-center">
-              <div className="h-[200px] w-[500px] rounded-full bg-[rgba(176,141,87,0.07)] blur-[80px]" />
-            </div>
-            <span className="badge badge-gold-dark mb-6 inline-flex">
-              <Sparkles size={10} /> Commencer maintenant
-            </span>
-            <h2 className="display-section text-white">
-              Prêt à passer au niveau{" "}
-              <span className="text-gold">supérieur ?</span>
-            </h2>
-            <p className="mx-auto mt-4 max-w-md text-base text-white/45">
-              Rejoignez les entrepreneurs qui utilisent DJAMA pour gérer leur activité en toute sérénité.
+            <p className="mb-4 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
+              Commencer maintenant
             </p>
-            <div className="mt-10 flex flex-wrap justify-center gap-4">
-              <Link href="#abonnement" className="btn-primary px-9 py-4 text-base">
-                <Wallet size={17} />
+            <h2 className="text-2xl font-black text-white sm:text-4xl">
+              Prêt à simplifier{" "}
+              <span className="text-[#c9a55a]">votre gestion ?</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-sm text-sm text-white/38">
+              Rejoignez les entrepreneurs qui pilotent leur activité avec DJAMA.
+            </p>
+            <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <Link
+                href="#abonnement"
+                className="group flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#c9a55a] px-9 py-4 text-sm font-bold text-[#09090b] shadow-[0_8px_32px_rgba(201,165,90,0.32)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_40px_rgba(201,165,90,0.48)] sm:w-auto"
+              >
+                <Wallet size={16} />
                 S&apos;abonner — 11,90€/mois
               </Link>
-              <Link href="/login" className="btn-ghost px-9 py-4 text-base">
-                <LogIn size={16} />
+              <Link
+                href="/login"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-9 py-4 text-sm font-semibold text-white/60 transition-all duration-200 hover:border-white/20 hover:text-white sm:w-auto"
+              >
+                <LogIn size={15} />
                 Déjà abonné
               </Link>
             </div>
@@ -750,23 +622,15 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          9. FOOTER MINIMAL
+          FOOTER
       ══════════════════════════════════════════════ */}
-      <footer className="border-t border-white/[0.06] py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
-          <p className="text-xs text-white/20">
-            © 2025 DJAMA · Tous droits réservés
-          </p>
-          <div className="flex items-center gap-5 text-xs text-white/25">
-            <a href="mailto:contact@djama.space" className="transition hover:text-[#c9a55a]">
-              contact@djama.space
-            </a>
-            <Link href="/login" className="transition hover:text-[#c9a55a]">
-              Se connecter
-            </Link>
-            <Link href="/" className="transition hover:text-white/50">
-              Accueil
-            </Link>
+      <footer className="border-t border-white/[0.05] py-7">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 sm:flex-row">
+          <p className="text-[0.7rem] text-white/18">© 2025 DJAMA · Tous droits réservés</p>
+          <div className="flex items-center gap-5 text-[0.7rem] text-white/25">
+            <a href="mailto:contact@djama.space" className="transition hover:text-[#c9a55a]">contact@djama.space</a>
+            <Link href="/login" className="transition hover:text-[#c9a55a]">Se connecter</Link>
+            <Link href="/" className="transition hover:text-white/45">Accueil</Link>
           </div>
         </div>
       </footer>
