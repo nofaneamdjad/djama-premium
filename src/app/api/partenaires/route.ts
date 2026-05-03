@@ -18,7 +18,7 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("partenaires");
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60; // ISR : revalidation toutes les 60s
 export const runtime  = "nodejs";
 
 export async function GET() {
@@ -45,8 +45,7 @@ export async function GET() {
 
     return NextResponse.json(logos, {
       headers: {
-        /* no-store : aucun cache CDN — changement admin visible immédiatement */
-        "Cache-Control": "no-store",
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
       },
     });
   } catch (err) {

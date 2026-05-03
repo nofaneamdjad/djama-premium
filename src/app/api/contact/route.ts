@@ -12,12 +12,12 @@
  *   SUPABASE_SERVICE_ROLE_KEY
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { createClient }              from "@supabase/supabase-js";
-import { Resend }                    from "resend";
-import { z }                         from "zod";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import { createLogger }              from "@/lib/logger";
+import { NextRequest, NextResponse }    from "next/server";
+import { Resend }                       from "resend";
+import { z }                            from "zod";
+import { createSupabaseAdmin }          from "@/lib/supabase-server";
+import { checkRateLimit, getClientIp }  from "@/lib/rate-limit";
+import { createLogger }                 from "@/lib/logger";
 
 const log = createLogger("contact");
 
@@ -30,11 +30,8 @@ const ContactSchema = z.object({
   phone:   z.string().max(30).trim().optional(),
 });
 
-// ── Supabase admin ────────────────────────────────────────────────────
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// ── Supabase admin (lazy — évite l'init au module load si clé absente) ──
+const getSupabaseAdmin = () => createSupabaseAdmin();
 
 // ── Resend (optionnel — si la clé manque, les emails sont skippés) ────
 function getResend() {
@@ -211,7 +208,7 @@ export async function POST(req: NextRequest) {
 
   const parsed = ContactSchema.safeParse(raw);
   if (!parsed.success) {
-    const msg = parsed.error.errors[0]?.message ?? "Données invalides";
+    const msg = parsed.error.issues[0]?.message ?? "Données invalides";
     return NextResponse.json({ error: msg }, { status: 422 });
   }
 
@@ -221,7 +218,7 @@ export async function POST(req: NextRequest) {
   // On ne bloque PAS l'envoi d'emails si Supabase échoue
   void (async () => {
     try {
-      const { error: dbErr } = await supabaseAdmin
+      const { error: dbErr } = await getSupabaseAdmin()
         .from("contact_messages")
         .insert([{
           name:     name.trim(),

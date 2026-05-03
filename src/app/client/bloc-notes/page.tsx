@@ -23,7 +23,7 @@ import {
   Send, Globe, CornerDownLeft,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import jsPDF from "jspdf";
+// jsPDF chargé en lazy (dynamic import) — évite ~850KB dans le bundle initial
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES
@@ -273,7 +273,8 @@ function TaskProgressBar({ content }: { content: string }) {
 /* ═══════════════════════════════════════════════════════════════
    EXPORT PDF
 ═══════════════════════════════════════════════════════════════ */
-function exportPDF(note: Note) {
+async function exportPDF(note: Note) {
+  const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const cat = getCat(note.category);
   const W = 210, margin = 20, maxWidth = W - margin * 2;
