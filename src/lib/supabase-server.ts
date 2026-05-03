@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient }       from "@supabase/supabase-js";
+import { cookies }            from "next/headers";
 
 /**
  * Client Supabase côté serveur (Server Components, API routes, Server Actions)
@@ -30,25 +31,36 @@ export async function createSupabaseServer() {
  *   1. SUPABASE_SERVICE_ROLE_KEY  — bypass RLS complet (recommandé pour admin)
  *   2. NEXT_PUBLIC_SUPABASE_ANON_KEY — fallback si service role absent/placeholder
  *
- * Pourquoi le fallback : en développement local, la service role key peut être
- * un placeholder (COLLER_ICI_VOTRE_CLE). Le fallback sur la clé anon permet
- * aux routes serveur de fonctionner tant que les RLS sont ouvertes (USING true).
+ * Une vraie service role key est un JWT >100 chars commençant par "eyJ"
  */
 export function createSupabaseAdmin() {
-  const { createClient } = require("@supabase/supabase-js");
+  const url     = process.env.NEXT_PUBLIC_SUPABASE_URL      ?? "";
+  const svcKey  = process.env.SUPABASE_SERVICE_ROLE_KEY     ?? "";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
-  const url      = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const svcKey   = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-  const anonKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  if (!url) {
+    throw new Error(
+      "[Supabase Admin] NEXT_PUBLIC_SUPABASE_URL manquante. " +
+      "Ajoutez-la dans Vercel → Settings → Environment Variables."
+    );
+  }
 
-  // Une vraie service role key est un JWT de +100 chars commençant par "eyJ"
-  const svcValid = svcKey.length > 50 && svcKey.startsWith("eyJ");
+  // JWT valide : >100 chars et commence par "eyJ"
+  const svcValid = svcKey.length > 100 && svcKey.startsWith("eyJ");
   const key = svcValid ? svcKey : anonKey;
 
-  if (!url || !key) {
+  if (!key) {
     throw new Error(
-      "[Supabase Admin] Variables manquantes. " +
-      "Ajoutez NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY dans Vercel."
+      "[Supabase Admin] Clé Supabase manquante. " +
+      "Ajoutez SUPABASE_SERVICE_ROLE_KEY ou NEXT_PUBLIC_SUPABASE_ANON_KEY dans Vercel."
+    );
+  }
+
+  // Avertir seulement en développement si on utilise le fallback
+  if (!svcValid && process.env.NODE_ENV !== "production") {
+    console.warn(
+      "[Supabase Admin] SUPABASE_SERVICE_ROLE_KEY absente/invalide — " +
+      "fallback sur anon key. Les RLS s'appliquent."
     );
   }
 
