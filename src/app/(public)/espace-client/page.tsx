@@ -214,35 +214,9 @@ export default function EspaceClientPage() {
       </Suspense>
 
       {/* ══════════════════════════════════════════════
-          BARRE DE NAVIGATION FIXE
-      ══════════════════════════════════════════════ */}
-      <motion.header
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease }}
-        className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-white/[0.06] bg-[#09090b]/90 px-6 py-3.5 backdrop-blur-xl"
-      >
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-sm font-black tracking-[0.2em] text-[#c9a55a] transition-opacity group-hover:opacity-75">DJAMA</span>
-          <span className="hidden rounded border border-white/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-white/25 sm:block">Pro</span>
-        </Link>
-
-        {/* Déjà client — bouton de connexion */}
-        <Link
-          href="/login"
-          className="flex items-center gap-2 rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.07)] px-4 py-2 text-xs font-bold text-[#c9a55a] transition-all hover:bg-[rgba(201,165,90,0.14)] hover:border-[rgba(201,165,90,0.45)]"
-        >
-          <Lock size={11} />
-          Déjà client ? Se connecter
-          <ArrowRight size={11} />
-        </Link>
-      </motion.header>
-
-      {/* ══════════════════════════════════════════════
           1. HERO
       ══════════════════════════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden pb-14 pt-32 sm:pb-32 sm:pt-44">
+      <section className="hero-dark hero-grid relative overflow-hidden pb-14 pt-24 sm:pb-32 sm:pt-40">
         {/* Glow central */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[500px] w-[600px] rounded-full bg-[rgba(176,141,87,0.10)] blur-[100px]" />
