@@ -120,7 +120,7 @@ export default function SplashScreen() {
 
                 {/* Espace client — mis en valeur */}
                 <button
-                  onClick={() => handleChoice("/client")}
+                  onClick={() => handleChoice("/espace-client")}
                   className="group flex items-center gap-4 px-6 py-4 rounded-2xl
                     border border-[#c9a55a]/25 bg-[#c9a55a]/[0.07]
                     hover:bg-[#c9a55a]/[0.13] hover:border-[#c9a55a]/45
