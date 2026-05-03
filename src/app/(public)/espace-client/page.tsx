@@ -214,9 +214,35 @@ export default function EspaceClientPage() {
       </Suspense>
 
       {/* ══════════════════════════════════════════════
+          BARRE DE NAVIGATION FIXE
+      ══════════════════════════════════════════════ */}
+      <motion.header
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease }}
+        className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-white/[0.06] bg-[#09090b]/90 px-6 py-3.5 backdrop-blur-xl"
+      >
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 group">
+          <span className="text-sm font-black tracking-[0.2em] text-[#c9a55a] transition-opacity group-hover:opacity-75">DJAMA</span>
+          <span className="hidden rounded border border-white/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-white/25 sm:block">Pro</span>
+        </Link>
+
+        {/* Déjà client — bouton de connexion */}
+        <Link
+          href="/login"
+          className="flex items-center gap-2 rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.07)] px-4 py-2 text-xs font-bold text-[#c9a55a] transition-all hover:bg-[rgba(201,165,90,0.14)] hover:border-[rgba(201,165,90,0.45)]"
+        >
+          <Lock size={11} />
+          Déjà client ? Se connecter
+          <ArrowRight size={11} />
+        </Link>
+      </motion.header>
+
+      {/* ══════════════════════════════════════════════
           1. HERO
       ══════════════════════════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden pb-14 pt-24 sm:pb-32 sm:pt-40">
+      <section className="hero-dark hero-grid relative overflow-hidden pb-14 pt-32 sm:pb-32 sm:pt-44">
         {/* Glow central */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[500px] w-[600px] rounded-full bg-[rgba(176,141,87,0.10)] blur-[100px]" />
@@ -250,25 +276,35 @@ export default function EspaceClientPage() {
             as="p"
             className="mx-auto mt-6 max-w-xl text-lg leading-[1.8] text-white/50"
           >
-            Un abonnement mensuel simple pour accéder à vos 10 outils de gestion —
-            Coach IA, CRM, Trésorerie, Contrats, Sourcing et bien plus encore. Toujours disponibles, toujours à jour.
+            Un abonnement mensuel simple pour accéder à 11 outils de gestion —
+            Coach IA, CRM, Trésorerie, Contrats, Sourcing et bien plus encore.
           </FadeReveal>
 
-          {/* CTA */}
+          {/* CTA principal */}
           <FadeReveal delay={0.65} className="mt-10 flex flex-wrap justify-center gap-3">
             <Link href="#abonnement" className="btn-primary px-8 py-4 text-base">
               <Wallet size={17} />
-              S&apos;abonner maintenant
+              S&apos;abonner — 11,90€/mois
             </Link>
             <Link href="#outils" className="btn-ghost px-8 py-4 text-base">
               Voir les outils <ArrowRight size={16} />
             </Link>
           </FadeReveal>
 
+          {/* Lien connexion sous les CTAs */}
+          <FadeReveal delay={0.78} className="mt-5">
+            <p className="text-sm text-white/30">
+              Déjà abonné ?{" "}
+              <Link href="/login" className="font-semibold text-[#c9a55a] underline-offset-2 hover:underline">
+                Accéder à mon espace →
+              </Link>
+            </p>
+          </FadeReveal>
+
           {/* Trust strip */}
           <FadeReveal
-            delay={0.8}
-            className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
+            delay={0.88}
+            className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
           >
             {[
               { icon: Zap,           text: "Accès immédiat" },
@@ -536,30 +572,16 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          5. DÉJÀ CLIENT
+          5. FOOTER MINIMAL
       ══════════════════════════════════════════════ */}
-      <section className="mx-auto max-w-md px-6 pb-14 pt-2 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport}
-          transition={{ duration: 0.45, ease }}
-          className="rounded-2xl border border-white/[.05] bg-white/[.018] px-6 py-6"
-        >
-          <p className="mb-1 text-sm font-semibold text-white/55">
-            Déjà client DJAMA ?
-          </p>
-          <p className="mb-4 text-[0.8rem] text-white/30">
-            Accédez à votre espace et retrouvez tous vos outils.
-          </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/[.1] bg-white/[.03] px-5 py-2.5 text-sm font-semibold text-white/50 transition-all duration-200 hover:border-white/[.2] hover:text-white/80"
-          >
-            Accéder à mon espace
-            <ArrowRight size={13} />
+      <section className="border-t border-white/[0.06] py-8 text-center">
+        <p className="text-xs text-white/20">
+          DJAMA · <a href="mailto:contact@djama.space" className="text-[#c9a55a] hover:underline">contact@djama.space</a>
+          {" · "}
+          <Link href="/login" className="text-white/35 hover:text-[#c9a55a] transition-colors">
+            Déjà abonné ? Se connecter
           </Link>
-        </motion.div>
+        </p>
       </section>
 
     </div>
