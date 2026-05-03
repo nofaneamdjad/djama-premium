@@ -1,5 +1,20 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { z } from "zod";
+import { createLogger } from "@/lib/logger";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+const log = createLogger("rdv");
+
+const RdvSchema = z.object({
+  parentName:   z.string().min(2).max(100).trim(),
+  studentName:  z.string().min(2).max(100).trim(),
+  email:        z.string().email().max(200).trim(),
+  level:        z.string().min(1).max(50).trim(),
+  subject:      z.string().min(1).max(100).trim(),
+  availability: z.string().min(3).max(300).trim(),
+  message:      z.string().max(2000).trim().optional().default(""),
+});
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/rdv
@@ -131,24 +146,37 @@ function buildConfirmEmail(d: RdvPayload): string {
 
 /* ── Handler ───────────────────────────────────────────────── */
 export async function POST(req: Request) {
-  let data: RdvPayload;
-  try {
-    data = await req.json() as RdvPayload;
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  // ── Rate limiting : 5 demandes / 10 min par IP ──────────────
+  const ip = getClientIp(req);
+  const { allowed } = checkRateLimit(ip, 5, 10 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Trop de demandes. Réessayez dans quelques minutes." },
+      { status: 429 }
+    );
   }
 
-  const { parentName, studentName, email, level, subject, availability } = data;
-  if (!parentName || !studentName || !email || !level || !subject || !availability) {
-    return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
+  let raw: unknown;
+  try {
+    raw = await req.json();
+  } catch {
+    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
+
+  const parsed = RdvSchema.safeParse(raw);
+  if (!parsed.success) {
+    const msg = parsed.error.errors[0]?.message ?? "Données invalides";
+    return NextResponse.json({ error: msg }, { status: 422 });
+  }
+
+  const data: RdvPayload = parsed.data;
+  const { studentName, email, subject, level } = data;
 
   if (!process.env.RESEND_API_KEY) {
-    console.warn("[RDV] RESEND_API_KEY manquant — emails non envoyés");
+    log.warn("RESEND_API_KEY manquant — emails non envoyés");
     return NextResponse.json({ ok: true, warn: "email_skipped" });
   }
 
-  // Resend v6 retourne { data, error } au lieu de throw
   const resend = getResend();
 
   const { error: adminErr } = await resend.emails.send({
@@ -157,7 +185,7 @@ export async function POST(req: Request) {
     subject: `[DJAMA] Nouveau RDV soutien — ${studentName} (${subject}, ${level})`,
     html:    buildAdminEmail(data),
   });
-  if (adminErr) console.error("[RDV] Admin email error:", adminErr);
+  if (adminErr) log.error("Admin email error", adminErr);
 
   const { error: clientErr } = await resend.emails.send({
     from:    getFrom(),
@@ -165,8 +193,8 @@ export async function POST(req: Request) {
     subject: "Votre demande de soutien scolaire DJAMA — Confirmation",
     html:    buildConfirmEmail(data),
   });
-  if (clientErr) console.error("[RDV] Client email error:", clientErr);
+  if (clientErr) log.error("Client email error", clientErr);
 
-  console.log("[RDV] ✅ Demande envoyée →", email, `(${subject} - ${level})`);
+  log.info("Demande RDV envoyée");
   return NextResponse.json({ ok: true });
 }

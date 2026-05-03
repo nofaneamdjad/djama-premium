@@ -1,7 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { createLogger } from "@/lib/logger";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const log = createLogger("assistant");
+
+const MessageSchema = z.object({
+  role:    z.enum(["user", "assistant"]),
+  content: z.string().min(1).max(4000),
+});
+
+const BodySchema = z.object({
+  messages: z.array(MessageSchema).min(1).max(20),
+});
 
 const SYSTEM_PROMPT = `Tu es l'Assistant DJAMA, un assistant intelligent et professionnel qui représente l'agence DJAMA.
 
@@ -17,7 +29,7 @@ DJAMA est une plateforme qui combine création digitale, outils professionnels e
 - Design & identité visuelle (logo, charte graphique, visuels réseaux sociaux, branding)
 - Montage vidéo et retouche photo
 
-### Outils professionnels (Espace client — 11,99€/mois)
+### Outils professionnels (Espace client — 11,90€/mois)
 - **Factures & Devis** : création de documents professionnels en PDF, avec logo, TVA, RIB, numérotation automatique
 - **Planning & Agenda** : organisation en vue Jour, Semaine, Mois
 - **Bloc-notes pro** : prise de notes par catégories, export PDF, sauvegarde automatique
@@ -37,17 +49,17 @@ DJAMA est une plateforme qui combine création digitale, outils professionnels e
 - Organisation digitale
 
 ## Tarifs
-- Abonnement outils pro : 11,99€/mois
+- Abonnement outils pro : 11,90€/mois
 - Coaching IA : 190€ / 3 mois
 - Soutien scolaire : 14€/heure
 - Sites web & applications : sur devis (gratuit, réponse sous 24h)
 
 ## Contact
-- Email : contact@djama.fr
+- Email : contact@djama.space
 - Devis gratuit via la page contact du site
 
 ## Consignes importantes
-- Si quelqu'un demande un devis, oriente-le vers la page contact ou l'email contact@djama.fr
+- Si quelqu'un demande un devis, oriente-le vers la page contact ou l'email contact@djama.space
 - Si quelqu'un veut accéder aux outils, oriente-le vers la page d'abonnement
 - Ne donne jamais d'informations financières personnelles
 - Reste centré sur les services DJAMA
@@ -55,30 +67,48 @@ DJAMA est une plateforme qui combine création digitale, outils professionnels e
 - Réponds en 2-4 phrases maximum sauf si une explication détaillée est vraiment nécessaire`;
 
 export async function POST(req: NextRequest) {
+  // ── Rate limiting : 30 messages / 5 min par IP ───────────────
+  const ip = getClientIp(req);
+  const { allowed } = checkRateLimit(ip, 30, 5 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Trop de messages. Patientez quelques minutes." },
+      { status: 429 }
+    );
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY.includes("VOTRE_CLE")) {
+    return NextResponse.json(
+      { error: "Assistant temporairement indisponible." },
+      { status: 503 }
+    );
+  }
+
+  let raw: unknown;
   try {
-    const { messages } = await req.json();
+    raw = await req.json();
+  } catch {
+    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+  }
 
-    if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY.includes("VOTRE_CLE")) {
-      return NextResponse.json(
-        { error: "Clé API Anthropic non configurée. Ajoutez ANTHROPIC_API_KEY dans .env.local" },
-        { status: 503 }
-      );
-    }
+  const parsed = BodySchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Messages invalides" }, { status: 422 });
+  }
 
+  try {
+    const client   = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
-      model: "claude-haiku-4-5",
+      model:      "claude-haiku-4-5",
       max_tokens: 512,
-      system: SYSTEM_PROMPT,
-      messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role,
-        content: m.content,
-      })),
+      system:     SYSTEM_PROMPT,
+      messages:   parsed.data.messages,
     });
 
     const text = response.content[0].type === "text" ? response.content[0].text : "";
     return NextResponse.json({ reply: text });
   } catch (err) {
-    console.error("[assistant] error:", err);
+    log.error("Anthropic API error", err);
     return NextResponse.json(
       { error: "Une erreur est survenue. Veuillez réessayer." },
       { status: 500 }

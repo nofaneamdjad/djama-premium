@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendPaymentReceivedEmail } from "@/lib/email";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("webhook/stripe");
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/webhook/stripe
@@ -116,9 +119,9 @@ async function upsertUserAccess(opts: {
     .upsert([row], { onConflict: "email" });
 
   if (error) {
-    console.error("[Webhook] ❌ user_access upsert error:", error.message);
+    log.error("user_access upsert error", error.message);
   } else {
-    console.log("[Webhook] ✅ user_access mis à jour →", opts.email, isNew ? "(nouveau)" : "(existant)");
+    log.info("user_access updated");
   }
 
   return { accessCode, isNew };
@@ -151,13 +154,9 @@ async function upsertClientRecord(opts: {
     { onConflict: "email" }
   );
   if (error) {
-    console.error("[Webhook] ❌ clients upsert error:", error.message);
+    log.error("clients upsert error", error.message);
   } else {
-    console.log(
-      "[Webhook] ✅ Table clients →",
-      opts.subscriptionActive ? "actif" : "inactif",
-      "(", opts.email, ")"
-    );
+    log.info("clients record updated");
   }
 }
 
@@ -174,7 +173,7 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
   const providedUserId = session.client_reference_id     ?? null;
 
   if (!email) {
-    console.warn("[Webhook] ⚠️ coaching_ia : pas d'email");
+    log.warn("coaching_ia: pas d'email dans la session");
     return;
   }
 
@@ -198,7 +197,7 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
       },
     });
     if (error || !data.user) {
-      console.error("[Webhook] ❌ coaching_ia createUser:", error?.message);
+      log.error("coaching_ia createUser failed", error?.message);
       return;
     }
     user      = data.user;
@@ -239,7 +238,7 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
   /* Email de confirmation de paiement (PAS d'accès encore) */
   await sendPaymentReceivedEmail({ email, fullName, service: "coaching_ia" });
 
-  console.log("[Webhook] ✅ Coaching IA — paiement enregistré →", email, "(en attente d'activation admin)");
+  log.info("Coaching IA paiement enregistré — en attente activation admin");
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -253,11 +252,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const providedUserId   = session.client_reference_id ?? null;
 
   if (!email) {
-    console.warn("[Webhook] ⚠️ checkout.session.completed : pas d'email, skipped.");
+    log.warn("checkout.session.completed: pas d'email");
     return;
   }
 
-  console.log("[Webhook] 🛒 checkout.session.completed →", { email, fullName, providedUserId });
+  log.info("checkout.session.completed reçu");
 
   const supabase   = getSupabaseAdmin();
   let   isNewUser  = false;
@@ -282,14 +281,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
 
     if (error || !data.user) {
-      console.error("[Webhook] ❌ createUser error:", error?.message);
+      log.error("createUser failed", error?.message);
       return;
     }
 
     existingUser = data.user;
     userId       = data.user.id;
     isNewUser    = true;
-    console.log("[Webhook] 👤 Nouveau compte créé — userId:", userId, "email:", email);
+    log.info("Nouveau compte créé");
 
   } else {
     /* Client existant → mettre à jour ses metadata */
@@ -304,7 +303,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         stripe_subscription_id: stripeSubId,
       },
     });
-    console.log("[Webhook] 🔄 Compte existant mis à jour — userId:", existingUser.id);
+    log.info("Compte existant mis à jour");
   }
 
   /* ── 2. Upsert table clients ─────────────────────────────── */
@@ -328,7 +327,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   /* ── 4. Envoyer email "paiement reçu, en attente d'activation" ── */
   await sendPaymentReceivedEmail({ email, fullName, service: "espace_client" });
 
-  console.log("[Webhook] ✅ Paiement enregistré →", email, isNewUser ? "(nouveau client)" : "(existant)", "— EN ATTENTE ACTIVATION ADMIN");
+  log.info(`Paiement enregistré — ${isNewUser ? "nouveau client" : "existant"} — en attente activation`);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -337,7 +336,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 async function confirmSubscriptionActive(stripeCustomerId: string) {
   const user = await findUserByStripeCustomerId(stripeCustomerId);
   if (!user) {
-    console.warn("[Webhook] ⚠️ confirmSubscriptionActive: user not found →", stripeCustomerId);
+    log.warn("confirmSubscriptionActive: user not found");
     return;
   }
 
@@ -363,7 +362,7 @@ async function confirmSubscriptionActive(stripeCustomerId: string) {
       })
       .eq("email", user.email);
 
-    console.log("[Webhook] 🔄 Renouvellement confirmé →", user.email);
+    log.info("Renouvellement confirmé");
   }
 }
 
@@ -374,7 +373,7 @@ async function deactivateSubscription(stripeCustomerId: string) {
   const user = await findUserByStripeCustomerId(stripeCustomerId);
 
   if (!user) {
-    console.warn("[Webhook] ⚠️ deactivateSubscription: user not found →", stripeCustomerId);
+    log.warn("deactivateSubscription: user not found");
     return;
   }
 
@@ -410,7 +409,7 @@ async function deactivateSubscription(stripeCustomerId: string) {
       })
       .eq("email", user.email);
 
-    console.log("[Webhook] 🔴 Abonnement désactivé →", user.email);
+    log.info("Abonnement désactivé");
   }
 }
 
@@ -427,7 +426,7 @@ async function syncSubscriptionStatus(
     await confirmSubscriptionActive(stripeCustomerId);
   } else {
     await deactivateSubscription(stripeCustomerId);
-    console.log(`[Webhook] ⚠️ Statut "${status}" → accès désactivé →`, stripeCustomerId);
+    log.info(`Statut "${status}" → accès désactivé`);
   }
 }
 
@@ -453,13 +452,13 @@ export async function POST(req: Request) {
     event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Invalid signature";
-    console.error("[Webhook] ❌ Signature error:", msg);
+    log.error("Signature invalide", msg);
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
   // ── Idempotence : ignorer les events déjà traités ────────────
   if (processedEvents.has(event.id)) {
-    console.log("[Webhook] ⏭️  Event déjà traité, ignoré →", event.id);
+    log.info("Event déjà traité, ignoré");
     return NextResponse.json({ received: true, skipped: true });
   }
   processedEvents.add(event.id);
@@ -469,7 +468,7 @@ export async function POST(req: Request) {
     if (oldest) processedEvents.delete(oldest);
   }
 
-  console.log("[Webhook] 📨 Event:", event.type);
+  log.info(`Event reçu: ${event.type}`);
 
   /* ── checkout.session.completed ─────────────────────────── */
   if (event.type === "checkout.session.completed") {
@@ -493,7 +492,7 @@ export async function POST(req: Request) {
     if (isSubscriptionInvoice) {
       await confirmSubscriptionActive(invoice.customer as string);
     } else {
-      console.log("[Webhook] ℹ️ invoice.paid ignoré (billing_reason:", invoice.billing_reason, ")");
+      log.info(`invoice.paid ignoré (billing_reason: ${invoice.billing_reason})`);
     }
   }
 
@@ -501,14 +500,14 @@ export async function POST(req: Request) {
   if (event.type === "customer.subscription.updated") {
     const sub = event.data.object as Stripe.Subscription;
     await syncSubscriptionStatus(sub.customer as string, sub.status);
-    console.log(`[Webhook] 🔄 Subscription updated → statut: ${sub.status}`);
+    log.info(`Subscription updated → statut: ${sub.status}`);
   }
 
   /* ── customer.subscription.deleted ───────────────────────── */
   if (event.type === "customer.subscription.deleted") {
     const sub = event.data.object as Stripe.Subscription;
     await deactivateSubscription(sub.customer as string);
-    console.log("[Webhook] 🔴 Subscription deleted →", sub.customer);
+    log.info("Subscription deleted");
   }
 
   return NextResponse.json({ received: true });

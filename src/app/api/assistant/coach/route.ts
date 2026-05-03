@@ -18,6 +18,9 @@ import Anthropic               from "@anthropic-ai/sdk";
 import { NextResponse }        from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 import type { CoachResponse }  from "@/lib/assistant/types";
+import { createLogger }        from "@/lib/logger";
+
+const log = createLogger("coach");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -184,7 +187,7 @@ export async function POST(): Promise<NextResponse<CoachResponse | { error: stri
     });
 
   } catch (err) {
-    console.error("[coach]", err);
+    log.error("Coach analysis failed", err);
     return NextResponse.json({ error: "Erreur analyse coach." }, { status: 500 });
   }
 }
