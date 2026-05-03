@@ -16,13 +16,14 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   StickyNote, Plus, Search, Trash2, FileDown, Save,
-  CheckCircle2, AlertCircle, Loader2, ArrowLeft,
+  CheckCircle2, Loader2, ArrowLeft,
   ChevronDown, Clock, SortAsc, SortDesc, X,
   Sparkles, Wand2, FileText, ListChecks, MessageSquare,
   Star, Pin, Check, Eye, EyeOff, CheckSquare,
   Send, Globe, CornerDownLeft,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import Toast, { type ToastData } from "@/components/ui/Toast";
 // jsPDF chargé en lazy (dynamic import) — évite ~850KB dans le bundle initial
 
 /* ═══════════════════════════════════════════════════════════════
@@ -122,28 +123,6 @@ function CategoryBadge({ cat }: { cat: Category }) {
   );
 }
 
-function Toast({ toast, onClose }: { toast: { type: "success" | "error"; msg: string }; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 8, scale: 0.97 }} transition={{ duration: 0.35, ease }}
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl border px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl ${
-        toast.type === "success"
-          ? "border-green-500/20 bg-[rgba(15,23,42,0.95)] text-green-300"
-          : "border-red-500/20 bg-[rgba(15,23,42,0.95)] text-red-300"
-      }`}
-    >
-      {toast.type === "success"
-        ? <CheckCircle2 size={16} className="shrink-0 text-green-400" />
-        : <AlertCircle  size={16} className="shrink-0 text-red-400" />}
-      <span className="text-sm font-medium">{toast.msg}</span>
-      <button onClick={onClose} className="ml-1 text-white/30 hover:text-white/70 transition">
-        <X size={13} />
-      </button>
-    </motion.div>
-  );
-}
 
 function ConfirmDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
   return (
@@ -327,7 +306,7 @@ export default function BlocNotesPage() {
 
   /* ── UI ── */
   const [confirmDel, setConfirmDel] = useState(false);
-  const [toast,      setToast]      = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [toast,      setToast]      = useState<ToastData | null>(null);
   const [mobileView, setMobileView] = useState<"list" | "editor">("list");
   const [preview,    setPreview]    = useState(false);
 

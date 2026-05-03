@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Clock, Plus, Trash2, Edit3, Save, X,
   ChevronLeft, ChevronRight, Sun, Sunset, Moon,
-  CheckCircle2, AlertCircle, Loader2, AlignLeft,
+  Loader2, AlignLeft,
   StickyNote, LayoutGrid,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import Toast, { type ToastData } from "@/components/ui/Toast";
 
 /* ═══════════════════════════════════════════════════════════
    TYPES  — colonnes réelles : event_date, event_time
@@ -83,24 +84,6 @@ function CatBadge({ cat }: { cat: Category }) {
   );
 }
 
-function Toast({ toast, onClose }: {
-  toast: { type: "success"|"error"; msg: string }; onClose: () => void;
-}) {
-  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
-  return (
-    <motion.div initial={{ opacity:0, y:24, scale:0.95 }} animate={{ opacity:1, y:0, scale:1 }}
-      exit={{ opacity:0, y:8 }} transition={{ duration:0.3, ease }}
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl border px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl ${
-        toast.type==="success" ? "border-green-500/20 bg-[rgba(15,23,42,0.96)] text-green-300"
-                               : "border-red-500/20 bg-[rgba(15,23,42,0.96)] text-red-300"}`}>
-      {toast.type==="success"
-        ? <CheckCircle2 size={15} className="shrink-0 text-green-400"/>
-        : <AlertCircle  size={15} className="shrink-0 text-red-400"/>}
-      <span className="text-sm font-medium">{toast.msg}</span>
-      <button onClick={onClose} className="ml-1 text-white/30 hover:text-white/70 transition"><X size={12}/></button>
-    </motion.div>
-  );
-}
 
 function FInput({ value, onChange, placeholder, type="text" }:
   { value:string; onChange:(v:string)=>void; placeholder?:string; type?:string }) {
@@ -265,7 +248,7 @@ export default function PlanningAgendaPage() {
   const [loading,   setLoading]   = useState(true);
   const [saving,    setSaving]    = useState(false);
   const [deleting,  setDeleting]  = useState<string|null>(null);
-  const [toast,     setToast]     = useState<{type:"success"|"error";msg:string}|null>(null);
+  const [toast,     setToast]     = useState<ToastData | null>(null);
   const [modal,     setModal]     = useState<false|"new"|AgendaEvent>(false);
   const [modalDate, setModalDate] = useState(todayISO());
 
