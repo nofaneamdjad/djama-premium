@@ -162,7 +162,8 @@ export default function ChronoPage() {
       .from("time_entries")
       .select("*")
       .order("date", { ascending: false })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(500);
     if (error) {
       showToast("error", `Chargement impossible : ${error.message}`);
     } else {

@@ -217,7 +217,8 @@ export default function ContratsPage() {
         .from("contracts")
         .select("*")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(200);
       if (!error && data) setContracts(data as Contract[]);
       setLoading(false);
     })();

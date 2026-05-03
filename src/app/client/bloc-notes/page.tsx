@@ -352,7 +352,7 @@ export default function BlocNotesPage() {
   const fetchNotes = useCallback(async () => {
     setLoadingAll(true);
     const { data, error } = await supabase
-      .from("notes").select("*").order("updated_at", { ascending: false });
+      .from("notes").select("*").order("updated_at", { ascending: false }).limit(200);
     if (error) showToast("error", "Impossible de charger les notes.");
     else       setNotes((data as Note[]) ?? []);
     setLoadingAll(false);

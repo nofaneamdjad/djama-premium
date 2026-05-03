@@ -56,7 +56,8 @@ export default function ListeFactures() {
         .from("factures")
         .select("id, numero, type_document, client_nom, client_email, total_ttc, total_ht, date_emission, created_at, couleur")
         .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(200);
 
       if (sbErr) {
         setError(sbErr.message);

@@ -74,16 +74,27 @@ function UrgentDot({ urgency }: { urgency: UrgencyLevel }) {
 export default function RadarPage() {
   const [radar,         setRadar]         = useState<RadarResponse | null>(null);
   const [loading,       setLoading]       = useState(true);
+  const [fetchError,    setFetchError]    = useState(false);
   const [relanceItem,   setRelanceItem]   = useState<RadarItem | null>(null);
   const [relanceLoading,setRelanceLoading]= useState(false);
   const [relanceMsg,    setRelanceMsg]    = useState<RelanceResponse | null>(null);
+  const [relanceError,  setRelanceError]  = useState(false);
   const [copied,        setCopied]        = useState(false);
 
   const fetchRadar = useCallback(async () => {
     setLoading(true);
-    const r = await fetch("/api/assistant/radar").then(r => r.ok ? r.json() : null).catch(() => null);
-    setRadar(r);
-    setLoading(false);
+    setFetchError(false);
+    try {
+      const res = await fetch("/api/assistant/radar");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const r: RadarResponse = await res.json();
+      setRadar(r);
+    } catch {
+      setFetchError(true);
+      setRadar(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchRadar(); }, [fetchRadar]);
@@ -91,18 +102,26 @@ export default function RadarPage() {
   const openRelance = useCallback(async (item: RadarItem) => {
     setRelanceItem(item);
     setRelanceMsg(null);
+    setRelanceError(false);
     setRelanceLoading(true);
     setCopied(false);
     const body: RelanceRequest = {
       type: item.type, id: item.id, client_name: item.client,
       reference: item.reference, amount: item.amount, days: item.days,
     };
-    const res = await fetch("/api/assistant/relance", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }).then(r => r.ok ? r.json() : null).catch(() => null);
-    setRelanceMsg(res);
-    setRelanceLoading(false);
+    try {
+      const res = await fetch("/api/assistant/relance", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: RelanceResponse = await res.json();
+      setRelanceMsg(data);
+    } catch {
+      setRelanceError(true);
+    } finally {
+      setRelanceLoading(false);
+    }
   }, []);
 
   const copyMessage = useCallback(async () => {
@@ -176,6 +195,15 @@ export default function RadarPage() {
         {/* ── Liste ── */}
         {loading ? (
           <div className="space-y-2"><Sk /><Sk /><Sk h="h-12" /></div>
+        ) : fetchError ? (
+          <div className="flex flex-col items-center gap-3 py-16 rounded-2xl border border-dashed border-red-500/20">
+            <AlertCircle className="w-6 h-6 text-red-400/60" />
+            <p className="text-sm text-white/40 font-semibold">Impossible de charger les données</p>
+            <p className="text-xs text-white/20">Vérifiez votre connexion et réessayez.</p>
+            <button onClick={fetchRadar} className="mt-1 flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/40 hover:text-white/60 transition-colors">
+              <RefreshCw className="w-3 h-3" /> Réessayer
+            </button>
+          </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 rounded-2xl border border-dashed border-white/6">
             <Check className="w-6 h-6 text-emerald-400" />
@@ -342,10 +370,11 @@ export default function RadarPage() {
                 </motion.div>
               )}
 
-              {!relanceMsg && !relanceLoading && (
+              {relanceError && !relanceLoading && (
                 <div className="text-center py-8">
-                  <AlertCircle className="w-7 h-7 text-white/15 mx-auto mb-3" />
-                  <p className="text-sm text-white/25 mb-4">La génération a échoué.</p>
+                  <AlertCircle className="w-7 h-7 text-red-400/40 mx-auto mb-3" />
+                  <p className="text-sm text-white/40 mb-1">La génération a échoué.</p>
+                  <p className="text-xs text-white/20 mb-4">Vérifiez votre connexion et réessayez.</p>
                   <button
                     onClick={() => openRelance(relanceItem)}
                     className="flex items-center gap-2 mx-auto px-5 py-2.5 rounded-xl bg-white/[0.05] text-sm text-white/45 hover:bg-white/[0.08] transition-colors"

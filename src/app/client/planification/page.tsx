@@ -246,7 +246,7 @@ export default function PlanificationPage() {
 
   /* ── Fetch employees ── */
   const fetchEmployees = useCallback(async (uid: string) => {
-    const { data } = await supabase.from("employees").select("*").eq("user_id", uid).order("created_at");
+    const { data } = await supabase.from("employees").select("*").eq("user_id", uid).order("created_at").limit(100);
     if (data) setEmployees(data as Employee[]);
   }, []);
 

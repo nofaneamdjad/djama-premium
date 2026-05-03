@@ -442,7 +442,7 @@ export default function FacturesPage() {
   /* ── Charger ── */
   const fetchDocs = useCallback(async () => {
     setLoadingAll(true);
-    const { data, error } = await supabase.from("documents").select("*").order("updated_at", { ascending: false });
+    const { data, error } = await supabase.from("documents").select("*").order("updated_at", { ascending: false }).limit(200);
     if (error) {
       console.error("[fetchDocs]", error);
       showToast("error", `Chargement impossible : ${error.message}`);

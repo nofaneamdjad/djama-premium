@@ -156,7 +156,8 @@ export default function DepensesPage() {
     const { data, error } = await supabase
       .from("expenses")
       .select("*")
-      .order("date", { ascending: false });
+      .order("date", { ascending: false })
+      .limit(1000);
 
     if (error) {
       showToast("error", `Chargement impossible : ${error.message}`);
