@@ -12,6 +12,7 @@ import {
   UserPlus, CalendarDays, LayoutList, Info,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import Toast, { type ToastData } from "@/components/ui/Toast";
 
 /* ══════════════════════════════════════════════════════════
    TYPES
@@ -126,27 +127,6 @@ function emptyEmployee(color?: string): DraftEmployee {
   return { name: "", email: "", role: "", color: color ?? EMPLOYEE_COLORS[0] };
 }
 
-/* ══════════════════════════════════════════════════════════
-   TOAST
-══════════════════════════════════════════════════════════ */
-function Toast({ toast, onClose }: { toast: { type: "success" | "error"; msg: string }; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 4200); return () => clearTimeout(t); }, [onClose]);
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8 }}
-      transition={{ duration: 0.28, ease }}
-      className={`fixed bottom-6 right-6 z-50 flex max-w-sm items-start gap-3 rounded-2xl border px-5 py-3.5 shadow-2xl backdrop-blur-xl ${
-        toast.type === "success" ? "border-sky-500/20 bg-[rgba(15,23,42,0.97)] text-sky-300" : "border-red-500/20 bg-[rgba(15,23,42,0.97)] text-red-300"
-      }`}
-    >
-      {toast.type === "success"
-        ? <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-sky-400" />
-        : <AlertCircle size={15} className="mt-0.5 shrink-0 text-red-400" />}
-      <span className="flex-1 text-sm font-medium leading-snug">{toast.msg}</span>
-      <button onClick={onClose} className="ml-1 shrink-0 text-white/30 hover:text-white/60"><X size={12} /></button>
-    </motion.div>
-  );
-}
 
 /* ══════════════════════════════════════════════════════════
    SHIFT CARD
@@ -212,7 +192,7 @@ export default function PlanificationPage() {
   const [loading,    setLoading]    = useState(true);
   const [view,       setView]       = useState<View>("grille");
   const [weekRef,    setWeekRef]    = useState<Date>(new Date());
-  const [toast,      setToast]      = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [toast,      setToast]      = useState<ToastData | null>(null);
   const [publishing, setPublishing] = useState(false);
 
   /* ── Shift modal ── */
