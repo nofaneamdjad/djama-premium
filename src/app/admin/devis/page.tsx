@@ -6,6 +6,7 @@ import {
   ArrowRight, RefreshCw, Check,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { fmtEur } from "@/lib/format";
 import type { QuoteRow, QuoteItemRow, QuoteStatus, TemplateType } from "@/types/db";
 import { generatePdf } from "@/lib/pdf/generatePdf";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
@@ -43,9 +44,6 @@ function fmtDate(d: string | null | undefined) {
   return `${day}/${m}/${y}`;
 }
 
-function fmtEur(n: number) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
-}
 
 // ─────────────────────────────────────────────────────────────
 // Types formulaire

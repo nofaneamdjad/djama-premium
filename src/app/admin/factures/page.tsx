@@ -59,6 +59,7 @@ import {
   RefreshCw, Check, CreditCard, FileDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { fmtEur } from "@/lib/format";
 import type { InvoiceRow, InvoiceStatus, InvoicePaymentStatus, TemplateType } from "@/types/db";
 import { generatePdf } from "@/lib/pdf/generatePdf";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
@@ -99,9 +100,6 @@ function fmtDate(d?: string | null) {
   return `${day}/${m}/${y}`;
 }
 
-function fmtEur(n: number) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
-}
 
 // ─────────────────────────────────────────────────────────────
 // Types formulaire
