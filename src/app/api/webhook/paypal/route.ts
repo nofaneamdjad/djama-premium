@@ -1,12 +1,15 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { verifyPayPalWebhook } from "@/lib/paypal";
+import { NextResponse }             from "next/server";
+import { createClient }             from "@supabase/supabase-js";
+import { verifyPayPalWebhook }      from "@/lib/paypal";
 import {
   activateOrCreateUser,
   deactivateUserByPayPalSubId,
   confirmActiveByPayPalSubId,
 } from "@/lib/subscription-helpers";
-import { sendCoachingIAEmail } from "@/lib/email";
+import { sendCoachingIAEmail }  from "@/lib/email";
+import { createLogger }         from "@/lib/logger";
+
+const log = createLogger("webhook/paypal");
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -21,30 +24,14 @@ function getSupabaseAdmin() {
 /* ─────────────────────────────────────────────────────────────
    POST /api/webhook/paypal
    Reçoit les événements PayPal et synchronise les abonnements.
-
-   Événements gérés :
-     BILLING.SUBSCRIPTION.ACTIVATED   → Activer l'abonnement
-     BILLING.SUBSCRIPTION.RENEWED     → Confirmer le renouvellement
-     PAYMENT.SALE.COMPLETED           → Confirmer le paiement mensuel
-     BILLING.SUBSCRIPTION.CANCELLED   → Désactiver l'accès
-     BILLING.SUBSCRIPTION.SUSPENDED   → Désactiver l'accès
-     BILLING.SUBSCRIPTION.EXPIRED     → Désactiver l'accès
-
-   Configuration PayPal Developer Dashboard :
-     https://developer.paypal.com → My Apps & Credentials → ton app
-     → Webhooks → Add Webhook
-     URL : https://ton-domaine.com/api/webhook/paypal
-     Events : cocher les 6 événements ci-dessus
-     → Coller le Webhook ID dans PAYPAL_WEBHOOK_ID
 ─────────────────────────────────────────────────────────────── */
 
-/* ── Types webhook PayPal ─────────────────────────────────── */
 interface PayPalWebhookEvent {
   event_type: string;
   resource: {
-    id:         string;         // subscription ID
+    id:         string;
     status?:    string;
-    custom_id?: string;         // notre userId Supabase
+    custom_id?: string;
     plan_id?:   string;
     subscriber?: {
       email_address?: string;
@@ -53,18 +40,16 @@ interface PayPalWebhookEvent {
   };
 }
 
-/* ── Handler principal ────────────────────────────────────── */
 export async function POST(req: Request) {
   const rawBody = await req.text();
 
-  /* ── Vérification de signature ───────────────────────────── */
   const isValid = await verifyPayPalWebhook({
     headers: req.headers as Headers,
     rawBody,
   });
 
   if (!isValid) {
-    console.error("[Webhook PayPal] ❌ Signature invalide");
+    log.error("Signature invalide");
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
@@ -78,9 +63,9 @@ export async function POST(req: Request) {
   const { event_type, resource } = event;
   const subscriptionId = resource.id;
 
-  console.log("[Webhook PayPal] 📨 Event:", event_type, "| Sub:", subscriptionId);
+  log.info(`Event: ${event_type} | Sub: ${subscriptionId}`);
 
-  /* ── PAYMENT.CAPTURE.COMPLETED — Coaching IA paiement unique ── */
+  /* ── PAYMENT.CAPTURE.COMPLETED ── */
   if (event_type === "PAYMENT.CAPTURE.COMPLETED") {
     const capture = resource as unknown as {
       payer?: {
@@ -107,7 +92,7 @@ export async function POST(req: Request) {
           user_metadata: { full_name: fullName, coaching_ia_active: true, coaching_ia_expires: expiresAt },
         });
         if (error || !data.user) {
-          console.error("[PayPal Webhook] ❌ coaching_ia createUser:", error?.message);
+          log.error("coaching_ia createUser", error?.message);
           return NextResponse.json({ received: true });
         }
         user = data.user; isNewUser = true;
@@ -132,14 +117,13 @@ export async function POST(req: Request) {
       } catch { /* fallback */ }
 
       await sendCoachingIAEmail({ email, fullName, accessLink, isNewUser });
-      console.log("[PayPal Webhook] ✅ Coaching IA activé (PayPal) →", email);
+      log.info("Coaching IA activé (PayPal) → " + email);
     } else {
-      console.warn("[PayPal Webhook] ⚠️ PAYMENT.CAPTURE.COMPLETED : pas d'email");
+      log.warn("PAYMENT.CAPTURE.COMPLETED : pas d'email");
     }
   }
 
-  /* ── BILLING.SUBSCRIPTION.ACTIVATED ─────────────────────── */
-  /* Déclenché quand PayPal confirme l'abonnement côté serveur  */
+  /* ── BILLING.SUBSCRIPTION.ACTIVATED ── */
   if (event_type === "BILLING.SUBSCRIPTION.ACTIVATED") {
     const email = resource.subscriber?.email_address ?? null;
     const givenName = resource.subscriber?.name?.given_name ?? "";
@@ -155,36 +139,32 @@ export async function POST(req: Request) {
           providedUserId:       userId,
           paypalSubscriptionId: subscriptionId,
         });
-        console.log("[Webhook PayPal] ✅ ACTIVATED →", email);
+        log.info("ACTIVATED → " + email);
       } catch (err) {
-        console.error("[Webhook PayPal] ❌ ACTIVATED error:", err);
+        log.error("ACTIVATED error", err);
       }
     } else {
-      console.warn("[Webhook PayPal] ⚠️ ACTIVATED: pas d'email dans resource");
+      log.warn("ACTIVATED: pas d'email dans resource");
     }
   }
 
-  /* ── BILLING.SUBSCRIPTION.RENEWED ───────────────────────── */
-  /* ── PAYMENT.SALE.COMPLETED ─────────────────────────────── */
-  /* Déclenché à chaque paiement mensuel réussi               */
+  /* ── BILLING.SUBSCRIPTION.RENEWED / PAYMENT.SALE.COMPLETED ── */
   if (
     event_type === "BILLING.SUBSCRIPTION.RENEWED" ||
     event_type === "PAYMENT.SALE.COMPLETED"
   ) {
     await confirmActiveByPayPalSubId(subscriptionId);
-    console.log("[Webhook PayPal] 🔄", event_type, "→ confirmé actif:", subscriptionId);
+    log.info(`${event_type} → confirmé actif: ${subscriptionId}`);
   }
 
-  /* ── BILLING.SUBSCRIPTION.CANCELLED ─────────────────────── */
-  /* ── BILLING.SUBSCRIPTION.SUSPENDED ─────────────────────── */
-  /* ── BILLING.SUBSCRIPTION.EXPIRED ───────────────────────── */
+  /* ── CANCELLED / SUSPENDED / EXPIRED ── */
   if (
     event_type === "BILLING.SUBSCRIPTION.CANCELLED" ||
     event_type === "BILLING.SUBSCRIPTION.SUSPENDED" ||
     event_type === "BILLING.SUBSCRIPTION.EXPIRED"
   ) {
     await deactivateUserByPayPalSubId(subscriptionId);
-    console.log("[Webhook PayPal] 🔴", event_type, "→ accès désactivé:", subscriptionId);
+    log.info(`${event_type} → accès désactivé: ${subscriptionId}`);
   }
 
   return NextResponse.json({ received: true });

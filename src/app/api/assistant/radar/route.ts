@@ -11,6 +11,7 @@
 
 import { NextResponse }         from "next/server";
 import { createSupabaseAdmin }  from "@/lib/supabase-server";
+import { createLogger }         from "@/lib/logger";
 import type {
   RadarItem,
   RadarResponse,
@@ -19,6 +20,8 @@ import type {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const log = createLogger("assistant/radar");
 
 /* ── Helpers ── */
 function daysElapsed(dateStr: string, now: Date): number {
@@ -47,7 +50,7 @@ export async function GET(): Promise<NextResponse<RadarResponse | { error: strin
       .in("status", ["envoyée", "en retard"])
       .eq("payment_status", "non payée");
 
-    if (invErr) console.error("[radar] invoices:", invErr.message);
+    if (invErr) log.error("invoices error", invErr.message);
 
     for (const inv of invoices ?? []) {
       const days = daysElapsed(inv.issue_date ?? new Date().toISOString(), now);
@@ -70,7 +73,7 @@ export async function GET(): Promise<NextResponse<RadarResponse | { error: strin
       .select("id, reference, client_name, client_email, total, created_at")
       .eq("status", "envoyé");
 
-    if (qErr) console.error("[radar] quotes:", qErr.message);
+    if (qErr) log.error("quotes error", qErr.message);
 
     for (const q of quotes ?? []) {
       const days = daysElapsed(q.created_at, now);
@@ -98,7 +101,7 @@ export async function GET(): Promise<NextResponse<RadarResponse | { error: strin
 
     return NextResponse.json({ items, total });
   } catch (err) {
-    console.error("[radar] unexpected:", err);
+    log.error("unexpected", err);
     return NextResponse.json({ error: "Erreur radar." }, { status: 500 });
   }
 }

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createPayPalSubscription } from "@/lib/paypal";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("paypal/create-subscription");
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/paypal/create-subscription
@@ -37,11 +40,11 @@ export async function POST(req: Request) {
       userEmail: userEmail ?? null,
     });
 
-    console.log("[PayPal] 🟡 Subscription créée — redirection vers PayPal");
+    log.info("Subscription créée — redirection vers PayPal");
     return NextResponse.json({ url: approvalUrl });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Erreur PayPal";
-    console.error("[PayPal] ❌ create-subscription error:", message);
+    log.error("create-subscription error", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

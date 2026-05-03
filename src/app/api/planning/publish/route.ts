@@ -6,6 +6,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }              from "@supabase/supabase-js";
 import { Resend }                    from "resend";
+import { createLogger }              from "@/lib/logger";
+
+const log = createLogger("planning/publish");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -81,7 +84,6 @@ function buildEmployeeEmail(
 
   const subject = `[Planning] Votre semaine du ${startLabel} — ${emp.name}`;
 
-  /* ── Text ── */
   const text = [
     `Bonjour ${emp.name},`,
     ``,
@@ -96,7 +98,6 @@ function buildEmployeeEmail(
     `Ce message a été envoyé automatiquement depuis votre espace DJAMA Pro.`,
   ].join("\n");
 
-  /* ── Shift rows HTML ── */
   const shiftRows = shifts.map(s => {
     const color = TYPE_COLORS[s.type] ?? "#94a3b8";
     return `
@@ -195,20 +196,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Supabase non configuré." }, { status: 500 });
   }
 
-  /* Create an authenticated Supabase client (RLS via JWT) */
   const db = createClient(supaUrl, supaKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth:   { persistSession: false },
   });
 
-  console.log("[publish] token reçu, longueur:", token.length);
+  log.debug(`token reçu, longueur: ${token.length}`);
 
   const { data: { user }, error: authErr } = await db.auth.getUser(token);
   if (authErr || !user) {
-    console.error("[publish] auth échouée:", authErr?.message ?? "pas d'utilisateur");
+    log.error("auth échouée", authErr?.message ?? "pas d'utilisateur");
     return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
   }
-  console.log("[publish] utilisateur authentifié:", user.id);
+  log.info("utilisateur authentifié: " + user.id);
 
   /* ── Body ── */
   let body: { week_start: string };
@@ -221,7 +221,7 @@ export async function POST(req: NextRequest) {
   }
   const week_end = addDays(week_start, 6);
 
-  /* ── Fetch shifts for the week ── */
+  /* ── Fetch shifts ── */
   const { data: shifts, error: fetchErr } = await db
     .from("shifts")
     .select("id,date,start_time,end_time,title,type,note,employee_id")
@@ -231,10 +231,10 @@ export async function POST(req: NextRequest) {
     .order("date").order("start_time");
 
   if (fetchErr) {
-    console.error("[publish] erreur fetch shifts:", fetchErr.message);
+    log.error("erreur fetch shifts", fetchErr.message);
     return NextResponse.json({ error: fetchErr.message }, { status: 500 });
   }
-  console.log("[publish] shifts trouvés:", shifts?.length ?? 0, "sur", week_start, "→", week_end);
+  log.info(`shifts trouvés: ${shifts?.length ?? 0} sur ${week_start} → ${week_end}`);
   if (!shifts || shifts.length === 0) {
     return NextResponse.json({ error: "Aucun shift à publier pour cette semaine." }, { status: 400 });
   }
@@ -248,10 +248,10 @@ export async function POST(req: NextRequest) {
     .lte("date", week_end);
 
   if (updateErr) {
-    console.error("[publish] erreur update status:", updateErr.message);
+    log.error("erreur update status", updateErr.message);
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
   }
-  console.log("[publish] shifts marqués 'published'");
+  log.info("shifts marqués 'published'");
 
   /* ── Send emails per employee ── */
   let emails_sent = 0;
@@ -260,17 +260,15 @@ export async function POST(req: NextRequest) {
   const fromEmail = process.env.NOTIFY_FROM_EMAIL ?? "noreply@djama.fr";
 
   if (!resendKey) {
-    console.warn("[publish] RESEND_API_KEY absente — aucun email ne sera envoyé");
+    log.warn("RESEND_API_KEY absente — aucun email ne sera envoyé");
   } else {
-    console.log("[publish] Resend configuré, from:", fromEmail);
+    log.info("Resend configuré, from: " + fromEmail);
   }
 
-  /* Collect employee IDs that have at least one shift — validate emails */
   const assignedEmpIds = [...new Set(
     (shifts as ShiftRow[]).filter(s => s.employee_id != null).map(s => s.employee_id as string)
   )];
 
-  /* Pre-flight: check that all assigned employees have an email */
   if (assignedEmpIds.length > 0) {
     const { data: empCheck } = await db
       .from("employees")
@@ -280,7 +278,7 @@ export async function POST(req: NextRequest) {
     const missingEmail = (empCheck ?? []).filter((e: { email: string | null }) => !e.email);
     if (missingEmail.length > 0) {
       const names = missingEmail.map((e: { name: string }) => e.name).join(", ");
-      console.error("[publish] bloqué — email manquant pour:", names);
+      log.error("bloqué — email manquant pour: " + names);
       return NextResponse.json({
         error: `Email manquant pour : ${names}. Ajoutez leur adresse email avant de publier.`,
         missing_email: missingEmail.map((e: { name: string }) => e.name),
@@ -298,12 +296,12 @@ export async function POST(req: NextRequest) {
         .in("id", empIds);
 
       if (employees) {
-        console.log("[publish] employés à notifier:", employees.length, "—", (employees as EmpRow[]).map(e => e.email ?? "(sans email)").join(", "));
+        log.info(`employés à notifier: ${employees.length}`);
         const resend = new Resend(resendKey);
 
         for (const emp of employees as EmpRow[]) {
           if (!emp.email) {
-            console.log(`[publish] ${emp.name} ignoré (pas d'email)`);
+            log.info(`${emp.name} ignoré (pas d'email)`);
             continue;
           }
 
@@ -312,30 +310,30 @@ export async function POST(req: NextRequest) {
             .sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time));
 
           if (empShifts.length === 0) {
-            console.log(`[publish] ${emp.name} ignoré (aucun shift)`);
+            log.info(`${emp.name} ignoré (aucun shift)`);
             continue;
           }
 
-          console.log(`[publish] envoi email → ${emp.email} (${empShifts.length} shift(s))`);
+          log.info(`envoi email → ${emp.email} (${empShifts.length} shift(s))`);
           const { subject, html, text } = buildEmployeeEmail(emp, empShifts, week_start, week_end);
 
           try {
             const { data: mailData, error: mailErr } = await resend.emails.send({ from: fromEmail, to: emp.email, subject, html, text });
             if (mailErr) {
-              console.error(`[publish] ✗ email échoué pour ${emp.email}:`, mailErr.message);
+              log.error(`email échoué pour ${emp.email}`, mailErr.message);
             } else {
-              console.log(`[publish] ✓ email envoyé à ${emp.email}, id:`, mailData?.id);
+              log.info(`email envoyé à ${emp.email}, id: ${mailData?.id}`);
               emails_sent++;
             }
           } catch (e) {
-            console.error(`[publish] exception email pour ${emp.email}:`, e);
+            log.error(`exception email pour ${emp.email}`, e);
           }
         }
       }
     }
   }
 
-  console.log("[publish] terminé — shifts publiés:", shifts.length, "| emails envoyés:", emails_sent);
+  log.info(`terminé — shifts publiés: ${shifts.length} | emails envoyés: ${emails_sent}`);
   return NextResponse.json({
     published: shifts.length,
     emails_sent,

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("activate-test");
 
 /**
  * GET /api/admin/activate-test
@@ -78,9 +81,9 @@ export async function GET(request: Request) {
   );
   if (metaErr) {
     errors.push(`user_metadata: ${metaErr.message}`);
-    console.error("[activate-test] user_metadata error:", metaErr.message);
+    log.error("user_metadata error", metaErr.message);
   } else {
-    console.log("[activate-test] ✅ user_metadata mis à jour pour:", TEST_ACCOUNT.email);
+    log.info("user_metadata mis à jour pour: " + TEST_ACCOUNT.email);
   }
 
   /* 2. Upsert dans la table clients (colonnes réelles : email, abonnement, statut) */
@@ -94,9 +97,9 @@ export async function GET(request: Request) {
   );
   if (dbErr) {
     errors.push(`clients table: ${dbErr.message}`);
-    console.error("[activate-test] clients upsert error:", dbErr.message);
+    log.error("clients upsert error", dbErr.message);
   } else {
-    console.log("[activate-test] ✅ clients table mis à jour pour:", TEST_ACCOUNT.email);
+    log.info("clients table mis à jour pour: " + TEST_ACCOUNT.email);
   }
 
   if (errors.length > 0) {

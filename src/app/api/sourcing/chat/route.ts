@@ -9,8 +9,11 @@
  *        | { error: string }  → status 4xx/5xx
  */
 
-import Anthropic           from "@anthropic-ai/sdk";
+import Anthropic                    from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { createLogger }             from "@/lib/logger";
+
+const log = createLogger("sourcing/chat");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -104,7 +107,7 @@ export async function POST(req: NextRequest) {
   /* ── Clé API ── */
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    console.error("[sourcing/chat] ANTHROPIC_API_KEY manquante dans les variables d'environnement.");
+    log.error("ANTHROPIC_API_KEY manquante dans les variables d'environnement");
     return NextResponse.json({ error: "Cle API Anthropic non configuree." }, { status: 500 });
   }
 
@@ -133,7 +136,7 @@ export async function POST(req: NextRequest) {
     )
     .slice(-10);  // max 10 tours de conversation
 
-  console.log(`[sourcing/chat] message recu (${message.length} chars), history: ${cleanHistory.length} items`);
+  log.info(`message recu (${message.length} chars), history: ${cleanHistory.length} items`);
 
   /* ── Appel Claude ── */
   try {
@@ -144,7 +147,7 @@ export async function POST(req: NextRequest) {
       { role: "user", content: message.trim() },
     ];
 
-    console.log(`[sourcing/chat] appel Claude (${claudeMessages.length} messages)`);
+    log.debug(`appel Claude (${claudeMessages.length} messages)`);
 
     const response = await anthropic.messages.create({
       model:      MODEL,
@@ -157,7 +160,7 @@ export async function POST(req: NextRequest) {
       ? response.content[0].text.trim()
       : "";
 
-    console.log(`[sourcing/chat] reponse brute (${raw.length} chars):`, raw.slice(0, 200));
+    log.debug(`reponse brute (${raw.length} chars): ${raw.slice(0, 200)}`);
 
     /* ── Extraction JSON — avec fallback propre ── */
     let parsed: Record<string, unknown>;
@@ -172,9 +175,9 @@ export async function POST(req: NextRequest) {
       const match = src.match(/\{[\s\S]*\}/);
       if (!match) throw new Error("Aucun JSON trouve dans la reponse");
       parsed = JSON.parse(match[0]) as Record<string, unknown>;
-      console.log("[sourcing/chat] JSON parse OK, cles:", Object.keys(parsed).join(", "));
+      log.debug("JSON parse OK, cles: " + Object.keys(parsed).join(", "));
     } catch (parseErr) {
-      console.warn("[sourcing/chat] JSON parse echoue, fallback:", parseErr);
+      log.warn("JSON parse echoue, fallback");
       /* Ne jamais mettre le JSON brut dans text — extraire le champ text si possible */
       const textMatch = raw.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/);
       const fallbackText = textMatch
@@ -196,12 +199,7 @@ export async function POST(req: NextRequest) {
     const errBody  = (err as { error?: unknown }).error;
     const errMsg   = err instanceof Error ? err.message : String(err);
 
-    console.error("[sourcing/chat] ERREUR ANTHROPIC:", {
-      message: errMsg,
-      status,
-      type:    err?.constructor?.name,
-      body:    errBody,
-    });
+    log.error("ERREUR ANTHROPIC", { message: errMsg, status, type: err?.constructor?.name });
 
     const friendly = friendlyAnthropicError(err);
     return NextResponse.json({ error: friendly }, { status: 500 });

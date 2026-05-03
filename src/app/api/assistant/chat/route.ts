@@ -12,6 +12,7 @@
 import Anthropic                     from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse }  from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createLogger }               from "@/lib/logger";
 import type {
   ChatRequest, ChatApiResponse, ChatKPIs, ChatAction,
 } from "@/lib/assistant/types";
@@ -19,6 +20,7 @@ import type {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const log = createLogger("assistant/chat");
 const MODEL = "claude-haiku-4-5-20251001";
 
 /* ─────────────────────────────────────────────────────────
@@ -316,7 +318,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
 
   } catch (err) {
-    console.error("[chat]", err);
+    log.error("chat error", err);
     return NextResponse.json({ error: "Erreur lors de l'analyse." }, { status: 500 });
   }
 }

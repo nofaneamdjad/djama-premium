@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendCoachingIAEmail } from "@/lib/email";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("admin/coaching-ia");
 
 /* ─────────────────────────────────────────────────────────────
    /api/admin/coaching-ia
@@ -158,7 +161,7 @@ export async function POST(req: NextRequest) {
       isNewUser,
     });
 
-    console.log("[Admin] ✅ Coaching IA activé →", email);
+    log.info("Coaching IA activé → " + email);
     return NextResponse.json({ success: true, message: `Accès activé pour ${email}` });
   }
 
@@ -186,7 +189,7 @@ export async function POST(req: NextRequest) {
       updated_at:  now,
     }).eq("email", email.toLowerCase());
 
-    console.log("[Admin] 🔴 Coaching IA désactivé →", email);
+    log.info("Coaching IA désactivé → " + email);
     return NextResponse.json({ success: true, message: `Accès désactivé pour ${email}` });
   }
 
@@ -213,7 +216,7 @@ export async function POST(req: NextRequest) {
       isNewUser: false,
     });
 
-    console.log("[Admin] 📧 Email renvoyé →", email);
+    log.info("Email renvoyé → " + email);
     return NextResponse.json({ success: true, message: `Email renvoyé à ${email}` });
   }
 

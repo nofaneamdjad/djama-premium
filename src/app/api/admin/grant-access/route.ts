@@ -23,13 +23,13 @@
 import { NextResponse }             from "next/server";
 import { createClient }             from "@supabase/supabase-js";
 import { sendAccessWelcomeEmail }   from "@/lib/email";
+import { createLogger }             from "@/lib/logger";
+
+const log = createLogger("grant-access");
 
 // ── Client Supabase pour cette route ──────────────────────────
-// Les RLS de user_access sont ouvertes (USING (true)) donc la clé
-// anon suffit. On préfère la service role si elle est configurée.
 function getSupabaseClient() {
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-  // Placeholder non remplacé → on tombe sur la clé anon valide
   const isPlaceholder = !SERVICE_KEY || SERVICE_KEY.startsWith("COLLER_");
 
   const key = isPlaceholder
@@ -37,9 +37,7 @@ function getSupabaseClient() {
     : SERVICE_KEY;
 
   if (isPlaceholder) {
-    console.warn(
-      "[grant-access] ⚠️ SUPABASE_SERVICE_ROLE_KEY non configurée → utilisation de la clé anon (RLS ouvertes)."
-    );
+    log.warn("SUPABASE_SERVICE_ROLE_KEY non configurée → utilisation de la clé anon (RLS ouvertes).");
   }
 
   return createClient(
@@ -50,7 +48,6 @@ function getSupabaseClient() {
 }
 
 // ── Génération du code d'accès ─────────────────────────────────
-// Format : DJAM-XXXXXX (6 caractères, sans O/0/I/1 pour éviter confusion)
 function generateAccessCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "DJAM-";
@@ -62,10 +59,9 @@ function generateAccessCode(): string {
 
 // ── Handler ────────────────────────────────────────────────────
 export async function POST(req: Request) {
-  // SITE_URL résolu à l'exécution (jamais au chargement du module)
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000";
 
-  // ── Diagnostic complet (visible dans les logs Vercel) ──────────
+  // ── Diagnostic (muet en production) ───────────────────────────
   const rawKey    = process.env.RESEND_API_KEY;
   const sanitized = rawKey?.trim().replace(/^["']|["']$/g, "").trim() ?? "";
   const keyPreview = sanitized
@@ -77,12 +73,12 @@ export async function POST(req: Request) {
   const isPlaceholder = !serviceKey || serviceKey.startsWith("COLLER_");
   const supabaseKeyType = isPlaceholder ? "anon" : `service_role (${serviceKey.slice(0, 10)}...)`;
 
-  console.log("[grant-access] ── DIAGNOSTIC ──────────────────────────────");
-  console.log("[grant-access] RESEND_API_KEY :", keyPreview);
-  console.log("[grant-access] RESEND_FROM    :", process.env.RESEND_FROM ?? "ABSENT (fallback noreply@djama.space)");
-  console.log("[grant-access] SUPABASE_URL   :", supabaseUrl.slice(0, 40));
-  console.log("[grant-access] SUPABASE_KEY   :", supabaseKeyType);
-  console.log("[grant-access] ────────────────────────────────────────────");
+  log.debug("DIAGNOSTIC", {
+    RESEND_API_KEY: keyPreview,
+    RESEND_FROM:    process.env.RESEND_FROM ?? "ABSENT",
+    SUPABASE_URL:   supabaseUrl.slice(0, 40),
+    SUPABASE_KEY:   supabaseKeyType,
+  });
 
   try {
     const body = await req.json() as {
@@ -104,16 +100,17 @@ export async function POST(req: Request) {
     const normalizedEmail = email.trim().toLowerCase();
     const supabase        = getSupabaseClient();
 
-    // ── 1. Lire la ligne existante (pour préserver les champs non fournis) ──
+    // ── 1. Lire la ligne existante ──────────────────────────────
     const { data: existing, error: selectError } = await supabase
       .from("user_access")
       .select("*")
       .eq("email", normalizedEmail)
       .maybeSingle();
+
     if (selectError) {
-      console.error("[grant-access] ❌ SELECT error (Supabase) :", selectError.message, selectError.code);
+      log.error("SELECT error (Supabase)", selectError.message);
     } else {
-      console.log("[grant-access] ✅ SELECT ok — existing:", !!existing);
+      log.info("SELECT ok", { existing: !!existing });
     }
 
     const isNew      = !existing;
@@ -138,21 +135,17 @@ export async function POST(req: Request) {
       .upsert([row], { onConflict: "email" });
 
     if (upsertError) {
-      console.error("[grant-access] ❌ UPSERT error (Supabase) :", upsertError.message, upsertError.code);
-      console.error("[grant-access] ❌ → C'est un problème SUPABASE, pas Resend");
+      log.error("UPSERT error (Supabase) — problème Supabase, pas Resend", upsertError.message);
       return NextResponse.json({ error: `[Supabase] ${upsertError.message}` }, { status: 500 });
     }
 
-    console.log("[grant-access] ✅ user_access upserted →", normalizedEmail, isNew ? "(nouveau)" : "(mis à jour)");
+    log.info(`user_access upserted → ${normalizedEmail} ${isNew ? "(nouveau)" : "(mis à jour)"}`);
 
-    // ── 3. Créer / confirmer le compte Supabase Auth ───────────────────────────
-    // Nécessite SUPABASE_SERVICE_ROLE_KEY (clé admin).
-    // Sans cette clé, l'utilisateur ne pourra pas se connecter via /login.
+    // ── 3. Créer / confirmer le compte Supabase Auth ──────────────
     const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
     const hasSvc = svcKey && !svcKey.startsWith("COLLER_");
 
-    const codePreview = `${accessCode.slice(0, 7)}...${accessCode.slice(-2)} (${accessCode.length} chars)`;
-    console.log("[grant-access] 🔑 accessCode →", codePreview, "| isNew:", isNew);
+    log.debug(`accessCode généré (${accessCode.length} chars) | isNew: ${isNew}`);
 
     if (hasSvc) {
       const adminClient = createClient(
@@ -163,8 +156,8 @@ export async function POST(req: Request) {
 
       const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
         email:         normalizedEmail,
-        password:      accessCode,      // code temporaire = mot de passe initial
-        email_confirm: true,            // pas de vérification email requise
+        password:      accessCode,
+        email_confirm: true,
         user_metadata: { needs_password_reset: true },
       });
 
@@ -175,14 +168,11 @@ export async function POST(req: Request) {
           authErr.message.toLowerCase().includes("registered");
 
         if (alreadyExists) {
-          // L'utilisateur existe déjà dans Auth.
-          // On DOIT mettre à jour son mot de passe pour le synchroniser avec
-          // l'accessCode qu'on va envoyer par email — sinon le login échouera.
-          console.log("[grant-access] ℹ️ Auth user existant — synchronisation du mot de passe →", codePreview);
+          log.info("Auth user existant — synchronisation du mot de passe");
           try {
             const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
             if (listErr) {
-              console.warn("[grant-access] ⚠️ listUsers error :", listErr.message);
+              log.warn("listUsers error: " + listErr.message);
             } else {
               const authUser = users?.find(u => u.email?.toLowerCase() === normalizedEmail);
               if (authUser) {
@@ -192,51 +182,48 @@ export async function POST(req: Request) {
                   user_metadata: { needs_password_reset: true },
                 });
                 if (updErr) {
-                  console.warn("[grant-access] ⚠️ updateUserById échoué :", updErr.message);
+                  log.warn("updateUserById échoué: " + updErr.message);
                 } else {
-                  console.log("[grant-access] ✅ Auth user mis à jour → id:", authUser.id, "| email_confirmed:", authUser.email_confirmed_at ? "oui" : "non");
+                  log.info(`Auth user mis à jour → id: ${authUser.id}`);
                 }
               } else {
-                console.warn("[grant-access] ⚠️ Auth user non trouvé dans listUsers pour :", normalizedEmail);
+                log.warn("Auth user non trouvé dans listUsers pour: " + normalizedEmail);
               }
             }
           } catch (listEx) {
-            console.warn("[grant-access] ⚠️ Exception listUsers :", listEx);
+            log.warn("Exception listUsers: " + String(listEx));
           }
         } else {
-          console.warn("[grant-access] ⚠️ Auth user non créé :", authErr.message);
+          log.warn("Auth user non créé: " + authErr.message);
         }
       } else {
-        console.log("[grant-access] ✅ Auth user créé → id:", authData.user?.id, "| confirmed:", authData.user?.email_confirmed_at ? "oui" : "non");
+        log.info(`Auth user créé → id: ${authData.user?.id}`);
       }
     } else {
-      console.warn("[grant-access] ⚠️ SUPABASE_SERVICE_ROLE_KEY absent — compte Auth non créé");
+      log.warn("SUPABASE_SERVICE_ROLE_KEY absent — compte Auth non créé");
     }
 
     // ── 4. Envoyer l'email de bienvenue ────────────────────────
-    // Non bloquant : si l'email échoue, l'accès reste créé.
-    // La raison précise est retournée à l'UI pour affichage.
     let emailResult: { sent: boolean; reason?: string } = { sent: false, reason: "Non tenté" };
     try {
-      console.log("[grant-access] 📧 Appel sendAccessWelcomeEmail →", normalizedEmail);
+      log.info("Appel sendAccessWelcomeEmail → " + normalizedEmail);
       emailResult = await sendAccessWelcomeEmail({
         email:      normalizedEmail,
         fullName:   name?.trim() || null,
         accessCode,
         loginUrl:   `${SITE_URL}/login`,
       });
-      console.log("[grant-access] 📧 Résultat email :", emailResult);
+      log.info("Résultat email", { sent: emailResult.sent, reason: emailResult.reason });
     } catch (emailErr) {
       const msg = emailErr instanceof Error ? emailErr.message : String(emailErr);
-      console.error("[grant-access] ❌ Exception email (non bloquant) :", msg);
+      log.error("Exception email (non bloquant)", msg);
       emailResult = { sent: false, reason: msg };
     }
 
-    // Mapper le message d'erreur Resend en message lisible
     let emailError: string | undefined;
     if (!emailResult.sent) {
       const raw = emailResult.reason ?? "Erreur inconnue";
-      console.error("[grant-access] ❌ Email non envoyé — raison exacte :", raw);
+      log.error("Email non envoyé", raw);
       if (
         raw.toLowerCase().includes("invalid api key") ||
         raw.toLowerCase().includes("api key is invalid") ||
@@ -259,7 +246,7 @@ export async function POST(req: Request) {
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[grant-access] ❌ Exception:", msg);
+    log.error("Exception", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

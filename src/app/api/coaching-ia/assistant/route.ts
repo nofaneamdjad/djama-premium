@@ -1,5 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("coaching-ia/assistant");
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/coaching-ia/assistant
@@ -74,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ reply: text });
   } catch (err) {
-    console.error("[Coaching IA Assistant] error:", err);
+    log.error("Coaching IA Assistant error", err);
     return NextResponse.json(
       { error: "Une erreur est survenue. Réessayez." },
       { status: 500 }

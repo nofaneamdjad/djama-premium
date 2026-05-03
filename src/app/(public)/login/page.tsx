@@ -94,18 +94,12 @@ function LoginPageInner() {
 
     try {
       /* ── 1. Authentification ─────────────────────── */
-      const pwdPreview = password.length > 1
-        ? `${password[0]}${"*".repeat(Math.max(0, password.length - 2))}${password[password.length - 1]}`
-        : "*".repeat(password.length);
-      console.log("[Login] → email:", trimmedEmail, "| pwd length:", password.length, "| pwd preview:", pwdPreview);
-
       const { data, error: sbError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
       });
 
       if (sbError) {
-        console.error("[Login] ❌ message:", sbError.message, "| status:", sbError.status, "| code:", (sbError as { code?: string }).code ?? "—");
         if (
           sbError.message.includes("Invalid login credentials") ||
           sbError.message.includes("invalid_credentials")
@@ -132,15 +126,13 @@ function LoginPageInner() {
          TODO: réactiver le check clients table quand prêt           */
       const needsReset = data.session.user.user_metadata?.needs_password_reset === true;
       const dest       = needsReset ? "/definir-mot-de-passe" : redirectTo;
-      console.log("[Login] ✅ Connecté :", data.session.user.email, "→", dest);
 
       /* ── 3. Redirection ─────────────────────────── */
       setPhase("redirecting");
       willRedirect = true;
       window.location.href = dest;
 
-    } catch (err) {
-      console.error("[Login] ❌ Exception :", err);
+    } catch {
       setError("Erreur inattendue. Vérifiez votre connexion et réessayez.");
       setErrorType("other");
     } finally {

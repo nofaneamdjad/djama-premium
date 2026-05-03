@@ -12,6 +12,9 @@
 
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("services");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,7 +29,7 @@ export async function GET() {
       .order("sort_order", { ascending: true });
 
     if (error) {
-      console.error("[GET /api/services] Supabase error:", error.code, error.message);
+      log.error(`GET error ${error.code}`, error.message);
       return NextResponse.json(
         { error: `Supabase: ${error.message}`, code: error.code },
         { status: 500 }
@@ -38,7 +41,7 @@ export async function GET() {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[GET /api/services] Exception:", msg);
+    log.error("GET exception", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

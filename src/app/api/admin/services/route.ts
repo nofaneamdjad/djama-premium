@@ -11,6 +11,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("admin/services");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,7 +28,7 @@ export async function GET() {
       .order("sort_order", { ascending: true });
 
     if (error) {
-      console.error("[GET /api/admin/services]", error.code, error.message);
+      log.error("[GET /api/admin/services]", error.code, error.message);
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 
@@ -50,7 +53,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error("[POST /api/admin/services]", error.code, error.message);
+      log.error("[POST /api/admin/services]", error.code, error.message);
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 
@@ -77,7 +80,7 @@ export async function PATCH(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error("[PATCH /api/admin/services]", error.code, error.message);
+      log.error("[PATCH /api/admin/services]", error.code, error.message);
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 
@@ -98,7 +101,7 @@ export async function DELETE(req: NextRequest) {
     const { error } = await sb.from("services").delete().eq("id", id);
 
     if (error) {
-      console.error("[DELETE /api/admin/services]", error.code, error.message);
+      log.error("[DELETE /api/admin/services]", error.code, error.message);
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 

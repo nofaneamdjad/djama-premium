@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("rdv/decouverte");
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/rdv/decouverte
@@ -191,7 +194,7 @@ export async function POST(req: Request) {
   }
 
   if (!process.env.RESEND_API_KEY) {
-    console.warn("[Découverte RDV] RESEND_API_KEY manquant — emails non envoyés");
+    log.warn("RESEND_API_KEY manquant — emails non envoyés");
     return NextResponse.json({ ok: true, warn: "email_skipped" });
   }
 
@@ -213,9 +216,9 @@ export async function POST(req: Request) {
     }),
   ]);
 
-  if (adminRes.error)  console.error("[Découverte RDV] Admin email error:",  adminRes.error);
-  if (clientRes.error) console.error("[Découverte RDV] Client email error:", clientRes.error);
+  if (adminRes.error)  log.error("Admin email error",  adminRes.error);
+  if (clientRes.error) log.error("Client email error", clientRes.error);
 
-  console.log("[Découverte RDV] ✅ Emails envoyés →", email, `(${slot})`);
+  log.info(`Emails envoyés → ${email} (${slot})`);
   return NextResponse.json({ ok: true });
 }

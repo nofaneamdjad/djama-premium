@@ -18,6 +18,9 @@
 import { NextResponse }              from "next/server";
 import { createClient }              from "@supabase/supabase-js";
 import { sendAccessActivatedEmail }  from "@/lib/email";
+import { createLogger }              from "@/lib/logger";
+
+const log = createLogger("activate-access");
 
 type AccessCol = "espace_premium" | "coaching_ia" | "soutien_scolaire" | "outils_saas";
 
@@ -52,7 +55,7 @@ export async function POST(req: Request) {
   const keyPreview = sanitized
     ? `${sanitized.slice(0, 7)}...${sanitized.slice(-4)} (${sanitized.length} chars)`
     : "ABSENTE";
-  console.log("[activate-access] ENV →", {
+  log.debug("ENV", {
     RESEND_API_KEY: keyPreview,
     RESEND_FROM:    process.env.RESEND_FROM ?? "ABSENT",
     SITE_URL,
@@ -103,11 +106,11 @@ export async function POST(req: Request) {
       .eq("email", normalizedEmail);
 
     if (updateError) {
-      console.error("[activate-access] ❌ update error:", updateError.message);
+      log.error("update error", updateError.message);
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    console.log("[activate-access] ✅", activate ? "Activé" : "Désactivé", col, "→", normalizedEmail);
+    log.info(`${activate ? "Activé" : "Désactivé"} ${col} → ${normalizedEmail}`);
 
     // ── 3. Envoi de l'email si activation (pas pour désactivation) ──
     if (!activate) {
@@ -147,7 +150,7 @@ export async function POST(req: Request) {
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[activate-access] ❌ Exception:", msg);
+    log.error("Exception", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

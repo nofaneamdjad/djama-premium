@@ -10,6 +10,7 @@
 
 import { NextResponse }         from "next/server";
 import { createSupabaseAdmin }  from "@/lib/supabase-server";
+import { createLogger }         from "@/lib/logger";
 import type {
   AppNotification,
   NotificationsResponse,
@@ -18,6 +19,8 @@ import type {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const log = createLogger("assistant/notifications");
 
 function daysAgo(dateStr: string): number {
   return Math.max(0, Math.floor(
@@ -38,7 +41,7 @@ export async function GET(): Promise<NextResponse<NotificationsResponse | { erro
       .eq("payment_status", "non payée")
       .limit(10);
 
-    if (invErr) console.error("[notifs] invoices:", invErr.message);
+    if (invErr) log.error("invoices error", invErr.message);
 
     for (const inv of invoices ?? []) {
       const days  = daysAgo(inv.issue_date ?? new Date().toISOString());
@@ -65,7 +68,7 @@ export async function GET(): Promise<NextResponse<NotificationsResponse | { erro
       .eq("status", "envoyé")
       .limit(10);
 
-    if (qErr) console.error("[notifs] quotes:", qErr.message);
+    if (qErr) log.error("quotes error", qErr.message);
 
     for (const q of quotes ?? []) {
       const days = daysAgo(q.created_at);
@@ -95,7 +98,7 @@ export async function GET(): Promise<NextResponse<NotificationsResponse | { erro
       urgent_count:   notifs.filter(n => n.level === "urgent").length,
     });
   } catch (err) {
-    console.error("[notifs] unexpected:", err);
+    log.error("unexpected", err);
     return NextResponse.json({ error: "Erreur notifications." }, { status: 500 });
   }
 }

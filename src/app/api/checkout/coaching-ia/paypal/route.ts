@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("checkout/coaching-ia/paypal");
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/checkout/coaching-ia/paypal
@@ -96,15 +99,15 @@ export async function POST(req: Request) {
     const approveLink = order.links?.find((l) => l.rel === "approve")?.href;
 
     if (!approveLink) {
-      console.error("[PayPal] Réponse invalide:", JSON.stringify(order));
+      log.error("Réponse invalide", order);
       throw new Error("PayPal : lien d'approbation introuvable");
     }
 
-    console.log("[PayPal Coaching IA] ✅ Ordre créé →", order.id, "email:", userEmail);
+    log.info("Ordre créé → " + order.id);
     return NextResponse.json({ url: approveLink, orderId: order.id });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Erreur PayPal";
-    console.error("[PayPal Coaching IA] ❌", message);
+    log.error("PayPal error", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

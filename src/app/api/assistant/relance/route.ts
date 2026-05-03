@@ -13,6 +13,7 @@
 
 import Anthropic               from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
 import type {
   RelanceRequest,
   RelanceResponse,
@@ -21,6 +22,7 @@ import type {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const log = createLogger("assistant/relance");
 const MODEL = "claude-haiku-4-5-20251001";
 
 const SYSTEM = `\
@@ -85,7 +87,7 @@ export async function POST(
     return NextResponse.json(result);
 
   } catch (err) {
-    console.error("[relance]", err);
+    log.error("relance error", err);
     return NextResponse.json({ error: "Erreur génération message." }, { status: 500 });
   }
 }

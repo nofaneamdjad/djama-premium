@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("checkout/coaching-ia");
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/checkout/coaching-ia
@@ -74,7 +77,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Erreur inconnue";
-    console.error("[Stripe Coaching IA] Checkout error:", message);
+    log.error("Stripe Coaching IA Checkout error", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

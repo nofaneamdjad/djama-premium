@@ -1,6 +1,9 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getPayPalSubscription } from "@/lib/paypal";
 import { activateOrCreateUser } from "@/lib/subscription-helpers";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("paypal/capture");
 
 /* ─────────────────────────────────────────────────────────────
    GET /api/paypal/capture?subscription_id=I-XXXXXXX
@@ -23,35 +26,35 @@ export async function GET(req: NextRequest) {
   const subscriptionId = req.nextUrl.searchParams.get("subscription_id");
 
   if (!subscriptionId) {
-    console.warn("[PayPal Capture] ⚠️ subscription_id manquant dans l'URL");
+    log.warn("subscription_id manquant dans l'URL");
     return NextResponse.redirect(`${SITE_URL}/espace-client?erreur=paypal`);
   }
 
-  console.log("[PayPal Capture] 🔍 Vérification subscription:", subscriptionId);
+  log.info("Vérification subscription: " + subscriptionId);
 
   /* ── 1. Récupérer l'abonnement PayPal ─────────────────────── */
   let sub;
   try {
     sub = await getPayPalSubscription(subscriptionId);
   } catch (err) {
-    console.error("[PayPal Capture] ❌ getPayPalSubscription error:", err);
+    log.error("getPayPalSubscription error", err);
     return NextResponse.redirect(`${SITE_URL}/espace-client?erreur=paypal`);
   }
 
-  console.log("[PayPal Capture] 📋 Status:", sub.status, "| Sub ID:", sub.id);
+  log.info(`Status: ${sub.status} | Sub ID: ${sub.id}`);
 
   /* ── 2. Vérifier que le statut est bien actif ─────────────── */
   /* PayPal peut retourner APPROVAL_PENDING → on accepte aussi */
   const acceptedStatuses = ["ACTIVE", "APPROVAL_PENDING"];
   if (!acceptedStatuses.includes(sub.status)) {
-    console.warn("[PayPal Capture] ⚠️ Statut inattendu:", sub.status);
+    log.warn("Statut inattendu: " + sub.status);
     return NextResponse.redirect(`${SITE_URL}/espace-client?erreur=paypal-statut`);
   }
 
   /* ── 3. Extraire les données du souscripteur ──────────────── */
   const email = sub.subscriber?.email_address ?? null;
   if (!email) {
-    console.error("[PayPal Capture] ❌ Pas d'email dans la subscription PayPal");
+    log.error("Pas d'email dans la subscription PayPal");
     return NextResponse.redirect(`${SITE_URL}/espace-client?erreur=paypal-email`);
   }
 
@@ -69,7 +72,7 @@ export async function GET(req: NextRequest) {
       paypalSubscriptionId: subscriptionId,
     });
   } catch (err) {
-    console.error("[PayPal Capture] ❌ activateOrCreateUser error:", err);
+    log.error("activateOrCreateUser error", err);
     /* On redirige quand même vers la confirmation pour ne pas bloquer le client */
   }
 

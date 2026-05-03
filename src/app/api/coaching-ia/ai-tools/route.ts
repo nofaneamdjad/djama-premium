@@ -14,6 +14,9 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("coaching-ia/ai-tools");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -154,7 +157,7 @@ Réponds en français. Les prompts eux-mêmes peuvent être en français ou en a
     const result = response.content[0].type === "text" ? response.content[0].text.trim() : "";
     return NextResponse.json({ result });
   } catch (err) {
-    console.error("[ai-tools]", err);
+    log.error("ai-tools error", err);
     return NextResponse.json({ error: "Erreur lors de la génération. Réessayez." }, { status: 500 });
   }
 }

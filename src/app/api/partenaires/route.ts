@@ -14,6 +14,9 @@
 
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("partenaires");
 
 export const dynamic = "force-dynamic";
 export const runtime  = "nodejs";
@@ -32,19 +35,13 @@ export async function GET() {
       .order("sort_order", { ascending: true });
 
     if (error) {
-      console.error("[GET /api/partenaires] Supabase error:", error.code, error.message);
+      log.error(`GET Supabase error ${error.code}`, error.message);
       return NextResponse.json([], { status: 200 });
     }
 
     const logos = data ?? [];
 
-    /* ── Diagnostic log (visible dans Vercel Functions logs) ── */
-    console.log(
-      `[GET /api/partenaires] ${logos.length} logo(s) actif(s) :`,
-      logos.map((l: { name: string; is_active: boolean; logo_url: string }) =>
-        `"${l.name}" (is_active=${l.is_active}, url=${l.logo_url ? "ok" : "VIDE"})`
-      ).join(" | ")
-    );
+    log.info(`${logos.length} logo(s) actif(s)`);
 
     return NextResponse.json(logos, {
       headers: {
@@ -53,7 +50,7 @@ export async function GET() {
       },
     });
   } catch (err) {
-    console.error("[GET /api/partenaires] unexpected:", err);
+    log.error("GET unexpected", err);
     return NextResponse.json([]);
   }
 }

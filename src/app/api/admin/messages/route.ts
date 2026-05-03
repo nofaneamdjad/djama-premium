@@ -8,6 +8,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("admin/messages");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,7 +24,7 @@ export async function GET() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("[GET /api/admin/messages]", error.code, error.message);
+      log.error(`GET error ${error.code}`, error.message);
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 

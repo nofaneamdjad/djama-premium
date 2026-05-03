@@ -27,6 +27,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("admin/upload");
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   // 1. Auth basique
   if (!isAdmin(req)) {
-    console.warn("[upload] tentative non autorisée — header x-djama-admin absent");
+    log.warn("tentative non autorisée — header x-djama-admin absent");
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -63,7 +66,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[upload] bucket=${bucket} path=${path} size=${file.size} type=${file.type}`);
+    log.info(`bucket=${bucket} path=${path} size=${file.size} type=${file.type}`);
 
     // 3. Lecture du fichier
     const arrayBuffer = await file.arrayBuffer();
@@ -81,7 +84,7 @@ export async function POST(req: NextRequest) {
       });
 
     if (storageError) {
-      console.error("[upload] storageError:", JSON.stringify(storageError));
+      log.error("storageError", storageError);
       return NextResponse.json(
         {
           error:      storageError.message,
@@ -96,11 +99,11 @@ export async function POST(req: NextRequest) {
     const { data: urlData } = sb.storage.from(bucket).getPublicUrl(path);
     const url = urlData.publicUrl;
 
-    console.log(`[upload] succès → ${url}`);
+    log.info(`succès → ${url}`);
     return NextResponse.json({ url });
 
   } catch (err) {
-    console.error("[upload] exception:", err);
+    log.error("exception", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("checkout/coaching-ia/virement");
 
 /* ─────────────────────────────────────────────────────────────
    POST /api/checkout/coaching-ia/virement
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
   );
 
   if (clientsErr) {
-    console.error("[Virement] ❌ clients upsert error:", clientsErr.message);
+    log.error("clients upsert error", clientsErr.message);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 
@@ -67,6 +70,6 @@ export async function POST(req: Request) {
     { onConflict: "email", ignoreDuplicates: true }
   );
 
-  console.log("[Virement] ✅ Demande enregistrée →", normalizedEmail);
+  log.info("Demande enregistrée");
   return NextResponse.json({ success: true });
 }
