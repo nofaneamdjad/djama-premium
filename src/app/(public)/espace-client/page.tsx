@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import {
   FileText, CalendarRange, StickyNote, Brain, Timer, CreditCard, Globe,
   CheckCircle2, ArrowRight, Sparkles, Shield, Zap, Lock, Wallet,
-  AlertTriangle, MessageCircle, Users, LogIn, Star, BadgeCheck,
+  AlertTriangle, MessageCircle, Users, LogIn, BadgeCheck,
   ChevronRight,
 } from "lucide-react";
 import StripeButton from "@/components/ui/StripeButton";
@@ -100,18 +100,13 @@ const STEPS = [
   { n: "03", title: "Utilisez vos outils",   desc: "Tableau de bord prêt dès la première connexion." },
 ] as const;
 
-const REVIEWS = [
-  { initial: "K", name: "Karim B.", role: "Consultant indépendant", text: "DJAMA a remplacé 4 outils d'un coup. Le Coach IA m'a aidé à voir où je perdais du temps." },
-  { initial: "S", name: "Sofia M.", role: "Graphiste freelance",    text: "Mes factures sont impeccables. Les clients me demandent toujours quel outil j'utilise." },
-  { initial: "T", name: "Thomas D.", role: "Artisan entrepreneur",  text: "La trésorerie en temps réel, c'est exactement ce dont j'avais besoin pour piloter mon activité." },
-] as const;
 
 /* ─────────────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────────────── */
 export default function EspaceClientPage() {
   return (
-    <div className="bg-[#09090b] text-white">
+    <div className="overflow-x-hidden bg-[#09090b] text-white">
       <Suspense>
         <AlreadySubscribedRedirect />
         <AccessBanner />
@@ -120,7 +115,7 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           HERO
       ══════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pt-28 pb-24 sm:pt-44 sm:pb-40">
+      <section className="relative overflow-hidden pt-28 pb-24 sm:pt-40 sm:pb-36">
         {/* Fond grille subtile */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.025]"
@@ -132,8 +127,8 @@ export default function EspaceClientPage() {
         />
         {/* Glows */}
         <div className="pointer-events-none absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,0.07)] blur-[130px]" />
-        <div className="pointer-events-none absolute -left-20 top-1/2 h-[400px] w-[400px] rounded-full bg-[rgba(96,165,250,0.04)] blur-[100px]" />
-        <div className="pointer-events-none absolute -right-20 top-1/3 h-[350px] w-[350px] rounded-full bg-[rgba(167,139,250,0.04)] blur-[100px]" />
+        <div className="pointer-events-none absolute left-0 top-1/2 h-[400px] w-[300px] rounded-full bg-[rgba(96,165,250,0.04)] blur-[100px]" />
+        <div className="pointer-events-none absolute right-0 top-1/3 h-[350px] w-[300px] rounded-full bg-[rgba(167,139,250,0.04)] blur-[100px]" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
           {/* Badge */}
@@ -521,60 +516,6 @@ export default function EspaceClientPage() {
               </div>
             </motion.div>
           </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          AVIS
-      ══════════════════════════════════════════════ */}
-      <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-5xl px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
-            transition={{ duration: 0.5, ease }}
-            className="mb-12 text-center"
-          >
-            <p className="mb-3 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
-              Avis clients
-            </p>
-            <h2 className="text-2xl font-black text-white sm:text-3xl">
-              Ce qu&apos;ils en pensent.
-            </h2>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={viewport}
-            variants={staggerContainerFast}
-            className="grid gap-4 sm:grid-cols-3"
-          >
-            {REVIEWS.map((r) => (
-              <motion.div
-                key={r.name}
-                variants={cardReveal}
-                className="flex flex-col gap-4 rounded-2xl border border-white/[0.06] bg-[#0f0f13] p-6 transition-all duration-300 hover:border-white/[0.10]"
-              >
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={11} className="fill-[#c9a55a] text-[#c9a55a]" />
-                  ))}
-                </div>
-                <p className="text-[0.8rem] leading-relaxed text-white/52">&ldquo;{r.text}&rdquo;</p>
-                <div className="mt-auto flex items-center gap-3 border-t border-white/[0.05] pt-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.12)] text-xs font-black text-[#c9a55a]">
-                    {r.initial}
-                  </div>
-                  <div>
-                    <p className="text-[0.78rem] font-bold text-white">{r.name}</p>
-                    <p className="text-[0.68rem] text-white/30">{r.role}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
       </section>
 
