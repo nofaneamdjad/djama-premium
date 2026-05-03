@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }              from "@supabase/supabase-js";
 import { Resend }                    from "resend";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 // ── Supabase admin ────────────────────────────────────────────────────
 const supabaseAdmin = createClient(
@@ -175,6 +176,19 @@ function confirmEmail(d: { name: string; subject: string }) {
 // Handler
 // ─────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  // ── Rate limiting : 5 messages / 10 minutes par IP ──────────
+  const ip = getClientIp(req);
+  const { allowed, resetAt } = checkRateLimit(ip, 5, 10 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Trop de messages envoyés. Réessayez dans quelques minutes." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)) },
+      }
+    );
+  }
+
   let body: {
     name?: string; email?: string; subject?: string;
     budget?: string; message?: string; phone?: string;

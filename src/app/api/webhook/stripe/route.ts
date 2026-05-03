@@ -432,6 +432,12 @@ async function syncSubscriptionStatus(
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Idempotence — cache en mémoire des events déjà traités
+   (évite doublons si Stripe re-envoie le même event)
+───────────────────────────────────────────────────────────── */
+const processedEvents = new Set<string>();
+
+/* ─────────────────────────────────────────────────────────────
    Handler principal
 ───────────────────────────────────────────────────────────── */
 export async function POST(req: Request) {
@@ -449,6 +455,18 @@ export async function POST(req: Request) {
     const msg = err instanceof Error ? err.message : "Invalid signature";
     console.error("[Webhook] ❌ Signature error:", msg);
     return NextResponse.json({ error: msg }, { status: 400 });
+  }
+
+  // ── Idempotence : ignorer les events déjà traités ────────────
+  if (processedEvents.has(event.id)) {
+    console.log("[Webhook] ⏭️  Event déjà traité, ignoré →", event.id);
+    return NextResponse.json({ received: true, skipped: true });
+  }
+  processedEvents.add(event.id);
+  // Limiter la taille du cache en mémoire (~500 events max)
+  if (processedEvents.size > 500) {
+    const oldest = processedEvents.values().next().value;
+    if (oldest) processedEvents.delete(oldest);
   }
 
   console.log("[Webhook] 📨 Event:", event.type);
