@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { downloadContractPDF, openContractPDF } from "@/lib/contract-pdf";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 /* ═══════════════════════════════════════════════════
    TYPES
@@ -195,6 +196,10 @@ export default function ContratsPage() {
   const [generating, setGenerating] = useState(false);
   const [creating, setCreating] = useState(false);
 
+  /* ── confirmation suppression ── */
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   /* ── mobile panel ── */
   const [mobilePanel, setMobilePanel] = useState(false);
 
@@ -356,19 +361,28 @@ export default function ContratsPage() {
   /* ────────────────── delete ────────────────── */
   const handleDelete = useCallback(
     async (id: string) => {
-      if (!confirm("Supprimer ce contrat ?")) return;
-      const { error } = await supabase.from("contracts").delete().eq("id", id);
-      if (!error) {
-        setContracts((prev) => prev.filter((c) => c.id !== id));
-        if (selected?.id === id) {
-          setSelected(null);
-          setMobilePanel(false);
-        }
-        toast("Contrat supprimé", "info");
-      }
+      setConfirmDeleteId(id);
     },
-    [selected, toast]
+    []
   );
+
+  const confirmDelete = useCallback(async () => {
+    if (!confirmDeleteId) return;
+    setDeleting(true);
+    const { error } = await supabase.from("contracts").delete().eq("id", confirmDeleteId);
+    setDeleting(false);
+    setConfirmDeleteId(null);
+    if (!error) {
+      setContracts((prev) => prev.filter((c) => c.id !== confirmDeleteId));
+      if (selected?.id === confirmDeleteId) {
+        setSelected(null);
+        setMobilePanel(false);
+      }
+      toast("Contrat supprimé", "info");
+    } else {
+      toast("Erreur lors de la suppression", "error");
+    }
+  }, [confirmDeleteId, selected, toast]);
 
   /* ────────────────── create contract (brouillon vide) ────────────────── */
   const handleCreateContract = useCallback(
@@ -828,6 +842,17 @@ export default function ContratsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Confirmation suppression ── */}
+      <ConfirmModal
+        open={confirmDeleteId !== null}
+        title="Supprimer ce contrat ?"
+        description="Le contenu et l'historique du contrat seront définitivement effacés."
+        confirmLabel="Supprimer"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 /* ═══════════════════════════════════════════════════
    TYPES
@@ -160,6 +161,9 @@ export default function ReputationPage() {
   const [form, setForm] = useState<DraftReview>(EMPTY_FORM());
   const [submitting, setSubmitting] = useState(false);
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   /* ────────────── fetch ────────────── */
   useEffect(() => {
     (async () => {
@@ -214,14 +218,23 @@ export default function ReputationPage() {
   }, [form, userId, toast]);
 
   /* ────────────── delete ────────────── */
-  const handleDelete = useCallback(async (id: string) => {
-    if (!confirm("Supprimer cet avis ?")) return;
-    const { error } = await supabase.from("reviews").delete().eq("id", id);
+  const handleDelete = useCallback((id: string) => {
+    setConfirmDeleteId(id);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!confirmDeleteId) return;
+    setDeleting(true);
+    const { error } = await supabase.from("reviews").delete().eq("id", confirmDeleteId);
+    setDeleting(false);
+    setConfirmDeleteId(null);
     if (!error) {
-      setReviews((prev) => prev.filter((r) => r.id !== id));
+      setReviews((prev) => prev.filter((r) => r.id !== confirmDeleteId));
       toast("Avis supprimé", "info");
+    } else {
+      toast("Erreur lors de la suppression", "error");
     }
-  }, [toast]);
+  }, [confirmDeleteId, toast]);
 
   /* ═══════════════════════════════════════
      RENDER
@@ -435,6 +448,17 @@ export default function ReputationPage() {
           </div>
         )}
       </div>
+
+      {/* ── Confirmation suppression ── */}
+      <ConfirmModal
+        open={confirmDeleteId !== null}
+        title="Supprimer cet avis ?"
+        description="L'avis sera définitivement effacé de votre historique."
+        confirmLabel="Supprimer"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

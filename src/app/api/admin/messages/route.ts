@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
     const { data, error } = await sb
       .from("contact_messages")
       .select("id, name, email, phone, source, subject, message, status, metadata, created_at")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(500);
 
     if (error) {
       log.error(`GET error ${error.code}`, error.message);

@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
     const { data, error } = await sb
       .from("realisations")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(200);
 
     if (error) {
       log.error(`GET error ${error.code}`, error.message);

@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
     const { data, error } = await sb
       .from("services")
       .select("*")
-      .order("sort_order", { ascending: true });
+      .order("sort_order", { ascending: true })
+      .limit(100);
 
     if (error) {
       log.error(`GET error ${error.code}`, error.message);
