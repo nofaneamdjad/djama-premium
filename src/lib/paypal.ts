@@ -140,8 +140,9 @@ export async function verifyPayPalWebhook(opts: {
 }): Promise<boolean> {
   const webhookId = process.env.PAYPAL_WEBHOOK_ID;
   if (!webhookId) {
-    console.warn("[PayPal] PAYPAL_WEBHOOK_ID manquant — vérification ignorée");
-    return true; // En dev, on accepte sans vérif
+    // Ne jamais accepter sans vérification — forcer la configuration de PAYPAL_WEBHOOK_ID
+    console.error("[PayPal] PAYPAL_WEBHOOK_ID manquant — webhook rejeté");
+    return false;
   }
 
   try {

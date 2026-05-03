@@ -15,8 +15,9 @@
  */
 
 import Anthropic               from "@anthropic-ai/sdk";
-import { NextResponse }        from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { requireAdmin }        from "@/lib/admin-auth";
 import type { CoachResponse }  from "@/lib/assistant/types";
 import { createLogger }        from "@/lib/logger";
 
@@ -71,7 +72,10 @@ Retourne UNIQUEMENT ce JSON valide (sans markdown, sans commentaire) :
 }
 Exactement 3 actions. JSON pur, aucun texte avant ou après.`;
 
-export async function POST(): Promise<NextResponse<CoachResponse | { error: string }>> {
+export async function POST(req: NextRequest): Promise<NextResponse<CoachResponse | { error: string }>> {
+  const deny = await requireAdmin(req);
+  if (deny) return deny as NextResponse<CoachResponse | { error: string }>;
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Clé API manquante." }, { status: 500 });

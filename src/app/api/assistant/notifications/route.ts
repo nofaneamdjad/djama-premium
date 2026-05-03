@@ -8,8 +8,9 @@
  * Retour : { notifications[], total_at_risk, urgent_count }
  */
 
-import { NextResponse }         from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin }  from "@/lib/supabase-server";
+import { requireAdmin }         from "@/lib/admin-auth";
 import { createLogger }         from "@/lib/logger";
 import type {
   AppNotification,
@@ -28,7 +29,10 @@ function daysAgo(dateStr: string): number {
   ));
 }
 
-export async function GET(): Promise<NextResponse<NotificationsResponse | { error: string }>> {
+export async function GET(req: NextRequest): Promise<NextResponse<NotificationsResponse | { error: string }>> {
+  const deny = await requireAdmin(req);
+  if (deny) return deny as NextResponse<NotificationsResponse | { error: string }>;
+
   try {
     const sb    = createSupabaseAdmin();
     const notifs: AppNotification[] = [];

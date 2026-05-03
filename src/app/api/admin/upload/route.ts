@@ -60,6 +60,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 2b. Whitelist des types MIME autorisés (images uniquement)
+    const ALLOWED_MIME = [
+      "image/jpeg", "image/jpg", "image/png", "image/webp",
+      "image/gif",  "image/svg+xml", "image/avif",
+    ];
+    if (!ALLOWED_MIME.includes(file.type)) {
+      log.warn(`Type MIME rejeté : ${file.type}`);
+      return NextResponse.json(
+        { error: `Type de fichier non autorisé : "${file.type}". Formats acceptés : JPEG, PNG, WebP, GIF, SVG, AVIF.` },
+        { status: 400 },
+      );
+    }
+
+    // 2c. Taille max : 10 Mo
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json(
+        { error: `Fichier trop volumineux (${(file.size / 1024 / 1024).toFixed(1)} Mo). Maximum : 10 Mo.` },
+        { status: 400 },
+      );
+    }
+
     log.info(`bucket=${bucket} path=${path} size=${file.size} type=${file.type}`);
 
     // 3. Lecture du fichier

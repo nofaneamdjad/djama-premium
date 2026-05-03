@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/admin-auth";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("activate-test");
@@ -19,12 +20,6 @@ const log = createLogger("activate-test");
  * (après s'être connecté avec nofamdjad@gmail.com)
  */
 
-/* ── Emails autorisés à utiliser cette route ── */
-const ADMIN_EMAILS = [
-  "nofamdjad@gmail.com",
-  "nofamdjad31@gmail.com",
-];
-
 /* ── ID Supabase connu du compte test ── */
 const TEST_ACCOUNT = {
   email:  "nofamdjad@gmail.com",
@@ -32,7 +27,10 @@ const TEST_ACCOUNT = {
   nom:    "DJAMA Admin",
 };
 
-export async function GET(request: Request) {
+export async function GET(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
+
   /* ── Vérifications préalables ───────────────────────────── */
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceRoleKey || serviceRoleKey.startsWith("COLLER_")) {
@@ -52,17 +50,7 @@ export async function GET(request: Request) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
-  /* ── Vérifier que l'appelant est bien dans la liste admin ── */
-  const authHeader = request.headers.get("cookie") ?? "";
-  const supabaseAnon = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-  );
-
-  // On utilise la session portée par les cookies (header forwarded)
-  // Vérification simple : on récupère les users Supabase et on cherche notre admin
-  // (En production on vérifierait le JWT depuis les cookies de la requête)
+  /* ── Auth vérifiée via requireAdmin() ci-dessus ── */
 
   /* ── Activer le compte test ─────────────────────────────── */
   const errors: string[] = [];

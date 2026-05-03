@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { z }                   from "zod";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 import { createLogger }        from "@/lib/logger";
 import { requireAdmin }        from "@/lib/admin-auth";
@@ -47,7 +48,15 @@ export async function PATCH(req: NextRequest) {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
 
-    const { status } = await req.json();
+    const body = await req.json();
+    const parsed = z.object({
+      status: z.enum(["nouveau", "traité", "archivé"]),
+    }).safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
+    }
+    const { status } = parsed.data;
+
     const sb = createSupabaseAdmin();
     const { error } = await sb
       .from("contact_messages")
