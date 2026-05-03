@@ -150,14 +150,16 @@ export default function DepensesPage() {
     return d.toISOString().slice(0, 10);
   }, [viewYear, viewMonth]);
 
-  /* ── Fetch ── */
+  /* ── Fetch — filtre server-side sur le mois affiché ── */
   const fetchExpenses = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("expenses")
       .select("*")
+      .gte("date", monthStart)
+      .lte("date", monthEnd)
       .order("date", { ascending: false })
-      .limit(1000);
+      .limit(500);
 
     if (error) {
       showToast("error", `Chargement impossible : ${error.message}`);
@@ -165,34 +167,28 @@ export default function DepensesPage() {
       setExpenses((data as Expense[]) ?? []);
     }
     setLoading(false);
-  }, []);
+  }, [monthStart, monthEnd]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchExpenses(); }, [fetchExpenses]);
 
-  /* ── Filtered expenses for current month view ── */
-  const monthExpenses = useMemo(
-    () => expenses.filter((e) => e.date >= monthStart && e.date <= monthEnd),
-    [expenses, monthStart, monthEnd],
-  );
-
-  /* ── Summary ── */
+  /* ── Summary (expenses = données du mois courant, déjà filtrées) ── */
   const totalMonth = useMemo(
-    () => monthExpenses.reduce((s, e) => s + e.amount, 0),
-    [monthExpenses],
+    () => expenses.reduce((s, e) => s + e.amount, 0),
+    [expenses],
   );
 
   const byCategory = useMemo(() => {
     const map: Partial<Record<CategoryKey, number>> = {};
-    for (const e of monthExpenses) {
+    for (const e of expenses) {
       map[e.category] = (map[e.category] ?? 0) + e.amount;
     }
     return map;
-  }, [monthExpenses]);
+  }, [expenses]);
 
   /* ── Group by category (sorted by category total desc) ── */
   const grouped = useMemo(() => {
     const map: Partial<Record<CategoryKey, Expense[]>> = {};
-    for (const e of monthExpenses) {
+    for (const e of expenses) {
       if (!map[e.category]) map[e.category] = [];
       map[e.category]!.push(e);
     }
@@ -200,7 +196,7 @@ export default function DepensesPage() {
     return (Object.entries(map) as [CategoryKey, Expense[]][]).sort(
       ([a], [b]) => (byCategory[b] ?? 0) - (byCategory[a] ?? 0),
     );
-  }, [monthExpenses, byCategory]);
+  }, [expenses, byCategory]);
 
   /* ── Month navigation ── */
   function prevMonth() {
@@ -230,7 +226,8 @@ export default function DepensesPage() {
       return;
     }
 
-    // Optimistic insert
+    // Optimistic insert (seulement si la date est dans le mois affiché)
+    const inCurrentMonth = formDate >= monthStart && formDate <= monthEnd;
     const tempId = `temp-${Date.now()}`;
     const optimistic: Expense = {
       id: tempId,
@@ -241,7 +238,7 @@ export default function DepensesPage() {
       amount,
       created_at: new Date().toISOString(),
     };
-    setExpenses((prev) => [optimistic, ...prev]);
+    if (inCurrentMonth) setExpenses((prev) => [optimistic, ...prev]);
 
     // Reset form
     setFormDesc("");
@@ -264,13 +261,17 @@ export default function DepensesPage() {
 
     if (error) {
       // Roll back optimistic
-      setExpenses((prev) => prev.filter((ex) => ex.id !== tempId));
+      if (inCurrentMonth) setExpenses((prev) => prev.filter((ex) => ex.id !== tempId));
       showToast("error", `Erreur : ${error.message}`);
       return;
     }
 
-    // Replace temp with real row
-    setExpenses((prev) => prev.map((ex) => (ex.id === tempId ? (data as Expense) : ex)));
+    if (inCurrentMonth) {
+      // Replace temp with real row
+      setExpenses((prev) => prev.map((ex) => (ex.id === tempId ? (data as Expense) : ex)));
+    } else {
+      // La dépense est hors du mois affiché, on ne rafraîchit pas la liste
+    }
     showToast("success", "Dépense ajoutée !");
   }
 
@@ -444,7 +445,7 @@ export default function DepensesPage() {
                 </p>
               </div>
               <span className="text-xs text-white/30">
-                {monthExpenses.length} dépense{monthExpenses.length !== 1 ? "s" : ""}
+                {expenses.length} dépense{expenses.length !== 1 ? "s" : ""}
               </span>
             </div>
 
@@ -477,7 +478,7 @@ export default function DepensesPage() {
           <div className="flex items-center justify-center py-16">
             <Loader2 size={22} className="animate-spin text-white/20" />
           </div>
-        ) : monthExpenses.length === 0 ? (
+        ) : expenses.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
