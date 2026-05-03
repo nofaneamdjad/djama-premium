@@ -16,10 +16,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const { password } = await req.json();
-    const ADMIN_PASS =
-      process.env.ADMIN_PASS ??
-      process.env.NEXT_PUBLIC_ADMIN_PASS ??
-      "djama2024";
+    const ADMIN_PASS = process.env.ADMIN_PASS;
+
+    if (!ADMIN_PASS) {
+      return NextResponse.json(
+        { error: "Configuration admin manquante." },
+        { status: 503 }
+      );
+    }
 
     if (!password || password !== ADMIN_PASS) {
       // Délai anti-brute-force

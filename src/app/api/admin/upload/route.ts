@@ -17,37 +17,31 @@
  *   path    string  Chemin dans le bucket (ex: "1713890123-abc.webp")
  *
  * Auth :
- *   Header  x-djama-admin: ok   (valeur posée par localStorage côté admin)
+ *   Cookie  djama_admin_tok   HMAC-SHA256 vérifié par requireAdmin()
  *
  * Réponse :
  *   200  { url: string }      URL publique du fichier
  *   400  { error: string }    Paramètre manquant
- *   401  { error: string }    Header admin absent
+ *   401  { error: string }    Cookie admin absent ou invalide
  *   500  { error: string }    Erreur Supabase ou serveur
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createLogger } from "@/lib/logger";
+import { createLogger }      from "@/lib/logger";
+import { requireAdmin }      from "@/lib/admin-auth";
+import { createSupabaseAdmin } from "@/lib/supabase-server";
 
 const log = createLogger("admin/upload");
-import { createSupabaseAdmin } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 export const runtime  = "nodejs";
 
-// ─── Vérification admin ───────────────────────────────────────────────────────
-function isAdmin(req: NextRequest): boolean {
-  return req.headers.get("x-djama-admin") === "ok";
-}
-
 // ─── POST ─────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
 
-  // 1. Auth basique
-  if (!isAdmin(req)) {
-    log.warn("tentative non autorisée — header x-djama-admin absent");
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  // 1. Auth HMAC cookie
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
 
   try {
     const formData = await req.formData();

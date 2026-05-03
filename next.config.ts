@@ -37,6 +37,24 @@ const nextConfig: NextConfig = {
   //    récupérer la dernière version depuis Vercel ────────────────────
   async headers() {
     return [
+      /* ── En-têtes de sécurité — toutes les routes ── */
+      {
+        source: "/(.*)",
+        headers: [
+          // Empêche le site d'être embarqué dans une iframe tierce (clickjacking)
+          { key: "X-Frame-Options",           value: "SAMEORIGIN" },
+          // Empêche le navigateur de sniffer le Content-Type
+          { key: "X-Content-Type-Options",    value: "nosniff" },
+          // Limite les infos du Referer transmises aux tiers
+          { key: "Referrer-Policy",           value: "strict-origin-when-cross-origin" },
+          // Force HTTPS pour 1 an (Vercel / production uniquement)
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
+          // Désactive les APIs sensibles non utilisées
+          { key: "Permissions-Policy",        value: "camera=(), microphone=(), geolocation=(), payment=()" },
+          // Protection XSS basique (IE/Edge legacy)
+          { key: "X-XSS-Protection",          value: "1; mode=block" },
+        ],
+      },
       /* ── Service Worker — doit être revalidé mais pas bloqué ── */
       {
         source: "/sw.js",

@@ -2,14 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendCoachingIAEmail } from "@/lib/email";
 import { createLogger } from "@/lib/logger";
+import { requireAdmin } from "@/lib/admin-auth";
 
 const log = createLogger("admin/coaching-ia");
 
 /* ─────────────────────────────────────────────────────────────
    /api/admin/coaching-ia
    CRUD admin pour la gestion des accès Coaching IA.
-
-   Toutes les routes nécessitent : x-admin-token: ADMIN_SECRET
 
    GET  ?email=xxx          → lister les clients (filtrable)
    POST { action, email }   → activate | deactivate | resend_email | confirm_transfer
@@ -25,17 +24,10 @@ function getSupabaseAdmin() {
   );
 }
 
-function isAuthorized(req: NextRequest): boolean {
-  const ADMIN_PASS = process.env.ADMIN_PASS ?? process.env.NEXT_PUBLIC_ADMIN_PASS ?? "djama2024";
-  const tok = req.cookies.get("djama_admin_tok")?.value;
-  return tok === ADMIN_PASS;
-}
-
 /* ── GET ────────────────────────────────────────────────────── */
 export async function GET(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
 
   const supabase     = getSupabaseAdmin();
   const emailFilter  = req.nextUrl.searchParams.get("email");
@@ -75,9 +67,8 @@ export async function GET(req: NextRequest) {
 
 /* ── POST ───────────────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
 
   const { action, email } = await req.json() as {
     action: "activate" | "deactivate" | "resend_email" | "confirm_transfer";

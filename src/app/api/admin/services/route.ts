@@ -11,7 +11,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { createLogger } from "@/lib/logger";
+import { createLogger }        from "@/lib/logger";
+import { requireAdmin }        from "@/lib/admin-auth";
 
 const log = createLogger("admin/services");
 
@@ -19,7 +20,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 // ── GET — tous les services ───────────────────────────────────────────────────
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
+
   try {
     const sb = createSupabaseAdmin();
     const { data, error } = await sb
@@ -28,7 +32,7 @@ export async function GET() {
       .order("sort_order", { ascending: true });
 
     if (error) {
-      log.error("[GET /api/admin/services]", error.code, error.message);
+      log.error(`GET error ${error.code}`, error.message);
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 
@@ -43,6 +47,9 @@ export async function GET() {
 
 // ── POST — créer un service ───────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
+
   try {
     const payload = await req.json();
     const sb = createSupabaseAdmin();
@@ -53,7 +60,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      log.error("[POST /api/admin/services]", error.code, error.message);
+      log.error(`POST error ${error.code}`, error.message);
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 
@@ -66,6 +73,9 @@ export async function POST(req: NextRequest) {
 
 // ── PATCH — mettre à jour un service ─────────────────────────────────────────
 export async function PATCH(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
+
   try {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
@@ -80,7 +90,7 @@ export async function PATCH(req: NextRequest) {
       .single();
 
     if (error) {
-      log.error("[PATCH /api/admin/services]", error.code, error.message);
+      log.error(`PATCH error ${error.code}`, error.message);
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 
@@ -93,6 +103,9 @@ export async function PATCH(req: NextRequest) {
 
 // ── DELETE — supprimer un service ─────────────────────────────────────────────
 export async function DELETE(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
+
   try {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
@@ -101,7 +114,7 @@ export async function DELETE(req: NextRequest) {
     const { error } = await sb.from("services").delete().eq("id", id);
 
     if (error) {
-      log.error("[DELETE /api/admin/services]", error.code, error.message);
+      log.error(`DELETE error ${error.code}`, error.message);
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 
