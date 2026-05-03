@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import {
   FileText, CalendarRange, StickyNote, Brain, Timer, CreditCard, Globe,
   CheckCircle2, ArrowRight, Sparkles, Shield, Zap, Lock, Wallet,
-  AlertTriangle, MessageCircle, Users,
+  AlertTriangle, MessageCircle, Users, LogIn, Star, TrendingUp,
 } from "lucide-react";
 import StripeButton  from "@/components/ui/StripeButton";
 import { FadeReveal } from "@/components/ui/WordReveal";
@@ -17,7 +17,7 @@ import { staggerContainerFast, cardReveal, viewport, staggerContainer, fadeIn } 
 const ease = [0.16, 1, 0.3, 1] as const;
 
 /* ─────────────────────────────────────────────────────────
-   BANNER — accès refusé (redirigé depuis un outil protégé)
+   BANNER — accès refusé
 ───────────────────────────────────────────────────────── */
 function AccessBanner() {
   const params = useSearchParams();
@@ -178,6 +178,27 @@ const TRUST = [
   },
 ] as const;
 
+const TESTIMONIALS = [
+  {
+    name: "Karim B.",
+    role: "Consultant indépendant",
+    text: "DJAMA a remplacé 4 outils différents. Depuis que j'utilise le Coach IA, j'ai arrêté de perdre du temps à analyser mes chiffres.",
+    stars: 5,
+  },
+  {
+    name: "Sofia M.",
+    role: "Graphiste freelance",
+    text: "Les factures PDF sont impeccables. Mes clients me demandent souvent avec quel outil je les génère. Ça fait la différence.",
+    stars: 5,
+  },
+  {
+    name: "Thomas D.",
+    role: "Artisan entrepreneur",
+    text: "La trésorerie en temps réel, c'est ce dont j'avais besoin. Je vois d'un coup d'œil où j'en suis chaque matin.",
+    stars: 5,
+  },
+] as const;
+
 /* ─────────────────────────────────────────────────────────
    Redirection automatique si déjà abonné
 ───────────────────────────────────────────────────────── */
@@ -186,9 +207,7 @@ function AlreadySubscribedRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    /* Ne pas rediriger si paiement annulé ou accès refusé */
     if (params.get("annule") === "1" || params.get("acces") === "requis") return;
-
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       const meta = user.user_metadata ?? {};
@@ -216,19 +235,20 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           1. HERO
       ══════════════════════════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden pb-14 pt-24 sm:pb-32 sm:pt-40">
-        {/* Glow central */}
+      <section className="hero-dark hero-grid relative overflow-hidden pb-20 pt-24 sm:pb-36 sm:pt-44">
+        {/* Glows */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[500px] w-[600px] rounded-full bg-[rgba(176,141,87,0.10)] blur-[100px]" />
+          <div className="h-[560px] w-[700px] rounded-full bg-[rgba(176,141,87,0.10)] blur-[110px]" />
         </div>
+        <div className="pointer-events-none absolute right-0 top-1/3 h-[300px] w-[300px] rounded-full bg-[rgba(96,165,250,0.04)] blur-[80px]" />
 
         <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
           {/* Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            initial={{ opacity: 0, y: 10, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, ease }}
-            className="mb-7 inline-flex items-center gap-2 rounded-full border border-[rgba(176,141,87,0.28)] bg-[rgba(176,141,87,0.09)] px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#c9a55a]"
+            className="mb-7 inline-flex items-center gap-2 rounded-full border border-[rgba(176,141,87,0.30)] bg-[rgba(176,141,87,0.10)] px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#c9a55a]"
           >
             <Sparkles size={10} />
             Espace Client DJAMA
@@ -236,9 +256,9 @@ export default function EspaceClientPage() {
 
           {/* Titre */}
           <motion.h1
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease, delay: 0.1 }}
+            transition={{ duration: 0.75, ease, delay: 0.1 }}
             className="display-hero text-white"
           >
             Vos outils pros,{" "}
@@ -254,8 +274,8 @@ export default function EspaceClientPage() {
             Coach IA, CRM, Trésorerie, Contrats, Sourcing et bien plus encore.
           </FadeReveal>
 
-          {/* CTA principal */}
-          <FadeReveal delay={0.65} className="mt-10 flex flex-wrap justify-center gap-3">
+          {/* CTAs */}
+          <FadeReveal delay={0.62} className="mt-10 flex flex-wrap justify-center gap-3">
             <Link href="#abonnement" className="btn-primary px-8 py-4 text-base">
               <Wallet size={17} />
               S&apos;abonner — 11,90€/mois
@@ -265,19 +285,9 @@ export default function EspaceClientPage() {
             </Link>
           </FadeReveal>
 
-          {/* Lien connexion sous les CTAs */}
-          <FadeReveal delay={0.78} className="mt-5">
-            <p className="text-sm text-white/30">
-              Déjà abonné ?{" "}
-              <Link href="/login" className="font-semibold text-[#c9a55a] underline-offset-2 hover:underline">
-                Accéder à mon espace →
-              </Link>
-            </p>
-          </FadeReveal>
-
           {/* Trust strip */}
           <FadeReveal
-            delay={0.88}
+            delay={0.82}
             className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
           >
             {[
@@ -298,9 +308,62 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          2. OUTILS (5 cartes)
+          2. BLOC — DÉJÀ ABONNÉ (très visible)
       ══════════════════════════════════════════════ */}
-      <section id="outils" className="bg-[#0f0f13] py-12 sm:py-24">
+      <section className="bg-[#09090b] pb-10 pt-0 sm:pb-16">
+        <div className="mx-auto max-w-3xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.6, ease }}
+            className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.22)] bg-[#111113]"
+            style={{ boxShadow: "0 0 60px rgba(201,165,90,0.06), 0 20px 60px rgba(0,0,0,0.35)" }}
+          >
+            {/* Accent line top */}
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-[#c9a55a]/50 to-transparent" />
+
+            {/* Glow */}
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute left-1/2 top-0 h-[160px] w-[400px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,0.06)] blur-[60px]" />
+            </div>
+
+            <div className="relative flex flex-col items-center gap-6 px-8 py-9 sm:flex-row sm:justify-between">
+              {/* Left */}
+              <div className="flex items-center gap-5">
+                <div
+                  className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.28)]"
+                  style={{ background: "rgba(201,165,90,0.10)", boxShadow: "0 0 20px rgba(201,165,90,0.18)" }}
+                >
+                  <LogIn size={22} className="text-[#c9a55a]" />
+                </div>
+                <div>
+                  <p className="text-base font-extrabold text-white sm:text-lg">
+                    Déjà abonné ?
+                  </p>
+                  <p className="mt-0.5 text-sm text-white/40">
+                    Accédez directement à votre espace de gestion.
+                  </p>
+                </div>
+              </div>
+
+              {/* Right */}
+              <Link
+                href="/login"
+                className="group flex w-full items-center justify-center gap-2.5 rounded-xl border border-[rgba(201,165,90,0.35)] bg-[rgba(201,165,90,0.10)] px-7 py-3.5 text-sm font-bold text-[#c9a55a] transition-all duration-200 hover:bg-[rgba(201,165,90,0.18)] hover:border-[rgba(201,165,90,0.55)] hover:shadow-[0_0_24px_rgba(201,165,90,0.18)] sm:w-auto"
+              >
+                Se connecter
+                <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          3. OUTILS
+      ══════════════════════════════════════════════ */}
+      <section id="outils" className="bg-[#0f0f13] py-14 sm:py-28">
         <div className="mx-auto max-w-6xl px-6">
           {/* Header */}
           <motion.div
@@ -323,7 +386,7 @@ export default function EspaceClientPage() {
             </p>
           </motion.div>
 
-          {/* Grid 10 tool cards — dark preview cards */}
+          {/* Grid */}
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -338,24 +401,18 @@ export default function EspaceClientPage() {
                   key={tool.title}
                   variants={cardReveal}
                   className="group overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#09090b] transition-all duration-300 hover:-translate-y-1"
-                  style={{
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-                  }}
+                  style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}
                   whileHover={{
                     boxShadow: `0 16px 48px rgba(${tool.rgb}, 0.14)`,
                     borderColor: `rgba(${tool.rgb}, 0.3)`,
                   }}
                   transition={{ duration: 0.3, ease }}
                 >
-                  {/* Accent line */}
                   <div
                     className="h-[2px] w-full"
-                    style={{
-                      background: `linear-gradient(90deg, ${tool.color}, transparent)`,
-                    }}
+                    style={{ background: `linear-gradient(90deg, ${tool.color}, transparent)` }}
                   />
                   <div className="p-6">
-                    {/* Icon */}
                     <motion.div
                       className="mb-4 inline-flex h-[52px] w-[52px] items-center justify-center rounded-2xl border"
                       style={{
@@ -368,15 +425,8 @@ export default function EspaceClientPage() {
                     >
                       <Icon size={22} style={{ color: tool.color }} />
                     </motion.div>
-
-                    <h3 className="text-base font-extrabold text-white">
-                      {tool.title}
-                    </h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-white/40">
-                      {tool.desc}
-                    </p>
-
-                    {/* Feature chips */}
+                    <h3 className="text-base font-extrabold text-white">{tool.title}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-white/40">{tool.desc}</p>
                     <div className="mt-4 flex flex-wrap gap-1.5">
                       {tool.chips.map((chip) => (
                         <span
@@ -404,11 +454,11 @@ export default function EspaceClientPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport}
             transition={{ duration: 0.55, ease, delay: 0.2 }}
-            className="mt-12 text-center"
+            className="mt-14 text-center"
           >
             <Link href="#abonnement" className="btn-primary px-8 py-3.5 text-sm">
               <Wallet size={16} />
-              S&apos;abonner et accéder aux outils — 11,90€/mois{" "}
+              S&apos;abonner — accès à tout pour 11,90€/mois{" "}
               <ArrowRight size={14} />
             </Link>
           </motion.div>
@@ -416,65 +466,169 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          3. CARTE ABONNEMENT
+          4. STAT STRIP
       ══════════════════════════════════════════════ */}
-      <section id="abonnement" className="bg-[#09090b] py-12 sm:py-24">
-        <div className="mx-auto max-w-md px-6">
+      <section className="border-y border-white/[0.05] bg-[#09090b] py-10">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          variants={staggerContainerFast}
+          className="mx-auto flex max-w-4xl flex-col items-center justify-around gap-8 px-6 sm:flex-row"
+        >
+          {[
+            { value: "11", label: "Outils inclus", icon: Sparkles },
+            { value: "+50", label: "Abonnés actifs", icon: Users },
+            { value: "11,90€", label: "Par mois tout compris", icon: Wallet },
+            { value: "< 2 min", label: "Prise en main", icon: Zap },
+          ].map(({ value, label, icon: Icon }) => (
+            <motion.div
+              key={label}
+              variants={cardReveal}
+              className="flex flex-col items-center gap-2 text-center"
+            >
+              <Icon size={14} className="text-[#c9a55a]/60" />
+              <span className="text-3xl font-black text-white">{value}</span>
+              <span className="text-xs text-white/35">{label}</span>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          5. TÉMOIGNAGES
+      ══════════════════════════════════════════════ */}
+      <section className="bg-[#0f0f13] py-14 sm:py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.6, ease }}
+            className="mb-12 text-center"
+          >
+            <span className="badge badge-gold-dark mb-4 inline-flex">
+              <Star size={10} /> Ils utilisent DJAMA
+            </span>
+            <h2 className="display-section text-white">
+              Ce qu&apos;en disent{" "}
+              <span className="text-gold">nos abonnés.</span>
+            </h2>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            variants={staggerContainerFast}
+            className="grid gap-5 sm:grid-cols-3"
+          >
+            {TESTIMONIALS.map((t) => (
+              <motion.div
+                key={t.name}
+                variants={cardReveal}
+                className="flex flex-col gap-4 rounded-[1.5rem] border border-white/[0.07] bg-[#09090b] p-7 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.03]"
+              >
+                {/* Stars */}
+                <div className="flex gap-0.5">
+                  {Array.from({ length: t.stars }).map((_, i) => (
+                    <Star key={i} size={12} className="fill-[#c9a55a] text-[#c9a55a]" />
+                  ))}
+                </div>
+                <p className="text-sm leading-relaxed text-white/60">&ldquo;{t.text}&rdquo;</p>
+                <div className="mt-auto flex items-center gap-3 border-t border-white/[0.06] pt-4">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(201,165,90,0.12)] text-sm font-bold text-[#c9a55a]">
+                    {t.name[0]}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">{t.name}</p>
+                    <p className="text-xs text-white/35">{t.role}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          6. CARTE ABONNEMENT
+      ══════════════════════════════════════════════ */}
+      <section id="abonnement" className="bg-[#09090b] py-14 sm:py-28">
+        <div className="mx-auto max-w-lg px-6">
+          {/* Header section */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.5, ease }}
+            className="mb-10 text-center"
+          >
+            <span className="badge badge-gold-dark mb-4 inline-flex">
+              <TrendingUp size={10} /> Offre unique
+            </span>
+            <h2 className="display-section text-white">
+              Simple, transparent,{" "}
+              <span className="text-gold">sans surprise.</span>
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-sm text-white/40">
+              Un seul tarif. Tous les outils. Pas de fonctionnalités cachées derrière un plan supérieur.
+            </p>
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, y: 28, scale: 0.97 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={viewport}
             transition={{ duration: 0.75, ease }}
-            className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.28)] bg-[#111113] shadow-[0_40px_100px_rgba(0,0,0,0.45)]"
+            className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.30)] bg-[#111113]"
+            style={{ boxShadow: "0 0 80px rgba(201,165,90,0.08), 0 40px 100px rgba(0,0,0,0.5)" }}
           >
             {/* Glow interne */}
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="h-[320px] w-[420px] rounded-full bg-[rgba(176,141,87,0.09)] blur-[80px]" />
+              <div className="h-[320px] w-[440px] rounded-full bg-[rgba(176,141,87,0.09)] blur-[80px]" />
             </div>
 
             {/* Filet doré top */}
             <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
 
-            <div className="relative px-8 py-10">
-              {/* En-tête card */}
-              <div className="mb-6">
-                <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest text-[#c9a55a]">
+            <div className="relative px-8 py-11">
+              {/* Badges ligne */}
+              <div className="mb-6 flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest text-[#c9a55a]">
                   <Sparkles size={8} /> Abonnement mensuel
                 </div>
-                <h3 className="text-[1.25rem] font-extrabold leading-snug text-white">
-                  Accédez à tous les outils DJAMA
-                </h3>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(74,222,128,0.22)] bg-[rgba(74,222,128,0.06)] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest text-[#4ade80]">
+                  <CheckCircle2 size={8} /> Sans engagement
+                </div>
               </div>
 
+              <h3 className="text-xl font-extrabold leading-snug text-white">
+                Accédez à tous les outils DJAMA
+              </h3>
+              <p className="mt-1.5 text-sm text-white/35">
+                11 outils • Mises à jour continues • Résiliable à tout moment
+              </p>
+
               {/* Prix */}
-              <div className="mb-1 flex items-end gap-1.5">
-                <span className="text-[4.5rem] font-black leading-none text-white">
+              <div className="my-8 flex items-end gap-2">
+                <span className="text-[5rem] font-black leading-none tracking-tight text-white">
                   11,90
                 </span>
-                <div className="mb-3 flex flex-col leading-none">
-                  <span className="text-2xl font-black text-white">€</span>
+                <div className="mb-4 flex flex-col leading-none">
+                  <span className="text-3xl font-black text-[#c9a55a]">€</span>
                   <span className="mt-1 text-xs text-white/35">/ mois</span>
                 </div>
               </div>
-              <p className="mb-7 text-sm text-white/35">
-                11 outils inclus • Mise à jour continue
-              </p>
 
               {/* Divider doré */}
-              <div className="divider-gold mb-7" />
+              <div className="divider-gold mb-8" />
 
               {/* Inclus */}
-              <ul className="mb-8 space-y-2.5">
+              <ul className="mb-9 space-y-3">
                 {INCLUS.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-3 text-sm text-[#e5e7eb]"
-                  >
-                    <CheckCircle2
-                      size={14}
-                      className="mt-0.5 shrink-0"
-                      style={{ color: "#c9a55a" }}
-                    />
+                  <li key={item} className="flex items-start gap-3 text-sm text-[#e5e7eb]">
+                    <CheckCircle2 size={14} className="mt-0.5 shrink-0" style={{ color: "#c9a55a" }} />
                     {item}
                   </li>
                 ))}
@@ -485,17 +639,29 @@ export default function EspaceClientPage() {
 
               {/* Trust ligne */}
               <p className="mt-5 text-center text-[0.72rem] text-white/28">
-                Paiement sécurisé • Accès immédiat • Sans engagement
+                Paiement sécurisé via Stripe • Accès immédiat • Sans engagement
               </p>
+
+              {/* Lien connexion */}
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <div className="h-px flex-1 bg-white/[0.06]" />
+                <p className="text-[0.72rem] text-white/28">
+                  Déjà abonné ?{" "}
+                  <Link href="/login" className="font-bold text-[#c9a55a] hover:underline">
+                    Se connecter →
+                  </Link>
+                </p>
+                <div className="h-px flex-1 bg-white/[0.06]" />
+              </div>
             </div>
           </motion.div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════
-          4. SECTION CONFIANCE
+          7. SECTION CONFIANCE
       ══════════════════════════════════════════════ */}
-      <section className="hero-dark relative overflow-hidden py-12 sm:py-24">
+      <section className="hero-dark relative overflow-hidden py-14 sm:py-24">
         <div className="pointer-events-none absolute left-[15%] top-0 h-[280px] w-[340px] rounded-full bg-[rgba(201,165,90,0.05)] blur-[70px]" />
 
         <motion.div
@@ -546,18 +712,64 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          5. FOOTER MINIMAL
+          8. CTA FINAL
       ══════════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.06] py-8 text-center">
-        <p className="text-xs text-white/20">
-          DJAMA · <a href="mailto:contact@djama.space" className="text-[#c9a55a] hover:underline">contact@djama.space</a>
-          {" · "}
-          <Link href="/login" className="text-white/35 hover:text-[#c9a55a] transition-colors">
-            Déjà abonné ? Se connecter
-          </Link>
-        </p>
+      <section className="bg-[#09090b] py-14 sm:py-24">
+        <div className="mx-auto max-w-2xl px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.6, ease }}
+          >
+            <div className="pointer-events-none absolute inset-x-0 flex justify-center">
+              <div className="h-[200px] w-[500px] rounded-full bg-[rgba(176,141,87,0.07)] blur-[80px]" />
+            </div>
+            <span className="badge badge-gold-dark mb-6 inline-flex">
+              <Sparkles size={10} /> Commencer maintenant
+            </span>
+            <h2 className="display-section text-white">
+              Prêt à passer au niveau{" "}
+              <span className="text-gold">supérieur ?</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-base text-white/45">
+              Rejoignez les entrepreneurs qui utilisent DJAMA pour gérer leur activité en toute sérénité.
+            </p>
+            <div className="mt-10 flex flex-wrap justify-center gap-4">
+              <Link href="#abonnement" className="btn-primary px-9 py-4 text-base">
+                <Wallet size={17} />
+                S&apos;abonner — 11,90€/mois
+              </Link>
+              <Link href="/login" className="btn-ghost px-9 py-4 text-base">
+                <LogIn size={16} />
+                Déjà abonné
+              </Link>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
+      {/* ══════════════════════════════════════════════
+          9. FOOTER MINIMAL
+      ══════════════════════════════════════════════ */}
+      <footer className="border-t border-white/[0.06] py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
+          <p className="text-xs text-white/20">
+            © 2025 DJAMA · Tous droits réservés
+          </p>
+          <div className="flex items-center gap-5 text-xs text-white/25">
+            <a href="mailto:contact@djama.space" className="transition hover:text-[#c9a55a]">
+              contact@djama.space
+            </a>
+            <Link href="/login" className="transition hover:text-[#c9a55a]">
+              Se connecter
+            </Link>
+            <Link href="/" className="transition hover:text-white/50">
+              Accueil
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
