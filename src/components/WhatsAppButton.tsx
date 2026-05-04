@@ -46,7 +46,7 @@ export default function WhatsAppButton() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.6, y: 24 }}
           transition={{ duration: 0.45, ease }}
-          className="fixed bottom-6 right-6 z-[80] flex flex-col items-end gap-2"
+          className="fixed bottom-6 left-6 z-[80] flex flex-col items-start gap-2"
         >
           {/* Tooltip bulle */}
           <AnimatePresence>
@@ -62,7 +62,7 @@ export default function WhatsAppButton() {
                   Une question ? On répond sur WhatsApp en quelques minutes. 👋
                 </p>
                 {/* Triangle */}
-                <div className="absolute -bottom-2 right-5 h-3 w-3 rotate-45 border-b border-r border-white/[.09] bg-[#111113]" />
+                <div className="absolute -bottom-2 left-5 h-3 w-3 rotate-45 border-b border-l border-white/[.09] bg-[#111113]" />
               </motion.div>
             )}
           </AnimatePresence>
