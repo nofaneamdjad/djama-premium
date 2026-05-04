@@ -4,6 +4,7 @@ export interface Translations {
     services: string;
     projects: string;
     offres: string;
+    about: string;
     contact: string;
     clientArea: string;
     freeQuote: string;

@@ -6,6 +6,7 @@ export const en: Translations = {
     services: "Services",
     projects: "Projects",
     offres: "Pricing",
+    about: "About",
     contact: "Contact",
     clientArea: "Client Area",
     freeQuote: "Free Quote",

@@ -6,6 +6,7 @@ export const fr: Translations = {
     services: "Services",
     projects: "Réalisations",
     offres: "Offres",
+    about: "À propos",
     contact: "Contact",
     clientArea: "Espace client",
     freeQuote: "Devis gratuit",

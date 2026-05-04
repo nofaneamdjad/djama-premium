@@ -22,6 +22,7 @@ export default function Navbar() {
     { href: "/services",      label: dict.nav.services   },
     { href: "/offres",        label: dict.nav.offres     },
     { href: "/realisations",  label: dict.nav.projects   },
+    { href: "/a-propos",      label: dict.nav.about      },
     { href: "/contact",       label: dict.nav.contact    },
     { href: "/espace-client", label: dict.nav.clientArea },
   ];
