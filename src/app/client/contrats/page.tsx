@@ -418,20 +418,27 @@ export default function ContratsPage() {
       <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* ── Header ── */}
-      <div className="border-b border-white/[0.06] px-6 py-5 flex items-center justify-between">
+      <div className="border-b border-white/[0.06] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <FileText size={20} style={{ color: gold }} />
-          <h1 className="text-lg font-semibold tracking-tight">Contrats</h1>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: gold + "28" }} />
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border"
+              style={{ background: gold + "14", borderColor: gold + "25" }}>
+              <FileText size={16} style={{ color: gold }} />
+            </div>
+          </div>
+          <div>
+            <h1 className="text-[15px] font-extrabold text-white/92">Contrats</h1>
+            <p className="text-[10px] text-white/30">Génération IA · PDF · suivi statut</p>
+          </div>
         </div>
         <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          style={{ backgroundColor: gold + "20", color: gold, border: `1px solid ${gold}35` }}
+          className="flex items-center gap-1.5 rounded-xl border px-4 py-2 text-[12px] font-bold transition-all"
+          style={{ background: gold + "18", color: gold, borderColor: gold + "35" }}
         >
-          <Plus size={15} />
-          Nouveau contrat
+          <Plus size={13} /> Nouveau contrat
         </motion.button>
       </div>
 
@@ -477,45 +484,46 @@ export default function ContratsPage() {
               className="flex-1 flex flex-col overflow-hidden"
             >
               {/* panel header */}
-              <div className="flex items-start justify-between px-6 py-4 border-b border-white/[0.06] gap-4">
+              <div className="flex items-start justify-between px-5 py-4 border-b border-white/[0.06] gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1.5">
                     <button
                       onClick={() => { setSelected(null); setMobilePanel(false); }}
-                      className="md:hidden text-white/40 hover:text-white/70 transition-colors"
+                      aria-label="Retour à la liste"
+                      className="md:hidden rounded-lg p-1 text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70"
                     >
-                      <X size={16} />
+                      <X size={15} />
                     </button>
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full border font-medium"
-                      style={{ color: gold, borderColor: gold + "40", backgroundColor: gold + "15" }}
-                    >
+                    <span className="rounded-full border px-2.5 py-0.5 text-[10.5px] font-bold"
+                      style={{ color: gold, borderColor: gold + "35", background: gold + "12" }}>
                       {CONTRACT_TYPES[selected.contract_type]}
                     </span>
                     <StatusBadge status={selected.status} />
                   </div>
-                  <h2 className="text-base font-semibold truncate">{selected.title}</h2>
-                  <p className="text-sm text-white/40 mt-0.5">
+                  <h2 className="text-[15px] font-extrabold text-white/90 truncate">{selected.title}</h2>
+                  <p className="mt-0.5 text-[12px] text-white/45">
                     {selected.client_name}
-                    {selected.amount != null && <> · {fmtEur(selected.amount)}</>}
+                    {selected.amount != null && <span className="text-white/60 font-semibold"> · {fmtEur(selected.amount)}</span>}
                     {selected.start_date && <> · {fmtDate(selected.start_date)}</>}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {saving && <RefreshCw size={14} className="animate-spin text-white/30" />}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {saving && <RefreshCw size={13} className="animate-spin text-white/25" />}
                   <button
                     onClick={handleCopy}
-                    className="p-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors"
-                    title="Copier"
+                    aria-label={copied ? "Copié !" : "Copier le contenu"}
+                    title={copied ? "Copié !" : "Copier"}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] transition-all hover:bg-white/[0.08]"
                   >
-                    {copied ? <Check size={15} className="text-emerald-400" /> : <Copy size={15} className="text-white/50" />}
+                    {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} className="text-white/45" />}
                   </button>
                   <button
                     onClick={() => handleDelete(selected.id)}
-                    className="p-2 rounded-lg bg-white/[0.04] hover:bg-red-500/10 border border-white/10 hover:border-red-500/20 transition-colors"
+                    aria-label="Supprimer ce contrat"
                     title="Supprimer"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] transition-all hover:border-red-500/20 hover:bg-red-500/10"
                   >
-                    <Trash2 size={15} className="text-white/50 hover:text-red-400" />
+                    <Trash2 size={14} className="text-white/45 hover:text-red-400" />
                   </button>
                 </div>
               </div>
@@ -604,9 +612,17 @@ export default function ContratsPage() {
 
         {/* empty right when list exists but nothing selected */}
         {!selected && contracts.length > 0 && (
-          <div className="hidden md:flex flex-1 items-center justify-center text-white/20 text-sm gap-2">
-            <Edit2 size={16} />
-            Sélectionnez un contrat
+          <div className="hidden md:flex flex-1 flex-col items-center justify-center gap-3 relative overflow-hidden">
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ background: `radial-gradient(ellipse 50% 35% at 50% 50%, ${gold}05 0%, transparent 70%)` }}
+            />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl"
+              style={{ background: gold + "0f", border: `1px solid ${gold}20` }}>
+              <Edit2 size={18} style={{ color: gold + "80" }} />
+            </div>
+            <p className="text-[13px] font-semibold text-white/25">Sélectionnez un contrat</p>
+            <p className="text-[11px] text-white/15">pour l'éditer ou générer le PDF</p>
           </div>
         )}
       </div>
@@ -630,12 +646,22 @@ export default function ContratsPage() {
             >
               {/* modal header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-                <h3 className="font-semibold text-base">Nouveau contrat</h3>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl"
+                    style={{ background: gold + "18", border: `1px solid ${gold}30` }}>
+                    <FileText size={14} style={{ color: gold }} />
+                  </div>
+                  <div>
+                    <h3 className="text-[14px] font-extrabold text-white/92">Nouveau contrat</h3>
+                    <p className="text-[10px] text-white/30">IA · PDF · Suivi statut</p>
+                  </div>
+                </div>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="text-white/40 hover:text-white/70 transition-colors"
+                  aria-label="Fermer la modale"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70"
                 >
-                  <X size={18} />
+                  <X size={14} />
                 </button>
               </div>
 
@@ -643,7 +669,7 @@ export default function ContratsPage() {
                 {/* title + client */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
-                    <label className="block text-xs text-white/40 mb-1.5">Intitulé *</label>
+                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Intitulé *</label>
                     <input
                       value={form.title}
                       onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
@@ -652,7 +678,7 @@ export default function ContratsPage() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-xs text-white/40 mb-1.5">Nom du client *</label>
+                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Nom du client *</label>
                     <input
                       value={form.client_name}
                       onChange={(e) => setForm((p) => ({ ...p, client_name: e.target.value }))}
@@ -664,7 +690,7 @@ export default function ContratsPage() {
 
                 {/* type */}
                 <div>
-                  <label className="block text-xs text-white/40 mb-1.5">Type de contrat</label>
+                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Type de contrat</label>
                   <div className="flex flex-wrap gap-2">
                     {(Object.entries(CONTRACT_TYPES) as [ContractType, string][]).map(([k, v]) => (
                       <button
@@ -690,7 +716,7 @@ export default function ContratsPage() {
                 {/* amount + dates */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs text-white/40 mb-1.5">Montant (€)</label>
+                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Montant (€)</label>
                     <input
                       type="number"
                       min={0}
@@ -701,7 +727,7 @@ export default function ContratsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-white/40 mb-1.5">Début</label>
+                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Début</label>
                     <input
                       type="date"
                       value={form.start_date}
@@ -710,7 +736,7 @@ export default function ContratsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-white/40 mb-1.5">Fin</label>
+                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Fin</label>
                     <input
                       type="date"
                       value={form.end_date}
@@ -722,7 +748,7 @@ export default function ContratsPage() {
 
                 {/* specifics */}
                 <div>
-                  <label className="block text-xs text-white/40 mb-1.5">
+                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">
                     Précisions pour l'IA (optionnel)
                   </label>
                   <textarea
@@ -827,30 +853,42 @@ function ContractCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       onClick={onSelect}
-      className={`group relative flex flex-col gap-2 p-4 rounded-xl border cursor-pointer transition-all
+      className={`group relative flex flex-col gap-2 rounded-xl border cursor-pointer transition-all overflow-hidden
         ${isSelected
           ? "border-white/15 bg-white/[0.06]"
           : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10"
         }`}
     >
+      {/* Top accent bar */}
+      <div
+        className="h-[2px] w-full"
+        style={{
+          background: isSelected
+            ? `linear-gradient(90deg, ${gold}80, transparent)`
+            : "transparent",
+          transition: "background 0.2s",
+        }}
+      />
+      <div className="px-4 pb-4 pt-2.5">
       {isSelected && (
         <div
-          className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full"
+          className="absolute left-0 top-6 bottom-3 w-[2px] rounded-full"
           style={{ backgroundColor: gold }}
         />
       )}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{contract.title}</p>
-          <p className="text-xs text-white/40 mt-0.5 truncate">{contract.client_name}</p>
+          <p className="text-sm font-bold text-white/90 truncate">{contract.title}</p>
+          <p className="text-xs text-white/50 mt-0.5 truncate">{contract.client_name}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <StatusBadge status={contract.status} />
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(contract.id); }}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:text-red-400 text-white/30 transition-all"
+            aria-label={`Supprimer ${contract.title}`}
+            className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-md border border-transparent hover:border-red-500/20 hover:bg-red-500/10 text-white/30 hover:text-red-400 transition-all"
           >
-            <Trash2 size={13} />
+            <Trash2 size={12} />
           </button>
           <ChevronRight size={14} className="text-white/20" />
         </div>
@@ -871,34 +909,49 @@ function ContractCard({
           {new Date(contract.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
         </span>
       </div>
+      </div>
     </motion.div>
   );
 }
 
 function EmptyState({ onNew, gold }: { onNew: () => void; gold: string }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-5 p-8 text-center">
+    <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8 text-center relative overflow-hidden">
+      {/* Ambient glow */}
       <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center"
-        style={{ backgroundColor: gold + "15", border: `1px solid ${gold}25` }}
-      >
-        <FileText size={28} style={{ color: gold }} />
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse 55% 40% at 50% 50%, ${gold}08 0%, transparent 70%)`,
+        }}
+      />
+      {/* Icon */}
+      <div className="relative">
+        <div
+          className="absolute inset-0 rounded-2xl blur-xl"
+          style={{ background: gold + "20" }}
+        />
+        <div
+          className="relative w-16 h-16 rounded-2xl flex items-center justify-center"
+          style={{ backgroundColor: gold + "15", border: `1px solid ${gold}30` }}
+        >
+          <FileText size={28} style={{ color: gold }} />
+        </div>
       </div>
       <div>
-        <p className="text-base font-medium text-white/70">Aucun contrat</p>
-        <p className="text-sm text-white/30 mt-1">
-          Créez votre premier contrat et laissez l'IA le rédiger pour vous.
+        <p className="text-[15px] font-extrabold text-white/80">Aucun contrat</p>
+        <p className="text-[12px] text-white/35 mt-1.5 max-w-[220px] leading-relaxed">
+          Créez votre premier contrat et laissez l'IA le rédiger en quelques secondes.
         </p>
       </div>
       <motion.button
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.97 }}
         onClick={onNew}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors"
-        style={{ backgroundColor: gold + "20", color: gold, border: `1px solid ${gold}35` }}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all"
+        style={{ backgroundColor: gold + "20", color: gold, border: `1px solid ${gold}40` }}
       >
-        <Plus size={15} />
-        Nouveau contrat
+        <Sparkles size={14} />
+        Générer mon premier contrat
       </motion.button>
     </div>
   );
