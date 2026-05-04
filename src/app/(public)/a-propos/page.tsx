@@ -71,6 +71,22 @@ const TEAM = [
     tags: ["Marchés publics & privés", "Stratégie digitale", "IA & Automatisation"],
   },
   {
+    name: "Pôle Analyse de Marché",
+    role: "Analystes & Rédacteurs de dossiers",
+    initials: "AM",
+    color: "#f59e0b",
+    bio: "Une équipe spécialisée dans l'étude et l'analyse de marché. Elle décrypte les appels d'offres, identifie les opportunités, et prépare des dossiers solides et convaincants pour maximiser vos chances de remporter marchés publics et privés.",
+    tags: ["Analyse de marché", "Rédaction de dossiers", "Appels d'offres"],
+  },
+  {
+    name: "Pôle Sourcing & Fournisseurs",
+    role: "Experts sourcing & Négociateurs",
+    initials: "SF",
+    color: "#4ade80",
+    bio: "Des experts qui cherchent, sélectionnent et négocient pour vous les meilleurs fournisseurs adaptés à votre activité — en France et à l'international. L'objectif : vous obtenir les meilleures conditions pour réduire vos coûts et booster votre rentabilité.",
+    tags: ["Sourcing international", "Négociation fournisseurs", "Optimisation des coûts"],
+  },
+  {
     name: "Pôle Création",
     role: "Développeurs, Designers & Vidéastes",
     initials: "PC",
@@ -468,7 +484,7 @@ export default function AProposPage() {
             </p>
           </motion.div>
 
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {TEAM.map(({ name, role, initials, color, bio, tags }, i) => (
               <motion.div
                 key={name}
