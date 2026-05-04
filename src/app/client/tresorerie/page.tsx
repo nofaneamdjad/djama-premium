@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronDown,
-  Loader2,
   ArrowRight,
   ReceiptText,
   Receipt,
@@ -21,6 +20,7 @@ import {
   GraduationCap,
   MoreHorizontal,
   ExternalLink,
+  Download,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -121,6 +121,37 @@ function KpiCard({ label, value, icon: Icon, color, bg, border, loading, subtitl
       {subtitle && <p className="mt-1 text-[0.65rem] text-white/25">{subtitle}</p>}
     </motion.div>
   );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT CSV
+═══════════════════════════════════════════════════════════ */
+function exportCSV(invoices: Invoice[], expenses: Expense[], monthLabel: string) {
+  const rows: string[][] = [
+    ["Type", "Date", "Référence / Description", "Client / Catégorie", "Montant (€)"],
+    ...invoices.map(inv => [
+      "Facture",
+      inv.issue_date,
+      inv.reference,
+      inv.client_name,
+      inv.total.toFixed(2),
+    ]),
+    ...expenses.map(exp => [
+      "Dépense",
+      exp.date,
+      exp.description,
+      exp.category,
+      (-exp.amount).toFixed(2),
+    ]),
+  ];
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `tresorerie-${monthLabel}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -267,10 +298,20 @@ export default function TresoreriePage() {
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[rgba(74,222,128,0.2)] bg-[rgba(74,222,128,0.08)]">
             <Wallet size={20} style={{ color: "#4ade80" }} />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl font-extrabold text-white">Trésorerie</h1>
             <p className="text-xs text-white/30">Vue consolidée de vos flux financiers</p>
           </div>
+          {!loading && (invoices.length > 0 || expenses.length > 0) && (
+            <button
+              onClick={() => exportCSV(invoices, expenses, `${MONTH_NAMES[viewMonth].toLowerCase()}-${viewYear}`)}
+              aria-label="Exporter les données en CSV"
+              title="Exporter CSV"
+              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/45 transition-all hover:border-white/20 hover:text-white/70"
+            >
+              <Download size={12} /> Export CSV
+            </button>
+          )}
         </div>
 
         {/* ── Month selector ── */}

@@ -119,6 +119,8 @@ function NotifBell({ ready }: { ready: boolean }) {
       <motion.button
         onClick={() => setOpen(v => !v)}
         whileTap={{ scale: 0.9 }}
+        aria-label={`Notifications planning${badge > 0 ? ` — ${badge} aujourd'hui` : ""}`}
+        aria-expanded={open}
         className="relative flex h-8 w-8 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/[0.06] hover:text-white/70"
         title="Notifications planning"
       >
@@ -414,6 +416,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <button
             onClick={handleLogout}
             title="Se déconnecter"
+            aria-label="Se déconnecter"
             className="flex items-center gap-1 rounded-lg p-1.5 text-white/25 transition-all hover:bg-white/[0.05] hover:text-white/55"
           >
             <LogOut size={13} />

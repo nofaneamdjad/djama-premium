@@ -257,6 +257,30 @@ body {
 .animate-pulse-ring    { animation: pulse-ring    2s cubic-bezier(0.16,1,0.3,1) infinite; }
 .animate-gradient      { animation: gradient-shift 6s ease infinite; background-size: 300% 300%; }
 .animate-spin-slow     { animation: spin-slow     12s linear infinite; }
+
+/* ── ACCESSIBILITÉ — focus clavier ─────────── */
+:focus-visible {
+  outline: 2px solid rgba(201,165,90,.65);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(201,165,90,.32) !important;
+  border-color: rgba(201,165,90,.42) !important;
+}
+
+/* Supprime le focus-visible natif sur les éléments
+   qui ont déjà leur propre ring (boutons Tailwind) */
+button:focus:not(:focus-visible) { outline: none; }
+a:focus:not(:focus-visible)      { outline: none; }
+
+/* ── SCROLLBAR THIN ─────────────────────────── */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 .animate-glow-pulse    { animation: glow-pulse    2.5s ease-in-out infinite; }
 .animate-border-glow   { animation: border-glow   4s ease-in-out infinite; }
 .animate-fade-in-up    { animation: fade-in-up    0.55s cubic-bezier(0.16,1,0.3,1) both; }

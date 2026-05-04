@@ -1,16 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Star,
-  Plus,
-  X,
-  Check,
-  Trash2,
-  MessageCircle,
-  ChevronDown,
-  ChevronUp,
+  Star, Plus, X, Check, Trash2, MessageCircle,
+  ChevronDown, ChevronUp, TrendingUp, Award, Download,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -44,24 +38,21 @@ type DraftReview = {
    CONSTANTES
 ═══════════════════════════════════════════════════ */
 const ease = [0.16, 1, 0.3, 1] as const;
+const GOLD = "#f59e0b";
 
-const SOURCE_STYLES: Record<ReviewSource, { label: string; text: string; bg: string }> = {
-  google: { label: "Google", text: "text-red-400", bg: "bg-red-500/10" },
-  linkedin: { label: "LinkedIn", text: "text-sky-400", bg: "bg-sky-500/10" },
-  direct: { label: "Direct", text: "text-amber-400", bg: "bg-amber-500/10" },
-  autre: { label: "Autre", text: "text-white/35", bg: "bg-white/[0.05]" },
+const SOURCE_STYLES: Record<ReviewSource, { label: string; text: string; bg: string; border: string }> = {
+  google:   { label: "Google",   text: "text-red-400",    bg: "bg-red-500/10",    border: "border-red-500/20"   },
+  linkedin: { label: "LinkedIn", text: "text-sky-400",    bg: "bg-sky-500/10",    border: "border-sky-500/20"   },
+  direct:   { label: "Direct",   text: "text-amber-400",  bg: "bg-amber-500/10",  border: "border-amber-500/20" },
+  autre:    { label: "Autre",    text: "text-white/50",   bg: "bg-white/[0.05]",  border: "border-white/10"     },
 };
 
 const EMPTY_FORM = (): DraftReview => ({
-  client_name: "",
-  rating: 0,
-  message: "",
-  source: "direct",
-  project: "",
+  client_name: "", rating: 0, message: "", source: "direct", project: "",
 });
 
 /* ═══════════════════════════════════════════════════
-   STAR RATING COMPONENT
+   STAR RATING — interactif
 ═══════════════════════════════════════════════════ */
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hover, setHover] = useState(0);
@@ -70,114 +61,197 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
       {[1, 2, 3, 4, 5].map((i) => (
         <button
           key={i}
+          type="button"
+          aria-label={`${i} étoile${i > 1 ? "s" : ""}`}
           onClick={() => onChange(i)}
           onMouseEnter={() => setHover(i)}
           onMouseLeave={() => setHover(0)}
-          className={`text-xl transition-all ${
-            i <= (hover || value) ? "text-amber-400" : "text-white/15"
-          }`}
-        >
-          ★
-        </button>
+          className={`text-2xl transition-all ${i <= (hover || value) ? "text-amber-400 scale-110" : "text-white/15"}`}
+        >★</button>
       ))}
     </div>
   );
 }
 
 /* ═══════════════════════════════════════════════════
-   STAR DISPLAY (read-only)
+   STAR DISPLAY — lecture seule
 ═══════════════════════════════════════════════════ */
-function StarDisplay({ rating }: { rating: number }) {
+function StarDisplay({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <span
-          key={i}
-          className={`text-sm ${i <= rating ? "text-amber-400" : "text-white/15"}`}
-        >
-          ★
-        </span>
+        <span key={i} className={`${size === "sm" ? "text-sm" : "text-base"} ${i <= rating ? "text-amber-400" : "text-white/12"}`}>★</span>
       ))}
     </div>
   );
 }
 
+/* ═══════════════════════════════════════════════════
+   GRAPHIQUE TENDANCE — 6 derniers mois
+═══════════════════════════════════════════════════ */
+function TrendChart({ data }: { data: { label: string; avg: number; count: number }[] }) {
+  const H = 60;
+  const barW = 30;
+  const gap = 12;
+  const totalW = data.length * (barW + gap) - gap;
+
+  return (
+    <svg viewBox={`-2 0 ${totalW + 4} ${H + 32}`} className="w-full overflow-visible" style={{ height: H + 32 }}>
+      {data.map(({ label, avg, count }, i) => {
+        const bh = avg > 0 ? Math.max((avg / 5) * H, 6) : 4;
+        const x = i * (barW + gap);
+        const y = H - bh;
+        const col = avg >= 4 ? "#4ade80" : avg >= 3 ? "#fbbf24" : avg > 0 ? "#f87171" : "rgba(255,255,255,0.07)";
+        return (
+          <g key={i}>
+            {/* Bar background */}
+            <rect x={x} y={0} width={barW} height={H} rx={5} fill="rgba(255,255,255,0.03)" />
+            {/* Bar value */}
+            <motion.rect
+              x={x} width={barW} rx={5}
+              fill={col} fillOpacity={avg > 0 ? 0.82 : 1}
+              initial={{ y: H, height: 0 }}
+              animate={{ y, height: bh }}
+              transition={{ duration: 0.6, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+            />
+            {/* Avg value */}
+            {avg > 0 && (
+              <text x={x + barW / 2} y={y - 5} textAnchor="middle" fontSize="9" fill={col} fontWeight="700">
+                {avg.toFixed(1)}
+              </text>
+            )}
+            {/* Month label */}
+            <text x={x + barW / 2} y={H + 14} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.38)" style={{ textTransform: "capitalize" }}>
+              {label}
+            </text>
+            {/* Count */}
+            <text x={x + barW / 2} y={H + 26} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.2)">
+              {count > 0 ? `${count} avis` : "—"}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 /* ═══════════════════════════════════════════════════
-   PAGE
+   EXPORT CSV
+═══════════════════════════════════════════════════ */
+function exportReviewsCSV(reviews: Review[]) {
+  const rows: string[][] = [
+    ["Date", "Client", "Note", "Source", "Projet", "Message"],
+    ...reviews.map(r => [
+      new Date(r.created_at).toLocaleDateString("fr-FR"),
+      r.client_name,
+      String(r.rating),
+      SOURCE_STYLES[r.source].label,
+      r.project ?? "",
+      r.message.replace(/"/g, '""'),
+    ]),
+  ];
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `reputation-djama-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ═══════════════════════════════════════════════════
+   PAGE PRINCIPALE
 ═══════════════════════════════════════════════════ */
 export default function ReputationPage() {
   const { toasts, add: toast, remove: removeToast } = useToastStack();
 
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<DraftReview>(EMPTY_FORM());
-  const [submitting, setSubmitting] = useState(false);
-
+  const [reviews,     setReviews]     = useState<Review[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [userId,      setUserId]      = useState<string | null>(null);
+  const [showForm,    setShowForm]    = useState(false);
+  const [form,        setForm]        = useState<DraftReview>(EMPTY_FORM());
+  const [submitting,  setSubmitting]  = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [deleting,    setDeleting]    = useState(false);
+  const [activeSource, setActiveSource] = useState<ReviewSource | "all">("all");
 
-  /* ────────────── fetch ────────────── */
+  /* ── Fetch ── */
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
       const { data, error } = await supabase
-        .from("reviews")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(200);
+        .from("reviews").select("*").eq("user_id", user.id)
+        .order("created_at", { ascending: false }).limit(200);
       if (!error && data) setReviews(data as Review[]);
       setLoading(false);
     })();
   }, []);
 
-  /* ────────────── stats ────────────── */
+  /* ── Stats ── */
   const totalReviews = reviews.length;
-  const avgRating =
-    totalReviews > 0
-      ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / totalReviews) * 10) / 10
-      : 0;
+  const avgRating = totalReviews > 0
+    ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / totalReviews) * 10) / 10 : 0;
+
+  const positiveCount  = reviews.filter(r => r.rating >= 4).length;
+  const positiveRate   = totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 0;
 
   const breakdown = [5, 4, 3, 2, 1].map((star) => ({
     star,
-    count: reviews.filter((r) => r.rating === star).length,
-    pct: totalReviews > 0 ? (reviews.filter((r) => r.rating === star).length / totalReviews) * 100 : 0,
+    count: reviews.filter(r => r.rating === star).length,
+    pct: totalReviews > 0 ? (reviews.filter(r => r.rating === star).length / totalReviews) * 100 : 0,
   }));
 
-  /* ────────────── submit ────────────── */
+  /* ── Tendance mensuelle (6 derniers mois) ── */
+  const trendData = useMemo(() => {
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth() - (5 - i));
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      const label = d.toLocaleDateString("fr-FR", { month: "short" });
+      const monthReviews = reviews.filter(r => {
+        const rd = new Date(r.created_at);
+        return rd.getFullYear() === y && rd.getMonth() === m;
+      });
+      const avg = monthReviews.length > 0
+        ? monthReviews.reduce((s, r) => s + r.rating, 0) / monthReviews.length : 0;
+      return { label, avg, count: monthReviews.length };
+    });
+  }, [reviews]);
+
+  /* ── Filtered list ── */
+  const filteredReviews = useMemo(() =>
+    activeSource === "all" ? reviews : reviews.filter(r => r.source === activeSource),
+    [reviews, activeSource],
+  );
+
+  /* ── Submit ── */
   const handleSubmit = useCallback(async () => {
     if (!form.client_name.trim()) { toast("Nom du client requis", "error"); return; }
-    if (form.rating === 0) { toast("Veuillez sélectionner une note", "error"); return; }
+    if (form.rating === 0) { toast("Sélectionnez une note", "error"); return; }
     if (!userId) return;
     setSubmitting(true);
-    const payload = {
+    const { data, error } = await supabase.from("reviews").insert({
       user_id: userId,
       client_name: form.client_name.trim(),
       rating: form.rating,
       message: form.message.trim(),
       source: form.source,
       project: form.project.trim() || null,
-    };
-    const { data, error } = await supabase.from("reviews").insert(payload).select().single();
+    }).select().single();
     setSubmitting(false);
     if (error) { toast("Erreur lors de l'ajout", "error"); return; }
-    setReviews((prev) => [data as Review, ...prev]);
+    setReviews(prev => [data as Review, ...prev]);
     setForm(EMPTY_FORM());
     setShowForm(false);
-    toast("Avis ajouté avec succès", "success");
+    toast("Avis ajouté ✓", "success");
   }, [form, userId, toast]);
 
-  /* ────────────── delete ────────────── */
-  const handleDelete = useCallback((id: string) => {
-    setConfirmDeleteId(id);
-  }, []);
-
+  /* ── Delete ── */
   const confirmDelete = useCallback(async () => {
     if (!confirmDeleteId) return;
     setDeleting(true);
@@ -185,189 +259,276 @@ export default function ReputationPage() {
     setDeleting(false);
     setConfirmDeleteId(null);
     if (!error) {
-      setReviews((prev) => prev.filter((r) => r.id !== confirmDeleteId));
+      setReviews(prev => prev.filter(r => r.id !== confirmDeleteId));
       toast("Avis supprimé", "info");
     } else {
       toast("Erreur lors de la suppression", "error");
     }
   }, [confirmDeleteId, toast]);
 
-  /* ═══════════════════════════════════════
+  /* ═════════════════════════════════════════
      RENDER
-  ═══════════════════════════════════════ */
-  const amber = "#f59e0b";
-
+  ════════════════════════════════════════= */
   return (
     <div className="min-h-screen bg-[#080a0f] text-white">
       <ToastStack toasts={toasts} remove={removeToast} />
 
-      {/* ── Header ── */}
-      <div className="border-b border-white/[0.06] px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Star size={20} style={{ color: amber }} />
-          <h1 className="text-lg font-semibold tracking-tight">Réputation</h1>
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          style={{ backgroundColor: amber + "20", color: amber, border: `1px solid ${amber}35` }}
-        >
-          {showForm ? <X size={15} /> : <Plus size={15} />}
-          {showForm ? "Fermer" : "Ajouter un avis"}
-        </motion.button>
-      </div>
+      {/* Ambient glow */}
+      <div className="pointer-events-none fixed left-1/4 top-0 h-[300px] w-[400px] rounded-full bg-[rgba(245,158,11,0.05)] blur-[120px]" />
 
-      <div className="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-8">
-        {/* ── Stats header ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease }}
-          className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 flex flex-col sm:flex-row gap-6"
-        >
-          {/* avg rating */}
-          <div className="flex items-center gap-4 sm:pr-6 sm:border-r border-white/[0.06]">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
-              style={{ backgroundColor: amber + "15", border: `1px solid ${amber}25` }}
-            >
-              <span className="text-2xl">★</span>
+      {/* ── Header ── */}
+      <div className="relative border-b border-white/[0.06] px-5 py-4">
+        <div className="mx-auto flex max-w-3xl items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl bg-amber-500/20 blur-sm" />
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/14">
+                <Star size={16} style={{ color: GOLD }} />
+              </div>
             </div>
             <div>
-              <div className="text-4xl font-bold tracking-tight" style={{ color: amber }}>
-                {totalReviews > 0 ? avgRating.toFixed(1) : "—"}
-              </div>
-              <div className="text-sm text-white/40 mt-0.5">
-                {totalReviews} avis{totalReviews !== 1 ? "" : ""}
-              </div>
+              <h1 className="text-[15px] font-extrabold text-white/92">Réputation</h1>
+              <p className="text-[10px] text-white/30">Avis clients · image de marque</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {reviews.length > 0 && (
+              <button
+                onClick={() => exportReviewsCSV(reviews)}
+                aria-label="Exporter les avis en CSV"
+                title="Exporter CSV"
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-semibold text-white/45 transition-all hover:border-white/20 hover:text-white/70"
+              >
+                <Download size={12} /> Export CSV
+              </button>
+            )}
+            <motion.button
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => setShowForm(v => !v)}
+              className="flex items-center gap-1.5 rounded-xl border px-4 py-2 text-[12px] font-bold transition-all"
+              style={{ background: GOLD + "18", color: GOLD, borderColor: GOLD + "35" }}
+            >
+              {showForm ? <X size={13} /> : <Plus size={13} />}
+              {showForm ? "Fermer" : "Ajouter un avis"}
+            </motion.button>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-3xl px-4 py-6 flex flex-col gap-6">
+
+        {/* ── 3 KPI cards ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease }}
+          className="grid grid-cols-3 gap-3"
+        >
+          {/* Note moyenne */}
+          <div className="relative overflow-hidden rounded-2xl border border-amber-500/18 bg-amber-500/[0.06] p-4">
+            <div className="absolute right-3 top-3 opacity-10">
+              <Star size={28} style={{ color: GOLD }} />
+            </div>
+            <p className="text-[9.5px] font-bold uppercase tracking-widest text-white/35 mb-1">Note moyenne</p>
+            <p className="text-[2rem] font-black leading-none tracking-tight" style={{ color: GOLD }}>
+              {totalReviews > 0 ? avgRating.toFixed(1) : "—"}
+            </p>
+            <div className="mt-1.5">
+              <StarDisplay rating={Math.round(avgRating)} size="sm" />
             </div>
           </div>
 
-          {/* breakdown */}
-          <div className="flex-1 flex flex-col gap-2 justify-center">
-            {breakdown.map(({ star, count, pct }) => (
-              <div key={star} className="flex items-center gap-3">
-                <span className="text-xs text-white/35 w-3 text-right">{star}</span>
-                <span className="text-amber-400 text-xs">★</span>
-                <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${pct}%` }}
-                    transition={{ duration: 0.7, ease, delay: (5 - star) * 0.05 }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: amber }}
-                  />
-                </div>
-                <span className="text-xs text-white/25 w-4 text-right">{count}</span>
-              </div>
-            ))}
+          {/* Total avis */}
+          <div className="relative overflow-hidden rounded-2xl border border-blue-500/18 bg-blue-500/[0.05] p-4">
+            <div className="absolute right-3 top-3 opacity-10">
+              <Award size={28} className="text-blue-400" />
+            </div>
+            <p className="text-[9.5px] font-bold uppercase tracking-widest text-white/35 mb-1">Total avis</p>
+            <p className="text-[2rem] font-black leading-none tracking-tight text-blue-400">
+              {totalReviews}
+            </p>
+            <p className="mt-1.5 text-[10px] text-white/30">collectés</p>
+          </div>
+
+          {/* % positifs */}
+          <div className="relative overflow-hidden rounded-2xl border border-emerald-500/18 bg-emerald-500/[0.05] p-4">
+            <div className="absolute right-3 top-3 opacity-10">
+              <TrendingUp size={28} className="text-emerald-400" />
+            </div>
+            <p className="text-[9.5px] font-bold uppercase tracking-widest text-white/35 mb-1">Satisfaits</p>
+            <p className="text-[2rem] font-black leading-none tracking-tight text-emerald-400">
+              {positiveRate}%
+            </p>
+            <p className="mt-1.5 text-[10px] text-white/30">≥ 4 étoiles</p>
           </div>
         </motion.div>
 
-        {/* ── Add review form ── */}
+        {/* ── Tendance + Distribution ── */}
+        {totalReviews > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease, delay: 0.05 }}
+            className="grid gap-4 sm:grid-cols-2"
+          >
+            {/* Graphique tendance */}
+            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
+              <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-white/35">
+                Évolution — 6 derniers mois
+              </p>
+              <TrendChart data={trendData} />
+            </div>
+
+            {/* Distribution étoiles */}
+            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
+              <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-white/35">
+                Distribution des notes
+              </p>
+              <div className="flex flex-col gap-2.5">
+                {breakdown.map(({ star, count, pct }) => (
+                  <div key={star} className="flex items-center gap-3">
+                    <div className="flex w-12 items-center justify-end gap-1 shrink-0">
+                      <span className="text-[11px] font-bold text-white/50">{star}</span>
+                      <span className="text-amber-400 text-xs">★</span>
+                    </div>
+                    <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.7, ease, delay: (5 - star) * 0.06 }}
+                        className="h-full rounded-full"
+                        style={{
+                          background: star >= 4 ? "#4ade80" : star === 3 ? "#fbbf24" : "#f87171",
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-semibold text-white/30 w-6 text-right shrink-0">{count}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Légende sentiment */}
+              <div className="mt-4 flex items-center gap-3 pt-3 border-t border-white/[0.05]">
+                <div className="flex items-center gap-1.5 text-[9.5px] font-semibold text-emerald-400">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />Excellent (4-5★)
+                </div>
+                <div className="flex items-center gap-1.5 text-[9.5px] font-semibold text-amber-400">
+                  <span className="h-2 w-2 rounded-full bg-amber-400" />Bon (3★)
+                </div>
+                <div className="flex items-center gap-1.5 text-[9.5px] font-semibold text-red-400">
+                  <span className="h-2 w-2 rounded-full bg-red-400" />Faible (1-2★)
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Formulaire ajout ── */}
         <AnimatePresence>
           {showForm && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.4, ease }}
+              transition={{ duration: 0.35, ease }}
               className="overflow-hidden"
             >
-              <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 flex flex-col gap-4">
-                <h3 className="text-sm font-semibold text-white/70">Nouvel avis client</h3>
+              <div className="rounded-2xl border border-amber-500/18 bg-amber-500/[0.03] p-6 flex flex-col gap-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Star size={14} style={{ color: GOLD }} />
+                  <h3 className="text-[13px] font-extrabold text-white/85">Nouvel avis client</h3>
+                </div>
 
-                {/* client name */}
+                {/* Nom client */}
                 <div>
-                  <label className="block text-xs text-white/40 mb-1.5">Nom du client *</label>
+                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                    Nom du client *
+                  </label>
                   <input
                     value={form.client_name}
-                    onChange={(e) => setForm((p) => ({ ...p, client_name: e.target.value }))}
+                    onChange={e => setForm(p => ({ ...p, client_name: e.target.value }))}
                     placeholder="Jean Dupont / Acme SAS"
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-white/22 transition-all"
                   />
                 </div>
 
-                {/* rating */}
+                {/* Note */}
                 <div>
-                  <label className="block text-xs text-white/40 mb-1.5">Note *</label>
-                  <StarRating
-                    value={form.rating}
-                    onChange={(v) => setForm((p) => ({ ...p, rating: v }))}
-                  />
+                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                    Note *
+                  </label>
+                  <StarRating value={form.rating} onChange={v => setForm(p => ({ ...p, rating: v }))} />
                 </div>
 
-                {/* message */}
+                {/* Message */}
                 <div>
-                  <label className="block text-xs text-white/40 mb-1.5">Message</label>
+                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                    Message
+                  </label>
                   <textarea
                     value={form.message}
-                    onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
+                    onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
                     placeholder="Ce que le client a dit…"
                     rows={3}
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors resize-none"
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-white/22 transition-all resize-none"
                   />
                 </div>
 
-                {/* source */}
+                {/* Source */}
                 <div>
-                  <label className="block text-xs text-white/40 mb-1.5">Source</label>
+                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                    Source
+                  </label>
                   <div className="flex gap-2 flex-wrap">
-                    {(Object.entries(SOURCE_STYLES) as [ReviewSource, (typeof SOURCE_STYLES)[ReviewSource]][]).map(
-                      ([key, s]) => (
-                        <button
-                          key={key}
-                          onClick={() => setForm((p) => ({ ...p, source: key }))}
-                          className={`text-xs px-3 py-1.5 rounded-lg border transition-all
-                            ${form.source === key
-                              ? `${s.text} ${s.bg} border-current/30 font-medium`
-                              : "border-white/10 text-white/35 hover:border-white/20 hover:text-white/55"
-                            }`}
-                        >
-                          {s.label}
-                        </button>
-                      )
-                    )}
+                    {(Object.entries(SOURCE_STYLES) as [ReviewSource, typeof SOURCE_STYLES[ReviewSource]][]).map(([key, s]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setForm(p => ({ ...p, source: key }))}
+                        className={`rounded-lg border px-3 py-1.5 text-[11.5px] font-semibold transition-all ${
+                          form.source === key
+                            ? `${s.text} ${s.bg} ${s.border}`
+                            : "border-white/10 text-white/35 hover:border-white/20 hover:text-white/60"
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* project */}
+                {/* Projet */}
                 <div>
-                  <label className="block text-xs text-white/40 mb-1.5">Projet (optionnel)</label>
+                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                    Projet (optionnel)
+                  </label>
                   <input
                     value={form.project}
-                    onChange={(e) => setForm((p) => ({ ...p, project: e.target.value }))}
+                    onChange={e => setForm(p => ({ ...p, project: e.target.value }))}
                     placeholder="Nom de la mission"
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-white/22 transition-all"
                   />
                 </div>
 
-                {/* submit */}
+                {/* Actions */}
                 <div className="flex gap-3 pt-1">
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-60"
-                    style={{ backgroundColor: amber + "20", color: amber, border: `1px solid ${amber}40` }}
+                    className="flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-bold transition-all disabled:opacity-50"
+                    style={{ background: GOLD + "18", color: GOLD, borderColor: GOLD + "35" }}
                   >
-                    {submitting ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="w-4 h-4 border-2 border-current border-t-transparent rounded-full"
-                      />
-                    ) : (
-                      <Check size={15} />
-                    )}
+                    {submitting
+                      ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="h-4 w-4 rounded-full border-2 border-current border-t-transparent" />
+                      : <Check size={15} />
+                    }
                     Enregistrer
                   </motion.button>
                   <button
+                    type="button"
                     onClick={() => { setForm(EMPTY_FORM()); setShowForm(false); }}
-                    className="px-4 py-2.5 rounded-xl text-sm text-white/40 hover:text-white/60 border border-white/10 hover:border-white/20 transition-all"
+                    className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/40 transition-all hover:border-white/20 hover:text-white/60"
                   >
                     Annuler
                   </button>
@@ -377,30 +538,58 @@ export default function ReputationPage() {
           )}
         </AnimatePresence>
 
-        {/* ── Reviews list ── */}
+        {/* ── Filtres source ── */}
+        {reviews.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-white/25 mr-1">Filtrer :</span>
+            {([["all", "Tous", reviews.length], ...Object.entries(SOURCE_STYLES).map(([k, s]) => [k, s.label, reviews.filter(r => r.source === k).length])] as [string, string, number][]).map(([key, label, count]) => {
+              const active = activeSource === key;
+              const style = key !== "all" ? SOURCE_STYLES[key as ReviewSource] : null;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveSource(key as ReviewSource | "all")}
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold transition-all ${
+                    active
+                      ? style
+                        ? `${style.text} ${style.bg} ${style.border}`
+                        : "border-amber-500/30 bg-amber-500/12 text-amber-400"
+                      : "border-white/10 text-white/35 hover:border-white/20 hover:text-white/55"
+                  }`}
+                >
+                  {label}
+                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${active ? "bg-white/15" : "bg-white/[0.06]"}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Liste des avis ── */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-              className="w-6 h-6 border-2 border-white/20 border-t-amber-400 rounded-full"
-            />
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+              className="h-6 w-6 rounded-full border-2 border-white/15 border-t-amber-400" />
           </div>
         ) : reviews.length === 0 ? (
-          <EmptyState onAdd={() => setShowForm(true)} amber={amber} />
+          <EmptyState onAdd={() => setShowForm(true)} />
         ) : (
           <div className="flex flex-col gap-3">
-            <p className="text-xs text-white/30 uppercase tracking-wider font-medium px-1">
-              {totalReviews} avis — trié par date
+            <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-white/22">
+              {filteredReviews.length} avis{activeSource !== "all" ? ` · ${SOURCE_STYLES[activeSource as ReviewSource].label}` : " · tous les canaux"}
             </p>
-            {reviews.map((review, i) => (
-              <ReviewCard
-                key={review.id}
-                review={review}
-                index={i}
-                onDelete={handleDelete}
-              />
-            ))}
+            <AnimatePresence mode="popLayout">
+              {filteredReviews.map((review, i) => (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  index={i}
+                  onDelete={() => setConfirmDeleteId(review.id)}
+                />
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
@@ -422,87 +611,77 @@ export default function ReputationPage() {
 /* ═══════════════════════════════════════
    REVIEW CARD
 ═══════════════════════════════════════ */
-function ReviewCard({
-  review,
-  index,
-  onDelete,
-}: {
-  review: Review;
-  index: number;
-  onDelete: (id: string) => void;
-}) {
+function ReviewCard({ review, index, onDelete }: { review: Review; index: number; onDelete: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const src = SOURCE_STYLES[review.source];
   const initial = review.client_name.charAt(0).toUpperCase();
-
   const needsTruncate = review.message && review.message.length > 180;
-  const displayMessage =
-    needsTruncate && !expanded ? review.message.slice(0, 180) + "…" : review.message;
+  const displayMessage = needsTruncate && !expanded ? review.message.slice(0, 180) + "…" : review.message;
+  const ratingColor = review.rating >= 4 ? "#4ade80" : review.rating >= 3 ? "#fbbf24" : "#f87171";
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: index * 0.04 }}
-      className="group bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 hover:border-white/10 hover:bg-white/[0.03] transition-all"
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: index * 0.03 }}
+      className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 transition-all hover:border-white/[0.12] hover:bg-white/[0.035]"
     >
+      {/* Top accent bar */}
+      <div className="absolute inset-x-0 top-0 h-[2px]"
+        style={{ background: `linear-gradient(90deg, transparent, ${ratingColor}55, transparent)` }} />
+
       <div className="flex items-start gap-4">
-        {/* avatar */}
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold"
-          style={{ backgroundColor: "#f59e0b20", color: "#f59e0b", border: "1px solid #f59e0b30" }}
-        >
+        {/* Avatar */}
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-black"
+          style={{ background: ratingColor + "18", borderColor: ratingColor + "30", color: ratingColor }}>
           {initial}
         </div>
 
-        {/* content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 flex-wrap">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-sm font-medium">{review.client_name}</p>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <StarDisplay rating={review.rating} />
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${src.text} ${src.bg}`}>
+              <p className="text-[13px] font-bold text-white/90">{review.client_name}</p>
+              <div className="mt-1 flex items-center gap-2 flex-wrap">
+                <StarDisplay rating={review.rating} size="sm" />
+                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${src.text} ${src.bg} ${src.border}`}>
                   {src.label}
                 </span>
                 {review.project && (
-                  <span className="text-xs text-white/30 truncate max-w-[160px]">{review.project}</span>
+                  <span className="text-[10px] text-white/30 truncate max-w-[140px]">· {review.project}</span>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-white/25">
-                {new Date(review.created_at).toLocaleDateString("fr-FR", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })}
+              <span className="text-[10px] text-white/22">
+                {new Date(review.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
               </span>
               <button
-                onClick={() => onDelete(review.id)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/10 text-white/25 hover:text-red-400 transition-all"
+                onClick={onDelete}
+                aria-label="Supprimer cet avis"
+                className="rounded-lg p-1.5 text-white/20 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
               >
-                <Trash2 size={13} />
+                <Trash2 size={12} />
               </button>
             </div>
           </div>
 
+          {/* Message */}
           {review.message && (
             <div className="mt-3">
               <div className="flex items-start gap-2">
-                <MessageCircle size={13} className="text-white/20 mt-0.5 shrink-0" />
-                <p className="text-sm text-white/55 leading-relaxed">{displayMessage}</p>
+                <MessageCircle size={12} className="mt-0.5 shrink-0 text-white/18" />
+                <p className="text-[12.5px] leading-relaxed text-white/52">{displayMessage}</p>
               </div>
               {needsTruncate && (
                 <button
-                  onClick={() => setExpanded((v) => !v)}
-                  className="flex items-center gap-1 mt-2 text-xs text-white/35 hover:text-white/55 transition-colors ml-5"
+                  type="button"
+                  onClick={() => setExpanded(v => !v)}
+                  className="ml-5 mt-2 flex items-center gap-1 text-[10.5px] text-white/30 transition-colors hover:text-white/55"
                 >
-                  {expanded ? (
-                    <><ChevronUp size={12} /> Réduire</>
-                  ) : (
-                    <><ChevronDown size={12} /> Voir plus</>
-                  )}
+                  {expanded ? <><ChevronUp size={11} />Réduire</> : <><ChevronDown size={11} />Voir plus</>}
                 </button>
               )}
             </div>
@@ -516,30 +695,28 @@ function ReviewCard({
 /* ═══════════════════════════════════════
    EMPTY STATE
 ═══════════════════════════════════════ */
-function EmptyState({ onAdd, amber }: { onAdd: () => void; amber: string }) {
+function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-16 text-center">
-      <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center"
-        style={{ backgroundColor: amber + "15", border: `1px solid ${amber}25` }}
-      >
-        <Star size={28} style={{ color: amber }} />
+      <div className="relative">
+        <div className="absolute inset-0 rounded-2xl bg-amber-500/20 blur-md" />
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/25 bg-amber-500/12">
+          <Star size={28} style={{ color: GOLD }} />
+        </div>
       </div>
       <div>
-        <p className="text-base font-medium text-white/70">Aucun avis pour le moment</p>
-        <p className="text-sm text-white/30 mt-1 max-w-xs">
-          Commencez à collecter les retours de vos clients pour renforcer votre réputation.
+        <p className="text-[15px] font-extrabold text-white/75">Aucun avis pour le moment</p>
+        <p className="mx-auto mt-2 max-w-xs text-[12.5px] leading-relaxed text-white/35">
+          Collectez les retours de vos clients pour renforcer votre crédibilité et améliorer vos services.
         </p>
       </div>
       <motion.button
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.97 }}
+        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
         onClick={onAdd}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium"
-        style={{ backgroundColor: amber + "20", color: amber, border: `1px solid ${amber}35` }}
+        className="flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-bold"
+        style={{ background: GOLD + "18", color: GOLD, borderColor: GOLD + "35" }}
       >
-        <Plus size={15} />
-        Ajouter un avis
+        <Plus size={14} /> Ajouter votre premier avis
       </motion.button>
     </div>
   );
