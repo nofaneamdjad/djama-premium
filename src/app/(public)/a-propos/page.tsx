@@ -3,11 +3,12 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowRight, Mail, MessageCircle, Users, Lightbulb,
   Zap, ShieldCheck, HeartHandshake, Star, Globe,
-  CheckCircle2, Rocket, Target, Clock, FileText,
-  TrendingUp, BookOpen, Brain, Quote,
+  CheckCircle2, Rocket, Target, FileText,
+  TrendingUp, BookOpen, Brain,
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════
@@ -102,29 +103,55 @@ const MILESTONES = [
   },
 ];
 
-const TEMOIGNAGES = [
-  {
-    text: "Grâce à DJAMA, j'ai décroché mon premier marché public en 3 semaines. Le dossier était béton et le suivi impeccable.",
-    author: "Karim B.",
-    role: "Artisan électricien",
-    initials: "KB",
-    color: "#c9a55a",
-  },
-  {
-    text: "J'avais aucune idée comment trouver des fournisseurs à l'étranger. L'équipe a tout géré — les recherches, les négociations, les devis. Résultat : -30% sur mes coûts.",
-    author: "Samira L.",
-    role: "Gérante boutique en ligne",
-    initials: "SL",
-    color: "#a78bfa",
-  },
-  {
-    text: "Le site web livré en 5 jours, pro et moderne. Et le coaching IA m'a permis d'automatiser mes relances clients — je gagne 2h par jour.",
-    author: "Thomas M.",
-    role: "Consultant indépendant",
-    initials: "TM",
-    color: "#38bdf8",
-  },
-];
+/* ═══════════════════════════════════════════════════════════
+   COMPOSANT PHOTO FONDATEUR
+═══════════════════════════════════════════════════════════ */
+function FounderPhoto() {
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <div className="relative w-full max-w-[340px] md:max-w-full">
+      {/* Halo doré derrière */}
+      <div
+        className="absolute -inset-4 rounded-[2.5rem] opacity-25 blur-2xl"
+        style={{ background: `radial-gradient(ellipse, ${GOLD}80, transparent 70%)` }}
+      />
+      {/* Cadre */}
+      <div
+        className="relative overflow-hidden rounded-[1.75rem]"
+        style={{ boxShadow: `0 0 0 1.5px ${GOLD}40, 0 32px 80px rgba(0,0,0,0.7)` }}
+      >
+        {imgError ? (
+          /* Fallback avatar si photo manquante */
+          <div
+            className="flex aspect-square w-full items-center justify-center"
+            style={{ background: `linear-gradient(135deg, ${GOLD}20, ${GOLD}08)` }}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <span
+                className="flex h-24 w-24 items-center justify-center rounded-3xl text-4xl font-black"
+                style={{ backgroundColor: GOLD + "25", color: GOLD, border: `2px solid ${GOLD}50` }}
+              >
+                NA
+              </span>
+              <span className="text-sm font-bold text-white/40">Photo bientôt disponible</span>
+            </div>
+          </div>
+        ) : (
+          <Image
+            src="/founder-nofane.jpg"
+            alt="Nofane AMDJAD — Fondateur de DJAMA"
+            width={420}
+            height={420}
+            className="w-full object-cover"
+            priority
+            onError={() => setImgError(true)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
 /* ═══════════════════════════════════════════════════════════
    PAGE
@@ -233,7 +260,6 @@ export default function AProposPage() {
       <section className="relative z-10 py-16">
         <div className="mx-auto max-w-5xl px-6">
 
-          {/* Section header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -252,7 +278,7 @@ export default function AProposPage() {
             </h2>
           </motion.div>
 
-          {/* 2-col layout : photo gauche, bio droite */}
+          {/* Mobile : photo dessus, texte dessous — Desktop : côte à côte */}
           <div className="grid gap-10 md:grid-cols-2 md:items-start">
 
             {/* ── Photo + identité ── */}
@@ -263,31 +289,9 @@ export default function AProposPage() {
               transition={{ duration: 0.7, ease }}
               className="flex flex-col items-center md:items-start"
             >
-              {/* Cadre photo */}
-              <div className="relative">
-                {/* Halo doré derrière */}
-                <div
-                  className="absolute -inset-3 rounded-[2rem] blur-xl opacity-30"
-                  style={{ background: `radial-gradient(ellipse, ${GOLD}60, transparent 70%)` }}
-                />
-                {/* Bordure dorée subtile */}
-                <div
-                  className="absolute inset-0 rounded-[1.75rem]"
-                  style={{ boxShadow: `0 0 0 2px ${GOLD}35, 0 24px 60px rgba(0,0,0,0.6)` }}
-                />
-                <div className="relative overflow-hidden rounded-[1.75rem]">
-                  <Image
-                    src="/founder-nofane.jpg"
-                    alt="Nofane AMDJAD — Fondateur de DJAMA"
-                    width={420}
-                    height={420}
-                    className="w-full max-w-[340px] object-cover md:max-w-full"
-                    priority
-                  />
-                </div>
-              </div>
+              <FounderPhoto />
 
-              {/* Bloc identité sous la photo */}
+              {/* Bloc identité */}
               <div
                 className="relative mt-5 w-full max-w-[340px] overflow-hidden rounded-2xl border p-5 md:max-w-full"
                 style={{ borderColor: GOLD + "28", backgroundColor: GOLD + "0a" }}
@@ -308,10 +312,8 @@ export default function AProposPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7, ease, delay: 0.1 }}
-              className="space-y-6"
+              className="space-y-5"
             >
-
-              {/* Pourquoi */}
               <div className="rounded-2xl border border-white/7 bg-[rgba(15,17,23,0.6)] p-5">
                 <div className="mb-3 flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: GOLD + "18", border: `1px solid ${GOLD}30` }}>
@@ -327,7 +329,6 @@ export default function AProposPage() {
                 </p>
               </div>
 
-              {/* À qui on s'adresse */}
               <div className="rounded-2xl border border-white/7 bg-[rgba(15,17,23,0.6)] p-5">
                 <div className="mb-3 flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: "#a78bfa18", border: "1px solid #a78bfa30" }}>
@@ -342,7 +343,6 @@ export default function AProposPage() {
                 </p>
               </div>
 
-              {/* Ce qu'on apporte */}
               <div className="rounded-2xl border border-white/7 bg-[rgba(15,17,23,0.6)] p-5">
                 <div className="mb-3 flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: "#4ade8018", border: "1px solid #4ade8030" }}>
@@ -372,7 +372,7 @@ export default function AProposPage() {
       </section>
 
       {/* ════════════════════════════════════════════
-          HISTOIRE / TIMELINE
+          TIMELINE
       ════════════════════════════════════════════ */}
       <section className="relative z-10 py-16">
         <div className="mx-auto max-w-5xl px-6">
@@ -403,13 +403,10 @@ export default function AProposPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, ease, delay: i * 0.1 }}
-                className="relative overflow-hidden flex gap-4 rounded-2xl border border-white/7 bg-[rgba(15,17,23,0.6)] p-4"
+                className="relative flex gap-4 overflow-hidden rounded-2xl border border-white/7 bg-[rgba(15,17,23,0.6)] p-4"
               >
                 <div className="absolute inset-y-0 left-0 w-[3px] rounded-l-2xl" style={{ background: color }} />
-                <div
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-black"
-                  style={{ backgroundColor: color + "18", color, border: `1px solid ${color}35` }}
-                >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-black" style={{ backgroundColor: color + "18", color, border: `1px solid ${color}35` }}>
                   {year}
                 </div>
                 <div>
@@ -519,98 +516,6 @@ export default function AProposPage() {
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════════
-          TÉMOIGNAGES
-      ════════════════════════════════════════════ */}
-      <section className="relative z-10 py-16">
-        <div className="mx-auto max-w-5xl px-6">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease }}
-            className="mb-10 text-center"
-          >
-            <span
-              className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest"
-              style={{ color: "#4ade80", borderColor: "#4ade8030", backgroundColor: "#4ade800d" }}
-            >
-              <Star size={10} fill="#4ade80" style={{ color: "#4ade80" }} />
-              Ils nous font confiance
-            </span>
-            <h2 className="mt-3 text-3xl font-black text-white sm:text-4xl">
-              Ce que disent<br />
-              <span style={{ color: GOLD }}>nos clients.</span>
-            </h2>
-          </motion.div>
-
-          <div className="grid gap-5 md:grid-cols-3">
-            {TEMOIGNAGES.map(({ text, author, role, initials, color }, i) => (
-              <motion.div
-                key={author}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, ease, delay: i * 0.1 }}
-                className="relative overflow-hidden rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.7)] p-6 flex flex-col"
-              >
-                <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 40% at 50% 0%, ${color}12 0%, transparent 60%)` }} />
-                <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}50, transparent)` }} />
-
-                {/* Guillemets */}
-                <Quote size={24} className="relative mb-3 shrink-0 opacity-30" style={{ color }} />
-
-                {/* Texte */}
-                <p className="relative flex-1 text-sm leading-relaxed text-white/60 italic">"{text}"</p>
-
-                {/* Auteur */}
-                <div className="relative mt-5 flex items-center gap-3">
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-black"
-                    style={{ backgroundColor: color + "20", color, border: `1px solid ${color}35` }}
-                  >
-                    {initials}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">{author}</p>
-                    <p className="text-[0.65rem] text-white/35">{role}</p>
-                  </div>
-                  {/* Étoiles */}
-                  <div className="ml-auto flex gap-0.5">
-                    {[...Array(5)].map((_, j) => (
-                      <Star key={j} size={10} fill="#f59e0b" style={{ color: "#f59e0b" }} />
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Résultats clés */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, ease, delay: 0.2 }}
-            className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4"
-          >
-            {[
-              { value: "50+",  label: "Clients satisfaits",        color: "#c9a55a" },
-              { value: "100+", label: "Marchés & projets réalisés", color: "#4ade80" },
-              { value: "-30%", label: "Coûts fournisseurs en moy.", color: "#38bdf8" },
-              { value: "5★",   label: "Note moyenne clients",      color: "#f59e0b" },
-            ].map(({ value, label, color }) => (
-              <div key={label} className="relative overflow-hidden rounded-2xl border border-white/8 bg-[rgba(15,17,23,0.6)] px-4 py-4 text-center">
-                <div className="pointer-events-none absolute inset-0 opacity-15" style={{ background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${color}40 0%, transparent 70%)` }} />
-                <p className="relative text-2xl font-black" style={{ color }}>{value}</p>
-                <p className="relative mt-0.5 text-[0.65rem] text-white/45">{label}</p>
-              </div>
-            ))}
-          </motion.div>
         </div>
       </section>
 
