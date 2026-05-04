@@ -68,6 +68,31 @@ interface Invoice {
   due_date: string | null;
 }
 
+/* Ligne brute provenant de la table `documents` */
+interface RawDocument {
+  id: string;
+  numero: string;
+  client_nom: string;
+  total_ttc: number;
+  statut: string;
+  date_document: string;
+  date_echeance: string | null;
+}
+
+function mapDoc(d: RawDocument): Invoice {
+  const statut = d.statut ?? "";
+  return {
+    id:             d.id,
+    reference:      d.numero || "—",
+    client_name:    d.client_nom || "—",
+    total:          d.total_ttc ?? 0,
+    status:         statut === "en_retard" ? "en retard" : statut === "payé" ? "payée" : "envoyée",
+    payment_status: statut === "payé" ? "payée" : "non payée",
+    issue_date:     d.date_document,
+    due_date:       d.date_echeance ?? null,
+  };
+}
+
 interface Expense {
   id: string;
   date: string;
@@ -187,10 +212,12 @@ export default function TresoreriePage() {
 
     const [invoicesResult, expensesResult] = await Promise.all([
       supabase
-        .from("invoices")
-        .select("id, reference, client_name, total, status, payment_status, issue_date, due_date")
-        .gte("issue_date", monthStart)
-        .lte("issue_date", monthEnd),
+        .from("documents")
+        .select("id, numero, client_nom, total_ttc, statut, date_document, date_echeance")
+        .eq("type", "facture")
+        .in("statut", ["envoyé", "payé", "en_retard"])
+        .gte("date_document", monthStart)
+        .lte("date_document", monthEnd),
       supabase
         .from("expenses")
         .select("id, date, category, description, amount")
@@ -201,7 +228,7 @@ export default function TresoreriePage() {
     if (invoicesResult.error) {
       showToast("error", `Factures : ${invoicesResult.error.message}`);
     } else {
-      setInvoices((invoicesResult.data as Invoice[]) ?? []);
+      setInvoices(((invoicesResult.data ?? []) as RawDocument[]).map(mapDoc));
     }
 
     if (expensesResult.error) {
@@ -291,28 +318,32 @@ export default function TresoreriePage() {
         <div className="absolute bottom-[10%] right-[10%] h-[400px] w-[400px] rounded-full bg-[rgba(201,165,90,0.03)] blur-[120px]" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
-
-        {/* ── Header ── */}
-        <div className="mb-8 flex items-center gap-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[rgba(74,222,128,0.2)] bg-[rgba(74,222,128,0.08)]">
-            <Wallet size={20} style={{ color: "#4ade80" }} />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-extrabold text-white">Trésorerie</h1>
-            <p className="text-xs text-white/30">Vue consolidée de vos flux financiers</p>
+      {/* ── Sub-header ── */}
+      <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.88)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(74,222,128,0.22)] bg-[rgba(74,222,128,0.08)]">
+              <Wallet size={16} style={{ color: "#4ade80" }} />
+            </div>
+            <div>
+              <h1 className="text-base font-extrabold text-white">Trésorerie</h1>
+              <p className="text-[0.65rem] text-white/30">Vue consolidée de vos flux financiers</p>
+            </div>
           </div>
           {!loading && (invoices.length > 0 || expenses.length > 0) && (
             <button
               onClick={() => exportCSV(invoices, expenses, `${MONTH_NAMES[viewMonth].toLowerCase()}-${viewYear}`)}
               aria-label="Exporter les données en CSV"
               title="Exporter CSV"
-              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/45 transition-all hover:border-white/20 hover:text-white/70"
+              className="flex items-center gap-1.5 rounded-xl border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.08)] px-3.5 py-2 text-xs font-bold text-[#4ade80] transition-all hover:bg-[rgba(74,222,128,0.15)]"
             >
-              <Download size={12} /> Export CSV
+              <Download size={12} /> <span className="hidden sm:inline">Exporter CSV</span>
             </button>
           )}
         </div>
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-5xl px-4 py-6 sm:px-6">
 
         {/* ── Month selector ── */}
         <div className="mb-6 flex items-center justify-between">
@@ -427,14 +458,20 @@ export default function TresoreriePage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease }}
-            className="mb-6 flex flex-col items-center gap-4 rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.5)] py-14 text-center"
+            className="relative mb-6 flex flex-col items-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.5)] py-16 text-center"
           >
-            <Wallet size={30} className="text-white/15" />
+            <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 55% 45% at 50% 55%, rgba(74,222,128,0.07) 0%, transparent 70%)" }} />
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl blur-xl" style={{ background: "rgba(74,222,128,0.18)" }} />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(74,222,128,0.22)] bg-[rgba(74,222,128,0.09)]">
+                <Wallet size={26} style={{ color: "#4ade80" }} />
+              </div>
+            </div>
             <div>
-              <p className="text-sm font-bold text-white/30">
+              <p className="text-sm font-bold text-white/70">
                 Aucune donnée pour {MONTH_NAMES[viewMonth].toLowerCase()} {viewYear}
               </p>
-              <p className="mt-1 text-xs text-white/20">
+              <p className="mt-1 text-xs text-white/30">
                 Commencez par créer une facture ou saisir une dépense.
               </p>
             </div>
