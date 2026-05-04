@@ -1,11 +1,11 @@
 /**
  * POST /api/sourcing/chat
  *
- * Expert Sourcing & Marchés IA — réponses structurées.
+ * Expert Sourcing & Marchés IA — réponses longues, structurées, avec raisonnement.
  * Gère : fournisseurs, marchés publics/privés, négociation, guides pratiques.
  *
  * Body   : { message: string, history: Array<{role, content}> }
- * Return : { text, sections?, actions?, suggestions? }
+ * Return : { text, reasoning?, sections?, actions?, suggestions? }
  *        | { error: string }  → status 4xx/5xx
  */
 
@@ -18,53 +18,85 @@ const log = createLogger("sourcing/chat");
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MODEL = "claude-haiku-4-5-20251001";
+/* Sonnet pour des réponses longues et raisonnées */
+const MODEL = "claude-sonnet-4-5";
 
 /* ─────────────────────────────────────────────────────────
-   SYSTEM PROMPT
+   SYSTEM PROMPT — Expert exhaustif
 ───────────────────────────────────────────────────────── */
-const SYSTEM = `Tu es l'Expert Sourcing et Marches IA — specialiste mondial en approvisionnement B2B, supply chain et marches publics/prives pour PME, TPE et freelances.
+const SYSTEM = `Tu es l'Expert Sourcing et Marches IA de DJAMA PRO — conseiller senior specialise en approvisionnement B2B, supply chain strategique et marches publics/prives pour PME, TPE et freelances.
 
-COUVERTURE GEOGRAPHIQUE (non exhaustive) :
-- France & UE : BOAMP, TED, UGAP, JOUE, seuils europeens actuels
-- Afrique : ARMP, BAD, Banque Mondiale, plateformes nationales (SIGMAP, COLEPS...)
+TON STYLE : Exhaustif, precis, actionnable. Tu n'as PAS peur de donner des reponses longues. Chaque reponse doit etre COMPLETE — pas un apercu, pas un resume. Si la question merite 8 etapes detaillees, tu en donnes 8. Si 5 fournisseurs doivent etre cites avec leurs avantages/inconvenients, tu les cites tous les 5. Tu expliques le POURQUOI, pas seulement le QUOI.
+
+COUVERTURE GEOGRAPHIQUE :
+- France & UE : BOAMP, TED, UGAP, JOUE, seuils europeens en vigueur
+- Afrique : ARMP, BAD, Banque Mondiale, SIGMAP, COLEPS, plateformes nationales
 - USA & Canada : SAM.gov, MERX, BuyAndSell, plateformes etatiques
 - Moyen-Orient : Etimad (Arabie Saoudite), DG Procurement (EAU), GCC Tenders
-- International : UNGM (ONU), Banque Mondiale, BERD, BAfD, organismes multilateraux
-- Marches prives monde : Alibaba, ThomasNet, Kompass, Europages, Made-in-China, GlobalSources
+- International : UNGM (ONU), Banque Mondiale, BERD, BAD, multilateraux
+- Marches prives monde : Alibaba, ThomasNet, Kompass, Europages, Made-in-China, GlobalSources, Ariba
 
 DOMAINES :
-1. FOURNISSEURS — sourcing mondial, criteres de selection, certifications (ISO, CE, FDA, RoHS, Halal)
-2. MARCHES PUBLICS — procedures par pays, seuils actuels, plateformes officielles, preparation dossier
-3. MARCHES PRIVES — RFP/RFQ, panels fournisseurs, positionnement prix, negociation
-4. SOURCING STRATEGIQUE — due diligence, audit, diversification, cahier des charges
+1. FOURNISSEURS — sourcing mondial, criteres de selection, certifications (ISO, CE, FDA, RoHS, Halal), due diligence, grilles d'evaluation, gestion des risques fournisseurs
+2. MARCHES PUBLICS — procedures par pays, seuils actuels, MAPA/AO/AOTM, dossiers de candidature, memoires techniques, criteres de notation, recours
+3. MARCHES PRIVES — RFP/RFQ, panels fournisseurs, positionnement prix, scoring fournisseurs, SLA, penalites contractuelles
+4. NEGOCIATION — BATNA, zones d'accord, tactiques d'achat, clauses contractuelles, grilles tarifaires, conditions de paiement
+5. SOURCING STRATEGIQUE — make or buy, dual sourcing, audit fournisseur, cahier des charges techniques
 
 DETECTION CONTEXTE (critique) :
-- Si pays mentionne → adapter la reponse a ce pays (plateformes, seuils, procedures locales)
-- Si secteur mentionne → adapter (BTP, IT, sante, agroalimentaire, services, etc.)
-- Si type mentionne (public/prive) → adapter
-- Si budget mentionne → adapter le niveau de complexite et les seuils
-- Si aucun pays precise → reponse globale + suggestion finale : "Quel pays ou region ciblez-vous ?"
-- Toujours adapter au niveau detecte : debutant (etapes simples) ou experimente (detail technique)
+- Si pays mentionne → adapter avec plateformes, seuils, procedures et lois LOCALES
+- Si secteur mentionne → adapter les certifications, normes, acteurs du secteur
+- Si budget mentionne → adapter la complexite et les seuils appliques
+- Si aucun pays precise → reponse globale + finir par "Quel pays ou region ciblez-vous pour adapter precisement ?"
+- Niveau detecte : debutant (pedagogique + etapes simples) ou experimente (detail technique + ratios)
 
-REGLES ABSOLUES :
-1. Reponds en JSON pur, sans markdown, sans texte autour
-2. Jamais de date ou annee codee en dur — dire "actuels", "en vigueur", "recents" si besoin
-3. Sections claires, pas de blocs de texte denses
-4. Chaque point doit etre utilisable immediatement
-5. Portee internationale par defaut — ne jamais limiter a la France sauf si demande
+FORMAT DE REPONSE — JSON STRICT OBLIGATOIRE :
+Reponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant/apres.
+Schema exact :
+{
+  "text": "Synthese introductive de 3-5 phrases — contexte, enjeux, approche recommandee",
+  "reasoning": "Analyse strategique approfondie : pourquoi cette approche, quels sont les pieges, les facteurs cles de succes, les chiffres cles — minimum 4 phrases riches",
+  "sections": [
+    {
+      "type": "steps|supplier_list|checklist|tips|text",
+      "title": "Titre de section clair",
+      "items": [
+        {
+          "name": "Titre court de l'element",
+          "description": "Explication detaillee et actionnable — minimum 20 mots, avec chiffres concrets si applicable",
+          "tip": "Conseil expert optionnel (pour supplier_list)",
+          "country": "Pays (pour supplier_list)",
+          "type": "Type/categorie (pour supplier_list)"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {"label": "Telecharger le guide PDF", "icon": "Download", "type": "generate_pdf", "variant": "primary"}
+  ],
+  "suggestions": ["Question de suivi pertinente ?", "Autre angle ?", "Approfondissement ?"]
+}
 
-FORMAT DE REPONSE (JSON strict, rien d'autre) :
-{"text":"Intro courte","sections":[{"type":"steps","title":"Etapes cles","items":[{"name":"1. Titre etape","description":"Description actionnable"}]}],"actions":[{"label":"Telecharger le guide PDF","icon":"Download","type":"generate_pdf","variant":"primary"}],"suggestions":["Question de suivi ?","Autre aspect ?"]}
+REGLES DE CONTENU (non negociables) :
+1. MINIMUM 5 sections par reponse sur une question complexe (sourcing, marches, negociation)
+2. MINIMUM 5 items par section — jamais moins de 4
+3. Chaque item "description" : minimum 20 mots, precis, avec chiffres/% quand possible
+4. Section "reasoning" : obligatoire, minimum 4 phrases, analyse strategique reelle
+5. Toujours inclure une section "tips" avec les erreurs frequentes a eviter
+6. Pour supplier_list : inclure name, country, type, description ET tip pour chaque item
+7. Pour steps : inclure description detaillee de chaque etape (comment faire, pas juste quoi faire)
+8. Pour checklist : items courts mais precis, verifiables
+9. Max 3 suggestions, pertinentes et differentes entre elles
+10. Portee internationale par defaut
 
 TYPES DE SECTION VALIDES :
-- supplier_list : items avec name, country, type, description, tip
-- steps         : items avec name (ex "1. Titre") et description
-- checklist     : items avec name seulement
-- tips          : items avec name + description
-- text          : items avec name = texte libre
+- supplier_list : fournisseurs avec name, country, type, description, tip
+- steps         : processus avec name (ex "1. Titre") et description detaillee
+- checklist     : liste de verification avec name uniquement
+- tips          : conseils/avertissements avec name + description
+- text          : blocs texte libres avec name = texte
 
-Max 4 sections. Max 3 suggestions. JSON pur uniquement.`;
+JSON pur uniquement. Aucun texte hors JSON.`;
 
 /* ─────────────────────────────────────────────────────────
    TYPES
@@ -90,9 +122,9 @@ function friendlyAnthropicError(err: unknown): string {
   if (status === 401 || msg.includes("authentication"))
     return "Cle API Anthropic invalide ou expiree.";
   if (status === 429 || msg.includes("rate") || msg.includes("overloaded"))
-    return "Le service IA est surchargee. Reessaie dans 30 secondes.";
+    return "Le service IA est surcharge. Reessaie dans 30 secondes.";
   if (status === 400 && msg.includes("content"))
-    return "Contenu de requete invalide (historique corrompu). Rafraichis la page.";
+    return "Contenu de requete invalide. Rafraichis la page.";
   if (msg.includes("timeout") || msg.includes("ETIMEDOUT"))
     return "Timeout : le service IA met trop de temps a repondre. Reessaie.";
 
@@ -107,7 +139,7 @@ export async function POST(req: NextRequest) {
   /* ── Clé API ── */
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    log.error("ANTHROPIC_API_KEY manquante dans les variables d'environnement");
+    log.error("ANTHROPIC_API_KEY manquante");
     return NextResponse.json({ error: "Cle API Anthropic non configuree." }, { status: 500 });
   }
 
@@ -124,34 +156,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Message vide." }, { status: 400 });
   }
 
-  /* ── Nettoyer l'historique ──
-     Anthropic rejette les messages avec contenu vide ou manquant.
-     On filtre aussi les messages d'erreur stockés côté frontend.
-  ── */
+  /* ── Nettoyer l'historique ── */
   const cleanHistory = (history ?? [])
     .filter(h =>
       (h.role === "user" || h.role === "assistant") &&
       typeof h.content === "string" &&
       h.content.trim().length > 0,
     )
-    .slice(-10);  // max 10 tours de conversation
+    .slice(-8);  // max 8 tours
 
   log.info(`message recu (${message.length} chars), history: ${cleanHistory.length} items`);
 
-  /* ── Appel Claude ── */
+  /* ── Appel Claude Sonnet ── */
   try {
-    const anthropic = new Anthropic({ apiKey, maxRetries: 1, timeout: 30_000 });
+    const anthropic = new Anthropic({ apiKey, maxRetries: 1, timeout: 90_000 });
 
     const claudeMessages: Array<{ role: "user" | "assistant"; content: string }> = [
       ...cleanHistory.map(h => ({ role: h.role, content: h.content })),
       { role: "user", content: message.trim() },
     ];
 
-    log.debug(`appel Claude (${claudeMessages.length} messages)`);
+    log.debug(`appel Claude Sonnet (${claudeMessages.length} messages)`);
 
     const response = await anthropic.messages.create({
       model:      MODEL,
-      max_tokens: 1_500,
+      max_tokens: 4_096,   // réponses longues
       system:     SYSTEM,
       messages:   claudeMessages,
     });
@@ -162,31 +191,32 @@ export async function POST(req: NextRequest) {
 
     log.debug(`reponse brute (${raw.length} chars): ${raw.slice(0, 200)}`);
 
-    /* ── Extraction JSON — avec fallback propre ── */
+    /* ── Extraction JSON ── */
     let parsed: Record<string, unknown>;
 
     try {
-      /* 1. Supprimer les blocs markdown éventuels (```json ... ```) */
       let src = raw;
+      /* Supprimer blocs markdown ```json ... ``` */
       const codeBlock = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
       if (codeBlock) src = codeBlock[1].trim();
 
-      /* 2. Extraire le premier objet JSON complet */
+      /* Extraire premier objet JSON complet */
       const match = src.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error("Aucun JSON trouve dans la reponse");
+      if (!match) throw new Error("Aucun JSON trouve");
       parsed = JSON.parse(match[0]) as Record<string, unknown>;
       log.debug("JSON parse OK, cles: " + Object.keys(parsed).join(", "));
-    } catch (parseErr) {
-      log.warn("JSON parse echoue, fallback");
-      /* Ne jamais mettre le JSON brut dans text — extraire le champ text si possible */
+    } catch {
+      log.warn("JSON parse echoue, fallback texte");
       const textMatch = raw.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/);
       const fallbackText = textMatch
         ? textMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"')
-        : "Je n'ai pas pu generer une reponse structuree. Reformule ta question.";
+        : raw.length > 20
+          ? raw
+          : "Je n'ai pas pu generer une reponse structuree. Reformule ta question.";
       parsed = {
-        text:     fallbackText,
-        sections: [],
-        actions:  [{ label: "Telecharger le guide PDF", icon: "Download", type: "generate_pdf", variant: "primary" }],
+        text:        fallbackText,
+        sections:    [],
+        actions:     [{ label: "Telecharger le guide PDF", icon: "Download", type: "generate_pdf", variant: "primary" }],
         suggestions: ["Peux-tu reformuler ?", "Donne plus de details ?"],
       };
     }
@@ -194,10 +224,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(parsed);
 
   } catch (err) {
-    /* ── Logging détaillé de l'erreur Anthropic ── */
-    const status   = (err as { status?: number }).status;
-    const errBody  = (err as { error?: unknown }).error;
-    const errMsg   = err instanceof Error ? err.message : String(err);
+    const status  = (err as { status?: number }).status;
+    const errMsg  = err instanceof Error ? err.message : String(err);
 
     log.error("ERREUR ANTHROPIC", { message: errMsg, status, type: err?.constructor?.name });
 
