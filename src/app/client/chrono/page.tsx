@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Timer, Play, Square, Plus, Trash2, X,
+  Timer, Play, Pause, Square, Plus, Trash2, X,
   Loader2,
   Clock, Euro, CalendarDays, Briefcase, User,
 } from "lucide-react";
@@ -95,8 +95,10 @@ export default function ChronoPage() {
 
   /* ── Timer state ── */
   const [running, setRunning] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [startMs, setStartMs] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [pausedElapsed, setPausedElapsed] = useState(0);
   const [timerProject, setTimerProject] = useState("");
   const [timerClient, setTimerClient] = useState("");
   const [timerRate, setTimerRate] = useState("");
@@ -154,16 +156,35 @@ export default function ChronoPage() {
     const now = Date.now();
     setStartMs(now);
     setElapsed(0);
+    setPausedElapsed(0);
     setRunning(true);
+    setPaused(false);
+  }
+
+  /* ── Pause timer ── */
+  function handlePause() {
+    setRunning(false);
+    setPaused(true);
+    setPausedElapsed(elapsed);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  }
+
+  /* ── Resume timer ── */
+  function handleResume() {
+    const newStart = Date.now() - pausedElapsed * 1000;
+    setStartMs(newStart);
+    setRunning(true);
+    setPaused(false);
   }
 
   /* ── Stop timer & save ── */
   async function handleStop() {
-    if (!running || startMs === null) return;
+    if (!running && !paused) return;
     setRunning(false);
+    setPaused(false);
     if (intervalRef.current) clearInterval(intervalRef.current);
 
-    const finalElapsed = Math.floor((Date.now() - startMs) / 1000);
+    const finalElapsed = paused ? pausedElapsed : (startMs !== null ? Math.floor((Date.now() - startMs) / 1000) : 0);
     const duration_minutes = Math.max(1, Math.round(finalElapsed / 60));
 
     setSaving(true);
@@ -326,16 +347,19 @@ export default function ChronoPage() {
           transition={{ duration: 0.4, ease }}
           className="overflow-hidden rounded-[1.75rem] border border-[rgba(167,139,250,0.15)] bg-[rgba(15,17,23,0.7)] shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
         >
-          {/* Running indicator bar */}
+          {/* Running / paused indicator bar */}
           <AnimatePresence>
-            {running && (
+            {(running || paused) && (
               <motion.div
+                key={paused ? "paused-bar" : "running-bar"}
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 exit={{ scaleX: 0 }}
                 transition={{ duration: 0.5, ease }}
                 style={{ transformOrigin: "left" }}
-                className="h-0.5 w-full bg-gradient-to-r from-[#a78bfa] to-[#7c3aed]"
+                className={paused
+                  ? "h-0.5 w-full bg-gradient-to-r from-amber-400 to-amber-500"
+                  : "h-0.5 w-full bg-gradient-to-r from-[#a78bfa] to-[#7c3aed]"}
               />
             )}
           </AnimatePresence>
@@ -350,7 +374,7 @@ export default function ChronoPage() {
                 <input
                   value={timerProject}
                   onChange={(e) => setTimerProject(e.target.value)}
-                  disabled={running}
+                  disabled={running || paused}
                   placeholder="Nom du projet…"
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/18 focus:border-[rgba(167,139,250,0.45)] disabled:opacity-40 disabled:cursor-not-allowed"
                 />
@@ -362,7 +386,7 @@ export default function ChronoPage() {
                 <input
                   value={timerClient}
                   onChange={(e) => setTimerClient(e.target.value)}
-                  disabled={running}
+                  disabled={running || paused}
                   placeholder="Nom du client…"
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/18 focus:border-[rgba(167,139,250,0.45)] disabled:opacity-40 disabled:cursor-not-allowed"
                 />
@@ -377,7 +401,7 @@ export default function ChronoPage() {
                   step="5"
                   value={timerRate}
                   onChange={(e) => setTimerRate(e.target.value)}
-                  disabled={running}
+                  disabled={running || paused}
                   placeholder="75"
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/18 focus:border-[rgba(167,139,250,0.45)] disabled:opacity-40 disabled:cursor-not-allowed"
                 />
@@ -392,41 +416,81 @@ export default function ChronoPage() {
                   key={Math.floor(elapsed / 60)}
                   className="font-mono text-[3.5rem] font-black leading-none tracking-tight sm:text-[4.5rem]"
                   style={{
-                    color: running ? "#a78bfa" : "rgba(255,255,255,0.6)",
-                    textShadow: running ? "0 0 40px rgba(167,139,250,0.4)" : "none",
+                    color: paused ? "#f59e0b" : running ? "#a78bfa" : "rgba(255,255,255,0.6)",
+                    textShadow: paused ? "0 0 40px rgba(245,158,11,0.35)" : running ? "0 0 40px rgba(167,139,250,0.4)" : "none",
                   }}
                 >
                   {fmt(elapsed)}
                 </motion.span>
-                {timerRate && elapsed > 0 && (
+                {paused && (
+                  <span className="mt-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-widest text-amber-400">
+                    En pause
+                  </span>
+                )}
+                {!paused && timerRate && elapsed > 0 && (
                   <span className="mt-1 text-sm font-semibold text-[rgba(167,139,250,0.7)]">
                     {fmtEur((elapsed / 3600) * parseFloat(timerRate))} estimé
                   </span>
                 )}
               </div>
 
-              {/* Start / Stop */}
+              {/* Timer buttons — 3 states: idle / running / paused */}
               <div className="flex flex-col items-center gap-3">
-                <button
-                  onClick={running ? handleStop : handleStart}
-                  disabled={saving}
-                  className={`group relative flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition active:scale-95 disabled:opacity-40 ${
-                    running
-                      ? "bg-gradient-to-br from-red-500 to-red-600 shadow-[0_6px_24px_rgba(239,68,68,0.4)]"
-                      : "bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] shadow-[0_6px_24px_rgba(139,92,246,0.45)]"
-                  }`}
-                >
-                  {saving ? (
-                    <Loader2 size={22} className="animate-spin text-white" />
-                  ) : running ? (
-                    <Square size={20} className="fill-white text-white" />
-                  ) : (
-                    <Play size={22} className="ml-1 fill-white text-white" />
-                  )}
-                </button>
-                <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">
-                  {saving ? "Enregistrement…" : running ? "Arrêter" : "Démarrer"}
-                </span>
+                {!running && !paused ? (
+                  /* ── IDLE: single Play ── */
+                  <div className="flex flex-col items-center gap-2">
+                    <button
+                      onClick={handleStart}
+                      disabled={saving}
+                      className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] shadow-[0_6px_24px_rgba(139,92,246,0.45)] transition active:scale-95 disabled:opacity-40 hover:shadow-[0_8px_32px_rgba(139,92,246,0.55)]"
+                    >
+                      <Play size={22} className="ml-1 fill-white text-white" />
+                    </button>
+                    <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">
+                      Démarrer
+                    </span>
+                  </div>
+                ) : (
+                  /* ── RUNNING or PAUSED: Pause/Resume + Stop ── */
+                  <div className="flex items-end gap-4">
+                    {/* Pause / Resume button */}
+                    <div className="flex flex-col items-center gap-2">
+                      <button
+                        onClick={running ? handlePause : handleResume}
+                        className={`flex h-14 w-14 items-center justify-center rounded-full transition active:scale-95 ${
+                          running
+                            ? "bg-amber-500/15 border border-amber-500/40 shadow-[0_4px_18px_rgba(245,158,11,0.25)] hover:bg-amber-500/22"
+                            : "bg-emerald-500/15 border border-emerald-500/40 shadow-[0_4px_18px_rgba(16,185,129,0.25)] hover:bg-emerald-500/22"
+                        }`}
+                      >
+                        {running
+                          ? <Pause size={18} style={{ color: "#f59e0b" }} />
+                          : <Play size={18} className="ml-0.5 fill-emerald-400 text-emerald-400" />
+                        }
+                      </button>
+                      <span className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: running ? "#f59e0b" : "#34d399" }}>
+                        {running ? "Pause" : "Reprendre"}
+                      </span>
+                    </div>
+
+                    {/* Stop button */}
+                    <div className="flex flex-col items-center gap-2">
+                      <button
+                        onClick={handleStop}
+                        disabled={saving}
+                        className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 shadow-[0_6px_24px_rgba(239,68,68,0.4)] transition active:scale-95 disabled:opacity-40 hover:shadow-[0_8px_32px_rgba(239,68,68,0.5)]"
+                      >
+                        {saving
+                          ? <Loader2 size={20} className="animate-spin text-white" />
+                          : <Square size={18} className="fill-white text-white" />
+                        }
+                      </button>
+                      <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">
+                        {saving ? "Enregistrement…" : "Arrêter"}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -489,17 +553,36 @@ export default function ChronoPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, ease }}
-              className="flex flex-col items-center justify-center gap-4 rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.5)] py-20 text-center"
+              className="relative flex flex-col items-center justify-center gap-6 overflow-hidden rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.5)] py-20 text-center"
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(139,92,246,0.07)]">
-                <Timer size={24} style={{ color: "#a78bfa" }} />
+              {/* Ambient glow */}
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{ background: "radial-gradient(ellipse 55% 40% at 50% 50%, rgba(139,92,246,0.08) 0%, transparent 70%)" }}
+              />
+              {/* Icon with aura */}
+              <div className="relative">
+                <div className="absolute inset-0 rounded-2xl blur-xl" style={{ background: "rgba(167,139,250,0.2)" }} />
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(167,139,250,0.25)] bg-[rgba(139,92,246,0.1)]">
+                  <Timer size={28} style={{ color: "#a78bfa" }} />
+                </div>
               </div>
               <div>
                 <p className="text-base font-bold text-white/80">Aucune session enregistrée</p>
-                <p className="mt-1 text-sm text-white/30">
+                <p className="mt-1.5 text-sm text-white/35">
                   Démarrez le chronomètre ou ajoutez une entrée manuellement.
                 </p>
               </div>
+              <motion.button
+                onClick={() => { setManualDraft(emptyManualDraft()); setManualOpen(true); }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 rounded-xl border border-[rgba(167,139,250,0.3)] bg-[rgba(139,92,246,0.12)] px-5 py-2.5 text-sm font-bold transition hover:bg-[rgba(139,92,246,0.2)]"
+                style={{ color: "#a78bfa" }}
+              >
+                <Plus size={14} />
+                Ajouter ma première session
+              </motion.button>
             </motion.div>
           ) : (
             <div className="space-y-4">

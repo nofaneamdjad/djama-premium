@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Plus, Search, Trash2, Pencil, X,
   Loader2, Mail, Phone,
-  Building2, ChevronDown,
+  Building2, ChevronDown, Download, UserCheck,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
@@ -71,6 +71,27 @@ function emptyDraft(): ContactDraft {
   return { name: "", email: "", phone: "", company: "", status: "prospect", notes: "" };
 }
 
+function exportContactsCSV(contacts: Contact[]) {
+  const rows = [
+    ["Nom", "Société", "Email", "Téléphone", "Statut", "Notes", "Créé le"],
+    ...contacts.map(c => [
+      c.name,
+      c.company ?? "",
+      c.email ?? "",
+      c.phone ?? "",
+      STATUSES[c.status].label,
+      (c.notes ?? "").replace(/\n/g, " "),
+      new Date(c.created_at).toLocaleDateString("fr-FR"),
+    ]),
+  ];
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `contacts-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
 /* ═══════════════════════════════════════════════════════════
    STATUS BADGE
 ═══════════════════════════════════════════════════════════ */
@@ -89,10 +110,14 @@ function StatusBadge({ status }: { status: ContactStatus }) {
 /* ═══════════════════════════════════════════════════════════
    AVATAR INITIAL
 ═══════════════════════════════════════════════════════════ */
-function Avatar({ name }: { name: string }) {
+function Avatar({ name, status }: { name: string; status: ContactStatus }) {
   const initial = name.trim().charAt(0).toUpperCase() || "?";
+  const s = STATUSES[status];
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(96,165,250,0.25)] bg-[rgba(59,130,246,0.12)] text-sm font-extrabold text-[#60a5fa]">
+    <div
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-extrabold"
+      style={{ color: s.color, background: s.bg, borderColor: s.border }}
+    >
       {initial}
     </div>
   );
@@ -293,13 +318,25 @@ export default function CRMPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#60a5fa] to-[#3b82f6] px-4 py-2 text-xs font-extrabold text-white shadow-[0_4px_16px_rgba(59,130,246,0.3)] transition hover:shadow-[0_6px_24px_rgba(59,130,246,0.45)]"
-          >
-            <Plus size={14} />
-            Nouveau contact
-          </button>
+          <div className="flex items-center gap-2">
+            {!loading && contacts.length > 0 && (
+              <button
+                onClick={() => exportContactsCSV(contacts)}
+                aria-label="Exporter les contacts en CSV"
+                title="Export CSV"
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/45 transition hover:border-white/20 hover:text-white/70"
+              >
+                <Download size={12} /> Export
+              </button>
+            )}
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#60a5fa] to-[#3b82f6] px-4 py-2 text-xs font-extrabold text-white shadow-[0_4px_16px_rgba(59,130,246,0.3)] transition hover:shadow-[0_6px_24px_rgba(59,130,246,0.45)]"
+            >
+              <Plus size={14} />
+              Nouveau contact
+            </button>
+          </div>
         </div>
       </div>
 
@@ -370,29 +407,38 @@ export default function CRMPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease }}
-            className="flex flex-col items-center justify-center gap-4 rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.5)] py-20 text-center"
+            className="relative flex flex-col items-center justify-center gap-5 overflow-hidden rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.5)] py-20 text-center"
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(96,165,250,0.2)] bg-[rgba(59,130,246,0.07)]">
-              <Users size={24} style={{ color: "#60a5fa" }} />
+            <div className="pointer-events-none absolute inset-0"
+              style={{ background: "radial-gradient(ellipse 55% 45% at 50% 50%, rgba(59,130,246,0.05) 0%, transparent 70%)" }}
+            />
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl blur-xl" style={{ background: "rgba(59,130,246,0.2)" }} />
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(96,165,250,0.25)] bg-[rgba(59,130,246,0.1)]">
+                {query || filterStatus !== "tous"
+                  ? <Search size={24} style={{ color: "#60a5fa" }} />
+                  : <UserCheck size={24} style={{ color: "#60a5fa" }} />
+                }
+              </div>
             </div>
             <div>
-              <p className="text-base font-bold text-white/80">
+              <p className="text-[15px] font-extrabold text-white/80">
                 {query || filterStatus !== "tous" ? "Aucun résultat" : "Aucun contact"}
               </p>
-              <p className="mt-1 text-sm text-white/30">
+              <p className="mt-1 text-[12px] text-white/35 max-w-[220px]">
                 {query || filterStatus !== "tous"
-                  ? "Essayez d'autres filtres."
-                  : "Commencez par ajouter votre premier contact."}
+                  ? "Essayez d'autres filtres ou une autre recherche."
+                  : "Ajoutez votre premier contact pour démarrer votre CRM."}
               </p>
             </div>
             {!query && filterStatus === "tous" && (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 onClick={openCreate}
-                className="flex items-center gap-2 rounded-xl border border-[rgba(96,165,250,0.25)] bg-[rgba(59,130,246,0.09)] px-4 py-2 text-sm font-semibold text-[#60a5fa] transition hover:bg-[rgba(59,130,246,0.15)]"
+                className="flex items-center gap-2 rounded-xl border border-[rgba(96,165,250,0.3)] bg-[rgba(59,130,246,0.1)] px-5 py-2.5 text-[13px] font-bold text-[#60a5fa] transition hover:bg-[rgba(59,130,246,0.18)]"
               >
-                <Plus size={14} />
-                Ajouter votre premier contact
-              </button>
+                <Plus size={14} /> Ajouter un contact
+              </motion.button>
             )}
           </motion.div>
         ) : (
@@ -409,7 +455,7 @@ export default function CRMPage() {
                   className={`group flex items-center gap-4 border-b border-white/5 px-5 py-4 transition last:border-b-0 hover:bg-white/3`}
                 >
                   {/* Avatar */}
-                  <Avatar name={contact.name} />
+                  <Avatar name={contact.name} status={contact.status} />
 
                   {/* Main info */}
                   <div className="min-w-0 flex-1">
@@ -451,15 +497,15 @@ export default function CRMPage() {
                   <div className="flex shrink-0 items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={() => openEdit(contact)}
+                      aria-label={`Modifier ${contact.name}`}
                       className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-white/40 transition hover:border-[rgba(96,165,250,0.3)] hover:text-[#60a5fa]"
-                      title="Modifier"
                     >
                       <Pencil size={13} />
                     </button>
                     <button
                       onClick={() => setConfirmDelete(contact.id)}
+                      aria-label={`Supprimer ${contact.name}`}
                       className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-white/40 transition hover:border-red-500/30 hover:text-red-400"
-                      title="Supprimer"
                     >
                       <Trash2 size={13} />
                     </button>

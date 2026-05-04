@@ -11,11 +11,11 @@ import {
   MoreHorizontal,
   Plus,
   Trash2,
-  X,
   Check,
   ChevronDown,
   Loader2,
   Receipt,
+  Download,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt, fmtDate } from "@/lib/format";
@@ -219,6 +219,27 @@ export default function DepensesPage() {
     showToast("success", "Dépense ajoutée !");
   }
 
+  /* ── Export CSV ── */
+  function exportExpensesCSV() {
+    const rows = [
+      ["Date", "Catégorie", "Description", "Montant (€)"],
+      ...expenses.map((e) => [
+        e.date,
+        CATEGORIES[e.category]?.label ?? e.category,
+        e.description.replace(/"/g, '""'),
+        e.amount.toFixed(2),
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `depenses-${MONTH_NAMES[viewMonth].toLowerCase()}-${viewYear}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   /* ── Delete ── */
   async function handleDelete(id: string) {
     setDeletingId(id);
@@ -244,13 +265,26 @@ export default function DepensesPage() {
 
         {/* ── Header ── */}
         <div className="mb-8 flex items-center gap-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[rgba(249,115,22,0.2)] bg-[rgba(249,115,22,0.08)]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[rgba(249,115,22,0.2)] bg-[rgba(249,115,22,0.08)]">
             <Receipt size={20} style={{ color: "#f97316" }} />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-xl font-extrabold text-white">Dépenses Pro</h1>
             <p className="text-xs text-white/30">Suivez et catégorisez vos dépenses professionnelles</p>
           </div>
+          {!loading && expenses.length > 0 && (
+            <motion.button
+              onClick={exportExpensesCSV}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="flex shrink-0 items-center gap-2 rounded-xl border border-[rgba(249,115,22,0.25)] bg-[rgba(249,115,22,0.09)] px-3.5 py-2 text-xs font-bold transition hover:bg-[rgba(249,115,22,0.16)]"
+              style={{ color: "#f97316" }}
+              title="Exporter le mois en CSV"
+            >
+              <Download size={13} />
+              <span className="hidden sm:inline">Exporter CSV</span>
+            </motion.button>
+          )}
         </div>
 
         {/* ── Add form ── */}
@@ -424,15 +458,29 @@ export default function DepensesPage() {
           </div>
         ) : expenses.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center gap-3 rounded-[1.5rem] border border-white/6 bg-[rgba(15,17,23,0.4)] py-16 text-center"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease }}
+            className="relative flex flex-col items-center justify-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/6 bg-[rgba(15,17,23,0.4)] py-16 text-center"
           >
-            <Receipt size={28} className="text-white/15" />
-            <p className="text-sm font-semibold text-white/25">
-              Aucune dépense en {MONTH_NAMES[viewMonth].toLowerCase()} {viewYear}
-            </p>
-            <p className="text-xs text-white/15">Utilisez le formulaire ci-dessus pour en ajouter.</p>
+            {/* Ambient glow */}
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ background: "radial-gradient(ellipse 55% 45% at 50% 55%, rgba(249,115,22,0.07) 0%, transparent 70%)" }}
+            />
+            {/* Icon with aura */}
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl blur-xl" style={{ background: "rgba(249,115,22,0.18)" }} />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(249,115,22,0.22)] bg-[rgba(249,115,22,0.09)]">
+                <Receipt size={26} style={{ color: "#f97316" }} />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white/70">
+                Aucune dépense en {MONTH_NAMES[viewMonth].toLowerCase()} {viewYear}
+              </p>
+              <p className="mt-1 text-xs text-white/30">Utilisez le formulaire ci-dessus pour en ajouter.</p>
+            </div>
           </motion.div>
         ) : (
           <AnimatePresence mode="wait">
