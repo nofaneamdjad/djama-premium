@@ -235,32 +235,50 @@ function ToolCard({ tool, index }: { tool: ToolDef; index: number }) {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.28, ease }}
+      className="h-full"
     >
       <Link href={tool.href}
-        className="group flex flex-col h-full p-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:border-white/[0.15] hover:bg-white/[0.035] transition-all duration-200 active:scale-[0.98]"
+        className="group relative flex flex-col h-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] transition-all duration-250 hover:border-white/[0.13] hover:bg-white/[0.04] hover:shadow-[0_12px_36px_rgba(0,0,0,.45)] active:scale-[0.97]"
       >
-        {/* Icône + badge */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: tool.color + "1a", color: tool.color }}>
-            <Icon size={16} />
+        {/* Top accent bar */}
+        <div className="h-[2px] w-full transition-all duration-300 group-hover:h-[3px]"
+          style={{ background: `linear-gradient(90deg, transparent, ${tool.color}70, transparent)` }} />
+
+        {/* Inner hover glow */}
+        <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{ background: `radial-gradient(ellipse at 50% 0%, ${tool.color}0d 0%, transparent 65%)` }} />
+
+        <div className="relative flex flex-col flex-1 p-4">
+          {/* Icon + badge */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-110"
+              style={{
+                background: tool.color + "1c",
+                borderColor: tool.color + "30",
+                color: tool.color,
+                boxShadow: `0 0 12px ${tool.color}22`,
+              }}>
+              <Icon size={17} />
+            </div>
+            <span className={`text-[9px] px-2 py-0.5 rounded-full border font-bold ${BADGE_CLS[tool.badge]}`}>
+              {tool.badge}
+            </span>
           </div>
-          <span className={`text-[9.5px] px-2 py-0.5 rounded-full border font-bold ${BADGE_CLS[tool.badge]}`}>
-            {tool.badge}
-          </span>
-        </div>
-        {/* Titre */}
-        <p className="text-[13px] font-bold text-white/85 leading-snug mb-1">{tool.label}</p>
-        {/* Description */}
-        <p className="text-[11px] text-white/32 leading-relaxed flex-1 mb-3">{tool.desc}</p>
-        {/* Footer */}
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold" style={{ color: tool.color + "bb" }}>
-            {tool.utility}
-          </span>
-          <span className="flex items-center gap-0.5 text-[10px] font-bold text-white/18 group-hover:text-white/50 transition-colors">
-            Ouvrir <ArrowUpRight size={10} />
-          </span>
+          {/* Title */}
+          <p className="text-[12.5px] font-bold text-white/88 leading-snug mb-1">{tool.label}</p>
+          {/* Desc */}
+          <p className="text-[10.5px] text-white/30 leading-relaxed flex-1 mb-3">{tool.desc}</p>
+          {/* Footer */}
+          <div className="flex items-center justify-between">
+            <span className="text-[9.5px] font-semibold" style={{ color: tool.color + "aa" }}>
+              {tool.utility}
+            </span>
+            <span className="flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[9.5px] font-bold text-white/15 transition-all group-hover:text-white/50"
+              style={{ background: "transparent" }}
+            >
+              <ArrowUpRight size={10} />
+            </span>
+          </div>
         </div>
       </Link>
     </motion.div>
@@ -433,29 +451,26 @@ export default function ClientPage() {
     <div className="min-h-screen bg-[#09090f] text-white pb-44">
 
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-30 bg-[#09090f]/96 backdrop-blur-md border-b border-white/[0.05]">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-amber-500/14 border border-amber-500/20 flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            </div>
-            <div>
-              <p className="text-sm font-bold tracking-tight leading-none">DJAMA PRO</p>
-              <p className="text-[9px] text-white/28 leading-none mt-0.5">Cockpit Business</p>
-            </div>
+      <header className="sticky top-0 z-30 border-b border-white/[0.04] bg-[#09090f]/96 backdrop-blur-md">
+        <div className="mx-auto flex h-12 max-w-2xl items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <p className="text-[12px] font-extrabold tracking-tight text-white/70">
+              Cockpit Business
+            </p>
             {kpis && (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ml-1 ${
-                kpis.score >= 70 ? "bg-emerald-500/12 border-emerald-500/22 text-emerald-400"
-                : kpis.score >= 45 ? "bg-amber-500/12 border-amber-500/22 text-amber-400"
-                : "bg-red-500/12 border-red-500/22 text-red-400"
+              <span className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9.5px] font-black ${
+                kpis.score >= 70 ? "border-emerald-500/22 bg-emerald-500/10 text-emerald-400"
+                : kpis.score >= 45 ? "border-amber-500/22 bg-amber-500/10 text-amber-400"
+                : "border-red-500/22 bg-red-500/10 text-red-400"
               }`}>
+                <TrendingUp size={9} />
                 {kpis.score}/100
               </span>
             )}
           </div>
           <button onClick={handleRefresh} disabled={sending}
-            className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/55 transition-colors disabled:opacity-25 px-3 py-1.5 rounded-lg hover:bg-white/[0.04]">
-            <RefreshCw className={`w-3.5 h-3.5 ${sending ? "animate-spin" : ""}`} />
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10.5px] text-white/25 transition-all hover:bg-white/[0.04] hover:text-white/50 disabled:opacity-25">
+            <RefreshCw className={`h-3 w-3 ${sending ? "animate-spin" : ""}`} />
             Actualiser
           </button>
         </div>
@@ -467,30 +482,38 @@ export default function ClientPage() {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            className="sticky top-14 z-20 bg-[#09090f]/92 backdrop-blur-sm border-b border-white/[0.04]"
+            className="sticky top-12 z-20 border-b border-white/[0.04] bg-[#09090f]/92 backdrop-blur-sm"
           >
-            <div className="max-w-2xl mx-auto px-4 py-2 flex items-center gap-3 overflow-x-auto scrollbar-none text-xs">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-white/28 font-medium">CA</span>
-                <span className="font-bold text-white/80">{fmtEurInt(kpis.ca_this_month)}</span>
+            <div className="mx-auto flex max-w-2xl items-center gap-1 overflow-x-auto px-3 py-2 scrollbar-none">
+              {/* CA */}
+              <div className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-1.5">
+                <Wallet size={11} className="text-emerald-400/70 shrink-0" />
+                <span className="text-[10px] text-white/28">CA mois</span>
+                <span className="text-[11px] font-black text-white/82">{fmtEurInt(kpis.ca_this_month)}</span>
                 {kpis.ca_last_month > 0 && (
-                  <span className={`flex items-center gap-0.5 font-bold ${kpis.ca_change_pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                    {kpis.ca_change_pct >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                  <span className={`flex items-center gap-0.5 text-[10px] font-bold ${kpis.ca_change_pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                    {kpis.ca_change_pct >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                     {Math.abs(kpis.ca_change_pct)}%
                   </span>
                 )}
               </div>
-              <span className="text-white/8 shrink-0">│</span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-white/28 font-medium">Impayés</span>
-                <span className={`font-bold ${kpis.unpaid_count > 0 ? "text-red-400" : "text-emerald-400"}`}>
+              {/* Impayés */}
+              <div className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-1.5 ${
+                kpis.unpaid_count > 0
+                  ? "border-red-500/18 bg-red-500/[0.06]"
+                  : "border-white/[0.06] bg-white/[0.025]"
+              }`}>
+                <AlertCircle size={11} className={kpis.unpaid_count > 0 ? "text-red-400/70 shrink-0" : "text-white/20 shrink-0"} />
+                <span className="text-[10px] text-white/28">Impayés</span>
+                <span className={`text-[11px] font-black ${kpis.unpaid_count > 0 ? "text-red-400" : "text-emerald-400"}`}>
                   {kpis.unpaid_count > 0 ? `${kpis.unpaid_count} · ${fmtEurInt(kpis.unpaid_total)}` : "0 ✓"}
                 </span>
               </div>
-              <span className="text-white/8 shrink-0">│</span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-white/28 font-medium">Santé</span>
-                <span className={`font-bold ${kpis.score >= 70 ? "text-emerald-400" : kpis.score >= 45 ? "text-amber-400" : "text-red-400"}`}>
+              {/* Score */}
+              <div className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-1.5">
+                <Zap size={11} className={`shrink-0 ${kpis.score >= 70 ? "text-emerald-400/70" : kpis.score >= 45 ? "text-amber-400/70" : "text-red-400/70"}`} />
+                <span className="text-[10px] text-white/28">Santé</span>
+                <span className={`text-[11px] font-black ${kpis.score >= 70 ? "text-emerald-400" : kpis.score >= 45 ? "text-amber-400" : "text-red-400"}`}>
                   {kpis.score}/100
                 </span>
               </div>
@@ -505,31 +528,47 @@ export default function ClientPage() {
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease }}
-          className="rounded-3xl border border-white/[0.07] bg-gradient-to-br from-white/[0.03] to-transparent px-5 py-5"
+          transition={{ duration: 0.4, ease }}
+          className="relative overflow-hidden rounded-3xl border border-[rgba(201,165,90,0.14)] bg-gradient-to-br from-[rgba(201,165,90,0.07)] via-white/[0.02] to-transparent px-5 py-6"
         >
-          <p className="text-[10.5px] font-bold text-amber-400/65 uppercase tracking-widest mb-2">
-            {getGreeting()} — Cockpit Business
+          {/* Ambient glow inside hero */}
+          <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[rgba(201,165,90,0.12)] blur-[60px]" />
+
+          {/* Date tag */}
+          <div className="mb-3 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.08)] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#c9a55a]">
+              <Sparkles size={9} />
+              {getGreeting()}
+            </span>
+            <span className="text-[10.5px] capitalize text-white/22 font-medium">
+              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+            </span>
+          </div>
+
+          <p className="text-[17px] font-extrabold leading-snug text-white/92">
+            Bienvenue dans votre espace
           </p>
-          <p className="text-[15px] font-bold text-white/88 leading-snug">
-            Gérez vos clients, factures, contrats,
-          </p>
-          <p className="text-[15px] font-bold text-white/35 leading-snug mb-5">
-            planning, trésorerie et sourcing.
+          <p className="text-[17px] font-extrabold leading-snug text-white/30 mb-5">
+            DJAMA Pro — tout est prêt.
           </p>
 
+          {/* Quick actions */}
           <div className="flex flex-wrap gap-2">
             <Link href="/client/factures?new=1"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11.5px] font-bold hover:bg-emerald-500/18 active:scale-95 transition-all">
-              <Plus size={12} />Créer une facture
+              className="group flex items-center gap-1.5 rounded-xl border border-emerald-500/22 bg-emerald-500/10 px-3.5 py-2 text-[11.5px] font-bold text-emerald-400 transition-all hover:bg-emerald-500/20 active:scale-95">
+              <Plus size={12} />Nouvelle facture
             </Link>
             <button onClick={scrollToCoach}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11.5px] font-bold hover:bg-amber-500/18 active:scale-95 transition-all">
-              <Sparkles size={12} />Lancer le Coach
+              className="group flex items-center gap-1.5 rounded-xl border border-amber-500/22 bg-amber-500/10 px-3.5 py-2 text-[11.5px] font-bold text-amber-400 transition-all hover:bg-amber-500/20 active:scale-95">
+              <Sparkles size={12} />Coach IA
             </button>
+            <Link href="/client/crm"
+              className="group flex items-center gap-1.5 rounded-xl border border-blue-500/22 bg-blue-500/10 px-3.5 py-2 text-[11.5px] font-bold text-blue-400 transition-all hover:bg-blue-500/20 active:scale-95">
+              <Users size={12} />Mes clients
+            </Link>
             <Link href="/client/sourcing"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[11.5px] font-bold hover:bg-indigo-500/18 active:scale-95 transition-all">
-              <Search size={12} />Trouver un fournisseur
+              className="group flex items-center gap-1.5 rounded-xl border border-indigo-500/20 bg-indigo-500/8 px-3.5 py-2 text-[11.5px] font-bold text-indigo-400 transition-all hover:bg-indigo-500/16 active:scale-95">
+              <Search size={12} />Sourcing
             </Link>
           </div>
         </motion.section>
@@ -606,14 +645,20 @@ export default function ClientPage() {
         {/* ══ ASSISTANT IA ══ */}
         <section ref={coachRef}>
           {/* En-tête */}
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-7 h-7 rounded-xl bg-amber-500/14 border border-amber-500/20 flex items-center justify-center shrink-0">
-              <Sparkles size={12} className="text-amber-400" />
+          <div className="flex items-center gap-3 mb-3 p-4 rounded-2xl border border-amber-500/[0.12] bg-amber-500/[0.04]">
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 rounded-xl bg-amber-500/25 blur-sm" />
+              <div className="relative w-8 h-8 rounded-xl bg-amber-500/16 border border-amber-500/25 flex items-center justify-center">
+                <Sparkles size={14} className="text-amber-400" />
+              </div>
             </div>
-            <div>
-              <p className="text-[12px] font-bold text-white/80 leading-none">Assistant Business IA</p>
-              <p className="text-[10px] text-white/28 leading-none mt-0.5">Pose une question, je réponds avec tes vraies données</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12.5px] font-extrabold text-white/85 leading-none">Assistant Business IA</p>
+              <p className="text-[10px] text-white/30 leading-none mt-1">Analyse tes vraies données · répond en temps réel</p>
             </div>
+            <span className="shrink-0 text-[9px] px-2 py-1 rounded-full border border-amber-500/22 bg-amber-500/10 font-black text-amber-400 uppercase tracking-widest">
+              IA
+            </span>
           </div>
 
           {/* Exemples cliquables */}
@@ -655,11 +700,14 @@ export default function ClientPage() {
 
         {/* ══ TOUS LES OUTILS ══ */}
         <section className="pb-4">
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <p className="text-[13px] font-bold text-white/75">Vos Outils</p>
-              <p className="text-[10px] text-white/25 mt-0.5">{ALL_TOOLS.length} modules · Tous inclus</p>
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text-[13px] font-extrabold text-white/80">Vos outils Pro</p>
+              <p className="mt-0.5 text-[10px] text-white/22">{ALL_TOOLS.length} modules inclus · accès illimité</p>
             </div>
+            <span className="flex items-center gap-1 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-3 py-1 text-[9.5px] font-black uppercase tracking-widest text-[#c9a55a]">
+              <Zap size={9} /> Pro
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {ALL_TOOLS.map((tool, i) => (

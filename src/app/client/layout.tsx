@@ -8,17 +8,26 @@ import {
   StickyNote, Calendar, ReceiptText, Sparkles,
   LogOut, Lock, Clock, CheckCircle2, MessageCircle,
   Bell, X,
+  CreditCard, Wallet, Users, FileText, Timer, CalendarRange, Search, Star,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRequireSubscription } from "@/lib/use-require-subscription";
 
 const GOLD = "#c9a55a";
 
-const NAV = [
-  { href: "/client",          label: "Coach",    icon: Sparkles,   exact: true },
-  { href: "/client/factures", label: "Factures", icon: ReceiptText },
-  { href: "/client/notes",    label: "Notes",    icon: StickyNote },
-  { href: "/client/planning", label: "Planning", icon: Calendar },
+const ALL_TOOLS_NAV = [
+  { href: "/client",               label: "Cockpit",    icon: Sparkles,      exact: true as const, color: "#c9a55a" },
+  { href: "/client/factures",      label: "Factures",   icon: ReceiptText,   color: "#4ade80" },
+  { href: "/client/crm",           label: "CRM",        icon: Users,         color: "#60a5fa" },
+  { href: "/client/depenses",      label: "Dépenses",   icon: CreditCard,    color: "#f97316" },
+  { href: "/client/tresorerie",    label: "Trésorerie", icon: Wallet,        color: "#34d399" },
+  { href: "/client/contrats",      label: "Contrats",   icon: FileText,      color: "#c9a55a" },
+  { href: "/client/chrono",        label: "Chrono",     icon: Timer,         color: "#a78bfa" },
+  { href: "/client/notes",         label: "Notes IA",   icon: StickyNote,    color: "#fbbf24" },
+  { href: "/client/planning",      label: "Planning",   icon: Calendar,      color: "#60a5fa" },
+  { href: "/client/planification", label: "Équipe",     icon: CalendarRange, color: "#38bdf8" },
+  { href: "/client/reputation",    label: "Réputation", icon: Star,          color: "#f59e0b" },
+  { href: "/client/sourcing",      label: "Sourcing",   icon: Search,        color: "#818cf8" },
 ];
 
 type UpcomingEvent = {
@@ -327,13 +336,25 @@ function PendingScreen() {
    LAYOUT PRINCIPAL
 ═══════════════════════════════════════════════════ */
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const pathname  = usePathname();
   const { ready, pending } = useRequireSubscription();
+  const [userInitial, setUserInitial] = useState("U");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? "";
+      setUserInitial(email[0]?.toUpperCase() ?? "U");
+    });
+  }, []);
 
   async function handleLogout() {
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
+
+  const today = new Date().toLocaleDateString("fr-FR", {
+    weekday: "short", day: "numeric", month: "short",
+  });
 
   if (pending) return <PendingScreen />;
 
@@ -353,55 +374,81 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#080a0f]">
-      {/* ── Top bar ── */}
-      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-white/[0.06] bg-[#080a0f]/90 px-4 backdrop-blur-xl">
-        {/* Logo */}
-        <Link href="/client" className="group mr-4 flex items-center gap-2">
-          <span className="text-base font-bold tracking-widest text-[#c9a55a] transition-opacity group-hover:opacity-80">
-            DJAMA
+      {/* Ambient top glow */}
+      <div className="pointer-events-none fixed left-1/2 top-0 z-0 h-[280px] w-[700px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,0.045)] blur-[120px]" />
+
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-40 shrink-0 bg-[#080a0f]/96 backdrop-blur-xl">
+        {/* Row 1 — Logo + actions */}
+        <div className="flex h-12 items-center gap-3 border-b border-[rgba(201,165,90,0.1)] px-4">
+          {/* Logo */}
+          <Link href="/client" className="group mr-2 flex shrink-0 items-center gap-2">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-lg bg-amber-500/20 blur-sm transition-all group-hover:bg-amber-500/35" />
+              <div className="relative flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/22 bg-amber-500/14">
+                <Sparkles size={13} className="text-amber-400" />
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <p className="text-[13px] font-extrabold leading-none tracking-wider text-[#c9a55a]">DJAMA</p>
+              <p className="mt-0.5 text-[8px] font-bold uppercase leading-none tracking-[.18em] text-white/25">Pro</p>
+            </div>
+          </Link>
+
+          <div className="flex-1" />
+
+          {/* Date */}
+          <span className="hidden capitalize text-[11px] font-medium text-white/22 md:inline-flex">
+            {today}
           </span>
-          <span className="rounded border border-white/10 px-1.5 py-0.5 text-[10px] font-medium uppercase leading-none tracking-widest text-white/30">
-            Pro
-          </span>
-        </Link>
 
-        {/* Navigation */}
-        <nav className="flex flex-1 items-center gap-1">
-          {NAV.map(({ href, label, icon: Icon, exact }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
-                  active
-                    ? "border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.12)] text-[#c9a55a]"
-                    : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
-                }`}
-              >
-                <Icon size={14} />
-                <span className="hidden sm:inline">{label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+          {/* Notifications bell */}
+          <NotifBell ready={ready} />
 
-        {/* Cloche notifications planning */}
-        <NotifBell ready={ready} />
+          {/* User avatar */}
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[rgba(201,165,90,0.28)] bg-[rgba(201,165,90,0.13)] text-[11px] font-black text-[#c9a55a]">
+            {userInitial}
+          </div>
 
-        {/* Déconnexion */}
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-white/40 transition-all hover:bg-white/[0.04] hover:text-white/70"
-          title="Se déconnecter"
-        >
-          <LogOut size={14} />
-          <span className="hidden text-xs sm:inline">Déconnexion</span>
-        </button>
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            title="Se déconnecter"
+            className="flex items-center gap-1 rounded-lg p-1.5 text-white/25 transition-all hover:bg-white/[0.05] hover:text-white/55"
+          >
+            <LogOut size={13} />
+          </button>
+        </div>
+
+        {/* Row 2 — Tools nav (scrollable) */}
+        <div className="overflow-x-auto scrollbar-none border-b border-white/[0.04] bg-[#080a0f]/80">
+          <div className="flex w-max items-center gap-0.5 px-3 py-1.5">
+            {ALL_TOOLS_NAV.map(({ href, label, icon: Icon, exact, color }) => {
+              const active = exact ? pathname === href : pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-200 ${
+                    active ? "font-bold" : "text-white/35 hover:bg-white/[0.04] hover:text-white/65"
+                  }`}
+                  style={active ? {
+                    color,
+                    background: `${color}14`,
+                    outline: `1px solid ${color}28`,
+                  } : {}}
+                >
+                  <Icon size={12} style={active ? { color } : {}} />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </header>
 
-      {/* ── Contenu ── */}
-      <div className="flex-1 overflow-auto">{children}</div>
+      {/* ── Content ── */}
+      <div className="relative z-10 flex-1 overflow-auto">{children}</div>
     </div>
   );
 }
