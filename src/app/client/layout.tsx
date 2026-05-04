@@ -9,6 +9,7 @@ import {
   LogOut, Lock, Clock, CheckCircle2, MessageCircle,
   Bell, X,
   CreditCard, Wallet, Users, FileText, Timer, CalendarRange, Search, Star,
+  LayoutDashboard, Brain, Zap, Crown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRequireSubscription } from "@/lib/use-require-subscription";
@@ -16,18 +17,22 @@ import { useRequireSubscription } from "@/lib/use-require-subscription";
 const GOLD = "#c9a55a";
 
 const ALL_TOOLS_NAV = [
-  { href: "/client",               label: "Cockpit",    icon: Sparkles,      exact: true as const, color: "#c9a55a" },
-  { href: "/client/factures",      label: "Factures",   icon: ReceiptText,   color: "#4ade80" },
-  { href: "/client/crm",           label: "CRM",        icon: Users,         color: "#60a5fa" },
-  { href: "/client/depenses",      label: "Dépenses",   icon: CreditCard,    color: "#f97316" },
-  { href: "/client/tresorerie",    label: "Trésorerie", icon: Wallet,        color: "#34d399" },
-  { href: "/client/contrats",      label: "Contrats",   icon: FileText,      color: "#c9a55a" },
-  { href: "/client/chrono",        label: "Chrono",     icon: Timer,         color: "#a78bfa" },
-  { href: "/client/notes",         label: "Notes IA",   icon: StickyNote,    color: "#fbbf24" },
-  { href: "/client/planning",      label: "Planning",   icon: Calendar,      color: "#60a5fa" },
-  { href: "/client/planification", label: "Équipe",     icon: CalendarRange, color: "#38bdf8" },
-  { href: "/client/reputation",    label: "Réputation", icon: Star,          color: "#f59e0b" },
-  { href: "/client/sourcing",      label: "Sourcing",   icon: Search,        color: "#818cf8" },
+  { href: "/client",               label: "Cockpit",      icon: Sparkles,         exact: true as const, color: "#c9a55a" },
+  { href: "/client/dashboard",     label: "Dashboard",    icon: LayoutDashboard,  color: "#c9a55a" },
+  { href: "/client/factures",      label: "Factures",     icon: ReceiptText,      color: "#4ade80" },
+  { href: "/client/crm",           label: "CRM",          icon: Users,            color: "#60a5fa" },
+  { href: "/client/depenses",      label: "Dépenses",     icon: CreditCard,       color: "#f97316" },
+  { href: "/client/tresorerie",    label: "Trésorerie",   icon: Wallet,           color: "#34d399" },
+  { href: "/client/contrats",      label: "Contrats",     icon: FileText,         color: "#c9a55a" },
+  { href: "/client/chrono",        label: "Chrono",       icon: Timer,            color: "#a78bfa" },
+  { href: "/client/notes",         label: "Notes IA",     icon: StickyNote,       color: "#fbbf24" },
+  { href: "/client/planning",      label: "Planning",     icon: Calendar,         color: "#60a5fa" },
+  { href: "/client/planification", label: "Équipe",       icon: CalendarRange,    color: "#38bdf8" },
+  { href: "/client/reputation",    label: "Réputation",   icon: Star,             color: "#f59e0b" },
+  { href: "/client/sourcing",      label: "Sourcing",     icon: Search,           color: "#818cf8" },
+  { href: "/client/coaching-ia",   label: "Coaching IA",  icon: Brain,            color: "#d946ef" },
+  { href: "/client/assistant",     label: "Assistant IA", icon: Zap,              color: "#22d3ee" },
+  { href: "/client/abonnements",   label: "Abonnements",  icon: Crown,            color: "#c9a55a" },
 ];
 
 type UpcomingEvent = {
