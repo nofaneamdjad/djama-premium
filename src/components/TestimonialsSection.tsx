@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Star, Quote } from "lucide-react";
+import { Star, Quote, BadgeCheck } from "lucide-react";
 import Image from "next/image";
 import { staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
 
@@ -208,9 +208,14 @@ export default function TestimonialsSection({
                 >
                   {t.avatar}
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-[0.84rem] font-bold text-white/85">{t.name}</p>
                   <p className="text-[0.72rem] text-white/35">{t.role}</p>
+                </div>
+                {/* Badge vérifié */}
+                <div className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/[.08] px-2 py-0.5 text-[0.62rem] font-bold text-emerald-400">
+                  <BadgeCheck size={10} />
+                  Vérifié
                 </div>
               </div>
             </motion.div>

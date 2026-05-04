@@ -100,6 +100,49 @@ const ESPACE_TOOLS = [
   { icon: Globe,        color: "#f59e0b",  title: "Sourcing IA",         desc: "Trouvez des fournisseurs mondiaux et accédez aux marchés publics & privés." },
 ] as const;
 
+/* ─────────────────────────────────────────────────────
+   FAQ
+───────────────────────────────────────────────────── */
+const FAQ_ITEMS = [
+  {
+    q: "Quels sont vos délais de livraison ?",
+    a: "Un site vitrine est livré en 7 à 14 jours. Une application mobile ou une plateforme sur mesure prend 3 à 8 semaines selon la complexité. Vous recevez des mises à jour régulières tout au long du projet.",
+  },
+  {
+    q: "Est-ce que je peux tester DJAMA Pro sans engagement ?",
+    a: "Oui. L'abonnement DJAMA Pro à 11,90€/mois est sans engagement et résiliable à tout moment en un clic. Accès immédiat après paiement.",
+  },
+  {
+    q: "Comment se passe la demande de devis ?",
+    a: "Cliquez sur « Démarrer un projet » ou contactez-nous via WhatsApp. Nous répondons sous 24h avec une estimation claire, sans surprise cachée.",
+  },
+  {
+    q: "Vos services sont-ils disponibles à l'international ?",
+    a: "Oui. Nous accompagnons des clients en France, en Belgique, aux Comores, à La Réunion et dans d'autres pays francophones. Tout se fait à distance, en visio et par messagerie.",
+  },
+  {
+    q: "Proposez-vous un suivi après livraison ?",
+    a: "Absolument. Chaque projet inclut une période de support post-livraison. Pour un suivi continu, l'abonnement DJAMA Pro donne accès à notre assistance dédiée.",
+  },
+  {
+    q: "Le coaching IA est-il adapté aux débutants ?",
+    a: "Oui. Le coaching IA est conçu pour tous les niveaux — débutants complets comme professionnels qui veulent aller plus vite. Les modules progressent étape par étape.",
+  },
+  {
+    q: "Quels moyens de paiement acceptez-vous ?",
+    a: "Nous acceptons les paiements par carte bancaire (Stripe), PayPal et virement bancaire. Tous les paiements sont sécurisés et cryptés.",
+  },
+] as const;
+
+/* ─────────────────────────────────────────────────────
+   SmartStat — CountUp pour les valeurs numériques
+───────────────────────────────────────────────────── */
+function SmartStat({ value }: { value: string }) {
+  const match = value.match(/^(\d+)(.*)$/);
+  if (!match) return <>{value}</>;
+  return <><CountUp to={parseInt(match[1], 10)} />{match[2]}</>;
+}
+
 const ESPACE_BENEFITS = [
   { text: "Gain de temps immédiat",    color: GOLD },
   { text: "Image professionnelle",     color: "#60a5fa" },
@@ -158,6 +201,7 @@ function HomeContent() {
   ];
   const [heroIdx, setHeroIdx] = useState(0);
   const [dir, setDir]         = useState(1); // 1 = droite→gauche, -1 = gauche→droite
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -493,7 +537,7 @@ function HomeContent() {
                   >
                     <Icon size={21} style={{ color }} />
                   </motion.div>
-                  <p className="text-[2rem] font-black leading-none tracking-tight text-white">{value}</p>
+                  <p className="text-[2rem] font-black leading-none tracking-tight text-white"><SmartStat value={value} /></p>
                   <div className="mt-1.5">
                     <p className="text-[0.78rem] font-bold text-white/70">{label}</p>
                     <p className="mt-0.5 text-[0.7rem] text-white/35">{sub}</p>
@@ -1516,45 +1560,91 @@ function HomeContent() {
       <TestimonialsSection />
 
       {/* ══════════════════════════════════════════════
-          10. FAQ
+          10. FAQ — accordion animé
       ══════════════════════════════════════════════ */}
       <section className="relative overflow-hidden bg-[#09090b] py-20 sm:py-24">
+        {/* Glows */}
         <div className="pointer-events-none absolute left-1/2 top-0 h-[350px] w-[500px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.04)] blur-[120px]" />
+        <div className="pointer-events-none absolute bottom-0 right-1/4 h-[250px] w-[300px] rounded-full bg-[rgba(167,139,250,.03)] blur-[90px]" />
+
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainerFast}
-          className="relative z-10 mx-auto max-w-3xl px-6"
+          className="relative z-10 mx-auto max-w-2xl px-6"
         >
-          <motion.div variants={fadeIn} className="mb-10 text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]" style={{ color: "#c9a55a" }}>
-              Questions fréquentes
+          {/* Header */}
+          <motion.div variants={fadeIn} className="mb-12 text-center">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]" style={{ color: GOLD }}>
+              <Sparkles size={10} /> Questions fréquentes
             </div>
-            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">Tout ce que vous voulez savoir.</h2>
-            <p className="mx-auto mt-3 max-w-md text-sm text-white/40">Des réponses claires, sans jargon.</p>
+            <h2 className="text-[2rem] font-extrabold leading-tight text-white sm:text-[2.4rem]">
+              Tout ce que vous<br />voulez savoir.
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-[0.88rem] text-white/40">
+              Des réponses claires, sans jargon. Besoin d&apos;autre chose ?{" "}
+              <a href="/contact" className="font-semibold underline underline-offset-2 transition hover:text-white/70" style={{ color: GOLD }}>Contactez-nous.</a>
+            </p>
           </motion.div>
 
-          {[
-            { q: "Quels sont vos délais de livraison ?", a: "Un site vitrine est livré en 7 à 14 jours. Une application mobile ou une plateforme sur mesure prend 3 à 8 semaines selon la complexité. Vous recevez des mises à jour régulières tout au long du projet." },
-            { q: "Est-ce que je peux tester DJAMA Pro sans engagement ?", a: "Oui. L'abonnement DJAMA Pro à 11,90€/mois est sans engagement et résiliable à tout moment en un clic. Accès immédiat après paiement." },
-            { q: "Comment se passe la demande de devis ?", a: "Cliquez sur \"Démarrer un projet\" ou contactez-nous via WhatsApp. Nous répondons sous 24h avec une estimation claire, sans surprise cachée." },
-            { q: "Les services sont-ils disponibles à l'international ?", a: "Oui. Nous accompagnons des clients en France, en Belgique, aux Comores, à La Réunion et dans d'autres pays. Tout se fait à distance, en visio et par messagerie." },
-            { q: "Proposez-vous un suivi après livraison ?", a: "Absolument. Chaque projet inclut une période de support post-livraison. Pour un suivi continu, l'abonnement DJAMA Pro donne accès à notre assistance dédiée." },
-            { q: "Le coaching IA est-il adapté aux débutants ?", a: "Oui. Le coaching IA est conçu pour tous les niveaux — débutants complets comme professionnels qui veulent aller plus vite. Les modules progressent étape par étape." },
-          ].map(({ q, a }, i) => (
-            <motion.details
-              key={i}
-              variants={cardReveal}
-              className="group border-b border-white/[.07] py-5 last:border-0"
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[0.95rem] font-semibold text-white/85 transition hover:text-white">
-                {q}
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/[.12] text-white/40 transition group-open:rotate-45 group-open:border-[rgba(201,165,90,.4)] group-open:text-[#c9a55a]" style={{ transition: "transform .3s ease, color .2s, border-color .2s" }}>
-                  +
-                </span>
-              </summary>
-              <p className="mt-3 text-sm leading-relaxed text-white/45">{a}</p>
-            </motion.details>
-          ))}
+          {/* Accordion */}
+          <div className="overflow-hidden rounded-[1.5rem] border border-white/[.08] bg-white/[.025]">
+            {FAQ_ITEMS.map(({ q, a }, i) => {
+              const isOpen = openFaq === i;
+              return (
+                <motion.div
+                  key={i}
+                  variants={cardReveal}
+                  className={`border-b border-white/[.06] last:border-0 ${isOpen ? "bg-white/[.025]" : ""} transition-colors duration-200`}
+                >
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : i)}
+                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
+                    aria-expanded={isOpen}
+                  >
+                    <span className={`text-[0.93rem] font-semibold transition-colors duration-200 ${isOpen ? "text-white" : "text-white/80 hover:text-white"}`}>
+                      {q}
+                    </span>
+                    <motion.span
+                      animate={{ rotate: isOpen ? 45 : 0 }}
+                      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-sm font-light transition-colors duration-200"
+                      style={{
+                        borderColor: isOpen ? "rgba(201,165,90,.5)" : "rgba(255,255,255,.12)",
+                        color:       isOpen ? GOLD              : "rgba(255,255,255,.38)",
+                        background:  isOpen ? "rgba(201,165,90,.08)" : "transparent",
+                      }}
+                    >+</motion.span>
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        key="body"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ overflow: "hidden" }}
+                      >
+                        <p className="px-6 pb-5 pt-1 text-[0.85rem] leading-[1.8] text-white/50">{a}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Footer CTA */}
+          <FadeReveal delay={0.3} className="mt-8 flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-center sm:gap-6">
+            <Link href="/contact" className="flex items-center gap-2 rounded-xl border border-white/[.08] bg-white/[.03] px-5 py-2.5 text-[0.82rem] font-semibold text-white/55 transition hover:border-white/[.16] hover:text-white/80">
+              <Mail size={13} style={{ color: GOLD }} />
+              Poser une question par email
+            </Link>
+            <Link href="/reserver-appel" className="flex items-center gap-2 rounded-xl border border-[rgba(201,165,90,.22)] bg-[rgba(201,165,90,.06)] px-5 py-2.5 text-[0.82rem] font-semibold transition hover:bg-[rgba(201,165,90,.14)]" style={{ color: GOLD }}>
+              <MessageCircle size={13} />
+              Appel découverte gratuit
+            </Link>
+          </FadeReveal>
         </motion.div>
       </section>
 
