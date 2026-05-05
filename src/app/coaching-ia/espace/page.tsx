@@ -10,7 +10,7 @@ import {
   CreditCard, Landmark, Brain, Lightbulb, Download,
   Star, Maximize2, Minimize2, Copy, Check, X,
   FileText, Zap, HelpCircle, BookMarked, Rocket,
-  Shield, RefreshCw,
+  Shield, RefreshCw, Gamepad2, Trophy, Timer,
 } from "lucide-react";
 import { COACHING_MODULES, getNextChapter, type Module, type Chapter } from "@/lib/coaching-content";
 import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
@@ -48,7 +48,7 @@ function saveFavorites(s: Set<string>) {
 /* ─────────────────────────────────────────────────────────
    TYPES
 ───────────────────────────────────────────────────────── */
-type View      = "chapter" | "assistant" | "booking" | "favorites";
+type View      = "chapter" | "assistant" | "booking" | "favorites" | "jeux";
 type AiAction  = "summarize" | "simplify" | "quiz" | "action_plan" | "create_prompt";
 
 /* ─────────────────────────────────────────────────────────
@@ -1431,6 +1431,307 @@ function PreviewGate({ user }: {
 }
 
 /* ─────────────────────────────────────────────────────────
+   COMPOSANT — Jeux Panel
+───────────────────────────────────────────────────────── */
+const QUIZ_Q = [
+  { q: "Que signifie 'prompt engineering' ?", opts: ["Programmer un robot", "Rédiger des instructions efficaces pour une IA", "Créer une app mobile", "Coder en Python"], correct: 1, expl: "Le prompt engineering consiste à formuler des instructions précises pour obtenir les meilleures réponses d'un LLM." },
+  { q: "Quel modèle est derrière ChatGPT ?", opts: ["BERT", "LLaMA", "GPT-4", "Mistral"], correct: 2, expl: "ChatGPT est basé sur GPT-4o, développé par OpenAI." },
+  { q: "Que signifie 'hallucination' dans le contexte de l'IA ?", opts: ["Un bug visuel", "L'IA invente des infos fausses", "Une technique de prompt", "Un type de modèle"], correct: 1, expl: "Une hallucination désigne le phénomène où un modèle génère des informations fausses présentées avec confiance." },
+  { q: "Quelle structure de prompt est recommandée ?", opts: ["Une phrase courte", "Rôle + Contexte + Tâche + Format", "Écrire en majuscules", "Poser plusieurs questions"], correct: 1, expl: "Un bon prompt inclut un rôle, un contexte précis, une tâche définie et des contraintes de format." },
+  { q: "Qu'est-ce qu'un 'agent IA' ?", opts: ["Un commercial IA", "Un modèle qui effectue des actions autonomes", "Un antivirus", "Un assistant vocal"], correct: 1, expl: "Un agent IA agit de façon autonome : cherche des infos, exécute du code, prend des décisions." },
+  { q: "Que signifie RAG ?", opts: ["Rapid AI Generation", "Retrieval-Augmented Generation", "Random Answer Generator", "Real Agent Gateway"], correct: 1, expl: "RAG connecte un LLM à une base de données externe pour des réponses plus précises et actualisées." },
+  { q: "Quel modèle est français et open source ?", opts: ["ChatGPT", "Claude", "Mistral", "DALL-E"], correct: 2, expl: "Mistral est une entreprise française qui publie des modèles open source très performants." },
+  { q: "La 'température' contrôle quoi dans un LLM ?", opts: ["La vitesse", "La créativité des réponses", "La sécurité", "Le coût"], correct: 1, expl: "Température 0 = réponses précises. Température 1 = réponses créatives et variées." },
+];
+
+const FLASH_Q = [
+  { term: "LLM", def: "Large Language Model — modèle entraîné sur de vastes corpus de texte pour comprendre et générer du langage." },
+  { term: "Prompt", def: "Instruction envoyée à l'IA. La qualité du prompt détermine directement la qualité de la réponse." },
+  { term: "Token", def: "Unité de texte traitée par les LLMs. 1 token ≈ ¾ d'un mot. Les modèles ont une limite de tokens." },
+  { term: "Fine-tuning", def: "Réentraîner un modèle sur des données spécifiques pour l'adapter à un domaine particulier." },
+  { term: "RAG", def: "Retrieval-Augmented Generation — connecter une IA à une base de données externe pour des réponses précises." },
+  { term: "Température", def: "Paramètre contrôlant la créativité de l'IA. 0 = déterministe, 1 = très créatif." },
+  { term: "Chain of Thought", def: "Demander à l'IA de raisonner étape par étape pour améliorer la précision sur des problèmes complexes." },
+  { term: "Hallucination", def: "Quand un LLM génère des informations fausses mais les présente avec confiance." },
+  { term: "Context Window", def: "La quantité maximale de texte qu'un modèle peut analyser à la fois dans une conversation." },
+  { term: "Multimodal", def: "Modèle capable de traiter plusieurs types de données : texte, images, audio, vidéo." },
+];
+
+const VF_Q = [
+  { q: "ChatGPT peut inventer des informations fausses.", ans: true, expl: "Oui — c'est ce qu'on appelle une 'hallucination'. Toujours vérifier les infos factuelles importantes." },
+  { q: "Un prompt plus long donne toujours une meilleure réponse.", ans: false, expl: "Non. La précision et la structure comptent plus que la longueur." },
+  { q: "GPT-4 a été développé par OpenAI.", ans: true, expl: "Exact. GPT-4 (Generative Pre-trained Transformer 4) est le modèle principal d'OpenAI." },
+  { q: "Il est possible d'utiliser l'IA localement sans internet.", ans: true, expl: "Oui, avec Ollama + LLaMA. Idéal pour la confidentialité des données sensibles." },
+  { q: "L'IA a des émotions et une conscience propre.", ans: false, expl: "Non. Les LLMs génèrent du texte statistiquement probable. Ils simulent le langage, sans conscience." },
+  { q: "On peut partager des données clients dans ChatGPT sans risque.", ans: false, expl: "Non. Respectez le RGPD — ne partagez jamais de données personnelles de clients." },
+];
+
+function JeuxPanel() {
+  type GameId = "quiz" | "flash" | "vraifaux" | null;
+  const [game, setGame] = useState<GameId>(null);
+
+  /* Quiz */
+  const [quizIdx, setQuizIdx] = useState(0);
+  const [quizSel, setQuizSel] = useState<number | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
+  const [quizDone, setQuizDone] = useState(false);
+  const [quizStarted, setQuizStarted] = useState(false);
+
+  /* Flash */
+  const [cardIdx, setCardIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+
+  /* Vrai/Faux */
+  const [vfIdx, setVfIdx] = useState(0);
+  const [vfAns, setVfAns] = useState<boolean | null>(null);
+  const [vfScore, setVfScore] = useState(0);
+  const [vfDone, setVfDone] = useState(false);
+
+  const quizScore = quizAnswers.filter((a, i) => a === QUIZ_Q[i].correct).length;
+
+  function handleQuiz(idx: number) {
+    if (quizSel !== null) return;
+    setQuizSel(idx);
+    setTimeout(() => {
+      const next = [...quizAnswers, idx];
+      setQuizAnswers(next);
+      if (quizIdx + 1 >= QUIZ_Q.length) setQuizDone(true);
+      else { setQuizIdx(q => q + 1); setQuizSel(null); }
+    }, 900);
+  }
+  function resetQuiz() { setQuizIdx(0); setQuizSel(null); setQuizAnswers([]); setQuizDone(false); setQuizStarted(false); }
+  function nextCard() { setFlipped(false); setTimeout(() => setCardIdx(i => (i + 1) % FLASH_Q.length), 150); }
+  function prevCard() { setFlipped(false); setTimeout(() => setCardIdx(i => (i - 1 + FLASH_Q.length) % FLASH_Q.length), 150); }
+  function handleVF(ans: boolean) {
+    if (vfAns !== null) return;
+    setVfAns(ans);
+    if (ans === VF_Q[vfIdx].ans) setVfScore(s => s + 1);
+    setTimeout(() => {
+      if (vfIdx + 1 >= VF_Q.length) setVfDone(true);
+      else { setVfIdx(i => i + 1); setVfAns(null); }
+    }, 1300);
+  }
+  function resetVF() { setVfIdx(0); setVfAns(null); setVfScore(0); setVfDone(false); }
+
+  const cardColor = "#a78bfa";
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        {game && (
+          <button onClick={() => setGame(null)} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
+            <ChevronLeft size={13} /> Jeux
+          </button>
+        )}
+        {!game && (
+          <>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.12)] border border-[rgba(167,139,250,0.2)]">
+              <Gamepad2 size={15} className="text-[#a78bfa]" />
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold text-white">Jeux IA</h2>
+              <p className="text-xs text-white/35">Apprenez l'IA en jouant — 3 jeux interactifs</p>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Game selector */}
+      {!game && (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {[
+            { id: "quiz",    emoji: "🧩", color: "#a78bfa", title: "Quiz IA",      badge: "8 questions", desc: "Testez vos connaissances sur l'IA avec explications." },
+            { id: "flash",   emoji: "🃏", color: "#38bdf8", title: "Flash Cards",  badge: "10 cartes",   desc: "10 termes clés — cliquez pour révéler la définition." },
+            { id: "vraifaux",emoji: "🎯", color: "#4ade80", title: "Vrai ou Faux", badge: "6 questions", desc: "6 affirmations sur l'IA — vrai ou faux ?" },
+          ].map(({ id, emoji, color, title, badge, desc }) => (
+            <motion.button
+              key={id}
+              whileHover={{ scale: 1.03, y: -3 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setGame(id as GameId)}
+              className="relative overflow-hidden rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.65)] p-5 text-left"
+            >
+              <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 50% at 50% 0%, ${color}10 0%, transparent 60%)` }} />
+              <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
+              <div className="relative mb-3 flex items-start justify-between">
+                <span className="text-3xl">{emoji}</span>
+                <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold" style={{ color, backgroundColor: color + "15", border: `1px solid ${color}25` }}>{badge}</span>
+              </div>
+              <p className="relative text-sm font-extrabold text-white">{title}</p>
+              <p className="relative mt-1.5 text-xs leading-relaxed text-white/40">{desc}</p>
+              <div className="relative mt-3 flex items-center gap-1 text-xs font-bold" style={{ color }}>
+                <Play size={9} fill={color} /> Jouer
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      )}
+
+      {/* ═══ QUIZ ═══ */}
+      {game === "quiz" && (
+        <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(167,139,250,0.25)] bg-[rgba(15,17,23,0.75)] p-6">
+          <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(167,139,250,0.08) 0%, transparent 60%)" }} />
+          <div className="relative">
+            {!quizStarted ? (
+              <div className="text-center py-6 space-y-4">
+                <span className="text-5xl block">🧩</span>
+                <h3 className="text-xl font-black text-white">Quiz IA — 8 questions</h3>
+                <p className="text-sm text-white/40">Explication après chaque réponse</p>
+                <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                  onClick={() => setQuizStarted(true)}
+                  className="inline-flex items-center gap-2 rounded-2xl px-7 py-3 text-sm font-extrabold text-black shadow-[0_4px_20px_rgba(167,139,250,0.35)]"
+                  style={{ background: "linear-gradient(135deg, #a78bfa, #7c3aed)" }}>
+                  <Play size={13} fill="black" /> Commencer
+                </motion.button>
+              </div>
+            ) : quizDone ? (
+              <div className="text-center py-4 space-y-4">
+                <div className="text-4xl">{quizScore >= 7 ? "🏆" : quizScore >= 5 ? "⭐" : "💪"}</div>
+                <p className="text-2xl font-black text-white">{quizScore}/8</p>
+                <p className="text-sm text-white/40">{quizScore >= 7 ? "Excellent ! Vous maîtrisez les bases." : "Relisez les cours et réessayez."}</p>
+                <button onClick={resetQuiz} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white">
+                  <RefreshCw size={11} /> Rejouer
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-white/40">Question {quizIdx + 1}/8</span>
+                  <div className="flex gap-1">{QUIZ_Q.map((_, i) => <div key={i} className={`h-1.5 w-5 rounded-full ${i < quizIdx ? "bg-[#a78bfa]" : i === quizIdx ? "bg-[#a78bfa] opacity-50" : "bg-white/10"}`} />)}</div>
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div key={quizIdx} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}>
+                    <p className="text-base font-bold text-white mb-3">{QUIZ_Q[quizIdx].q}</p>
+                    <div className="space-y-2">
+                      {QUIZ_Q[quizIdx].opts.map((opt, i) => {
+                        const isCorrect = i === QUIZ_Q[quizIdx].correct;
+                        const isSel = quizSel === i;
+                        const rev = quizSel !== null;
+                        return (
+                          <motion.button key={i} whileHover={!rev ? { x: 3 } : {}}
+                            onClick={() => handleQuiz(i)} disabled={rev}
+                            className={`w-full rounded-xl border px-4 py-2.5 text-left text-xs font-semibold transition-all ${
+                              !rev ? "border-white/8 bg-white/4 text-white/65 hover:border-white/20 hover:text-white" :
+                              isCorrect ? "border-[rgba(74,222,128,0.4)] bg-[rgba(74,222,128,0.1)] text-[#4ade80]" :
+                              isSel ? "border-[rgba(248,113,113,0.4)] bg-[rgba(248,113,113,0.1)] text-[#f87171]" :
+                              "border-white/4 bg-white/2 text-white/20"
+                            }`}>
+                            <span className="mr-2 font-black">{String.fromCharCode(65 + i)}.</span>{opt}
+                            {rev && isCorrect && <CheckCircle2 size={12} className="inline ml-2 text-[#4ade80]" />}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                    {quizSel !== null && (
+                      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                        className="mt-3 rounded-xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.08)] px-4 py-3">
+                        <p className="text-xs font-bold text-[#a78bfa]">💡 Explication</p>
+                        <p className="mt-1 text-xs text-white/55 leading-relaxed">{QUIZ_Q[quizIdx].expl}</p>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ FLASH CARDS ═══ */}
+      {game === "flash" && (
+        <div className="space-y-4">
+          <p className="text-center text-xs text-white/35">Cliquez sur la carte pour révéler la définition</p>
+          <div style={{ perspective: "1000px" }} className="cursor-pointer" onClick={() => setFlipped(f => !f)}>
+            <motion.div animate={{ rotateY: flipped ? 180 : 0 }} transition={{ duration: 0.5 }} style={{ transformStyle: "preserve-3d" }} className="relative h-52">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-[1.75rem] border border-[rgba(56,189,248,0.25)] bg-[rgba(15,17,23,0.8)] p-6 text-center" style={{ backfaceVisibility: "hidden" }}>
+                <div className="pointer-events-none absolute inset-0 rounded-[1.75rem]" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(56,189,248,0.08) 0%, transparent 70%)" }} />
+                <span className="relative text-4xl font-black text-[#38bdf8]">{FLASH_Q[cardIdx].term}</span>
+                <p className="relative text-xs text-white/25">Cliquez pour retourner</p>
+              </div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-[1.75rem] border border-[rgba(56,189,248,0.3)] bg-[rgba(15,20,35,0.9)] p-6 text-center" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+                <div className="pointer-events-none absolute inset-0 rounded-[1.75rem]" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(56,189,248,0.1) 0%, transparent 70%)" }} />
+                <p className="relative text-sm font-extrabold text-[#38bdf8]">{FLASH_Q[cardIdx].term}</p>
+                <p className="relative text-sm leading-relaxed text-white/65">{FLASH_Q[cardIdx].def}</p>
+              </div>
+            </motion.div>
+          </div>
+          <div className="flex items-center justify-between">
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={prevCard} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 hover:text-white">
+              <ChevronLeft size={16} />
+            </motion.button>
+            <div className="flex flex-wrap justify-center gap-1.5 max-w-sm">
+              {FLASH_Q.map((_, i) => <button key={i} onClick={() => { setFlipped(false); setTimeout(() => setCardIdx(i), 150); }} className={`h-1.5 rounded-full transition-all ${i === cardIdx ? "w-5 bg-[#38bdf8]" : "w-1.5 bg-white/15"}`} />)}
+            </div>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={nextCard} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 hover:text-white">
+              <ChevronRight size={16} />
+            </motion.button>
+          </div>
+          <p className="text-center text-xs text-white/25">{cardIdx + 1} / {FLASH_Q.length}</p>
+        </div>
+      )}
+
+      {/* ═══ VRAI OU FAUX ═══ */}
+      {game === "vraifaux" && (
+        <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(74,222,128,0.2)] bg-[rgba(15,17,23,0.75)] p-6">
+          <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(74,222,128,0.06) 0%, transparent 60%)" }} />
+          <div className="relative">
+            {vfDone ? (
+              <div className="text-center py-4 space-y-4">
+                <div className="text-4xl">{vfScore >= 5 ? "🏆" : vfScore >= 3 ? "⭐" : "💪"}</div>
+                <p className="text-2xl font-black text-white">{vfScore}/{VF_Q.length}</p>
+                <p className="text-sm text-white/40">{vfScore >= 5 ? "Excellent !" : "Relisez les cours pour consolider vos bases."}</p>
+                <button onClick={resetVF} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white">
+                  <RefreshCw size={11} /> Rejouer
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-white/40">Question {vfIdx + 1}/{VF_Q.length}</span>
+                  <span className="text-xs font-bold text-[#4ade80]">Score : {vfScore}</span>
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div key={vfIdx} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.2 }}>
+                    <p className="text-lg font-extrabold text-white text-center mb-6 leading-snug">{VF_Q[vfIdx].q}</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {([{ label: "✅ VRAI", val: true, color: "#4ade80" }, { label: "❌ FAUX", val: false, color: "#f87171" }] as const).map(({ label, val, color }) => {
+                        const isCor = val === VF_Q[vfIdx].ans;
+                        const isSel = vfAns === val;
+                        const rev = vfAns !== null;
+                        return (
+                          <motion.button key={label} whileHover={!rev ? { scale: 1.04 } : {}} whileTap={!rev ? { scale: 0.96 } : {}}
+                            onClick={() => handleVF(val)} disabled={rev}
+                            className={`rounded-2xl border py-5 text-base font-extrabold transition-all ${
+                              !rev ? "border-white/10 bg-white/5 text-white/70 hover:text-white" :
+                              isCor ? "border-[rgba(74,222,128,0.4)] bg-[rgba(74,222,128,0.12)] text-[#4ade80]" :
+                              isSel ? "border-[rgba(248,113,113,0.4)] bg-[rgba(248,113,113,0.1)] text-[#f87171]" :
+                              "border-white/5 bg-white/2 text-white/20"
+                            }`}>
+                            {label}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                    {vfAns !== null && (
+                      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                        className={`mt-4 rounded-xl border px-4 py-3 ${vfAns === VF_Q[vfIdx].ans ? "border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.08)]" : "border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.08)]"}`}>
+                        <p className={`text-xs font-bold mb-1 ${vfAns === VF_Q[vfIdx].ans ? "text-[#4ade80]" : "text-[#f87171]"}`}>{vfAns === VF_Q[vfIdx].ans ? "✅ Bonne réponse !" : "❌ Mauvaise réponse"}</p>
+                        <p className="text-xs text-white/50 leading-relaxed">{VF_Q[vfIdx].expl}</p>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    PAGE PRINCIPALE
 ───────────────────────────────────────────────────────── */
 export default function EspaceCoachingIA() {
@@ -1532,6 +1833,7 @@ export default function EspaceCoachingIA() {
   const TAB_ITEMS: { key: View; icon: React.ElementType; label: string; badge?: number }[] = [
     { key: "chapter",   icon: BookOpen,    label: "Cours" },
     { key: "assistant", icon: Bot,         label: "Assistant IA" },
+    { key: "jeux",      icon: Gamepad2,    label: "Jeux IA" },
     { key: "favorites", icon: Star,        label: "Favoris", badge: favCount || undefined },
     { key: "booking",   icon: Calendar,    label: "Réserver" },
   ];
@@ -1741,6 +2043,15 @@ export default function EspaceCoachingIA() {
                 exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
               >
                 <BookingPanel />
+              </motion.div>
+            )}
+
+            {view === "jeux" && (
+              <motion.div key="jeux"
+                initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
+              >
+                <JeuxPanel />
               </motion.div>
             )}
 

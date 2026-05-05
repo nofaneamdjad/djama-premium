@@ -30,7 +30,7 @@ const ALL_TOOLS_NAV = [
   { href: "/client/planification", label: "Équipe",       icon: CalendarRange,    color: "#38bdf8" },
   { href: "/client/reputation",    label: "Réputation",   icon: Star,             color: "#f59e0b" },
   { href: "/client/sourcing",      label: "Sourcing",     icon: Search,           color: "#818cf8" },
-  { href: "/client/coaching-ia",   label: "Coaching IA",  icon: Brain,            color: "#d946ef" },
+  { href: "/coaching-ia/espace",    label: "Coaching IA",  icon: Brain,            color: "#d946ef" },
   { href: "/client/assistant",     label: "Assistant IA", icon: Zap,              color: "#22d3ee" },
   { href: "/client/abonnements",   label: "Abonnements",  icon: Crown,            color: "#c9a55a" },
 ];
