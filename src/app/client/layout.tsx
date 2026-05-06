@@ -9,7 +9,7 @@ import {
   LogOut, Lock, Clock, CheckCircle2, MessageCircle,
   Bell, X,
   CreditCard, Wallet, Users, FileText, Timer, CalendarRange, Search, Star,
-  LayoutDashboard, Brain, Zap, Crown,
+  LayoutDashboard, Brain, Zap, Crown, Mic,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRequireSubscription } from "@/lib/use-require-subscription";
@@ -26,6 +26,7 @@ const ALL_TOOLS_NAV = [
   { href: "/client/contrats",      label: "Contrats",     icon: FileText,         color: "#c9a55a" },
   { href: "/client/chrono",        label: "Chrono",       icon: Timer,            color: "#a78bfa" },
   { href: "/client/notes",         label: "Notes IA",     icon: StickyNote,       color: "#fbbf24" },
+  { href: "/client/bloc-note",     label: "Bloc Note 🎙️", icon: Mic,               color: "#a78bfa" },
   { href: "/client/planning",      label: "Planning",     icon: Calendar,         color: "#60a5fa" },
   { href: "/client/planification", label: "Équipe",       icon: CalendarRange,    color: "#38bdf8" },
   { href: "/client/reputation",    label: "Réputation",   icon: Star,             color: "#f59e0b" },
