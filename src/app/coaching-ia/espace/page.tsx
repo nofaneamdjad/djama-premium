@@ -975,28 +975,54 @@ function BookingPanel() {
     { value: "semaine-matin",      label: "En semaine — matin (9h-12h)" },
     { value: "semaine-apres-midi", label: "En semaine — après-midi (14h-18h)" },
     { value: "semaine-soir",       label: "En semaine — soir (18h-20h)" },
-    { value: "samedi",             label: "Le samedi" },
-    { value: "flexible",           label: "Flexible — à définir" },
+    { value: "samedi-matin",       label: "Samedi matin (9h-12h)" },
+    { value: "samedi-apres-midi",  label: "Samedi après-midi (14h-17h)" },
+    { value: "flexible",           label: "Flexible — à définir ensemble" },
   ];
 
   return (
     <div className="mx-auto max-w-xl px-4 py-8">
-      <div className="mb-8">
+      {/* Header */}
+      <div className="mb-6">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.08)] px-3 py-1 text-xs font-bold text-[#a78bfa]">
-          <Calendar size={11} /> Session avec un expert
+          <Calendar size={11} /> Programme Expert IA — 6 mois
         </div>
-        <h2 className="mt-2 text-xl font-bold text-white">Réservez votre coaching individuel</h2>
+        <h2 className="mt-2 text-xl font-bold text-white">Coaching individuel avec un expert humain</h2>
         <p className="mt-2 text-sm text-white/45">
-          Une session de 60 min avec un expert DJAMA pour revoir vos avancées,
-          débloquer vos points durs et accélérer votre progression.
+          1 séance par semaine pendant 6 mois = <span className="text-white/70 font-semibold">24 séances · 24h d&apos;accompagnement</span> avec un expert IA certifié DJAMA.
         </p>
       </div>
 
-      <div className="mb-8 grid grid-cols-3 gap-3">
+      {/* Programme 6 mois */}
+      <div className="mb-6 rounded-2xl border border-[rgba(167,139,250,0.15)] bg-[rgba(167,139,250,0.05)] p-4">
+        <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-[#a78bfa]">Le programme</p>
+        <div className="space-y-2">
+          {[
+            { mois: "Mois 1–2",   label: "Fondations & outils",          detail: "8 séances — ChatGPT, Claude, Gemini, prompting", color: "#60a5fa" },
+            { mois: "Mois 3–4",   label: "Automatisation & business",    detail: "8 séances — Workflows, agents, cas concrets",     color: "#a78bfa" },
+            { mois: "Mois 5–6",   label: "Projet & certification",       detail: "8 séances — Projet final, déploiement, certification DJAMA", color: "#f59e0b" },
+          ].map(({ mois, label, detail, color }) => (
+            <div key={mois} className="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+              <div>
+                <p className="text-xs font-bold text-white">{mois} — {label}</p>
+                <p className="text-[0.65rem] text-white/40">{detail}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex items-center justify-between rounded-xl bg-white/[0.03] px-3 py-2">
+          <span className="text-[0.65rem] text-white/40">Total accompagnement</span>
+          <span className="text-sm font-bold text-[#f59e0b]">24 séances · 24h · 6 mois</span>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="mb-6 grid grid-cols-3 gap-3">
         {[
-          { icon: Target,     label: "Objectifs revus",      color: "#a78bfa" },
-          { icon: TrendingUp, label: "Progression mesurée",  color: "#4ade80" },
-          { icon: Award,      label: "Plan ajusté",          color: "#c9a55a" },
+          { icon: Target,     label: "Objectifs clairs",      color: "#a78bfa" },
+          { icon: TrendingUp, label: "Progression mesurée",   color: "#4ade80" },
+          { icon: Award,      label: "Certification finale",   color: "#f59e0b" },
         ].map(({ icon: Icon, label, color }) => (
           <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 text-center">
             <Icon size={18} className="mx-auto mb-1.5" style={{ color }} />
@@ -1005,13 +1031,14 @@ function BookingPanel() {
         ))}
       </div>
 
+      {/* Formulaire */}
       <AnimatePresence mode="wait">
         {sent ? (
           <motion.div key="sent" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
             className="rounded-2xl border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.06)] p-8 text-center">
             <CheckCircle2 size={40} className="mx-auto mb-4 text-[#34d399]" />
             <h3 className="mb-2 text-lg font-bold text-white">Demande envoyée !</h3>
-            <p className="text-sm text-white/50">L&apos;équipe DJAMA vous contacte sous 24h pour confirmer la session.</p>
+            <p className="text-sm text-white/50">Un expert DJAMA vous contacte sous 24h pour planifier votre première séance et démarrer votre parcours de 6 mois.</p>
           </motion.div>
         ) : (
           <motion.form key="form" onSubmit={handleSubmit} className="space-y-4">
@@ -1030,22 +1057,22 @@ function BookingPanel() {
               </div>
             ))}
             <div>
-              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">Disponibilité</label>
+              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">Créneau préféré (séances hebdomadaires)</label>
               <div className="relative flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
                 <Clock size={14} className="shrink-0 text-white/25" />
                 <select value={availability} onChange={(e) => setAvailability(e.target.value)} required
                   style={{ color: availability ? "white" : "rgba(255,255,255,0.2)" }}
                   className="flex-1 appearance-none bg-transparent text-sm outline-none [&>option]:bg-[#111113] [&>option]:text-white">
-                  <option value="" disabled>Quand êtes-vous disponible ?</option>
+                  <option value="" disabled>Quand êtes-vous disponible chaque semaine ?</option>
                   {SLOTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
                 <ChevronDown size={12} className="pointer-events-none shrink-0 text-white/20" />
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">Objectif (optionnel)</label>
+              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">Votre objectif principal (optionnel)</label>
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-                <textarea placeholder="Ex : je bloque sur module 3, je veux revoir ma stratégie IA…"
+                <textarea placeholder="Ex : automatiser mon marketing, former mon équipe à l'IA, créer un chatbot pour mes clients…"
                   value={goal} onChange={(e) => setGoal(e.target.value)} rows={3}
                   className="w-full resize-none bg-transparent text-sm text-white placeholder-white/20 outline-none" />
               </div>
@@ -1053,8 +1080,9 @@ function BookingPanel() {
             <button type="submit" disabled={!name.trim() || !email.trim() || !availability || sending}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(167,139,250,0.2)] transition hover:shadow-[0_4px_32px_rgba(167,139,250,0.35)] disabled:cursor-not-allowed disabled:opacity-50">
               {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-              {sending ? "Envoi…" : "Réserver ma session"}
+              {sending ? "Envoi…" : "Démarrer mon parcours 6 mois"}
             </button>
+            <p className="text-center text-[0.6rem] text-white/25">1 séance/semaine · 24 séances · 24h avec un expert humain certifié</p>
           </motion.form>
         )}
       </AnimatePresence>
