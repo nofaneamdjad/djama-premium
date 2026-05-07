@@ -1209,9 +1209,31 @@ export default function BlocNotesPage() {
                   {/* Séparateur */}
                   <div className="h-4 w-px bg-white/10" />
 
+                  {/* 🎙️ Réunion vocale */}
+                  <button
+                    onClick={() => { setVoiceOpen(v => !v); setChatOpen(false); }}
+                    title="Enregistrer une réunion et la transcrire avec l'IA"
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
+                      voiceOpen
+                        ? "border-[rgba(167,139,250,0.45)] bg-[rgba(167,139,250,0.10)] text-[#a78bfa] shadow-[0_0_14px_rgba(167,139,250,0.18)]"
+                        : voiceState === "recording"
+                          ? "border-red-500/40 bg-red-500/10 text-red-400"
+                          : "border-[rgba(167,139,250,0.18)] text-[#a78bfa]/60 hover:border-[rgba(167,139,250,0.38)] hover:bg-[rgba(167,139,250,0.06)] hover:text-[#a78bfa] hover:shadow-[0_0_12px_rgba(167,139,250,0.12)]"
+                    }`}
+                  >
+                    {voiceTranscribing
+                      ? <Loader2 size={11} className="animate-spin" />
+                      : <Mic size={11} />
+                    }
+                    <span className="hidden sm:inline">Réunion</span>
+                    {voiceState === "recording" && (
+                      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
+                    )}
+                  </button>
+
                   {/* Demander à l'IA — PRO */}
                   <button
-                    onClick={() => setChatOpen(v => !v)}
+                    onClick={() => { setChatOpen(v => !v); setVoiceOpen(false); }}
                     className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
                       chatOpen
                         ? "border-[rgba(201,165,90,0.45)] bg-[rgba(201,165,90,0.10)] text-[#c9a55a] shadow-[0_0_14px_rgba(201,165,90,0.18)]"
@@ -1325,6 +1347,176 @@ export default function BlocNotesPage() {
                       <p className="mt-1.5 text-[0.58rem] text-white/20">
                         ↵ Envoyer · Shift+↵ Nouvelle ligne · L&apos;IA lit le contenu de votre note
                       </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* ── Panel 🎙️ Réunion ── */}
+              <AnimatePresence initial={false}>
+                {voiceOpen && (
+                  <motion.div
+                    key="voice-panel"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease }}
+                    className="overflow-hidden border-b border-[rgba(167,139,250,0.12)] bg-[rgba(167,139,250,0.02)]"
+                  >
+                    <div className="p-4">
+
+                      {/* Header */}
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          {voiceState === "recording" && (
+                            <div className="relative flex h-4 w-4 items-center justify-center">
+                              <motion.span
+                                animate={{ scale: [1, 2, 1], opacity: [0.5, 0, 0.5] }}
+                                transition={{ duration: 1.4, repeat: Infinity }}
+                                className="absolute inset-0 rounded-full bg-red-500/50"
+                              />
+                              <span className="h-2 w-2 rounded-full bg-red-400" />
+                            </div>
+                          )}
+                          <span className="text-xs font-bold text-white/60">
+                            {voiceState === "idle"      ? "🎙️ Enregistrement de réunion"   :
+                             voiceState === "recording" ? "🔴 Enregistrement en cours…"     :
+                             voiceState === "paused"    ? "⏸️ En pause"                     :
+                                                         "✅ Enregistrement terminé"}
+                          </span>
+                          {voiceState !== "idle" && (
+                            <span className="font-mono text-xs font-bold tabular-nums text-[#a78bfa]">
+                              {fmtSec(voiceElapsed)}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setVoiceOpen(false)}
+                          className="text-white/25 transition hover:text-white/55"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+
+                      {/* Contrôles */}
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        {voiceState === "idle" && (
+                          <button
+                            onClick={startVoice}
+                            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#a78bfa] to-[#7c3aed] px-4 py-2 text-xs font-extrabold text-white shadow-[0_2px_12px_rgba(167,139,250,0.35)] transition hover:shadow-[0_4px_20px_rgba(167,139,250,0.5)] active:scale-[0.97]"
+                          >
+                            <Mic size={13} /> Démarrer l&apos;enregistrement
+                          </button>
+                        )}
+                        {voiceState === "recording" && (
+                          <>
+                            <button
+                              onClick={pauseVoice}
+                              className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.1)] px-3 py-2 text-xs font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.18)]"
+                            >
+                              <Pause size={13} /> Pause
+                            </button>
+                            <button
+                              onClick={stopVoice}
+                              className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 transition hover:bg-red-500/20"
+                            >
+                              <Square size={13} /> Terminer
+                            </button>
+                          </>
+                        )}
+                        {voiceState === "paused" && (
+                          <>
+                            <button
+                              onClick={resumeVoice}
+                              className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.1)] px-3 py-2 text-xs font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.18)]"
+                            >
+                              <Play size={13} /> Reprendre
+                            </button>
+                            <button
+                              onClick={stopVoice}
+                              className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 transition hover:bg-red-500/20"
+                            >
+                              <Square size={13} /> Terminer
+                            </button>
+                          </>
+                        )}
+                        {voiceState === "stopped" && (
+                          <button
+                            onClick={resetVoice}
+                            className="flex items-center gap-1.5 rounded-xl border border-white/12 px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/22 hover:text-white/65"
+                          >
+                            <RotateCcw size={13} /> Nouveau
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Erreur */}
+                      {voiceErr && (
+                        <div className="mb-3 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/08 px-3 py-2 text-xs text-red-400">
+                          <AlertCircle size={12} className="shrink-0" /> {voiceErr}
+                        </div>
+                      )}
+
+                      {/* Transcription live */}
+                      {(voiceTxt || voiceTranscribing) && (
+                        <div className="mb-3 max-h-36 overflow-y-auto rounded-xl border border-white/[0.07] bg-white/[0.025] p-3">
+                          <div className="mb-1.5 flex items-center gap-2">
+                            <span className="text-[0.58rem] font-black uppercase tracking-wider text-white/25">Transcription</span>
+                            {voiceTranscribing && <Loader2 size={9} className="animate-spin text-[#a78bfa]" />}
+                          </div>
+                          <p className="whitespace-pre-wrap text-xs leading-relaxed text-white/55">
+                            {voiceTxt || <span className="italic text-white/25">Transcription en cours…</span>}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Résumé IA */}
+                      {voiceSummary && (
+                        <div className="mb-3 max-h-36 overflow-y-auto rounded-xl border border-[rgba(201,165,90,0.15)] bg-[rgba(201,165,90,0.04)] p-3">
+                          <span className="text-[0.58rem] font-black uppercase tracking-wider text-[#c9a55a]/40">Résumé IA</span>
+                          <p className="mt-1.5 whitespace-pre-wrap text-xs leading-relaxed text-white/55">{voiceSummary}</p>
+                        </div>
+                      )}
+
+                      {/* Boutons d'action — après l'enregistrement */}
+                      {voiceTxt && voiceState === "stopped" && (
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={injectTranscript}
+                            className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.08)] px-3 py-2 text-xs font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.16)]"
+                          >
+                            <CornerDownLeft size={12} /> Insérer la transcription
+                          </button>
+                          <button
+                            onClick={() => voiceSummarize(false)}
+                            disabled={voiceSummarizing}
+                            className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)] px-3 py-2 text-xs font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.16)] disabled:opacity-50"
+                          >
+                            {voiceSummarizing
+                              ? <Loader2 size={12} className="animate-spin" />
+                              : <Sparkles size={12} />
+                            }
+                            Résumer la réunion
+                          </button>
+                          {voiceSummary && (
+                            <button
+                              onClick={() => voiceSummarize(true)}
+                              disabled={voiceSummarizing}
+                              className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)] px-3 py-2 text-xs font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.16)] disabled:opacity-50"
+                            >
+                              <CornerDownLeft size={12} /> Insérer le résumé
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Hint idle */}
+                      {voiceState === "idle" && (
+                        <p className="mt-1 text-[0.6rem] text-white/20">
+                          Supporte jusqu&apos;à 2h de réunion · Transcription automatique toutes les 5 min · Résumé IA sur demande
+                        </p>
+                      )}
+
                     </div>
                   </motion.div>
                 )}
