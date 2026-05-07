@@ -21,6 +21,7 @@ import {
   Sparkles, Wand2, FileText, ListChecks, MessageSquare,
   Star, Pin, Check, Eye, EyeOff, CheckSquare,
   Send, Globe, CornerDownLeft,
+  Mic, Volume2, Square, Pause, Play, RotateCcw, AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
@@ -53,6 +54,14 @@ interface ChatMessage {
    CONSTANTES
 ═══════════════════════════════════════════════════════════════ */
 const ease = [0.16, 1, 0.3, 1] as const;
+type VoiceState = "idle" | "recording" | "paused" | "stopped";
+const CHUNK_MS  = 5 * 60 * 1000; // auto-transcription toutes les 5 min
+function fmtSec(s: number) {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return h > 0
+    ? `${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`
+    : `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+}
 
 const CATEGORIES = [
   { value: "réunion"   as Category, label: "Réunion",   color: "#60a5fa", bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)"  },
@@ -298,6 +307,16 @@ export default function BlocNotesPage() {
   const [autoSaving, setAutoSaving] = useState(false);
   const [aiLoading,  setAiLoading]  = useState<NonChatAction | null>(null);
 
+  /* ── Voice recording ── */
+  const [voiceOpen,   setVoiceOpen]   = useState(false);
+  const [voiceState,  setVoiceState]  = useState<VoiceState>("idle");
+  const [voiceElapsed,setVoiceElapsed]= useState(0);
+  const [voiceTxt,    setVoiceTxt]    = useState("");
+  const [voiceTranscribing, setVoiceTranscribing] = useState(false);
+  const [voiceErr,    setVoiceErr]    = useState("");
+  const [voiceSummarizing, setVoiceSummarizing] = useState(false);
+  const [voiceSummary, setVoiceSummary] = useState("");
+
   /* ── Chat IA ── */
   const [chatOpen,    setChatOpen]    = useState(false);
   const [chatPrompt,  setChatPrompt]  = useState("");
@@ -326,6 +345,15 @@ export default function BlocNotesPage() {
   const handleSaveRef = useRef<(silent?: boolean) => Promise<void>>(async () => {});
   const chatInputRef  = useRef<HTMLTextAreaElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  /* Voice refs */
+  const mrRef      = useRef<MediaRecorder | null>(null);
+  const audioRef   = useRef<Blob[]>([]);
+  const streamRef  = useRef<MediaStream | null>(null);
+  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const chunkRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const elapsedRef = useRef(0);
+  const chunkIdxRef= useRef(0);
+  const txRef      = useRef("");
 
   /* ── Charger les notes ── */
   const fetchNotes = useCallback(async () => {
@@ -652,6 +680,117 @@ export default function BlocNotesPage() {
     showToast("success", "✅ Réponse appliquée — pensez à sauvegarder.");
     setChatOpen(false);
   }
+
+  /* ══════════════════════════════════════════════════════════════
+     VOICE RECORDING — Whisper + Claude
+  ══════════════════════════════════════════════════════════════ */
+  const transcribeBlob = useCallback(async (blob: Blob, idx: number) => {
+    setVoiceTranscribing(true);
+    try {
+      const fd = new FormData();
+      const ext = blob.type.includes("ogg") ? "ogg" : blob.type.includes("mp4") ? "mp4" : "webm";
+      fd.append("audio", new File([blob], `chunk-${idx}.${ext}`, { type: blob.type }));
+      const res  = await fetch("/api/transcribe", { method: "POST", body: fd });
+      const data = await res.json() as { text?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Erreur");
+      const text = data.text?.trim() ?? "";
+      if (text) {
+        setVoiceTxt(prev => { const full = prev ? `${prev} ${text}` : text; txRef.current = full; return full; });
+      }
+    } catch (e) { setVoiceErr(e instanceof Error ? e.message : "Erreur transcription"); }
+    finally { setVoiceTranscribing(false); }
+  }, []);
+
+  const flushChunk = useCallback(() => {
+    const blobs = [...audioRef.current]; audioRef.current = [];
+    if (!blobs.length) return;
+    const blob = new Blob(blobs, { type: blobs[0].type });
+    transcribeBlob(blob, chunkIdxRef.current++);
+  }, [transcribeBlob]);
+
+  const startVoice = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mime = ["audio/webm;codecs=opus","audio/webm","audio/ogg","audio/mp4"].find(m => MediaRecorder.isTypeSupported(m)) ?? "";
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      mrRef.current = mr; audioRef.current = []; chunkIdxRef.current = 0;
+      elapsedRef.current = 0; txRef.current = "";
+      setVoiceTxt(""); setVoiceErr(""); setVoiceSummary(""); setVoiceElapsed(0);
+      mr.ondataavailable = e => { if (e.data.size > 0) audioRef.current.push(e.data); };
+      mr.start(1000);
+      setVoiceState("recording");
+      timerRef.current = setInterval(() => setVoiceElapsed(p => { elapsedRef.current = p + 1; return p + 1; }), 1000);
+      chunkRef.current  = setInterval(flushChunk, CHUNK_MS);
+    } catch { setVoiceErr("Accès micro refusé. Vérifiez les permissions."); }
+  }, [flushChunk]);
+
+  const pauseVoice = useCallback(() => {
+    mrRef.current?.pause();
+    if (timerRef.current) clearInterval(timerRef.current);
+    setVoiceState("paused");
+  }, []);
+
+  const resumeVoice = useCallback(() => {
+    mrRef.current?.resume();
+    timerRef.current = setInterval(() => setVoiceElapsed(p => { elapsedRef.current = p + 1; return p + 1; }), 1000);
+    setVoiceState("recording");
+  }, []);
+
+  const stopVoice = useCallback(() => {
+    if (chunkRef.current) clearInterval(chunkRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
+    const mr = mrRef.current; if (!mr) return;
+    mr.onstop = () => {
+      const blobs = [...audioRef.current]; audioRef.current = [];
+      if (blobs.length) transcribeBlob(new Blob(blobs, { type: blobs[0].type }), chunkIdxRef.current);
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    };
+    mr.stop(); setVoiceState("stopped");
+  }, [transcribeBlob]);
+
+  const resetVoice = useCallback(() => {
+    setVoiceState("idle"); setVoiceElapsed(0); setVoiceTxt("");
+    setVoiceErr(""); setVoiceSummary(""); txRef.current = "";
+  }, []);
+
+  const injectTranscript = useCallback(() => {
+    const txt = txRef.current || voiceTxt;
+    if (!txt) return;
+    const sep = (draft.content ?? "").length > 0 ? "\n\n" : "";
+    updateDraft("content", (draft.content ?? "") + sep + txt);
+    showToast("success", "🎙️ Transcription insérée dans la note.");
+    setVoiceOpen(false);
+  }, [voiceTxt, draft.content]);
+
+  const voiceSummarize = useCallback(async (injectAfter = false) => {
+    const txt = txRef.current || voiceTxt;
+    if (!txt) return;
+    setVoiceSummarizing(true); setVoiceSummary("");
+    try {
+      const res  = await fetch("/api/summarize-meeting", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ transcript: txt, mode:"resume" }) });
+      const data = await res.json() as { summary?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Erreur");
+      const sum  = data.summary ?? "";
+      setVoiceSummary(sum);
+      if (injectAfter) {
+        const sep = (draft.content ?? "").length > 0 ? "\n\n" : "";
+        updateDraft("content", (draft.content ?? "") + sep + sum);
+        showToast("success", "✨ Résumé inséré dans la note.");
+        setVoiceOpen(false);
+      }
+    } catch (e) { setVoiceErr(e instanceof Error ? e.message : "Erreur résumé"); }
+    finally { setVoiceSummarizing(false); }
+  }, [voiceTxt, draft.content]);
+
+  /* Cleanup au démontage */
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (chunkRef.current) clearInterval(chunkRef.current);
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    };
+  }, []);
 
   /* ── Insérer une case à cocher ── */
   function insertCheckItem() {
