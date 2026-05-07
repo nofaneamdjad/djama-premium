@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 export async function POST(req: NextRequest) {
   try {
+    // Instantiation lazy — évite l'erreur au build si OPENAI_API_KEY absent
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
     const formData = await req.formData();
     const file = formData.get("audio") as File | null;
 
@@ -12,7 +13,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Aucun fichier audio fourni" }, { status: 400 });
     }
 
-    // Limit: 25 MB per chunk
     if (file.size > 25 * 1024 * 1024) {
       return NextResponse.json({ error: "Fichier trop volumineux (max 25 Mo)" }, { status: 413 });
     }
@@ -31,5 +31,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
-export const config = { api: { bodyParser: false } };
