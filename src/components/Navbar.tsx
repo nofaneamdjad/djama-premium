@@ -18,14 +18,11 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const NAV_LINKS = [
-    { href: "/",               label: dict.nav.home       },
-    { href: "/services",       label: "Services"          },
-    { href: "/formations",     label: "Formations"        },
-    { href: "/accompagnement", label: "Accompagnement"    },
-    { href: "/produits",       label: "Produits"          },
-    { href: "/a-propos",       label: dict.nav.about      },
-    { href: "/contact",        label: dict.nav.contact    },
-    { href: "/espace-client",  label: dict.nav.clientArea },
+    { href: "/",              label: dict.nav.home       },
+    { href: "/services",      label: "Services"          },
+    { href: "/a-propos",      label: dict.nav.about      },
+    { href: "/contact",       label: dict.nav.contact    },
+    { href: "/espace-client", label: dict.nav.clientArea },
   ];
 
   const [scrolled, setScrolled] = useState(false);
