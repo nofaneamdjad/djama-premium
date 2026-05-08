@@ -6,7 +6,7 @@ import {
   Crown, CheckCircle2, Zap, Loader2, ExternalLink,
   ReceiptText, Users, Timer, Receipt, FileText, Search,
   TrendingUp, StickyNote, Star, Sparkles, CalendarRange,
-  ShieldCheck, RefreshCw,
+  ShieldCheck, RefreshCw, Brain, Gift,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import StripeButton from "@/components/ui/StripeButton";
@@ -198,6 +198,17 @@ export default function AbonnementsPage() {
                 </div>
                 <h2 className="text-2xl font-black text-white">DJAMA PRO</h2>
                 <p className="mt-1 text-sm text-white/40">Accès complet à la suite d'outils professionnels</p>
+
+                {/* ── Coaching IA offert ── */}
+                <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-[rgba(217,70,239,0.3)] bg-[rgba(217,70,239,0.08)] px-4 py-2.5">
+                  <Gift size={15} className="shrink-0 text-fuchsia-400" />
+                  <div>
+                    <p className="text-xs font-extrabold text-fuchsia-300">🎁 Coaching IA offert</p>
+                    <p className="text-[0.65rem] text-white/45 leading-tight">
+                      Le programme Coaching IA (valeur 29€/mois) est inclus gratuitement avec votre abonnement DJAMA PRO.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Price */}
@@ -212,18 +223,42 @@ export default function AbonnementsPage() {
 
             {/* Features grid */}
             <div className="mb-8 grid gap-3 sm:grid-cols-2">
-              {FEATURES.map(({ Icon, label, desc }) => (
-                <div key={label} className="flex items-start gap-3 rounded-[1rem] border border-white/6 bg-white/3 px-4 py-3">
-                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border" style={{ backgroundColor: GOLD + "10", borderColor: GOLD + "25" }}>
-                    <Icon size={13} style={{ color: GOLD }} />
+              {FEATURES.map(({ Icon, label, desc }) => {
+                const isCoaching = label === "Coaching IA";
+                return (
+                  <div
+                    key={label}
+                    className={`flex items-start gap-3 rounded-[1rem] border px-4 py-3 ${
+                      isCoaching
+                        ? "border-[rgba(217,70,239,0.25)] bg-[rgba(217,70,239,0.06)]"
+                        : "border-white/6 bg-white/3"
+                    }`}
+                  >
+                    <div
+                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border"
+                      style={
+                        isCoaching
+                          ? { backgroundColor: "rgba(217,70,239,0.12)", borderColor: "rgba(217,70,239,0.3)" }
+                          : { backgroundColor: GOLD + "10", borderColor: GOLD + "25" }
+                      }
+                    >
+                      <Icon size={13} style={{ color: isCoaching ? "#e879f9" : GOLD }} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className={`text-xs font-bold ${isCoaching ? "text-fuchsia-300" : "text-white/85"}`}>{label}</p>
+                        {isCoaching && (
+                          <span className="rounded-full border border-[rgba(217,70,239,0.4)] bg-[rgba(217,70,239,0.15)] px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-wider text-fuchsia-300">
+                            Offert
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-[0.65rem] text-white/35 leading-tight">{desc}</p>
+                    </div>
+                    <CheckCircle2 size={13} className={`mt-0.5 shrink-0 ${isCoaching ? "text-fuchsia-400/60" : "text-emerald-400/60"}`} />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-white/85">{label}</p>
-                    <p className="mt-0.5 text-[0.65rem] text-white/35 leading-tight">{desc}</p>
-                  </div>
-                  <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-emerald-400/60" />
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* CTA */}
