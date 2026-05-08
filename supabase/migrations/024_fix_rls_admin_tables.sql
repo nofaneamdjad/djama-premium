@@ -16,50 +16,54 @@
 --                    UPDATE/DELETE supprimés
 -- ══════════════════════════════════════════════════════════════════
 
-/* ─── services ─────────────────────────────────────────────────── */
-DROP POLICY IF EXISTS "insert services" ON services;
-DROP POLICY IF EXISTS "update services" ON services;
-DROP POLICY IF EXISTS "delete services" ON services;
--- SELECT reste : "select services" FOR SELECT USING (true)
+DO $$
+DECLARE
+  tbl text;
+BEGIN
 
-/* ─── realisations ─────────────────────────────────────────────── */
-DROP POLICY IF EXISTS "insert realisations" ON realisations;
-DROP POLICY IF EXISTS "update realisations" ON realisations;
-DROP POLICY IF EXISTS "delete realisations" ON realisations;
+  /* ─── Tables admin write-only via service role ─────────────────
+     Pour chaque table, on supprime les politiques INSERT/UPDATE/DELETE
+     si la table existe. SELECT public reste intact.
+  ──────────────────────────────────────────────────────────────── */
+  FOREACH tbl IN ARRAY ARRAY[
+    'services', 'realisations', 'partner_logos',
+    'site_settings', 'social_links', 'site_content'
+  ] LOOP
+    IF EXISTS (
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = tbl
+    ) THEN
+      EXECUTE format('DROP POLICY IF EXISTS "insert %I" ON %I', tbl, tbl);
+      EXECUTE format('DROP POLICY IF EXISTS "update %I" ON %I', tbl, tbl);
+      EXECUTE format('DROP POLICY IF EXISTS "delete %I" ON %I', tbl, tbl);
+      RAISE NOTICE 'RLS write policies supprimées pour table %', tbl;
+    ELSE
+      RAISE NOTICE 'Table % inexistante — ignorée', tbl;
+    END IF;
+  END LOOP;
 
-/* ─── partner_logos ────────────────────────────────────────────── */
-DROP POLICY IF EXISTS "insert partner_logos" ON partner_logos;
-DROP POLICY IF EXISTS "update partner_logos" ON partner_logos;
-DROP POLICY IF EXISTS "delete partner_logos" ON partner_logos;
+  /* ─── contact_messages ─────────────────────────────────────────
+     SELECT restreint (service role bypass uniquement)
+     INSERT conservé pour le formulaire de contact anon
+     UPDATE/DELETE supprimés
+  ──────────────────────────────────────────────────────────────── */
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'contact_messages'
+  ) THEN
+    DROP POLICY IF EXISTS "select contact_messages" ON contact_messages;
+    CREATE POLICY "select contact_messages"
+      ON contact_messages FOR SELECT
+      USING (false);
 
-/* ─── site_settings ────────────────────────────────────────────── */
-DROP POLICY IF EXISTS "insert site_settings" ON site_settings;
-DROP POLICY IF EXISTS "update site_settings" ON site_settings;
-DROP POLICY IF EXISTS "delete site_settings" ON site_settings;
+    DROP POLICY IF EXISTS "update contact_messages" ON contact_messages;
+    DROP POLICY IF EXISTS "delete contact_messages" ON contact_messages;
+    RAISE NOTICE 'RLS contact_messages sécurisé';
+  ELSE
+    RAISE NOTICE 'Table contact_messages inexistante — ignorée';
+  END IF;
 
-/* ─── social_links ─────────────────────────────────────────────── */
-DROP POLICY IF EXISTS "insert social_links" ON social_links;
-DROP POLICY IF EXISTS "update social_links" ON social_links;
-DROP POLICY IF EXISTS "delete social_links" ON social_links;
-
-/* ─── site_content ─────────────────────────────────────────────── */
-DROP POLICY IF EXISTS "insert site_content" ON site_content;
-DROP POLICY IF EXISTS "update site_content" ON site_content;
-DROP POLICY IF EXISTS "delete site_content" ON site_content;
-
-/* ─── contact_messages ─────────────────────────────────────────── */
--- SELECT : admin seulement (service role bypass, anon ne peut pas lire)
-DROP POLICY IF EXISTS "select contact_messages" ON contact_messages;
-CREATE POLICY "select contact_messages"
-  ON contact_messages FOR SELECT
-  USING (false);  -- seul le service role peut lire (bypass RLS)
-
--- INSERT : ouvert à tous (formulaire de contact public + anon)
--- La politique existante "insert contact_messages" WITH CHECK (true) est correcte → on la laisse
-
--- UPDATE/DELETE : supprimés (admin via service role uniquement)
-DROP POLICY IF EXISTS "update contact_messages" ON contact_messages;
-DROP POLICY IF EXISTS "delete contact_messages" ON contact_messages;
+END $$;
 
 
 -- ══════════════════════════════════════════════════════════════════
