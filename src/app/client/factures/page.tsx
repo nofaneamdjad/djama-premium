@@ -7,6 +7,7 @@ import {
   Loader2, ArrowLeft, ChevronDown,
   RefreshCw, Building2, User, FileText, Send, BadgeCheck,
   AlertTriangle, ImagePlus, Palette, Landmark, Eye, Percent,
+  Mail, Link2, Copy, Check, Globe,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEur, fmtDate } from "@/lib/format";
@@ -409,6 +410,25 @@ export default function FacturesPage() {
   const [confirmDel,  setConfirmDel]  = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
+  /* ── Email modal ── */
+  const [emailModal,   setEmailModal]   = useState(false);
+  const [emailTo,      setEmailTo]      = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMsg,     setEmailMsg]     = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  /* ── Payment link modal ── */
+  const [payLinkModal,   setPayLinkModal]   = useState(false);
+  const [payLinkLoading, setPayLinkLoading] = useState(false);
+  const [payLinkUrl,     setPayLinkUrl]     = useState("");
+  const [copied,         setCopied]         = useState(false);
+
+  /* ── Portail client modal ── */
+  const [portalModal,   setPortalModal]   = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalUrl,     setPortalUrl]     = useState("");
+  const [portalCopied,  setPortalCopied]  = useState(false);
+
   const totals = useMemo(
     () => calcTotals(items, draft?.remise_pct ?? 0, draft?.acompte ?? 0),
     [items, draft?.remise_pct, draft?.acompte]
@@ -642,6 +662,116 @@ export default function FacturesPage() {
     openDoc(newDoc as Document);
   }
 
+  /* ── Envoyer par email ── */
+  function openEmailModal() {
+    if (!draft || !selected) return;
+    setEmailTo(draft.client_email || "");
+    setEmailSubject(`${draft.type === "facture" ? "Facture" : "Devis"} ${draft.numero} — ${draft.emetteur_nom || "DJAMA"}`);
+    setEmailMsg(`Bonjour ${draft.client_nom || ""},\n\nVeuillez trouver ci-dessous les détails de votre ${draft.type === "facture" ? "facture" : "devis"}.\n\nRestant à votre disposition pour toute question.`);
+    setEmailModal(true);
+  }
+
+  async function handleSendEmail() {
+    if (!selected || !emailTo) return;
+    setSendingEmail(true);
+    try {
+      const res = await fetch("/api/factures/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          document_id: selected.id,
+          to_email:    emailTo,
+          to_name:     draft?.client_nom,
+          subject:     emailSubject,
+          message:     emailMsg,
+        }),
+      });
+      if (!res.ok) throw new Error("Erreur envoi");
+      showToast("success", "Email envoyé ✓");
+      setEmailModal(false);
+    } catch {
+      showToast("error", "Erreur lors de l'envoi de l'email");
+    } finally {
+      setSendingEmail(false);
+    }
+  }
+
+  /* ── Lien de paiement Stripe ── */
+  async function handlePaymentLink() {
+    if (!selected || !draft) return;
+    setPayLinkLoading(true);
+    setPayLinkUrl("");
+    setPayLinkModal(true);
+    try {
+      const res = await fetch("/api/stripe/payment-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount:      totals.ttc,
+          description: draft.sujet || `${draft.type === "facture" ? "Facture" : "Devis"} ${draft.numero}`,
+          document_id: selected.id,
+          reference:   draft.numero,
+          client_email:draft.client_email,
+        }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error || "Erreur Stripe");
+      setPayLinkUrl(data.url || "");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur Stripe";
+      showToast("error", msg);
+      setPayLinkModal(false);
+    } finally {
+      setPayLinkLoading(false);
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!payLinkUrl) return;
+    await navigator.clipboard.writeText(payLinkUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  /* ── Portail client ── */
+  async function handlePortalLink() {
+    if (!draft) return;
+    setPortalLoading(true);
+    setPortalUrl("");
+    setPortalModal(true);
+    try {
+      const { data: { session } } = await (await import("@/lib/supabase")).supabase.auth.getSession();
+      const res = await fetch("/api/portail/generer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token || ""}`,
+        },
+        body: JSON.stringify({
+          client_nom:   draft.client_nom,
+          client_email: draft.client_email,
+          expires_days: 30,
+        }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error || "Erreur portail");
+      setPortalUrl(data.url || "");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur génération portail";
+      showToast("error", msg);
+      setPortalModal(false);
+    } finally {
+      setPortalLoading(false);
+    }
+  }
+
+  async function handleCopyPortal() {
+    if (!portalUrl) return;
+    await navigator.clipboard.writeText(portalUrl);
+    setPortalCopied(true);
+    setTimeout(() => setPortalCopied(false), 2000);
+  }
+
   /* ── Filtres ── */
   const filtered = useMemo(() => {
     let list = [...documents];
@@ -835,6 +965,30 @@ export default function FacturesPage() {
                     title="Exporter en PDF">
                     <FileDown size={13}/> PDF
                   </button>
+                  {/* Email */}
+                  {selected && (
+                    <button onClick={openEmailModal}
+                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(56,189,248,0.2)] px-3 py-2 text-xs font-semibold text-sky-400/70 transition hover:border-[rgba(56,189,248,0.4)] hover:text-sky-400 sm:flex"
+                      title="Envoyer par email">
+                      <Mail size={13}/> Email
+                    </button>
+                  )}
+                  {/* Stripe payment link */}
+                  {selected && draft.type === "facture" && (
+                    <button onClick={handlePaymentLink} disabled={payLinkLoading}
+                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#a78bfa]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#a78bfa] disabled:opacity-40 sm:flex"
+                      title="Créer un lien de paiement Stripe">
+                      {payLinkLoading ? <Loader2 size={13} className="animate-spin"/> : <Link2 size={13}/>} Paiement
+                    </button>
+                  )}
+                  {/* Portail client */}
+                  {selected && draft.client_nom && (
+                    <button onClick={handlePortalLink} disabled={portalLoading}
+                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(34,211,238,0.2)] px-3 py-2 text-xs font-semibold text-[#22d3ee]/70 transition hover:border-[rgba(34,211,238,0.4)] hover:text-[#22d3ee] disabled:opacity-40 sm:flex"
+                      title="Générer un portail client sécurisé">
+                      {portalLoading ? <Loader2 size={13} className="animate-spin"/> : <Globe size={13}/>} Portail
+                    </button>
+                  )}
                   {selected && (
                     <button onClick={() => setConfirmDel(true)} disabled={deleting}
                       className="flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 py-2 text-xs font-semibold text-red-400/70 transition hover:border-red-500/40 hover:text-red-400 disabled:opacity-40">
@@ -1160,6 +1314,164 @@ export default function FacturesPage() {
                   {deleting && <Loader2 size={13} className="animate-spin"/>}Supprimer
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ══ Modal Email ══ */}
+      <AnimatePresence>
+        {emailModal && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
+              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
+              className="w-full max-w-md rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-sky-400/25 bg-sky-400/8">
+                    <Mail size={15} className="text-sky-400"/>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">Envoyer par email</h3>
+                    <p className="text-[0.65rem] text-white/30">{draft?.numero}</p>
+                  </div>
+                </div>
+                <button onClick={() => setEmailModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Destinataire</label>
+                  <input value={emailTo} onChange={e => setEmailTo(e.target.value)}
+                    placeholder="email@client.com"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Objet</label>
+                  <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Message</label>
+                  <textarea value={emailMsg} onChange={e => setEmailMsg(e.target.value)} rows={4}
+                    className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
+                </div>
+              </div>
+              <div className="mt-5 flex gap-3">
+                <button onClick={() => setEmailModal(false)}
+                  className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/60 transition hover:border-white/20">Annuler</button>
+                <button onClick={handleSendEmail} disabled={sendingEmail || !emailTo}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-sky-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-sky-500 disabled:opacity-50">
+                  {sendingEmail ? <Loader2 size={13} className="animate-spin"/> : <Send size={13}/>}
+                  {sendingEmail ? "Envoi…" : "Envoyer"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ══ Modal Lien de paiement ══ */}
+      <AnimatePresence>
+        {payLinkModal && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
+              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
+              className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)]">
+                    <Link2 size={15} className="text-[#a78bfa]"/>
+                  </div>
+                  <h3 className="text-sm font-extrabold text-white">Lien de paiement</h3>
+                </div>
+                <button onClick={() => setPayLinkModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+              </div>
+              {payLinkLoading ? (
+                <div className="flex flex-col items-center gap-3 py-8">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#a78bfa]"/>
+                  <p className="text-sm text-white/40">Génération du lien Stripe…</p>
+                </div>
+              ) : payLinkUrl ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-white/55">Lien de paiement créé pour <strong className="text-white">{fmtEur(totals.ttc)}</strong></p>
+                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5">
+                    <span className="flex-1 truncate text-xs text-white/60">{payLinkUrl}</span>
+                    <button onClick={handleCopyLink}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 text-white/40 transition hover:text-white/80">
+                      {copied ? <Check size={13} className="text-emerald-400"/> : <Copy size={13}/>}
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleCopyLink}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] py-2.5 text-sm font-semibold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.15)]">
+                      {copied ? <Check size={13}/> : <Copy size={13}/>}
+                      {copied ? "Copié !" : "Copier"}
+                    </button>
+                    <a href={payLinkUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a78bfa] to-[#8b5cf6] py-2.5 text-sm font-bold text-white transition hover:opacity-90">
+                      Ouvrir →
+                    </a>
+                  </div>
+                </div>
+              ) : null}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ══ Modal Portail client ══ */}
+      <AnimatePresence>
+        {portalModal && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
+              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
+              className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(34,211,238,0.25)] bg-[rgba(34,211,238,0.08)]">
+                    <Globe size={15} className="text-[#22d3ee]"/>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">Portail client</h3>
+                    <p className="text-[0.62rem] text-white/35">{draft?.client_nom}</p>
+                  </div>
+                </div>
+                <button onClick={() => setPortalModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+              </div>
+              {portalLoading ? (
+                <div className="flex flex-col items-center gap-3 py-8">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#22d3ee]"/>
+                  <p className="text-sm text-white/40">Génération du lien…</p>
+                </div>
+              ) : portalUrl ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-white/55">
+                    Partagez ce lien sécurisé avec <strong className="text-white">{draft?.client_nom}</strong>.
+                    <br/><span className="text-xs text-white/30">Valide 30 jours.</span>
+                  </p>
+                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5">
+                    <span className="flex-1 truncate text-xs text-white/55">{portalUrl}</span>
+                    <button onClick={handleCopyPortal}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 text-white/40 transition hover:text-white/80">
+                      {portalCopied ? <Check size={13} className="text-emerald-400"/> : <Copy size={13}/>}
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleCopyPortal}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[rgba(34,211,238,0.25)] bg-[rgba(34,211,238,0.08)] py-2.5 text-sm font-semibold text-[#22d3ee] transition hover:bg-[rgba(34,211,238,0.15)]">
+                      {portalCopied ? <Check size={13}/> : <Copy size={13}/>}
+                      {portalCopied ? "Copié !" : "Copier"}
+                    </button>
+                    <a href={portalUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#22d3ee] to-[#0ea5e9] py-2.5 text-sm font-bold text-[#09090b] transition hover:opacity-90">
+                      Aperçu →
+                    </a>
+                  </div>
+                </div>
+              ) : null}
             </motion.div>
           </motion.div>
         )}

@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Star, Quote, BadgeCheck } from "lucide-react";
 import Image from "next/image";
 import { staggerContainerFast, cardReveal, fadeIn, viewport } from "@/lib/animations";
+import { supabase } from "@/lib/supabase";
 
 export type Testimonial = {
   name: string;
@@ -15,6 +17,51 @@ export type Testimonial = {
   text: string;
   result?: string; // résultat chiffré optionnel
 };
+
+/* Couleurs cycliques pour les avatars Supabase */
+const AVATAR_PALETTE = [
+  { color: "#c9a55a", rgb: "201,165,90"  },
+  { color: "#f472b6", rgb: "244,114,182" },
+  { color: "#60a5fa", rgb: "96,165,250"  },
+  { color: "#a78bfa", rgb: "167,139,250" },
+  { color: "#34d399", rgb: "52,211,153"  },
+  { color: "#f59e0b", rgb: "245,158,11"  },
+  { color: "#38bdf8", rgb: "56,189,248"  },
+  { color: "#fb923c", rgb: "251,146,60"  },
+];
+
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+/* Mapping depuis Supabase `testimonials` row → Testimonial */
+function rowToTestimonial(
+  row: {
+    nom: string;
+    role?: string | null;
+    entreprise?: string | null;
+    texte: string;
+    note: number;
+  },
+  index: number
+): Testimonial {
+  const palette = AVATAR_PALETTE[index % AVATAR_PALETTE.length];
+  const roleStr = [row.role, row.entreprise].filter(Boolean).join(" · ") || "Client DJAMA";
+  return {
+    name:   row.nom,
+    role:   roleStr,
+    avatar: initials(row.nom),
+    color:  palette.color,
+    rgb:    palette.rgb,
+    rating: row.note,
+    text:   row.texte,
+  };
+}
 
 const DEFAULT_TESTIMONIALS: Testimonial[] = [
   {
@@ -83,18 +130,48 @@ interface Props {
   badge?: string;
   title?: string;
   subtitle?: string;
+  /** Si fourni, ces témoignages sont affichés directement sans fetch Supabase */
   testimonials?: Testimonial[];
   maxVisible?: number;
+  /** Si true, charge les témoignages publiés depuis Supabase (ignore `testimonials`) */
+  dynamic?: boolean;
 }
 
 export default function TestimonialsSection({
   badge = "Ils nous font confiance",
   title = "Ce que disent nos clients.",
   subtitle = "Des résultats concrets, des vrais retours d'expérience.",
-  testimonials = DEFAULT_TESTIMONIALS,
+  testimonials,
   maxVisible = 6,
+  dynamic = false,
 }: Props) {
-  const visible = testimonials.slice(0, maxVisible);
+  const [dynamicItems, setDynamicItems] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    if (!dynamic) return;
+    (async () => {
+      const { data } = await supabase
+        .from("testimonials")
+        .select("nom, role, entreprise, texte, note")
+        .eq("published", true)
+        .order("created_at", { ascending: false })
+        .limit(maxVisible);
+      if (data && data.length > 0) {
+        setDynamicItems(
+          (data as { nom: string; role?: string | null; entreprise?: string | null; texte: string; note: number }[])
+            .map((row, i) => rowToTestimonial(row, i))
+        );
+      }
+    })();
+  }, [dynamic, maxVisible]);
+
+  /* Priorité : dynamicItems (si chargés) > testimonials prop > DEFAULT */
+  const source =
+    dynamic && dynamicItems.length > 0
+      ? dynamicItems
+      : testimonials ?? DEFAULT_TESTIMONIALS;
+
+  const visible = source.slice(0, maxVisible);
 
   return (
     <section className="relative overflow-hidden bg-[#09090b] py-20 sm:py-28">

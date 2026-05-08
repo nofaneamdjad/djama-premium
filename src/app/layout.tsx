@@ -235,6 +235,7 @@ export default function RootLayout({
       style={{ colorScheme: "dark", backgroundColor: "#09090b" }}
     >
       <head>
+        <link rel="manifest" href="/manifest.json" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

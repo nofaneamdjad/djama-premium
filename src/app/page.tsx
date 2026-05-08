@@ -1557,7 +1557,7 @@ function HomeContent() {
       {/* ══════════════════════════════════════════════
           9. TÉMOIGNAGES
       ══════════════════════════════════════════════ */}
-      <TestimonialsSection />
+      <TestimonialsSection dynamic />
 
       {/* ══════════════════════════════════════════════
           10. FAQ — accordion animé

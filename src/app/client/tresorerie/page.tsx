@@ -21,6 +21,13 @@ import {
   MoreHorizontal,
   ExternalLink,
   Download,
+  Sparkles,
+  Loader2,
+  X,
+  ShieldCheck,
+  Star,
+  Lightbulb,
+  TrendingUp as TrendUp,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -191,12 +198,63 @@ export default function TresoreriePage() {
   const [loading,     setLoading]     = useState(true);
   const [toast,       setToast]       = useState<ToastData | null>(null);
 
+  /* ── AI Analysis ── */
+  type AIAnalysis = {
+    score: number;
+    titre: string;
+    resume: string;
+    points_forts: string[];
+    alertes: string[];
+    recommandations: string[];
+    projection: string;
+  };
+  const [aiOpen,     setAiOpen]     = useState(false);
+  const [aiLoading,  setAiLoading]  = useState(false);
+  const [aiResult,   setAiResult]   = useState<AIAnalysis | null>(null);
+
   /* Month selector */
   const [viewYear,  setViewYear]  = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
   /* ── Helpers ── */
   const showToast = (type: "success" | "error", msg: string) => setToast({ type, msg } as ToastData);
+
+  /* ── Analyse IA ── */
+  async function runAIAnalysis() {
+    if (loading) return;
+    setAiLoading(true);
+    setAiOpen(true);
+    setAiResult(null);
+    try {
+      const top_depenses_map = new Map<string, number>();
+      for (const e of expenses) {
+        top_depenses_map.set(e.category, (top_depenses_map.get(e.category) ?? 0) + e.amount);
+      }
+      const top_depenses = [...top_depenses_map.entries()]
+        .sort((a, b) => b[1] - a[1]).slice(0, 5)
+        .map(([cat, total]) => ({ cat, total }));
+      const res = await fetch("/api/tresorerie/analyse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          revenus:     encaisse,
+          depenses:    totalDepenses,
+          solde:       resultatNet,
+          impaye:      enAttente,
+          nb_impaye:   unpaidInvoices.length,
+          mois:        `${MONTH_NAMES[viewMonth]} ${viewYear}`,
+          top_depenses,
+        }),
+      });
+      if (!res.ok) throw new Error("Erreur analyse");
+      setAiResult(await res.json());
+    } catch {
+      showToast("error", "Erreur lors de l'analyse IA");
+      setAiOpen(false);
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   const monthStart = useMemo(() => {
     return new Date(viewYear, viewMonth, 1).toISOString().slice(0, 10);
@@ -330,16 +388,28 @@ export default function TresoreriePage() {
               <p className="text-[0.65rem] text-white/30">Vue consolidée de vos flux financiers</p>
             </div>
           </div>
-          {!loading && (invoices.length > 0 || expenses.length > 0) && (
-            <button
-              onClick={() => exportCSV(invoices, expenses, `${MONTH_NAMES[viewMonth].toLowerCase()}-${viewYear}`)}
-              aria-label="Exporter les données en CSV"
-              title="Exporter CSV"
-              className="flex items-center gap-1.5 rounded-xl border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.08)] px-3.5 py-2 text-xs font-bold text-[#4ade80] transition-all hover:bg-[rgba(74,222,128,0.15)]"
-            >
-              <Download size={12} /> <span className="hidden sm:inline">Exporter CSV</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {!loading && (invoices.length > 0 || expenses.length > 0) && (
+              <button
+                onClick={runAIAnalysis}
+                disabled={aiLoading}
+                className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.08)] px-3.5 py-2 text-xs font-bold text-[#a78bfa] transition-all hover:bg-[rgba(167,139,250,0.15)] disabled:opacity-50"
+              >
+                {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                <span className="hidden sm:inline">Analyse IA</span>
+              </button>
+            )}
+            {!loading && (invoices.length > 0 || expenses.length > 0) && (
+              <button
+                onClick={() => exportCSV(invoices, expenses, `${MONTH_NAMES[viewMonth].toLowerCase()}-${viewYear}`)}
+                aria-label="Exporter les données en CSV"
+                title="Exporter CSV"
+                className="flex items-center gap-1.5 rounded-xl border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.08)] px-3.5 py-2 text-xs font-bold text-[#4ade80] transition-all hover:bg-[rgba(74,222,128,0.15)]"
+              >
+                <Download size={12} /> <span className="hidden sm:inline">CSV</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -450,6 +520,137 @@ export default function TresoreriePage() {
               <span>Encaissé : {fmtEurInt(encaisse)}</span>
             </div>
           </motion.div>
+        </AnimatePresence>
+
+        {/* ── AI Analysis Panel ── */}
+        <AnimatePresence>
+          {aiOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease }}
+              className="mb-6 overflow-hidden rounded-[1.5rem] border border-[rgba(167,139,250,0.2)] bg-[rgba(15,17,23,0.8)] backdrop-blur-sm"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/6 px-5 py-3.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.1)]">
+                    <Sparkles size={13} style={{ color: "#a78bfa" }} />
+                  </div>
+                  <span className="text-sm font-extrabold text-white">Analyse IA — {MONTH_NAMES[viewMonth]} {viewYear}</span>
+                </div>
+                <button onClick={() => setAiOpen(false)} className="text-white/25 transition hover:text-white/60">
+                  <X size={15} />
+                </button>
+              </div>
+
+              {aiLoading ? (
+                <div className="flex flex-col items-center gap-3 py-12">
+                  <div className="relative">
+                    <div className="h-12 w-12 animate-spin rounded-full border-2 border-white/10 border-t-[#a78bfa]" />
+                    <Sparkles size={14} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[#a78bfa]" />
+                  </div>
+                  <p className="text-sm text-white/40">Analyse en cours…</p>
+                </div>
+              ) : aiResult && (
+                <div className="p-5 space-y-5">
+                  {/* Score + Titre */}
+                  <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-5">
+                    {/* Score ring */}
+                    <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
+                      <svg className="absolute inset-0 -rotate-90" viewBox="0 0 80 80">
+                        <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6"/>
+                        <circle
+                          cx="40" cy="40" r="34"
+                          fill="none"
+                          stroke={aiResult.score >= 70 ? "#4ade80" : aiResult.score >= 40 ? "#fbbf24" : "#f87171"}
+                          strokeWidth="6"
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 34}`}
+                          strokeDashoffset={`${2 * Math.PI * 34 * (1 - aiResult.score / 100)}`}
+                          style={{ transition: "stroke-dashoffset 1s ease" }}
+                        />
+                      </svg>
+                      <span className="text-xl font-black" style={{ color: aiResult.score >= 70 ? "#4ade80" : aiResult.score >= 40 ? "#fbbf24" : "#f87171" }}>
+                        {aiResult.score}
+                      </span>
+                    </div>
+                    <div className="flex-1 text-center sm:text-left">
+                      <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Score de santé financière</p>
+                      <h3 className="mt-1 text-lg font-extrabold text-white">{aiResult.titre}</h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-white/55">{aiResult.resume}</p>
+                    </div>
+                  </div>
+
+                  {/* Grid: points forts + alertes */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {aiResult.points_forts?.length > 0 && (
+                      <div className="rounded-xl border border-[rgba(74,222,128,0.15)] bg-[rgba(74,222,128,0.05)] p-4">
+                        <div className="mb-2.5 flex items-center gap-2">
+                          <ShieldCheck size={13} className="text-emerald-400" />
+                          <span className="text-[0.6rem] font-bold uppercase tracking-widest text-emerald-400/70">Points forts</span>
+                        </div>
+                        <ul className="space-y-1.5">
+                          {aiResult.points_forts.map((p, i) => (
+                            <li key={i} className="flex items-start gap-2 text-xs text-white/65">
+                              <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-emerald-400" />
+                              {p}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {aiResult.alertes?.length > 0 && (
+                      <div className="rounded-xl border border-[rgba(251,191,36,0.15)] bg-[rgba(251,191,36,0.05)] p-4">
+                        <div className="mb-2.5 flex items-center gap-2">
+                          <AlertTriangle size={13} className="text-amber-400" />
+                          <span className="text-[0.6rem] font-bold uppercase tracking-widest text-amber-400/70">Alertes</span>
+                        </div>
+                        <ul className="space-y-1.5">
+                          {aiResult.alertes.map((a, i) => (
+                            <li key={i} className="flex items-start gap-2 text-xs text-white/65">
+                              <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
+                              {a}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recommandations */}
+                  {aiResult.recommandations?.length > 0 && (
+                    <div className="rounded-xl border border-[rgba(167,139,250,0.15)] bg-[rgba(167,139,250,0.05)] p-4">
+                      <div className="mb-2.5 flex items-center gap-2">
+                        <Lightbulb size={13} className="text-[#a78bfa]" />
+                        <span className="text-[0.6rem] font-bold uppercase tracking-widest text-[#a78bfa]/70">Recommandations</span>
+                      </div>
+                      <ol className="space-y-1.5">
+                        {aiResult.recommandations.map((r, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs text-white/65">
+                            <span className="shrink-0 rounded-full border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.1)] px-1.5 py-0.5 text-[0.55rem] font-black text-[#a78bfa]">{i + 1}</span>
+                            {r}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* Projection */}
+                  {aiResult.projection && (
+                    <div className="flex items-start gap-3 rounded-xl border border-[rgba(201,165,90,0.15)] bg-[rgba(201,165,90,0.05)] p-4">
+                      <TrendUp size={14} className="mt-0.5 shrink-0 text-[#c9a55a]" />
+                      <div>
+                        <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-widest text-[#c9a55a]/70">Projection mois prochain</p>
+                        <p className="text-xs text-white/65">{aiResult.projection}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* ── Empty state ── */}

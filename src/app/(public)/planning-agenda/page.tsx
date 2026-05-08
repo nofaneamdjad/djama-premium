@@ -6,7 +6,7 @@ import {
   Calendar, Clock, Plus, Trash2, Edit3, Save, X,
   ChevronLeft, ChevronRight, Sun, Sunset, Moon,
   Loader2, AlignLeft,
-  StickyNote, LayoutGrid,
+  StickyNote, LayoutGrid, RefreshCw, CalendarCheck,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
@@ -252,6 +252,11 @@ export default function PlanningAgendaPage() {
   const [modal,     setModal]     = useState<false|"new"|AgendaEvent>(false);
   const [modalDate, setModalDate] = useState(todayISO());
 
+  /* Google Calendar */
+  const [gcalConnected, setGcalConnected] = useState<boolean | null>(null);
+  const [gcalSyncing,   setGcalSyncing]   = useState(false);
+  const [gcalLastSync,  setGcalLastSync]  = useState<string | null>(null);
+
   /* Horloge */
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -289,6 +294,55 @@ export default function PlanningAgendaPage() {
   }, [calYear]);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
+
+  /* ── Google Calendar : vérifier connexion + lire param URL ── */
+  useEffect(() => {
+    fetch("/api/calendar/sync")
+      .then(r => r.json())
+      .then((d: { connected: boolean; last_sync_at: string | null }) => {
+        setGcalConnected(d.connected);
+        setGcalLastSync(d.last_sync_at);
+      })
+      .catch(() => setGcalConnected(false));
+
+    /* Lire ?gcal=connected|error depuis l'URL callback */
+    const params = new URLSearchParams(window.location.search);
+    const gcalParam = params.get("gcal");
+    if (gcalParam === "connected") {
+      showToast("success", "Google Calendar connecté ✓");
+      setGcalConnected(true);
+      /* Nettoyer l'URL */
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (gcalParam === "error") {
+      const reason = params.get("reason") ?? "inconnue";
+      showToast("error", `Erreur Google Calendar : ${reason}`);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleGcalSync() {
+    setGcalSyncing(true);
+    try {
+      const res  = await fetch("/api/calendar/sync", { method: "POST" });
+      const data = await res.json() as { ok?: boolean; exported?: number; imported?: number; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Erreur de synchronisation");
+      setGcalLastSync(new Date().toISOString());
+      await fetchEvents();
+      showToast("success", `Sync OK — ${data.exported ?? 0} exporté(s), ${data.imported ?? 0} importé(s)`);
+    } catch (e: unknown) {
+      showToast("error", e instanceof Error ? e.message : "Erreur sync Google Calendar");
+    } finally {
+      setGcalSyncing(false);
+    }
+  }
+
+  async function handleGcalDisconnect() {
+    await fetch("/api/calendar/sync", { method: "DELETE" });
+    setGcalConnected(false);
+    setGcalLastSync(null);
+    showToast("success", "Google Calendar déconnecté");
+  }
 
   function showToast(type: "success"|"error", msg: string) { setToast({ type, msg }); }
 
@@ -462,12 +516,37 @@ export default function PlanningAgendaPage() {
             ))}
           </div>
 
-          {/* Horloge + bouton */}
-          <div className="flex items-center gap-3">
+          {/* Horloge + boutons */}
+          <div className="flex items-center gap-2">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-mono font-black tabular-nums text-white leading-none">{timeStr}</p>
               <p className="text-[0.6rem] capitalize text-white/30 leading-tight">{dateStr}</p>
             </div>
+
+            {/* Google Calendar */}
+            {gcalConnected === false && (
+              <a href="/api/calendar/auth"
+                className="hidden sm:flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-semibold text-white/50 transition hover:bg-white/[0.08] hover:text-white/80">
+                <CalendarCheck size={12}/> Connecter GCal
+              </a>
+            )}
+            {gcalConnected === true && (
+              <div className="hidden sm:flex items-center gap-1">
+                <button onClick={handleGcalSync} disabled={gcalSyncing}
+                  title={gcalLastSync ? `Dernière sync : ${new Date(gcalLastSync).toLocaleString("fr-FR")}` : "Synchroniser Google Calendar"}
+                  className="flex items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2 text-[11px] font-semibold text-emerald-400 transition hover:bg-emerald-500/[0.12] disabled:opacity-60">
+                  {gcalSyncing
+                    ? <Loader2 size={12} className="animate-spin"/>
+                    : <RefreshCw size={12}/>}
+                  Sync GCal
+                </button>
+                <button onClick={handleGcalDisconnect} title="Déconnecter Google Calendar"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 text-white/25 transition hover:border-red-500/20 hover:text-red-400/70">
+                  <X size={11}/>
+                </button>
+              </div>
+            )}
+
             <button onClick={() => openModal(todayStr)}
               className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:shadow-[0_6px_24px_rgba(201,165,90,0.45)]">
               <Plus size={14}/> Ajouter
