@@ -295,6 +295,8 @@ export default function PlanningAgendaPage() {
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
+  function showToast(type: "success"|"error", msg: string) { setToast({ type, msg }); }
+
   /* ── Google Calendar : vérifier connexion + lire param URL ── */
   useEffect(() => {
     fetch("/api/calendar/sync")
@@ -306,22 +308,23 @@ export default function PlanningAgendaPage() {
       .catch(() => setGcalConnected(false));
 
     /* Lire ?gcal=connected|error depuis l'URL callback */
-    const params = new URLSearchParams(window.location.search);
-    const gcalParam = params.get("gcal");
-    if (gcalParam === "connected") {
-      showToast("success", "Google Calendar connecté ✓");
-      setGcalConnected(true);
-      /* Nettoyer l'URL */
-      window.history.replaceState({}, "", window.location.pathname);
-    } else if (gcalParam === "error") {
-      const reason = params.get("reason") ?? "inconnue";
-      showToast("error", `Erreur Google Calendar : ${reason}`);
-      window.history.replaceState({}, "", window.location.pathname);
-    }
+    try {
+      const params   = new URLSearchParams(window.location.search);
+      const gcalParam = params.get("gcal");
+      if (gcalParam === "connected") {
+        showToast("success", "Google Calendar connecté ✓");
+        setGcalConnected(true);
+        window.history.replaceState({}, "", window.location.pathname);
+      } else if (gcalParam === "error") {
+        const reason = params.get("reason") ?? "inconnue";
+        showToast("error", `Erreur Google Calendar : ${reason}`);
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleGcalSync() {
+  const handleGcalSync = useCallback(async () => {
     setGcalSyncing(true);
     try {
       const res  = await fetch("/api/calendar/sync", { method: "POST" });
@@ -335,16 +338,16 @@ export default function PlanningAgendaPage() {
     } finally {
       setGcalSyncing(false);
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchEvents]);
 
-  async function handleGcalDisconnect() {
+  const handleGcalDisconnect = useCallback(async () => {
     await fetch("/api/calendar/sync", { method: "DELETE" });
     setGcalConnected(false);
     setGcalLastSync(null);
     showToast("success", "Google Calendar déconnecté");
-  }
-
-  function showToast(type: "success"|"error", msg: string) { setToast({ type, msg }); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── CRUD ──────────────────────────────────────────── */
   async function handleSave(form: EventForm) {
