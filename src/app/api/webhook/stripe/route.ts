@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendPaymentReceivedEmail } from "@/lib/email";
 import { createLogger } from "@/lib/logger";
+import { syncSubscriptionAccess } from "@/lib/subscription-helpers";
 
 const log = createLogger("webhook/stripe");
 
@@ -335,35 +336,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 ───────────────────────────────────────────────────────────── */
 async function confirmSubscriptionActive(stripeCustomerId: string) {
   const user = await findUserByStripeCustomerId(stripeCustomerId);
-  if (!user) {
+  if (!user?.email) {
     log.warn("confirmSubscriptionActive: user not found");
     return;
   }
-
-  const supabase = getSupabaseAdmin();
-
-  await supabase.auth.admin.updateUserById(user.id, {
-    user_metadata: {
-      ...user.user_metadata,
-      subscription_active: true,
-      abonnement:          "outils_djama",
-      statut:              "actif",
-    },
+  await syncSubscriptionAccess({
+    email:    user.email,
+    userId:   user.id,
+    active:   true,
+    provider: "stripe",
+    userData: user.user_metadata,
   });
-
-  if (user.email) {
-    await supabase
-      .from("clients")
-      .update({
-        subscription_active: true,
-        abonnement:          "outils_djama",
-        statut:              "actif",
-        updated_at:          new Date().toISOString(),
-      })
-      .eq("email", user.email);
-
-    log.info("Renouvellement confirmé");
-  }
+  log.info("Renouvellement confirmé → " + user.email);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -371,46 +355,18 @@ async function confirmSubscriptionActive(stripeCustomerId: string) {
 ───────────────────────────────────────────────────────────── */
 async function deactivateSubscription(stripeCustomerId: string) {
   const user = await findUserByStripeCustomerId(stripeCustomerId);
-
-  if (!user) {
+  if (!user?.email) {
     log.warn("deactivateSubscription: user not found");
     return;
   }
-
-  const supabase = getSupabaseAdmin();
-
-  await supabase.auth.admin.updateUserById(user.id, {
-    user_metadata: {
-      ...user.user_metadata,
-      subscription_active: false,
-      abonnement:          null,
-      statut:              "inactif",
-    },
+  await syncSubscriptionAccess({
+    email:    user.email,
+    userId:   user.id,
+    active:   false,
+    provider: "stripe",
+    userData: user.user_metadata,
   });
-
-  if (user.email) {
-    await supabase
-      .from("clients")
-      .update({
-        subscription_active: false,
-        abonnement:          null,
-        statut:              "inactif",
-        updated_at:          new Date().toISOString(),
-      })
-      .eq("email", user.email);
-
-    // Retirer les accès dans user_access
-    await supabase
-      .from("user_access")
-      .update({
-        outils_saas:    false,
-        espace_premium: false,
-        updated_at:     new Date().toISOString(),
-      })
-      .eq("email", user.email);
-
-    log.info("Abonnement désactivé");
-  }
+  log.info("Abonnement désactivé → " + user.email);
 }
 
 /* ─────────────────────────────────────────────────────────────

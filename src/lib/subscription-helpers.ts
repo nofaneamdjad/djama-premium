@@ -1,8 +1,8 @@
 /**
  * Helpers partagés — gestion des abonnements DJAMA
  *
- * Utilisé par les routes PayPal (capture + webhook).
- * Le webhook Stripe possède sa propre implémentation interne.
+ * Utilisé par les routes PayPal et Stripe (webhooks).
+ * Source de vérité unique : syncSubscriptionAccess()
  */
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -135,13 +135,14 @@ export async function activateOrCreateUser(opts: {
     console.log("[SubHelpers] 🔄 Compte existant mis à jour — userId:", userId);
   }
 
-  /* ── 2. Upsert table clients ─────────────────────────────── */
-  await upsertClientRecord({
-    userId,
+  /* ── 2. Sync source de vérité unique ────────────────────── */
+  await syncSubscriptionAccess({
     email,
-    fullName,
-    paypalSubscriptionId,
-    subscriptionActive: true,
+    userId,
+    active:         true,
+    provider:       "paypal",
+    subscriptionId: paypalSubscriptionId,
+    userData:       existingUser?.user_metadata ?? {},
   });
 
   /* ── 3. Générer le lien d'accès ──────────────────────────── */
@@ -186,30 +187,15 @@ export async function deactivateUserByPayPalSubId(paypalSubId: string) {
     return;
   }
 
-  const supabase = getSupabaseAdmin();
-
-  await supabase.auth.admin.updateUserById(user.id, {
-    user_metadata: {
-      ...user.user_metadata,
-      subscription_active: false,
-      abonnement:          null,
-      statut:              "inactif",
-    },
+  await syncSubscriptionAccess({
+    email:          user.email!,
+    userId:         user.id,
+    active:         false,
+    provider:       "paypal",
+    subscriptionId: paypalSubId,
+    userData:       user.user_metadata,
   });
-
-  if (user.email) {
-    await supabase
-      .from("clients")
-      .update({
-        subscription_active: false,
-        abonnement:          null,
-        statut:              "inactif",
-        updated_at:          new Date().toISOString(),
-      })
-      .eq("email", user.email);
-
-    console.log("[SubHelpers] 🔴 Abonnement PayPal désactivé →", user.email);
-  }
+  console.log("[SubHelpers] 🔴 Abonnement PayPal désactivé →", user.email);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -217,34 +203,98 @@ export async function deactivateUserByPayPalSubId(paypalSubId: string) {
 ───────────────────────────────────────────────────────────── */
 export async function confirmActiveByPayPalSubId(paypalSubId: string) {
   const user = await findUserByPayPalSubId(paypalSubId);
-
-  if (!user) {
+  if (!user?.email) {
     console.warn("[SubHelpers] ⚠️ confirm: user not found for PayPal sub:", paypalSubId);
     return;
   }
+  await syncSubscriptionAccess({
+    email:          user.email,
+    userId:         user.id,
+    active:         true,
+    provider:       "paypal",
+    subscriptionId: paypalSubId,
+    userData:       user.user_metadata,
+  });
+  console.log("[SubHelpers] 🔄 Renouvellement PayPal confirmé →", user.email);
+}
 
+/* ═══════════════════════════════════════════════════════════════
+   SOURCE DE VÉRITÉ UNIQUE — syncSubscriptionAccess
+   ═══════════════════════════════════════════════════════════════
+   Synchronise les 3 tables en une seule opération atomique :
+     • user_access  (outils_saas + espace_premium)
+     • clients      (subscription_active + statut + abonnement)
+     • user_metadata (subscription_active + statut + abonnement)
+
+   Appelé par les webhooks Stripe ET PayPal pour les événements :
+     - renouvellement (invoice.paid / BILLING.SUBSCRIPTION.RENEWED)
+     - mise à jour statut (subscription.updated / ACTIVATED)
+     - désactivation (subscription.deleted / CANCELLED / SUSPENDED)
+═══════════════════════════════════════════════════════════════ */
+export async function syncSubscriptionAccess(opts: {
+  email:           string;
+  userId:          string;
+  active:          boolean;
+  provider:        "stripe" | "paypal";
+  subscriptionId?: string;
+  userData?:       Record<string, unknown>;
+}) {
+  const { email, userId, active, provider, subscriptionId, userData } = opts;
   const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
 
-  await supabase.auth.admin.updateUserById(user.id, {
+  /* ── 1. user_access ──────────────────────────────────────── */
+  const { data: existing } = await supabase
+    .from("user_access")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("user_access")
+      .update({
+        outils_saas:    active,
+        espace_premium: active,
+        source:         provider,
+        updated_at:     now,
+      })
+      .eq("email", email);
+  } else if (active) {
+    /* Créer la ligne seulement lors d'une activation */
+    await supabase.from("user_access").insert({
+      email,
+      outils_saas:    true,
+      espace_premium: true,
+      source:         provider,
+      updated_at:     now,
+    });
+  }
+
+  /* ── 2. clients ──────────────────────────────────────────── */
+  const clientPatch: Record<string, unknown> = {
+    subscription_active: active,
+    statut:              active ? "actif" : "inactif",
+    abonnement:          active ? "outils_djama" : null,
+    updated_at:          now,
+  };
+  if (subscriptionId) {
+    if (provider === "stripe") clientPatch.stripe_subscription_id = subscriptionId;
+    if (provider === "paypal") clientPatch.paypal_subscription_id = subscriptionId;
+  }
+  await supabase.from("clients").update(clientPatch).eq("email", email);
+
+  /* ── 3. user_metadata ────────────────────────────────────── */
+  await supabase.auth.admin.updateUserById(userId, {
     user_metadata: {
-      ...user.user_metadata,
-      subscription_active: true,
-      abonnement:          "outils_djama",
-      statut:              "actif",
+      ...(userData ?? {}),
+      subscription_active: active,
+      abonnement:          active ? "outils_djama" : null,
+      statut:              active ? "actif" : "inactif",
     },
   });
 
-  if (user.email) {
-    await supabase
-      .from("clients")
-      .update({
-        subscription_active: true,
-        abonnement:          "outils_djama",
-        statut:              "actif",
-        updated_at:          new Date().toISOString(),
-      })
-      .eq("email", user.email);
-
-    console.log("[SubHelpers] 🔄 Renouvellement PayPal confirmé →", user.email);
-  }
+  console.log(
+    `[SubHelpers] ✅ syncSubscriptionAccess → ${email} | ${active ? "ACTIF" : "INACTIF"} | ${provider}`
+  );
 }
