@@ -350,7 +350,7 @@ export default function ChronoPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease }}
-          className="overflow-hidden rounded-[1.75rem] border border-[rgba(167,139,250,0.15)] bg-[rgba(15,17,23,0.7)] shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
+          className="overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[#0f1117] shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
         >
           {/* Running / paused indicator bar */}
           <AnimatePresence>
@@ -513,7 +513,7 @@ export default function ChronoPage() {
 
         {/* ── WEEKLY SUMMARY ── */}
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="flex items-center gap-4 rounded-[1.25rem] border border-white/8 bg-[rgba(15,17,23,0.55)] px-5 py-4">
+          <div className="flex items-center gap-4 rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] px-5 py-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(167,139,250,0.2)] bg-[rgba(139,92,246,0.09)]">
               <Clock size={16} style={{ color: "#a78bfa" }} />
             </div>
@@ -526,7 +526,7 @@ export default function ChronoPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4 rounded-[1.25rem] border border-white/8 bg-[rgba(15,17,23,0.55)] px-5 py-4">
+          <div className="flex items-center gap-4 rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] px-5 py-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.09)]">
               <Euro size={16} style={{ color: "#c9a55a" }} />
             </div>
@@ -558,7 +558,7 @@ export default function ChronoPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, ease }}
-              className="relative flex flex-col items-center justify-center gap-6 overflow-hidden rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.5)] py-20 text-center"
+              className="relative flex flex-col items-center justify-center gap-6 overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[#0f1117] py-20 text-center"
             >
               {/* Ambient glow */}
               <div
@@ -611,7 +611,7 @@ export default function ChronoPage() {
                     </div>
 
                     {/* Day entries */}
-                    <div className="overflow-hidden rounded-[1.25rem] border border-white/8 bg-[rgba(15,17,23,0.55)]">
+                    <div className="overflow-hidden rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117]">
                       <AnimatePresence initial={false}>
                         {dayEntries.map((entry, idx) => {
                           const earnings =

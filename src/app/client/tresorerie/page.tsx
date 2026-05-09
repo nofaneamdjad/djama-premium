@@ -491,7 +491,7 @@ export default function TresoreriePage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease }}
-            className="mb-6 rounded-[1.25rem] border border-white/8 bg-[rgba(15,17,23,0.6)] p-4"
+            className="mb-6 rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4"
           >
             <div className="mb-2 flex items-center justify-between text-xs">
               <span className="font-semibold text-white/50">
@@ -535,7 +535,7 @@ export default function TresoreriePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35, ease }}
-              className="mb-6 overflow-hidden rounded-[1.5rem] border border-[rgba(167,139,250,0.2)] bg-[rgba(15,17,23,0.8)] backdrop-blur-sm"
+              className="mb-6 overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117]"
             >
               {/* Header */}
               <div className="flex items-center justify-between border-b border-white/6 px-5 py-3.5">
@@ -664,7 +664,7 @@ export default function TresoreriePage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease }}
-            className="relative mb-6 flex flex-col items-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.5)] py-16 text-center"
+            className="relative mb-6 flex flex-col items-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] py-16 text-center"
           >
             <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 55% 45% at 50% 55%, rgba(74,222,128,0.07) 0%, transparent 70%)" }} />
             <div className="relative">
@@ -707,7 +707,7 @@ export default function TresoreriePage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease, delay: 0.05 }}
-              className="rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.6)] p-4"
+              className="rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-4"
             >
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -816,7 +816,7 @@ export default function TresoreriePage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease, delay: 0.1 }}
-              className="rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.6)] p-4"
+              className="rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-4"
             >
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">

@@ -298,7 +298,7 @@ export default function DepensesPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease }}
-          className="mb-6 rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.7)] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+          className="mb-6 rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.3)]"
         >
           <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-white/30">
             Nouvelle dépense
@@ -416,7 +416,7 @@ export default function DepensesPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3, ease }}
-            className="mb-5 rounded-[1.25rem] border border-white/8 bg-[rgba(15,17,23,0.6)] p-4"
+            className="mb-5 rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4"
           >
             <div className="mb-3 flex items-end justify-between">
               <div>
@@ -466,7 +466,7 @@ export default function DepensesPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease }}
-            className="relative flex flex-col items-center justify-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/6 bg-[rgba(15,17,23,0.4)] py-16 text-center"
+            className="relative flex flex-col items-center justify-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] py-16 text-center"
           >
             {/* Ambient glow */}
             <div
@@ -530,7 +530,7 @@ export default function DepensesPage() {
                               animate={{ opacity: 1, x: 0 }}
                               exit={{ opacity: 0, x: 10, height: 0 }}
                               transition={{ duration: 0.22, ease }}
-                              className="group flex items-center gap-3 rounded-[1.25rem] border border-white/6 bg-[rgba(15,17,23,0.5)] px-4 py-3 transition hover:border-white/10 hover:bg-[rgba(15,17,23,0.8)]"
+                              className="group flex items-center gap-3 rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] px-4 py-3 transition duration-300 hover:-translate-y-px hover:border-white/[0.14] hover:shadow-[0_4px_16px_rgba(0,0,0,0.4)]"
                             >
                               {/* Category badge */}
                               <div
