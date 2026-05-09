@@ -34,7 +34,6 @@ const ALL_TOOLS_NAV = [
   { href: "/client/sourcing",      label: "Sourcing",     icon: Search,           color: "#818cf8" },
   { href: "/coaching-ia/espace",    label: "Coaching IA",  icon: Brain,            color: "#d946ef" },
   { href: "/client/assistant",     label: "Assistant IA", icon: Zap,              color: "#22d3ee" },
-  { href: "/client/temoignages",  label: "Témoignages",  icon: Star,             color: "#fb7185" },
 ];
 
 type UpcomingEvent = {
