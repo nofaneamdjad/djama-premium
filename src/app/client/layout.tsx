@@ -10,7 +10,7 @@ import {
   Bell, X, Menu,
   CreditCard, Wallet, Users, FileText, Timer, CalendarRange, Search, Star,
   LayoutDashboard, Brain, Zap, Mic, ChevronRight,
-  Globe,
+  Globe, Package,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRequireSubscription } from "@/lib/use-require-subscription";
@@ -38,6 +38,7 @@ const NAV_GROUPS: { label: string | null; items: NavEntry[] }[] = [
       { href: "/client/depenses",   label: "Dépenses",    icon: CreditCard,    color: "#f97316" },
       { href: "/client/tresorerie", label: "Trésorerie",  icon: Wallet,        color: "#34d399" },
       { href: "/client/contrats",   label: "Contrats IA", icon: FileText,      color: "#c9a55a" },
+      { href: "/client/stocks",     label: "Stocks",      icon: Package,       color: "#10b981" },
     ],
   },
   {
