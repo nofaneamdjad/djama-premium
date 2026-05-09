@@ -325,7 +325,7 @@ export default function ReputationPage() {
           className="grid grid-cols-3 gap-3"
         >
           {/* Note moyenne */}
-          <div className="relative overflow-hidden rounded-2xl border border-amber-500/18 bg-amber-500/[0.06] p-4">
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1117] p-4">
             <div className="absolute right-3 top-3 opacity-10">
               <Star size={28} style={{ color: GOLD }} />
             </div>
@@ -339,7 +339,7 @@ export default function ReputationPage() {
           </div>
 
           {/* Total avis */}
-          <div className="relative overflow-hidden rounded-2xl border border-blue-500/18 bg-blue-500/[0.05] p-4">
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1117] p-4">
             <div className="absolute right-3 top-3 opacity-10">
               <Award size={28} className="text-blue-400" />
             </div>
@@ -351,7 +351,7 @@ export default function ReputationPage() {
           </div>
 
           {/* % positifs */}
-          <div className="relative overflow-hidden rounded-2xl border border-emerald-500/18 bg-emerald-500/[0.05] p-4">
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1117] p-4">
             <div className="absolute right-3 top-3 opacity-10">
               <TrendingUp size={28} className="text-emerald-400" />
             </div>
@@ -372,7 +372,7 @@ export default function ReputationPage() {
             className="grid gap-4 sm:grid-cols-2"
           >
             {/* Graphique tendance */}
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
+            <div className="rounded-2xl border border-white/[0.07] bg-[#0f1117] p-5">
               <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-white/35">
                 Évolution — 6 derniers mois
               </p>
@@ -380,7 +380,7 @@ export default function ReputationPage() {
             </div>
 
             {/* Distribution étoiles */}
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
+            <div className="rounded-2xl border border-white/[0.07] bg-[#0f1117] p-5">
               <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-white/35">
                 Distribution des notes
               </p>
@@ -432,7 +432,7 @@ export default function ReputationPage() {
               transition={{ duration: 0.35, ease }}
               className="overflow-hidden"
             >
-              <div className="rounded-2xl border border-amber-500/18 bg-amber-500/[0.03] p-6 flex flex-col gap-4">
+              <div className="rounded-2xl border border-white/[0.07] bg-[#0f1117] p-6 flex flex-col gap-4">
                 <div className="flex items-center gap-2 mb-1">
                   <Star size={14} style={{ color: GOLD }} />
                   <h3 className="text-[13px] font-extrabold text-white/85">Nouvel avis client</h3>
@@ -440,7 +440,7 @@ export default function ReputationPage() {
 
                 {/* Nom client */}
                 <div>
-                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
                     Nom du client *
                   </label>
                   <input
@@ -453,7 +453,7 @@ export default function ReputationPage() {
 
                 {/* Note */}
                 <div>
-                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
                     Note *
                   </label>
                   <StarRating value={form.rating} onChange={v => setForm(p => ({ ...p, rating: v }))} />
@@ -461,7 +461,7 @@ export default function ReputationPage() {
 
                 {/* Message */}
                 <div>
-                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
                     Message
                   </label>
                   <textarea
@@ -475,7 +475,7 @@ export default function ReputationPage() {
 
                 {/* Source */}
                 <div>
-                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
                     Source
                   </label>
                   <div className="flex gap-2 flex-wrap">
@@ -498,7 +498,7 @@ export default function ReputationPage() {
 
                 {/* Projet */}
                 <div>
-                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
                     Projet (optionnel)
                   </label>
                   <input
@@ -511,12 +511,11 @@ export default function ReputationPage() {
 
                 {/* Actions */}
                 <div className="flex gap-3 pt-1">
-                  <motion.button
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  <button
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-bold transition-all disabled:opacity-50"
-                    style={{ background: GOLD + "18", color: GOLD, borderColor: GOLD + "35" }}
+                    className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-extrabold text-[#080a0f] transition hover:opacity-90 disabled:opacity-50"
+                    style={{ background: GOLD, boxShadow: `0 4px 16px ${GOLD}40` }}
                   >
                     {submitting
                       ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -524,11 +523,11 @@ export default function ReputationPage() {
                       : <Check size={15} />
                     }
                     Enregistrer
-                  </motion.button>
+                  </button>
                   <button
                     type="button"
                     onClick={() => { setForm(EMPTY_FORM()); setShowForm(false); }}
-                    className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/40 transition-all hover:border-white/20 hover:text-white/60"
+                    className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white/60 transition hover:bg-white/[0.08]"
                   >
                     Annuler
                   </button>
@@ -626,7 +625,7 @@ function ReviewCard({ review, index, onDelete }: { review: Review; index: number
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: index * 0.03 }}
-      className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 transition-all hover:border-white/[0.12] hover:bg-white/[0.035]"
+      className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1117] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
     >
       {/* Top accent bar */}
       <div className="absolute inset-x-0 top-0 h-[2px]"

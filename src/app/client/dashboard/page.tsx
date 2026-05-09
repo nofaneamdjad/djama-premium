@@ -466,7 +466,7 @@ export default function DashboardPage() {
                   <motion.div
                     whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-4 rounded-[1.5rem] border bg-[rgba(15,17,23,0.7)] px-5 py-4 backdrop-blur-xl transition-all hover:bg-[rgba(15,17,23,0.9)] cursor-pointer"
+                    className="flex items-center gap-4 rounded-[1.5rem] border bg-[#0f1117] px-5 py-4 transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)] cursor-pointer"
                     style={{ borderColor: kpi.border }}
                   >
                     <div
@@ -476,11 +476,11 @@ export default function DashboardPage() {
                       <Icon size={18} style={{ color: kpi.color }} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/35 leading-tight">
+                      <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/25 leading-tight">
                         {kpi.label}
                       </p>
                       {statsLoading ? (
-                        <div className="mt-1.5 h-6 w-20 animate-pulse rounded-lg bg-white/8" />
+                        <div className="mt-1.5 h-6 w-20 animate-pulse rounded-lg bg-white/[0.05]" />
                       ) : (
                         <p className="mt-0.5 text-xl font-black leading-none" style={{ color: kpi.color }}>
                           {kpi.value}
@@ -531,7 +531,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease, delay: 0.35 }}
-            className="rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.65)] p-5 backdrop-blur-xl"
+            className="rounded-[1.75rem] border border-white/[0.07] bg-[#0f1117] p-5"
           >
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -595,7 +595,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease, delay: 0.4 }}
-            className="rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.65)] p-5 backdrop-blur-xl"
+            className="rounded-[1.75rem] border border-white/[0.07] bg-[#0f1117] p-5"
           >
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)]">
@@ -651,7 +651,7 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35, ease }}
-              className="overflow-hidden rounded-[1.75rem] border border-[rgba(167,139,250,0.2)] bg-[rgba(15,17,23,0.85)] backdrop-blur-sm"
+              className="overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[#0f1117]"
             >
               <div className="flex items-center justify-between border-b border-white/6 px-6 py-4">
                 <div className="flex items-center gap-2.5">
@@ -711,7 +711,7 @@ export default function DashboardPage() {
                         { label: "Factures",           value: String(rapport.kpis.nb_factures),        color: "#60a5fa" },
                         { label: "Clients actifs",     value: String(rapport.kpis.nb_clients),         color: "#a78bfa" },
                       ].map(k => (
-                        <div key={k.label} className="rounded-xl border border-white/6 bg-white/3 px-4 py-3">
+                        <div key={k.label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
                           <p className="text-[0.58rem] font-bold uppercase tracking-wider text-white/30">{k.label}</p>
                           <p className="mt-1 text-lg font-black" style={{ color: k.color }}>{k.value}</p>
                         </div>
@@ -806,7 +806,7 @@ export default function DashboardPage() {
                     <motion.div
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}
-                      className="group flex items-center gap-3.5 rounded-[1.25rem] border bg-[rgba(15,17,23,0.6)] p-4 transition-all hover:bg-[rgba(15,17,23,0.92)] cursor-pointer"
+                      className="group flex items-center gap-3.5 rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] cursor-pointer"
                       style={{ borderColor: tool.border }}
                     >
                       <div

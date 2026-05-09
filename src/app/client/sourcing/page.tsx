@@ -817,9 +817,9 @@ export default function SourcingPage() {
       </div>
 
       {/* ══ INPUT STICKY ══ */}
-      <div className="fixed bottom-0 inset-x-0 z-30 bg-[#09090f]/96 backdrop-blur-xl border-t border-white/[0.05]">
+      <div className="fixed bottom-0 inset-x-0 z-30 bg-[rgba(10,11,16,0.96)] backdrop-blur-xl border-t border-white/[0.06]">
         <div className="max-w-2xl mx-auto px-4 py-3">
-          <div className="flex items-end gap-2.5 bg-white/[0.04] border border-white/[0.09] rounded-2xl px-4 py-2.5 focus-within:border-white/18 transition-colors">
+          <div className="flex items-end gap-2.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 transition-colors focus-within:border-[rgba(129,140,248,0.3)]">
             <textarea
               ref={inputRef}
               value={input}
@@ -828,13 +828,14 @@ export default function SourcingPage() {
               placeholder="Décris ta situation, ton secteur, ton pays… Plus tu es précis, plus la réponse sera utile."
               rows={1}
               disabled={sending}
-              className="flex-1 bg-transparent text-[13px] text-white placeholder:text-white/22 outline-none resize-none leading-relaxed max-h-32 scrollbar-none disabled:opacity-40"
+              className="flex-1 bg-transparent text-[13px] text-white placeholder:text-white/25 outline-none resize-none leading-relaxed max-h-32 scrollbar-none disabled:opacity-40"
               style={{ height: "24px" }}
             />
             <button
               onClick={() => handleSend()}
               disabled={!input.trim() || sending}
-              className="w-8 h-8 flex items-center justify-center rounded-xl bg-blue-500/20 border border-blue-500/25 text-blue-400 hover:bg-blue-500/30 transition-all disabled:opacity-25 disabled:cursor-not-allowed shrink-0 mb-0.5"
+              className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-all disabled:cursor-not-allowed disabled:opacity-25"
+              style={{ backgroundColor: "#818cf820", borderColor: "#818cf830", color: "#818cf8" }}
             >
               {sending
                 ? <RefreshCw size={13} className="animate-spin" />
@@ -842,7 +843,7 @@ export default function SourcingPage() {
               }
             </button>
           </div>
-          <p className="text-center text-[10px] text-white/13 mt-1.5">
+          <p className="mt-1.5 text-center text-[10px] text-white/15">
             Entrée pour envoyer · Maj+Entrée pour saut de ligne · Réponse complète ~10-30s
           </p>
         </div>

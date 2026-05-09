@@ -643,7 +643,7 @@ export default function ContratsPage() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.97 }}
               transition={{ duration: 0.4, ease }}
-              className="w-full max-w-lg bg-[#0e1117] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden"
+              className="w-full max-w-lg bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] shadow-[0_32px_80px_rgba(0,0,0,0.6)] overflow-hidden"
             >
               {/* modal header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
@@ -670,21 +670,21 @@ export default function ContratsPage() {
                 {/* title + client */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
-                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Intitulé *</label>
+                    <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">Intitulé *</label>
                     <input
                       value={form.title}
                       onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
                       placeholder="Mission développement web"
-                      className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors"
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Nom du client *</label>
+                    <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">Nom du client *</label>
                     <input
                       value={form.client_name}
                       onChange={(e) => setForm((p) => ({ ...p, client_name: e.target.value }))}
                       placeholder="Entreprise ou particulier"
-                      className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors"
                     />
                   </div>
                 </div>
@@ -697,10 +697,10 @@ export default function ContratsPage() {
                       <button
                         key={k}
                         onClick={() => setForm((p) => ({ ...p, type: k }))}
-                        className={`text-xs px-3 py-1.5 rounded-lg border transition-all
+                        className={`text-xs px-3 py-1.5 rounded-xl border transition-all
                           ${form.type === k
-                            ? "border-transparent font-medium"
-                            : "border-white/10 text-white/40 hover:border-white/20 hover:text-white/60"
+                            ? "border-transparent font-bold"
+                            : "border-white/[0.08] text-white/40 hover:border-white/[0.15] hover:text-white/60"
                           }`}
                         style={
                           form.type === k
@@ -717,39 +717,39 @@ export default function ContratsPage() {
                 {/* amount + dates */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Montant (€)</label>
+                    <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">Montant (€)</label>
                     <input
                       type="number"
                       min={0}
                       value={form.amount}
                       onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
                       placeholder="1500"
-                      className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Début</label>
+                    <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">Début</label>
                     <input
                       type="date"
                       value={form.start_date}
                       onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))}
-                      className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white/80 focus:outline-none focus:border-white/20 transition-colors"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white/80 focus:outline-none focus:border-white/[0.18] transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">Fin</label>
+                    <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">Fin</label>
                     <input
                       type="date"
                       value={form.end_date}
                       onChange={(e) => setForm((p) => ({ ...p, end_date: e.target.value }))}
-                      className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white/80 focus:outline-none focus:border-white/20 transition-colors"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white/80 focus:outline-none focus:border-white/[0.18] transition-colors"
                     />
                   </div>
                 </div>
 
                 {/* specifics */}
                 <div>
-                  <label className="block text-[10.5px] font-bold uppercase tracking-wider text-white/45 mb-1.5">
+                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
                     Précisions pour l'IA (optionnel)
                   </label>
                   <textarea
@@ -757,7 +757,7 @@ export default function ContratsPage() {
                     onChange={(e) => setForm((p) => ({ ...p, specifics: e.target.value }))}
                     placeholder="Clauses spécifiques, livrables, conditions particulières…"
                     rows={3}
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors resize-none"
+                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors resize-none"
                   />
                 </div>
 
@@ -797,7 +797,7 @@ export default function ContratsPage() {
                     whileTap={{ scale: 0.97 }}
                     onClick={() => handleCreateContract()}
                     disabled={generating || creating}
-                    className="px-5 py-3 rounded-xl text-sm font-medium bg-white/[0.05] border border-white/10 hover:bg-white/[0.08] transition-all disabled:opacity-50"
+                    className="px-5 py-3 rounded-xl text-sm font-semibold text-white/60 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-all disabled:opacity-50"
                   >
                     {creating ? <RefreshCw size={14} className="animate-spin" /> : "Créer vide"}
                   </motion.button>
@@ -854,10 +854,10 @@ function ContractCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       onClick={onSelect}
-      className={`group relative flex flex-col gap-2 rounded-xl border cursor-pointer transition-all overflow-hidden
+      className={`group relative flex flex-col gap-2 rounded-2xl border cursor-pointer transition-all duration-300 overflow-hidden
         ${isSelected
-          ? "border-white/15 bg-white/[0.06]"
-          : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10"
+          ? "border-white/[0.14] bg-[#0f1117]"
+          : "border-white/[0.07] bg-[#0f1117] hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
         }`}
     >
       {/* Top accent bar */}

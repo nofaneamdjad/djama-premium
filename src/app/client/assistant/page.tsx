@@ -171,7 +171,7 @@ export default function RadarPage() {
         {!loading && items.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between px-5 py-4 rounded-2xl bg-white/[0.025] border border-white/[0.06]"
+            className="flex items-center justify-between rounded-2xl border border-white/[0.07] bg-[#0f1117] px-5 py-4"
           >
             <div>
               <p className="text-xl font-black text-white">{fmtEurInt(total)}</p>
@@ -196,7 +196,7 @@ export default function RadarPage() {
         {loading ? (
           <div className="space-y-2"><Sk /><Sk /><Sk h="h-12" /></div>
         ) : fetchError ? (
-          <div className="flex flex-col items-center gap-3 py-16 rounded-2xl border border-dashed border-red-500/20">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-500/[0.15] bg-red-500/[0.04] py-16">
             <AlertCircle className="w-6 h-6 text-red-400/60" />
             <p className="text-sm text-white/40 font-semibold">Impossible de charger les données</p>
             <p className="text-xs text-white/20">Vérifiez votre connexion et réessayez.</p>
@@ -205,7 +205,7 @@ export default function RadarPage() {
             </button>
           </div>
         ) : items.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 rounded-2xl border border-dashed border-white/6">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#0f1117] py-16">
             <Check className="w-6 h-6 text-emerald-400" />
             <p className="text-sm text-white/25 font-semibold">Aucun argent perdu détecté</p>
             <p className="text-xs text-white/15">Toutes vos factures et devis sont à jour.</p>
@@ -284,7 +284,7 @@ export default function RadarPage() {
             <motion.div
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 32, stiffness: 270 }}
-              className="fixed bottom-0 inset-x-0 z-50 max-w-2xl mx-auto bg-[#101017] border-t border-white/[0.07] rounded-t-3xl px-5 pb-10 pt-4 max-h-[90vh] overflow-y-auto"
+              className="fixed bottom-0 inset-x-0 z-50 max-w-2xl mx-auto bg-[#0f1117] border-t border-x border-white/[0.07] rounded-t-[2rem] px-5 pb-10 pt-4 max-h-[90vh] overflow-y-auto shadow-[0_-24px_80px_rgba(0,0,0,0.7)]"
             >
               <div className="w-9 h-1 bg-white/10 rounded-full mx-auto mb-5" />
 
@@ -326,11 +326,11 @@ export default function RadarPage() {
 
               {relanceMsg && !relanceLoading && (
                 <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3">
+                  <div className="rounded-xl border border-white/[0.07] bg-[#0f1117] px-4 py-3">
                     <p className="text-[10px] uppercase tracking-widest text-white/22 font-bold mb-1.5">Objet</p>
                     <p className="text-sm font-semibold">{relanceMsg.subject}</p>
                   </div>
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3">
+                  <div className="rounded-xl border border-white/[0.07] bg-[#0f1117] px-4 py-3">
                     <p className="text-[10px] uppercase tracking-widest text-white/22 font-bold mb-2">Message</p>
                     <p className="text-sm text-white/60 leading-relaxed whitespace-pre-wrap">{relanceMsg.message}</p>
                   </div>
