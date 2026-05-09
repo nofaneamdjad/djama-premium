@@ -412,7 +412,7 @@ export default function CRMPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease }}
-            className="relative flex flex-col items-center justify-center gap-5 overflow-hidden rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.5)] py-20 text-center"
+            className="relative flex flex-col items-center justify-center gap-5 overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[#0f1117] py-20 text-center"
           >
             <div className="pointer-events-none absolute inset-0"
               style={{ background: "radial-gradient(ellipse 55% 45% at 50% 50%, rgba(59,130,246,0.05) 0%, transparent 70%)" }}
@@ -447,7 +447,7 @@ export default function CRMPage() {
             )}
           </motion.div>
         ) : (
-          <div className="overflow-hidden rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.55)]">
+          <div className="overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117]">
             <AnimatePresence initial={false}>
               {filtered.map((contact, idx) => (
                 <motion.div
@@ -544,7 +544,7 @@ export default function CRMPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 30, stiffness: 260 }}
-              className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-[2rem] border-t border-x border-white/10 bg-[#0c0e16] shadow-[0_-24px_80px_rgba(0,0,0,0.7)]"
+              className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-[2rem] border-t border-x border-white/[0.07] bg-[#0f1117] shadow-[0_-24px_80px_rgba(0,0,0,0.7)]"
             >
               {/* Handle */}
               <div className="flex justify-center pt-3 pb-1">
@@ -704,7 +704,7 @@ export default function CRMPage() {
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 8, opacity: 0 }}
               transition={{ duration: 0.3, ease }}
-              className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
+              className="w-full max-w-sm rounded-[1.75rem] border border-white/[0.07] bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
             >
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10">
                 <Trash2 size={18} className="text-red-400" />

@@ -831,7 +831,7 @@ export default function FacturesPage() {
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 px-5 py-5 sm:px-5">
 
         {/* ══ Liste ══ */}
-        <aside className={`flex w-full flex-col border-r border-white/6 bg-[rgba(15,17,23,0.6)] sm:w-[300px] sm:flex-none sm:rounded-[1.5rem] sm:border sm:border-white/8 ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}>
+        <aside className={`flex w-full flex-col border-r border-white/[0.06] bg-[#0f1117] sm:w-[300px] sm:flex-none sm:rounded-[1.5rem] sm:border sm:border-white/[0.07] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}>
           <div className="space-y-2.5 border-b border-white/6 p-4">
             <div className="relative">
               <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25"/>
@@ -896,7 +896,7 @@ export default function FacturesPage() {
         <main className={`flex flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
           {!draft ? (
             <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-              className="flex h-full flex-col items-center justify-center gap-4 rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.4)] p-8 text-center">
+              className="flex h-full flex-col items-center justify-center gap-4 rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-8 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)]">
                 <ReceiptText size={28} style={{ color: "#c9a55a" }}/>
               </div>
@@ -918,7 +918,7 @@ export default function FacturesPage() {
           ) : (
             <motion.div key={selected?.id ?? "new"} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
               transition={{ duration:0.3, ease }}
-              className="flex h-full flex-col overflow-hidden rounded-none bg-[rgba(15,17,23,0.6)] sm:rounded-[1.5rem] sm:border sm:border-white/8">
+              className="flex h-full flex-col overflow-hidden rounded-none bg-[#0f1117] sm:rounded-[1.5rem] sm:border sm:border-white/[0.07]">
 
               {/* ── Toolbar ── */}
               <div className="flex flex-wrap items-center gap-2 border-b border-white/6 px-5 py-3">
@@ -1055,7 +1055,7 @@ export default function FacturesPage() {
                   <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
 
                   {/* Template PDF */}
-                  <div className="rounded-[1.25rem] border border-white/8 bg-[rgba(255,255,255,0.02)] p-4">
+                  <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
                     <TemplateSelector
                       value={draft.template ?? "modern"}
                       onChange={v => { setDraft(d => d ? { ...d, template: v } : d); setDirty(true); }}
@@ -1066,7 +1066,7 @@ export default function FacturesPage() {
                   {/* Émetteur | Client */}
                   <div className="grid gap-5 sm:grid-cols-2">
                     {/* Émetteur */}
-                    <div className="rounded-[1.25rem] border border-white/8 bg-[rgba(255,255,255,0.02)] p-4">
+                    <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <Building2 size={13} style={{ color: activeColor }}/>
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Votre entreprise</span>
@@ -1080,7 +1080,7 @@ export default function FacturesPage() {
                       </div>
                     </div>
                     {/* Client */}
-                    <div className="rounded-[1.25rem] border border-white/8 bg-[rgba(255,255,255,0.02)] p-4">
+                    <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <User size={13} className="text-blue-400"/>
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Client</span>
@@ -1096,7 +1096,7 @@ export default function FacturesPage() {
                   </div>
 
                   {/* Coordonnées bancaires */}
-                  <div className="rounded-[1.25rem] border border-white/8 bg-[rgba(255,255,255,0.02)] p-4">
+                  <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
                     <div className="mb-3 flex items-center gap-2">
                       <Landmark size={13} style={{ color: activeColor }}/>
                       <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Coordonnées bancaires</span>
@@ -1134,7 +1134,7 @@ export default function FacturesPage() {
                           return (
                             <motion.div key={idx} layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
                               transition={{ duration:0.2, ease }}
-                              className="group grid grid-cols-1 gap-2 rounded-[1.25rem] border border-white/8 bg-[rgba(15,17,23,0.5)] p-3 sm:grid-cols-[1fr_60px_80px_70px_80px_32px] sm:items-center">
+                              className="group grid grid-cols-1 gap-2 rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-3 sm:grid-cols-[1fr_60px_80px_70px_80px_32px] sm:items-center">
                               <DInput small value={it.description} onChange={v => updItem(idx, "description", v)} placeholder="Description de la prestation"/>
                               <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx, "quantity",   parseFloat(v) || 0)} placeholder="1"/>
                               <DInput small type="number" value={String(it.unit_price)} onChange={v => updItem(idx, "unit_price", parseFloat(v) || 0)} placeholder="0.00"/>
@@ -1158,7 +1158,7 @@ export default function FacturesPage() {
 
                   {/* Remise & Acompte */}
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-[1.25rem] border border-white/8 bg-[rgba(255,255,255,0.02)] p-4">
+                    <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <Percent size={12} style={{ color: activeColor }}/>
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Remise globale</span>
@@ -1175,7 +1175,7 @@ export default function FacturesPage() {
                         )}
                       </div>
                     </div>
-                    <div className="rounded-[1.25rem] border border-white/8 bg-[rgba(255,255,255,0.02)] p-4">
+                    <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <BadgeCheck size={12} className="text-green-400"/>
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Acompte versé</span>
@@ -1193,7 +1193,7 @@ export default function FacturesPage() {
 
                   {/* Totaux */}
                   <div className="flex justify-end">
-                    <div className="w-full max-w-xs rounded-[1.25rem] border border-white/8 bg-[rgba(15,17,23,0.6)] p-5 space-y-2">
+                    <div className="w-full max-w-xs rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-5 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-white/50">Sous-total HT</span>
                         <span className="text-sm font-semibold text-white/80">{fmtEur(totals.subtotal_ht)}</span>
@@ -1264,7 +1264,7 @@ export default function FacturesPage() {
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm">
             {/* Barre supérieure */}
-            <div className="flex items-center justify-between border-b border-white/10 bg-[rgba(15,17,23,0.95)] px-6 py-3">
+            <div className="flex items-center justify-between border-b border-white/[0.07] bg-[rgba(10,11,16,0.97)] px-6 py-3">
               <div className="flex items-center gap-3">
                 <Eye size={15} style={{ color: activeColor }}/>
                 <span className="text-sm font-bold text-white">
