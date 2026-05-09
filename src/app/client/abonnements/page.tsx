@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Crown, CheckCircle2, Zap, Loader2, ExternalLink,
@@ -47,6 +48,7 @@ interface ClientRow {
    PAGE
 ═══════════════════════════════════════════════════════════ */
 export default function AbonnementsPage() {
+  const router = useRouter();
   const [client,  setClient]  = useState<ClientRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
@@ -69,6 +71,13 @@ export default function AbonnementsPage() {
   }, []);
 
   const isPaid = client?.paid === true || client?.statut === "actif";
+
+  // Redirect subscribed users — they don't need to see this page
+  useEffect(() => {
+    if (!loading && isPaid) {
+      router.replace("/client/dashboard");
+    }
+  }, [loading, isPaid, router]);
 
   /* ══════════════════════════════════════════════════════════
      RENDER
