@@ -440,7 +440,7 @@ export default function DashboardPage() {
             {fmtFullDate()}
           </p>
           <h2 className="relative mt-1.5 text-2xl font-black text-white sm:text-3xl">
-            {getGreeting()}{userName ? `, ${userName}` : ""} 👋
+            {getGreeting()}{userName ? `, ${userName}` : ""}
           </h2>
           <p className="relative mt-1 text-sm text-white/40">
             Voici un résumé de votre activité DJAMA PRO.

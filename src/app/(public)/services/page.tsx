@@ -31,7 +31,7 @@ const CAT_CONFIG = {
     border:      "rgba(124,111,205,0.28)",
     hoverShadow: "0 32px 72px rgba(124,111,205,0.24), 0 8px 20px rgba(0,0,0,0.6)",
     label:       "Digital",
-    emoji:       "⚡",
+    emoji:       "◆",
   },
   "Création de contenu": {
     bg:          "from-[#160810] via-[#220c1c] to-[#1c0a16]",

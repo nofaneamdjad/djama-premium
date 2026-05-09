@@ -136,9 +136,9 @@ export default function CoachingIAPage() {
           className="flex gap-2 rounded-2xl border border-white/8 bg-[rgba(15,17,23,0.6)] p-1.5"
         >
           {([
-            { id: "cours",    label: "📚 Cours",     count: "20" },
-            { id: "activites",label: "🛠️ Activités", count: "6"  },
-            { id: "jeux",     label: "🎮 Jeux",       count: "5"  },
+            { id: "cours",    label: "Cours",     count: "20" },
+            { id: "activites",label: "Activités", count: "6"  },
+            { id: "jeux",     label: "Jeux",       count: "5"  },
           ] as const).map(({ id, label, count }) => (
             <button
               key={id}
@@ -301,7 +301,6 @@ export default function CoachingIAPage() {
                   <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(167,139,250,0.09) 0%, transparent 60%)" }} />
                   <div className="relative flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <span className="text-4xl">🎮</span>
                       <div>
                         <p className="text-base font-extrabold text-white">Espace Jeux IA</p>
                         <p className="mt-0.5 text-xs text-white/40">5 jeux interactifs pour apprendre l'IA en vous amusant</p>
@@ -317,12 +316,12 @@ export default function CoachingIAPage() {
               {/* Aperçu des jeux */}
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {[
-                  { emoji: "🧩", color: "#a78bfa", title: "Quiz IA",      badge: "10 Q",      href: "/client/coaching-ia/jeux" },
-                  { emoji: "🃏", color: "#38bdf8", title: "Flash Cards",  badge: "12 cartes", href: "/client/coaching-ia/jeux" },
-                  { emoji: "⚡", color: "#f59e0b", title: "Speed Quiz",   badge: "8 Q rapides", href: "/client/coaching-ia/jeux" },
-                  { emoji: "🎯", color: "#4ade80", title: "Vrai ou Faux", badge: "8 Q",       href: "/client/coaching-ia/jeux" },
-                  { emoji: "🔥", color: "#f472b6", title: "Défi du jour", badge: "Prompt",    href: "/client/coaching-ia/jeux" },
-                ].map(({ emoji, color, title, badge, href }, i) => (
+                  { color: "#a78bfa", title: "Quiz IA",      badge: "10 Q",      href: "/client/coaching-ia/jeux" },
+                  { color: "#38bdf8", title: "Flash Cards",  badge: "12 cartes", href: "/client/coaching-ia/jeux" },
+                  { color: "#f59e0b", title: "Speed Quiz",   badge: "8 Q rapides", href: "/client/coaching-ia/jeux" },
+                  { color: "#4ade80", title: "Vrai ou Faux", badge: "8 Q",       href: "/client/coaching-ia/jeux" },
+                  { color: "#f472b6", title: "Défi du jour", badge: "Prompt",    href: "/client/coaching-ia/jeux" },
+                ].map(({ color, title, badge, href }, i) => (
                   <Link key={title} href={href}>
                     <motion.div
                       initial={{ opacity: 0, y: 12 }}
@@ -334,7 +333,6 @@ export default function CoachingIAPage() {
                     >
                       <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 50% at 50% 0%, ${color}10 0%, transparent 60%)` }} />
                       <div className="relative flex items-start justify-between mb-3">
-                        <span className="text-2xl">{emoji}</span>
                         <span className="rounded-full px-2 py-0.5 text-[0.55rem] font-bold" style={{ color, backgroundColor: color + "15", border: `1px solid ${color}20` }}>{badge}</span>
                       </div>
                       <p className="relative text-sm font-extrabold text-white">{title}</p>

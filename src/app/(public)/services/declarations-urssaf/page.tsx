@@ -297,7 +297,7 @@ function DevisForm() {
           : <><Send size={17} /> Demander un devis</>}
       </button>
       <p className="text-center text-[0.68rem] text-white/20">
-        🔒 Confidentialité garantie · Réponse sous 24h · Sans engagement
+        Confidentialité garantie · Réponse sous 24h · Sans engagement
       </p>
     </motion.form>
   );

@@ -126,7 +126,7 @@ function AiToolsBar({
 
   function handlePdf() {
     const content = [
-      `${module.emoji} ${module.title}`,
+      `${module.title}`,
       `Chapitre : ${chapter.title}`,
       `Durée : ${chapter.duration}`,
       "",
@@ -180,7 +180,7 @@ function AiToolsBar({
         @media print{body{margin:0}button{display:none}}
       </style>
       </head><body>
-      <div class="badge">Coaching IA DJAMA — ${module.emoji} ${module.title}</div>
+      <div class="badge">Coaching IA DJAMA — ${module.title}</div>
       <h1>${chapter.title}</h1>
       <p class="meta">Durée estimée : ${chapter.duration} · Formation DJAMA</p>
       <h2>Introduction</h2>
@@ -194,7 +194,7 @@ function AiToolsBar({
           </div>`).join("")}` : ""}
       ${chapter.example ? `
         <div class="example-box">
-          <div class="label">💡 Exemple concret</div>
+          <div class="label">Exemple concret</div>
           <p>${chapter.example}</p>
         </div>` : ""}
       ${chapter.tips ? `
@@ -315,11 +315,11 @@ function AiToolsBar({
                     <Bot size={12} className="text-[#a78bfa]" />
                   </div>
                   <span className="text-[0.65rem] font-bold uppercase tracking-widest text-[#a78bfa]">
-                    {activeAction === "summarize"    ? "✨ Résumé IA"
-                     : activeAction === "simplify"  ? "💡 Explication simple"
-                     : activeAction === "quiz"       ? "🧠 Quiz interactif"
-                     : activeAction === "action_plan"? "🎯 Plan d'action"
-                     : "⚡ Prompts prêts à l'emploi"}
+                    {activeAction === "summarize"    ? "Résumé IA"
+                     : activeAction === "simplify"  ? "Explication simple"
+                     : activeAction === "quiz"       ? "Quiz interactif"
+                     : activeAction === "action_plan"? "Plan d'action"
+                     : "Prompts prêts à l'emploi"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -368,7 +368,7 @@ function AiToolsBar({
           >
             <div className="mt-3 rounded-2xl border border-[rgba(96,165,250,0.2)] bg-[rgba(96,165,250,0.05)] p-4">
               <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-[#60a5fa]">
-                ❓ Posez votre question sur ce cours
+                Posez votre question sur ce cours
               </p>
               <div className="flex gap-2">
                 <textarea
@@ -429,7 +429,6 @@ function ModuleSidebarItem({
         onClick={onToggle}
         className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all hover:bg-white/[0.05]"
       >
-        <span className="text-lg">{module.emoji}</span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <p className="truncate text-xs font-semibold text-white/80">
@@ -489,7 +488,7 @@ function ModuleSidebarItem({
                         : ch.type === "quiz"   ? "text-[#60a5fa]"
                         : "text-white/20"
                       }`}>
-                        {ch.type === "exercise" ? "✍️" : ch.type === "quiz" ? "❓" : "📖"}
+                        {ch.type === "exercise" ? "Ex" : ch.type === "quiz" ? "Q" : ""}
                       </span>
                     </div>
                   </button>
@@ -527,7 +526,7 @@ function ChapterViewer({
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="rounded-full px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest"
             style={{ background: `rgba(${module.rgb},0.12)`, color: `rgb(${module.rgb})`, border: `1px solid rgba(${module.rgb},0.22)` }}>
-            {module.emoji} M{module.id} · {module.title}
+            M{module.id} · {module.title}
           </span>
           <span className="flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[0.6rem] text-white/35">
             <Clock size={9} /> {chapter.duration}
@@ -538,7 +537,7 @@ function ChapterViewer({
                 ? "bg-[rgba(249,168,38,0.1)] text-[#f9a826]"
                 : "bg-[rgba(96,165,250,0.1)] text-[#60a5fa]"
             }`}>
-              {chapter.type === "exercise" ? "✍️ Exercice" : "❓ Quiz"}
+              {chapter.type === "exercise" ? "Exercice" : "Quiz"}
             </span>
           )}
           {isCompleted && (
@@ -579,7 +578,7 @@ function ChapterViewer({
       {chapter.keyPoints && chapter.keyPoints.length > 0 && (
         <div className="mb-8">
           <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-white/25">
-            📌 Points clés
+            Points clés
           </p>
           <div className="space-y-3">
             {chapter.keyPoints.map(({ title, text }, i) => (
@@ -608,7 +607,7 @@ function ChapterViewer({
       {chapter.example && (
         <div className="mb-8 rounded-2xl border border-[rgba(201,165,90,0.2)] bg-gradient-to-br from-[rgba(201,165,90,0.06)] to-[rgba(201,165,90,0.03)] p-5">
           <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-[#c9a55a]">
-            💡 Exemple concret
+            Exemple concret
           </p>
           <p className="text-sm leading-[1.75] text-[#c9a55a]/80">{chapter.example}</p>
         </div>
@@ -618,7 +617,7 @@ function ChapterViewer({
       {chapter.exercise && (
         <div className="mb-8 rounded-2xl border border-[rgba(249,168,38,0.22)] bg-[rgba(249,168,38,0.05)] p-5">
           <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-[#f9a826]">
-            {chapter.type === "quiz" ? "❓ Quiz" : "✍️ Exercice pratique"}
+            {chapter.type === "quiz" ? "Quiz" : "Exercice pratique"}
           </p>
           <p className="mb-5 text-sm leading-[1.75] text-white/65">{chapter.exercise.prompt}</p>
           <div className="space-y-2">
@@ -646,7 +645,7 @@ function ChapterViewer({
       {chapter.templates && chapter.templates.length > 0 && (
         <div className="mb-8">
           <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-white/25">
-            📋 Templates prêts à copier
+            Templates prêts à copier
           </p>
           <div className="space-y-3">
             {chapter.templates.map((template, i) => (
@@ -670,7 +669,7 @@ function ChapterViewer({
       {chapter.tips && chapter.tips.length > 0 && (
         <div className="mb-8 rounded-2xl border border-[rgba(52,211,153,0.18)] bg-[rgba(52,211,153,0.04)] p-5">
           <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-[#34d399]">
-            🧠 À retenir
+            À retenir
           </p>
           <ul className="space-y-2.5">
             {chapter.tips.map((tip, i) => (
@@ -687,7 +686,7 @@ function ChapterViewer({
       {chapter.actions && chapter.actions.length > 0 && (
         <div className="mb-8 rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.05)] p-5">
           <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-[#a78bfa]">
-            🚀 Actions à faire maintenant
+            Actions à faire maintenant
           </p>
           <ul className="space-y-2.5">
             {chapter.actions.map((action, i) => (
@@ -734,7 +733,7 @@ function AssistantPanel({
 }) {
   const [messages, setMessages] = useState<Msg[]>([{
     role:    "assistant",
-    content: "Bonjour ! 👋 Je suis votre assistant pédagogique IA. Posez-moi vos questions sur le programme, les concepts IA, ou demandez-moi de l'aide pour les exercices.",
+    content: "Bonjour ! Je suis votre assistant pédagogique IA. Posez-moi vos questions sur le programme, les concepts IA, ou demandez-moi de l'aide pour les exercices.",
   }]);
   const [input,   setInput]   = useState(initMessage ?? "");
   const [loading, setLoading] = useState(false);
@@ -894,7 +893,7 @@ function FavoritesPanel({
         <div>
           <p className="text-sm font-semibold text-white/50">Aucun favori</p>
           <p className="mt-1 text-xs text-white/25">
-            Cliquez sur ⭐ dans n&apos;importe quel cours pour le sauvegarder ici.
+            Cliquez sur l&apos;étoile dans n&apos;importe quel cours pour le sauvegarder ici.
           </p>
         </div>
       </div>
@@ -920,7 +919,6 @@ function FavoritesPanel({
             transition={{ duration: 0.18 }}
             className="group flex w-full items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 text-left transition-all hover:border-white/[0.12] hover:bg-white/[0.05]"
           >
-            <span className="text-2xl">{module.emoji}</span>
             <div className="flex-1 min-w-0">
               <p className="mb-0.5 text-[0.62rem] font-bold uppercase tracking-widest"
                 style={{ color: module.color }}>
@@ -930,7 +928,7 @@ function FavoritesPanel({
               <div className="mt-1 flex items-center gap-2 text-[0.6rem] text-white/30">
                 <Clock size={9} /> {chapter.duration}
                 <span>·</span>
-                <span>{chapter.type === "exercise" ? "✍️ Exercice" : chapter.type === "quiz" ? "❓ Quiz" : "📖 Cours"}</span>
+                <span>{chapter.type === "exercise" ? "Exercice" : chapter.type === "quiz" ? "Quiz" : "Cours"}</span>
               </div>
             </div>
             <ArrowRight size={14} className="mt-1 shrink-0 text-white/20 transition-transform group-hover:translate-x-0.5 group-hover:text-white/50" />
@@ -1295,7 +1293,6 @@ function PreviewGate({ user }: {
           {/* Free preview */}
           <div className="rounded-2xl border border-[rgba(96,165,250,0.2)] bg-white/[0.03] overflow-hidden">
             <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
-              <span className="text-lg">{firstModule.emoji}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-[0.65rem] font-bold uppercase tracking-widest text-[#60a5fa]">Module 1 · {firstModule.title}</p>
                 <p className="truncate text-sm font-semibold text-white mt-0.5">{freeChapter.title}</p>
@@ -1322,7 +1319,6 @@ function PreviewGate({ user }: {
               </div>
               <div className="pointer-events-none select-none opacity-40 blur-[2px] px-5 py-4">
                 <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xl">{mod.emoji}</span>
                   <div>
                     <p className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: mod.color }}>Module {mod.id}</p>
                     <p className="text-sm font-semibold text-white">{mod.title}</p>
@@ -1569,10 +1565,10 @@ function JeuxPanel() {
       {!game && (
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { id: "quiz",    emoji: "🧩", color: "#a78bfa", title: "Quiz IA",      badge: "8 questions", desc: "Testez vos connaissances sur l'IA avec explications." },
-            { id: "flash",   emoji: "🃏", color: "#38bdf8", title: "Flash Cards",  badge: "10 cartes",   desc: "10 termes clés — cliquez pour révéler la définition." },
-            { id: "vraifaux",emoji: "🎯", color: "#4ade80", title: "Vrai ou Faux", badge: "6 questions", desc: "6 affirmations sur l'IA — vrai ou faux ?" },
-          ].map(({ id, emoji, color, title, badge, desc }) => (
+            { id: "quiz",    color: "#a78bfa", title: "Quiz IA",      badge: "8 questions", desc: "Testez vos connaissances sur l'IA avec explications." },
+            { id: "flash",   color: "#38bdf8", title: "Flash Cards",  badge: "10 cartes",   desc: "10 termes clés — cliquez pour révéler la définition." },
+            { id: "vraifaux",color: "#4ade80", title: "Vrai ou Faux", badge: "6 questions", desc: "6 affirmations sur l'IA — vrai ou faux ?" },
+          ].map(({ id, color, title, badge, desc }) => (
             <motion.button
               key={id}
               whileHover={{ scale: 1.03, y: -3 }}
@@ -1583,7 +1579,6 @@ function JeuxPanel() {
               <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 50% at 50% 0%, ${color}10 0%, transparent 60%)` }} />
               <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
               <div className="relative mb-3 flex items-start justify-between">
-                <span className="text-3xl">{emoji}</span>
                 <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold" style={{ color, backgroundColor: color + "15", border: `1px solid ${color}25` }}>{badge}</span>
               </div>
               <p className="relative text-sm font-extrabold text-white">{title}</p>
@@ -1603,7 +1598,6 @@ function JeuxPanel() {
           <div className="relative">
             {!quizStarted ? (
               <div className="text-center py-6 space-y-4">
-                <span className="text-5xl block">🧩</span>
                 <h3 className="text-xl font-black text-white">Quiz IA — 8 questions</h3>
                 <p className="text-sm text-white/40">Explication après chaque réponse</p>
                 <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
@@ -1615,7 +1609,6 @@ function JeuxPanel() {
               </div>
             ) : quizDone ? (
               <div className="text-center py-4 space-y-4">
-                <div className="text-4xl">{quizScore >= 7 ? "🏆" : quizScore >= 5 ? "⭐" : "💪"}</div>
                 <p className="text-2xl font-black text-white">{quizScore}/8</p>
                 <p className="text-sm text-white/40">{quizScore >= 7 ? "Excellent ! Vous maîtrisez les bases." : "Relisez les cours et réessayez."}</p>
                 <button onClick={resetQuiz} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white">
@@ -1654,7 +1647,7 @@ function JeuxPanel() {
                     {quizSel !== null && (
                       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                         className="mt-3 rounded-xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.08)] px-4 py-3">
-                        <p className="text-xs font-bold text-[#a78bfa]">💡 Explication</p>
+                        <p className="text-xs font-bold text-[#a78bfa]">Explication</p>
                         <p className="mt-1 text-xs text-white/55 leading-relaxed">{QUIZ_Q[quizIdx].expl}</p>
                       </motion.div>
                     )}
@@ -1706,7 +1699,6 @@ function JeuxPanel() {
           <div className="relative">
             {vfDone ? (
               <div className="text-center py-4 space-y-4">
-                <div className="text-4xl">{vfScore >= 5 ? "🏆" : vfScore >= 3 ? "⭐" : "💪"}</div>
                 <p className="text-2xl font-black text-white">{vfScore}/{VF_Q.length}</p>
                 <p className="text-sm text-white/40">{vfScore >= 5 ? "Excellent !" : "Relisez les cours pour consolider vos bases."}</p>
                 <button onClick={resetVF} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white">
@@ -1723,7 +1715,7 @@ function JeuxPanel() {
                   <motion.div key={vfIdx} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.2 }}>
                     <p className="text-lg font-extrabold text-white text-center mb-6 leading-snug">{VF_Q[vfIdx].q}</p>
                     <div className="grid grid-cols-2 gap-3">
-                      {([{ label: "✅ VRAI", val: true, color: "#4ade80" }, { label: "❌ FAUX", val: false, color: "#f87171" }] as const).map(({ label, val, color }) => {
+                      {([{ label: "VRAI", val: true, color: "#4ade80" }, { label: "FAUX", val: false, color: "#f87171" }] as const).map(({ label, val, color }) => {
                         const isCor = val === VF_Q[vfIdx].ans;
                         const isSel = vfAns === val;
                         const rev = vfAns !== null;
@@ -1744,7 +1736,7 @@ function JeuxPanel() {
                     {vfAns !== null && (
                       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                         className={`mt-4 rounded-xl border px-4 py-3 ${vfAns === VF_Q[vfIdx].ans ? "border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.08)]" : "border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.08)]"}`}>
-                        <p className={`text-xs font-bold mb-1 ${vfAns === VF_Q[vfIdx].ans ? "text-[#4ade80]" : "text-[#f87171]"}`}>{vfAns === VF_Q[vfIdx].ans ? "✅ Bonne réponse !" : "❌ Mauvaise réponse"}</p>
+                        <p className={`text-xs font-bold mb-1 ${vfAns === VF_Q[vfIdx].ans ? "text-[#4ade80]" : "text-[#f87171]"}`}>{vfAns === VF_Q[vfIdx].ans ? "Bonne réponse !" : "Mauvaise réponse"}</p>
                         <p className="text-xs text-white/50 leading-relaxed">{VF_Q[vfIdx].expl}</p>
                       </motion.div>
                     )}
@@ -2011,7 +2003,7 @@ export default function EspaceCoachingIA() {
               }`}
             >
               <Maximize2 size={12} />
-              {focusMode ? "Quitter focus" : "🧘 Focus"}
+              {focusMode ? "Quitter focus" : "Focus"}
             </button>
           )}
         </div>

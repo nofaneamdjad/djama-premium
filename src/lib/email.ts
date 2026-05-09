@@ -138,17 +138,17 @@ function buildWelcomeHtml(opts: {
           <p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${GOLD};">Outils inclus dans votre abonnement</p>
           <table width="100%" cellpadding="0" cellspacing="0">
             ${[
-              ["📄", "Factures & Devis PDF"],
-              ["📅", "Planning / Agenda"],
-              ["🗒️", "Bloc-notes professionnel"],
-              ["📊", "Tableau de bord"],
-              ["🗂️", "Stockage de documents"],
+              "Factures & Devis PDF",
+              "Planning / Agenda",
+              "Bloc-notes professionnel",
+              "Tableau de bord",
+              "Stockage de documents",
             ]
               .map(
-                ([emoji, label]) => `
+                (label) => `
             <tr>
               <td style="padding:5px 0;font-size:13px;color:${TEXT};">
-                <span style="margin-right:8px;">${emoji}</span>${label}
+                ${label}
               </td>
               <td align="right" style="font-size:11px;color:#4ade80;">✓ inclus</td>
             </tr>`
@@ -223,7 +223,7 @@ export async function sendWelcomeEmail(opts: WelcomeEmailOptions): Promise<boole
       from: getFrom(),
       to:   opts.email,
       subject: opts.isNewUser
-        ? "Bienvenue chez DJAMA — Votre espace client est prêt 🎉"
+        ? "Bienvenue chez DJAMA — Votre espace client est prêt"
         : "Votre abonnement DJAMA est actif ✓",
       html: buildWelcomeHtml({
         firstName,
@@ -271,11 +271,11 @@ function buildCoachingIAHtml(opts: {
     : `Votre accès au Coaching IA DJAMA est confirmé et actif. Retrouvez vos 5 modules, l'assistant pédagogique IA et votre session de coaching individuel.`;
 
   const modules = [
-    ["🧠", "Module 1", "Comprendre l'IA"],
-    ["✍️", "Module 2", "Prompt Engineering"],
-    ["⚡", "Module 3", "Automatisation"],
-    ["🛠️", "Module 4", "Outils IA"],
-    ["📈", "Module 5", "IA pour le Business"],
+    ["Module 1", "Comprendre l'IA"],
+    ["Module 2", "Prompt Engineering"],
+    ["Module 3", "Automatisation"],
+    ["Module 4", "Outils IA"],
+    ["Module 5", "IA pour le Business"],
   ];
 
   return `<!DOCTYPE html>
@@ -336,10 +336,10 @@ function buildCoachingIAHtml(opts: {
         <td style="padding:0 40px 32px;">
           <p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${PURPLE};">Programme inclus — 5 modules</p>
           <table width="100%" cellpadding="0" cellspacing="0">
-            ${modules.map(([emoji, mod, title]) => `
+            ${modules.map(([mod, title]) => `
             <tr>
               <td style="padding:5px 0;font-size:13px;color:${TEXT};">
-                <span style="margin-right:8px;">${emoji}</span><strong style="color:rgba(255,255,255,0.5);font-size:11px;">${mod}</strong> — ${title}
+                <strong style="color:rgba(255,255,255,0.5);font-size:11px;">${mod}</strong> — ${title}
               </td>
               <td align="right" style="font-size:11px;color:#4ade80;">✓</td>
             </tr>`).join("")}
@@ -406,7 +406,7 @@ export async function sendCoachingIAEmail(opts: CoachingIAEmailOptions): Promise
       from:    getFrom(),
       to:      opts.email,
       subject: opts.isNewUser
-        ? "Bienvenue — Votre Coaching IA DJAMA est prêt 🎓"
+        ? "Bienvenue — Votre Coaching IA DJAMA est prêt"
         : "Votre accès Coaching IA DJAMA est actif ✓",
       html: buildCoachingIAHtml({
         firstName,
@@ -665,7 +665,7 @@ function buildPaymentReceivedHtml(opts: {
   const isCoaching = service === "coaching_ia";
   const ACCENT = isCoaching ? "#a78bfa" : GOLD;
   const label  = isCoaching ? "Coaching IA" : "Espace Client";
-  const icon   = isCoaching ? "🎓" : "🛡️";
+  const icon   = "";
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -823,13 +823,13 @@ function buildAccessActivatedHtml(opts: {
   const details = isCoaching
     ? `<p style="margin:0 0 8px;font-size:13px;color:${MUTED};">Votre accès inclut :</p>
        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
-         ${[["🧠","Comprendre l'IA"],["✍️","Prompt Engineering"],["⚡","Automatisation"],["🛠️","Outils IA"],["📈","IA pour le Business"]]
-           .map(([e,t]) => `<tr><td style="padding:4px 0;font-size:13px;color:#e5e7eb;"><span style="margin-right:8px;">${e}</span>${t}</td><td align="right" style="font-size:11px;color:#4ade80;">✓</td></tr>`).join("")}
+         ${["Comprendre l'IA","Prompt Engineering","Automatisation","Outils IA","IA pour le Business"]
+           .map((t) => `<tr><td style="padding:4px 0;font-size:13px;color:#e5e7eb;">${t}</td><td align="right" style="font-size:11px;color:#4ade80;">✓</td></tr>`).join("")}
        </table>`
     : `<p style="margin:0 0 8px;font-size:13px;color:${MUTED};">Vos outils disponibles :</p>
        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
-         ${[["📄","Factures & Devis PDF"],["📅","Planning / Agenda"],["🗒️","Bloc-notes"],["📊","Tableau de bord"]]
-           .map(([e,t]) => `<tr><td style="padding:4px 0;font-size:13px;color:#e5e7eb;"><span style="margin-right:8px;">${e}</span>${t}</td><td align="right" style="font-size:11px;color:#4ade80;">✓</td></tr>`).join("")}
+         ${["Factures & Devis PDF","Planning / Agenda","Bloc-notes","Tableau de bord"]
+           .map((t) => `<tr><td style="padding:4px 0;font-size:13px;color:#e5e7eb;">${t}</td><td align="right" style="font-size:11px;color:#4ade80;">✓</td></tr>`).join("")}
        </table>`;
 
   return `<!DOCTYPE html>
@@ -871,7 +871,7 @@ function buildAccessActivatedHtml(opts: {
           </div>
 
           <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#fff;line-height:1.3;">
-            Bonjour ${firstName}, votre accès est prêt&nbsp;🎉
+            Bonjour ${firstName}, votre accès est prêt
           </h1>
 
           <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:${MUTED};">

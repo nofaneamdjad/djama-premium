@@ -203,7 +203,7 @@ export default function AbonnementsPage() {
                 <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-[rgba(217,70,239,0.3)] bg-[rgba(217,70,239,0.08)] px-4 py-2.5">
                   <Gift size={15} className="shrink-0 text-fuchsia-400" />
                   <div>
-                    <p className="text-xs font-extrabold text-fuchsia-300">🎁 Coaching IA offert</p>
+                    <p className="text-xs font-extrabold text-fuchsia-300">Coaching IA offert</p>
                     <p className="text-[0.65rem] text-white/45 leading-tight">
                       Le programme Coaching IA (valeur 29€/mois) est inclus gratuitement avec votre abonnement DJAMA PRO.
                     </p>
@@ -288,12 +288,11 @@ export default function AbonnementsPage() {
           className="grid gap-3 sm:grid-cols-3"
         >
           {[
-            { icon: "🔒", title: "Paiement sécurisé",  desc: "Stripe · Chiffrement SSL · 3D Secure"    },
-            { icon: "🔄", title: "Sans engagement",     desc: "Résiliez à tout moment depuis votre espace" },
-            { icon: "⚡", title: "Accès immédiat",      desc: "Outils disponibles dès la confirmation"  },
+            { title: "Paiement sécurisé",  desc: "Stripe · Chiffrement SSL · 3D Secure"    },
+            { title: "Sans engagement",     desc: "Résiliez à tout moment depuis votre espace" },
+            { title: "Accès immédiat",      desc: "Outils disponibles dès la confirmation"  },
           ].map((g) => (
             <div key={g.title} className="flex items-start gap-3 rounded-[1.25rem] border border-white/6 bg-[rgba(15,17,23,0.5)] px-4 py-4">
-              <span className="mt-0.5 text-xl">{g.icon}</span>
               <div>
                 <p className="text-xs font-bold text-white/80">{g.title}</p>
                 <p className="mt-0.5 text-[0.65rem] leading-tight text-white/35">{g.desc}</p>

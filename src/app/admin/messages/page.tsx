@@ -743,7 +743,7 @@ export default function AdminMessages() {
         {/* ── Erreur Supabase visible */}
         {loadError && (
           <div className="rounded-2xl border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.08)] px-5 py-4">
-            <p className="text-[0.84rem] font-bold text-[#f87171] mb-1">⚠ Erreur de connexion Supabase</p>
+            <p className="text-[0.84rem] font-bold text-[#f87171] mb-1">Erreur de connexion Supabase</p>
             <p className="text-[0.78rem] text-[#f87171]/70 font-mono break-all">{loadError}</p>
             <p className="text-[0.75rem] text-white/35 mt-2">
               Vérifie que la table <code className="bg-white/[0.06] px-1 rounded">contact_messages</code> existe

@@ -46,7 +46,7 @@ const DEFAULT_SETTINGS: SiteSettingsMap = {
   "cta.secondary.href":  "/services",
   "site.name":        "DJAMA",
   "site.tagline":     "Création digitale, outils professionnels et accompagnement.",
-  "hero.badge":       "🚀 Services DJAMA",
+  "hero.badge":       "Services DJAMA",
   "hero.title1":      "Créons ensemble",
   "hero.title2":      "votre présence digitale",
   "hero.subtitle":    "Sites web, applications, outils professionnels et accompagnement.",

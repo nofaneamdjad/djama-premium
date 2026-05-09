@@ -887,7 +887,7 @@ export default function PlanificationPage() {
                           {emp.name}
                           {emp.role && <span className="opacity-50">· {emp.role}</span>}
                           {!emp.email && (
-                            <span title="Pas d'email — aucune notification" className="ml-0.5 text-amber-400/70">⚠</span>
+                            <span title="Pas d'email — aucune notification" className="ml-0.5 text-amber-400/70"></span>
                           )}
                         </button>
                       ))}

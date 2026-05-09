@@ -257,7 +257,7 @@ export default function AutomatisationIAPage() {
                   {[
                     { icon: CheckCircle2, c: TR,           text: "Email reçu → parsing NLP",        sub: "lead@entreprise.fr",    ok: true,  delay: .6  },
                     { icon: BrainCircuit, c: VR,           text: "Analyse IA — scoring en cours",   sub: "modèle v2.4",           ok: null,  delay: .85 },
-                    { icon: Activity,     c: TR,           text: "Score calculé : 87/100",          sub: "🔥 Hot lead",           ok: true,  delay: 1.1 },
+                    { icon: Activity,     c: TR,           text: "Score calculé : 87/100",          sub: "Hot lead",              ok: true,  delay: 1.1 },
                     { icon: CheckCircle2, c: "74,222,128", text: "Tag ajouté : \"Hot Lead\"",        sub: "HubSpot sync",          ok: true,  delay: 1.35},
                     { icon: Zap,          c: VR,           text: "Séquence email déclenchée",       sub: "J0 → J3 → J7 → J14",   ok: true,  delay: 1.6 },
                     { icon: Bell,         c: GR,           text: "Slack notif → @commercial",       sub: "#leads-chauds",         ok: true,  delay: 1.85},

@@ -175,7 +175,7 @@ export default function PortailPage({ params }: { params: Promise<{ token: strin
         >
           <p className="text-[0.6rem] font-bold uppercase tracking-widest text-[#c9a55a]/70">Portail client</p>
           <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">
-            Bonjour, {data.client_nom.split(" ")[0]} 👋
+            Bonjour, {data.client_nom.split(" ")[0]}
           </h1>
           <p className="mt-1.5 text-sm text-white/45">
             Retrouvez ici tous vos documents. Portail sécurisé — accès privé.

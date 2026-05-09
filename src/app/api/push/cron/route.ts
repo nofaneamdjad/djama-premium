@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
 
     for (const ev of (events ?? [])) {
       const sent = await pushToUser(ev.user_id, {
-        title: `📅 ${ev.title}`,
+        title: ev.title,
         body:  `Commence dans 30 minutes — ${(ev.event_time as string).slice(0, 5)}`,
         icon:  "/icons/icon-192.png",
         badge: "/icons/icon-192.png",
@@ -128,7 +128,7 @@ export async function GET(req: NextRequest) {
           .join(" · ");
 
         const sent = await pushToUser(userId, {
-          title: `🗓️ Votre journée — ${todayEvs.length} événement${todayEvs.length > 1 ? "s" : ""}`,
+          title: `Votre journée — ${todayEvs.length} événement${todayEvs.length > 1 ? "s" : ""}`,
           body:  evList,
           icon:  "/icons/icon-192.png",
           badge: "/icons/icon-192.png",
@@ -162,7 +162,7 @@ export async function GET(req: NextRequest) {
 
       for (const [userId, count] of Object.entries(byUser)) {
         const sent = await pushToUser(userId, {
-          title: `⚠️ ${count} facture${count > 1 ? "s" : ""} en retard`,
+          title: `${count} facture${count > 1 ? "s" : ""} en retard`,
           body:  `${count} facture${count > 1 ? "s" : ""} non réglée${count > 1 ? "s" : ""} dépassent leur échéance. Consultez votre trésorerie.`,
           icon:  "/icons/icon-192.png",
           badge: "/icons/icon-192.png",

@@ -606,7 +606,7 @@ function ContactPageContent() {
                           animate={{ opacity: 1, y: 0 }}
                           className="flex items-start gap-3 rounded-2xl border border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.07)] px-4 py-3.5"
                         >
-                          <span className="mt-0.5 shrink-0 text-[#f87171]">⚠</span>
+                          <span className="mt-0.5 shrink-0 text-[#f87171]">!</span>
                           <p className="text-[0.81rem] leading-relaxed text-[#f87171]">{sendError}</p>
                         </motion.div>
                       )}

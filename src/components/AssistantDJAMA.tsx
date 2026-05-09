@@ -9,7 +9,7 @@ interface Message {
   content: string;
 }
 
-const WELCOME = "Bonjour 👋 Je suis l'assistant DJAMA.\nJe peux répondre à vos questions sur nos services et vous guider.";
+const WELCOME = "Bonjour, je suis l'assistant DJAMA.\nJe peux répondre à vos questions sur nos services et vous guider.";
 
 const SUGGESTIONS = [
   "Quels services proposez-vous ?",

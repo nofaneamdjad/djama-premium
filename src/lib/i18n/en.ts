@@ -269,7 +269,7 @@ export const en: Translations = {
       messagePlaceholder: "Describe your project, needs and constraints…",
       submit: "Send message",
       sending: "Sending…",
-      successTitle: "Message sent! 🎉",
+      successTitle: "Message sent!",
       successText: "Thank you for your message. We'll get back to you within 24 hours — check your inbox.",
       successBadge: "Reply expected within 24h",
       newMessage: "Send another message →",

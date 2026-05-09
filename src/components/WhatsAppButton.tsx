@@ -59,7 +59,7 @@ export default function WhatsAppButton() {
                 className="relative max-w-[210px] rounded-2xl border border-white/[.09] bg-[#111113] px-4 py-3 shadow-2xl"
               >
                 <p className="text-[0.78rem] font-semibold leading-snug text-white/75">
-                  Une question ? On répond sur WhatsApp en quelques minutes. 👋
+                  Une question ? On répond sur WhatsApp en quelques minutes.
                 </p>
                 {/* Triangle */}
                 <div className="absolute -bottom-2 left-5 h-3 w-3 rotate-45 border-b border-l border-white/[.09] bg-[#111113]" />

@@ -607,7 +607,7 @@ export default function ReserverAppelPage() {
                     </button>
 
                     <p className="text-center text-[0.65rem] text-white/20">
-                      🔒 Vos données restent confidentielles · Aucun engagement
+                      Vos données restent confidentielles · Aucun engagement
                     </p>
                   </form>
                 </div>

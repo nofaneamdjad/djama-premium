@@ -204,16 +204,16 @@ Chaque conversation conserve le contexte complet de l'échange, permettant à l'
       {
         title: "Bonnes pratiques et pièges à éviter",
         content: `Ce qu'il faut faire :
-✅ Toujours donner du contexte (qui vous êtes, pour qui, dans quel but)
-✅ Itérer — une bonne réponse vient rarement du premier prompt
-✅ Vérifier les informations factuelles (dates, statistiques, noms propres)
-✅ Utiliser des exemples pour guider le style souhaité
+- Toujours donner du contexte (qui vous êtes, pour qui, dans quel but)
+- Itérer — une bonne réponse vient rarement du premier prompt
+- Vérifier les informations factuelles (dates, statistiques, noms propres)
+- Utiliser des exemples pour guider le style souhaité
 
 Ce qu'il faut éviter :
-❌ Faire confiance aveuglément aux chiffres et aux dates
-❌ Utiliser des prompts trop vagues ("aide-moi avec mon business")
-❌ Partager des données clients ou financières confidentielles
-❌ Ignorer les hallucinations — l'IA peut inventer des sources avec confiance`,
+- Faire confiance aveuglément aux chiffres et aux dates
+- Utiliser des prompts trop vagues ("aide-moi avec mon business")
+- Partager des données clients ou financières confidentielles
+- Ignorer les hallucinations — l'IA peut inventer des sources avec confiance`,
         concepts: [
           { term: "Hallucination", def: "Quand l'IA génère des informations fausses mais présentées avec certitude" },
           { term: "RGPD", def: "Ne partagez jamais de données personnelles de clients dans ChatGPT" },
@@ -615,7 +615,6 @@ export default function CoursDetailPage() {
               </motion.button>
             ) : quizDone ? (
               <div className="space-y-4 text-center py-2">
-                <div className="text-3xl">{score === cours.quiz.length ? "🏆" : score >= cours.quiz.length / 2 ? "⭐" : "💪"}</div>
                 <p className="text-xl font-black text-white">{score}/{cours.quiz.length}</p>
                 <p className="text-xs text-white/40">{score === cours.quiz.length ? "Parfait ! Module maîtrisé." : "Relisez le cours et réessayez."}</p>
                 <button onClick={resetQuiz} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white transition-colors">

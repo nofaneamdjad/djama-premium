@@ -313,7 +313,7 @@ function DevisForm() {
         {sending ? <><Loader2 size={17} className="animate-spin" /> Envoi en cours…</> : <><Send size={17} /> Envoyer ma demande de devis</>}
       </button>
       <p className="text-center text-[0.68rem] text-white/20">
-        🔒 Confidentialité garantie · Réponse sous 24h · Sans engagement
+        Confidentialité garantie · Réponse sous 24h · Sans engagement
       </p>
     </motion.form>
   );

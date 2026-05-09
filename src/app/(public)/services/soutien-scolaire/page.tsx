@@ -25,14 +25,14 @@ const NIVEAUX = {
 };
 
 const MATIERES = [
-  { label: "Mathématiques",         emoji: "📐", color: "#60a5fa", rgb: "96,165,250" },
-  { label: "Physique-Chimie",       emoji: "🔬", color: "#a78bfa", rgb: "167,139,250" },
-  { label: "Français",              emoji: "📖", color: "#c9a55a", rgb: "201,165,90"  },
-  { label: "Anglais",               emoji: "🌍", color: "#4ade80", rgb: "74,222,128"  },
-  { label: "Histoire-Géographie",   emoji: "🗺️", color: "#fb923c", rgb: "251,146,60"  },
-  { label: "SVT",                   emoji: "🌱", color: "#34d399", rgb: "52,211,153"  },
-  { label: "NSI / Informatique",    emoji: "💻", color: "#7c6fcd", rgb: "124,111,205" },
-  { label: "Philosophie",           emoji: "🧠", color: "#f472b6", rgb: "244,114,182" },
+  { label: "Mathématiques",         color: "#60a5fa", rgb: "96,165,250" },
+  { label: "Physique-Chimie",       color: "#a78bfa", rgb: "167,139,250" },
+  { label: "Français",              color: "#c9a55a", rgb: "201,165,90"  },
+  { label: "Anglais",               color: "#4ade80", rgb: "74,222,128"  },
+  { label: "Histoire-Géographie",   color: "#fb923c", rgb: "251,146,60"  },
+  { label: "SVT",                   color: "#34d399", rgb: "52,211,153"  },
+  { label: "NSI / Informatique",    color: "#7c6fcd", rgb: "124,111,205" },
+  { label: "Philosophie",           color: "#f472b6", rgb: "244,114,182" },
 ];
 
 const ETAPES = [
@@ -183,7 +183,7 @@ const LEVELS_FOR_SELECT = [
   ...NIVEAUX["Lycée"].map((l) => ({ value: l, label: `Lycée — ${l}` })),
 ];
 
-const SUBJECTS_FOR_SELECT = MATIERES.map((m) => ({ value: m.label, label: `${m.emoji} ${m.label}` }));
+const SUBJECTS_FOR_SELECT = MATIERES.map((m) => ({ value: m.label, label: m.label }));
 
 const AVAILABILITY_OPTIONS = [
   { value: "semaine-matin",      label: "En semaine — le matin" },
@@ -508,15 +508,8 @@ export default function SoutienScolairePage() {
             delay={0.85}
             className="mt-12 flex flex-wrap items-center justify-center gap-6 border-t border-white/[0.07] pt-8"
           >
-            {[
-              { icon: "💰", label: "14€ / heure" },
-              { icon: "🎓", label: "6e à Terminale" },
-              { icon: "💻", label: "100 % en ligne" },
-              { icon: "⚡", label: "Accès rapide" },
-              { icon: "🔒", label: "Sans engagement" },
-            ].map(({ icon, label }) => (
+            {["14€ / heure", "6e à Terminale", "100 % en ligne", "Accès rapide", "Sans engagement"].map((label) => (
               <div key={label} className="flex items-center gap-2 text-xs font-medium text-white/35">
-                <span>{icon}</span>
                 <span>{label}</span>
               </div>
             ))}
@@ -624,18 +617,16 @@ export default function SoutienScolairePage() {
             variants={staggerContainerFast}
             className="grid grid-cols-2 gap-3 sm:grid-cols-4"
           >
-            {MATIERES.map(({ label, emoji, color, rgb }) => (
+            {MATIERES.map(({ label, color, rgb }) => (
               <motion.div
                 key={label}
                 variants={cardReveal}
                 className="flex items-center gap-3 rounded-2xl border border-black/[0.06] bg-white p-4 shadow-sm"
               >
                 <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base"
-                  style={{ background: `rgba(${rgb},0.1)` }}
-                >
-                  {emoji}
-                </div>
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: `rgba(${rgb},0.15)`, borderLeft: `3px solid ${color}` }}
+                />
                 <span className="text-xs font-semibold leading-tight text-[#09090b]">
                   {label}
                 </span>
@@ -1149,7 +1140,7 @@ export default function SoutienScolairePage() {
                   </button>
 
                   <p className="text-center text-[0.68rem] text-white/20">
-                    🔒 Vos données restent confidentielles · Réponse sous 24h · Sans engagement
+                    Vos données restent confidentielles · Réponse sous 24h · Sans engagement
                   </p>
                 </motion.form>
               )}

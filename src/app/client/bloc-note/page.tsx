@@ -321,7 +321,7 @@ export default function BlocNotePage() {
               isRecording ? "text-[#a78bfa]" : isPaused ? "text-[#fbbf24]" : "text-[var(--ink)]"
             }`}>{fmtSeconds(elapsed)}</p>
             <p className="mt-1 text-xs text-[var(--muted)]">
-              {isRecording ? "● Enregistrement en cours" : isPaused ? "⏸ En pause" : isStopped ? "✓ Terminé" : "Prêt à enregistrer"}
+              {isRecording ? "Enregistrement en cours" : isPaused ? "En pause" : isStopped ? "Terminé" : "Prêt à enregistrer"}
             </p>
             {(isRecording || isPaused) && chunks.length > 0 && (
               <p className="mt-1 text-[0.65rem] text-[#a78bfa]">
@@ -400,7 +400,7 @@ export default function BlocNotePage() {
         {/* Info chunking */}
         {(isRecording || isPaused) && (
           <p className="mt-4 text-center text-[0.6rem] text-[var(--muted)]">
-            ⚡ Transcription automatique toutes les 5 min · Jusqu&apos;à 2h de réunion supportées
+            Transcription automatique toutes les 5 min · Jusqu&apos;à 2h de réunion supportées
           </p>
         )}
       </div>

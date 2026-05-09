@@ -299,7 +299,7 @@ function SourcingForm() {
           : <><Search size={17} /> Demander une recherche de fournisseur</>}
       </button>
       <p className="text-center text-[0.68rem] text-white/20">
-        🔒 Confidentialité garantie · Réponse sous 24–48h · Sans engagement
+        Confidentialité garantie · Réponse sous 24–48h · Sans engagement
       </p>
     </motion.form>
   );

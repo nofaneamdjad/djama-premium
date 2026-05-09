@@ -19,70 +19,70 @@ const ease = [0.16, 1, 0.3, 1] as const;
 /* ── MODULES (10 × 7 = 70 chapitres) ─────────────────────── */
 const MODULES = [
   {
-    num: "01", emoji: "🧠", color: "#60a5fa", title: "Comprendre l'IA",
+    num: "01", color: "#60a5fa", title: "Comprendre l'IA",
     tagline: "Les fondations pour tout comprendre",
     chapters: ["Qu'est-ce que l'IA ?","Brève histoire de l'IA","Comment fonctionne un LLM","Les limites de l'IA","Éthique et responsabilité IA","L'IA dans votre secteur","Quiz : Fondations IA"],
   },
   {
-    num: "02", emoji: "✍️", color: "#a78bfa", title: "Prompt Engineering",
+    num: "02", color: "#a78bfa", title: "Prompt Engineering",
     tagline: "L'art de parler aux IA",
     chapters: ["Les bases du prompting","Techniques avancées (CoT, Few-shot)","Prompts pour entrepreneurs","Itérer et affiner","Bibliothèque de prompts DJAMA","Prompts multimodaux","Exercice : construire vos prompts"],
   },
   {
-    num: "03", emoji: "💬", color: "#34d399", title: "Maîtriser ChatGPT",
+    num: "03", color: "#34d399", title: "Maîtriser ChatGPT",
     tagline: "L'outil le plus utilisé au monde",
     chapters: ["GPT-4o, o1, o3 — quel modèle choisir","Interface et raccourcis","GPTs Custom sur mesure","ChatGPT pour la recherche","ChatGPT pour le contenu","ChatGPT et le code","Workflow ChatGPT complet"],
   },
   {
-    num: "04", emoji: "🎯", color: "#f97316", title: "Maîtriser Claude",
+    num: "04", color: "#f97316", title: "Maîtriser Claude",
     tagline: "L'IA la plus sûre et nuancée",
     chapters: ["Claude vs ChatGPT — vraies différences","Travailler avec de longs documents","Rédaction avancée avec Claude","Les Projets Claude","Claude API et intégrations","Claude pour le code","Exercice en conditions réelles"],
   },
   {
-    num: "05", emoji: "🌐", color: "#06b6d4", title: "Gemini, Mistral & Autres",
+    num: "05", color: "#06b6d4", title: "Gemini, Mistral & Autres",
     tagline: "L'écosystème IA complet",
     chapters: ["Google Gemini — l'écosystème Google","Mistral — l'IA européenne open source","Perplexity — l'IA pour la recherche","DALL-E, Midjourney, Stable Diffusion","IA audio et vidéo","Choisir le bon outil","Tour d'horizon des IA"],
   },
   {
-    num: "06", emoji: "⚡", color: "#fbbf24", title: "Automatisation & Workflows",
+    num: "06", color: "#fbbf24", title: "Automatisation & Workflows",
     tagline: "Travaillez moins, produisez plus",
     chapters: ["Les bases de l'automatisation","Zapier — automatiser sans coder","Make — workflows avancés","n8n — open source et souverain","Les 10 workflows IA indispensables","Agents IA autonomes","Construire votre stack IA"],
   },
   {
-    num: "07", emoji: "🚀", color: "#ec4899", title: "IA pour Entrepreneurs",
+    num: "07", color: "#ec4899", title: "IA pour Entrepreneurs",
     tagline: "Croissance et opérations dopées par l'IA",
     chapters: ["IA et prospection commerciale","IA et stratégie marketing","IA et service client","IA et gestion de projet","IA et finances","IA et ressources humaines","Construire votre roadmap IA"],
   },
   {
-    num: "08", emoji: "✨", color: "#8b5cf6", title: "Création de Contenu IA",
+    num: "08", color: "#8b5cf6", title: "Création de Contenu IA",
     tagline: "Multipliez votre production",
     chapters: ["Stratégie de contenu IA","LinkedIn — bâtir votre audience","Newsletter — fidéliser et convertir","Vidéo et podcast avec l'IA","SEO et contenu optimisé","Images et visuels IA","Construire votre machine à contenu"],
   },
   {
-    num: "09", emoji: "🤖", color: "#14b8a6", title: "Agents IA & Niveau Avancé",
+    num: "09", color: "#14b8a6", title: "Agents IA & Niveau Avancé",
     tagline: "Le futur de l'IA est autonome",
     chapters: ["Architecture des agents IA","RAG — Retrieval Augmented Generation","Fine-tuning — personnaliser un modèle","LangChain, LlamaIndex, CrewAI","Sécurité et risques de l'IA","L'avenir de l'IA — se préparer","Construire un mini-agent"],
   },
   {
-    num: "10", emoji: "🏆", color: "#f59e0b", title: "Projet Final & Certification",
+    num: "10", color: "#f59e0b", title: "Projet Final & Certification",
     tagline: "Prouvez votre maîtrise",
     chapters: ["Bilan des 9 modules","Définir votre projet de certification","Construire votre solution IA","Présenter et pitcher votre solution","Plan d'action 90 jours","Rejoindre la communauté DJAMA","Certification DJAMA IA Expert"],
   },
 ];
 
 const OUTILS_IA = [
-  { logo: "💬", name: "ChatGPT", desc: "GPT-4o & o1" },
-  { logo: "🎯", name: "Claude",  desc: "Anthropic" },
-  { logo: "🔷", name: "Gemini",  desc: "Google AI" },
-  { logo: "🇫🇷", name: "Mistral", desc: "IA européenne" },
-  { logo: "🔍", name: "Perplexity", desc: "Recherche IA" },
-  { logo: "🖼️", name: "DALL-E 3", desc: "Génération image" },
-  { logo: "🎨", name: "Midjourney", desc: "Image pro" },
-  { logo: "⚡", name: "Zapier",   desc: "Automatisation" },
-  { logo: "🔧", name: "Make",     desc: "Workflows" },
-  { logo: "🌐", name: "n8n",      desc: "Open source" },
-  { logo: "🎙️", name: "ElevenLabs", desc: "Audio IA" },
-  { logo: "🎬", name: "Runway",   desc: "Vidéo IA" },
+  { name: "ChatGPT",    desc: "GPT-4o & o1" },
+  { name: "Claude",     desc: "Anthropic" },
+  { name: "Gemini",     desc: "Google AI" },
+  { name: "Mistral",    desc: "IA européenne" },
+  { name: "Perplexity", desc: "Recherche IA" },
+  { name: "DALL-E 3",   desc: "Génération image" },
+  { name: "Midjourney", desc: "Image pro" },
+  { name: "Zapier",     desc: "Automatisation" },
+  { name: "Make",       desc: "Workflows" },
+  { name: "n8n",        desc: "Open source" },
+  { name: "ElevenLabs", desc: "Audio IA" },
+  { name: "Runway",     desc: "Vidéo IA" },
 ];
 
 const PROGRAMME_6MOIS = [
@@ -92,12 +92,12 @@ const PROGRAMME_6MOIS = [
 ];
 
 const QUIZ_JEUX = [
-  { emoji: "🧩", color: "#a78bfa", bg: "rgba(167,139,250,0.08)", border: "rgba(167,139,250,0.2)", title: "Quiz de compréhension", desc: "Un quiz rapide après chaque cours — 5 questions, résultat instantané, correction commentée.", detail: "70 quiz — 1 par chapitre" },
-  { emoji: "🏆", color: "#f59e0b", bg: "rgba(245,158,11,0.08)",  border: "rgba(245,158,11,0.2)",  title: "Défi de la semaine",    desc: "Un challenge hebdomadaire chronométré sur un cas réel. Meilleur résultat = session bonus.", detail: "Toutes les semaines" },
-  { emoji: "🎯", color: "#4ade80", bg: "rgba(74,222,128,0.08)",  border: "rgba(74,222,128,0.2)",  title: "Tournoi de prompts",   desc: "Créez le meilleur prompt pour une tâche donnée. Débriefing collectif et astuces coach.", detail: "1 tournoi / mois" },
-  { emoji: "🤖", color: "#38bdf8", bg: "rgba(56,189,248,0.08)",  border: "rgba(56,189,248,0.2)",  title: "Jeu de rôle IA",       desc: "Simulez une vraie mission : rédiger une offre, analyser un concurrent, automatiser un process.", detail: "Scénarios réels" },
-  { emoji: "⚡", color: "#f472b6", bg: "rgba(244,114,182,0.08)", border: "rgba(244,114,182,0.2)", title: "Sprint créatif 30 min", desc: "Un exercice intense et ciblé : produire un maximum de valeur avec l'IA en 30 minutes.", detail: "Chrono inclus" },
-  { emoji: "🔍", color: "#c9a55a", bg: "rgba(201,165,90,0.08)",  border: "rgba(201,165,90,0.2)",  title: "Escape Room IA",       desc: "Un scénario mystère à résoudre uniquement avec des outils IA — chaque indice = nouvelle compétence.", detail: "Trimestriel" },
+  { color: "#a78bfa", bg: "rgba(167,139,250,0.08)", border: "rgba(167,139,250,0.2)", title: "Quiz de compréhension", desc: "Un quiz rapide après chaque cours — 5 questions, résultat instantané, correction commentée.", detail: "70 quiz — 1 par chapitre" },
+  { color: "#f59e0b", bg: "rgba(245,158,11,0.08)",  border: "rgba(245,158,11,0.2)",  title: "Défi de la semaine",    desc: "Un challenge hebdomadaire chronométré sur un cas réel. Meilleur résultat = session bonus.", detail: "Toutes les semaines" },
+  { color: "#4ade80", bg: "rgba(74,222,128,0.08)",  border: "rgba(74,222,128,0.2)",  title: "Tournoi de prompts",   desc: "Créez le meilleur prompt pour une tâche donnée. Débriefing collectif et astuces coach.", detail: "1 tournoi / mois" },
+  { color: "#38bdf8", bg: "rgba(56,189,248,0.08)",  border: "rgba(56,189,248,0.2)",  title: "Jeu de rôle IA",       desc: "Simulez une vraie mission : rédiger une offre, analyser un concurrent, automatiser un process.", detail: "Scénarios réels" },
+  { color: "#f472b6", bg: "rgba(244,114,182,0.08)", border: "rgba(244,114,182,0.2)", title: "Sprint créatif 30 min", desc: "Un exercice intense et ciblé : produire un maximum de valeur avec l'IA en 30 minutes.", detail: "Chrono inclus" },
+  { color: "#c9a55a", bg: "rgba(201,165,90,0.08)",  border: "rgba(201,165,90,0.2)",  title: "Escape Room IA",       desc: "Un scénario mystère à résoudre uniquement avec des outils IA — chaque indice = nouvelle compétence.", detail: "Trimestriel" },
 ];
 
 const COMPETENCES = [
@@ -229,14 +229,13 @@ export default function CoachingIAPage() {
             viewport={viewport}
             className="flex flex-wrap items-center justify-center gap-3"
           >
-            {OUTILS_IA.map(({ logo, name, desc }) => (
+            {OUTILS_IA.map(({ name, desc }) => (
               <motion.div
                 key={name}
                 variants={cardReveal}
                 whileHover={{ y: -3, scale: 1.04 }}
                 className="flex items-center gap-2.5 rounded-2xl border border-[var(--border)] bg-white px-4 py-2.5 shadow-sm transition-all hover:border-[rgba(var(--gold),0.4)] hover:shadow-[0_4px_16px_rgba(var(--gold),0.1)]"
               >
-                <span className="text-xl">{logo}</span>
                 <div>
                   <p className="text-xs font-extrabold text-[var(--ink)]">{name}</p>
                   <p className="text-[0.6rem] text-[var(--muted)]">{desc}</p>
@@ -285,7 +284,7 @@ export default function CoachingIAPage() {
                   className="group w-full rounded-2xl border border-[var(--border)] bg-white px-5 py-4 text-left transition-all duration-200 hover:border-[rgba(var(--gold),0.4)] hover:shadow-[0_4px_20px_rgba(var(--gold),0.08)]"
                 >
                   <div className="flex items-center gap-4">
-                    <span className="text-2xl">{mod.emoji}</span>
+                    <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: mod.color }} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest" style={{ color: mod.color }}>Module {mod.num}</span>
@@ -420,13 +419,13 @@ export default function CoachingIAPage() {
           </FadeReveal>
 
           <motion.div variants={staggerContainerFast} initial="hidden" whileInView="visible" viewport={viewport} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {QUIZ_JEUX.map(({ emoji, color, bg, border, title, desc, detail }) => (
+            {QUIZ_JEUX.map(({ color, bg, border, title, desc, detail }) => (
               <motion.div key={title} variants={cardReveal} whileHover={{ scale: 1.02, y: -4 }}
                 className="group relative overflow-hidden rounded-3xl border p-6 transition-all duration-300"
                 style={{ backgroundColor: bg, borderColor: border }}>
                 <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: `radial-gradient(ellipse 60% 50% at 50% 0%, ${color}15 0%, transparent 60%)` }} />
                 <div className="relative mb-4 flex items-start justify-between gap-3">
-                  <span className="text-3xl leading-none">{emoji}</span>
+                  <div className="h-2.5 w-2.5 rounded-full mt-1 shrink-0" style={{ backgroundColor: color }} />
                   <span className="rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider shrink-0" style={{ color, backgroundColor: color + "18", border: `1px solid ${color}30` }}>{detail}</span>
                 </div>
                 <h3 className="relative text-base font-extrabold text-[var(--ink)]">{title}</h3>

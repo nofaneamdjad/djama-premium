@@ -217,7 +217,7 @@ function DevisForm() {
         className="btn-primary w-full justify-center py-4 text-base disabled:cursor-not-allowed disabled:opacity-50">
         {sending ? <><Loader2 size={17} className="animate-spin" /> Envoi en cours…</> : <><Send size={17} /> Discuter de mon projet</>}
       </button>
-      <p className="text-center text-[0.68rem] text-white/20">🔒 Confidentialité garantie · Réponse sous 24h · Sans engagement</p>
+      <p className="text-center text-[0.68rem] text-white/20">Confidentialité garantie · Réponse sous 24h · Sans engagement</p>
     </motion.form>
   );
 }
@@ -271,8 +271,8 @@ export default function SolutionsDigitalesPage() {
               </FadeReveal>
               <FadeReveal delay={0.42}>
                 <div className="flex flex-wrap gap-2.5">
-                  {[{ emoji: "🤖", label: "Automatisation intelligente" }, { emoji: "⚡", label: "Gain de temps" }, { emoji: "🔗", label: "Intégration avec vos outils" }].map(({ emoji, label }) => (
-                    <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.09] bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/60">{emoji} {label}</span>
+                  {["Automatisation intelligente", "Gain de temps", "Intégration avec vos outils"].map((label) => (
+                    <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.09] bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/60">{label}</span>
                   ))}
                 </div>
               </FadeReveal>

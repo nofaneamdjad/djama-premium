@@ -202,7 +202,7 @@ export default function RadarPage() {
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 rounded-2xl border border-dashed border-white/6">
             <Check className="w-6 h-6 text-emerald-400" />
-            <p className="text-sm text-white/25 font-semibold">Aucun argent perdu détecté 🎉</p>
+            <p className="text-sm text-white/25 font-semibold">Aucun argent perdu détecté</p>
             <p className="text-xs text-white/15">Toutes vos factures et devis sont à jour.</p>
           </div>
         ) : (

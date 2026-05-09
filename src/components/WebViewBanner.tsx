@@ -26,14 +26,14 @@ interface AppDef {
 }
 
 const IN_APP_APPS: AppDef[] = [
-  { pattern: /WhatsApp/i,       name: "WhatsApp",  emoji: "💬" },
-  { pattern: /FBAN|FBAV|FB_IAB/i, name: "Facebook",  emoji: "📘" },
-  { pattern: /Instagram/i,      name: "Instagram", emoji: "📸" },
-  { pattern: /Twitter/i,        name: "Twitter",   emoji: "🐦" },
-  { pattern: /MicroMessenger/i, name: "WeChat",    emoji: "💚" },
-  { pattern: /Line\//i,         name: "Line",      emoji: "💬" },
-  { pattern: /Snapchat/i,       name: "Snapchat",  emoji: "👻" },
-  { pattern: /TikTok/i,         name: "TikTok",    emoji: "🎵" },
+  { pattern: /WhatsApp/i,       name: "WhatsApp",  emoji: "" },
+  { pattern: /FBAN|FBAV|FB_IAB/i, name: "Facebook",  emoji: "" },
+  { pattern: /Instagram/i,      name: "Instagram", emoji: "" },
+  { pattern: /Twitter/i,        name: "Twitter",   emoji: "" },
+  { pattern: /MicroMessenger/i, name: "WeChat",    emoji: "" },
+  { pattern: /Line\//i,         name: "Line",      emoji: "" },
+  { pattern: /Snapchat/i,       name: "Snapchat",  emoji: "" },
+  { pattern: /TikTok/i,         name: "TikTok",    emoji: "" },
 ];
 
 function detectApp(ua: string): AppDef | null {

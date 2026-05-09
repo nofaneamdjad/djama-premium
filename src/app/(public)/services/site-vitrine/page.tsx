@@ -300,7 +300,7 @@ export default function SiteVitrinePage() {
                   <div className="flex flex-1 items-center gap-2 rounded-md border border-white/[0.06] bg-white/[0.04] px-2.5 py-1 mx-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
                     <span className="flex-1 text-[.58rem] text-white/30">www.votre-activite.fr</span>
-                    <span className="text-[.5rem] text-white/20">🔒</span>
+                    <span className="text-[.5rem] text-white/20">ssl</span>
                   </div>
                 </div>
 

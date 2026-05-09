@@ -12,7 +12,7 @@ export interface Chapter {
   tips?: string[]; actions?: string[]; templates?: string[];
 }
 export interface Module {
-  id: string; title: string; emoji: string; tagline: string;
+  id: string; title: string; tagline: string;
   color: string; rgb: string; description: string; duration: string; chapters: Chapter[];
 }
 
@@ -20,7 +20,7 @@ export interface Module {
    MODULE 1 — COMPRENDRE L'IA
 ══════════════════════════════════════════════════════════════ */
 const M1: Module = {
-  id:"1", title:"Comprendre l'IA", emoji:"🧠",
+  id:"1", title:"Comprendre l'IA", 
   tagline:"Les fondations pour tout comprendre",
   color:"#60a5fa", rgb:"96,165,250",
   description:"Démystifiez l'intelligence artificielle : comment ça marche, ses limites, son histoire et les enjeux éthiques.",
@@ -116,7 +116,7 @@ const M1: Module = {
    MODULE 2 — PROMPT ENGINEERING
 ══════════════════════════════════════════════════════════════ */
 const M2: Module = {
-  id:"2", title:"Prompt Engineering", emoji:"✍️",
+  id:"2", title:"Prompt Engineering", 
   tagline:"L'art de parler aux IA",
   color:"#a78bfa", rgb:"167,139,250",
   description:"Maîtrisez la science et l'art de formuler des instructions parfaites pour obtenir des résultats exceptionnels.",
@@ -225,7 +225,7 @@ const M2: Module = {
    MODULE 3 — MAÎTRISER CHATGPT
 ══════════════════════════════════════════════════════════════ */
 const M3: Module = {
-  id:"3", title:"Maîtriser ChatGPT", emoji:"💬",
+  id:"3", title:"Maîtriser ChatGPT", 
   tagline:"L'outil le plus utilisé au monde",
   color:"#34d399", rgb:"52,211,153",
   description:"De GPT-4o aux GPTs custom, maîtrisez chaque fonctionnalité de ChatGPT pour décupler votre productivité.",
@@ -320,7 +320,7 @@ const M3: Module = {
    MODULE 4 — MAÎTRISER CLAUDE (ANTHROPIC)
 ══════════════════════════════════════════════════════════════ */
 const M4: Module = {
-  id:"4", title:"Maîtriser Claude", emoji:"🎯",
+  id:"4", title:"Maîtriser Claude", 
   tagline:"L'IA la plus sûre et la plus nuancée",
   color:"#f97316", rgb:"249,115,22",
   description:"Claude d'Anthropic excelle sur les longs documents, le raisonnement nuancé et la sécurité. Maîtrisez ses capacités uniques.",
@@ -419,7 +419,7 @@ const M4: Module = {
    MODULE 5 — GEMINI, MISTRAL & LES AUTRES IA
 ══════════════════════════════════════════════════════════════ */
 const M5: Module = {
-  id:"5", title:"Gemini, Mistral & Autres", emoji:"🌐",
+  id:"5", title:"Gemini, Mistral & Autres", 
   tagline:"L'écosystème IA complet",
   color:"#06b6d4", rgb:"6,182,212",
   description:"Au-delà de ChatGPT et Claude — Gemini, Mistral, Perplexity, DALL-E, Midjourney et l'IA image/audio.",
@@ -512,7 +512,7 @@ const M5: Module = {
    MODULE 6 — AUTOMATISATION & WORKFLOWS IA
 ══════════════════════════════════════════════════════════════ */
 const M6: Module = {
-  id:"6", title:"Automatisation & Workflows", emoji:"⚡",
+  id:"6", title:"Automatisation & Workflows", 
   tagline:"Travaillez moins, produisez plus",
   color:"#fbbf24", rgb:"251,191,36",
   description:"Zapier, Make, n8n, agents IA — automatisez vos processus répétitifs et libérez votre temps pour les tâches à haute valeur.",
@@ -602,7 +602,7 @@ const M6: Module = {
    MODULE 7 — IA POUR ENTREPRENEURS
 ══════════════════════════════════════════════════════════════ */
 const M7: Module = {
-  id:"7", title:"IA pour Entrepreneurs", emoji:"🚀",
+  id:"7", title:"IA pour Entrepreneurs", 
   tagline:"Croissance, ventes et opérations dopés par l'IA",
   color:"#ec4899", rgb:"236,72,153",
   description:"Prospection, marketing, service client, gestion financière — toutes les applications IA concrètes pour développer votre business.",
@@ -704,7 +704,7 @@ const M7: Module = {
    MODULE 8 — CRÉATION DE CONTENU IA
 ══════════════════════════════════════════════════════════════ */
 const M8: Module = {
-  id:"8", title:"Création de Contenu IA", emoji:"✨",
+  id:"8", title:"Création de Contenu IA", 
   tagline:"Multipliez votre production de contenu",
   color:"#8b5cf6", rgb:"139,92,246",
   description:"LinkedIn, newsletters, vidéos, podcasts, images, SEO — maîtrisez la création de contenu assistée par IA pour toutes les plateformes.",
@@ -802,7 +802,7 @@ const M8: Module = {
    MODULE 9 — AGENTS IA & NIVEAU AVANCÉ
 ══════════════════════════════════════════════════════════════ */
 const M9: Module = {
-  id:"9", title:"Agents IA & Niveau Avancé", emoji:"🤖",
+  id:"9", title:"Agents IA & Niveau Avancé", 
   tagline:"Le futur de l'IA est autonome",
   color:"#14b8a6", rgb:"20,184,166",
   description:"Agents autonomes, RAG, fine-tuning, sécurité IA — maîtrisez les concepts et outils avancés qui définissent la prochaine vague.",
@@ -893,7 +893,7 @@ const M9: Module = {
    MODULE 10 — PROJET FINAL & CERTIFICATION DJAMA
 ══════════════════════════════════════════════════════════════ */
 const M10: Module = {
-  id:"10", title:"Projet Final & Certification", emoji:"🏆",
+  id:"10", title:"Projet Final & Certification", 
   tagline:"Prouvez votre maîtrise, obtenez votre certification",
   color:"#f59e0b", rgb:"245,158,11",
   description:"Projet final complet, plan d'action 90 jours et certification officielle DJAMA IA Expert.",

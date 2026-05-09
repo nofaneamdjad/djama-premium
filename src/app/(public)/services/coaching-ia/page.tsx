@@ -34,21 +34,18 @@ const OUTCOMES = [
 const BEFORE_AFTER = [
   {
     color:  "#a78bfa",
-    emoji:  "📄",
     task:   "Rédiger une proposition commerciale",
     before: "2h de rédaction, structure imparfaite, relances oubliées",
     after:  "8 minutes avec un prompt structuré → document professionnel prêt à envoyer",
   },
   {
     color:  "#4ade80",
-    emoji:  "📱",
     task:   "Créer du contenu pour les réseaux",
     before: "Panne d'inspiration, 1 post par semaine max, temps perdu chaque lundi",
     after:  "10 idées + 3 textes rédigés en 20 minutes avec l'IA comme co-auteur",
   },
   {
     color:  "#60a5fa",
-    emoji:  "🎯",
     task:   "Prospecter de nouveaux clients",
     before: "Emails froids génériques, taux de réponse < 5%, démarchage épuisant",
     after:  "Séquences personnalisées générées par IA, recherche déléguée, gain de temps massif",
@@ -237,7 +234,7 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
   }
 
   const TABS = [
-    { id: "stripe",   label: "💳 Carte bancaire" },
+    { id: "stripe",   label: "Carte bancaire" },
     { id: "virement", label: "🏦 Virement"        },
   ] as const;
 
@@ -370,7 +367,7 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
           {/* Confirmation / formulaire */}
           {vSent ? (
             <div className="rounded-2xl border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.06)] p-5 text-center">
-              <div className="mb-2 text-2xl">✅</div>
+              <div className="mb-2 text-2xl text-green-400">✓</div>
               <p className="text-sm font-bold text-green-400">Confirmation reçue !</p>
               <p className="mt-1.5 text-xs leading-relaxed text-white/40">
                 Votre accès sera activé sous 24 à 48h dès réception du virement.
@@ -383,7 +380,7 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
                   className="flex h-6 w-6 items-center justify-center rounded-lg text-xs"
                   style={{ background: `rgba(${ACCENT_RGB},0.12)` }}
                 >
-                  📧
+                  @
                 </div>
                 <p className="text-xs font-bold text-white/60">Après votre virement</p>
               </div>
@@ -480,7 +477,7 @@ export default function CoachingIAPage() {
             <Zap size={15} /> Commencer maintenant — 190€
           </a>
           <p className="mt-1.5 text-center text-[0.6rem] text-white/25">
-            🔒 Paiement sécurisé · Garantie 7 jours
+            Paiement sécurisé · Garantie 7 jours
           </p>
         </div>
       </div>
@@ -589,15 +586,10 @@ export default function CoachingIAPage() {
               className="mt-12 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 border-t border-white/[0.07] pt-8"
             >
               {[
-                { icon: "🧠", label: "6 modules"              },
-                { icon: "📚", label: "20 chapitres"            },
-                { icon: "🤖", label: "Assistant IA inclus"     },
-                { icon: "🎯", label: "4h accompagnement expert"},
-                { icon: "📅", label: "Accès 3 mois"            },
-                { icon: "✅", label: "Garantie 7 jours"        },
-              ].map(({ icon, label }) => (
+                "6 modules", "20 chapitres", "Assistant IA inclus",
+                "4h accompagnement expert", "Accès 3 mois", "Garantie 7 jours",
+              ].map((label) => (
                 <div key={label} className="flex items-center gap-2 text-[0.72rem] font-medium text-white/35">
-                  <span className="text-sm">{icon}</span>
                   <span>{label}</span>
                 </div>
               ))}
@@ -681,7 +673,7 @@ export default function CoachingIAPage() {
             </motion.div>
 
             <div className="space-y-4">
-              {BEFORE_AFTER.map(({ color, emoji, task, before, after }, i) => (
+              {BEFORE_AFTER.map(({ color, task, before, after }, i) => (
                 <motion.div
                   key={task}
                   initial={{ opacity: 0, y: 18 }}
@@ -691,13 +683,12 @@ export default function CoachingIAPage() {
                   className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03]"
                 >
                   <div className="flex items-center gap-3 border-b border-white/[0.05] bg-white/[0.04] px-5 py-3.5">
-                    <span className="text-xl">{emoji}</span>
                     <p className="text-sm font-bold text-white/85">{task}</p>
                   </div>
                   <div className="grid grid-cols-1 divide-y divide-white/[0.05] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                     <div className="bg-[rgba(248,113,113,0.04)] px-5 py-5">
                       <p className="mb-2.5 text-[0.6rem] font-bold uppercase tracking-widest text-red-400">
-                        ❌ Sans la formation
+                        Sans la formation
                       </p>
                       <p className="text-sm leading-relaxed text-white/45">{before}</p>
                     </div>
@@ -706,7 +697,7 @@ export default function CoachingIAPage() {
                         className="mb-2.5 text-[0.6rem] font-bold uppercase tracking-widest"
                         style={{ color }}
                       >
-                        ✅ Avec la formation
+                        Avec la formation
                       </p>
                       <p className="text-sm font-semibold leading-relaxed text-white/80">{after}</p>
                     </div>
@@ -757,10 +748,10 @@ export default function CoachingIAPage() {
                     className="flex w-full items-center gap-4 p-5 text-left transition-colors hover:bg-black/[0.02]"
                   >
                     <div
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg"
-                      style={{ background: `rgba(${module.rgb},0.10)`, border: `1px solid rgba(${module.rgb},0.2)` }}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
+                      style={{ background: `rgba(${module.rgb},0.10)`, border: `1px solid rgba(${module.rgb},0.2)`, color: module.color }}
                     >
-                      {module.emoji}
+                      {module.id}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -937,7 +928,7 @@ export default function CoachingIAPage() {
                       { val: "4h", sub: "d'accompagnement",    color: "#a78bfa" },
                       { val: "3",  sub: "mois d'accès",         color: "#4ade80" },
                       { val: "1:1",sub: "session individuelle", color: "#f9a826" },
-                      { val: "🎯", sub: "adapté à votre métier",color: "#60a5fa" },
+                      { val: "100%", sub: "adapté à votre métier",color: "#60a5fa" },
                     ].map(({ val, sub, color }) => (
                       <div
                         key={sub}
@@ -1082,7 +1073,7 @@ export default function CoachingIAPage() {
                 Ce qu&apos;en disent les participants
               </h2>
               <div className="mx-auto max-w-md rounded-2xl border border-black/[0.07] bg-[#f9fafb] px-8 py-8">
-                <div className="mb-3 text-3xl">💬</div>
+                <div className="mb-3 h-8 w-8 rounded-full border border-[#e5e7eb] bg-[#f3f4f6]" />
                 <p className="text-sm font-semibold text-[#374151]">
                   Aucun avis publié pour le moment.
                 </p>

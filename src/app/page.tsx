@@ -1487,7 +1487,7 @@ function HomeContent() {
                 {/* Messages */}
                 <div className="space-y-3 p-5">
                   {[
-                    { type: "ai",   text: "Bonjour 👋 Quel est votre projet ?\nJe peux vous orienter rapidement." },
+                    { type: "ai",   text: "Bonjour ! Quel est votre projet ?\nJe peux vous orienter rapidement." },
                     { type: "user", text: "J'aimerais créer une application." },
                     { type: "ai",   text: "Parfait — mobile ou web ? Pour quel secteur ? Je vous propose les meilleures options DJAMA." },
                     { type: "user", text: "Mobile, pour gérer mes clients." },

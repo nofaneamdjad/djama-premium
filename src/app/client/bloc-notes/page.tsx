@@ -634,13 +634,13 @@ export default function BlocNotesPage() {
 
       if (action === "to-tasks") {
         setDraft(d => ({ ...d, content: result, category: "tâches" as Category }));
-        showToast("success", "✅ Actions créées — pensez à sauvegarder.");
+        showToast("success", "Actions créées — pensez à sauvegarder.");
       } else if (action === "improve") {
         setDraft(d => ({ ...d, content: result }));
-        showToast("success", "✨ Texte amélioré — pensez à sauvegarder.");
+        showToast("success", "Texte amélioré — pensez à sauvegarder.");
       } else {
         setDraft(d => ({ ...d, content: result }));
-        showToast("success", "📋 Résumé généré — pensez à sauvegarder.");
+        showToast("success", "Résumé généré — pensez à sauvegarder.");
       }
       setDirty(true);
     } catch (err) {
@@ -669,7 +669,7 @@ export default function BlocNotesPage() {
       setChatHistory(prev => [...prev, { role: "assistant", text: result }]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erreur IA.";
-      setChatHistory(prev => [...prev, { role: "assistant", text: `❌ ${msg}` }]);
+      setChatHistory(prev => [...prev, { role: "assistant", text: msg }]);
     } finally {
       setChatLoading(false);
     }
@@ -677,7 +677,7 @@ export default function BlocNotesPage() {
 
   function applyToNote(text: string) {
     updateDraft("content", text);
-    showToast("success", "✅ Réponse appliquée — pensez à sauvegarder.");
+    showToast("success", "Réponse appliquée — pensez à sauvegarder.");
     setChatOpen(false);
   }
 
@@ -776,7 +776,7 @@ export default function BlocNotesPage() {
       if (injectAfter) {
         const sep = (draft.content ?? "").length > 0 ? "\n\n" : "";
         updateDraft("content", (draft.content ?? "") + sep + sum);
-        showToast("success", "✨ Résumé inséré dans la note.");
+        showToast("success", "Résumé inséré dans la note.");
         setVoiceOpen(false);
       }
     } catch (e) { setVoiceErr(e instanceof Error ? e.message : "Erreur résumé"); }
@@ -1284,7 +1284,7 @@ export default function BlocNotesPage() {
                                   : "border border-[rgba(201,165,90,0.12)] bg-[rgba(201,165,90,0.07)] text-white/80"
                               }`}>
                                 <p className="whitespace-pre-wrap">{msg.text}</p>
-                                {msg.role === "assistant" && !msg.text.startsWith("❌") && (
+                                {msg.role === "assistant" && (
                                   <button
                                     onClick={() => applyToNote(msg.text)}
                                     className="mt-2 flex items-center gap-1 text-[0.6rem] font-bold text-[#c9a55a]/50 transition hover:text-[#c9a55a]"
@@ -1379,10 +1379,10 @@ export default function BlocNotesPage() {
                             </div>
                           )}
                           <span className="text-xs font-bold text-white/60">
-                            {voiceState === "idle"      ? "🎙️ Enregistrement de réunion"   :
-                             voiceState === "recording" ? "🔴 Enregistrement en cours…"     :
-                             voiceState === "paused"    ? "⏸️ En pause"                     :
-                                                         "✅ Enregistrement terminé"}
+                            {voiceState === "idle"      ? "Enregistrement de réunion"   :
+                             voiceState === "recording" ? "Enregistrement en cours…"     :
+                             voiceState === "paused"    ? "En pause"                     :
+                                                         "Enregistrement terminé"}
                           </span>
                           {voiceState !== "idle" && (
                             <span className="font-mono text-xs font-bold tabular-nums text-[#a78bfa]">

@@ -56,10 +56,10 @@ const ACCOMPAGNEMENT = [
 ];
 
 const TYPES_MARCHES = [
-  { emoji: "🏛️", title: "Marchés publics",      desc: "Collectivités locales, ministères, hôpitaux, établissements publics. Tous les organismes soumis au Code de la commande publique." },
-  { emoji: "🏢", title: "Appels d'offres privés", desc: "Grands comptes, ETI et multinationales qui publient leurs propres appels d'offres pour sélectionner leurs prestataires." },
-  { emoji: "🤝", title: "Sous-traitance",         desc: "Répondre en tant que sous-traitant d'un titulaire principal, avec un dossier de présentation solide et conforme." },
-  { emoji: "🔗", title: "Partenariats & GIE",     desc: "Candidature en groupement d'entreprises (mandataire / cotraitant) pour répondre à des lots plus importants." },
+  { title: "Marchés publics",      desc: "Collectivités locales, ministères, hôpitaux, établissements publics. Tous les organismes soumis au Code de la commande publique." },
+  { title: "Appels d'offres privés", desc: "Grands comptes, ETI et multinationales qui publient leurs propres appels d'offres pour sélectionner leurs prestataires." },
+  { title: "Sous-traitance",         desc: "Répondre en tant que sous-traitant d'un titulaire principal, avec un dossier de présentation solide et conforme." },
+  { title: "Partenariats & GIE",     desc: "Candidature en groupement d'entreprises (mandataire / cotraitant) pour répondre à des lots plus importants." },
 ];
 
 const ETAPES = [
@@ -298,7 +298,7 @@ function DevisForm() {
       </button>
 
       <p className="text-center text-[0.68rem] text-white/20">
-        🔒 Vos informations restent confidentielles · Réponse sous 24h · Sans engagement
+        Vos informations restent confidentielles · Réponse sous 24h · Sans engagement
       </p>
     </motion.form>
   );
@@ -500,13 +500,12 @@ export default function MarchesPublicsPage() {
               initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainerFast}
               className="grid gap-5 sm:grid-cols-2"
             >
-              {TYPES_MARCHES.map(({ emoji, title, desc }) => (
+              {TYPES_MARCHES.map(({ title, desc }) => (
                 <motion.div
                   key={title}
                   variants={cardReveal}
                   className="flex items-start gap-4 rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm transition-all duration-300 hover:border-[rgba(249,168,38,0.3)] hover:shadow-md"
                 >
-                  <span className="mt-0.5 text-2xl">{emoji}</span>
                   <div>
                     <h3 className="mb-1 text-sm font-bold text-[#09090b]">{title}</h3>
                     <p className="text-xs leading-relaxed text-[#6b7280]">{desc}</p>

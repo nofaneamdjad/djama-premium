@@ -156,11 +156,11 @@ export default function JeuxPage() {
   function resetVF() { setVfIndex(0); setVfAnswer(null); setVfScore(0); setVfDone(false); }
 
   const GAMES = [
-    { id: "quiz",    emoji: "🧩", color: "#a78bfa", title: "Quiz IA",        badge: "10 Q",      desc: "10 questions sur l'IA avec explications détaillées après chaque réponse." },
-    { id: "flash",   emoji: "🃏", color: "#38bdf8", title: "Flash Cards",    badge: "12 cartes", desc: "12 termes clés de l'IA à maîtriser. Cliquez sur la carte pour révéler la définition." },
-    { id: "speed",   emoji: "⚡", color: "#f59e0b", title: "Speed Quiz",     badge: "8 Q — 30s", desc: "8 questions rapides. Le but : répondre le plus vite possible. Réflexes et connaissance !" },
-    { id: "vraifaux",emoji: "🎯", color: "#4ade80", title: "Vrai ou Faux",   badge: "8 Q",       desc: "8 affirmations sur l'IA. Vrai ou faux ? Testez vos certitudes et découvrez la vérité." },
-    { id: "defi",    emoji: "🔥", color: "#f472b6", title: "Défi du jour",   badge: "Prompt",    desc: "Rédigez le meilleur prompt pour une mission réelle d'entrepreneur. Comparez avec l'expert." },
+    { id: "quiz",    color: "#a78bfa", title: "Quiz IA",        badge: "10 Q",      desc: "10 questions sur l'IA avec explications détaillées après chaque réponse." },
+    { id: "flash",   color: "#38bdf8", title: "Flash Cards",    badge: "12 cartes", desc: "12 termes clés de l'IA à maîtriser. Cliquez sur la carte pour révéler la définition." },
+    { id: "speed",   color: "#f59e0b", title: "Speed Quiz",     badge: "8 Q — 30s", desc: "8 questions rapides. Le but : répondre le plus vite possible. Réflexes et connaissance !" },
+    { id: "vraifaux",color: "#4ade80", title: "Vrai ou Faux",   badge: "8 Q",       desc: "8 affirmations sur l'IA. Vrai ou faux ? Testez vos certitudes et découvrez la vérité." },
+    { id: "defi",    color: "#f472b6", title: "Défi du jour",   badge: "Prompt",    desc: "Rédigez le meilleur prompt pour une mission réelle d'entrepreneur. Comparez avec l'expert." },
   ] as const;
 
   return (
@@ -203,7 +203,7 @@ export default function JeuxPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {GAMES.map(({ id, emoji, color, title, badge, desc }, i) => (
+              {GAMES.map(({ id, color, title, badge, desc }, i) => (
                 <motion.button
                   key={id}
                   initial={{ opacity: 0, y: 20 }}
@@ -218,7 +218,6 @@ export default function JeuxPage() {
                   <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
 
                   <div className="relative mb-4 flex items-start justify-between">
-                    <span className="text-3xl">{emoji}</span>
                     <span className="rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold" style={{ color, backgroundColor: color + "15", border: `1px solid ${color}25` }}>{badge}</span>
                   </div>
                   <p className="relative text-sm font-extrabold text-white">{title}</p>
@@ -241,7 +240,7 @@ export default function JeuxPage() {
               <button onClick={() => { setActiveGame(null); resetQuiz(); }} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
                 <ChevronLeft size={13} /> Jeux
               </button>
-              <span className="text-sm font-bold text-white">🧩 Quiz IA — 10 questions</span>
+              <span className="text-sm font-bold text-white">Quiz IA — 10 questions</span>
             </div>
 
             <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(167,139,250,0.25)] bg-[rgba(15,17,23,0.75)] p-6">
@@ -249,7 +248,6 @@ export default function JeuxPage() {
 
               {!quizStarted ? (
                 <div className="relative text-center py-6 space-y-4">
-                  <span className="text-5xl block">🧩</span>
                   <h2 className="text-2xl font-black text-white">Quiz IA</h2>
                   <p className="text-sm text-white/40">10 questions · Explication après chaque réponse · Score final</p>
                   <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
@@ -261,7 +259,6 @@ export default function JeuxPage() {
                 </div>
               ) : quizDone ? (
                 <div className="relative text-center py-6 space-y-4">
-                  <div className="text-5xl">{quizScore >= 9 ? "🏆" : quizScore >= 7 ? "⭐" : quizScore >= 5 ? "👍" : "💪"}</div>
                   <h2 className="text-3xl font-black text-white">{quizScore}/10</h2>
                   <p className="text-sm text-white/40">{quizScore === 10 ? "Parfait ! Vous maîtrisez les bases de l'IA." : quizScore >= 7 ? "Excellent résultat !" : quizScore >= 5 ? "Bon début — continuez à apprendre !" : "Relisez les cours et recommencez !"}</p>
                   <div className="mx-auto max-w-xs">
@@ -310,7 +307,7 @@ export default function JeuxPage() {
                       {selected !== null && (
                         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                           className="mt-4 rounded-xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.08)] px-4 py-3">
-                          <p className="text-xs font-bold text-[#a78bfa]">💡 Explication</p>
+                          <p className="text-xs font-bold text-[#a78bfa]">Explication</p>
                           <p className="mt-1 text-xs text-white/55 leading-relaxed">{QUIZ_QUESTIONS[qIndex].expl}</p>
                         </motion.div>
                       )}
@@ -331,7 +328,7 @@ export default function JeuxPage() {
               <button onClick={() => { setActiveGame(null); setCardIndex(0); setFlipped(false); }} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
                 <ChevronLeft size={13} /> Jeux
               </button>
-              <span className="text-sm font-bold text-white">🃏 Flash Cards IA</span>
+              <span className="text-sm font-bold text-white">Flash Cards IA</span>
               <span className="ml-auto text-xs text-white/30">{cardIndex + 1}/{FLASH_CARDS.length}</span>
             </div>
 
@@ -389,7 +386,7 @@ export default function JeuxPage() {
               <button onClick={() => { setActiveGame(null); resetSpeed(); }} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
                 <ChevronLeft size={13} /> Jeux
               </button>
-              <span className="text-sm font-bold text-white">⚡ Speed Quiz</span>
+              <span className="text-sm font-bold text-white">Speed Quiz</span>
               {!speedDone && <span className="ml-auto rounded-full bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.25)] px-2.5 py-0.5 text-xs font-bold text-[#f59e0b]">Score: {speedScore}</span>}
             </div>
 
@@ -398,7 +395,6 @@ export default function JeuxPage() {
 
               {speedDone ? (
                 <div className="relative text-center py-6 space-y-4">
-                  <div className="text-4xl">{speedScore >= 7 ? "🏆" : speedScore >= 5 ? "⭐" : "💪"}</div>
                   <h2 className="text-2xl font-black text-white">{speedScore}/{SPEED_QUESTIONS.length}</h2>
                   <p className="text-sm text-white/40">{speedScore === SPEED_QUESTIONS.length ? "Parfait ! Vous connaissez tous les acteurs de l'IA." : speedScore >= 5 ? "Bon résultat !" : "Relisez le module 2 sur les modèles IA !"}</p>
                   <button onClick={resetSpeed} className="inline-flex items-center gap-2 rounded-2xl border border-white/12 bg-white/5 px-6 py-2.5 text-sm font-bold text-white/60 hover:text-white transition-colors">
@@ -454,7 +450,7 @@ export default function JeuxPage() {
               <button onClick={() => { setActiveGame(null); resetVF(); }} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
                 <ChevronLeft size={13} /> Jeux
               </button>
-              <span className="text-sm font-bold text-white">🎯 Vrai ou Faux</span>
+              <span className="text-sm font-bold text-white">Vrai ou Faux</span>
               {!vfDone && <span className="ml-auto rounded-full bg-[rgba(74,222,128,0.15)] border border-[rgba(74,222,128,0.25)] px-2.5 py-0.5 text-xs font-bold text-[#4ade80]">Score: {vfScore}</span>}
             </div>
 
@@ -463,7 +459,6 @@ export default function JeuxPage() {
 
               {vfDone ? (
                 <div className="relative text-center py-6 space-y-4">
-                  <div className="text-4xl">{vfScore >= 7 ? "🏆" : vfScore >= 5 ? "⭐" : "💪"}</div>
                   <h2 className="text-2xl font-black text-white">{vfScore}/{VRAI_FAUX.length}</h2>
                   <p className="text-sm text-white/40">{vfScore >= 7 ? "Excellent ! Vous connaissez bien l'IA." : "Relisez les cours pour consolider vos bases."}</p>
                   <button onClick={resetVF} className="inline-flex items-center gap-2 rounded-2xl border border-white/12 bg-white/5 px-6 py-2.5 text-sm font-bold text-white/60 hover:text-white transition-colors">
@@ -485,8 +480,8 @@ export default function JeuxPage() {
                       <p className="text-lg font-extrabold text-white leading-snug text-center mb-6">{VRAI_FAUX[vfIndex].q}</p>
                       <div className="grid grid-cols-2 gap-3">
                         {[
-                          { label: "✅ VRAI", value: true, color: "#4ade80" },
-                          { label: "❌ FAUX", value: false, color: "#f87171" },
+                          { label: "VRAI", value: true, color: "#4ade80" },
+                          { label: "FAUX", value: false, color: "#f87171" },
                         ].map(({ label, value, color }) => {
                           const isSelected = vfAnswer === value;
                           const isCorrect = value === VRAI_FAUX[vfIndex].ans;
@@ -509,7 +504,7 @@ export default function JeuxPage() {
                         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                           className={`mt-4 rounded-xl border px-4 py-3 ${vfAnswer === VRAI_FAUX[vfIndex].ans ? "border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.08)]" : "border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.08)]"}`}>
                           <p className={`text-xs font-bold mb-1 ${vfAnswer === VRAI_FAUX[vfIndex].ans ? "text-[#4ade80]" : "text-[#f87171]"}`}>
-                            {vfAnswer === VRAI_FAUX[vfIndex].ans ? "✅ Bonne réponse !" : "❌ Mauvaise réponse"}
+                            {vfAnswer === VRAI_FAUX[vfIndex].ans ? "Bonne réponse !" : "Mauvaise réponse"}
                           </p>
                           <p className="text-xs text-white/50 leading-relaxed">{VRAI_FAUX[vfIndex].expl}</p>
                         </motion.div>
@@ -531,7 +526,7 @@ export default function JeuxPage() {
               <button onClick={() => { setActiveGame(null); setDefiDone(false); setPrompt(""); setShowExemple(false); }} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
                 <ChevronLeft size={13} /> Jeux
               </button>
-              <span className="text-sm font-bold text-white">🔥 Défi du jour</span>
+              <span className="text-sm font-bold text-white">Défi du jour</span>
             </div>
 
             <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(244,114,182,0.2)] bg-[rgba(15,17,23,0.75)] p-6 space-y-5">
@@ -544,7 +539,7 @@ export default function JeuxPage() {
               </div>
 
               <div className="relative rounded-xl border border-white/6 bg-white/3 p-4 space-y-2">
-                <p className="text-xs font-bold text-white/50">💡 Conseils pour un prompt parfait :</p>
+                <p className="text-xs font-bold text-white/50">Conseils pour un prompt parfait :</p>
                 {DEFI.tips.map((tip) => (
                   <p key={tip} className="flex items-start gap-2 text-xs text-white/40">
                     <span className="shrink-0 mt-0.5 text-[#f472b6]">→</span>{tip}
@@ -578,7 +573,7 @@ export default function JeuxPage() {
               {defiDone && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                   <div className="rounded-xl border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.08)] px-4 py-3">
-                    <p className="text-sm font-bold text-[#4ade80]">✅ Excellent ! Prompt soumis.</p>
+                    <p className="text-sm font-bold text-[#4ade80]">Excellent ! Prompt soumis.</p>
                     <p className="mt-1 text-xs text-white/45">Comparez maintenant votre prompt avec l'exemple expert ci-dessous.</p>
                   </div>
 
