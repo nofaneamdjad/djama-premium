@@ -10,7 +10,7 @@ import {
   Bell, X,
   CreditCard, Wallet, Users, FileText, Timer, CalendarRange, Search, Star,
   LayoutDashboard, Brain, Zap, Mic,
-  BookOpen, Globe, Calculator,
+  BookOpen, Globe,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRequireSubscription } from "@/lib/use-require-subscription";
@@ -36,7 +36,6 @@ const ALL_TOOLS_NAV = [
   { href: "/client/assistant",     label: "Assistant IA", icon: Zap,              color: "#22d3ee" },
   { href: "/client/temoignages",  label: "Témoignages",  icon: Star,             color: "#fb7185" },
   { href: "/client/blog",         label: "Blog",         icon: BookOpen,         color: "#c9a55a" },
-  { href: "/calculateur",         label: "Calculateur",  icon: Calculator,       color: "#4ade80" },
 ];
 
 type UpcomingEvent = {
