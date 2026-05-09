@@ -135,15 +135,20 @@ function drawHeader(
   }
 
   // ── Gauche : logo ou nom entreprise ────────────────────────────────────────
-  const LOGO_MAX_H = variant === "minimal" ? 18 : 24;
-  const LOGO_MAX_W = variant === "minimal" ? 60 : 70;
+  // Dimensions selon la taille choisie (sm/md/lg)
+  const SIZE_MAP = {
+    sm: { h: variant === "minimal" ? 10 : 14, w: variant === "minimal" ? 36 : 46 },
+    md: { h: variant === "minimal" ? 18 : 24, w: variant === "minimal" ? 60 : 70 },
+    lg: { h: variant === "minimal" ? 26 : 32, w: variant === "minimal" ? 80 : 90 },
+  };
+  const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_MAP[co.logoSize ?? "md"];
 
   if (logoImg) {
     const ratio = logoImg.naturalW / logoImg.naturalH;
     let lH = LOGO_MAX_H;
     let lW = lH * ratio;
     if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
-    const logoY = (headerH - lH) / 2;
+    const logoY = Math.max(4, (headerH - lH) / 2);
     doc.addImage(logoImg.dataUri, ML, logoY, lW, lH, "", "FAST");
   } else if (co.name) {
     // Nom entreprise uniquement si pas de logo ET nom renseigné
@@ -181,11 +186,12 @@ function drawHeader(
 
 // ─── SECTION : ADRESSES ──────────────────────────────────────────────────────
 function drawAddresses(
-  doc:    jsPDF,
-  data:   PdfTemplateData,
-  co:     Required<CompanySettings>,
-  theme:  PdfTheme,
-  startY: number,
+  doc:     jsPDF,
+  data:    PdfTemplateData,
+  co:      Required<CompanySettings>,
+  theme:   PdfTheme,
+  startY:  number,
+  logoImg: LogoImg,
 ): number {
   const MID = PW / 2;
   const RX  = MID + 6;     // colonne client
@@ -200,10 +206,12 @@ function drawAddresses(
   y += 8;
 
   // Noms en gras
+  // Si logoHideName=true ET logo uploadé → on masque le nom de l'émetteur
+  const showEmetteurName = co.name && !(co.logoHideName && logoImg);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9.5);
   setTxt(doc, theme.sectionNameColor);
-  if (co.name) doc.text(co.name, ML, y);
+  if (showEmetteurName) doc.text(co.name, ML, y);
   doc.text(data.client_name, RX, y);
   y += 5.5;
 
@@ -689,7 +697,7 @@ export async function renderPdfWithTheme(
   }
 
   let y = drawHeader(doc, data, co, theme, logoImg);
-  y = drawAddresses(doc, data, co, theme, y);
+  y = drawAddresses(doc, data, co, theme, y, logoImg);
   y = drawDocumentTitle(doc, data, theme, y);
   if (data.subject) {
     y = drawSubject(doc, data, theme, y);

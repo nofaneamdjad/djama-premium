@@ -165,9 +165,11 @@ function contrastColor(hex: string): "#0a0a0a"|"#ffffff" {
    PDF EXPORT
 ═══════════════════════════════════════════════════════════ */
 async function exportPDFWithTemplate(
-  draft:  DraftDoc,
-  items:  DocItem[],
-  totals: ReturnType<typeof calcTotals>,
+  draft:        DraftDoc,
+  items:        DocItem[],
+  totals:       ReturnType<typeof calcTotals>,
+  logoSize?:    "sm" | "md" | "lg",
+  logoHideName?: boolean,
 ) {
   const { generatePdf } = await import("@/lib/pdf/generatePdf");
 
@@ -225,13 +227,15 @@ async function exportPDFWithTemplate(
 
     /* Entreprise */
     company: {
-      logoUrl:  draft.emetteur_logo    || null,
-      name:     draft.emetteur_nom     || "",
-      email:    draft.emetteur_email   || "",
-      address:  draft.emetteur_adresse || "",
-      siret:    draft.emetteur_siret   || "",
-      iban:     draft.rib_iban         || "",
-      bic:      draft.rib_bic          || "",
+      logoUrl:      draft.emetteur_logo    || null,
+      name:         draft.emetteur_nom     || "",
+      email:        draft.emetteur_email   || "",
+      address:      draft.emetteur_adresse || "",
+      siret:        draft.emetteur_siret   || "",
+      iban:         draft.rib_iban         || "",
+      bic:          draft.rib_bic          || "",
+      logoSize:     logoSize     ?? "md",
+      logoHideName: logoHideName ?? false,
     },
   });
 }
@@ -412,6 +416,20 @@ export default function FacturesPage() {
   const [mobileView,  setMobileView]  = useState<"list"|"editor">("list");
   const [confirmDel,  setConfirmDel]  = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+
+  /* ── Logo options (persistées en localStorage) ── */
+  const [logoSize,     setLogoSize]     = useState<"sm"|"md"|"lg">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("pdf.logo_size") as "sm"|"md"|"lg") ?? "md";
+    }
+    return "md";
+  });
+  const [logoHideName, setLogoHideName] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pdf.logo_hide_name") === "true";
+    }
+    return false;
+  });
 
   /* ── Email modal ── */
   const [emailModal,   setEmailModal]   = useState(false);
@@ -968,7 +986,7 @@ export default function FacturesPage() {
                     <Eye size={13}/> Aperçu
                   </button>
                   {/* PDF */}
-                  <button onClick={() => exportPDFWithTemplate(draft, items, totals)}
+                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
                     className="hidden items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/50 transition hover:border-white/20 hover:text-white/80 sm:flex"
                     title="Exporter en PDF">
                     <FileDown size={13}/> PDF
@@ -1076,6 +1094,55 @@ export default function FacturesPage() {
                       </div>
                       <div className="space-y-2.5">
                         <LogoUploader value={draft.emetteur_logo} onChange={v => updDraft("emetteur_logo", v)}/>
+
+                        {/* Options logo (visibles seulement si logo uploadé) */}
+                        {draft.emetteur_logo && (
+                          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 space-y-3">
+                            {/* Taille logo */}
+                            <div>
+                              <p className="mb-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Taille du logo</p>
+                              <div className="flex gap-1.5">
+                                {([
+                                  { val: "sm" as const, label: "S", desc: "Petit" },
+                                  { val: "md" as const, label: "M", desc: "Moyen" },
+                                  { val: "lg" as const, label: "L", desc: "Grand" },
+                                ]).map(({ val, label, desc }) => (
+                                  <button
+                                    key={val}
+                                    type="button"
+                                    title={desc}
+                                    onClick={() => { setLogoSize(val); localStorage.setItem("pdf.logo_size", val); }}
+                                    className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all ${
+                                      logoSize === val
+                                        ? "text-[#0a0b10] shadow"
+                                        : "border border-white/10 bg-transparent text-white/40 hover:text-white/70"
+                                    }`}
+                                    style={logoSize === val ? { backgroundColor: activeColor } : {}}
+                                  >
+                                    {label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            {/* Logo seul */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = !logoHideName;
+                                setLogoHideName(next);
+                                localStorage.setItem("pdf.logo_hide_name", String(next));
+                              }}
+                              className="flex w-full items-center justify-between gap-2 text-left"
+                            >
+                              <span className="text-[0.7rem] text-white/50">Logo seul (sans nom)</span>
+                              <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${logoHideName ? "bg-[var(--c)]" : "bg-white/10"}`}
+                                style={{ "--c": activeColor } as React.CSSProperties}>
+                                <span className={`inline-block h-3.5 w-3.5 translate-x-0.5 rounded-full bg-white shadow transition-transform ${logoHideName ? "translate-x-[1.15rem]" : ""}`}/>
+                              </span>
+                            </button>
+                          </div>
+                        )}
+
                         <DInput value={draft.emetteur_nom}     onChange={v => updDraft("emetteur_nom", v)}     placeholder="Nom / Société"/>
                         <DInput value={draft.emetteur_email}   onChange={v => updDraft("emetteur_email", v)}   placeholder="email@exemple.com"/>
                         <DInput value={draft.emetteur_adresse} onChange={v => updDraft("emetteur_adresse", v)} placeholder="Adresse complète"/>
@@ -1248,7 +1315,7 @@ export default function FacturesPage() {
                       className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/60 transition hover:border-white/20">
                       <Eye size={13}/> Aperçu
                     </button>
-                    <button onClick={() => exportPDFWithTemplate(draft, items, totals)}
+                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
                       className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/60 transition hover:border-white/20">
                       <FileDown size={13}/> Exporter PDF
                     </button>
@@ -1276,7 +1343,7 @@ export default function FacturesPage() {
                 {draft.sujet && <span className="text-xs text-white/40">{draft.sujet}</span>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => { exportPDFWithTemplate(draft, items, totals); }}
+                <button onClick={() => { exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName); }}
                   className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:opacity-90">
                   <FileDown size={13}/> Télécharger PDF
                 </button>

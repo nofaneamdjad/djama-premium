@@ -6,35 +6,41 @@
 import { supabase } from "@/lib/supabase";
 
 export interface CompanySettings {
-  logoUrl:     string | null;
-  name:        string;
-  email:       string;
-  website:     string;
-  phone:       string;
-  address:     string;
-  city:        string;
-  country:     string;
-  siret:       string;
-  ape:         string;
-  vat_number:  string;   // Numéro de TVA intracommunautaire
-  iban:        string;
-  bic:         string;   // BIC/SWIFT
+  logoUrl:      string | null;
+  name:         string;
+  email:        string;
+  website:      string;
+  phone:        string;
+  address:      string;
+  city:         string;
+  country:      string;
+  siret:        string;
+  ape:          string;
+  vat_number:   string;   // Numéro de TVA intracommunautaire
+  iban:         string;
+  bic:          string;   // BIC/SWIFT
+  /** Taille du logo dans le PDF : "sm" = ~12mm, "md" = ~20mm, "lg" = ~30mm */
+  logoSize:     "sm" | "md" | "lg";
+  /** Masquer le nom de société dans le PDF quand un logo est présent */
+  logoHideName: boolean;
 }
 
 const DEFAULTS: CompanySettings = {
-  logoUrl:     null,
-  name:        "",
-  email:       "",
-  website:     "",
-  phone:       "",
-  address:     "",
-  city:        "",
-  country:     "",
-  siret:       "",
-  ape:         "",
-  vat_number:  "",
-  iban:        "",
-  bic:         "",
+  logoUrl:      null,
+  name:         "",
+  email:        "",
+  website:      "",
+  phone:        "",
+  address:      "",
+  city:         "",
+  country:      "",
+  siret:        "",
+  ape:          "",
+  vat_number:   "",
+  iban:         "",
+  bic:          "",
+  logoSize:     "md",
+  logoHideName: false,
 };
 
 export async function fetchCompanySettings(): Promise<CompanySettings> {
@@ -63,8 +69,10 @@ export async function fetchCompanySettings(): Promise<CompanySettings> {
     country:    map["brand.country"]       || DEFAULTS.country,
     siret:      map["brand.siret"]         || DEFAULTS.siret,
     ape:        map["brand.ape"]           || DEFAULTS.ape,
-    vat_number: map["brand.vat_number"]    || DEFAULTS.vat_number,
-    iban:       map["brand.iban"]          || DEFAULTS.iban,
-    bic:        map["brand.bic"]           || DEFAULTS.bic,
+    vat_number:   map["brand.vat_number"]    || DEFAULTS.vat_number,
+    iban:         map["brand.iban"]          || DEFAULTS.iban,
+    bic:          map["brand.bic"]           || DEFAULTS.bic,
+    logoSize:     (map["brand.logo_size"] as "sm"|"md"|"lg") || DEFAULTS.logoSize,
+    logoHideName: map["brand.logo_hide_name"] === "true",
   };
 }

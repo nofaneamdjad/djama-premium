@@ -69,9 +69,11 @@ export async function generatePdf(data: PdfData, download = true): Promise<void>
     country:    data.company?.country     ?? "",
     siret:      data.company?.siret       ?? "",
     ape:        data.company?.ape         ?? "",
-    vat_number: data.company?.vat_number  ?? "",
-    iban:       data.company?.iban        ?? "",
-    bic:        data.company?.bic         ?? "",
+    vat_number:   data.company?.vat_number   ?? "",
+    iban:         data.company?.iban         ?? "",
+    bic:          data.company?.bic          ?? "",
+    logoSize:     data.company?.logoSize     ?? "md",
+    logoHideName: data.company?.logoHideName ?? false,
   };
 
   // ── Charger le logo ───────────────────────────────────────────────────────
