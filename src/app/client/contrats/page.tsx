@@ -417,29 +417,30 @@ export default function ContratsPage() {
     <div className="min-h-screen bg-[#080a0f] text-white">
       <ToastStack toasts={toasts} remove={removeToast} />
 
-      {/* ── Header ── */}
-      <div className="border-b border-white/[0.06] px-5 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: gold + "28" }} />
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border"
-              style={{ background: gold + "14", borderColor: gold + "25" }}>
-              <FileText size={16} style={{ color: gold }} />
+      {/* ── Sub-header ── */}
+      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: gold + "30" }} />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+                style={{ backgroundColor: gold + "14", borderColor: gold + "28" }}>
+                <FileText size={18} style={{ color: gold }} />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-base font-extrabold text-white">Contrats IA</h1>
+              <p className="text-[0.65rem] text-white/30">Génération IA · PDF · suivi statut</p>
             </div>
           </div>
-          <div>
-            <h1 className="text-[15px] font-extrabold text-white/92">Contrats</h1>
-            <p className="text-[10px] text-white/30">Génération IA · PDF · suivi statut</p>
-          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
+            style={{ background: gold, boxShadow: `0 4px 16px ${gold}40` }}
+          >
+            <Plus size={13} /> Nouveau contrat
+          </button>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-1.5 rounded-xl border px-4 py-2 text-[12px] font-bold transition-all"
-          style={{ background: gold + "18", color: gold, borderColor: gold + "35" }}
-        >
-          <Plus size={13} /> Nouveau contrat
-        </motion.button>
       </div>
 
       {/* ── Body: split layout ── */}

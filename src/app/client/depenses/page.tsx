@@ -261,31 +261,36 @@ export default function DepensesPage() {
         <div className="absolute bottom-[10%] right-[5%] h-[400px] w-[400px] rounded-full bg-[rgba(201,165,90,0.03)] blur-[120px]" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-3xl px-4 py-8 sm:px-6">
-
-        {/* ── Header ── */}
-        <div className="mb-8 flex items-center gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[rgba(249,115,22,0.2)] bg-[rgba(249,115,22,0.08)]">
-            <Receipt size={20} style={{ color: "#f97316" }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-extrabold text-white">Dépenses Pro</h1>
-            <p className="text-xs text-white/30">Suivez et catégorisez vos dépenses professionnelles</p>
+      {/* ── Sub-header ── */}
+      <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-3xl items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#f9731630" }} />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+                style={{ backgroundColor: "#f9731614", borderColor: "#f9731628" }}>
+                <Receipt size={18} style={{ color: "#f97316" }} />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-base font-extrabold text-white">Dépenses Pro</h1>
+              <p className="text-[0.65rem] text-white/30">{expenses.length} dépense{expenses.length !== 1 ? "s" : ""} ce mois</p>
+            </div>
           </div>
           {!loading && expenses.length > 0 && (
-            <motion.button
+            <button
               onClick={exportExpensesCSV}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex shrink-0 items-center gap-2 rounded-xl border border-[rgba(249,115,22,0.25)] bg-[rgba(249,115,22,0.09)] px-3.5 py-2 text-xs font-bold transition hover:bg-[rgba(249,115,22,0.16)]"
-              style={{ color: "#f97316" }}
+              className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08]"
               title="Exporter le mois en CSV"
             >
               <Download size={13} />
               <span className="hidden sm:inline">Exporter CSV</span>
-            </motion.button>
+            </button>
           )}
         </div>
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-3xl px-4 py-8 sm:px-6">
 
         {/* ── Add form ── */}
         <motion.form

@@ -137,28 +137,33 @@ export default function RadarPage() {
   items.forEach(i => counts[i.urgency]++);
 
   return (
-    <div className="min-h-screen bg-[#09090f] text-white pb-28">
+    <div className="min-h-screen bg-[#080a0f] text-white pb-28">
 
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-30 bg-[#09090f]/95 backdrop-blur-md border-b border-white/[0.05]">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+      {/* ── Sub-header ── */}
+      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-2xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/client" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/35 hover:text-white/65 transition-all">
-              <ChevronLeft className="w-4 h-4" />
-            </Link>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#22d3ee30" }} />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+                style={{ backgroundColor: "#22d3ee14", borderColor: "#22d3ee28" }}>
+                <Sparkles size={18} style={{ color: "#22d3ee" }} />
+              </div>
+            </div>
             <div>
-              <span className="text-sm font-bold tracking-tight">Relances intelligentes</span>
+              <h1 className="text-base font-extrabold text-white">Assistant IA</h1>
+              <p className="text-[0.65rem] text-white/30">Relances intelligentes · Radar argent perdu</p>
             </div>
           </div>
           <button
             onClick={fetchRadar} disabled={loading}
-            className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/55 transition-colors disabled:opacity-25 px-3 py-1.5 rounded-lg hover:bg-white/[0.04]"
+            className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08] disabled:opacity-40"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
             Actualiser
           </button>
         </div>
-      </header>
+      </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-5 space-y-4">
 

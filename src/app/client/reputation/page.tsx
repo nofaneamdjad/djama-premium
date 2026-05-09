@@ -276,19 +276,20 @@ export default function ReputationPage() {
       {/* Ambient glow */}
       <div className="pointer-events-none fixed left-1/4 top-0 h-[300px] w-[400px] rounded-full bg-[rgba(245,158,11,0.05)] blur-[120px]" />
 
-      {/* ── Header ── */}
-      <div className="relative border-b border-white/[0.06] px-5 py-4">
+      {/* ── Sub-header ── */}
+      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="absolute inset-0 rounded-xl bg-amber-500/20 blur-sm" />
-              <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/14">
-                <Star size={16} style={{ color: GOLD }} />
+              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: GOLD + "30" }} />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+                style={{ backgroundColor: GOLD + "14", borderColor: GOLD + "28" }}>
+                <Star size={18} style={{ color: GOLD }} />
               </div>
             </div>
             <div>
-              <h1 className="text-[15px] font-extrabold text-white/92">Réputation</h1>
-              <p className="text-[10px] text-white/30">Avis clients · image de marque</p>
+              <h1 className="text-base font-extrabold text-white">Réputation</h1>
+              <p className="text-[0.65rem] text-white/30">{reviews.length} avis · image de marque</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -297,20 +298,19 @@ export default function ReputationPage() {
                 onClick={() => exportReviewsCSV(reviews)}
                 aria-label="Exporter les avis en CSV"
                 title="Exporter CSV"
-                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-semibold text-white/45 transition-all hover:border-white/20 hover:text-white/70"
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08]"
               >
                 <Download size={12} /> Export CSV
               </button>
             )}
-            <motion.button
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            <button
               onClick={() => setShowForm(v => !v)}
-              className="flex items-center gap-1.5 rounded-xl border px-4 py-2 text-[12px] font-bold transition-all"
-              style={{ background: GOLD + "18", color: GOLD, borderColor: GOLD + "35" }}
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
+              style={{ background: GOLD, boxShadow: `0 4px 16px ${GOLD}40` }}
             >
               {showForm ? <X size={13} /> : <Plus size={13} />}
               {showForm ? "Fermer" : "Ajouter un avis"}
-            </motion.button>
+            </button>
           </div>
         </div>
       </div>

@@ -672,21 +672,22 @@ export default function SourcingPage() {
      RENDU
   ════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#09090f] text-white pb-40">
+    <div className="min-h-screen bg-[#080a0f] text-white pb-40">
 
-      {/* ── HEADER ── */}
-      <header className="sticky top-0 z-30 bg-[#09090f]/96 backdrop-blur-md border-b border-white/[0.05]">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+      {/* ── Sub-header ── */}
+      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-2xl items-center justify-between">
+          <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-sm bg-blue-500/20" />
-              <div className="relative w-8 h-8 rounded-xl bg-blue-500/12 border border-blue-500/22 flex items-center justify-center">
-                <Search className="w-3.5 h-3.5 text-blue-400" />
+              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#818cf830" }} />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+                style={{ backgroundColor: "#818cf814", borderColor: "#818cf828" }}>
+                <Search size={18} style={{ color: "#818cf8" }} />
               </div>
             </div>
             <div>
-              <h1 className="text-[14px] font-extrabold text-white/92 leading-none">Sourcing IA</h1>
-              <p className="text-[10px] text-white/30 leading-none mt-0.5">Fournisseurs · Marchés · Analyse Sonnet</p>
+              <h1 className="text-base font-extrabold text-white">Sourcing IA</h1>
+              <p className="text-[0.65rem] text-white/30">Fournisseurs · Marchés · Analyse Sonnet</p>
             </div>
           </div>
 
@@ -695,7 +696,7 @@ export default function SourcingPage() {
               <button
                 onClick={handleGeneratePdf}
                 disabled={pdfLoading}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/12 border border-blue-500/22 text-blue-400 text-[11px] font-bold hover:bg-blue-500/22 transition-all disabled:opacity-40"
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08] disabled:opacity-40"
               >
                 {pdfLoading
                   ? <RefreshCw size={12} className="animate-spin" />
@@ -707,7 +708,7 @@ export default function SourcingPage() {
             {hasMessages && (
               <button
                 onClick={newChat}
-                className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/55 transition-colors px-3 py-1.5 rounded-lg hover:bg-white/[0.04]"
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08]"
               >
                 <X size={13} />
                 Nouveau
@@ -715,7 +716,7 @@ export default function SourcingPage() {
             )}
           </div>
         </div>
-      </header>
+      </div>
 
       {/* ── CONTENU PRINCIPAL ── */}
       <div className="max-w-2xl mx-auto px-4 pt-5">

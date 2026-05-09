@@ -305,11 +305,15 @@ export default function CRMPage() {
       </div>
 
       {/* ── Sub-header ── */}
-      <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.88)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(96,165,250,0.2)] bg-[rgba(59,130,246,0.09)]">
-              <Users size={16} style={{ color: "#60a5fa" }} />
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#60a5fa30" }} />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+                style={{ backgroundColor: "#60a5fa14", borderColor: "#60a5fa28" }}>
+                <Users size={18} style={{ color: "#60a5fa" }} />
+              </div>
             </div>
             <div>
               <h1 className="text-base font-extrabold text-white">CRM Client</h1>
@@ -324,16 +328,17 @@ export default function CRMPage() {
                 onClick={() => exportContactsCSV(contacts)}
                 aria-label="Exporter les contacts en CSV"
                 title="Export CSV"
-                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/45 transition hover:border-white/20 hover:text-white/70"
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08]"
               >
                 <Download size={12} /> Export
               </button>
             )}
             <button
               onClick={openCreate}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#60a5fa] to-[#3b82f6] px-4 py-2 text-xs font-extrabold text-white shadow-[0_4px_16px_rgba(59,130,246,0.3)] transition hover:shadow-[0_6px_24px_rgba(59,130,246,0.45)]"
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
+              style={{ background: "#60a5fa", boxShadow: "0 4px 16px #60a5fa40" }}
             >
-              <Plus size={14} />
+              <Plus size={13} />
               Nouveau contact
             </button>
           </div>

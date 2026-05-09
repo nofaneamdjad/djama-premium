@@ -377,11 +377,15 @@ export default function TresoreriePage() {
       </div>
 
       {/* ── Sub-header ── */}
-      <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.88)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+      <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(74,222,128,0.22)] bg-[rgba(74,222,128,0.08)]">
-              <Wallet size={16} style={{ color: "#4ade80" }} />
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#34d39930" }} />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+                style={{ backgroundColor: "#34d39914", borderColor: "#34d39928" }}>
+                <Wallet size={18} style={{ color: "#34d399" }} />
+              </div>
             </div>
             <div>
               <h1 className="text-base font-extrabold text-white">Trésorerie</h1>
@@ -393,7 +397,7 @@ export default function TresoreriePage() {
               <button
                 onClick={runAIAnalysis}
                 disabled={aiLoading}
-                className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.08)] px-3.5 py-2 text-xs font-bold text-[#a78bfa] transition-all hover:bg-[rgba(167,139,250,0.15)] disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08] disabled:opacity-50"
               >
                 {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                 <span className="hidden sm:inline">Analyse IA</span>
@@ -404,7 +408,8 @@ export default function TresoreriePage() {
                 onClick={() => exportCSV(invoices, expenses, `${MONTH_NAMES[viewMonth].toLowerCase()}-${viewYear}`)}
                 aria-label="Exporter les données en CSV"
                 title="Exporter CSV"
-                className="flex items-center gap-1.5 rounded-xl border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.08)] px-3.5 py-2 text-xs font-bold text-[#4ade80] transition-all hover:bg-[rgba(74,222,128,0.15)]"
+                className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
+                style={{ background: "#34d399", boxShadow: "0 4px 16px #34d39940" }}
               >
                 <Download size={12} /> <span className="hidden sm:inline">CSV</span>
               </button>

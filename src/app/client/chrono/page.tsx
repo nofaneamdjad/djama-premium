@@ -314,11 +314,15 @@ export default function ChronoPage() {
       </div>
 
       {/* ── Sub-header ── */}
-      <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.88)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+      <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(167,139,250,0.2)] bg-[rgba(139,92,246,0.09)]">
-              <Timer size={16} style={{ color: "#a78bfa" }} />
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#a78bfa30" }} />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+                style={{ backgroundColor: "#a78bfa14", borderColor: "#a78bfa28" }}>
+                <Timer size={18} style={{ color: "#a78bfa" }} />
+              </div>
             </div>
             <div>
               <h1 className="text-base font-extrabold text-white">Chrono Pro</h1>
@@ -329,9 +333,10 @@ export default function ChronoPage() {
           </div>
           <button
             onClick={() => { setManualDraft(emptyManualDraft()); setManualOpen(true); }}
-            className="flex items-center gap-2 rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(139,92,246,0.1)] px-4 py-2 text-xs font-semibold text-[#a78bfa] transition hover:bg-[rgba(139,92,246,0.18)]"
+            className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
+            style={{ background: "#a78bfa", boxShadow: "0 4px 16px #a78bfa40" }}
           >
-            <Plus size={14} />
+            <Plus size={13} />
             Ajout manuel
           </button>
         </div>

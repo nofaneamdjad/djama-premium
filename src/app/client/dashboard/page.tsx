@@ -399,11 +399,15 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Sub-header ── */}
-      <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.88)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+      <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)]">
-              <LayoutDashboard size={16} style={{ color: "#c9a55a" }} />
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#c9a55a30" }} />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+                style={{ backgroundColor: "#c9a55a14", borderColor: "#c9a55a28" }}>
+                <LayoutDashboard size={18} style={{ color: "#c9a55a" }} />
+              </div>
             </div>
             <div>
               <h1 className="text-base font-extrabold text-white">Tableau de bord</h1>
@@ -413,7 +417,7 @@ export default function DashboardPage() {
           <button
             onClick={runRapport}
             disabled={rapportLoading}
-            className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.28)] bg-[rgba(167,139,250,0.08)] px-3.5 py-2 text-xs font-bold text-[#a78bfa] transition-all hover:bg-[rgba(167,139,250,0.15)] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08] disabled:opacity-50"
           >
             {rapportLoading ? <Loader2 size={12} className="animate-spin" /> : <FileBarChart2 size={12} />}
             <span className="hidden sm:inline">Rapport mensuel</span>
