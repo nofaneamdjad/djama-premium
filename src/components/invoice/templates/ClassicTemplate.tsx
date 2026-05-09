@@ -1,103 +1,107 @@
 "use client";
 /**
- * ClassicTemplate — Header bleu marine, style corporate traditionnel.
- * Idéal pour les documents administratifs et B2B formels.
+ * ClassicTemplate — Header coloré (couleur choisie), corps blanc. Style corporate.
  */
 
 import type { PreviewData } from "../shared";
-import { fmtDate, fmtEur } from "../shared";
+import { fmtDate, fmtEur, getContrastText, lightenHex, alphaHex } from "../shared";
 
 export function ClassicTemplate({ data }: { data: PreviewData }) {
-  const co = data.company ?? {};
-  const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
+  const co        = data.company ?? {};
+  const C         = data.color ?? "#1a2e4f";
+  const CT        = getContrastText(C);
+  const CL        = lightenHex(C, 0.6);   // version claire pour sous-textes header
+  const CA        = alphaHex(C, 0.06);    // très léger pour fond adresses
+  const CB        = alphaHex(C, 0.12);    // fond lignes alternées
+  const docLabel  = data.type === "invoice" ? "FACTURE" : "DEVIS";
   const dateLabel = data.type === "invoice" ? "Échéance" : "Valable jusqu'au";
   const dateVal   = data.type === "invoice" ? data.due_date : data.valid_until;
 
   return (
-    <div className="w-full bg-white font-sans text-[8px] leading-tight">
+    <div style={{ width:"100%", backgroundColor:"#ffffff", fontFamily:"sans-serif", fontSize:8, lineHeight:1.35 }}>
 
-      {/* Header bleu marine */}
-      <div className="px-5 py-4 flex items-start justify-between" style={{ backgroundColor: "#1a2e4f", minHeight: 58 }}>
+      {/* Header */}
+      <div style={{ backgroundColor: C, padding:"16px 20px 14px", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
         <div>
-          <p className="text-white font-black text-[12px] tracking-tight">{co.name ?? "DJAMA"}</p>
-          <p className="text-[6px] mt-0.5 uppercase tracking-widest" style={{ color: "#a0bee6" }}>{docLabel}</p>
-          {co.email && <p className="text-[5.5px] mt-1" style={{ color: "#a0bee6" }}>{co.email}</p>}
-          {co.website && <p className="text-[5.5px]" style={{ color: "#a0bee6" }}>{co.website}</p>}
+          <div style={{ color: CT, fontWeight:900, fontSize:12, letterSpacing:"-0.3px" }}>{co.name ?? "DJAMA"}</div>
+          <div style={{ color: CL, fontSize:5.5, marginTop:3, textTransform:"uppercase", letterSpacing:"0.15em" }}>{docLabel}</div>
+          {co.email   && <div style={{ color: CL, fontSize:5.5, marginTop:2 }}>{co.email}</div>}
+          {co.website && <div style={{ color: CL, fontSize:5.5 }}>{co.website}</div>}
         </div>
-        <div className="text-right">
-          <p className="text-white font-black text-[10px]">{data.reference}</p>
-          <p className="text-[6px] mt-0.5" style={{ color: "#a0bee6" }}>Émis le {fmtDate(data.issue_date)}</p>
-          {dateVal && <p className="text-[6px]" style={{ color: "#a0bee6" }}>{dateLabel} {fmtDate(dateVal)}</p>}
+        <div style={{ textAlign:"right" }}>
+          <div style={{ color: CT, fontWeight:900, fontSize:10 }}>{data.reference}</div>
+          <div style={{ color: CL, fontSize:5.5, marginTop:2 }}>Émis le {fmtDate(data.issue_date)}</div>
+          {dateVal && <div style={{ color: CL, fontSize:5.5 }}>{dateLabel} {fmtDate(dateVal)}</div>}
         </div>
       </div>
 
-      {/* Bande décorative */}
-      <div className="h-0.5" style={{ backgroundColor: "#c9a55a" }} />
+      {/* Bande décorative or */}
+      <div style={{ height:2, backgroundColor:"#c9a55a" }} />
 
       {/* Adresses */}
-      <div className="px-5 py-3 flex gap-4 bg-blue-50 border-b border-blue-100">
-        <div className="flex-1">
-          <p className="font-bold text-[5.5px] uppercase tracking-wider mb-1" style={{ color: "#1a2e4f" }}>Émetteur</p>
-          <p className="font-bold text-[7.5px]" style={{ color: "#1a2e4f" }}>{co.name ?? "DJAMA"}</p>
+      <div style={{ padding:"10px 20px", display:"flex", gap:16, backgroundColor: CA, borderBottom:`1px solid ${alphaHex(C,0.1)}` }}>
+        <div style={{ flex:1 }}>
+          <div style={{ color: C, fontWeight:700, fontSize:5, textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:3 }}>Émetteur</div>
+          <div style={{ color:"#111827", fontWeight:700, fontSize:7 }}>{co.name ?? "DJAMA"}</div>
+          {co.email && <div style={{ color:"#6b7280", fontSize:5.5 }}>{co.email}</div>}
         </div>
-        <div className="flex-1">
-          <p className="font-bold text-[5.5px] uppercase tracking-wider mb-1" style={{ color: "#1a2e4f" }}>Destinataire</p>
-          <p className="font-bold text-[7.5px]" style={{ color: "#1a2e4f" }}>{data.client_name}</p>
-          {data.client_company && <p className="text-gray-500 text-[6px]">{data.client_company}</p>}
-          <p className="text-gray-500 text-[6px]">{data.client_email}</p>
+        <div style={{ flex:1 }}>
+          <div style={{ color: C, fontWeight:700, fontSize:5, textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:3 }}>Destinataire</div>
+          <div style={{ color:"#111827", fontWeight:700, fontSize:7 }}>{data.client_name}</div>
+          {data.client_company && <div style={{ color:"#6b7280", fontSize:5.5 }}>{data.client_company}</div>}
+          <div style={{ color:"#6b7280", fontSize:5.5 }}>{data.client_email}</div>
         </div>
       </div>
 
       {/* Objet */}
-      <div className="px-5 py-2">
-        <div className="rounded px-2 py-1" style={{ backgroundColor: "#e8f0fb" }}>
-          <p className="font-bold text-[7px]" style={{ color: "#1a2e4f" }}>{data.subject}</p>
+      <div style={{ padding:"6px 20px" }}>
+        <div style={{ backgroundColor: alphaHex(C,0.07), borderLeft:`3px solid ${C}`, padding:"4px 8px", borderRadius:"0 4px 4px 0" }}>
+          <div style={{ color:"#111827", fontWeight:700, fontSize:6.5 }}>{data.subject}</div>
         </div>
       </div>
 
       {/* Tableau */}
-      <div className="px-5 mt-1">
-        <table className="w-full border-collapse">
+      <div style={{ padding:"4px 20px 0" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse" }}>
           <thead>
-            <tr style={{ backgroundColor: "#1a2e4f" }}>
-              <th className="text-left px-2 py-1 text-[5.5px] font-bold text-white">Description</th>
-              <th className="text-right px-1 py-1 text-[5.5px] font-bold text-white">Qté</th>
-              <th className="text-right px-1 py-1 text-[5.5px] font-bold text-white">P.U.</th>
-              <th className="text-right px-1 py-1 text-[5.5px] font-bold text-white">Total</th>
+            <tr style={{ backgroundColor: C }}>
+              <th style={{ textAlign:"left",  padding:"4px 6px", fontSize:5, fontWeight:700, color: CT, width:"50%" }}>Description</th>
+              <th style={{ textAlign:"right", padding:"4px 4px", fontSize:5, fontWeight:700, color: CT, width:"10%" }}>Qté</th>
+              <th style={{ textAlign:"right", padding:"4px 4px", fontSize:5, fontWeight:700, color: CT, width:"20%" }}>Prix unitaire</th>
+              <th style={{ textAlign:"right", padding:"4px 6px", fontSize:5, fontWeight:700, color: CT, width:"20%" }}>Total HT</th>
             </tr>
           </thead>
           <tbody>
             {data.items.map((item, i) => (
-              <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#f0f5fc" : "#ffffff" }}>
-                <td className="px-2 py-1 text-[6px]" style={{ color: "#1a2e4f" }}>{item.description}</td>
-                <td className="text-right px-1 py-1 text-[6px] text-gray-500">{item.quantity}</td>
-                <td className="text-right px-1 py-1 text-[6px] text-gray-500">{fmtEur(item.unit_price)}</td>
-                <td className="text-right px-1 py-1 text-[6px] font-semibold" style={{ color: "#1a2e4f" }}>{fmtEur(item.total)}</td>
+              <tr key={i} style={{ backgroundColor: i % 2 === 0 ? CB : "#ffffff", borderBottom:`1px solid ${alphaHex(C,0.08)}` }}>
+                <td style={{ padding:"4px 6px", fontSize:6, color:"#111827" }}>{item.description}</td>
+                <td style={{ padding:"4px 4px", fontSize:6, color:"#6b7280", textAlign:"right" }}>{item.quantity}</td>
+                <td style={{ padding:"4px 4px", fontSize:6, color:"#6b7280", textAlign:"right" }}>{fmtEur(item.unit_price)}</td>
+                <td style={{ padding:"4px 6px", fontSize:6, color:"#111827", fontWeight:600, textAlign:"right" }}>{fmtEur(item.total)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
         {/* Totaux */}
-        <div className="mt-2 flex justify-end">
-          <div className="w-36">
-            <div className="flex justify-between text-[6px] text-gray-400 py-0.5" style={{ backgroundColor: "#f0f5fc" }}>
-              <span className="pl-1">Sous-total HT</span><span className="pr-1">{fmtEur(data.subtotal)}</span>
+        <div style={{ display:"flex", justifyContent:"flex-end", marginTop:6 }}>
+          <div style={{ width:140 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:6, color:"#6b7280", padding:"2px 4px", backgroundColor: CB }}>
+              <span>Sous-total HT</span><span>{fmtEur(data.subtotal)}</span>
             </div>
-            <div className="flex justify-between text-[6px] text-gray-400 py-0.5" style={{ backgroundColor: "#f0f5fc" }}>
-              <span className="pl-1">TVA ({data.tax_rate}%)</span><span className="pr-1">{fmtEur(data.tax_amount)}</span>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:6, color:"#6b7280", padding:"2px 4px", backgroundColor: CB }}>
+              <span>TVA ({data.tax_rate}%)</span><span>{fmtEur(data.tax_amount)}</span>
             </div>
-            <div className="flex justify-between px-2 py-1 mt-0.5 rounded" style={{ backgroundColor: "#1a2e4f" }}>
-              <span className="text-[7px] font-black text-white">TOTAL TTC</span>
-              <span className="text-[7px] font-black text-white">{fmtEur(data.total)}</span>
+            <div style={{ display:"flex", justifyContent:"space-between", backgroundColor: C, color: CT, fontWeight:900, fontSize:7, padding:"5px 8px", borderRadius:3, marginTop:3 }}>
+              <span>TOTAL TTC</span><span>{fmtEur(data.total)}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="mt-4 px-5 py-2 text-center" style={{ backgroundColor: "#1a2e4f" }}>
-        <p className="text-[5.5px]" style={{ color: "#a0bee6" }}>{[co.name, co.email, co.website].filter(Boolean).join(" · ")}</p>
+      <div style={{ marginTop:12, padding:"6px 20px", backgroundColor: C, textAlign:"center" }}>
+        <div style={{ color: CL, fontSize:5 }}>{[co.name, co.email, co.website].filter(Boolean).join(" · ")}</div>
       </div>
     </div>
   );

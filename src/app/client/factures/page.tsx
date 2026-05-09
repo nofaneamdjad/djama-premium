@@ -264,6 +264,8 @@ function draftToPreviewData(
     tax_amount: totals.tva,
     total:      totals.ttc,
     notes:      draft.notes || null,
+    color:      draft.couleur || "#c9a55a",
+    valid_until: draft.type !== "facture" ? (draft.date_echeance || null) : null,
     company: {
       name:    draft.emetteur_nom  || "DJAMA",
       email:   draft.emetteur_email,
