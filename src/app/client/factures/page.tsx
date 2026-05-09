@@ -226,11 +226,12 @@ async function exportPDFWithTemplate(
     /* Entreprise */
     company: {
       logoUrl:  draft.emetteur_logo    || null,
-      name:     draft.emetteur_nom     || "DJAMA",
-      email:    draft.emetteur_email,
-      address:  draft.emetteur_adresse,
-      siret:    draft.emetteur_siret,
-      iban:     draft.rib_iban || "",
+      name:     draft.emetteur_nom     || "",
+      email:    draft.emetteur_email   || "",
+      address:  draft.emetteur_adresse || "",
+      siret:    draft.emetteur_siret   || "",
+      iban:     draft.rib_iban         || "",
+      bic:      draft.rib_bic          || "",
     },
   });
 }

@@ -128,62 +128,55 @@ function drawHeader(
     setFill(doc, theme.tableHeaderBg);
     doc.rect(0, headerH - 3.5, PW, 3.5, "F");
   } else {
-    // Minimal : simple trait
+    // Minimal : simple trait bas
     setDraw(doc, theme.tableBorder ?? [210, 210, 215]);
-    doc.setLineWidth(0.4);
+    doc.setLineWidth(0.5);
     doc.line(ML, headerH, PW - MR, headerH);
   }
 
   // ── Gauche : logo ou nom entreprise ────────────────────────────────────────
-  const LOGO_MAX_H = variant === "minimal" ? 14 : 22;
-  const LOGO_MAX_W = variant === "minimal" ? 50 : 60;
+  const LOGO_MAX_H = variant === "minimal" ? 18 : 24;
+  const LOGO_MAX_W = variant === "minimal" ? 60 : 70;
 
   if (logoImg) {
     const ratio = logoImg.naturalW / logoImg.naturalH;
-    let logoH = LOGO_MAX_H;
-    let logoW = logoH * ratio;
-    if (logoW > LOGO_MAX_W) { logoW = LOGO_MAX_W; logoH = logoW / ratio; }
-    const logoY = (headerH - logoH) / 2;
-    doc.addImage(logoImg.dataUri, ML, logoY, logoW, logoH, "", "FAST");
-  } else {
+    let lH = LOGO_MAX_H;
+    let lW = lH * ratio;
+    if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
+    const logoY = (headerH - lH) / 2;
+    doc.addImage(logoImg.dataUri, ML, logoY, lW, lH, "", "FAST");
+  } else if (co.name) {
+    // Nom entreprise uniquement si pas de logo ET nom renseigné
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(variant === "minimal" ? 17 : 22);
+    doc.setFontSize(variant === "minimal" ? 18 : 22);
     setTxt(doc, theme.headerNameColor);
-    doc.text(co.name, ML, variant === "minimal" ? headerH / 2 + 4 : ML + 15);
+    const nameY = variant === "minimal" ? headerH / 2 + 5 : headerH / 2 + 6;
+    doc.text(co.name, ML, nameY);
   }
 
-  // Label type document (FACTURE / DEVIS)
-  const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  setTxt(doc, theme.headerSubColor);
-  doc.text(docLabel, ML, headerH - 6);
-
-  // ── Droite : référence + dates ──────────────────────────────────────────────
-  const RX   = PW - MR;
-  const refY = variant === "minimal" ? headerH / 2 - 2 : 14;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(17);
-  setTxt(doc, theme.headerRefColor);
-  doc.text(data.reference, RX, refY, { align: "right" });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  setTxt(doc, theme.headerDateColor);
-
-  let dateY = refY + 9;
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, dateY, { align: "right" });
-  dateY += 6;
-
-  if (data.type === "invoice" && data.due_date) {
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, dateY, { align: "right" });
-  }
-  if (data.type === "quote" && data.valid_until) {
-    doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, RX, dateY, { align: "right" });
+  // Label type document (FACTURE / DEVIS) — côté gauche, en bas du header
+  if (variant !== "minimal") {
+    const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    setTxt(doc, theme.headerSubColor);
+    doc.text(docLabel, ML, headerH - 6);
   }
 
-  return headerH + 10;
+  // ── Droite : référence (petite, discrète dans le header) ────────────────────
+  if (variant !== "minimal") {
+    const RX = PW - MR;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    setTxt(doc, theme.headerRefColor);
+    doc.text(data.reference, RX, headerH / 2 + 3, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    setTxt(doc, theme.headerDateColor);
+    doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, headerH / 2 + 11, { align: "right" });
+  }
+
+  return headerH + 8;
 }
 
 // ─── SECTION : ADRESSES ──────────────────────────────────────────────────────
@@ -194,49 +187,61 @@ function drawAddresses(
   theme:  PdfTheme,
   startY: number,
 ): number {
-  const MID = PW / 2;       // milieu page
+  const MID = PW / 2;
   const RX  = MID + 6;     // colonne client
   let   y   = startY;
 
   // Labels
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(6.5);
+  doc.setFontSize(6);
   setTxt(doc, theme.labelColor);
-  doc.text("DE", ML, y + 4);
-  doc.text(data.type === "invoice" ? "FACTURE A" : "DEVIS POUR", RX, y + 4);
+  doc.text("DE :", ML, y + 4);
+  doc.text(data.type === "invoice" ? "FACTURE À :" : "DEVIS POUR :", RX, y + 4);
   y += 8;
 
   // Noms en gras
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   setTxt(doc, theme.sectionNameColor);
-  doc.text(co.name, ML, y);
+  if (co.name) doc.text(co.name, ML, y);
   doc.text(data.client_name, RX, y);
-  y += 6;
+  y += 5.5;
 
-  // Détails émetteur
+  // Détails émetteur — taille 7.5, toutes les infos légales inline
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.8);
+  doc.setFontSize(7.5);
   setTxt(doc, theme.mutedText);
 
   let ey = y;
-  if (co.address) { doc.text(co.address, ML, ey); ey += 4.8; }
+  if (co.address) {
+    const addrLines = doc.splitTextToSize(co.address, MID - ML - 4) as string[];
+    addrLines.forEach(l => { doc.text(l, ML, ey); ey += 4.5; });
+  }
   const cityLine = [co.city, co.country].filter(Boolean).join(", ");
-  if (cityLine)   { doc.text(cityLine,   ML, ey); ey += 4.8; }
-  if (co.phone)   { doc.text(co.phone,   ML, ey); ey += 4.8; }
-  if (co.email)   { doc.text(co.email,   ML, ey); ey += 4.8; }
-  if (co.website) { doc.text(co.website, ML, ey); ey += 4.8; }
-  const legal = [co.siret && `SIRET : ${co.siret}`, co.ape && `APE : ${co.ape}`]
-    .filter(Boolean).join("  |  ");
-  if (legal) { doc.text(legal, ML, ey); ey += 4.8; }
+  if (cityLine)       { doc.text(cityLine,                    ML, ey); ey += 4.5; }
+  if (co.phone)       { doc.text(co.phone,                    ML, ey); ey += 4.5; }
+  if (co.email)       { doc.text(co.email,                    ML, ey); ey += 4.5; }
+  if (co.website)     { doc.text(co.website,                  ML, ey); ey += 4.5; }
+  if (co.siret)       { doc.text(`SIRET : ${co.siret}`,       ML, ey); ey += 4.5; }
+  if (co.ape)         { doc.text(`APE : ${co.ape}`,           ML, ey); ey += 4.5; }
+  if (co.vat_number)  { doc.text(`N° TVA : ${co.vat_number}`, ML, ey); ey += 4.5; }
+  if (co.iban) {
+    const ibanFmt = co.iban.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
+    doc.text(`IBAN : ${ibanFmt}`,   ML, ey); ey += 4.5;
+  }
+  if (co.bic)  { doc.text(`BIC/SWIFT : ${co.bic}`, ML, ey); ey += 4.5; }
 
   // Détails client
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  setTxt(doc, theme.mutedText);
+
   let cy = y;
-  if (data.client_company) { doc.text(data.client_company, RX, cy); cy += 4.8; }
-  if (data.client_email)   { doc.text(data.client_email,   RX, cy); cy += 4.8; }
-  if (data.client_phone)   { doc.text(data.client_phone,   RX, cy); cy += 4.8; }
+  if (data.client_company) { doc.text(data.client_company, RX, cy); cy += 4.5; }
+  if (data.client_email)   { doc.text(data.client_email,   RX, cy); cy += 4.5; }
+  if (data.client_phone)   { doc.text(data.client_phone,   RX, cy); cy += 4.5; }
   if (data.client_address) {
-    const lines = doc.splitTextToSize(data.client_address, 80) as string[];
+    const lines = doc.splitTextToSize(data.client_address, MID - ML - 4) as string[];
     lines.forEach(l => { doc.text(l, RX, cy); cy += 4.5; });
   }
 
@@ -250,7 +255,59 @@ function drawAddresses(
   // Ligne de séparation basse
   hLine(doc, blockEnd + 2, theme.tableBorder ?? [200, 200, 210], 0.3);
 
-  return blockEnd + 9;
+  return blockEnd + 6;
+}
+
+// ─── SECTION : TITRE DU DOCUMENT ─────────────────────────────────────────────
+function drawDocumentTitle(
+  doc:    jsPDF,
+  data:   PdfTemplateData,
+  theme:  PdfTheme,
+  startY: number,
+): number {
+  let y = startY;
+
+  // Type document en petit au-dessus
+  const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  setTxt(doc, theme.labelColor);
+  doc.text(docLabel, ML, y);
+  y += 7;
+
+  // Numéro en grand — utilise totalBoxBg comme couleur accent (or, bleu, vert...)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  setTxt(doc, theme.totalBoxBg);
+  doc.text(data.reference, ML, y);
+  y += 8;
+
+  // Ligne séparatrice
+  hLine(doc, y, theme.tableBorder ?? [200, 200, 210], 0.3);
+  y += 6;
+
+  // Dates sur une ligne
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.8);
+  setTxt(doc, theme.mutedText);
+  const issued = `Date d'émission : ${fmtDate(data.issue_date)}`;
+  doc.text(issued, ML, y);
+
+  const RX = PW - MR;
+  if (data.type === "invoice" && data.due_date) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.8);
+    setTxt(doc, theme.bodyText);
+    doc.text(`Date d'échéance : ${fmtDate(data.due_date)}`, RX, y, { align: "right" });
+  } else if (data.type === "quote" && data.valid_until) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.8);
+    setTxt(doc, theme.bodyText);
+    doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, RX, y, { align: "right" });
+  }
+  y += 10;
+
+  return y;
 }
 
 // ─── SECTION : OBJET ─────────────────────────────────────────────────────────
@@ -424,17 +481,17 @@ function drawTotals(
   doc.text(fmtEur(data.tax_amount), RX, y, { align: "right" });
   y += 9;
 
-  // Total TTC
-  y = maybePageBreak(doc, y, 14, theme);
+  // Total TTC — montant mis en valeur
+  y = maybePageBreak(doc, y, 18, theme);
   setFill(doc, theme.totalBoxBg);
-  doc.roundedRect(TX - 2, y - 2, BLOCK_W + 4, 13, 2.5, 2.5, "F");
+  doc.roundedRect(TX - 2, y - 2, BLOCK_W + 4, 15, 2.5, 2.5, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10.5);
+  doc.setFontSize(8.5);
   setTxt(doc, theme.totalBoxText);
-  doc.text("TOTAL TTC", TX + 3, y + 7.5);
-  doc.setFontSize(11.5);
-  doc.text(fmtEur(data.total), RX - 2, y + 7.5, { align: "right" });
-  y += 20;
+  doc.text("TOTAL TTC", TX + 3, y + 6);
+  doc.setFontSize(13);
+  doc.text(fmtEur(data.total), RX - 2, y + 9.5, { align: "right" });
+  y += 22;
 
   // Acompte + net à payer
   if (data.deposit && data.deposit > 0) {
@@ -587,14 +644,15 @@ function drawFooter(
   doc.setFontSize(6.5);
   setTxt(doc, theme.footerText);
 
-  // Ligne 1 : nom · email · site · tel
+  // Ligne 1 : nom · email · site · tel (uniquement les données réelles)
   const l1 = [co.name, co.email, co.website, co.phone].filter(Boolean).join("   |   ");
-  doc.text(l1, PW / 2, FY + 6, { align: "center" });
+  if (l1) doc.text(l1, PW / 2, FY + 6, { align: "center" });
 
-  // Ligne 2 : SIRET · APE
+  // Ligne 2 : SIRET · APE · N° TVA
   const l2parts: string[] = [];
-  if (co.siret) l2parts.push(`SIRET : ${co.siret}`);
-  if (co.ape)   l2parts.push(`APE : ${co.ape}`);
+  if (co.siret)      l2parts.push(`SIRET : ${co.siret}`);
+  if (co.ape)        l2parts.push(`APE : ${co.ape}`);
+  if (co.vat_number) l2parts.push(`TVA : ${co.vat_number}`);
   if (l2parts.length > 0) {
     doc.text(l2parts.join("   |   "), PW / 2, FY + 12, { align: "center" });
   }
@@ -604,6 +662,12 @@ function drawFooter(
     doc.setFontSize(6);
     doc.text(data.footer_text, PW / 2, FY + 18, { align: "center", maxWidth: CW });
   }
+
+  // Numéro de page
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6);
+  setTxt(doc, theme.footerText);
+  doc.text(`Page 1/1`, PW - MR, PH - 4, { align: "right" });
 }
 
 // ─── Fond sombre (premium) ────────────────────────────────────────────────────
@@ -626,12 +690,15 @@ export async function renderPdfWithTheme(
 
   let y = drawHeader(doc, data, co, theme, logoImg);
   y = drawAddresses(doc, data, co, theme, y);
-  y = drawSubject(doc, data, theme, y);
+  y = drawDocumentTitle(doc, data, theme, y);
+  if (data.subject) {
+    y = drawSubject(doc, data, theme, y);
+  }
   y = drawItemsTable(doc, data, theme, y);
   y = drawTotals(doc, data, theme, y);
 
   if (data.type === "invoice") {
-    y = drawPaymentInfo(doc, data, co, theme, y + 6);
+    y = drawPaymentInfo(doc, data, co, theme, y + 4);
   }
 
   y = drawNotes(doc, data, theme, y + 4);

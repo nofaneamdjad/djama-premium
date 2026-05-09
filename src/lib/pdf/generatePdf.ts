@@ -45,6 +45,7 @@ export interface PdfData {
   rib_banque?:     string | null;
   notes?:          string | null;
   footer_text?:    string | null;
+  /** Surcharge les paramètres entreprise (priorité sur companySettings). */
   company?:        Partial<CompanySettings>;
 }
 
@@ -58,17 +59,19 @@ export async function generatePdf(data: PdfData, download = true): Promise<void>
 
   // ── Paramètres entreprise (avec valeurs par défaut) ───────────────────────
   const co: Required<CompanySettings> = {
-    logoUrl:  data.company?.logoUrl  ?? null,
-    name:     data.company?.name     ?? "DJAMA",
-    email:    data.company?.email    ?? "contact@djama.fr",
-    website:  data.company?.website  ?? "www.djama.fr",
-    phone:    data.company?.phone    ?? "",
-    address:  data.company?.address  ?? "",
-    city:     data.company?.city     ?? "",
-    country:  data.company?.country  ?? "France",
-    siret:    data.company?.siret    ?? "",
-    ape:      data.company?.ape      ?? "",
-    iban:     data.company?.iban     ?? "",
+    logoUrl:    data.company?.logoUrl     ?? null,
+    name:       data.company?.name        ?? "",
+    email:      data.company?.email       ?? "",
+    website:    data.company?.website     ?? "",
+    phone:      data.company?.phone       ?? "",
+    address:    data.company?.address     ?? "",
+    city:       data.company?.city        ?? "",
+    country:    data.company?.country     ?? "",
+    siret:      data.company?.siret       ?? "",
+    ape:        data.company?.ape         ?? "",
+    vat_number: data.company?.vat_number  ?? "",
+    iban:       data.company?.iban        ?? "",
+    bic:        data.company?.bic         ?? "",
   };
 
   // ── Charger le logo ───────────────────────────────────────────────────────
