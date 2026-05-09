@@ -2,10 +2,6 @@
   "framework": "nextjs",
   "crons": [
     {
-      "path": "/api/push/cron",
-      "schedule": "*/30 * * * *"
-    },
-    {
       "path": "/api/relances/cron",
       "schedule": "0 9 * * 1-5"
     }
