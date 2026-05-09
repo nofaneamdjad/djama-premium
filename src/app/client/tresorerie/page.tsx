@@ -1,920 +1,1540 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  TrendingUp,
-  TrendingDown,
-  Wallet,
-  Clock,
-  AlertTriangle,
-  CheckCircle2,
-  ChevronDown,
-  ArrowRight,
-  ReceiptText,
-  Receipt,
-  Package,
-  Car,
-  UtensilsCrossed,
-  Monitor,
-  GraduationCap,
-  MoreHorizontal,
-  ExternalLink,
-  Download,
-  Sparkles,
-  Loader2,
-  X,
-  ShieldCheck,
-  Star,
-  Lightbulb,
-  TrendingUp as TrendUp,
+  TrendingUp, TrendingDown, Wallet, AlertTriangle, CheckCircle2,
+  X, Download, Upload, Search, Plus, Edit2, Trash2,
+  ArrowUpRight, ArrowDownRight, CreditCard, Users, FileText,
+  Monitor, Car, Megaphone, ShoppingBag, Package, MoreHorizontal,
+  BarChart2, Building2, Calendar, Zap, PiggyBank, Clock,
+  ChevronDown, Receipt, RefreshCw, Banknote, Target,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
-import { fmtEurInt, fmtDateShort } from "@/lib/format";
+import { fmtEur, fmtDate } from "@/lib/format";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
-/* ═══════════════════════════════════════════════════════════
-   CONSTANTES
-═══════════════════════════════════════════════════════════ */
-const ease = [0.16, 1, 0.3, 1] as const;
+/* ═══════════════════════════ TYPES ══════════════════════════════════════ */
 
-const MONTH_NAMES = [
-  "Janvier","Février","Mars","Avril","Mai","Juin",
-  "Juillet","Août","Septembre","Octobre","Novembre","Décembre",
+type TxType   = "income" | "expense";
+type TxStatus = "completed" | "pending" | "cancelled";
+type TxFreq   = "weekly" | "monthly" | "quarterly" | "yearly";
+
+interface TAccount {
+  id: string; user_id: string;
+  name: string; bank: string; iban: string;
+  balance: number; currency: string;
+  color: string; is_default: boolean;
+  created_at: string; updated_at: string;
+}
+
+interface Transaction {
+  id: string; user_id: string; account_id: string | null;
+  type: TxType; category: string; label: string;
+  amount: number; currency: string; date: string;
+  payment_method: string; status: TxStatus;
+  client_supplier: string; invoice_ref: string;
+  project: string; notes: string; created_at: string;
+}
+
+interface Recurring {
+  id: string; user_id: string;
+  type: TxType; label: string;
+  amount: number; frequency: TxFreq;
+  next_date: string | null;
+  category: string; active: boolean; created_at: string;
+}
+
+interface RawDoc {
+  id: string; numero: string; client_nom: string;
+  total_ttc: number; statut: string;
+  date_document: string; date_echeance: string | null;
+}
+
+/* ═══════════════════════════ CONSTANTS ══════════════════════════════════ */
+
+const INCOME_CATS = [
+  { v: "client",     l: "Paiement client",  c: "#10b981", I: Users      },
+  { v: "abonnement", l: "Abonnement",        c: "#3b82f6", I: RefreshCw  },
+  { v: "vente",      l: "Vente produit",     c: "#8b5cf6", I: ShoppingBag},
+  { v: "subvention", l: "Subvention",        c: "#f59e0b", I: Zap        },
+  { v: "autre",      l: "Autre revenu",      c: "#6b7280", I: Plus       },
+] as const;
+
+const EXPENSE_CATS = [
+  { v: "salaires",     l: "Salaires",       c: "#ef4444", I: Users       },
+  { v: "fournisseurs", l: "Fournisseurs",   c: "#f97316", I: Package     },
+  { v: "logiciels",    l: "Logiciels",      c: "#8b5cf6", I: Monitor     },
+  { v: "marketing",    l: "Marketing",      c: "#ec4899", I: Megaphone   },
+  { v: "transport",    l: "Transport",      c: "#3b82f6", I: Car         },
+  { v: "taxes",        l: "Taxes & impôts", c: "#dc2626", I: Building2   },
+  { v: "bancaires",    l: "Frais bancaires",c: "#64748b", I: CreditCard  },
+  { v: "autre",        l: "Autre",          c: "#6b7280", I: MoreHorizontal},
+] as const;
+
+const PAY_METHODS = [
+  { v: "virement",    l: "Virement"    },
+  { v: "carte",       l: "Carte"       },
+  { v: "prelevement", l: "Prélèvement" },
+  { v: "cash",        l: "Espèces"     },
+  { v: "cheque",      l: "Chèque"      },
 ];
 
-type CategoryKey = "fournitures" | "transport" | "restaurant" | "logiciel" | "formation" | "autre";
+const TX_STATUSES = [
+  { v: "completed", l: "Effectué",  c: "#10b981" },
+  { v: "pending",   l: "En attente",c: "#f59e0b" },
+  { v: "cancelled", l: "Annulé",    c: "#6b7280" },
+] as const;
 
-const CATEGORIES: Record<
-  CategoryKey,
-  { label: string; color: string; bg: string; border: string; icon: React.ElementType }
-> = {
-  fournitures: { label: "Fournitures",  color: "#c9a55a", bg: "bg-amber-500/10",   border: "border-amber-500/20",   icon: Package          },
-  transport:   { label: "Transport",    color: "#60a5fa", bg: "bg-sky-500/10",     border: "border-sky-500/20",     icon: Car              },
-  restaurant:  { label: "Restaurant",   color: "#f97316", bg: "bg-orange-500/10",  border: "border-orange-500/20",  icon: UtensilsCrossed  },
-  logiciel:    { label: "Logiciel",     color: "#a78bfa", bg: "bg-violet-500/10",  border: "border-violet-500/20",  icon: Monitor          },
-  formation:   { label: "Formation",    color: "#4ade80", bg: "bg-emerald-500/10", border: "border-emerald-500/20", icon: GraduationCap    },
-  autre:       { label: "Autre",        color: "#ffffff", bg: "bg-white/[0.05]",   border: "border-white/10",       icon: MoreHorizontal   },
+const FREQUENCIES = [
+  { v: "weekly",    l: "Hebdomadaire" },
+  { v: "monthly",   l: "Mensuel"      },
+  { v: "quarterly", l: "Trimestriel"  },
+  { v: "yearly",    l: "Annuel"       },
+];
+
+const ACCOUNT_COLORS = ["#3b82f6","#10b981","#8b5cf6","#f59e0b","#ec4899","#06b6d4","#c9a55a"];
+
+/* ═══════════════════════════ HELPERS ════════════════════════════════════ */
+
+const fmtC  = (n: number, c = "EUR") =>
+  new Intl.NumberFormat("fr-FR", { style: "currency", currency: c, maximumFractionDigits: 0 }).format(n);
+
+const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(0)}%`;
+
+const getCat = (type: TxType, v: string) =>
+  type === "income"
+    ? (INCOME_CATS.find(c => c.v === v) ?? INCOME_CATS[INCOME_CATS.length - 1])
+    : (EXPENSE_CATS.find(c => c.v === v) ?? EXPENSE_CATS[EXPENSE_CATS.length - 1]);
+
+const monthKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+const recurringMonthly = (r: Recurring) => {
+  if (!r.active) return 0;
+  const map: Record<TxFreq, number> = { weekly: 4.33, monthly: 1, quarterly: 1/3, yearly: 1/12 };
+  return r.amount * (map[r.frequency] ?? 1);
 };
 
-/* ═══════════════════════════════════════════════════════════
-   TYPES
-═══════════════════════════════════════════════════════════ */
-type InvoiceStatus = "envoyée" | "payée" | "en retard";
-type PaymentStatus = "payée" | "non payée";
+/* ═══════════════════════════ MINI COMPONENTS ════════════════════════════ */
 
-interface Invoice {
-  id: string;
-  reference: string;
-  client_name: string;
-  total: number;
-  status: InvoiceStatus;
-  payment_status: PaymentStatus;
-  issue_date: string;
-  due_date: string | null;
-}
-
-/* Ligne brute provenant de la table `documents` */
-interface RawDocument {
-  id: string;
-  numero: string;
-  client_nom: string;
-  total_ttc: number;
-  statut: string;
-  date_document: string;
-  date_echeance: string | null;
-}
-
-function mapDoc(d: RawDocument): Invoice {
-  const statut = d.statut ?? "";
-  return {
-    id:             d.id,
-    reference:      d.numero || "—",
-    client_name:    d.client_nom || "—",
-    total:          d.total_ttc ?? 0,
-    status:         statut === "en_retard" ? "en retard" : statut === "payé" ? "payée" : "envoyée",
-    payment_status: statut === "payé" ? "payée" : "non payée",
-    issue_date:     d.date_document,
-    due_date:       d.date_echeance ?? null,
-  };
-}
-
-interface Expense {
-  id: string;
-  date: string;
-  category: CategoryKey;
-  description: string;
-  amount: number;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   KPI CARD
-═══════════════════════════════════════════════════════════ */
-interface KpiCardProps {
-  label: string;
-  value: number;
-  icon: React.ElementType;
-  color: string;
-  bg: string;
-  border: string;
-  loading: boolean;
-  subtitle?: string;
-  negative?: boolean;
-}
-
-function KpiCard({ label, value, icon: Icon, color, bg, border, loading, subtitle, negative }: KpiCardProps) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease }}
-      className={`rounded-[1.25rem] border p-4 ${bg} ${border} backdrop-blur-sm`}
-    >
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{label}</p>
-        <div
-          className="flex h-7 w-7 items-center justify-center rounded-lg"
-          style={{ background: `${color}18`, border: `1px solid ${color}30` }}
-        >
-          <Icon size={13} style={{ color }} />
+    <div className="space-y-1">
+      <label className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+const inp = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 transition-all";
+
+function TxBadge({ status }: { status: TxStatus }) {
+  const s = TX_STATUSES.find(x => x.v === status) ?? TX_STATUSES[0];
+  return (
+    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
+      style={{ backgroundColor: s.c + "22", color: s.c }}>
+      {s.l}
+    </span>
+  );
+}
+
+/* ═══════════════════════════ TRANSACTION MODAL ══════════════════════════ */
+
+const BLANK_TX: Partial<Transaction> = {
+  type: "expense", category: "autre", label: "", amount: 0,
+  currency: "EUR", date: new Date().toISOString().slice(0, 10),
+  payment_method: "virement", status: "completed",
+  client_supplier: "", invoice_ref: "", project: "", notes: "",
+};
+
+function TransactionModal({
+  tx, accounts, userId, onSave, onClose,
+}: {
+  tx: Partial<Transaction> | null;
+  accounts: TAccount[];
+  userId: string;
+  onSave: (t: Transaction) => void;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState<Partial<Transaction>>(tx ?? { ...BLANK_TX });
+  const [saving, setSaving] = useState(false);
+  const set = (k: keyof Transaction, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+
+  const cats = form.type === "income" ? INCOME_CATS : EXPENSE_CATS;
+
+  async function save() {
+    if (!form.label?.trim() || !form.amount) return;
+    setSaving(true);
+    const payload = { ...form, user_id: userId, amount: Number(form.amount) };
+    if (tx?.id) {
+      const { data, error } = await supabase.from("treasury_transactions").update(payload).eq("id", tx.id).select().single();
+      if (!error && data) onSave(data as Transaction);
+    } else {
+      const { data, error } = await supabase.from("treasury_transactions").insert(payload).select().single();
+      if (!error && data) onSave(data as Transaction);
+    }
+    setSaving(false);
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}>
+      <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 40, opacity: 0 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/[0.08] bg-[#0c0c10] p-5 space-y-4"
+        onClick={e => e.stopPropagation()}>
+
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-white">{tx?.id ? "Modifier" : "Nouvelle transaction"}</h2>
+          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X size={18} /></button>
         </div>
-      </div>
-      {loading ? (
-        <div className="h-8 w-24 animate-pulse rounded-lg bg-white/5" />
-      ) : (
-        <p
-          className="text-2xl font-black tracking-tight"
-          style={{ color: negative && value < 0 ? "#f87171" : color }}
-        >
-          {fmtEurInt(value)}
-        </p>
-      )}
-      {subtitle && <p className="mt-1 text-[0.65rem] text-white/25">{subtitle}</p>}
+
+        {/* Type toggle */}
+        <div className="grid grid-cols-2 gap-2">
+          {(["income", "expense"] as TxType[]).map(t => (
+            <button key={t} type="button" onClick={() => { set("type", t); set("category", "autre"); }}
+              className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.78rem] font-bold border transition-all"
+              style={{
+                backgroundColor: form.type === t ? (t === "income" ? "#10b98122" : "#ef444422") : "transparent",
+                borderColor:     form.type === t ? (t === "income" ? "#10b98144" : "#ef444444") : "rgba(255,255,255,0.08)",
+                color:           form.type === t ? (t === "income" ? "#10b981" : "#ef4444") : "rgba(255,255,255,0.3)",
+              }}>
+              {t === "income" ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+              {t === "income" ? "Encaissement" : "Dépense"}
+            </button>
+          ))}
+        </div>
+
+        {/* Label + Amount + Currency */}
+        <Field label="Libellé">
+          <input className={inp} placeholder="Ex: Paiement facture FACT-042"
+            value={form.label ?? ""} onChange={e => set("label", e.target.value)} />
+        </Field>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="col-span-2">
+            <Field label="Montant">
+              <input type="number" step="0.01" min="0" placeholder="0.00" className={inp}
+                value={form.amount ?? ""} onChange={e => set("amount", parseFloat(e.target.value) || 0)} />
+            </Field>
+          </div>
+          <Field label="Devise">
+            <select className={inp} value={form.currency ?? "EUR"} onChange={e => set("currency", e.target.value)}>
+              {["EUR","USD","GBP","CHF","MAD"].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+        </div>
+
+        {/* Category */}
+        <Field label="Catégorie">
+          <div className="grid grid-cols-4 gap-1.5">
+            {cats.map(({ v, l, c, I }) => (
+              <button key={v} type="button" onClick={() => set("category", v)}
+                className="flex flex-col items-center gap-1 rounded-xl p-2 text-[0.58rem] font-medium border transition-all"
+                style={{
+                  backgroundColor: form.category === v ? c + "2a" : "transparent",
+                  borderColor:     form.category === v ? c + "55" : "rgba(255,255,255,0.06)",
+                  color:           form.category === v ? c : "rgba(255,255,255,0.35)",
+                }}>
+                <I size={12} /><span className="truncate w-full text-center">{l}</span>
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        {/* Date + Status + Payment */}
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Date">
+            <input type="date" className={inp} value={form.date ?? ""} onChange={e => set("date", e.target.value)} />
+          </Field>
+          <Field label="Statut">
+            <select className={inp} value={form.status ?? "completed"} onChange={e => set("status", e.target.value)}>
+              {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
+            </select>
+          </Field>
+          <Field label="Paiement">
+            <select className={inp} value={form.payment_method ?? "virement"} onChange={e => set("payment_method", e.target.value)}>
+              {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
+            </select>
+          </Field>
+        </div>
+
+        {/* Client/Supplier + Invoice ref */}
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={form.type === "income" ? "Client" : "Fournisseur"}>
+            <input className={inp} placeholder="Nom" value={form.client_supplier ?? ""}
+              onChange={e => set("client_supplier", e.target.value)} />
+          </Field>
+          <Field label="Réf. facture">
+            <input className={inp} placeholder="FACT-001" value={form.invoice_ref ?? ""}
+              onChange={e => set("invoice_ref", e.target.value)} />
+          </Field>
+        </div>
+
+        {/* Compte */}
+        {accounts.length > 0 && (
+          <Field label="Compte bancaire">
+            <select className={inp} value={form.account_id ?? ""} onChange={e => set("account_id", e.target.value || null)}>
+              <option value="">— Sans compte —</option>
+              {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.bank || "—"})</option>)}
+            </select>
+          </Field>
+        )}
+
+        {/* Notes */}
+        <Field label="Notes">
+          <textarea rows={2} className={`${inp} resize-none`} placeholder="Notes…"
+            value={form.notes ?? ""} onChange={e => set("notes", e.target.value)} />
+        </Field>
+
+        <div className="flex gap-2 pt-1">
+          <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40">Annuler</button>
+          <button onClick={save} disabled={saving}
+            className="flex-1 rounded-xl bg-white py-2.5 text-[0.78rem] font-bold text-black hover:bg-white/90 disabled:opacity-40">
+            {saving ? "…" : tx?.id ? "Mettre à jour" : "Ajouter"}
+          </button>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   EXPORT CSV
-═══════════════════════════════════════════════════════════ */
-function exportCSV(invoices: Invoice[], expenses: Expense[], monthLabel: string) {
-  const rows: string[][] = [
-    ["Type", "Date", "Référence / Description", "Client / Catégorie", "Montant (€)"],
-    ...invoices.map(inv => [
-      "Facture",
-      inv.issue_date,
-      inv.reference,
-      inv.client_name,
-      inv.total.toFixed(2),
-    ]),
-    ...expenses.map(exp => [
-      "Dépense",
-      exp.date,
-      exp.description,
-      exp.category,
-      (-exp.amount).toFixed(2),
-    ]),
-  ];
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `tresorerie-${monthLabel}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+/* ═══════════════════════════ ACCOUNT MODAL ══════════════════════════════ */
+
+function AccountModal({
+  account, userId, onSave, onClose,
+}: {
+  account: TAccount | null;
+  userId: string;
+  onSave: (a: TAccount) => void;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState<Partial<TAccount>>(account ?? {
+    name: "", bank: "", iban: "", balance: 0, currency: "EUR", color: "#3b82f6", is_default: false,
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (k: keyof TAccount, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+
+  async function save() {
+    if (!form.name?.trim()) return;
+    setSaving(true);
+    const payload = { ...form, user_id: userId, balance: Number(form.balance ?? 0) };
+    if (account) {
+      const { data, error } = await supabase.from("treasury_accounts").update(payload).eq("id", account.id).select().single();
+      if (!error && data) onSave(data as TAccount);
+    } else {
+      const { data, error } = await supabase.from("treasury_accounts").insert(payload).select().single();
+      if (!error && data) onSave(data as TAccount);
+    }
+    setSaving(false);
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}>
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 20, opacity: 0 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#0c0c10] p-5 space-y-4"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-white">{account ? "Modifier le compte" : "Nouveau compte"}</h2>
+          <button onClick={onClose} className="text-white/30 hover:text-white/60"><X size={18} /></button>
+        </div>
+        <Field label="Nom du compte">
+          <input className={inp} placeholder="Ex: Compte principal" value={form.name ?? ""} onChange={e => set("name", e.target.value)} />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Banque">
+            <input className={inp} placeholder="Ex: BNP, CIC…" value={form.bank ?? ""} onChange={e => set("bank", e.target.value)} />
+          </Field>
+          <Field label="Solde actuel (€)">
+            <input type="number" step="0.01" className={inp} value={form.balance ?? 0} onChange={e => set("balance", parseFloat(e.target.value) || 0)} />
+          </Field>
+        </div>
+        <Field label="IBAN (optionnel)">
+          <input className={inp} placeholder="FR76 …" value={form.iban ?? ""} onChange={e => set("iban", e.target.value)} />
+        </Field>
+        <Field label="Couleur">
+          <div className="flex gap-2 flex-wrap">
+            {ACCOUNT_COLORS.map(c => (
+              <button key={c} type="button" onClick={() => set("color", c)}
+                className="h-7 w-7 rounded-full border-2 transition-all"
+                style={{ backgroundColor: c, borderColor: form.color === c ? "white" : "transparent" }} />
+            ))}
+          </div>
+        </Field>
+        <div className="flex gap-2">
+          <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40">Annuler</button>
+          <button onClick={save} disabled={saving}
+            className="flex-1 rounded-xl bg-white py-2.5 text-[0.78rem] font-bold text-black hover:bg-white/90 disabled:opacity-40">
+            {account ? "Mettre à jour" : "Créer"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PAGE PRINCIPALE
-═══════════════════════════════════════════════════════════ */
-export default function TresoreriePage() {
-  const today = new Date();
+/* ═══════════════════════════ RECURRING MODAL ════════════════════════════ */
 
-  /* ── State ── */
-  const [invoices,    setInvoices]    = useState<Invoice[]>([]);
-  const [expenses,    setExpenses]    = useState<Expense[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [toast,       setToast]       = useState<ToastData | null>(null);
+function RecurringModal({
+  item, userId, onSave, onClose,
+}: {
+  item: Recurring | null;
+  userId: string;
+  onSave: (r: Recurring) => void;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState<Partial<Recurring>>(item ?? {
+    type: "expense", label: "", amount: 0, frequency: "monthly", category: "autre", active: true,
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (k: keyof Recurring, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+  const cats = form.type === "income" ? INCOME_CATS : EXPENSE_CATS;
 
-  /* ── AI Analysis ── */
-  type AIAnalysis = {
-    score: number;
-    titre: string;
-    resume: string;
-    points_forts: string[];
-    alertes: string[];
-    recommandations: string[];
-    projection: string;
-  };
-  const [aiOpen,     setAiOpen]     = useState(false);
-  const [aiLoading,  setAiLoading]  = useState(false);
-  const [aiResult,   setAiResult]   = useState<AIAnalysis | null>(null);
-
-  /* Month selector */
-  const [viewYear,  setViewYear]  = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
-
-  /* ── Helpers ── */
-  const showToast = (type: "success" | "error", msg: string) => setToast({ type, msg } as ToastData);
-
-  /* ── Analyse IA ── */
-  async function runAIAnalysis() {
-    if (loading) return;
-    setAiLoading(true);
-    setAiOpen(true);
-    setAiResult(null);
-    try {
-      const top_depenses_map = new Map<string, number>();
-      for (const e of expenses) {
-        top_depenses_map.set(e.category, (top_depenses_map.get(e.category) ?? 0) + e.amount);
-      }
-      const top_depenses = [...top_depenses_map.entries()]
-        .sort((a, b) => b[1] - a[1]).slice(0, 5)
-        .map(([cat, total]) => ({ cat, total }));
-      const res = await fetch("/api/tresorerie/analyse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          revenus:     encaisse,
-          depenses:    totalDepenses,
-          solde:       resultatNet,
-          impaye:      enAttente,
-          nb_impaye:   unpaidInvoices.length,
-          mois:        `${MONTH_NAMES[viewMonth]} ${viewYear}`,
-          top_depenses,
-        }),
-      });
-      if (!res.ok) throw new Error("Erreur analyse");
-      setAiResult(await res.json());
-    } catch {
-      showToast("error", "Erreur lors de l'analyse IA");
-      setAiOpen(false);
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
-  const monthStart = useMemo(() => {
-    return new Date(viewYear, viewMonth, 1).toISOString().slice(0, 10);
-  }, [viewYear, viewMonth]);
-
-  const monthEnd = useMemo(() => {
-    return new Date(viewYear, viewMonth + 1, 0).toISOString().slice(0, 10);
-  }, [viewYear, viewMonth]);
-
-  /* ── Fetch both tables in parallel ── */
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-
-    const [invoicesResult, expensesResult] = await Promise.all([
-      supabase
-        .from("documents")
-        .select("id, numero, client_nom, total_ttc, statut, date_document, date_echeance")
-        .eq("type", "facture")
-        .in("statut", ["envoyé", "payé", "en_retard"])
-        .gte("date_document", monthStart)
-        .lte("date_document", monthEnd),
-      supabase
-        .from("expenses")
-        .select("id, date, category, description, amount")
-        .gte("date", monthStart)
-        .lte("date", monthEnd),
-    ]);
-
-    if (invoicesResult.error) {
-      showToast("error", `Factures : ${invoicesResult.error.message}`);
+  async function save() {
+    if (!form.label?.trim() || !form.amount) return;
+    setSaving(true);
+    const payload = { ...form, user_id: userId, amount: Number(form.amount) };
+    if (item) {
+      const { data, error } = await supabase.from("treasury_recurring").update(payload).eq("id", item.id).select().single();
+      if (!error && data) onSave(data as Recurring);
     } else {
-      setInvoices(((invoicesResult.data ?? []) as RawDocument[]).map(mapDoc));
+      const { data, error } = await supabase.from("treasury_recurring").insert(payload).select().single();
+      if (!error && data) onSave(data as Recurring);
     }
-
-    if (expensesResult.error) {
-      showToast("error", `Dépenses : ${expensesResult.error.message}`);
-    } else {
-      setExpenses((expensesResult.data as Expense[]) ?? []);
-    }
-
-    setLoading(false);
-  }, [monthStart, monthEnd]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  /* ── Month navigation ── */
-  function prevMonth() {
-    if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); }
-    else setViewMonth((m) => m - 1);
-  }
-  function nextMonth() {
-    if (viewMonth === 11) { setViewYear((y) => y + 1); setViewMonth(0); }
-    else setViewMonth((m) => m + 1);
+    setSaving(false);
   }
 
-  /* ── KPI calculations ── */
-  const encaisse = useMemo(
-    () =>
-      invoices
-        .filter((inv) => inv.payment_status === "payée")
-        .reduce((s, inv) => s + inv.total, 0),
-    [invoices],
-  );
-
-  const enAttente = useMemo(
-    () =>
-      invoices
-        .filter(
-          (inv) =>
-            inv.payment_status === "non payée" &&
-            (inv.status === "envoyée" || inv.status === "en retard"),
-        )
-        .reduce((s, inv) => s + inv.total, 0),
-    [invoices],
-  );
-
-  const totalDepenses = useMemo(
-    () => expenses.reduce((s, e) => s + e.amount, 0),
-    [expenses],
-  );
-
-  const resultatNet = encaisse - totalDepenses;
-
-  /* ── Unpaid invoices for left column ── */
-  const unpaidInvoices = useMemo(
-    () =>
-      invoices
-        .filter(
-          (inv) =>
-            inv.payment_status === "non payée" &&
-            (inv.status === "envoyée" || inv.status === "en retard"),
-        )
-        .sort((a, b) => b.total - a.total),
-    [invoices],
-  );
-
-  /* ── Expenses for right column, sorted by date desc ── */
-  const sortedExpenses = useMemo(
-    () => [...expenses].sort((a, b) => (a.date < b.date ? 1 : -1)),
-    [expenses],
-  );
-
-  /* ── Progress bar ratio ── */
-  const depenseRatio = useMemo(() => {
-    if (encaisse === 0) return totalDepenses > 0 ? 100 : 0;
-    return Math.min(100, Math.round((totalDepenses / encaisse) * 100));
-  }, [encaisse, totalDepenses]);
-
-  const hasNoData = !loading && invoices.length === 0 && expenses.length === 0;
-
-  /* ══════════════════════════════════════════════════════════
-     RENDER
-  ══════════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#080a0f]">
-      {/* Ambient glows */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute left-[5%] top-[5%] h-[500px] w-[500px] rounded-full bg-[rgba(74,222,128,0.03)] blur-[140px]" />
-        <div className="absolute bottom-[10%] right-[10%] h-[400px] w-[400px] rounded-full bg-[rgba(201,165,90,0.03)] blur-[120px]" />
-      </div>
-
-      {/* ── Sub-header ── */}
-      <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#34d39930" }} />
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
-                style={{ backgroundColor: "#34d39914", borderColor: "#34d39928" }}>
-                <Wallet size={18} style={{ color: "#34d399" }} />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-base font-extrabold text-white">Trésorerie</h1>
-              <p className="text-[0.65rem] text-white/30">Vue consolidée de vos flux financiers</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {!loading && (invoices.length > 0 || expenses.length > 0) && (
-              <button
-                onClick={runAIAnalysis}
-                disabled={aiLoading}
-                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08] disabled:opacity-50"
-              >
-                {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                <span className="hidden sm:inline">Analyse IA</span>
-              </button>
-            )}
-            {!loading && (invoices.length > 0 || expenses.length > 0) && (
-              <button
-                onClick={() => exportCSV(invoices, expenses, `${MONTH_NAMES[viewMonth].toLowerCase()}-${viewYear}`)}
-                aria-label="Exporter les données en CSV"
-                title="Exporter CSV"
-                className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
-                style={{ background: "#34d399", boxShadow: "0 4px 16px #34d39940" }}
-              >
-                <Download size={12} /> <span className="hidden sm:inline">CSV</span>
-              </button>
-            )}
-          </div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}>
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 20, opacity: 0 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#0c0c10] p-5 space-y-4"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-white">{item ? "Modifier" : "Nouvel élément récurrent"}</h2>
+          <button onClick={onClose} className="text-white/30 hover:text-white/60"><X size={18} /></button>
         </div>
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-5xl px-4 py-6 sm:px-6">
-
-        {/* ── Month selector ── */}
-        <div className="mb-6 flex items-center justify-between">
-          <button
-            onClick={prevMonth}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 transition hover:border-white/20 hover:text-white/80"
-          >
-            <ChevronDown size={15} className="rotate-90" />
-          </button>
-          <h2 className="text-sm font-bold capitalize text-white">
-            {MONTH_NAMES[viewMonth]} {viewYear}
-          </h2>
-          <button
-            onClick={nextMonth}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 transition hover:border-white/20 hover:text-white/80"
-          >
-            <ChevronDown size={15} className="-rotate-90" />
-          </button>
+        <div className="grid grid-cols-2 gap-2">
+          {(["income","expense"] as TxType[]).map(t => (
+            <button key={t} type="button" onClick={() => { set("type", t); set("category", "autre"); }}
+              className="rounded-xl py-2 text-[0.75rem] font-bold border transition-all"
+              style={{
+                backgroundColor: form.type === t ? (t === "income" ? "#10b98122" : "#ef444422") : "transparent",
+                borderColor:     form.type === t ? (t === "income" ? "#10b98144" : "#ef444444") : "rgba(255,255,255,0.08)",
+                color:           form.type === t ? (t === "income" ? "#10b981" : "#ef4444") : "rgba(255,255,255,0.3)",
+              }}>
+              {t === "income" ? "Revenu" : "Dépense"}
+            </button>
+          ))}
         </div>
-
-        {/* ── 4 KPI cards (2×2 mobile, 4 col desktop) ── */}
-        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <KpiCard
-            label="Encaissé ce mois"
-            value={encaisse}
-            icon={TrendingUp}
-            color="#4ade80"
-            bg="bg-emerald-500/5"
-            border="border-emerald-500/15"
-            loading={loading}
-            subtitle={`${invoices.filter((i) => i.payment_status === "payée").length} facture(s)`}
-          />
-          <KpiCard
-            label="En attente"
-            value={enAttente}
-            icon={Clock}
-            color="#fbbf24"
-            bg="bg-amber-500/5"
-            border="border-amber-500/15"
-            loading={loading}
-            subtitle={`${unpaidInvoices.length} facture(s)`}
-          />
-          <KpiCard
-            label="Dépenses ce mois"
-            value={totalDepenses}
-            icon={TrendingDown}
-            color="#f97316"
-            bg="bg-orange-500/5"
-            border="border-orange-500/15"
-            loading={loading}
-            subtitle={`${expenses.length} entrée(s)`}
-          />
-          <KpiCard
-            label="Résultat net"
-            value={resultatNet}
-            icon={resultatNet >= 0 ? TrendingUp : TrendingDown}
-            color={resultatNet >= 0 ? "#4ade80" : "#f87171"}
-            bg={resultatNet >= 0 ? "bg-emerald-500/5" : "bg-red-500/5"}
-            border={resultatNet >= 0 ? "border-emerald-500/15" : "border-red-500/15"}
-            loading={loading}
-            negative
-          />
+        <Field label="Libellé">
+          <input className={inp} placeholder="Ex: Abonnement Slack" value={form.label ?? ""} onChange={e => set("label", e.target.value)} />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Montant (€)">
+            <input type="number" step="0.01" min="0" className={inp}
+              value={form.amount ?? ""} onChange={e => set("amount", parseFloat(e.target.value) || 0)} />
+          </Field>
+          <Field label="Fréquence">
+            <select className={inp} value={form.frequency ?? "monthly"} onChange={e => set("frequency", e.target.value)}>
+              {FREQUENCIES.map(f => <option key={f.v} value={f.v}>{f.l}</option>)}
+            </select>
+          </Field>
         </div>
-
-        {/* ── Progress bar ── */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`prog-${viewYear}-${viewMonth}`}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease }}
-            className="mb-6 rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4"
-          >
-            <div className="mb-2 flex items-center justify-between text-xs">
-              <span className="font-semibold text-white/50">
-                Ratio dépenses / encaissements
-              </span>
-              <span
-                className="font-extrabold"
-                style={{ color: depenseRatio > 80 ? "#f87171" : depenseRatio > 50 ? "#fbbf24" : "#4ade80" }}
-              >
-                {depenseRatio}%
-              </span>
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/8">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${depenseRatio}%` }}
-                transition={{ duration: 0.8, ease }}
-                className="h-full rounded-full"
+        <Field label="Catégorie">
+          <div className="grid grid-cols-4 gap-1.5">
+            {cats.map(({ v, l, c, I }) => (
+              <button key={v} type="button" onClick={() => set("category", v)}
+                className="flex flex-col items-center gap-1 rounded-xl p-2 text-[0.58rem] border transition-all"
                 style={{
-                  background:
-                    depenseRatio > 80
-                      ? "linear-gradient(90deg,#f97316,#f87171)"
-                      : depenseRatio > 50
-                      ? "linear-gradient(90deg,#4ade80,#fbbf24)"
-                      : "linear-gradient(90deg,#4ade80,#22d3ee)",
-                }}
-              />
-            </div>
-            <div className="mt-2 flex items-center justify-between text-[0.6rem] text-white/25">
-              <span>Dépenses : {fmtEurInt(totalDepenses)}</span>
-              <span>Encaissé : {fmtEurInt(encaisse)}</span>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+                  backgroundColor: form.category === v ? c + "2a" : "transparent",
+                  borderColor:     form.category === v ? c + "55" : "rgba(255,255,255,0.06)",
+                  color:           form.category === v ? c : "rgba(255,255,255,0.35)",
+                }}>
+                <I size={12} /><span className="truncate w-full text-center">{l}</span>
+              </button>
+            ))}
+          </div>
+        </Field>
+        <Field label="Prochain prélèvement">
+          <input type="date" className={inp} value={form.next_date ?? ""} onChange={e => set("next_date", e.target.value || null)} />
+        </Field>
+        <div className="flex gap-2">
+          <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40">Annuler</button>
+          <button onClick={save} disabled={saving}
+            className="flex-1 rounded-xl bg-white py-2.5 text-[0.78rem] font-bold text-black hover:bg-white/90 disabled:opacity-40">
+            {item ? "Mettre à jour" : "Ajouter"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
 
-        {/* ── AI Analysis Panel ── */}
-        <AnimatePresence>
-          {aiOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease }}
-              className="mb-6 overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117]"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-white/6 px-5 py-3.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.1)]">
-                    <Sparkles size={13} style={{ color: "#a78bfa" }} />
-                  </div>
-                  <span className="text-sm font-extrabold text-white">Analyse IA — {MONTH_NAMES[viewMonth]} {viewYear}</span>
-                </div>
-                <button onClick={() => setAiOpen(false)} className="text-white/25 transition hover:text-white/60">
-                  <X size={15} />
-                </button>
+/* ═══════════════════════════ DASHBOARD VIEW ══════════════════════════════ */
+
+function DashboardView({
+  transactions, accounts, recurring, invoices,
+}: {
+  transactions: Transaction[];
+  accounts: TAccount[];
+  recurring: Recurring[];
+  invoices: RawDoc[];
+}) {
+  const now = new Date();
+  const mk  = monthKey(now);
+  const prevMk = monthKey(new Date(now.getFullYear(), now.getMonth() - 1));
+
+  const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
+
+  const thisIncome  = transactions.filter(t => t.type === "income"   && t.status === "completed" && t.date.startsWith(mk)).reduce((a, t) => a + t.amount, 0);
+  const thisExpense = transactions.filter(t => t.type === "expense"  && t.status === "completed" && t.date.startsWith(mk)).reduce((a, t) => a + t.amount, 0);
+  const lastIncome  = transactions.filter(t => t.type === "income"   && t.status === "completed" && t.date.startsWith(prevMk)).reduce((a, t) => a + t.amount, 0);
+  const lastExpense = transactions.filter(t => t.type === "expense"  && t.status === "completed" && t.date.startsWith(prevMk)).reduce((a, t) => a + t.amount, 0);
+
+  const pending    = transactions.filter(t => t.status === "pending").reduce((a, t) => a + (t.type === "income" ? t.amount : -t.amount), 0);
+  const netMonth   = thisIncome - thisExpense;
+
+  const mrrIncome  = recurring.filter(r => r.active && r.type === "income").reduce((a, r) => a + recurringMonthly(r), 0);
+  const mrrExpense = recurring.filter(r => r.active && r.type === "expense").reduce((a, r) => a + recurringMonthly(r), 0);
+  const forecast30 = totalBalance + mrrIncome - mrrExpense;
+
+  const incomePct  = lastIncome  > 0 ? ((thisIncome  - lastIncome)  / lastIncome  * 100) : 0;
+  const expensePct = lastExpense > 0 ? ((thisExpense - lastExpense) / lastExpense * 100) : 0;
+
+  // Cashflow chart — 6 months
+  const months6 = Array.from({ length: 6 }, (_, i) => {
+    const d   = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const key = monthKey(d);
+    const inc = transactions.filter(t => t.type === "income"  && t.status === "completed" && t.date.startsWith(key)).reduce((a, t) => a + t.amount, 0);
+    const exp = transactions.filter(t => t.type === "expense" && t.status === "completed" && t.date.startsWith(key)).reduce((a, t) => a + t.amount, 0);
+    return { label: d.toLocaleDateString("fr-FR", { month: "short" }), key, inc, exp };
+  });
+  const maxVal = Math.max(...months6.flatMap(m => [m.inc, m.exp]), 1);
+
+  // Alerts
+  const overdue = invoices.filter(inv => {
+    if (!inv.date_echeance || inv.statut === "payé") return false;
+    return new Date(inv.date_echeance) < now;
+  });
+  const upcoming30 = recurring.filter(r => r.active && r.next_date && new Date(r.next_date) <= new Date(now.getFullYear(), now.getMonth() + 1, now.getDate())).sort((a, b) => a.amount - b.amount).slice(0, 3);
+
+  const recent5 = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+
+  const KPI = [
+    { l: "Solde total",          v: totalBalance,  c: "#c9a55a", sub: `${accounts.length} compte${accounts.length !== 1 ? "s" : ""}`, I: Wallet,       delta: null },
+    { l: "Encaissements",        v: thisIncome,    c: "#10b981", sub: fmtPct(incomePct) + " vs mois dernier",  I: ArrowUpRight,  delta: incomePct  },
+    { l: "Dépenses",             v: thisExpense,   c: "#ef4444", sub: fmtPct(expensePct) + " vs mois dernier", I: ArrowDownRight,delta: -expensePct },
+    { l: "Résultat net",         v: netMonth,      c: netMonth >= 0 ? "#10b981" : "#ef4444", sub: "Ce mois", I: BarChart2, delta: null },
+    { l: "En attente",           v: Math.abs(pending), c: "#f59e0b", sub: pending >= 0 ? "à encaisser" : "à payer", I: Clock,  delta: null },
+    { l: "Prévision 30 jours",   v: forecast30,    c: "#8b5cf6", sub: "Basé sur récurrents", I: Target, delta: null },
+  ];
+
+  return (
+    <div className="space-y-5">
+      {/* Alerts */}
+      {(overdue.length > 0 || (totalBalance > 0 && forecast30 < 0)) && (
+        <div className="space-y-2">
+          {forecast30 < 0 && (
+            <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+              <AlertTriangle size={15} className="shrink-0 text-red-400" />
+              <p className="text-[0.75rem] text-red-300">
+                <strong>Risque de trésorerie négative</strong> dans 30 jours.
+                Projection : <span className="font-bold">{fmtC(forecast30)}</span>
+              </p>
+            </div>
+          )}
+          {overdue.length > 0 && (
+            <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+              <AlertTriangle size={15} className="shrink-0 text-amber-400" />
+              <p className="text-[0.75rem] text-amber-300">
+                <strong>{overdue.length} facture{overdue.length > 1 ? "s" : ""} en retard</strong> — relancez vos clients.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* KPI Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {KPI.map(({ l, v, c, sub, I, delta }) => (
+          <div key={l} className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">{l}</p>
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg"
+                style={{ backgroundColor: c + "20" }}>
+                <I size={12} style={{ color: c }} />
               </div>
+            </div>
+            <p className="text-xl font-black leading-none" style={{ color: v < 0 && delta === null ? "#ef4444" : "white" }}>
+              {fmtC(Math.abs(v))}{v < 0 ? " ↓" : ""}
+            </p>
+            <div className="flex items-center gap-1.5">
+              {delta !== null && delta !== 0 && (
+                delta > 0
+                  ? <TrendingUp size={10} className="text-green-400" />
+                  : <TrendingDown size={10} className="text-red-400" />
+              )}
+              <p className="text-[0.62rem]" style={{ color: c + "bb" }}>{sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
 
-              {aiLoading ? (
-                <div className="flex flex-col items-center gap-3 py-12">
-                  <div className="relative">
-                    <div className="h-12 w-12 animate-spin rounded-full border-2 border-white/10 border-t-[#a78bfa]" />
-                    <Sparkles size={14} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[#a78bfa]" />
+      {/* Cashflow Chart */}
+      <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Cashflow — 6 mois</h3>
+          <div className="flex items-center gap-3 text-[0.62rem] text-white/30">
+            <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-green-500/60" /> Entrées</span>
+            <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-red-500/60" /> Sorties</span>
+          </div>
+        </div>
+        <div className="flex items-end gap-3" style={{ height: "96px" }}>
+          {months6.map(({ label, key, inc, exp }) => (
+            <div key={key} className="flex flex-1 flex-col items-center gap-1.5">
+              <div className="flex w-full items-end gap-0.5" style={{ height: "72px" }}>
+                <motion.div className="flex-1 rounded-t-sm bg-green-500/50"
+                  initial={{ height: 0 }} animate={{ height: `${Math.max((inc / maxVal) * 72, inc > 0 ? 3 : 0)}px` }}
+                  transition={{ duration: 0.6, ease: "easeOut" }} />
+                <motion.div className="flex-1 rounded-t-sm bg-red-500/50"
+                  initial={{ height: 0 }} animate={{ height: `${Math.max((exp / maxVal) * 72, exp > 0 ? 3 : 0)}px` }}
+                  transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }} />
+              </div>
+              <span className="text-[0.55rem] text-white/30">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Upcoming recurring */}
+        {upcoming30.length > 0 && (
+          <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+            <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Prochains paiements</h3>
+            <div className="space-y-2">
+              {upcoming30.map(r => {
+                const ci = getCat(r.type, r.category);
+                const CI = ci.I;
+                return (
+                  <div key={r.id} className="flex items-center gap-3">
+                    <CI size={12} style={{ color: ci.c }} className="shrink-0" />
+                    <span className="flex-1 text-[0.72rem] text-white/60 truncate">{r.label}</span>
+                    <span className="shrink-0 text-[0.65rem] text-white/30">{r.next_date ? fmtDate(r.next_date) : "—"}</span>
+                    <span className="shrink-0 text-[0.75rem] font-bold" style={{ color: r.type === "expense" ? "#ef4444" : "#10b981" }}>
+                      {r.type === "income" ? "+" : "-"}{fmtC(r.amount)}
+                    </span>
                   </div>
-                  <p className="text-sm text-white/40">Analyse en cours…</p>
-                </div>
-              ) : aiResult && (
-                <div className="p-5 space-y-5">
-                  {/* Score + Titre */}
-                  <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-5">
-                    {/* Score ring */}
-                    <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
-                      <svg className="absolute inset-0 -rotate-90" viewBox="0 0 80 80">
-                        <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6"/>
-                        <circle
-                          cx="40" cy="40" r="34"
-                          fill="none"
-                          stroke={aiResult.score >= 70 ? "#4ade80" : aiResult.score >= 40 ? "#fbbf24" : "#f87171"}
-                          strokeWidth="6"
-                          strokeLinecap="round"
-                          strokeDasharray={`${2 * Math.PI * 34}`}
-                          strokeDashoffset={`${2 * Math.PI * 34 * (1 - aiResult.score / 100)}`}
-                          style={{ transition: "stroke-dashoffset 1s ease" }}
-                        />
-                      </svg>
-                      <span className="text-xl font-black" style={{ color: aiResult.score >= 70 ? "#4ade80" : aiResult.score >= 40 ? "#fbbf24" : "#f87171" }}>
-                        {aiResult.score}
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Recent transactions */}
+        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Dernières transactions</h3>
+          {recent5.length === 0
+            ? <p className="py-4 text-center text-[0.72rem] text-white/20">Aucune transaction</p>
+            : (
+              <div className="space-y-1.5">
+                {recent5.map(t => {
+                  const ci = getCat(t.type, t.category);
+                  const CI = ci.I;
+                  return (
+                    <div key={t.id} className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                        style={{ backgroundColor: ci.c + "22" }}>
+                        <CI size={12} style={{ color: ci.c }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate text-[0.72rem] font-medium text-white/80">{t.label}</p>
+                        <p className="text-[0.6rem] text-white/30">{fmtDate(t.date)}</p>
+                      </div>
+                      <span className={`shrink-0 text-[0.78rem] font-bold ${t.type === "income" ? "text-green-400" : "text-red-400"}`}>
+                        {t.type === "income" ? "+" : "-"}{fmtC(t.amount)}
                       </span>
                     </div>
-                    <div className="flex-1 text-center sm:text-left">
-                      <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Score de santé financière</p>
-                      <h3 className="mt-1 text-lg font-extrabold text-white">{aiResult.titre}</h3>
-                      <p className="mt-1.5 text-sm leading-relaxed text-white/55">{aiResult.resume}</p>
-                    </div>
-                  </div>
-
-                  {/* Grid: points forts + alertes */}
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {aiResult.points_forts?.length > 0 && (
-                      <div className="rounded-xl border border-[rgba(74,222,128,0.15)] bg-[rgba(74,222,128,0.05)] p-4">
-                        <div className="mb-2.5 flex items-center gap-2">
-                          <ShieldCheck size={13} className="text-emerald-400" />
-                          <span className="text-[0.6rem] font-bold uppercase tracking-widest text-emerald-400/70">Points forts</span>
-                        </div>
-                        <ul className="space-y-1.5">
-                          {aiResult.points_forts.map((p, i) => (
-                            <li key={i} className="flex items-start gap-2 text-xs text-white/65">
-                              <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-emerald-400" />
-                              {p}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {aiResult.alertes?.length > 0 && (
-                      <div className="rounded-xl border border-[rgba(251,191,36,0.15)] bg-[rgba(251,191,36,0.05)] p-4">
-                        <div className="mb-2.5 flex items-center gap-2">
-                          <AlertTriangle size={13} className="text-amber-400" />
-                          <span className="text-[0.6rem] font-bold uppercase tracking-widest text-amber-400/70">Alertes</span>
-                        </div>
-                        <ul className="space-y-1.5">
-                          {aiResult.alertes.map((a, i) => (
-                            <li key={i} className="flex items-start gap-2 text-xs text-white/65">
-                              <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
-                              {a}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Recommandations */}
-                  {aiResult.recommandations?.length > 0 && (
-                    <div className="rounded-xl border border-[rgba(167,139,250,0.15)] bg-[rgba(167,139,250,0.05)] p-4">
-                      <div className="mb-2.5 flex items-center gap-2">
-                        <Lightbulb size={13} className="text-[#a78bfa]" />
-                        <span className="text-[0.6rem] font-bold uppercase tracking-widest text-[#a78bfa]/70">Recommandations</span>
-                      </div>
-                      <ol className="space-y-1.5">
-                        {aiResult.recommandations.map((r, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-white/65">
-                            <span className="shrink-0 rounded-full border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.1)] px-1.5 py-0.5 text-[0.55rem] font-black text-[#a78bfa]">{i + 1}</span>
-                            {r}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-
-                  {/* Projection */}
-                  {aiResult.projection && (
-                    <div className="flex items-start gap-3 rounded-xl border border-[rgba(201,165,90,0.15)] bg-[rgba(201,165,90,0.05)] p-4">
-                      <TrendUp size={14} className="mt-0.5 shrink-0 text-[#c9a55a]" />
-                      <div>
-                        <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-widest text-[#c9a55a]/70">Projection mois prochain</p>
-                        <p className="text-xs text-white/65">{aiResult.projection}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Empty state ── */}
-        {hasNoData && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease }}
-            className="relative mb-6 flex flex-col items-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] py-16 text-center"
-          >
-            <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 55% 45% at 50% 55%, rgba(74,222,128,0.07) 0%, transparent 70%)" }} />
-            <div className="relative">
-              <div className="absolute inset-0 rounded-2xl blur-xl" style={{ background: "rgba(74,222,128,0.18)" }} />
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(74,222,128,0.22)] bg-[rgba(74,222,128,0.09)]">
-                <Wallet size={26} style={{ color: "#4ade80" }} />
+                  );
+                })}
               </div>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white/70">
-                Aucune donnée pour {MONTH_NAMES[viewMonth].toLowerCase()} {viewYear}
-              </p>
-              <p className="mt-1 text-xs text-white/30">
-                Commencez par créer une facture ou saisir une dépense.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Link
-                href="/client/factures"
-                className="flex items-center gap-2 rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)] px-4 py-2 text-xs font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.15)]"
-              >
-                <ReceiptText size={13} /> Factures
-              </Link>
-              <Link
-                href="/client/depenses"
-                className="flex items-center gap-2 rounded-xl border border-[rgba(249,115,22,0.25)] bg-[rgba(249,115,22,0.08)] px-4 py-2 text-xs font-semibold text-[#f97316] transition hover:bg-[rgba(249,115,22,0.15)]"
-              >
-                <Receipt size={13} /> Dépenses
-              </Link>
-            </div>
-          </motion.div>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════ TRANSACTIONS VIEW ═══════════════════════════ */
+
+function TransactionsView({
+  transactions, accounts, userId, onAdd, onEdit, onDelete, onStatusChange,
+}: {
+  transactions: Transaction[];
+  accounts: TAccount[];
+  userId: string;
+  onAdd: (t: Transaction) => void;
+  onEdit: (t: Transaction) => void;
+  onDelete: (id: string) => void;
+  onStatusChange: (id: string, status: TxStatus) => void;
+}) {
+  const [search,      setSearch]      = useState("");
+  const [filterType,  setFilterType]  = useState<"" | TxType>("");
+  const [filterSt,    setFilterSt]    = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
+  const [showModal,   setShowModal]   = useState(false);
+  const [editTx,      setEditTx]      = useState<Transaction | null>(null);
+
+  const filtered = useMemo(() => transactions.filter(t => {
+    if (search && !t.label.toLowerCase().includes(search.toLowerCase()) &&
+        !t.client_supplier.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterType  && t.type         !== filterType)  return false;
+    if (filterSt    && t.status       !== filterSt)    return false;
+    if (filterMonth && !t.date.startsWith(filterMonth)) return false;
+    return true;
+  }), [transactions, search, filterType, filterSt, filterMonth]);
+
+  const totalIn  = filtered.filter(t => t.type === "income"  && t.status === "completed").reduce((a, t) => a + t.amount, 0);
+  const totalOut = filtered.filter(t => t.type === "expense" && t.status === "completed").reduce((a, t) => a + t.amount, 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2">
+          <Search size={13} className="shrink-0 text-white/25" />
+          <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-[0.78rem] text-white placeholder-white/20 outline-none" />
+        </div>
+        <select value={filterType} onChange={e => setFilterType(e.target.value as "" | TxType)}
+          className="rounded-xl border border-white/[0.08] bg-[#0c0c10] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
+          <option value="">Tout</option>
+          <option value="income">Encaissements</option>
+          <option value="expense">Dépenses</option>
+        </select>
+        <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
+          className="rounded-xl border border-white/[0.08] bg-[#0c0c10] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
+          <option value="">Tous statuts</option>
+          {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
+        </select>
+        <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
+          className="rounded-xl border border-white/[0.08] bg-[#0c0c10] px-3 py-2 text-[0.75rem] text-white/50 outline-none" />
+        {(search || filterType || filterSt || filterMonth) && (
+          <button onClick={() => { setSearch(""); setFilterType(""); setFilterSt(""); setFilterMonth(""); }}
+            className="flex items-center gap-1 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.72rem] text-white/30 hover:text-white/60">
+            <X size={12} /> Effacer
+          </button>
+        )}
+        <button onClick={() => { setEditTx(null); setShowModal(true); }}
+          className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-[0.72rem] font-bold text-black hover:bg-white/90">
+          <Plus size={13} /> Transaction
+        </button>
+      </div>
+
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Entrées (filtré)</p>
+          <p className="mt-0.5 text-base font-black text-green-400">{fmtC(totalIn)}</p>
+        </div>
+        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Sorties (filtré)</p>
+          <p className="mt-0.5 text-base font-black text-red-400">{fmtC(totalOut)}</p>
+        </div>
+        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Net</p>
+          <p className={`mt-0.5 text-base font-black ${totalIn - totalOut >= 0 ? "text-green-400" : "text-red-400"}`}>{fmtC(totalIn - totalOut)}</p>
+        </div>
+      </div>
+
+      {/* List */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Receipt size={32} className="text-white/10" />
+          <p className="text-[0.78rem] text-white/30">Aucune transaction trouvée</p>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <AnimatePresence initial={false}>
+            {filtered.map(t => {
+              const ci = getCat(t.type, t.category);
+              const CI = ci.I;
+              return (
+                <motion.div key={t.id} layout
+                  initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="group flex items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 hover:bg-white/[0.03] transition-all">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: ci.c + "22" }}>
+                    <CI size={14} style={{ color: ci.c }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-[0.78rem] font-semibold text-white/90">{t.label}</p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                      <span className="text-[0.62rem] text-white/30">{fmtDate(t.date)}</span>
+                      {t.client_supplier && <span className="text-[0.6rem] text-white/25">{t.client_supplier}</span>}
+                      <TxBadge status={t.status} />
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className={`text-[0.88rem] font-bold ${t.type === "income" ? "text-green-400" : "text-red-400"}`}>
+                      {t.type === "income" ? "+" : "-"}{fmtC(t.amount, t.currency)}
+                    </p>
+                    <p className="text-[0.6rem] text-white/20">{PAY_METHODS.find(m => m.v === t.payment_method)?.l}</p>
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <button onClick={() => { setEditTx(t); setShowModal(true); }}
+                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white">
+                      <Edit2 size={12} />
+                    </button>
+                    <button onClick={() => onDelete(t.id)}
+                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                  <select value={t.status} onChange={e => onStatusChange(t.id, e.target.value as TxStatus)}
+                    className="shrink-0 cursor-pointer rounded-lg border border-white/[0.05] bg-transparent px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 group-hover:opacity-100 transition-all"
+                    style={{ minWidth: "90px" }}>
+                    {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
+                  </select>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {showModal && (
+          <TransactionModal
+            tx={editTx} accounts={accounts} userId={userId}
+            onSave={saved => { editTx ? onEdit(saved) : onAdd(saved); setShowModal(false); setEditTx(null); }}
+            onClose={() => { setShowModal(false); setEditTx(null); }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ═══════════════════════════ PRÉVISIONS VIEW ════════════════════════════ */
+
+function PrevisionsView({
+  transactions, accounts, recurring, invoices, userId,
+  onRecurringAdd, onRecurringEdit, onRecurringDelete,
+}: {
+  transactions: Transaction[];
+  accounts: TAccount[];
+  recurring: Recurring[];
+  invoices: RawDoc[];
+  userId: string;
+  onRecurringAdd: (r: Recurring) => void;
+  onRecurringEdit: (r: Recurring) => void;
+  onRecurringDelete: (id: string) => void;
+}) {
+  const [horizon, setHorizon] = useState<30 | 90 | 365>(30);
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState<Recurring | null>(null);
+
+  const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
+
+  const mrrIncome  = recurring.filter(r => r.active && r.type === "income").reduce((a, r) => a + recurringMonthly(r), 0);
+  const mrrExpense = recurring.filter(r => r.active && r.type === "expense").reduce((a, r) => a + recurringMonthly(r), 0);
+  const months     = horizon / 30;
+
+  // Expected income from open invoices
+  const openInvoices = invoices.filter(inv => inv.statut !== "payé").reduce((a, inv) => a + inv.total_ttc, 0);
+  const forecast = totalBalance + (mrrIncome - mrrExpense) * months + (horizon <= 90 ? openInvoices : 0);
+
+  // Monthly forecast points for chart
+  const forecastPoints = Array.from({ length: Math.min(Math.ceil(months), 12) }, (_, i) => ({
+    label: new Date(new Date().getFullYear(), new Date().getMonth() + i + 1, 1).toLocaleDateString("fr-FR", { month: "short" }),
+    value: totalBalance + (mrrIncome - mrrExpense) * (i + 1),
+  }));
+  const minV = Math.min(...forecastPoints.map(p => p.value), 0);
+  const maxV = Math.max(...forecastPoints.map(p => p.value), 1);
+  const range = maxV - minV || 1;
+
+  const burnRate = mrrExpense;
+  const runway   = burnRate > 0 ? Math.floor(totalBalance / burnRate) : null;
+
+  return (
+    <div className="space-y-5">
+      {/* Summary bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Solde actuel</p>
+          <p className="mt-0.5 text-lg font-black text-white">{fmtC(totalBalance)}</p>
+        </div>
+        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">MRR</p>
+          <p className="mt-0.5 text-lg font-black text-green-400">{fmtC(mrrIncome)}</p>
+        </div>
+        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Burn rate</p>
+          <p className="mt-0.5 text-lg font-black text-red-400">{fmtC(burnRate)}/mois</p>
+        </div>
+        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Runway</p>
+          <p className="mt-0.5 text-lg font-black" style={{ color: runway === null ? "#6b7280" : runway < 3 ? "#ef4444" : runway < 6 ? "#f59e0b" : "#10b981" }}>
+            {runway === null ? "∞" : `${runway} mois`}
+          </p>
+        </div>
+      </div>
+
+      {/* Horizon selector + forecast */}
+      <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h3 className="text-[0.78rem] font-bold text-white">Projection trésorerie</h3>
+            <p className="text-[0.65rem] text-white/30 mt-0.5">Basé sur les récurrents + factures ouvertes</p>
+          </div>
+          <div className="flex gap-1">
+            {([30, 90, 365] as const).map(h => (
+              <button key={h} onClick={() => setHorizon(h)}
+                className={`rounded-xl px-3 py-1.5 text-[0.68rem] font-bold transition-all ${
+                  horizon === h ? "bg-white/[0.12] text-white" : "text-white/30 hover:text-white/60"
+                }`}>
+                {h === 30 ? "30j" : h === 90 ? "90j" : "1 an"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+          <Target size={16} className="shrink-0 text-purple-400" />
+          <div>
+            <p className="text-[0.65rem] text-white/30">Trésorerie dans {horizon} jours</p>
+            <p className={`text-2xl font-black ${forecast < 0 ? "text-red-400" : "text-white"}`}>{fmtC(forecast)}</p>
+          </div>
+          {forecast < totalBalance
+            ? <TrendingDown size={20} className="ml-auto text-red-400/60" />
+            : <TrendingUp size={20} className="ml-auto text-green-400/60" />
+          }
+        </div>
+
+        {/* Mini forecast chart */}
+        {forecastPoints.length > 0 && (
+          <div className="flex items-end gap-1.5" style={{ height: "60px" }}>
+            {forecastPoints.map(({ label, value }) => (
+              <div key={label} className="flex flex-1 flex-col items-center gap-1">
+                <motion.div className="w-full rounded-t-sm"
+                  style={{
+                    height: `${Math.max(((value - minV) / range) * 48, 2)}px`,
+                    backgroundColor: value < 0 ? "#ef444450" : "#8b5cf650",
+                  }}
+                  initial={{ height: 0 }} animate={{ height: `${Math.max(((value - minV) / range) * 48, 2)}px` }}
+                  transition={{ duration: 0.5, ease: "easeOut" }} />
+                <span className="text-[0.5rem] text-white/25">{label}</span>
+              </div>
+            ))}
+          </div>
         )}
 
-        {/* ── Two-column layout ── */}
-        {!hasNoData && (
-          <div className="grid gap-4 lg:grid-cols-2">
+        {openInvoices > 0 && horizon <= 90 && (
+          <p className="text-[0.65rem] text-white/30">
+            + <span className="font-semibold text-amber-400">{fmtC(openInvoices)}</span> de factures ouvertes incluses dans la projection.
+          </p>
+        )}
+      </div>
 
-            {/* ── Left: Factures à encaisser ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease, delay: 0.05 }}
-              className="rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-4"
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ReceiptText size={14} style={{ color: "#fbbf24" }} />
-                  <h3 className="text-sm font-extrabold text-white">Factures à encaisser</h3>
-                </div>
-                <Link
-                  href="/client/factures"
-                  className="flex items-center gap-1 text-[0.65rem] font-semibold text-[#c9a55a] transition hover:text-[#e4c07a]"
-                >
-                  Voir tout <ExternalLink size={10} />
-                </Link>
-              </div>
+      {/* Recurring items */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[0.78rem] font-bold text-white">Éléments récurrents</h3>
+          <button onClick={() => { setEditItem(null); setShowModal(true); }}
+            className="flex items-center gap-1.5 rounded-xl bg-white/[0.05] px-3 py-1.5 text-[0.68rem] font-semibold text-white/60 hover:bg-white/[0.08] hover:text-white transition-all">
+            <Plus size={12} /> Ajouter
+          </button>
+        </div>
 
-              {loading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-14 animate-pulse rounded-xl bg-white/5" />
-                  ))}
-                </div>
-              ) : unpaidInvoices.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-10 text-center">
-                  <CheckCircle2 size={22} className="text-emerald-400/40" />
-                  <p className="text-sm text-white/25">Toutes les factures sont encaissées</p>
-                </div>
-              ) : (
-                <AnimatePresence initial={false}>
-                  <div className="space-y-2">
-                    {unpaidInvoices.map((inv) => {
-                      const isOverdue = inv.status === "en retard";
-                      const urgencyColor = isOverdue ? "#f87171" : "#fbbf24";
-                      return (
-                        <motion.div
-                          key={inv.id}
-                          layout
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.22, ease }}
-                          className="flex items-center gap-3 rounded-xl border border-white/6 bg-[rgba(255,255,255,0.02)] px-3.5 py-2.5 transition hover:border-white/10"
-                        >
-                          {/* Urgency indicator */}
-                          <div
-                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border"
-                            style={{
-                              borderColor: `${urgencyColor}30`,
-                              background: `${urgencyColor}12`,
-                            }}
-                          >
-                            {isOverdue ? (
-                              <AlertTriangle size={11} style={{ color: urgencyColor }} />
-                            ) : (
-                              <Clock size={11} style={{ color: urgencyColor }} />
-                            )}
-                          </div>
-
-                          {/* Info */}
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-bold text-white/90">
-                              {inv.reference}
-                            </p>
-                            <p className="truncate text-[0.6rem] text-white/35">{inv.client_name}</p>
-                          </div>
-
-                          {/* Due date */}
-                          {inv.due_date && (
-                            <span
-                              className="shrink-0 text-[0.6rem] font-semibold"
-                              style={{ color: urgencyColor }}
-                            >
-                              {fmtDateShort(inv.due_date)}
-                            </span>
-                          )}
-
-                          {/* Amount */}
-                          <span className="shrink-0 text-xs font-extrabold text-white/80">
-                            {fmtEurInt(inv.total)}
-                          </span>
-
-                          {/* Relancer link */}
-                          <Link
-                            href="/client/factures"
-                            className="shrink-0 text-[0.6rem] font-semibold text-[#c9a55a] transition hover:text-[#e4c07a]"
-                            title="Relancer"
-                          >
-                            <ArrowRight size={12} />
-                          </Link>
-                        </motion.div>
-                      );
-                    })}
+        {recurring.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-2">
+            <RefreshCw size={24} className="text-white/10" />
+            <p className="text-[0.75rem] text-white/25">Aucun élément récurrent</p>
+            <p className="text-[0.65rem] text-white/15 text-center max-w-xs">Ajoutez vos revenus et dépenses récurrents pour activer la prévision.</p>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {["income", "expense"].map(type => {
+              const items = recurring.filter(r => r.type === type);
+              if (items.length === 0) return null;
+              const total = items.filter(r => r.active).reduce((a, r) => a + recurringMonthly(r), 0);
+              return (
+                <div key={type} className="space-y-1">
+                  <div className="flex items-center justify-between px-1 py-1">
+                    <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${type === "income" ? "text-green-400/60" : "text-red-400/60"}`}>
+                      {type === "income" ? "Revenus récurrents" : "Dépenses récurrentes"}
+                    </p>
+                    <span className={`text-[0.68rem] font-bold ${type === "income" ? "text-green-400" : "text-red-400"}`}>
+                      {type === "income" ? "+" : "-"}{fmtC(total)}/mois
+                    </span>
                   </div>
-                </AnimatePresence>
-              )}
-
-              {/* Subtotal */}
-              {unpaidInvoices.length > 0 && (
-                <div className="mt-4 flex items-center justify-between border-t border-white/6 pt-3">
-                  <span className="text-xs text-white/30">Total en attente</span>
-                  <span className="text-sm font-extrabold text-amber-400">{fmtEurInt(enAttente)}</span>
-                </div>
-              )}
-            </motion.div>
-
-            {/* ── Right: Dépenses récentes ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease, delay: 0.1 }}
-              className="rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-4"
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Receipt size={14} style={{ color: "#f97316" }} />
-                  <h3 className="text-sm font-extrabold text-white">Dépenses récentes</h3>
-                </div>
-                <Link
-                  href="/client/depenses"
-                  className="flex items-center gap-1 text-[0.65rem] font-semibold text-[#f97316] transition hover:text-[#fb923c]"
-                >
-                  Gérer <ExternalLink size={10} />
-                </Link>
-              </div>
-
-              {loading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-14 animate-pulse rounded-xl bg-white/5" />
-                  ))}
-                </div>
-              ) : sortedExpenses.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-10 text-center">
-                  <Receipt size={22} className="text-white/15" />
-                  <p className="text-sm text-white/25">Aucune dépense ce mois</p>
-                  <Link
-                    href="/client/depenses"
-                    className="mt-1 flex items-center gap-1.5 rounded-xl border border-[rgba(249,115,22,0.25)] px-3 py-1.5 text-xs font-semibold text-[#f97316] transition hover:bg-[rgba(249,115,22,0.08)]"
-                  >
-                    Ajouter une dépense <ArrowRight size={11} />
-                  </Link>
-                </div>
-              ) : (
-                <AnimatePresence initial={false}>
-                  <div className="space-y-2">
-                    {sortedExpenses.map((exp) => {
-                      const cat = CATEGORIES[exp.category] ?? CATEGORIES.autre;
-                      const Icon = cat.icon;
-                      return (
-                        <motion.div
-                          key={exp.id}
-                          layout
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.22, ease }}
-                          className="flex items-center gap-3 rounded-xl border border-white/6 bg-[rgba(255,255,255,0.02)] px-3.5 py-2.5 transition hover:border-white/10"
-                        >
-                          {/* Category badge */}
-                          <div
-                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border ${cat.bg} ${cat.border}`}
-                          >
-                            <Icon size={11} style={{ color: cat.color }} />
+                  {items.map(r => {
+                    const ci = getCat(r.type as TxType, r.category);
+                    const CI = ci.I;
+                    return (
+                      <div key={r.id} className={`group flex items-center gap-3 rounded-xl border p-3 transition-all ${r.active ? "border-white/[0.05] bg-white/[0.02]" : "border-white/[0.03] bg-white/[0.01] opacity-50"}`}>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: ci.c + "22" }}>
+                          <CI size={13} style={{ color: ci.c }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[0.75rem] font-semibold text-white/80 truncate">{r.label}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[0.62rem] text-white/30">{FREQUENCIES.find(f => f.v === r.frequency)?.l}</span>
+                            {r.next_date && <span className="text-[0.6rem] text-white/20">→ {fmtDate(r.next_date)}</span>}
                           </div>
-
-                          {/* Info */}
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-bold text-white/90">{exp.description}</p>
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className="text-[0.55rem] font-bold uppercase tracking-wide"
-                                style={{ color: cat.color }}
-                              >
-                                {cat.label}
-                              </span>
-                              <span className="text-[0.55rem] text-white/20">·</span>
-                              <span className="text-[0.6rem] text-white/30">{fmtDateShort(exp.date)}</span>
-                            </div>
-                          </div>
-
-                          {/* Amount */}
-                          <span className="shrink-0 text-xs font-extrabold" style={{ color: "#f97316" }}>
-                            {fmtEurInt(exp.amount)}
-                          </span>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </AnimatePresence>
-              )}
-
-              {/* Subtotal */}
-              {sortedExpenses.length > 0 && (
-                <div className="mt-4 flex items-center justify-between border-t border-white/6 pt-3">
-                  <span className="text-xs text-white/30">Total dépenses</span>
-                  <span className="text-sm font-extrabold" style={{ color: "#f97316" }}>
-                    {fmtEurInt(totalDepenses)}
-                  </span>
+                        </div>
+                        <span className={`shrink-0 text-[0.82rem] font-bold ${r.type === "income" ? "text-green-400" : "text-red-400"}`}>
+                          {r.type === "income" ? "+" : "-"}{fmtC(r.amount)}
+                        </span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <button onClick={async () => {
+                            const { error } = await supabase.from("treasury_recurring").update({ active: !r.active }).eq("id", r.id);
+                            if (!error) onRecurringEdit({ ...r, active: !r.active });
+                          }} className="h-6 w-6 rounded-md flex items-center justify-center text-white/25 hover:text-white hover:bg-white/[0.08] transition-all text-[0.6rem]" title={r.active ? "Désactiver" : "Activer"}>
+                            {r.active ? "⏸" : "▶"}
+                          </button>
+                          <button onClick={() => { setEditItem(r); setShowModal(true); }}
+                            className="h-6 w-6 rounded-md flex items-center justify-center text-white/25 hover:text-white hover:bg-white/[0.08]">
+                            <Edit2 size={11} />
+                          </button>
+                          <button onClick={() => onRecurringDelete(r.id)}
+                            className="h-6 w-6 rounded-md flex items-center justify-center text-white/25 hover:text-red-400 hover:bg-red-500/10">
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-            </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Toast */}
+      <AnimatePresence>
+        {showModal && (
+          <RecurringModal
+            item={editItem} userId={userId}
+            onSave={saved => { editItem ? onRecurringEdit(saved) : onRecurringAdd(saved); setShowModal(false); setEditItem(null); }}
+            onClose={() => { setShowModal(false); setEditItem(null); }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ═══════════════════════════ COMPTES VIEW ════════════════════════════════ */
+
+function ComptesView({
+  accounts, userId, transactions,
+  onAccountAdd, onAccountEdit, onAccountDelete,
+  onTxImported,
+}: {
+  accounts: TAccount[];
+  userId: string;
+  transactions: Transaction[];
+  onAccountAdd: (a: TAccount) => void;
+  onAccountEdit: (a: TAccount) => void;
+  onAccountDelete: (id: string) => void;
+  onTxImported: (txs: Transaction[]) => void;
+}) {
+  const [showModal,    setShowModal]    = useState(false);
+  const [editAccount,  setEditAccount]  = useState<TAccount | null>(null);
+  const [csvDraft,     setCsvDraft]     = useState<Partial<Transaction>[]>([]);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
+
+  function parseCSV(text: string): Partial<Transaction>[] {
+    const lines = text.trim().split("\n").filter(Boolean);
+    const result: Partial<Transaction>[] = [];
+    for (let i = 1; i < lines.length; i++) {  // skip header
+      const cols = lines[i].split(/[,;]/).map(c => c.trim().replace(/^"|"$/g, ""));
+      const [date, label, amountStr, type, category] = cols;
+      const amount = parseFloat(amountStr?.replace(",", ".") ?? "0");
+      if (!date || !label || isNaN(amount)) continue;
+      result.push({
+        date, label, amount: Math.abs(amount),
+        type: (type?.toLowerCase() === "income" || type?.toLowerCase() === "revenu") ? "income" : "expense",
+        category: category?.toLowerCase() || "autre",
+        status: "completed", payment_method: "virement", currency: "EUR",
+        user_id: userId,
+      });
+    }
+    return result;
+  }
+
+  async function importCSV() {
+    if (!csvDraft.length || !userId) return;
+    setCsvImporting(true);
+    const { data, error } = await supabase.from("treasury_transactions")
+      .insert(csvDraft.map(t => ({ ...t, user_id: userId })))
+      .select();
+    if (!error && data) onTxImported(data as Transaction[]);
+    setCsvDraft([]);
+    setCsvImporting(false);
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[0.65rem] text-white/30">Solde total consolidé</p>
+          <p className="text-2xl font-black text-white">{fmtC(totalBalance)}</p>
+        </div>
+        <button onClick={() => { setEditAccount(null); setShowModal(true); }}
+          className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-[0.72rem] font-bold text-black hover:bg-white/90">
+          <Plus size={13} /> Compte
+        </button>
+      </div>
+
+      {accounts.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Building2 size={32} className="text-white/10" />
+          <p className="text-[0.78rem] text-white/30">Aucun compte bancaire</p>
+          <button onClick={() => { setEditAccount(null); setShowModal(true); }}
+            className="flex items-center gap-2 rounded-xl bg-white/[0.05] px-4 py-2 text-[0.72rem] text-white/50 hover:bg-white/[0.08] hover:text-white">
+            <Plus size={13} /> Ajouter un compte
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {accounts.map(a => {
+            const txCount = transactions.filter(t => t.account_id === a.id).length;
+            return (
+              <div key={a.id} className="group rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3 hover:bg-white/[0.03] transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
+                      style={{ backgroundColor: a.color + "20", borderColor: a.color + "30" }}>
+                      <Building2 size={15} style={{ color: a.color }} />
+                    </div>
+                    <div>
+                      <p className="text-[0.82rem] font-bold text-white/90">{a.name}</p>
+                      <p className="text-[0.62rem] text-white/30">{a.bank || "—"} · {txCount} transactions</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => { setEditAccount(a); setShowModal(true); }}
+                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white">
+                      <Edit2 size={12} />
+                    </button>
+                    <button onClick={() => onAccountDelete(a.id)}
+                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-2xl font-black" style={{ color: a.balance < 0 ? "#ef4444" : "white" }}>
+                    {fmtC(a.balance, a.currency)}
+                  </p>
+                  {a.iban && <p className="mt-0.5 text-[0.6rem] text-white/20 font-mono">{a.iban}</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* CSV Import */}
+      <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <Download size={15} className="text-white/30" />
+          <div>
+            <h3 className="text-[0.78rem] font-semibold text-white/80">Import CSV relevé bancaire</h3>
+            <p className="text-[0.62rem] text-white/30">Format : date, libellé, montant, type (income/expense), catégorie</p>
+          </div>
+        </div>
+
+        {csvDraft.length === 0 ? (
+          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-white/[0.10] bg-white/[0.02] py-6 hover:border-white/20 hover:bg-white/[0.04] transition-all">
+            <Upload size={18} className="text-white/20" />
+            <span className="text-[0.68rem] text-white/25">Cliquez pour importer un fichier CSV</span>
+            <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                const reader = new FileReader();
+                reader.onload = ev => {
+                  const text = ev.target?.result as string;
+                  const draft = parseCSV(text);
+                  setCsvDraft(draft);
+                };
+                reader.readAsText(f);
+              }} />
+          </label>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-[0.72rem] text-white/50">{csvDraft.length} transaction{csvDraft.length !== 1 ? "s" : ""} détectée{csvDraft.length !== 1 ? "s" : ""}</p>
+            <div className="max-h-40 overflow-y-auto space-y-1">
+              {csvDraft.slice(0, 10).map((t, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg px-2 py-1 text-[0.68rem]">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${t.type === "income" ? "bg-green-400" : "bg-red-400"}`} />
+                  <span className="flex-1 truncate text-white/60">{t.label}</span>
+                  <span className="shrink-0 text-white/40">{t.date}</span>
+                  <span className={`shrink-0 font-semibold ${t.type === "income" ? "text-green-400" : "text-red-400"}`}>
+                    {t.type === "income" ? "+" : "-"}{fmtC(t.amount ?? 0)}
+                  </span>
+                </div>
+              ))}
+              {csvDraft.length > 10 && <p className="text-center text-[0.65rem] text-white/20">+ {csvDraft.length - 10} autres…</p>}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setCsvDraft([]); if (fileRef.current) fileRef.current.value = ""; }}
+                className="flex-1 rounded-xl border border-white/[0.08] py-2 text-[0.72rem] text-white/40 hover:text-white/60">
+                Annuler
+              </button>
+              <button onClick={importCSV} disabled={csvImporting}
+                className="flex-1 rounded-xl bg-white py-2 text-[0.72rem] font-bold text-black hover:bg-white/90 disabled:opacity-40">
+                {csvImporting ? "Import…" : `Importer ${csvDraft.length} transactions`}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {showModal && (
+          <AccountModal
+            account={editAccount} userId={userId}
+            onSave={saved => { editAccount ? onAccountEdit(saved) : onAccountAdd(saved); setShowModal(false); setEditAccount(null); }}
+            onClose={() => { setShowModal(false); setEditAccount(null); }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ═══════════════════════════ RAPPORT VIEW ════════════════════════════════ */
+
+function RapportView({ transactions, recurring, accounts }: {
+  transactions: Transaction[];
+  recurring: Recurring[];
+  accounts: TAccount[];
+}) {
+  const now   = new Date();
+  const valid = transactions.filter(t => t.status === "completed");
+
+  // Last 3 months avg burn
+  const last3Months = Array.from({ length: 3 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    return valid.filter(t => t.type === "expense" && t.date.startsWith(monthKey(d))).reduce((a, t) => a + t.amount, 0);
+  });
+  const burnRate3mo = last3Months.reduce((a, b) => a + b, 0) / 3;
+
+  const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
+  const mrr = recurring.filter(r => r.active && r.type === "income").reduce((a, r) => a + recurringMonthly(r), 0);
+  const arr = mrr * 12;
+  const runway = burnRate3mo > 0 ? (totalBalance / burnRate3mo) : null;
+
+  const thisMonth = monthKey(now);
+  const thisIncome  = valid.filter(t => t.type === "income"  && t.date.startsWith(thisMonth)).reduce((a, t) => a + t.amount, 0);
+  const thisExpense = valid.filter(t => t.type === "expense" && t.date.startsWith(thisMonth)).reduce((a, t) => a + t.amount, 0);
+  const margin = thisIncome > 0 ? ((thisIncome - thisExpense) / thisIncome * 100) : 0;
+
+  // Expense breakdown
+  const byExpCat: Record<string, number> = {};
+  valid.filter(t => t.type === "expense").forEach(t => {
+    byExpCat[t.category] = (byExpCat[t.category] ?? 0) + t.amount;
+  });
+  const expCatList = Object.entries(byExpCat).sort((a, b) => b[1] - a[1]);
+  const maxExpCat  = expCatList[0]?.[1] ?? 1;
+
+  // Income breakdown
+  const byIncCat: Record<string, number> = {};
+  valid.filter(t => t.type === "income").forEach(t => {
+    byIncCat[t.category] = (byIncCat[t.category] ?? 0) + t.amount;
+  });
+  const incCatList = Object.entries(byIncCat).sort((a, b) => b[1] - a[1]);
+  const maxIncCat  = incCatList[0]?.[1] ?? 1;
+
+  const advKPI = [
+    { l: "MRR",           v: fmtC(mrr),                       sub: "Revenu mensuel récurrent",   c: "#10b981" },
+    { l: "ARR",           v: fmtC(arr),                       sub: "Revenu annuel récurrent",     c: "#3b82f6" },
+    { l: "Burn rate",     v: fmtC(burnRate3mo) + "/mois",     sub: "Moy. 3 derniers mois",        c: "#ef4444" },
+    { l: "Runway",        v: runway !== null ? `${Math.floor(runway)} mois` : "∞", sub: "Mois de trésorerie", c: runway !== null && runway < 3 ? "#ef4444" : runway !== null && runway < 6 ? "#f59e0b" : "#10b981" },
+    { l: "Marge nette",   v: `${margin.toFixed(1)}%`,         sub: "Ce mois",                     c: margin >= 0 ? "#10b981" : "#ef4444" },
+    { l: "Solde consolidé",v: fmtC(totalBalance),             sub: `${accounts.length} compte${accounts.length !== 1 ? "s" : ""}`, c: "#c9a55a" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      {/* Advanced KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {advKPI.map(({ l, v, sub, c }) => (
+          <div key={l} className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-1">
+            <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">{l}</p>
+            <p className="text-xl font-black leading-none text-white">{v}</p>
+            <p className="text-[0.62rem]" style={{ color: c }}>{sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Expense breakdown */}
+        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Répartition dépenses</h3>
+          {expCatList.length === 0
+            ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
+            : expCatList.slice(0, 7).map(([cat, total]) => {
+              const ci = getCat("expense", cat);
+              const CI = ci.I;
+              return (
+                <div key={cat} className="flex items-center gap-2">
+                  <CI size={11} style={{ color: ci.c }} className="shrink-0" />
+                  <span className="w-20 shrink-0 truncate text-[0.65rem] text-white/50">{ci.l}</span>
+                  <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+                    <motion.div className="h-full rounded-full"
+                      initial={{ width: 0 }} animate={{ width: `${(total / maxExpCat) * 100}%` }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                      style={{ backgroundColor: ci.c }} />
+                  </div>
+                  <span className="w-16 shrink-0 text-right text-[0.65rem] font-semibold text-white/60">{fmtC(total)}</span>
+                </div>
+              );
+            })
+          }
+        </div>
+
+        {/* Income breakdown */}
+        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Répartition revenus</h3>
+          {incCatList.length === 0
+            ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucun revenu</p>
+            : incCatList.slice(0, 7).map(([cat, total]) => {
+              const ci = getCat("income", cat);
+              const CI = ci.I;
+              return (
+                <div key={cat} className="flex items-center gap-2">
+                  <CI size={11} style={{ color: ci.c }} className="shrink-0" />
+                  <span className="w-20 shrink-0 truncate text-[0.65rem] text-white/50">{ci.l}</span>
+                  <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+                    <motion.div className="h-full rounded-full"
+                      initial={{ width: 0 }} animate={{ width: `${(total / maxIncCat) * 100}%` }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                      style={{ backgroundColor: ci.c }} />
+                  </div>
+                  <span className="w-16 shrink-0 text-right text-[0.65rem] font-semibold text-white/60">{fmtC(total)}</span>
+                </div>
+              );
+            })
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════ MAIN PAGE ══════════════════════════════════ */
+
+export default function TresoreriePage() {
+  const [userId,       setUserId]       = useState<string | null>(null);
+  const [loading,      setLoading]      = useState(true);
+  const [toast,        setToast]        = useState<ToastData | null>(null);
+
+  const [accounts,     setAccounts]     = useState<TAccount[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [recurring,    setRecurring]    = useState<Recurring[]>([]);
+  const [invoices,     setInvoices]     = useState<RawDoc[]>([]);
+
+  const [tab, setTab] = useState<"dashboard"|"transactions"|"previsions"|"comptes"|"rapport">("dashboard");
+
+  const toast$ = (msg: string, type: "success"|"error" = "success") => setToast({ msg, type });
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => { if (data.user) setUserId(data.user.id); });
+  }, []);
+
+  const loadAll = useCallback(async () => {
+    if (!userId) return;
+    setLoading(true);
+    const [aRes, tRes, rRes, iRes] = await Promise.all([
+      supabase.from("treasury_accounts").select("*").eq("user_id", userId).order("is_default", { ascending: false }),
+      supabase.from("treasury_transactions").select("*").eq("user_id", userId).order("date", { ascending: false }),
+      supabase.from("treasury_recurring").select("*").eq("user_id", userId).order("label"),
+      supabase.from("documents").select("id,numero,client_nom,total_ttc,statut,date_document,date_echeance").eq("user_id", userId).eq("type", "facture"),
+    ]);
+    if (aRes.data) setAccounts(aRes.data as TAccount[]);
+    if (tRes.data) setTransactions(tRes.data as Transaction[]);
+    if (rRes.data) setRecurring(rRes.data as Recurring[]);
+    if (iRes.data) setInvoices(iRes.data as RawDoc[]);
+    setLoading(false);
+  }, [userId]);
+
+  useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
+
+  /* ── Transaction CRUD ── */
+  async function deleteTx(id: string) {
+    if (!confirm("Supprimer cette transaction ?")) return;
+    const { error } = await supabase.from("treasury_transactions").delete().eq("id", id);
+    if (error) return toast$("Erreur", "error");
+    setTransactions(ts => ts.filter(t => t.id !== id));
+    toast$("Transaction supprimée");
+  }
+
+  async function updateTxStatus(id: string, status: TxStatus) {
+    const { error } = await supabase.from("treasury_transactions").update({ status }).eq("id", id);
+    if (error) return toast$("Erreur", "error");
+    setTransactions(ts => ts.map(t => t.id === id ? { ...t, status } : t));
+  }
+
+  /* ── Account CRUD ── */
+  async function deleteAccount(id: string) {
+    if (!confirm("Supprimer ce compte ?")) return;
+    const { error } = await supabase.from("treasury_accounts").delete().eq("id", id);
+    if (error) return toast$("Erreur", "error");
+    setAccounts(as => as.filter(a => a.id !== id));
+    toast$("Compte supprimé");
+  }
+
+  /* ── Recurring CRUD ── */
+  async function deleteRecurring(id: string) {
+    if (!confirm("Supprimer cet élément récurrent ?")) return;
+    const { error } = await supabase.from("treasury_recurring").delete().eq("id", id);
+    if (error) return toast$("Erreur", "error");
+    setRecurring(rs => rs.filter(r => r.id !== id));
+    toast$("Élément supprimé");
+  }
+
+  /* ── Export CSV ── */
+  function exportCSV() {
+    const h = ["Date","Libellé","Montant","Type","Catégorie","Statut","Client/Fournisseur","Réf. facture"];
+    const rows = transactions.map(t => [
+      t.date, `"${t.label}"`, t.amount, t.type === "income" ? "Entrée" : "Sortie",
+      t.category, TX_STATUSES.find(s => s.v === t.status)?.l ?? t.status,
+      `"${t.client_supplier}"`, `"${t.invoice_ref}"`,
+    ]);
+    const csv  = [h.join(";"), ...rows.map(r => r.join(";"))].join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "tresorerie.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const TABS = [
+    { id: "dashboard",    l: "Dashboard",    I: BarChart2,  badge: 0 },
+    { id: "transactions", l: "Transactions", I: Receipt,    badge: transactions.filter(t => t.status === "pending").length },
+    { id: "previsions",   l: "Prévisions",   I: Target,     badge: 0 },
+    { id: "comptes",      l: "Comptes",      I: Building2,  badge: accounts.length },
+    { id: "rapport",      l: "Rapport",      I: PiggyBank,  badge: 0 },
+  ] as const;
+
+  const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
+
+  if (loading) return (
+    <div className="flex h-full items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+    </div>
+  );
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
       <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       </AnimatePresence>
+
+      {/* ── Header ── */}
+      <div className="shrink-0 flex items-center justify-between gap-4 border-b border-white/[0.05] p-4 sm:p-6">
+        <div>
+          <h1 className="text-xl font-black tracking-tight text-white">Trésorerie</h1>
+          <p className="mt-0.5 text-[0.65rem] text-white/30">
+            Solde : <span className={totalBalance < 0 ? "text-red-400 font-bold" : "text-white font-semibold"}>{fmtC(totalBalance)}</span>
+            {" · "}{transactions.length} transactions
+          </p>
+        </div>
+        <button onClick={exportCSV} title="Exporter CSV"
+          className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.04] text-white/30 hover:bg-white/[0.08] hover:text-white transition-all">
+          <Download size={15} />
+        </button>
+      </div>
+
+      {/* ── Tabs ── */}
+      <div className="shrink-0 flex gap-0.5 overflow-x-auto border-b border-white/[0.05] px-3 py-2 sm:px-6 scrollbar-none">
+        {TABS.map(({ id, l, I, badge }) => (
+          <button key={id} onClick={() => setTab(id as typeof tab)}
+            className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-[0.72rem] font-semibold transition-all ${
+              tab === id ? "bg-white/[0.08] text-white" : "text-white/30 hover:text-white/60"
+            }`}>
+            <I size={13} />{l}
+            {badge > 0 && (
+              <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[0.55rem] font-bold text-white/60">{badge}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Content ── */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <AnimatePresence mode="wait">
+
+          {tab === "dashboard" && (
+            <motion.div key="dash" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <DashboardView transactions={transactions} accounts={accounts} recurring={recurring} invoices={invoices} />
+            </motion.div>
+          )}
+
+          {tab === "transactions" && (
+            <motion.div key="tx" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              {userId && (
+                <TransactionsView
+                  transactions={transactions} accounts={accounts} userId={userId}
+                  onAdd={t => { setTransactions(ts => [t, ...ts]); toast$("Transaction ajoutée ✓"); }}
+                  onEdit={t => { setTransactions(ts => ts.map(x => x.id === t.id ? t : x)); toast$("Mise à jour ✓"); }}
+                  onDelete={deleteTx}
+                  onStatusChange={updateTxStatus}
+                />
+              )}
+            </motion.div>
+          )}
+
+          {tab === "previsions" && (
+            <motion.div key="prev" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              {userId && (
+                <PrevisionsView
+                  transactions={transactions} accounts={accounts}
+                  recurring={recurring} invoices={invoices} userId={userId}
+                  onRecurringAdd={r => { setRecurring(rs => [...rs, r]); toast$("Récurrent ajouté ✓"); }}
+                  onRecurringEdit={r => setRecurring(rs => rs.map(x => x.id === r.id ? r : x))}
+                  onRecurringDelete={deleteRecurring}
+                />
+              )}
+            </motion.div>
+          )}
+
+          {tab === "comptes" && (
+            <motion.div key="comp" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              {userId && (
+                <ComptesView
+                  accounts={accounts} userId={userId} transactions={transactions}
+                  onAccountAdd={a => { setAccounts(as => [...as, a]); toast$("Compte ajouté ✓"); }}
+                  onAccountEdit={a => setAccounts(as => as.map(x => x.id === a.id ? a : x))}
+                  onAccountDelete={deleteAccount}
+                  onTxImported={txs => { setTransactions(ts => [...txs, ...ts]); toast$(`${txs.length} transactions importées ✓`); }}
+                />
+              )}
+            </motion.div>
+          )}
+
+          {tab === "rapport" && (
+            <motion.div key="rap" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <RapportView transactions={transactions} recurring={recurring} accounts={accounts} />
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
