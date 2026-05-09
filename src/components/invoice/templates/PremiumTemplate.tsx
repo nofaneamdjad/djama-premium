@@ -1,103 +1,109 @@
 "use client";
 /**
- * PremiumTemplate — Fond sombre intégral, texte or, typographie luxe.
- * Design ultra-premium pour clients haut de gamme.
+ * PremiumTemplate — Corporate Slate.
+ * Header bleu ardoise professionnel, corps blanc. Style cabinet conseil / Big4.
  */
 
 import type { PreviewData } from "../shared";
 import { fmtDate, fmtEur } from "../shared";
 
+const SLATE  = "#1e3a5f";
+const SLATE2 = "#2d5480";
+const ACCENT = "#3b82f6";
+const MUTED  = "#64748b";
+
 export function PremiumTemplate({ data }: { data: PreviewData }) {
   const co = data.company ?? {};
-  const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
+  const docLabel  = data.type === "invoice" ? "FACTURE" : "DEVIS";
   const dateLabel = data.type === "invoice" ? "Échéance" : "Valable jusqu'au";
   const dateVal   = data.type === "invoice" ? data.due_date : data.valid_until;
 
   return (
-    <div className="w-full font-sans text-[8px] leading-tight" style={{ backgroundColor: "#12121a", minHeight: "100%" }}>
+    <div style={{ width: "100%", backgroundColor: "#ffffff", fontFamily: "sans-serif", fontSize: 8, lineHeight: 1.35, minHeight: "100%" }}>
 
-      {/* Header sombre avec accent or */}
-      <div className="px-5 py-4 flex items-start justify-between" style={{ backgroundColor: "#0a0a0e", borderBottom: "1px solid #2a2820" }}>
+      {/* ── Header ── */}
+      <div style={{ backgroundColor: SLATE, padding: "16px 20px 14px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <p className="font-black text-[12px] tracking-tight" style={{ color: "#c9a55a" }}>{co.name ?? "DJAMA"}</p>
-          <p className="text-[6px] mt-0.5 uppercase tracking-[0.2em]" style={{ color: "#7a6a40" }}>{docLabel}</p>
-          {co.email && <p className="text-[5.5px] mt-1" style={{ color: "#6a6a7a" }}>{co.email}</p>}
+          <div style={{ color: "#ffffff", fontWeight: 900, fontSize: 12, letterSpacing: "-0.3px" }}>{co.name ?? "DJAMA"}</div>
+          <div style={{ color: "#93c5fd", fontSize: 5.5, marginTop: 3, textTransform: "uppercase", letterSpacing: "0.15em" }}>{docLabel}</div>
+          {co.email && <div style={{ color: "#93c5fd", fontSize: 5.5, marginTop: 2 }}>{co.email}</div>}
         </div>
-        <div className="text-right">
-          <p className="font-black text-[10px]" style={{ color: "#e8cc94" }}>{data.reference}</p>
-          <p className="text-[6px] mt-0.5" style={{ color: "#7a6a40" }}>Émis le {fmtDate(data.issue_date)}</p>
-          {dateVal && <p className="text-[6px]" style={{ color: "#7a6a40" }}>{dateLabel} {fmtDate(dateVal)}</p>}
-        </div>
-      </div>
-
-      {/* Liseré or */}
-      <div className="h-px" style={{ backgroundColor: "#c9a55a", opacity: 0.4 }} />
-
-      {/* Adresses */}
-      <div className="px-5 py-3 flex gap-4" style={{ borderBottom: "1px solid #2a2820" }}>
-        <div className="flex-1">
-          <p className="font-bold text-[5.5px] uppercase tracking-wider mb-1" style={{ color: "#7a6a40" }}>De</p>
-          <p className="font-bold text-[7.5px]" style={{ color: "#e8e0cc" }}>{co.name ?? "DJAMA"}</p>
-          <p className="text-[6px]" style={{ color: "#6a6a7a" }}>{co.email}</p>
-        </div>
-        <div className="flex-1">
-          <p className="font-bold text-[5.5px] uppercase tracking-wider mb-1" style={{ color: "#7a6a40" }}>Facturé à</p>
-          <p className="font-bold text-[7.5px]" style={{ color: "#e8e0cc" }}>{data.client_name}</p>
-          {data.client_company && <p className="text-[6px]" style={{ color: "#6a6a7a" }}>{data.client_company}</p>}
-          <p className="text-[6px]" style={{ color: "#6a6a7a" }}>{data.client_email}</p>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ color: "#ffffff", fontWeight: 900, fontSize: 10 }}>{data.reference}</div>
+          <div style={{ color: "#bfdbfe", fontSize: 5.5, marginTop: 2 }}>Émis le {fmtDate(data.issue_date)}</div>
+          {dateVal && <div style={{ color: "#bfdbfe", fontSize: 5.5 }}>{dateLabel} {fmtDate(dateVal)}</div>}
         </div>
       </div>
 
-      {/* Objet */}
-      <div className="px-5 py-2">
-        <div className="rounded px-2 py-1" style={{ backgroundColor: "#1e1e26" }}>
-          <p className="font-bold text-[7px]" style={{ color: "#d4c090" }}>{data.subject}</p>
+      {/* Bande d'accent */}
+      <div style={{ height: 3, background: `linear-gradient(90deg, ${ACCENT}, ${SLATE2})` }} />
+
+      {/* ── Adresses ── */}
+      <div style={{ padding: "10px 20px", display: "flex", gap: 16, borderBottom: "1px solid #e2e8f0" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: SLATE, fontWeight: 700, fontSize: 5, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 3 }}>Émetteur</div>
+          <div style={{ color: "#0f172a", fontWeight: 700, fontSize: 7 }}>{co.name ?? "DJAMA"}</div>
+          {co.email && <div style={{ color: MUTED, fontSize: 5.5 }}>{co.email}</div>}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: SLATE, fontWeight: 700, fontSize: 5, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 3 }}>Facturé à</div>
+          <div style={{ color: "#0f172a", fontWeight: 700, fontSize: 7 }}>{data.client_name}</div>
+          {data.client_company && <div style={{ color: MUTED, fontSize: 5.5 }}>{data.client_company}</div>}
+          <div style={{ color: MUTED, fontSize: 5.5 }}>{data.client_email}</div>
         </div>
       </div>
 
-      {/* Tableau */}
-      <div className="px-5 mt-1">
-        <table className="w-full border-collapse">
+      {/* ── Objet ── */}
+      <div style={{ padding: "6px 20px" }}>
+        <div style={{ backgroundColor: "#eff6ff", borderLeft: `3px solid ${ACCENT}`, padding: "4px 8px", borderRadius: "0 4px 4px 0" }}>
+          <div style={{ color: SLATE, fontWeight: 700, fontSize: 6.5 }}>{data.subject}</div>
+        </div>
+      </div>
+
+      {/* ── Tableau ── */}
+      <div style={{ padding: "4px 20px 0" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ backgroundColor: "#c9a55a" }}>
-              <th className="text-left px-2 py-1 text-[5.5px] font-bold" style={{ color: "#0a0a0e" }}>Description</th>
-              <th className="text-right px-1 py-1 text-[5.5px] font-bold" style={{ color: "#0a0a0e" }}>Qté</th>
-              <th className="text-right px-1 py-1 text-[5.5px] font-bold" style={{ color: "#0a0a0e" }}>P.U.</th>
-              <th className="text-right px-1 py-1 text-[5.5px] font-bold" style={{ color: "#0a0a0e" }}>Total</th>
+            <tr style={{ backgroundColor: SLATE }}>
+              <th style={{ textAlign: "left",  padding: "4px 6px", fontSize: 5, fontWeight: 700, color: "#fff", width: "45%" }}>Description</th>
+              <th style={{ textAlign: "right", padding: "4px 4px", fontSize: 5, fontWeight: 700, color: "#fff", width: "10%" }}>Qté</th>
+              <th style={{ textAlign: "right", padding: "4px 4px", fontSize: 5, fontWeight: 700, color: "#fff", width: "20%" }}>Prix unitaire</th>
+              <th style={{ textAlign: "right", padding: "4px 4px", fontSize: 5, fontWeight: 700, color: "#fff", width: "12%" }}>TVA</th>
+              <th style={{ textAlign: "right", padding: "4px 6px", fontSize: 5, fontWeight: 700, color: "#fff", width: "13%" }}>Total HT</th>
             </tr>
           </thead>
           <tbody>
             {data.items.map((item, i) => (
-              <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#1a1a22" : "#16161e" }}>
-                <td className="px-2 py-1 text-[6px]" style={{ color: "#d8d4c8" }}>{item.description}</td>
-                <td className="text-right px-1 py-1 text-[6px]" style={{ color: "#8a8a9a" }}>{item.quantity}</td>
-                <td className="text-right px-1 py-1 text-[6px]" style={{ color: "#8a8a9a" }}>{fmtEur(item.unit_price)}</td>
-                <td className="text-right px-1 py-1 text-[6px] font-semibold" style={{ color: "#e0d0a0" }}>{fmtEur(item.total)}</td>
+              <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#f8fafc" : "#ffffff", borderBottom: "1px solid #e2e8f0" }}>
+                <td style={{ padding: "4px 6px", fontSize: 6, color: "#1e293b" }}>{item.description}</td>
+                <td style={{ padding: "4px 4px", fontSize: 6, color: MUTED, textAlign: "right" }}>{item.quantity}</td>
+                <td style={{ padding: "4px 4px", fontSize: 6, color: MUTED, textAlign: "right" }}>{fmtEur(item.unit_price)}</td>
+                <td style={{ padding: "4px 4px", fontSize: 6, color: MUTED, textAlign: "right" }}>{data.tax_rate}%</td>
+                <td style={{ padding: "4px 6px", fontSize: 6, color: "#1e293b", fontWeight: 600, textAlign: "right" }}>{fmtEur(item.total)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
         {/* Totaux */}
-        <div className="mt-2 flex justify-end">
-          <div className="w-36">
-            <div className="flex justify-between text-[6px] py-0.5" style={{ color: "#7a7a8a" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+          <div style={{ width: 140 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: MUTED, padding: "2px 0", borderBottom: "1px solid #e2e8f0" }}>
               <span>Sous-total HT</span><span>{fmtEur(data.subtotal)}</span>
             </div>
-            <div className="flex justify-between text-[6px] py-0.5" style={{ color: "#7a7a8a", borderBottom: "1px solid #2a2820" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: MUTED, padding: "2px 0", borderBottom: "1px solid #e2e8f0" }}>
               <span>TVA ({data.tax_rate}%)</span><span>{fmtEur(data.tax_amount)}</span>
             </div>
-            <div className="flex justify-between px-2 py-1 mt-1 rounded" style={{ backgroundColor: "#c9a55a" }}>
-              <span className="text-[7px] font-black" style={{ color: "#0a0a0e" }}>TOTAL TTC</span>
-              <span className="text-[7px] font-black" style={{ color: "#0a0a0e" }}>{fmtEur(data.total)}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", backgroundColor: SLATE, color: "#fff", fontWeight: 900, fontSize: 7, padding: "5px 8px", borderRadius: 3, marginTop: 4 }}>
+              <span>TOTAL TTC</span><span>{fmtEur(data.total)}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="mt-4 px-5 py-2 text-center" style={{ backgroundColor: "#0a0a0e", borderTop: "1px solid #2a2820" }}>
-        <p className="text-[5.5px]" style={{ color: "#7a6a40" }}>{[co.name, co.email, co.website].filter(Boolean).join(" · ")}</p>
+      <div style={{ marginTop: 12, padding: "6px 20px", backgroundColor: SLATE, textAlign: "center" }}>
+        <div style={{ color: "#93c5fd", fontSize: 5 }}>{[co.name, co.email, co.website].filter(Boolean).join(" · ")}</div>
       </div>
     </div>
   );

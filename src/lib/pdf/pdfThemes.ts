@@ -120,78 +120,78 @@ const classicTheme: PdfTheme = {
   variant: "standard",
 };
 
-// ── Premium ───────────────────────────────────────────────────────────────────
-// Fond sombre sur tout le document, texte or, typographie luxe.
+// ── Premium (Corporate Slate) ─────────────────────────────────────────────────
+// Header bleu ardoise professionnel, corps blanc. Style cabinet conseil / Big4.
 const premiumTheme: PdfTheme = {
   id: "premium",
 
-  headerBg:         [10, 10, 14],
+  headerBg:         [30, 58, 95],   // slate #1e3a5f
   headerH:          50,
-  headerNameColor:  [201, 165, 90],
-  headerSubColor:   [120, 100, 60],
-  headerRefColor:   [232, 204, 148],
-  headerDateColor:  [140, 120, 80],
+  headerNameColor:  [255, 255, 255],
+  headerSubColor:   [147, 197, 253], // blue-300
+  headerRefColor:   [255, 255, 255],
+  headerDateColor:  [191, 219, 254], // blue-200
 
-  bodyBg:           [18, 18, 22],   // fond sombre corps
-  bodyText:         [232, 232, 240],
-  mutedText:        [140, 140, 155],
+  bodyBg:           [255, 255, 255],
+  bodyText:         [15, 23, 42],
+  mutedText:        [100, 116, 139],
 
-  labelColor:       [160, 130, 70],
-  sectionNameColor: [240, 235, 220],
+  labelColor:       [30, 58, 95],
+  sectionNameColor: [15, 23, 42],
 
-  subjectBg:        [28, 28, 34],
-  subjectText:      [220, 200, 160],
+  subjectBg:        [239, 246, 255], // blue-50
+  subjectText:      [15, 23, 42],
 
-  tableHeaderBg:    [201, 165, 90],
-  tableHeaderText:  [10, 10, 14],
-  tableRowAlt:      [24, 24, 30],
-  tableBorder:      [50, 48, 42],
-  tableText:        [220, 218, 210],
+  tableHeaderBg:    [30, 58, 95],
+  tableHeaderText:  [255, 255, 255],
+  tableRowAlt:      [248, 250, 252],
+  tableBorder:      [226, 232, 240],
+  tableText:        [30, 41, 59],
 
-  totalLineBg:      [24, 24, 30],
-  totalBoxBg:       [201, 165, 90],
-  totalBoxText:     [10, 10, 14],
+  totalLineBg:      [241, 245, 249],
+  totalBoxBg:       [30, 58, 95],
+  totalBoxText:     [255, 255, 255],
 
-  footerBg:         [10, 10, 14],
-  footerText:       [120, 110, 80],
+  footerBg:         [30, 58, 95],
+  footerText:       [147, 197, 253],
 
-  variant: "dark",
+  variant: "standard",
 };
 
-// ── Colorful ──────────────────────────────────────────────────────────────────
-// Header dégradé violet/indigo, moderne SaaS. Corps blanc propre.
+// ── Colorful (Vert Banque) ─────────────────────────────────────────────────────
+// Header vert profond style BNP/Crédit Agricole, corps blanc propre.
 const colorfulTheme: PdfTheme = {
   id: "colorful",
 
-  headerBg:         [79, 70, 229],  // indigo-600
+  headerBg:         [10, 79, 58],   // vert #0a4f3a
   headerH:          50,
   headerNameColor:  [255, 255, 255],
-  headerSubColor:   [199, 210, 254], // indigo-200
+  headerSubColor:   [110, 231, 183], // emerald-300
   headerRefColor:   [255, 255, 255],
-  headerDateColor:  [199, 210, 254],
+  headerDateColor:  [167, 243, 208], // emerald-200
 
   bodyBg:           [255, 255, 255],
-  bodyText:         [15, 15, 25],
-  mutedText:        [90, 85, 110],
+  bodyText:         [15, 23, 42],
+  mutedText:        [107, 114, 128],
 
-  labelColor:       [79, 70, 229],
-  sectionNameColor: [15, 15, 25],
+  labelColor:       [10, 79, 58],
+  sectionNameColor: [15, 23, 42],
 
-  subjectBg:        [238, 242, 255], // indigo-50
-  subjectText:      [49, 46, 129],   // indigo-900
+  subjectBg:        [240, 253, 244], // green-50
+  subjectText:      [15, 23, 42],
 
-  tableHeaderBg:    [79, 70, 229],
+  tableHeaderBg:    [10, 79, 58],
   tableHeaderText:  [255, 255, 255],
-  tableRowAlt:      [246, 247, 255],
-  tableBorder:      [199, 210, 254],
-  tableText:        [15, 15, 25],
+  tableRowAlt:      [240, 253, 244],
+  tableBorder:      [209, 250, 229],
+  tableText:        [30, 41, 59],
 
-  totalLineBg:      [246, 247, 255],
-  totalBoxBg:       [79, 70, 229],
+  totalLineBg:      [240, 253, 244],
+  totalBoxBg:       [10, 79, 58],
   totalBoxText:     [255, 255, 255],
 
-  footerBg:         [79, 70, 229],
-  footerText:       [199, 210, 254],
+  footerBg:         [10, 79, 58],
+  footerText:       [167, 243, 208],
 
   variant: "standard",
 };
@@ -263,24 +263,24 @@ export const TEMPLATE_INFO: TemplateInfo[] = [
   },
   {
     id:          "premium",
-    label:       "Premium",
-    description: "Fond sombre intégral, typographie or. Ultra-luxe.",
-    headerColor: "#0a0a0e",
+    label:       "Corporate",
+    description: "Bleu ardoise professionnel. Style cabinet conseil, Big4, assurances.",
+    headerColor: "#1e3a5f",
     badge: {
-      label:     "✦ Luxe",
-      textColor: "#e8cc94",
-      bgColor:   "rgba(232,204,148,0.14)",
+      label:     "Pro",
+      textColor: "#60a5fa",
+      bgColor:   "rgba(96,165,250,0.14)",
     },
   },
   {
     id:          "colorful",
-    label:       "Colorful",
-    description: "Header indigo vif, design SaaS moderne.",
-    headerColor: "#4f46e5",
+    label:       "Banque",
+    description: "Vert banque profond. Style BNP, Crédit Agricole, grandes institutions.",
+    headerColor: "#0a4f3a",
     badge: {
-      label:     "Moderne",
-      textColor: "#a78bfa",
-      bgColor:   "rgba(167,139,250,0.14)",
+      label:     "Banque",
+      textColor: "#10b981",
+      bgColor:   "rgba(16,185,129,0.14)",
     },
   },
 ];
