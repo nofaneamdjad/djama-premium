@@ -1,1674 +1,1225 @@
 "use client";
 
 /**
- * Bloc-notes DJAMA PRO — v3
- *
- * Nouveautés v3 :
- *   🤖 "Demander à l'IA" → mini panel chat contextuel (badge PRO)
- *   ✏️  Boutons IA : "Améliorer mon texte" / "Résumer" / "Créer des actions"
- *   ☑  Checklist tri-state : [ ] en attente · [~] en cours · [x] terminé
- *   📊 Barre de progression pour les notes "Tâches"
- *   💬 Empty state : "Capturez vos idées, améliorez-les avec l'IA…"
- *   🔒 Placeholder "Bientôt" sur Traduire
+ * Notes IA — v4
+ * 8 types • dossiers • tags • archive • 9 actions IA
+ * templates • versions • export PDF/TXT/MD
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  StickyNote, Plus, Search, Trash2, FileDown, Save,
-  CheckCircle2, Loader2, ArrowLeft,
-  ChevronDown, Clock, SortAsc, SortDesc, X,
-  Sparkles, Wand2, FileText, ListChecks, MessageSquare,
-  Star, Pin, Check, Eye, EyeOff, CheckSquare,
-  Send, Globe, CornerDownLeft,
-  Mic, Volume2, Square, Pause, Play, RotateCcw, AlertCircle,
+  StickyNote, Plus, Search, Trash2, X, Loader2, Star, Pin,
+  ChevronDown, Save, Sparkles, Wand2, FileText, ListChecks,
+  MessageSquare, Mic, Square, Pause, Play, RotateCcw, ArrowLeft,
+  Folder, FolderPlus, Tag, CheckSquare, BookOpen, Users, Lightbulb,
+  Code, ClipboardList, Archive, Download, Clock, Brain, RefreshCw,
+  Languages, FileSearch, Zap, Check, MoreHorizontal, Hash,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
-// jsPDF chargé en lazy (dynamic import) — évite ~850KB dans le bundle initial
 
-/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    TYPES
-═══════════════════════════════════════════════════════════════ */
-type Category     = "réunion" | "idées" | "tâches" | "personnel";
-type AiAction     = "improve" | "summarize" | "to-tasks" | "chat";
-type NonChatAction = Exclude<AiAction, "chat">;
-type SortBy       = "date" | "category";
+═══════════════════════════════════════════════════════════ */
+type NoteType =
+  | "texte" | "checklist" | "réunion" | "idée"
+  | "compte-rendu" | "journal" | "code" | "vocal";
+
+type AiAction =
+  | "improve" | "summarize" | "to-tasks" | "correct"
+  | "rephrase" | "translate" | "meeting-report" | "extract-actions" | "chat";
+
+type SortBy  = "date" | "alpha" | "type";
+type AppView = "list" | "editor";
 
 interface Note {
-  id:         string;
-  user_id:    string;
-  title:      string;
-  content:    string;
-  category:   Category;
-  created_at: string;
-  updated_at: string;
+  id:            string;
+  user_id:       string;
+  title:         string;
+  content:       string;
+  category:      string;
+  note_type:     NoteType | null;
+  folder_id:     string | null;
+  tags:          string[] | null;
+  is_archived:   boolean | null;
+  is_favorite:   boolean | null;
+  linked_entity: string | null;
+  word_count:    number | null;
+  created_at:    string;
+  updated_at:    string;
 }
 
-interface ChatMessage {
-  role: "user" | "assistant";
-  text: string;
+interface NoteFolder {
+  id:    string;
+  name:  string;
+  color: string;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   CONSTANTES
-═══════════════════════════════════════════════════════════════ */
-const ease = [0.16, 1, 0.3, 1] as const;
 type VoiceState = "idle" | "recording" | "paused" | "stopped";
-const CHUNK_MS  = 5 * 60 * 1000; // auto-transcription toutes les 5 min
-function fmtSec(s: number) {
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-  return h > 0
-    ? `${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`
-    : `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
-}
 
-const CATEGORIES = [
-  { value: "réunion"   as Category, label: "Réunion",   color: "#60a5fa", bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)"  },
-  { value: "idées"     as Category, label: "Idées",     color: "#c9a55a", bg: "rgba(201,165,90,0.12)",  border: "rgba(201,165,90,0.3)"  },
-  { value: "tâches"    as Category, label: "Tâches",    color: "#4ade80", bg: "rgba(34,197,94,0.12)",   border: "rgba(34,197,94,0.3)"   },
-  { value: "personnel" as Category, label: "Personnel", color: "#a78bfa", bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.3)"  },
-] as const;
+/* ═══════════════════════════════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════════════════════════════ */
+const amber = "#f59e0b";
+const ease  = [0.16, 1, 0.3, 1] as const;
+const CHUNK_MS = 5 * 60 * 1000;
 
-const AI_ACTIONS: { action: NonChatAction; label: string; labelShort: string; icon: React.ElementType; tip: string }[] = [
-  { action: "improve",   label: "Améliorer mon texte", labelShort: "Améliorer", icon: Wand2,      tip: "Améliore style et grammaire"   },
-  { action: "summarize", label: "Résumer",              labelShort: "Résumer",   icon: FileText,   tip: "Génère un résumé en points"    },
-  { action: "to-tasks",  label: "Créer des actions",   labelShort: "Actions",   icon: ListChecks, tip: "Transforme en liste de tâches" },
+const NOTE_TYPES: {
+  value: NoteType; label: string; color: string; bg: string;
+  border: string; Icon: React.ElementType
+}[] = [
+  { value:"texte",        label:"Texte",        color:"#94a3b8", bg:"rgba(148,163,184,0.1)",  border:"rgba(148,163,184,0.2)", Icon:FileText     },
+  { value:"checklist",    label:"Checklist",    color:"#4ade80", bg:"rgba(74,222,128,0.1)",   border:"rgba(74,222,128,0.2)",  Icon:CheckSquare  },
+  { value:"réunion",      label:"Réunion",      color:"#60a5fa", bg:"rgba(96,165,250,0.1)",   border:"rgba(96,165,250,0.2)",  Icon:Users        },
+  { value:"idée",         label:"Idée",         color:"#f59e0b", bg:"rgba(245,158,11,0.1)",   border:"rgba(245,158,11,0.2)",  Icon:Lightbulb    },
+  { value:"compte-rendu", label:"Compte-rendu", color:"#a78bfa", bg:"rgba(167,139,250,0.1)",  border:"rgba(167,139,250,0.2)", Icon:ClipboardList},
+  { value:"journal",      label:"Journal",      color:"#f472b6", bg:"rgba(244,114,182,0.1)",  border:"rgba(244,114,182,0.2)", Icon:BookOpen     },
+  { value:"code",         label:"Code",         color:"#38bdf8", bg:"rgba(56,189,248,0.1)",   border:"rgba(56,189,248,0.2)",  Icon:Code         },
+  { value:"vocal",        label:"Vocal",        color:"#fb923c", bg:"rgba(251,146,60,0.1)",   border:"rgba(251,146,60,0.2)",  Icon:Mic          },
 ];
 
-/* ── localStorage helpers ── */
+const AI_ACTIONS: { action: AiAction; label: string; icon: React.ElementType; color: string; replaces: boolean }[] = [
+  { action:"improve",         label:"Améliorer",    icon:Wand2,       color:"#a78bfa", replaces:true  },
+  { action:"correct",         label:"Corriger",     icon:Check,       color:"#4ade80", replaces:true  },
+  { action:"rephrase",        label:"Reformuler",   icon:RefreshCw,   color:"#60a5fa", replaces:true  },
+  { action:"summarize",       label:"Résumer",      icon:FileText,    color:"#f59e0b", replaces:false },
+  { action:"to-tasks",        label:"→ Tâches",     icon:ListChecks,  color:"#34d399", replaces:false },
+  { action:"translate",       label:"Traduire",     icon:Languages,   color:"#38bdf8", replaces:true  },
+  { action:"meeting-report",  label:"CR Réunion",   icon:ClipboardList,color:"#f472b6",replaces:false },
+  { action:"extract-actions", label:"Extraire",     icon:Zap,         color:"#fb923c", replaces:false },
+  { action:"chat",            label:"Chat IA",      icon:MessageSquare,color:"#c9a55a",replaces:false },
+];
+
+const TEMPLATES: { label: string; type: NoteType; icon: string; content: string }[] = [
+  {
+    label:"Réunion", type:"réunion", icon:"👥",
+    content:`# Réunion — ${new Date().toLocaleDateString("fr-FR")}
+
+**Participants :**
+
+**Ordre du jour :**
+-
+
+**Notes :**
+
+
+**Décisions prises :**
+-
+
+**Actions à suivre :**
+- [ ]
+- [ ]
+
+**Prochaine réunion :**`,
+  },
+  {
+    label:"Brainstorming", type:"idée", icon:"💡",
+    content:`# Brainstorming
+
+**Idée principale :**
+
+
+**Pistes à explorer :**
+-
+-
+-
+
+**Pour :**
+-
+
+**Contre :**
+-
+
+**Prochaine action :**`,
+  },
+  {
+    label:"Projet", type:"compte-rendu", icon:"🚀",
+    content:`# Projet :
+
+**Objectif :**
+
+
+**Étapes clés :**
+1.
+2.
+3.
+
+**Ressources nécessaires :**
+-
+
+**Budget estimé :**
+
+
+**Deadline :**
+
+
+**Risques :**
+- `,
+  },
+  {
+    label:"Journal", type:"journal", icon:"📓",
+    content:`# Journal — ${new Date().toLocaleDateString("fr-FR")}
+
+**Aujourd'hui :**
+
+
+**Ce qui s'est bien passé :**
+-
+
+**Ce qui peut être amélioré :**
+-
+
+**Apprentissages :**
+
+
+**Demain :**
+- [ ] `,
+  },
+  {
+    label:"Business Plan", type:"texte", icon:"📊",
+    content:`# Business Plan
+
+## Vision
+**Mission :**
+
+**Valeur unique :**
+
+## Problème
+Le problème que l'on résout :
+
+## Solution
+
+
+## Marché cible
+**Segment :**
+
+**Taille estimée :**
+
+## Modèle de revenus
+
+
+## Concurrence
+
+
+## Objectifs (6 mois)
+- [ ]
+- [ ] `,
+  },
+  {
+    label:"Notes de cours", type:"texte", icon:"📚",
+    content:`# Cours :
+
+**Date :** ${new Date().toLocaleDateString("fr-FR")}
+**Formateur :**
+
+## Points clés
+-
+-
+-
+
+## Concepts importants
+
+
+## Questions à creuser
+-
+
+## Résumé
+
+
+## Prochaines étapes
+- [ ] `,
+  },
+];
+
+const FOLDER_COLORS = ["#a78bfa","#60a5fa","#4ade80","#f59e0b","#f472b6","#38bdf8","#fb923c"];
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+const getNoteType = (n: Note): NoteType => {
+  if (n.note_type) return n.note_type;
+  // Fallback from old category
+  const map: Record<string, NoteType> = { réunion:"réunion", idées:"idée", tâches:"checklist", personnel:"journal" };
+  return map[n.category] ?? "texte";
+};
+const getTypeInfo = (t: NoteType) => NOTE_TYPES.find(x => x.value === t) ?? NOTE_TYPES[0];
+const countWords = (t: string) => t.trim() ? t.trim().split(/\s+/).length : 0;
+const fmtDate = (iso: string) =>
+  new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}).format(new Date(iso));
+const fmtDateShort = (iso: string) =>
+  new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"short"}).format(new Date(iso));
+
 const FAV_KEY = "djama_notes_favorites";
-const PIN_KEY = "djama_notes_pinned";
+const getLocalFavs = (): Set<string> => {
+  try { const d = localStorage.getItem(FAV_KEY); return d ? new Set(JSON.parse(d) as string[]) : new Set(); } catch { return new Set(); }
+};
 
-function getLocalSet(key: string): Set<string> {
-  try {
-    if (typeof window === "undefined") return new Set();
-    const d = localStorage.getItem(key);
-    return d ? new Set(JSON.parse(d) as string[]) : new Set();
-  } catch { return new Set(); }
-}
-function saveLocalSet(key: string, s: Set<string>) {
-  try { localStorage.setItem(key, JSON.stringify([...s])); } catch {}
+function fmtSec(s: number) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return h>0 ? `${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}` : `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
 }
 
-/* ── Helpers ── */
-function getCat(v: Category) {
-  return CATEGORIES.find(c => c.value === v) ?? CATEGORIES[3];
-}
-function fmtDate(iso: string) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-  }).format(new Date(iso));
-}
-function fmtDateShort(iso: string) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
-  }).format(new Date(iso));
-}
-function countWords(text: string) {
-  return text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
-}
-function getTaskProgress(content: string) {
-  const lines  = content.split("\n");
-  const total  = lines.filter(l => /^(\s*)-\s*\[[x~\s]\]\s/.test(l)).length;
-  const done   = lines.filter(l => /^(\s*)-\s*\[x\]\s/i.test(l)).length;
-  const inProg = lines.filter(l => /^(\s*)-\s*\[~\]\s/.test(l)).length;
-  return { total, done, inProg };
+function getCheckProgress(content: string) {
+  const lines = content.split("\n");
+  const total = lines.filter(l=>/^(\s*)-\s*\[[x~\s]\]/.test(l)).length;
+  const done  = lines.filter(l=>/^(\s*)-\s*\[x\]/i.test(l)).length;
+  return { total, done };
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SOUS-COMPOSANTS
-═══════════════════════════════════════════════════════════════ */
-
-function CategoryBadge({ cat }: { cat: Category }) {
-  const c = getCat(cat);
-  return (
-    <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider"
-      style={{ color: c.color, background: c.bg, border: `1px solid ${c.border}` }}
-    >
-      {c.label}
-    </span>
-  );
-}
-
-
-function ConfirmDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
-    >
-      <motion.div
-        initial={{ scale: 0.93, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.95, y: 8, opacity: 0 }} transition={{ duration: 0.3, ease }}
-        className="w-full max-w-sm overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
-      >
-        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10">
-          <Trash2 size={18} className="text-red-400" />
-        </div>
-        <h3 className="text-base font-extrabold text-white">Supprimer cette note ?</h3>
-        <p className="mt-1.5 text-sm text-white/40">Cette action est irréversible.</p>
-        <div className="mt-5 flex gap-3">
-          <button onClick={onCancel}  className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/60 transition hover:border-white/20 hover:text-white/90">Annuler</button>
-          <button onClick={onConfirm} className="flex-1 rounded-xl bg-red-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-red-500">Supprimer</button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-/* ── ChecklistView — tri-state : [ ] · [~] · [x] ── */
+/* ═══════════════════════════════════════════════════════════
+   CHECKLIST VIEW (tri-state)
+═══════════════════════════════════════════════════════════ */
 function ChecklistView({ content, onToggle }: { content: string; onToggle: (c: string) => void }) {
   const lines = content.split("\n");
-
-  function cycleState(i: number) {
+  function cycle(i: number) {
     const nl = [...lines];
     const l  = nl[i];
-    if (/^(\s*-\s*)\[ \]/.test(l))      nl[i] = l.replace(/^(\s*-\s*)\[ \]/, "$1[~]");
-    else if (/^(\s*-\s*)\[~\]/.test(l)) nl[i] = l.replace(/^(\s*-\s*)\[~\]/, "$1[x]");
-    else                                  nl[i] = l.replace(/^(\s*-\s*)\[x\]/i, "$1[ ]");
+    if (/^(\s*-\s*)\[ \]/.test(l))      nl[i] = l.replace(/^(\s*-\s*)\[ \]/,"$1[~]");
+    else if (/^(\s*-\s*)\[~\]/.test(l)) nl[i] = l.replace(/^(\s*-\s*)\[~\]/,"$1[x]");
+    else                                  nl[i] = l.replace(/^(\s*-\s*)\[x\]/i,"$1[ ]");
     onToggle(nl.join("\n"));
   }
-
   return (
-    <div className="space-y-2 py-1">
-      {lines.map((line, i) => {
-        const mPend = /^(\s*)-\s*\[ \]\s*(.*)/.exec(line);
-        const mProg = /^(\s*)-\s*\[~\]\s*(.*)/.exec(line);
-        const mDone = /^(\s*)-\s*\[x\]\s*(.*)/i.exec(line);
-        const m     = mPend ?? mProg ?? mDone;
-
+    <div className="space-y-1.5 py-1">
+      {lines.map((line,i)=>{
+        const mP = /^(\s*)-\s*\[ \]\s*(.*)/.exec(line);
+        const mR = /^(\s*)-\s*\[~\]\s*(.*)/.exec(line);
+        const mD = /^(\s*)-\s*\[x\]\s*(.*)/i.exec(line);
+        const m  = mP??mR??mD;
         if (m) {
-          const indent     = m[1].length;
-          const text       = m[2] ?? "";
-          const state      = mDone ? "done" : mProg ? "progress" : "pending";
-          const borderCol  = state === "done"     ? "#4ade80"
-                           : state === "progress" ? "#c9a55a"
-                           :                        "rgba(255,255,255,0.2)";
-          const bgCol      = state === "done"     ? "rgba(74,222,128,0.12)"
-                           : state === "progress" ? "rgba(201,165,90,0.12)"
-                           :                        "transparent";
-          const textClass  = state === "done"     ? "text-white/35 line-through"
-                           : state === "progress" ? "text-[#c9a55a]/90"
-                           :                        "text-white/80";
-          const title      = state === "pending"  ? "Marquer en cours"
-                           : state === "progress" ? "Marquer terminé"
-                           :                        "Remettre en attente";
-
+          const state = mD?"done":mR?"progress":"pending";
+          const text  = m[2]??"";
+          const col   = state==="done"?"#4ade80":state==="progress"?"#f59e0b":"rgba(255,255,255,0.3)";
           return (
-            <div key={i} className="flex items-center gap-2.5" style={{ paddingLeft: `${indent * 8}px` }}>
-              <button
-                onClick={() => cycleState(i)}
-                title={title}
-                className="flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all duration-200 hover:scale-110"
-                style={{ borderColor: borderCol, background: bgCol }}
-              >
-                {state === "done"     && <Check size={9} className="text-green-400" />}
-                {state === "progress" && <div className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />}
-              </button>
-              <span className={`text-[0.95rem] leading-relaxed transition-colors ${textClass}`}>
-                {text || "\u00a0"}
-              </span>
+            <div key={i} onClick={()=>cycle(i)}
+              className="flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 transition hover:bg-white/[0.04]"
+              style={{background:state!=="pending"?`${col}10`:"transparent"}}>
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border" style={{borderColor:col,background:`${col}18`}}>
+                {state==="done"&&<Check size={10} style={{color:col}}/>}
+                {state==="progress"&&<span className="text-[8px] font-black" style={{color:col}}>~</span>}
+              </div>
+              <span className={`flex-1 text-sm ${state==="done"?"text-white/30 line-through":state==="progress"?"text-amber-300/80":"text-white/80"}`}>{text}</span>
             </div>
           );
         }
-
-        return (
-          <p key={i} className={`text-[0.95rem] leading-relaxed text-white/80 ${!line ? "h-5" : ""}`}>
-            {line || ""}
-          </p>
-        );
+        return line.trim() ? (
+          <p key={i} className="px-3 py-0.5 text-sm text-white/60">{line}</p>
+        ) : <div key={i} className="h-1"/>;
       })}
     </div>
   );
 }
 
-/* ── TaskProgressBar ── */
-function TaskProgressBar({ content }: { content: string }) {
-  const { total, done, inProg } = getTaskProgress(content);
-  if (total === 0) return null;
-
-  const pctDone = Math.round((done   / total) * 100);
-  const pctProg = Math.round((inProg / total) * 100);
-
-  return (
-    <div className="flex items-center gap-3 mt-2">
-      <div className="flex-1 h-1.5 rounded-full bg-white/[0.07] overflow-hidden">
-        <div className="h-full flex">
-          <motion.div
-            initial={{ width: 0 }} animate={{ width: `${pctDone}%` }}
-            transition={{ duration: 0.55, ease }}
-            className="h-full bg-green-400/75 rounded-l-full"
-          />
-          <motion.div
-            initial={{ width: 0 }} animate={{ width: `${pctProg}%` }}
-            transition={{ duration: 0.55, ease, delay: 0.1 }}
-            className="h-full bg-[#c9a55a]/60"
-          />
-        </div>
-      </div>
-      <span className="text-[0.6rem] font-bold text-white/30 shrink-0 tabular-nums">
-        {done}/{total}
-        {inProg > 0 && (
-          <span className="ml-1 text-[#c9a55a]/50">· {inProg} en cours</span>
-        )}
-      </span>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   EXPORT PDF
-═══════════════════════════════════════════════════════════════ */
-async function exportPDF(note: Note) {
-  const { jsPDF } = await import("jspdf");
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const cat = getCat(note.category);
-  const W = 210, margin = 20, maxWidth = W - margin * 2;
-  doc.setFillColor(8, 10, 15);
-  doc.rect(0, 0, W, 55, "F");
-  doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(201, 165, 90);
-  doc.text(cat.label.toUpperCase(), margin, 20);
-  doc.setFontSize(22); doc.setFont("helvetica", "bold"); doc.setTextColor(255, 255, 255);
-  const titleLines = doc.splitTextToSize(note.title || "Sans titre", maxWidth) as string[];
-  doc.text(titleLines, margin, 30);
-  doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(130, 130, 130);
-  doc.text(`Modifiée le ${fmtDate(note.updated_at)}`, margin, 48);
-  doc.setDrawColor(201, 165, 90); doc.setLineWidth(0.4); doc.line(margin, 56, W - margin, 56);
-  doc.setFontSize(10.5); doc.setFont("helvetica", "normal"); doc.setTextColor(40, 40, 40);
-  const bodyLines = doc.splitTextToSize(note.content || "(note vide)", maxWidth) as string[];
-  const lineH = 5.5; let y = 66;
-  for (const line of bodyLines) {
-    if (y > 277) { doc.addPage(); y = margin; }
-    doc.text(line, margin, y); y += lineH;
-  }
-  doc.setFontSize(7.5); doc.setTextColor(160, 160, 160);
-  doc.text("DJAMA — Bloc-notes Pro", margin, 290);
-  doc.text("Page 1", W - margin, 290, { align: "right" });
-  doc.save(`${(note.title || "note").replace(/[^a-z0-9]/gi, "_").toLowerCase()}.pdf`);
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   PAGE PRINCIPALE
-═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   MAIN PAGE
+═══════════════════════════════════════════════════════════ */
 export default function BlocNotesPage() {
 
-  /* ── Notes & sélection ── */
-  const [notes,      setNotes]      = useState<Note[]>([]);
-  const [selected,   setSelected]   = useState<Note | null>(null);
-  const [draft,      setDraft]      = useState<Partial<Note>>({});
-  const [dirty,      setDirty]      = useState(false);
+  /* ── Data ── */
+  const [notes,   setNotes]   = useState<Note[]>([]);
+  const [folders, setFolders] = useState<NoteFolder[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  /* ── États de chargement ── */
-  const [loadingAll, setLoadingAll] = useState(true);
-  const [saving,     setSaving]     = useState(false);
-  const [deleting,   setDeleting]   = useState(false);
-  const [autoSaving, setAutoSaving] = useState(false);
-  const [aiLoading,  setAiLoading]  = useState<NonChatAction | null>(null);
+  /* ── Selection / filters ── */
+  const [selected,      setSelected]      = useState<Note|null>(null);
+  const [filter,        setFilter]        = useState<"all"|"favorites"|"archived"|string>("all");
+  const [typeFilter,    setTypeFilter]    = useState<NoteType|"all">("all");
+  const [search,        setSearch]        = useState("");
+  const [sortBy,        setSortBy]        = useState<SortBy>("date");
+  const [favSet,        setFavSet]        = useState<Set<string>>(new Set());
 
-  /* ── Voice recording ── */
-  const [voiceOpen,   setVoiceOpen]   = useState(false);
-  const [voiceState,  setVoiceState]  = useState<VoiceState>("idle");
-  const [voiceElapsed,setVoiceElapsed]= useState(0);
-  const [voiceTxt,    setVoiceTxt]    = useState("");
-  const [voiceTranscribing, setVoiceTranscribing] = useState(false);
-  const [voiceErr,    setVoiceErr]    = useState("");
-  const [voiceSummarizing, setVoiceSummarizing] = useState(false);
-  const [voiceSummary, setVoiceSummary] = useState("");
-
-  /* ── Chat IA ── */
-  const [chatOpen,    setChatOpen]    = useState(false);
-  const [chatPrompt,  setChatPrompt]  = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  /* ── Editor state ── */
+  const [dTitle,    setDTitle]    = useState("");
+  const [dContent,  setDContent]  = useState("");
+  const [dType,     setDType]     = useState<NoteType>("texte");
+  const [dFolderId, setDFolderId] = useState<string|null>(null);
+  const [dTags,     setDTags]     = useState<string[]>([]);
+  const [dLinked,   setDLinked]   = useState("");
+  const [dTagInput, setDTagInput] = useState("");
+  const [isDirty,   setIsDirty]   = useState(false);
+  const [isSaving,  setIsSaving]  = useState(false);
+  const [savedAgo,  setSavedAgo]  = useState("");
+  const [prevSnap,  setPrevSnap]  = useState<string|null>(null); // version before AI
 
   /* ── UI ── */
-  const [confirmDel, setConfirmDel] = useState(false);
-  const [toast,      setToast]      = useState<ToastData | null>(null);
-  const [mobileView, setMobileView] = useState<"list" | "editor">("list");
-  const [preview,    setPreview]    = useState(false);
+  const [view,          setView]          = useState<AppView>("list");
+  const [toast,         setToast]         = useState<ToastData|null>(null);
+  const [aiPanel,       setAiPanel]       = useState(false);
+  const [aiAction,      setAiAction]      = useState<AiAction>("improve");
+  const [aiLoading,     setAiLoading]     = useState(false);
+  const [aiResult,      setAiResult]      = useState("");
+  const [chatPrompt,    setChatPrompt]    = useState("");
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showVersions,  setShowVersions]  = useState(false);
+  const [confirmDel,    setConfirmDel]    = useState(false);
+  const [folderModal,   setFolderModal]   = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderColor,setNewFolderColor]= useState("#a78bfa");
+  const [exportMenu,    setExportMenu]    = useState(false);
 
-  /* ── Filtres ── */
-  const [query,      setQuery]      = useState("");
-  const [filterCat,  setFilterCat]  = useState<Category | "tous">("tous");
-  const [filterFav,  setFilterFav]  = useState(false);
-  const [sortDir,    setSortDir]    = useState<"desc" | "asc">("desc");
-  const [sortBy,     setSortBy]     = useState<SortBy>("date");
-
-  /* ── Favoris & épinglés ── */
-  const [favorites,  setFavorites]  = useState<Set<string>>(new Set());
-  const [pinned,     setPinned]     = useState<Set<string>>(new Set());
+  /* ── Voice ── */
+  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const [voiceSec,   setVoiceSec]   = useState(0);
+  const [voiceTxt,   setVoiceTxt]   = useState("");
+  const [voiceLoad,  setVoiceLoad]  = useState(false);
 
   /* ── Refs ── */
-  const textareaRef   = useRef<HTMLTextAreaElement>(null);
-  const handleSaveRef = useRef<(silent?: boolean) => Promise<void>>(async () => {});
-  const chatInputRef  = useRef<HTMLTextAreaElement>(null);
-  const chatBottomRef = useRef<HTMLDivElement>(null);
-  /* Voice refs */
-  const mrRef      = useRef<MediaRecorder | null>(null);
-  const audioRef   = useRef<Blob[]>([]);
-  const streamRef  = useRef<MediaStream | null>(null);
-  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
-  const chunkRef   = useRef<ReturnType<typeof setInterval> | null>(null);
-  const elapsedRef = useRef(0);
-  const chunkIdxRef= useRef(0);
-  const txRef      = useRef("");
-
-  /* ── Charger les notes ── */
-  const fetchNotes = useCallback(async () => {
-    setLoadingAll(true);
-    const { data, error } = await supabase
-      .from("notes").select("*").order("updated_at", { ascending: false }).limit(200);
-    if (error) showToast("error", "Impossible de charger les notes.");
-    else       setNotes((data as Note[]) ?? []);
-    setLoadingAll(false);
-  }, []);
-
-  useEffect(() => { fetchNotes(); }, [fetchNotes]);
-
-  /* ── Charger favoris/épinglés ── */
-  useEffect(() => {
-    setFavorites(getLocalSet(FAV_KEY));
-    setPinned(getLocalSet(PIN_KEY));
-  }, []);
-
-  /* ── Réinitialiser chat quand on change de note ── */
-  useEffect(() => {
-    setChatHistory([]);
-    setChatOpen(false);
-    setChatPrompt("");
-  }, [selected?.id]);
-
-  /* ── Focus input chat à l'ouverture ── */
-  useEffect(() => {
-    if (chatOpen) {
-      const t = setTimeout(() => chatInputRef.current?.focus(), 150);
-      return () => clearTimeout(t);
-    }
-  }, [chatOpen]);
-
-  /* ── Scroll chat vers le bas ── */
-  useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatHistory]);
-
-  /* ── Ctrl+S ── */
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s" && dirty) {
-        e.preventDefault();
-        handleSaveRef.current();
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [dirty]);
-
-  /* ── Auto-resize textarea ── */
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [draft.content]);
+  const textareaRef  = useRef<HTMLTextAreaElement>(null);
+  const saveRef      = useRef<(s?: boolean)=>Promise<void>>(async()=>{});
+  const debRef       = useRef<ReturnType<typeof setTimeout>|null>(null);
+  const timerRef     = useRef<ReturnType<typeof setInterval>|null>(null);
+  const chunkRef     = useRef<ReturnType<typeof setInterval>|null>(null);
+  const mrRef        = useRef<MediaRecorder|null>(null);
+  const blobsRef     = useRef<Blob[]>([]);
+  const chunkIdxRef  = useRef(0);
+  const txRef        = useRef("");
+  const voiceSecRef  = useRef(0);
 
   /* ── Toast ── */
-  function showToast(type: "success" | "error", msg: string) {
-    setToast({ type, msg });
-  }
+  const showToast = (type: "success"|"error"|"info", msg: string) => setToast({type,msg} as ToastData);
 
-  /* ── Sauvegarder ── */
+  /* ── Fetch ── */
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    const [nRes, fRes] = await Promise.all([
+      supabase.from("notes").select("*").order("updated_at",{ascending:false}).limit(500),
+      supabase.from("note_folders").select("*").order("name"),
+    ]);
+    if (nRes.data) setNotes(nRes.data as Note[]);
+    if (fRes.data) setFolders(fRes.data as NoteFolder[]);
+    setFavSet(getLocalFavs());
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { void fetchAll() }, [fetchAll]);
+
+  /* ── Load note into editor ── */
+  const openNote = useCallback((n: Note) => {
+    setSelected(n);
+    setDTitle(n.title);
+    setDContent(n.content);
+    setDType(getNoteType(n));
+    setDFolderId(n.folder_id ?? null);
+    setDTags(n.tags ?? []);
+    setDLinked(n.linked_entity ?? "");
+    setIsDirty(false);
+    setAiPanel(false);
+    setAiResult("");
+    setPrevSnap(null);
+    setSavedAgo("");
+    setView("editor");
+  }, []);
+
+  /* ── New note ── */
+  const createNote = useCallback((type: NoteType = "texte", templateContent = "") => {
+    setSelected(null);
+    setDTitle("");
+    setDContent(templateContent);
+    setDType(type);
+    setDFolderId(null);
+    setDTags([]);
+    setDLinked("");
+    setIsDirty(!!templateContent);
+    setAiPanel(false);
+    setAiResult("");
+    setPrevSnap(null);
+    setSavedAgo("");
+    setView("editor");
+  }, []);
+
+  /* ── Save ── */
   const handleSave = useCallback(async (silent = false) => {
-    if (!draft.title?.trim() && !draft.content?.trim()) {
-      if (!silent) showToast("error", "La note doit avoir un titre ou du contenu.");
-      return;
-    }
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { if (!silent) showToast("error", "Non connecté."); return; }
-
-    if (!silent) setSaving(true);
+    if (!dTitle.trim() && !dContent.trim()) return;
+    setIsSaving(true);
+    const { data:{user} } = await supabase.auth.getUser();
+    if (!user) { setIsSaving(false); return; }
 
     const payload = {
-      title:    draft.title    ?? "",
-      content:  draft.content  ?? "",
-      category: draft.category ?? "personnel",
+      title:         dTitle.trim() || "Sans titre",
+      content:       dContent,
+      note_type:     dType,
+      category:      dType, // keep for backward compat
+      folder_id:     dFolderId,
+      tags:          dTags,
+      linked_entity: dLinked.trim(),
+      word_count:    countWords(dContent),
+      updated_at:    new Date().toISOString(),
     };
 
-    let saved: Note | null = null;
-
-    if (selected) {
-      const { data, error } = await supabase
-        .from("notes").update(payload).eq("id", selected.id).select().single();
-      if (error) { if (!silent) showToast("error", error.message); if (!silent) setSaving(false); return; }
-      saved = data as Note;
-      setNotes(prev => prev.map(n => n.id === saved!.id ? saved! : n));
+    let savedNote: Note | null = null;
+    if (selected?.id) {
+      const { data, error } = await supabase.from("notes").update(payload).eq("id",selected.id).select().single();
+      if (error) { showToast("error",`Erreur : ${error.message}`); setIsSaving(false); return; }
+      savedNote = data as Note;
+      setNotes(p => p.map(n => n.id===selected.id ? savedNote! : n));
     } else {
-      const { data, error } = await supabase
-        .from("notes").insert({ ...payload, user_id: user.id }).select().single();
-      if (error) { if (!silent) showToast("error", error.message); if (!silent) setSaving(false); return; }
-      saved = data as Note;
-      setNotes(prev => [saved!, ...prev]);
+      const { data, error } = await supabase.from("notes").insert({...payload,user_id:user.id}).select().single();
+      if (error) { showToast("error",`Erreur : ${error.message}`); setIsSaving(false); return; }
+      savedNote = data as Note;
+      setNotes(p => [savedNote!, ...p]);
+      setSelected(savedNote);
     }
 
-    setSelected(saved);
-    setDraft({ title: saved.title, content: saved.content, category: saved.category });
-    setDirty(false);
-    if (!silent) { setSaving(false); showToast("success", "Note enregistrée."); }
-  }, [draft, selected]);
+    setIsSaving(false);
+    setIsDirty(false);
+    setSavedAgo("il y a quelques secondes");
+    if (!silent) showToast("success","Note sauvegardée ✓");
+  }, [dTitle, dContent, dType, dFolderId, dTags, dLinked, selected]);
 
-  useEffect(() => { handleSaveRef.current = handleSave; }, [handleSave]);
+  saveRef.current = handleSave;
 
-  /* ── Auto-save ── */
+  /* ── Auto-save debounce ── */
   useEffect(() => {
-    if (!dirty || !selected?.id) return;
-    const timer = setTimeout(async () => {
-      setAutoSaving(true);
-      await handleSaveRef.current(true);
-      setAutoSaving(false);
-    }, 2500);
-    return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft.title, draft.content, draft.category, dirty, selected?.id]);
+    if (!isDirty) return;
+    if (debRef.current) clearTimeout(debRef.current);
+    debRef.current = setTimeout(() => { void saveRef.current(true) }, 2500);
+    return () => { if (debRef.current) clearTimeout(debRef.current) };
+  }, [isDirty, dTitle, dContent, dType]);
 
-  /* ── Supprimer ── */
+  /* ── Delete ── */
   async function handleDelete() {
-    if (!selected) return;
-    setDeleting(true);
-    const { error } = await supabase.from("notes").delete().eq("id", selected.id);
-    setDeleting(false);
-    setConfirmDel(false);
-    if (error) { showToast("error", error.message); return; }
-    setNotes(prev => prev.filter(n => n.id !== selected.id));
-    setSelected(null); setDraft({}); setDirty(false); setMobileView("list");
-    showToast("success", "Note supprimée.");
-  }
-
-  /* ── Navigation ── */
-  function openNote(note: Note) {
-    setSelected(note);
-    setDraft({ title: note.title, content: note.content, category: note.category });
-    setDirty(false); setPreview(false); setMobileView("editor");
-  }
-
-  function newNote() {
+    if (!selected?.id) return;
+    const { error } = await supabase.from("notes").delete().eq("id",selected.id);
+    if (error) { showToast("error",error.message); return; }
+    setNotes(p => p.filter(n => n.id!==selected.id));
     setSelected(null);
-    setDraft({ title: "", content: "", category: "idées" });
-    setDirty(true); setPreview(false); setMobileView("editor");
-    setTimeout(() => (document.getElementById("note-title") as HTMLInputElement)?.focus(), 80);
+    setView("list");
+    setConfirmDel(false);
+    showToast("success","Note supprimée.");
   }
 
-  function updateDraft(key: keyof Note, value: string) {
-    setDraft(d => ({ ...d, [key]: value }));
-    setDirty(true);
+  /* ── Toggle favorite ── */
+  function toggleFav(id: string) {
+    const s = new Set(favSet);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    setFavSet(s);
+    try { localStorage.setItem(FAV_KEY, JSON.stringify([...s])) } catch {}
   }
 
-  /* ── Favoris & épinglés ── */
-  function toggleFavorite(noteId: string) {
-    setFavorites(prev => {
-      const next = new Set(prev);
-      next.has(noteId) ? next.delete(noteId) : next.add(noteId);
-      saveLocalSet(FAV_KEY, next);
-      return next;
-    });
+  /* ── Toggle archive ── */
+  async function toggleArchive() {
+    if (!selected?.id) return;
+    const newVal = !(selected.is_archived ?? false);
+    await supabase.from("notes").update({is_archived:newVal}).eq("id",selected.id);
+    setNotes(p => p.map(n => n.id===selected.id ? {...n,is_archived:newVal} : n));
+    setSelected(s => s ? {...s,is_archived:newVal} : s);
+    showToast("success", newVal ? "Note archivée." : "Note désarchivée.");
+    if (newVal) { setSelected(null); setView("list"); }
   }
 
-  function togglePin(noteId: string) {
-    setPinned(prev => {
-      const next = new Set(prev);
-      next.has(noteId) ? next.delete(noteId) : next.add(noteId);
-      saveLocalSet(PIN_KEY, next);
-      return next;
-    });
-  }
-
-  /* ══════════════════════════════════════════════════════════════
-     callAI — fetch /api/notes/ai
-     • AbortController 20 s  →  compatible WebView WhatsApp/Instagram
-     • Détecte offline avant d'envoyer  →  message clair
-     • Retry automatique 1 fois sur erreurs transitoires
-       (surchargé, délai, réseau)  — pas sur auth/quota/invalid
-  ══════════════════════════════════════════════════════════════ */
-  async function callAI(
-    body: { action: AiAction; content: string; title: string; prompt?: string },
-    attempt = 0,
-  ): Promise<string> {
-    /* ── Offline guard (WhatsApp WebView / avion) ── */
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      throw new Error("Pas de connexion internet — vérifiez votre réseau.");
-    }
-
-    /* URL absolue basée sur l'origine courante — évite tout mauvais basePath */
-    const url = `${window.location.origin}/api/notes/ai`;
-
-    /* ── AbortController 20 s ── */
-    const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), 20_000);
-
-    /* ── Log diagnostic : URL exacte + méthode ── */
-    console.log(
-      `[callAI] ▶ attempt=${attempt} | POST ${url}`,
-      `| action=${body.action} | contenu=${(body.content ?? "").length} car.`,
-    );
-
-    try {
-      const res = await fetch(url, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(body),
-        signal:  controller.signal,
-      });
-      clearTimeout(tid);
-
-      /* ── Log réponse ── */
-      console.log(`[callAI] ◀ status=${res.status} ok=${res.ok} url=${res.url}`);
-
-      /* ── Check HTTP status avant de parser — évite SyntaxError sur HTML 404 ── */
-      if (!res.ok) {
-        /* Tenter de lire un message JSON d'erreur s'il existe */
-        let serverMsg = "";
-        try {
-          const errJson = await res.json() as { error?: string };
-          serverMsg = errJson.error ?? "";
-        } catch {
-          /* Réponse non-JSON (ex: page HTML Vercel) — on ignore */
-        }
-        const label = serverMsg || `Route introuvable ou non autorisée`;
-        throw new Error(`HTTP ${res.status} — ${label}`);
-      }
-
-      /* ── Parse JSON résultat ── */
-      const json = await res.json() as { result?: string; error?: string };
-      if (json.error) throw new Error(json.error);
-      if (!json.result) throw new Error("Réponse vide — réessayez.");
-      return json.result;
-
-    } catch (err) {
-      clearTimeout(tid);
-
-      /* ── Traduction des erreurs client-side ── */
-      if (err instanceof DOMException && err.name === "AbortError") {
-        throw new Error("Délai IA dépassé (20 s) — réessayez.");
-      }
-      if (err instanceof TypeError) {
-        /* TypeError = fetch échoué (réseau coupé, DNS, CORS) */
-        throw new Error("Impossible de joindre le serveur IA — vérifiez votre connexion.");
-      }
-
-      /* ── Log erreur ── */
-      console.error(`[callAI] ❌ attempt=${attempt}`, err instanceof Error ? err.message : err);
-
-      /* ── Retry unique sur erreurs transitoires ── */
-      const msg = err instanceof Error ? err.message : "";
-      const isTransient =
-        msg.includes("surchargé")  ||
-        msg.includes("Délai")      ||
-        msg.includes("connexion")  ||
-        msg.includes("Erreur interne Anthropic") ||
-        msg.includes("503")        ||
-        msg.includes("408");
-
-      if (attempt === 0 && isTransient) {
-        console.log("[callAI] ↻ retry dans 1,4 s…");
-        await new Promise(r => setTimeout(r, 1_400));
-        return callAI(body, 1);
-      }
-
-      throw err;
-    }
-  }
-
-  /* ── IA — actions prédéfinies ── */
-  async function runAI(action: NonChatAction) {
-    if (!draft.content?.trim() && !draft.title?.trim()) {
-      showToast("error", "Écrivez quelque chose avant d'utiliser l'IA.");
-      return;
-    }
-    setAiLoading(action);
-    try {
-      const result = await callAI({
-        action,
-        content: draft.content ?? "",
-        title:   draft.title   ?? "",
-      });
-
-      if (action === "to-tasks") {
-        setDraft(d => ({ ...d, content: result, category: "tâches" as Category }));
-        showToast("success", "Actions créées — pensez à sauvegarder.");
-      } else if (action === "improve") {
-        setDraft(d => ({ ...d, content: result }));
-        showToast("success", "Texte amélioré — pensez à sauvegarder.");
-      } else {
-        setDraft(d => ({ ...d, content: result }));
-        showToast("success", "Résumé généré — pensez à sauvegarder.");
-      }
-      setDirty(true);
-    } catch (err) {
-      showToast("error", err instanceof Error ? err.message : "Erreur IA.");
-    } finally {
-      setAiLoading(null);
-    }
-  }
-
-  /* ── IA — chat libre ── */
-  async function runChat() {
-    const prompt = chatPrompt.trim();
-    if (!prompt || chatLoading) return;
-
-    setChatLoading(true);
-    setChatHistory(prev => [...prev, { role: "user", text: prompt }]);
-    setChatPrompt("");
-
-    try {
-      const result = await callAI({
-        action:  "chat",
-        content: draft.content ?? "",
-        title:   draft.title   ?? "",
-        prompt,
-      });
-      setChatHistory(prev => [...prev, { role: "assistant", text: result }]);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erreur IA.";
-      setChatHistory(prev => [...prev, { role: "assistant", text: msg }]);
-    } finally {
-      setChatLoading(false);
-    }
-  }
-
-  function applyToNote(text: string) {
-    updateDraft("content", text);
-    showToast("success", "Réponse appliquée — pensez à sauvegarder.");
-    setChatOpen(false);
-  }
-
-  /* ══════════════════════════════════════════════════════════════
-     VOICE RECORDING — Whisper + Claude
-  ══════════════════════════════════════════════════════════════ */
-  const transcribeBlob = useCallback(async (blob: Blob, idx: number) => {
-    setVoiceTranscribing(true);
-    try {
-      const fd = new FormData();
-      const ext = blob.type.includes("ogg") ? "ogg" : blob.type.includes("mp4") ? "mp4" : "webm";
-      fd.append("audio", new File([blob], `chunk-${idx}.${ext}`, { type: blob.type }));
-      const res  = await fetch("/api/transcribe", { method: "POST", body: fd });
-      const data = await res.json() as { text?: string; error?: string };
-      if (!res.ok || data.error) throw new Error(data.error ?? "Erreur");
-      const text = data.text?.trim() ?? "";
-      if (text) {
-        setVoiceTxt(prev => { const full = prev ? `${prev} ${text}` : text; txRef.current = full; return full; });
-      }
-    } catch (e) { setVoiceErr(e instanceof Error ? e.message : "Erreur transcription"); }
-    finally { setVoiceTranscribing(false); }
-  }, []);
-
-  const flushChunk = useCallback(() => {
-    const blobs = [...audioRef.current]; audioRef.current = [];
-    if (!blobs.length) return;
-    const blob = new Blob(blobs, { type: blobs[0].type });
-    transcribeBlob(blob, chunkIdxRef.current++);
-  }, [transcribeBlob]);
-
-  const startVoice = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      const mime = ["audio/webm;codecs=opus","audio/webm","audio/ogg","audio/mp4"].find(m => MediaRecorder.isTypeSupported(m)) ?? "";
-      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-      mrRef.current = mr; audioRef.current = []; chunkIdxRef.current = 0;
-      elapsedRef.current = 0; txRef.current = "";
-      setVoiceTxt(""); setVoiceErr(""); setVoiceSummary(""); setVoiceElapsed(0);
-      mr.ondataavailable = e => { if (e.data.size > 0) audioRef.current.push(e.data); };
-      mr.start(1000);
-      setVoiceState("recording");
-      timerRef.current = setInterval(() => setVoiceElapsed(p => { elapsedRef.current = p + 1; return p + 1; }), 1000);
-      chunkRef.current  = setInterval(flushChunk, CHUNK_MS);
-    } catch { setVoiceErr("Accès micro refusé. Vérifiez les permissions."); }
-  }, [flushChunk]);
-
-  const pauseVoice = useCallback(() => {
-    mrRef.current?.pause();
-    if (timerRef.current) clearInterval(timerRef.current);
-    setVoiceState("paused");
-  }, []);
-
-  const resumeVoice = useCallback(() => {
-    mrRef.current?.resume();
-    timerRef.current = setInterval(() => setVoiceElapsed(p => { elapsedRef.current = p + 1; return p + 1; }), 1000);
-    setVoiceState("recording");
-  }, []);
-
-  const stopVoice = useCallback(() => {
-    if (chunkRef.current) clearInterval(chunkRef.current);
-    if (timerRef.current) clearInterval(timerRef.current);
-    const mr = mrRef.current; if (!mr) return;
-    mr.onstop = () => {
-      const blobs = [...audioRef.current]; audioRef.current = [];
-      if (blobs.length) transcribeBlob(new Blob(blobs, { type: blobs[0].type }), chunkIdxRef.current);
-      streamRef.current?.getTracks().forEach(t => t.stop());
-    };
-    mr.stop(); setVoiceState("stopped");
-  }, [transcribeBlob]);
-
-  const resetVoice = useCallback(() => {
-    setVoiceState("idle"); setVoiceElapsed(0); setVoiceTxt("");
-    setVoiceErr(""); setVoiceSummary(""); txRef.current = "";
-  }, []);
-
-  const injectTranscript = useCallback(() => {
-    const txt = txRef.current || voiceTxt;
-    if (!txt) return;
-    const sep = (draft.content ?? "").length > 0 ? "\n\n" : "";
-    updateDraft("content", (draft.content ?? "") + sep + txt);
-    showToast("success", "🎙️ Transcription insérée dans la note.");
-    setVoiceOpen(false);
-  }, [voiceTxt, draft.content]);
-
-  const voiceSummarize = useCallback(async (injectAfter = false) => {
-    const txt = txRef.current || voiceTxt;
-    if (!txt) return;
-    setVoiceSummarizing(true); setVoiceSummary("");
-    try {
-      const res  = await fetch("/api/summarize-meeting", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ transcript: txt, mode:"resume" }) });
-      const data = await res.json() as { summary?: string; error?: string };
-      if (!res.ok || data.error) throw new Error(data.error ?? "Erreur");
-      const sum  = data.summary ?? "";
-      setVoiceSummary(sum);
-      if (injectAfter) {
-        const sep = (draft.content ?? "").length > 0 ? "\n\n" : "";
-        updateDraft("content", (draft.content ?? "") + sep + sum);
-        showToast("success", "Résumé inséré dans la note.");
-        setVoiceOpen(false);
-      }
-    } catch (e) { setVoiceErr(e instanceof Error ? e.message : "Erreur résumé"); }
-    finally { setVoiceSummarizing(false); }
-  }, [voiceTxt, draft.content]);
-
-  /* Cleanup au démontage */
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (chunkRef.current) clearInterval(chunkRef.current);
-      streamRef.current?.getTracks().forEach(t => t.stop());
-    };
-  }, []);
-
-  /* ── Insérer une case à cocher ── */
-  function insertCheckItem() {
-    const content    = draft.content ?? "";
-    const sep        = content.length > 0 && !content.endsWith("\n") ? "\n" : "";
-    const newContent = `${content}${sep}- [ ] `;
-    updateDraft("content", newContent);
+  /* ── Toolbar insert ── */
+  function insertFormat(before: string, after = "") {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    const sel   = dContent.slice(start, end);
+    const repl  = before + sel + after;
+    const newContent = dContent.slice(0, start) + repl + dContent.slice(end);
+    setDContent(newContent);
+    setIsDirty(true);
     setTimeout(() => {
-      const ta = textareaRef.current;
-      if (ta) { ta.focus(); ta.selectionStart = ta.selectionEnd = newContent.length; }
-    }, 0);
+      ta.focus();
+      ta.setSelectionRange(start + before.length, start + before.length + sel.length);
+    }, 10);
   }
 
-  /* ── Filtres & tri ── */
-  const filtered = useMemo(() => {
-    let list = [...notes];
-    if (filterCat !== "tous") list = list.filter(n => n.category === filterCat);
-    if (filterFav)            list = list.filter(n => favorites.has(n.id));
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      list = list.filter(n =>
-        n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
+  function insertLinePrefix(prefix: string) {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const lines = dContent.split("\n");
+    const start = ta.selectionStart;
+    let charCount = 0, lineIdx = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (charCount + lines[i].length >= start) { lineIdx = i; break; }
+      charCount += lines[i].length + 1;
+    }
+    lines[lineIdx] = prefix + lines[lineIdx];
+    setDContent(lines.join("\n"));
+    setIsDirty(true);
+  }
+
+  /* ── AI call ── */
+  async function callAI(action: AiAction, customPrompt?: string) {
+    if (!dContent.trim() && !dTitle.trim()) { showToast("error","Note vide."); return; }
+    setAiAction(action);
+    setAiLoading(true);
+    setAiResult("");
+    setAiPanel(true);
+
+    try {
+      const res = await fetch("/api/notes/ai", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ action, content:dContent, title:dTitle, prompt:customPrompt }),
+      });
+      const json = await res.json() as { result?: string; error?: string };
+      if (!res.ok || json.error) { showToast("error", json.error ?? "Erreur IA."); setAiLoading(false); return; }
+      setAiResult(json.result ?? "");
+    } catch { showToast("error","Erreur réseau."); }
+    setAiLoading(false);
+  }
+
+  function applyAiResult() {
+    const ai = AI_ACTIONS.find(a => a.action === aiAction);
+    if (ai?.replaces) {
+      setPrevSnap(dContent);
+      setDContent(aiResult);
+    } else {
+      setDContent(c => `${c}\n\n---\n${aiResult}`);
+    }
+    setIsDirty(true);
+    setAiPanel(false);
+    setAiResult("");
+    showToast("success","Résultat IA appliqué ✓");
+  }
+
+  /* ── Create folder ── */
+  async function handleCreateFolder() {
+    if (!newFolderName.trim()) return;
+    const { data:{user} } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data, error } = await supabase.from("note_folders")
+      .insert({ user_id:user.id, name:newFolderName.trim(), color:newFolderColor })
+      .select().single();
+    if (error) { showToast("error",error.message); return; }
+    setFolders(f => [...f, data as NoteFolder]);
+    setFolderModal(false);
+    setNewFolderName("");
+    showToast("success","Dossier créé.");
+  }
+
+  /* ── Export ── */
+  function exportTXT() {
+    const blob = new Blob([`${dTitle}\n${"=".repeat(dTitle.length)}\n\n${dContent}`],{type:"text/plain;charset=utf-8"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${dTitle||"note"}.txt`; a.click();
+    showToast("success","Export TXT ✓");
+  }
+
+  function exportMarkdown() {
+    const blob = new Blob([`# ${dTitle}\n\n${dContent}`],{type:"text/markdown;charset=utf-8"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${dTitle||"note"}.md`; a.click();
+    showToast("success","Export Markdown ✓");
+  }
+
+  async function exportPDF() {
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit:"mm", format:"a4" });
+      const W = doc.internal.pageSize.getWidth() - 40;
+      doc.setFontSize(18); doc.setFont("helvetica","bold");
+      doc.text(dTitle || "Note", 20, 22);
+      doc.setFontSize(9); doc.setFont("helvetica","normal"); doc.setTextColor(150);
+      doc.text(new Date().toLocaleDateString("fr-FR"), 20, 30);
+      doc.setTextColor(0); doc.setFontSize(11);
+      const lines = doc.splitTextToSize(dContent, W);
+      doc.text(lines, 20, 40);
+      doc.save(`${dTitle||"note"}.pdf`);
+      showToast("success","Export PDF ✓");
+    } catch { showToast("error","Erreur PDF — réessayez."); }
+  }
+
+  /* ── Voice recording ── */
+  async function startVoice() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      const mime   = ["audio/webm","audio/ogg","audio/mp4"].find(m=>MediaRecorder.isTypeSupported(m));
+      const mr     = new MediaRecorder(stream, mime?{mimeType:mime}:undefined);
+      mrRef.current = mr; blobsRef.current = []; chunkIdxRef.current = 0;
+      mr.ondataavailable = (e) => { if (e.data.size>0) blobsRef.current.push(e.data) };
+      mr.start(1000);
+      setVoiceState("recording"); setVoiceSec(0); voiceSecRef.current = 0;
+      timerRef.current = setInterval(()=>{ voiceSecRef.current++; setVoiceSec(voiceSecRef.current) },1000);
+      chunkRef.current = setInterval(()=>{ if(blobsRef.current.length) flushChunk() }, CHUNK_MS);
+    } catch { showToast("error","Accès micro refusé.") }
+  }
+
+  const flushChunk = useCallback(()=>{
+    const blobs = [...blobsRef.current]; blobsRef.current=[];
+    if (blobs.length) void transcribeBlob(new Blob(blobs,{type:blobs[0].type}), chunkIdxRef.current++);
+  },[]);
+
+  const transcribeBlob = useCallback(async(blob: Blob, idx: number)=>{
+    setVoiceLoad(true);
+    const fd = new FormData();
+    const ext = blob.type.includes("ogg")?"ogg":blob.type.includes("mp4")?"mp4":"webm";
+    fd.append("audio", new File([blob],`chunk-${idx}.${ext}`,{type:blob.type}));
+    const res  = await fetch("/api/transcribe",{method:"POST",body:fd});
+    const data = await res.json() as {text?:string;error?:string};
+    if (data.text) {
+      const full = txRef.current ? `${txRef.current} ${data.text}` : data.text;
+      txRef.current = full;
+      setVoiceTxt(full);
+    }
+    setVoiceLoad(false);
+  },[]);
+
+  function pauseVoice()  { mrRef.current?.pause();  if(timerRef.current) clearInterval(timerRef.current); setVoiceState("paused")  }
+  function resumeVoice() { mrRef.current?.resume(); timerRef.current=setInterval(()=>{voiceSecRef.current++;setVoiceSec(voiceSecRef.current)},1000); setVoiceState("recording") }
+  function stopVoice()   {
+    mrRef.current?.stop();
+    if(timerRef.current) clearInterval(timerRef.current);
+    if(chunkRef.current) clearInterval(chunkRef.current);
+    const blobs = [...blobsRef.current]; blobsRef.current=[];
+    if(blobs.length) void transcribeBlob(new Blob(blobs,{type:blobs[0].type}), chunkIdxRef.current);
+    mrRef.current?.stream?.getTracks().forEach(t=>t.stop());
+    setVoiceState("stopped");
+  }
+  function useVoiceText()  { setDContent(c=>c?`${c}\n\n${voiceTxt}`:voiceTxt); setIsDirty(true); setVoiceState("idle"); setVoiceTxt(""); txRef.current=""; }
+  function discardVoice() { setVoiceState("idle"); setVoiceTxt(""); txRef.current="" }
+
+  /* ── Filtered + sorted notes ── */
+  const displayNotes = useMemo(() => {
+    let ns = notes.filter(n => {
+      const archived = n.is_archived ?? false;
+      if (filter === "all")      return !archived;
+      if (filter === "favorites") return !archived && favSet.has(n.id);
+      if (filter === "archived")  return archived;
+      return n.folder_id === filter && !archived;
+    });
+    if (typeFilter !== "all") ns = ns.filter(n => getNoteType(n) === typeFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      ns = ns.filter(n =>
+        n.title.toLowerCase().includes(q) ||
+        n.content.toLowerCase().includes(q) ||
+        (n.tags ?? []).some(t => t.toLowerCase().includes(q))
       );
     }
-    if (sortBy === "category") {
-      list.sort((a, b) => a.category.localeCompare(b.category));
-    } else {
-      list.sort((a, b) => {
-        const ta = new Date(a.updated_at).getTime();
-        const tb = new Date(b.updated_at).getTime();
-        return sortDir === "desc" ? tb - ta : ta - tb;
-      });
-    }
-    list.sort((a, b) => (pinned.has(b.id) ? 1 : 0) - (pinned.has(a.id) ? 1 : 0));
-    return list;
-  }, [notes, filterCat, filterFav, query, sortBy, sortDir, favorites, pinned]);
+    ns.sort((a,b) => {
+      if (sortBy==="alpha") return a.title.localeCompare(b.title);
+      if (sortBy==="type")  return getNoteType(a).localeCompare(getNoteType(b));
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+    return ns;
+  }, [notes, filter, typeFilter, search, sortBy, favSet]);
 
-  const wordCount  = useMemo(() => countWords(draft.content ?? ""), [draft.content]);
-  const hasContent = draft.title !== undefined || draft.content !== undefined;
-  const isTaches   = (draft.category ?? "") === "tâches";
+  const counts = useMemo(()=>({
+    all:      notes.filter(n=>!(n.is_archived??false)).length,
+    favs:     notes.filter(n=>!(n.is_archived??false)&&favSet.has(n.id)).length,
+    archived: notes.filter(n=>n.is_archived??false).length,
+  }),[notes,favSet]);
 
-  /* ══════════════════════════════════════════════════════════════
+  const currentTypeInfo = getTypeInfo(dType);
+  const wordCnt = countWords(dContent);
+
+  /* ══════════════════════════════════════════════════════════
      RENDER
-  ══════════════════════════════════════════════════════════════ */
+  ══════════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col bg-[#080a0f]">
+    <div className="flex h-[calc(100vh-56px)] bg-[#080a0f] overflow-hidden">
 
-      {/* ── Glows de fond ── */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute left-[20%] top-[10%] h-[500px] w-[500px] rounded-full bg-[rgba(176,141,87,0.04)] blur-[140px]" />
-        <div className="absolute bottom-[10%] right-[15%] h-[400px] w-[400px] rounded-full bg-[rgba(124,111,205,0.04)] blur-[120px]" />
-      </div>
-
-      {/* ── Header ── */}
-      <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.85)] px-5 py-4 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.09)]">
-              <StickyNote size={16} style={{ color: "#c9a55a" }} />
+      {/* ── SIDEBAR ── */}
+      <div className="hidden w-56 shrink-0 flex-col border-r border-white/[0.06] bg-[#0b0d14] lg:flex">
+        <div className="p-4">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{background:`${amber}18`,border:`1px solid ${amber}30`}}>
+              <StickyNote size={15} style={{color:amber}}/>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-extrabold text-white">Bloc-notes</h1>
-                <span className="rounded-full border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.09)] px-2 py-0.5 text-[0.58rem] font-black uppercase tracking-[0.12em] text-[#c9a55a]">
-                  PRO
-                </span>
-              </div>
-              <p className="hidden text-[0.64rem] text-white/30 sm:block">
-                Capturez vos idées, améliorez-les avec l&apos;IA et transformez-les en actions.
-              </p>
-            </div>
+            <span className="text-sm font-extrabold text-white">Notes IA</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden text-[0.7rem] text-white/25 sm:block">
-              {notes.length} note{notes.length !== 1 ? "s" : ""}
-            </span>
-            <button
-              onClick={newNote}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:shadow-[0_6px_24px_rgba(201,165,90,0.45)] active:scale-[0.97]"
-            >
-              <Plus size={14} /> Nouvelle note
-            </button>
+          {/* Filters */}
+          <div className="space-y-0.5 mb-4">
+            {[
+              { key:"all",       label:"Toutes",   count:counts.all,      icon:"📝" },
+              { key:"favorites", label:"Favoris",  count:counts.favs,     icon:"⭐" },
+              { key:"archived",  label:"Archives", count:counts.archived, icon:"📦" },
+            ].map(f=>(
+              <button key={f.key} onClick={()=>setFilter(f.key)}
+                className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition ${filter===f.key?"text-white bg-white/[0.07]":"text-white/40 hover:text-white/60 hover:bg-white/[0.03]"}`}>
+                <span>{f.icon}</span>
+                <span className="flex-1 text-left">{f.label}</span>
+                <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px]">{f.count}</span>
+              </button>
+            ))}
           </div>
+
+          {/* Folders */}
+          <div className="mb-2 flex items-center justify-between px-1">
+            <span className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Dossiers</span>
+            <button onClick={()=>setFolderModal(true)} className="text-white/25 transition hover:text-white/60"><FolderPlus size={13}/></button>
+          </div>
+          <div className="space-y-0.5 mb-4">
+            {folders.map(f=>(
+              <button key={f.id} onClick={()=>setFilter(f.id)}
+                className={`flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition ${filter===f.id?"text-white bg-white/[0.07]":"text-white/40 hover:text-white/60"}`}>
+                <div className="h-2 w-2 rounded-full" style={{background:f.color}}/>
+                <span className="flex-1 truncate text-left">{f.name}</span>
+              </button>
+            ))}
+            {folders.length===0&&<p className="px-3 text-[0.65rem] text-white/20">Aucun dossier</p>}
+          </div>
+
+          <button onClick={()=>{createNote("texte")}}
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
+            style={{background:`linear-gradient(135deg, ${amber}, #d97706)`,boxShadow:`0 4px 16px ${amber}30`}}>
+            <Plus size={13}/> Nouvelle note
+          </button>
         </div>
       </div>
 
-      {/* ── Corps ── */}
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-0 overflow-hidden sm:gap-5 sm:px-5 sm:py-5">
+      {/* ── LIST PANEL ── */}
+      <div className={`flex flex-col border-r border-white/[0.06] bg-[#0c0e16] ${view==="editor"&&selected?"hidden lg:flex":""} w-full lg:w-80 shrink-0`}>
 
-        {/* ════════════════════════════════════════════
-            PANNEAU GAUCHE — LISTE
-        ════════════════════════════════════════════ */}
-        <motion.aside
-          className={`flex w-full flex-col border-r border-white/6 bg-[rgba(15,17,23,0.6)] sm:w-[300px] sm:flex-none sm:rounded-[1.5rem] sm:border sm:border-white/8 ${
-            mobileView === "editor" ? "hidden sm:flex" : "flex"
-          }`}
-        >
-          {/* Search + filtres */}
-          <div className="space-y-2.5 border-b border-white/6 p-4">
-            <div className="relative">
-              <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25" />
-              <input
-                type="text" value={query} onChange={e => setQuery(e.target.value)}
-                placeholder="Rechercher…"
-                className="w-full rounded-xl border border-white/8 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-white/15 focus:border-[rgba(201,165,90,0.4)] focus:ring-1 focus:ring-[rgba(201,165,90,0.15)]"
-              />
-              {query && (
-                <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 transition hover:text-white/60">
-                  <X size={13} />
+        {/* Header */}
+        <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl lg:hidden" style={{background:`${amber}18`,border:`1px solid ${amber}30`}}>
+            <StickyNote size={14} style={{color:amber}}/>
+          </div>
+          <div className="relative flex-1">
+            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25"/>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher…"
+              className="w-full rounded-xl border border-white/8 bg-white/[0.04] pl-8 pr-3 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[rgba(245,158,11,0.3)]"/>
+          </div>
+          <button onClick={()=>{createNote("texte")}} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition hover:bg-white/[0.06]" style={{color:amber}}>
+            <Plus size={16}/>
+          </button>
+          <button onClick={()=>setShowTemplates(true)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white/30 transition hover:bg-white/[0.06] hover:text-white/60" title="Templates">
+            <Hash size={14}/>
+          </button>
+        </div>
+
+        {/* Sort + type filter */}
+        <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-2">
+          <select value={sortBy} onChange={e=>setSortBy(e.target.value as SortBy)}
+            className="flex-1 rounded-lg border border-white/8 bg-transparent py-1 pl-2 pr-1 text-[0.65rem] text-white/50 outline-none">
+            <option value="date">Récentes</option>
+            <option value="alpha">A–Z</option>
+            <option value="type">Type</option>
+          </select>
+          <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value as NoteType|"all")}
+            className="flex-1 rounded-lg border border-white/8 bg-transparent py-1 pl-2 pr-1 text-[0.65rem] text-white/50 outline-none">
+            <option value="all">Tous types</option>
+            {NOTE_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        </div>
+
+        {/* Notes list */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-16"><Loader2 size={20} className="animate-spin text-white/20"/></div>
+          ) : displayNotes.length===0 ? (
+            <div className="flex flex-col items-center gap-3 py-14 text-center px-4">
+              <StickyNote size={28} className="text-white/15"/>
+              <p className="text-sm font-bold text-white/30">{search ? "Aucun résultat" : "Aucune note"}</p>
+              <button onClick={()=>createNote("texte")} className="rounded-xl border border-white/10 px-4 py-2 text-xs font-bold text-white/50 transition hover:text-white/70">
+                + Créer une note
+              </button>
+            </div>
+          ) : (
+            <AnimatePresence initial={false}>
+              {displayNotes.map(n=>{
+                const ti = getTypeInfo(getNoteType(n));
+                const isFav = favSet.has(n.id);
+                const tags = n.tags ?? [];
+                const {total,done} = getCheckProgress(n.content);
+                return (
+                  <motion.div key={n.id} layout initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+                    onClick={()=>openNote(n)}
+                    className={`cursor-pointer border-b border-white/[0.05] px-4 py-3.5 transition hover:bg-white/[0.04] ${selected?.id===n.id?"bg-white/[0.06]":""}`}>
+                    <div className="mb-1.5 flex items-start justify-between gap-2">
+                      <span className="flex-1 truncate text-sm font-bold text-white/90">{n.title||"Sans titre"}</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button onClick={e=>{e.stopPropagation();toggleFav(n.id)}} className={`transition ${isFav?"text-amber-400":"text-white/15 hover:text-white/50"}`}>
+                          <Star size={11} className={isFav?"fill-amber-400":""}/>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6rem] font-bold" style={{color:ti.color,background:ti.bg,border:`1px solid ${ti.border}`}}>
+                        <ti.Icon size={9}/>
+                        {ti.label}
+                      </span>
+                      {getNoteType(n)==="checklist"&&total>0&&(
+                        <span className="text-[0.6rem] text-white/30">{done}/{total}</span>
+                      )}
+                      {tags.slice(0,2).map(t=>(
+                        <span key={t} className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[0.6rem] text-white/35">#{t}</span>
+                      ))}
+                    </div>
+                    <p className="mb-1 line-clamp-2 text-xs text-white/35">{n.content.replace(/^#+\s/gm,"").replace(/\[[\sx~]\]\s/g,"").slice(0,120)}</p>
+                    <p className="text-[0.6rem] text-white/20">{fmtDateShort(n.updated_at)}</p>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          )}
+        </div>
+      </div>
+
+      {/* ── EDITOR PANEL ── */}
+      <div className={`flex flex-1 flex-col overflow-hidden ${view==="list"&&!selected?"hidden lg:flex":""}`}>
+
+        {/* Back button (mobile) */}
+        {view==="editor"&&(
+          <div className="flex items-center gap-3 border-b border-white/[0.06] bg-[#0c0e16] px-4 py-2.5 lg:hidden">
+            <button onClick={()=>{setView("list");setSelected(null)}} className="flex items-center gap-1.5 text-xs font-bold text-white/50 transition hover:text-white/80">
+              <ArrowLeft size={14}/> Notes
+            </button>
+          </div>
+        )}
+
+        {(!selected && view==="list") ? (
+          /* Empty state */
+          <div className="flex flex-1 flex-col items-center justify-center gap-5 p-8 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-[rgba(245,158,11,0.2)] bg-[rgba(245,158,11,0.07)]">
+              <StickyNote size={36} style={{color:amber}}/>
+            </div>
+            <div>
+              <p className="text-lg font-extrabold text-white/80">Capturez vos idées</p>
+              <p className="mt-1.5 text-sm text-white/30">Créez une note ou sélectionnez-en une</p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              {NOTE_TYPES.slice(0,4).map(t=>(
+                <button key={t.value} onClick={()=>createNote(t.value)}
+                  className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition hover:opacity-80"
+                  style={{color:t.color,borderColor:`${t.color}30`,background:`${t.color}10`}}>
+                  <t.Icon size={12}/>{t.label}
                 </button>
-              )}
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col overflow-hidden bg-[#0a0c13]">
+
+            {/* Editor top bar */}
+            <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] bg-[#0b0d14] px-5 py-2.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                {NOTE_TYPES.map(t=>(
+                  <button key={t.value} onClick={()=>{setDType(t.value);setIsDirty(true)}}
+                    className={`flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-[0.65rem] font-bold transition ${dType===t.value?"text-white":"text-white/30 hover:text-white/60"}`}
+                    style={dType===t.value?{background:t.bg,color:t.color,border:`1px solid ${t.border}`}:{}}>
+                    <t.Icon size={11}/>{t.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {prevSnap&&(
+                  <button onClick={()=>{setDContent(prevSnap);setPrevSnap(null);setIsDirty(true);showToast("success","Version précédente restaurée.");}}
+                    className="flex items-center gap-1 rounded-xl border border-amber-500/25 bg-amber-500/8 px-2.5 py-1.5 text-[0.65rem] font-bold text-amber-400 transition hover:bg-amber-500/15"
+                    title="Annuler l'IA">
+                    <RotateCcw size={11}/> Annuler IA
+                  </button>
+                )}
+                <div className="relative">
+                  <button onClick={()=>setExportMenu(v=>!v)} className="flex items-center gap-1 rounded-xl border border-white/10 px-2.5 py-1.5 text-[0.65rem] font-bold text-white/40 transition hover:text-white/70">
+                    <Download size={11}/> Export
+                  </button>
+                  <AnimatePresence>
+                    {exportMenu&&(
+                      <motion.div initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
+                        className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border border-white/10 bg-[#0f1117] shadow-xl">
+                        {[{label:"PDF",fn:exportPDF},{label:"Markdown (.md)",fn:exportMarkdown},{label:"Texte (.txt)",fn:exportTXT}].map(opt=>(
+                          <button key={opt.label} onClick={()=>{void opt.fn();setExportMenu(false)}}
+                            className="flex w-full items-center px-4 py-2.5 text-xs font-bold text-white/60 transition hover:bg-white/[0.06] hover:text-white/90">
+                            {opt.label}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <button onClick={()=>toggleArchive()}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 text-white/30 transition hover:text-white/70"
+                  title={selected?.is_archived?"Désarchiver":"Archiver"}>
+                  <Archive size={13}/>
+                </button>
+                <button onClick={()=>setConfirmDel(true)} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 text-white/30 transition hover:border-red-500/30 hover:text-red-400">
+                  <Trash2 size={13}/>
+                </button>
+                <button onClick={()=>void handleSave()} disabled={isSaving||!isDirty}
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.65rem] font-extrabold text-[#080a0f] transition hover:opacity-90 disabled:opacity-40"
+                  style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>
+                  {isSaving?<Loader2 size={11} className="animate-spin"/>:<Save size={11}/>}
+                  {isSaving?"Enreg…":"Sauver"}
+                </button>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setFilterCat("tous")}
-                className={`rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition ${
-                  filterCat === "tous" ? "bg-white/12 text-white" : "text-white/30 hover:text-white/60"
-                }`}
-              >
-                Toutes
-              </button>
-              {CATEGORIES.map(c => (
-                <button
-                  key={c.value}
-                  onClick={() => setFilterCat(filterCat === c.value ? "tous" : c.value)}
-                  className="rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition"
-                  style={
-                    filterCat === c.value
-                      ? { color: c.color, background: c.bg, border: `1px solid ${c.border}` }
-                      : { color: "rgba(255,255,255,0.3)" }
-                  }
-                >
-                  {c.label}
+            {/* Title */}
+            <div className="border-b border-white/[0.04] px-5 py-3">
+              <input value={dTitle} onChange={e=>{setDTitle(e.target.value);setIsDirty(true)}}
+                placeholder="Titre de la note…"
+                className="w-full bg-transparent text-xl font-extrabold text-white outline-none placeholder:text-white/15"/>
+              {/* Tags + folder row */}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {dTags.map(t=>(
+                  <span key={t} onClick={()=>{setDTags(p=>p.filter(x=>x!==t));setIsDirty(true)}}
+                    className="flex cursor-pointer items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-[0.65rem] text-white/50 transition hover:bg-red-500/15 hover:text-red-400">
+                    #{t}<X size={9}/>
+                  </span>
+                ))}
+                <input value={dTagInput} onChange={e=>setDTagInput(e.target.value)}
+                  onKeyDown={e=>{if((e.key==="Enter"||e.key===",")&&dTagInput.trim()){e.preventDefault();const t=dTagInput.trim().toLowerCase().replace(/^#/,"");if(!dTags.includes(t)){setDTags(p=>[...p,t]);setIsDirty(true);}setDTagInput("");}}}
+                  placeholder="+ tag"
+                  className="w-16 bg-transparent text-[0.65rem] text-white/40 outline-none placeholder:text-white/20"/>
+                {dFolderId&&(
+                  <span className="flex items-center gap-1 rounded-full bg-white/[0.05] px-2 py-0.5 text-[0.65rem] text-white/30">
+                    <Folder size={9}/>{folders.find(f=>f.id===dFolderId)?.name}
+                  </span>
+                )}
+                {folders.length>0&&(
+                  <select value={dFolderId??""} onChange={e=>{setDFolderId(e.target.value||null);setIsDirty(true)}}
+                    className="rounded-full border border-white/10 bg-transparent px-2 py-0.5 text-[0.65rem] text-white/30 outline-none">
+                    <option value="">📂 Dossier</option>
+                    {folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
+                  </select>
+                )}
+                {savedAgo&&<span className="text-[0.6rem] text-white/20">Sauvegardé {savedAgo}</span>}
+              </div>
+            </div>
+
+            {/* Toolbar */}
+            <div className="flex items-center gap-0.5 overflow-x-auto border-b border-white/[0.04] bg-[#0b0d14] px-4 py-1.5 scrollbar-hide">
+              {[
+                { label:"H1",  fn:()=>insertLinePrefix("# ")      },
+                { label:"H2",  fn:()=>insertLinePrefix("## ")     },
+                { label:"H3",  fn:()=>insertLinePrefix("### ")    },
+                { label:"B",   fn:()=>insertFormat("**","**")     },
+                { label:"I",   fn:()=>insertFormat("*","*")       },
+                { label:"`",   fn:()=>insertFormat("`","`")       },
+                { label:"```", fn:()=>insertFormat("\n```\n","\n```\n") },
+                { label:"—",   fn:()=>insertLinePrefix("")        },
+                { label:"• ",  fn:()=>insertLinePrefix("- ")      },
+                { label:"☑",   fn:()=>insertLinePrefix("- [ ] ")  },
+                { label:"›",   fn:()=>insertLinePrefix("> ")      },
+                { label:"🔗",  fn:()=>insertFormat("[","](url)")  },
+                { label:"📊",  fn:()=>insertFormat("\n| Col 1 | Col 2 |\n| ----- | ----- |\n| ", " | |\n") },
+                { label:"---", fn:()=>setDContent(c=>c+"\n\n---\n\n") },
+              ].map((b,i)=>(
+                <button key={i} onClick={b.fn} className={`shrink-0 rounded-lg px-2 py-1.5 text-[0.65rem] font-bold text-white/40 transition hover:bg-white/[0.06] hover:text-white/80 ${b.label==="B"?"font-extrabold":""}`}>
+                  {b.label}
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center justify-between gap-2">
-              <button
-                onClick={() => setFilterFav(v => !v)}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.65rem] font-bold transition ${
-                  filterFav
-                    ? "border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.12)] text-[#c9a55a]"
-                    : "text-white/25 hover:text-white/50"
-                }`}
-              >
-                <Star size={11} fill={filterFav ? "#c9a55a" : "none"} />
-                Favoris
-              </button>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setSortBy("date")}
-                  className={`rounded-lg px-2 py-1 text-[0.62rem] font-bold transition ${sortBy === "date" ? "bg-white/8 text-white/70" : "text-white/25 hover:text-white/45"}`}
-                >
-                  Date
-                </button>
-                <button
-                  onClick={() => setSortBy("category")}
-                  className={`rounded-lg px-2 py-1 text-[0.62rem] font-bold transition ${sortBy === "category" ? "bg-white/8 text-white/70" : "text-white/25 hover:text-white/45"}`}
-                >
-                  Catégorie
-                </button>
-                {sortBy === "date" && (
-                  <button
-                    onClick={() => setSortDir(d => d === "desc" ? "asc" : "desc")}
-                    className="text-white/25 transition hover:text-white/55"
-                  >
-                    {sortDir === "desc" ? <SortDesc size={12} /> : <SortAsc size={12} />}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+            {/* Content area */}
+            <div className="flex flex-1 overflow-hidden">
 
-          {/* Liste */}
-          <div className="flex-1 overflow-y-auto">
-            {loadingAll ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 size={22} className="animate-spin text-white/20" />
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-                <StickyNote size={24} className="text-white/15" />
-                <p className="text-sm text-white/25">
-                  {query || filterCat !== "tous" || filterFav ? "Aucun résultat" : "Aucune note"}
-                </p>
-                {!query && filterCat === "tous" && !filterFav && (
-                  <button
-                    onClick={newNote}
-                    className="mt-1 flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-xs font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.1)]"
-                  >
-                    <Plus size={12} /> Créer une note
-                  </button>
-                )}
-              </div>
-            ) : (
-              <AnimatePresence initial={false}>
-                {filtered.map(note => {
-                  const isFav    = favorites.has(note.id);
-                  const isPin    = pinned.has(note.id);
-                  const isActive = selected?.id === note.id;
-                  return (
-                    <motion.div
-                      key={note.id} layout
-                      initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.25, ease }}
-                      className={`group relative border-b border-white/5 transition hover:bg-white/[0.035] ${
-                        isActive ? "bg-white/[0.05]" : ""
-                      }`}
-                    >
-                      {isActive && (
-                        <motion.div layoutId="note-indicator"
-                          className="absolute bottom-3 left-0 top-3 w-0.5 rounded-r-full bg-[#c9a55a]"
-                        />
-                      )}
-                      <button className="w-full px-4 py-3.5 text-left" onClick={() => openNote(note)}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex min-w-0 items-center gap-1.5">
-                            {isPin && <Pin size={10} className="shrink-0 text-[#a78bfa]" fill="#a78bfa" />}
-                            {isFav && <Star size={10} className="shrink-0 text-[#c9a55a]" fill="#c9a55a" />}
-                            <p className="line-clamp-1 text-sm font-bold text-white/90">
-                              {note.title || <span className="italic text-white/30">Sans titre</span>}
-                            </p>
+              {/* Left: Editor / Checklist view */}
+              <div className="flex flex-1 flex-col overflow-hidden">
+                {dType==="checklist" ? (
+                  <div className="flex-1 overflow-y-auto px-5 py-4">
+                    {getCheckProgress(dContent).total > 0 ? (
+                      <>
+                        <div className="mb-3">
+                          <div className="mb-1 flex justify-between text-[0.6rem] text-white/30">
+                            <span>Progression</span>
+                            <span>{getCheckProgress(dContent).done}/{getCheckProgress(dContent).total}</span>
                           </div>
-                          <CategoryBadge cat={note.category} />
-                        </div>
-                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/35">
-                          {note.content || <span className="italic">Note vide</span>}
-                        </p>
-                        <div className="mt-2 flex items-center gap-1 text-[0.6rem] text-white/20">
-                          <Clock size={9} />{fmtDateShort(note.updated_at)}
-                        </div>
-                      </button>
-
-                      <div className="absolute right-3 top-3 hidden items-center gap-1 group-hover:flex">
-                        <button
-                          onClick={e => { e.stopPropagation(); togglePin(note.id); }}
-                          title={isPin ? "Désépingler" : "Épingler"}
-                          className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/5 transition hover:bg-white/12"
-                        >
-                          <Pin size={10} className={isPin ? "text-[#a78bfa]" : "text-white/30"} fill={isPin ? "#a78bfa" : "none"} />
-                        </button>
-                        <button
-                          onClick={e => { e.stopPropagation(); toggleFavorite(note.id); }}
-                          title={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
-                          className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/5 transition hover:bg-white/12"
-                        >
-                          <Star size={10} className={isFav ? "text-[#c9a55a]" : "text-white/30"} fill={isFav ? "#c9a55a" : "none"} />
-                        </button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            )}
-          </div>
-        </motion.aside>
-
-        {/* ════════════════════════════════════════════
-            PANNEAU DROIT — ÉDITEUR
-        ════════════════════════════════════════════ */}
-        <main className={`flex flex-1 flex-col ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
-          {hasContent ? (
-            <motion.div
-              key={selected?.id ?? "new"}
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease }}
-              className="flex h-full flex-col rounded-none bg-[rgba(15,17,23,0.6)] sm:rounded-[1.5rem] sm:border sm:border-white/8"
-            >
-
-              {/* ── Toolbar principale ── */}
-              <div className="flex items-center justify-between gap-3 border-b border-white/6 px-5 py-3">
-                <button onClick={() => setMobileView("list")} className="flex items-center gap-1.5 text-xs text-white/40 transition hover:text-white/70 sm:hidden">
-                  <ArrowLeft size={14} /> Notes
-                </button>
-
-                <div className="hidden items-center gap-2 sm:flex">
-                  {autoSaving && (
-                    <span className="flex items-center gap-1.5 text-[0.6rem] text-white/30">
-                      <Loader2 size={9} className="animate-spin" /> Sauvegarde auto…
-                    </span>
-                  )}
-                  {!autoSaving && dirty && (
-                    <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      className="flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.08)] px-2.5 py-1 text-[0.6rem] font-semibold text-[#c9a55a]"
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" /> Non sauvegardé
-                    </motion.span>
-                  )}
-                  {!autoSaving && !dirty && selected && (
-                    <span className="flex items-center gap-1.5 text-[0.65rem] text-white/25">
-                      <CheckCircle2 size={11} className="text-green-500/60" /> Enregistré
-                    </span>
-                  )}
-                </div>
-
-                <div className="ml-auto flex items-center gap-1.5">
-                  {selected && (
-                    <button
-                      onClick={() => toggleFavorite(selected.id)}
-                      title={favorites.has(selected.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
-                      className="flex items-center gap-1.5 rounded-xl border border-white/10 px-2.5 py-2 text-xs font-semibold transition hover:border-[rgba(201,165,90,0.3)] hover:bg-[rgba(201,165,90,0.07)]"
-                    >
-                      <Star size={13} className={favorites.has(selected.id) ? "text-[#c9a55a]" : "text-white/40"} fill={favorites.has(selected.id) ? "#c9a55a" : "none"} />
-                    </button>
-                  )}
-                  {selected && (
-                    <button
-                      onClick={() => togglePin(selected.id)}
-                      title={pinned.has(selected.id) ? "Désépingler" : "Épingler"}
-                      className="flex items-center gap-1.5 rounded-xl border border-white/10 px-2.5 py-2 text-xs font-semibold transition hover:border-[rgba(139,92,246,0.3)] hover:bg-[rgba(139,92,246,0.07)]"
-                    >
-                      <Pin size={13} className={pinned.has(selected.id) ? "text-[#a78bfa]" : "text-white/40"} fill={pinned.has(selected.id) ? "#a78bfa" : "none"} />
-                    </button>
-                  )}
-                  {selected && (
-                    <button
-                      onClick={() => exportPDF({ ...selected, ...draft } as Note)}
-                      className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/50 transition hover:border-white/20 hover:text-white/80"
-                    >
-                      <FileDown size={13} /><span className="hidden sm:inline">PDF</span>
-                    </button>
-                  )}
-                  {selected && (
-                    <button
-                      onClick={() => setConfirmDel(true)} disabled={deleting}
-                      className="flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 py-2 text-xs font-semibold text-red-400/70 transition hover:border-red-500/40 hover:text-red-400 disabled:opacity-40"
-                    >
-                      {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                      <span className="hidden sm:inline">Supprimer</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleSaveRef.current()}
-                    disabled={saving || autoSaving || !dirty}
-                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_2px_12px_rgba(201,165,90,0.3)] transition hover:shadow-[0_4px_20px_rgba(201,165,90,0.45)] active:scale-[0.97] disabled:opacity-50"
-                  >
-                    {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                    Enregistrer
-                  </button>
-                </div>
-              </div>
-
-              {/* ── Barre IA ── */}
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-white/5 bg-[rgba(201,165,90,0.02)] px-5 py-2.5">
-
-                {/* Label IA + boutons actions */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles size={11} className="text-[#c9a55a]" />
-                    <span className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-white/25">IA</span>
-                  </div>
-
-                  {AI_ACTIONS.map(({ action, label, labelShort, icon: Icon, tip }) => (
-                    <button
-                      key={action}
-                      onClick={() => runAI(action)}
-                      disabled={!!aiLoading || chatLoading}
-                      title={tip}
-                      className={`group/ai flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
-                        aiLoading === action
-                          ? "border-[rgba(201,165,90,0.4)] bg-[rgba(201,165,90,0.12)] text-[#c9a55a] shadow-[0_0_14px_rgba(201,165,90,0.2)]"
-                          : "border-white/[0.08] text-white/45 hover:border-[rgba(201,165,90,0.3)] hover:bg-[rgba(201,165,90,0.06)] hover:text-[#c9a55a] hover:shadow-[0_0_12px_rgba(201,165,90,0.12)]"
-                      } disabled:cursor-not-allowed disabled:opacity-50`}
-                    >
-                      {aiLoading === action
-                        ? <Loader2 size={11} className="animate-spin" />
-                        : <Icon size={11} className="transition-transform group-hover/ai:scale-110" />
-                      }
-                      <span className="hidden sm:inline">{label}</span>
-                      <span className="inline sm:hidden">{labelShort}</span>
-                    </button>
-                  ))}
-
-                  {/* Locked — Traduire (bientôt) */}
-                  <div
-                    title="Fonctionnalité à venir"
-                    className="flex cursor-not-allowed select-none items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-white/18"
-                  >
-                    <Globe size={11} />
-                    <span className="hidden sm:inline">Traduire</span>
-                    <span className="rounded-full bg-white/[0.06] px-1.5 py-px text-[0.5rem] font-black uppercase tracking-[0.1em] text-white/22">
-                      Bientôt
-                    </span>
-                  </div>
-                </div>
-
-                {/* Outils droite + bouton chat */}
-                <div className="ml-auto flex items-center gap-1.5">
-                  {!preview && (
-                    <button
-                      onClick={insertCheckItem}
-                      title="Insérer une case à cocher"
-                      className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-white/35 transition hover:border-white/18 hover:text-white/60"
-                    >
-                      <CheckSquare size={11} />
-                      <span className="hidden sm:inline">Case</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => setPreview(v => !v)}
-                    title={preview ? "Mode édition" : "Mode aperçu checklist"}
-                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
-                      preview
-                        ? "border-[rgba(96,165,250,0.3)] bg-[rgba(59,130,246,0.08)] text-[#60a5fa]"
-                        : "border-white/[0.08] text-white/35 hover:border-white/18 hover:text-white/60"
-                    }`}
-                  >
-                    {preview ? <EyeOff size={11} /> : <Eye size={11} />}
-                    <span className="hidden sm:inline">{preview ? "Éditer" : "Aperçu"}</span>
-                  </button>
-
-                  {/* Séparateur */}
-                  <div className="h-4 w-px bg-white/10" />
-
-                  {/* 🎙️ Réunion vocale */}
-                  <button
-                    onClick={() => { setVoiceOpen(v => !v); setChatOpen(false); }}
-                    title="Enregistrer une réunion et la transcrire avec l'IA"
-                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
-                      voiceOpen
-                        ? "border-[rgba(167,139,250,0.45)] bg-[rgba(167,139,250,0.10)] text-[#a78bfa] shadow-[0_0_14px_rgba(167,139,250,0.18)]"
-                        : voiceState === "recording"
-                          ? "border-red-500/40 bg-red-500/10 text-red-400"
-                          : "border-[rgba(167,139,250,0.18)] text-[#a78bfa]/60 hover:border-[rgba(167,139,250,0.38)] hover:bg-[rgba(167,139,250,0.06)] hover:text-[#a78bfa] hover:shadow-[0_0_12px_rgba(167,139,250,0.12)]"
-                    }`}
-                  >
-                    {voiceTranscribing
-                      ? <Loader2 size={11} className="animate-spin" />
-                      : <Mic size={11} />
-                    }
-                    <span className="hidden sm:inline">Réunion</span>
-                    {voiceState === "recording" && (
-                      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
-                    )}
-                  </button>
-
-                  {/* Demander à l'IA — PRO */}
-                  <button
-                    onClick={() => { setChatOpen(v => !v); setVoiceOpen(false); }}
-                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
-                      chatOpen
-                        ? "border-[rgba(201,165,90,0.45)] bg-[rgba(201,165,90,0.10)] text-[#c9a55a] shadow-[0_0_14px_rgba(201,165,90,0.18)]"
-                        : "border-[rgba(201,165,90,0.18)] text-[#c9a55a]/60 hover:border-[rgba(201,165,90,0.38)] hover:bg-[rgba(201,165,90,0.06)] hover:text-[#c9a55a] hover:shadow-[0_0_12px_rgba(201,165,90,0.12)]"
-                    }`}
-                  >
-                    {chatLoading
-                      ? <Loader2 size={11} className="animate-spin" />
-                      : <MessageSquare size={11} />
-                    }
-                    <span className="hidden sm:inline">Demander à l&apos;IA</span>
-                    <span className="rounded-full bg-[rgba(201,165,90,0.15)] px-1.5 py-px text-[0.5rem] font-black uppercase tracking-[0.12em] text-[#c9a55a]">
-                      PRO
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* ── Panel chat IA ── */}
-              <AnimatePresence initial={false}>
-                {chatOpen && (
-                  <motion.div
-                    key="chat-panel"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease }}
-                    className="overflow-hidden border-b border-[rgba(201,165,90,0.1)] bg-[rgba(201,165,90,0.018)]"
-                  >
-                    <div className="p-4">
-
-                      {/* Historique */}
-                      {chatHistory.length > 0 && (
-                        <div className="mb-3 max-h-52 space-y-3 overflow-y-auto pr-1 scroll-smooth">
-                          {chatHistory.map((msg, i) => (
-                            <div
-                              key={i}
-                              className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                            >
-                              {msg.role === "assistant" && (
-                                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(201,165,90,0.15)]">
-                                  <Sparkles size={9} className="text-[#c9a55a]" />
-                                </div>
-                              )}
-                              <div className={`max-w-[88%] rounded-xl px-3 py-2.5 text-xs leading-relaxed ${
-                                msg.role === "user"
-                                  ? "bg-white/[0.07] text-white/65"
-                                  : "border border-[rgba(201,165,90,0.12)] bg-[rgba(201,165,90,0.07)] text-white/80"
-                              }`}>
-                                <p className="whitespace-pre-wrap">{msg.text}</p>
-                                {msg.role === "assistant" && (
-                                  <button
-                                    onClick={() => applyToNote(msg.text)}
-                                    className="mt-2 flex items-center gap-1 text-[0.6rem] font-bold text-[#c9a55a]/50 transition hover:text-[#c9a55a]"
-                                  >
-                                    <CornerDownLeft size={9} /> Appliquer à la note
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-
-                          {/* Indicateur de frappe */}
-                          {chatLoading && (
-                            <div className="flex gap-2.5 justify-start">
-                              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(201,165,90,0.15)]">
-                                <Sparkles size={9} className="text-[#c9a55a]" />
-                              </div>
-                              <div className="rounded-xl border border-[rgba(201,165,90,0.12)] bg-[rgba(201,165,90,0.07)] px-3 py-2.5">
-                                <div className="flex items-center gap-1">
-                                  {[0, 1, 2].map(j => (
-                                    <motion.div
-                                      key={j}
-                                      animate={{ opacity: [0.25, 1, 0.25] }}
-                                      transition={{ duration: 1, repeat: Infinity, delay: j * 0.2 }}
-                                      className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]"
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          <div ref={chatBottomRef} />
-                        </div>
-                      )}
-
-                      {/* Zone saisie */}
-                      <div className="flex items-end gap-2">
-                        <textarea
-                          ref={chatInputRef}
-                          value={chatPrompt}
-                          onChange={e => setChatPrompt(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              runChat();
-                            }
-                          }}
-                          placeholder="Posez une question ou demandez à l'IA de modifier cette note…"
-                          rows={2}
-                          className="flex-1 resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-xs leading-relaxed text-white placeholder:text-white/22 outline-none transition focus:border-[rgba(201,165,90,0.35)] focus:ring-1 focus:ring-[rgba(201,165,90,0.12)]"
-                        />
-                        <button
-                          onClick={runChat}
-                          disabled={chatLoading || !chatPrompt.trim()}
-                          className="flex h-[4.2rem] w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-[#c9a55a] to-[#b08d45] text-[#0a0a0a] shadow-[0_2px_10px_rgba(201,165,90,0.3)] transition hover:shadow-[0_4px_16px_rgba(201,165,90,0.45)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          <Send size={13} />
-                        </button>
-                      </div>
-                      <p className="mt-1.5 text-[0.58rem] text-white/20">
-                        ↵ Envoyer · Shift+↵ Nouvelle ligne · L&apos;IA lit le contenu de votre note
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ── Panel 🎙️ Réunion ── */}
-              <AnimatePresence initial={false}>
-                {voiceOpen && (
-                  <motion.div
-                    key="voice-panel"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease }}
-                    className="overflow-hidden border-b border-[rgba(167,139,250,0.12)] bg-[rgba(167,139,250,0.02)]"
-                  >
-                    <div className="p-4">
-
-                      {/* Header */}
-                      <div className="mb-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          {voiceState === "recording" && (
-                            <div className="relative flex h-4 w-4 items-center justify-center">
-                              <motion.span
-                                animate={{ scale: [1, 2, 1], opacity: [0.5, 0, 0.5] }}
-                                transition={{ duration: 1.4, repeat: Infinity }}
-                                className="absolute inset-0 rounded-full bg-red-500/50"
-                              />
-                              <span className="h-2 w-2 rounded-full bg-red-400" />
-                            </div>
-                          )}
-                          <span className="text-xs font-bold text-white/60">
-                            {voiceState === "idle"      ? "Enregistrement de réunion"   :
-                             voiceState === "recording" ? "Enregistrement en cours…"     :
-                             voiceState === "paused"    ? "En pause"                     :
-                                                         "Enregistrement terminé"}
-                          </span>
-                          {voiceState !== "idle" && (
-                            <span className="font-mono text-xs font-bold tabular-nums text-[#a78bfa]">
-                              {fmtSec(voiceElapsed)}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => setVoiceOpen(false)}
-                          className="text-white/25 transition hover:text-white/55"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-
-                      {/* Contrôles */}
-                      <div className="mb-3 flex flex-wrap items-center gap-2">
-                        {voiceState === "idle" && (
-                          <button
-                            onClick={startVoice}
-                            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#a78bfa] to-[#7c3aed] px-4 py-2 text-xs font-extrabold text-white shadow-[0_2px_12px_rgba(167,139,250,0.35)] transition hover:shadow-[0_4px_20px_rgba(167,139,250,0.5)] active:scale-[0.97]"
-                          >
-                            <Mic size={13} /> Démarrer l&apos;enregistrement
-                          </button>
-                        )}
-                        {voiceState === "recording" && (
-                          <>
-                            <button
-                              onClick={pauseVoice}
-                              className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.1)] px-3 py-2 text-xs font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.18)]"
-                            >
-                              <Pause size={13} /> Pause
-                            </button>
-                            <button
-                              onClick={stopVoice}
-                              className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 transition hover:bg-red-500/20"
-                            >
-                              <Square size={13} /> Terminer
-                            </button>
-                          </>
-                        )}
-                        {voiceState === "paused" && (
-                          <>
-                            <button
-                              onClick={resumeVoice}
-                              className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.1)] px-3 py-2 text-xs font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.18)]"
-                            >
-                              <Play size={13} /> Reprendre
-                            </button>
-                            <button
-                              onClick={stopVoice}
-                              className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 transition hover:bg-red-500/20"
-                            >
-                              <Square size={13} /> Terminer
-                            </button>
-                          </>
-                        )}
-                        {voiceState === "stopped" && (
-                          <button
-                            onClick={resetVoice}
-                            className="flex items-center gap-1.5 rounded-xl border border-white/12 px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/22 hover:text-white/65"
-                          >
-                            <RotateCcw size={13} /> Nouveau
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Erreur */}
-                      {voiceErr && (
-                        <div className="mb-3 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/08 px-3 py-2 text-xs text-red-400">
-                          <AlertCircle size={12} className="shrink-0" /> {voiceErr}
-                        </div>
-                      )}
-
-                      {/* Transcription live */}
-                      {(voiceTxt || voiceTranscribing) && (
-                        <div className="mb-3 max-h-36 overflow-y-auto rounded-xl border border-white/[0.07] bg-white/[0.025] p-3">
-                          <div className="mb-1.5 flex items-center gap-2">
-                            <span className="text-[0.58rem] font-black uppercase tracking-wider text-white/25">Transcription</span>
-                            {voiceTranscribing && <Loader2 size={9} className="animate-spin text-[#a78bfa]" />}
+                          <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                            <div className="h-full rounded-full bg-green-400" style={{width:`${getCheckProgress(dContent).total>0?Math.round((getCheckProgress(dContent).done/getCheckProgress(dContent).total)*100):0}%`}}/>
                           </div>
-                          <p className="whitespace-pre-wrap text-xs leading-relaxed text-white/55">
-                            {voiceTxt || <span className="italic text-white/25">Transcription en cours…</span>}
-                          </p>
                         </div>
-                      )}
-
-                      {/* Résumé IA */}
-                      {voiceSummary && (
-                        <div className="mb-3 max-h-36 overflow-y-auto rounded-xl border border-[rgba(201,165,90,0.15)] bg-[rgba(201,165,90,0.04)] p-3">
-                          <span className="text-[0.58rem] font-black uppercase tracking-wider text-[#c9a55a]/40">Résumé IA</span>
-                          <p className="mt-1.5 whitespace-pre-wrap text-xs leading-relaxed text-white/55">{voiceSummary}</p>
-                        </div>
-                      )}
-
-                      {/* Boutons d'action — après l'enregistrement */}
-                      {voiceTxt && voiceState === "stopped" && (
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={injectTranscript}
-                            className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.08)] px-3 py-2 text-xs font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.16)]"
-                          >
-                            <CornerDownLeft size={12} /> Insérer la transcription
-                          </button>
-                          <button
-                            onClick={() => voiceSummarize(false)}
-                            disabled={voiceSummarizing}
-                            className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)] px-3 py-2 text-xs font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.16)] disabled:opacity-50"
-                          >
-                            {voiceSummarizing
-                              ? <Loader2 size={12} className="animate-spin" />
-                              : <Sparkles size={12} />
-                            }
-                            Résumer la réunion
-                          </button>
-                          {voiceSummary && (
-                            <button
-                              onClick={() => voiceSummarize(true)}
-                              disabled={voiceSummarizing}
-                              className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)] px-3 py-2 text-xs font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.16)] disabled:opacity-50"
-                            >
-                              <CornerDownLeft size={12} /> Insérer le résumé
-                            </button>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Hint idle */}
-                      {voiceState === "idle" && (
-                        <p className="mt-1 text-[0.6rem] text-white/20">
-                          Supporte jusqu&apos;à 2h de réunion · Transcription automatique toutes les 5 min · Résumé IA sur demande
-                        </p>
-                      )}
-
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ── Zone édition ── */}
-              <div className="flex flex-1 flex-col overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
-
-                {/* Titre */}
-                <input
-                  id="note-title" type="text"
-                  value={draft.title ?? ""}
-                  onChange={e => updateDraft("title", e.target.value)}
-                  placeholder="Titre de la note…"
-                  className="w-full border-none bg-transparent text-2xl font-extrabold text-white placeholder:text-white/18 outline-none transition-colors focus:placeholder:text-white/10 sm:text-3xl"
-                />
-
-                {/* Méta */}
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <div className="relative">
-                    <select
-                      value={draft.category ?? "idées"}
-                      onChange={e => updateDraft("category", e.target.value)}
-                      className="appearance-none cursor-pointer rounded-full border py-1 pl-3 pr-7 text-[0.65rem] font-bold uppercase tracking-wider outline-none transition"
-                      style={(() => {
-                        const c = getCat((draft.category as Category) ?? "idées");
-                        return { color: c.color, background: c.bg, borderColor: c.border };
-                      })()}
-                    >
-                      {CATEGORIES.map(c => (
-                        <option key={c.value} value={c.value} style={{ background: "#0f1117", color: "#fff" }}>
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 opacity-60" style={{ color: "currentcolor" }} />
-                  </div>
-                  {selected && (
-                    <span className="flex items-center gap-1 text-[0.65rem] text-white/25">
-                      <Clock size={10} /> Modifiée le {fmtDate(selected.updated_at)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Barre de progression (notes tâches) */}
-                {isTaches && draft.content && (
-                  <TaskProgressBar content={draft.content} />
-                )}
-
-                {/* Divider or */}
-                <div className="my-5 h-px w-full bg-gradient-to-r from-[rgba(201,165,90,0.25)] via-[rgba(201,165,90,0.08)] to-transparent" />
-
-                {/* Contenu */}
-                {preview ? (
-                  <div className="flex-1">
-                    <ChecklistView
-                      content={draft.content ?? ""}
-                      onToggle={c => updateDraft("content", c)}
-                    />
-                    {!(draft.content?.trim()) && (
-                      <p className="text-sm italic text-white/20">Note vide — passez en mode édition pour écrire.</p>
+                        <ChecklistView content={dContent} onToggle={c=>{setDContent(c);setIsDirty(true)}}/>
+                      </>
+                    ) : (
+                      <textarea ref={textareaRef} value={dContent} onChange={e=>{setDContent(e.target.value);setIsDirty(true)}}
+                        placeholder="- [ ] Tâche 1&#10;- [ ] Tâche 2&#10;- [ ] Tâche 3"
+                        className="h-full w-full resize-none bg-transparent text-sm leading-relaxed text-white/80 outline-none placeholder:text-white/20"/>
                     )}
                   </div>
                 ) : (
-                  <textarea
-                    ref={textareaRef}
-                    value={draft.content ?? ""}
-                    onChange={e => updateDraft("content", e.target.value)}
-                    placeholder="Commencez à écrire… Utilisez l'IA pour améliorer, résumer ou transformer votre note."
-                    className="min-h-[240px] w-full flex-1 resize-none border-none bg-transparent text-[0.95rem] leading-relaxed text-white/80 outline-none placeholder:text-white/18 transition-colors focus:placeholder:text-white/10"
-                    style={{ height: "auto" }}
-                  />
+                  <textarea ref={textareaRef} value={dContent} onChange={e=>{setDContent(e.target.value);setIsDirty(true)}}
+                    placeholder={dType==="code" ? "// Votre code ici…" : dType==="vocal" ? "Transcription vocale…" : "Commencez à écrire…"}
+                    className={`flex-1 resize-none bg-transparent px-5 py-4 text-sm leading-relaxed text-white/80 outline-none placeholder:text-white/20 ${dType==="code"?"font-mono text-cyan-300/80":""}`}/>
                 )}
+
+                {/* Footer bar */}
+                <div className="flex items-center justify-between border-t border-white/[0.04] bg-[#0b0d14] px-5 py-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[0.6rem] text-white/20">{wordCnt} mot{wordCnt!==1?"s":""}</span>
+                    <span className="text-[0.6rem] text-white/20">{dContent.length} car.</span>
+                    {isDirty&&<span className="text-[0.6rem] text-amber-400/60">● Non sauvegardé</span>}
+                  </div>
+                  {/* Voice button */}
+                  <div className="flex items-center gap-2">
+                    {voiceState==="idle" ? (
+                      <button onClick={startVoice} className="flex items-center gap-1.5 rounded-xl border border-[rgba(251,146,60,0.25)] bg-[rgba(251,146,60,0.08)] px-3 py-1.5 text-[0.65rem] font-bold text-orange-400 transition hover:bg-[rgba(251,146,60,0.15)]">
+                        <Mic size={11}/> Note vocale
+                      </button>
+                    ):(
+                      <div className="flex items-center gap-2 rounded-xl border border-orange-500/25 bg-orange-500/8 px-3 py-1.5">
+                        <span className="text-[0.65rem] font-bold text-orange-400">{fmtSec(voiceSec)}</span>
+                        {voiceState==="recording"?<button onClick={pauseVoice}><Pause size={11} className="text-orange-400"/></button>:<button onClick={resumeVoice}><Play size={11} className="text-orange-400"/></button>}
+                        <button onClick={stopVoice}><Square size={11} className="text-red-400"/></button>
+                        {voiceLoad&&<Loader2 size={11} className="animate-spin text-orange-400"/>}
+                        {voiceTxt&&voiceState==="stopped"&&(
+                          <><button onClick={useVoiceText} className="text-[0.65rem] font-bold text-green-400">Utiliser</button>
+                          <button onClick={discardVoice} className="text-[0.65rem] text-white/30">✕</button></>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Linked entity */}
+                <div className="border-t border-white/[0.04] px-5 py-2">
+                  <input value={dLinked} onChange={e=>{setDLinked(e.target.value);setIsDirty(true)}}
+                    placeholder="🔗 Lié à : client, projet, contrat… (ex: Client: Ali / Projet: DJAMA)"
+                    className="w-full bg-transparent text-[0.65rem] text-white/30 outline-none placeholder:text-white/15"/>
+                </div>
               </div>
 
-              {/* ── Footer ── */}
-              <div className="flex items-center justify-between border-t border-white/5 px-6 py-2.5 sm:px-8">
-                <span className="text-[0.62rem] text-white/20 tabular-nums">
-                  {wordCount} mot{wordCount !== 1 ? "s" : ""}
-                  {draft.content ? ` · ${draft.content.length} car.` : ""}
-                </span>
-                {autoSaving && (
-                  <span className="flex items-center gap-1.5 text-[0.62rem] text-white/25">
-                    <Loader2 size={9} className="animate-spin" /> Sauvegarde…
-                  </span>
+              {/* Right: AI Panel */}
+              <AnimatePresence>
+                {aiPanel&&(
+                  <motion.div initial={{width:0,opacity:0}} animate={{width:320,opacity:1}} exit={{width:0,opacity:0}}
+                    transition={{duration:0.3,ease}} className="overflow-hidden border-l border-white/[0.06] bg-[#0b0d14]"
+                    style={{minWidth:0}}>
+                    <div className="flex h-full w-80 flex-col p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2"><Brain size={14} style={{color:amber}}/><span className="text-xs font-extrabold text-white">IA Notes</span></div>
+                        <button onClick={()=>{setAiPanel(false);setAiResult("")}} className="text-white/30 hover:text-white/70"><X size={14}/></button>
+                      </div>
+
+                      {/* Chat input for "chat" action */}
+                      {aiAction==="chat"&&(
+                        <div className="mb-3">
+                          <textarea value={chatPrompt} onChange={e=>setChatPrompt(e.target.value)}
+                            placeholder="Instruction : résume, corrige, traduis, génère…"
+                            rows={3} className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/80 placeholder:text-white/20 outline-none focus:border-[rgba(245,158,11,0.3)]"/>
+                          <button onClick={()=>void callAI("chat",chatPrompt)} disabled={aiLoading||!chatPrompt.trim()}
+                            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-[#080a0f] disabled:opacity-40"
+                            style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>
+                            {aiLoading?<Loader2 size={12} className="animate-spin"/>:<MessageSquare size={12}/>} Envoyer
+                          </button>
+                        </div>
+                      )}
+
+                      {aiLoading&&(
+                        <div className="flex flex-1 flex-col items-center justify-center gap-3">
+                          <Loader2 size={22} className="animate-spin" style={{color:amber}}/>
+                          <p className="text-xs text-white/40">IA en cours…</p>
+                        </div>
+                      )}
+
+                      {!aiLoading&&aiResult&&(
+                        <div className="flex flex-1 flex-col gap-3 overflow-hidden">
+                          <div className="flex-1 overflow-y-auto rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
+                            <pre className="whitespace-pre-wrap text-[0.7rem] leading-relaxed text-white/75">{aiResult}</pre>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={applyAiResult} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-extrabold text-[#080a0f]" style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>
+                              <Check size={12}/> Appliquer
+                            </button>
+                            <button onClick={()=>{setAiResult("");setChatPrompt("")}} className="flex flex-1 items-center justify-center rounded-xl border border-white/10 py-2 text-xs font-bold text-white/50">
+                              Écarter
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {!aiLoading&&!aiResult&&aiAction!=="chat"&&(
+                        <div className="flex flex-1 flex-col items-center justify-center gap-2">
+                          <Sparkles size={20} className="text-white/15"/>
+                          <p className="text-xs text-white/25 text-center">Résultat IA ici</p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
                 )}
-                {!autoSaving && !dirty && selected && (
-                  <span className="flex items-center gap-1.5 text-[0.62rem] text-green-500/40">
-                    <CheckCircle2 size={9} /> Enregistré
-                  </span>
-                )}
-              </div>
+              </AnimatePresence>
+            </div>
 
-            </motion.div>
-          ) : (
-            /* ── Empty state ── */
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="flex h-full flex-col items-center justify-center gap-5 rounded-none p-8 text-center sm:rounded-[1.5rem] sm:border sm:border-white/8 sm:bg-[rgba(15,17,23,0.4)]"
-            >
-              <motion.div
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-                className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] shadow-[0_0_32px_rgba(201,165,90,0.08)]"
-              >
-                <StickyNote size={28} style={{ color: "#c9a55a" }} />
-              </motion.div>
-
-              <div>
-                <p className="text-lg font-extrabold text-white">Votre bloc-notes intelligent</p>
-                <p className="mt-2 max-w-[280px] text-sm leading-relaxed text-white/40">
-                  Capturez vos idées, améliorez-les avec l&apos;IA et transformez-les en actions.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-2">
-                {[
-                  { icon: Wand2,        label: "Améliorer l'écriture" },
-                  { icon: FileText,     label: "Résumer"               },
-                  { icon: ListChecks,   label: "Créer des actions"     },
-                  { icon: MessageSquare,label: "Demander à l'IA"       },
-                  { icon: CheckSquare,  label: "Checklists"            },
-                  { icon: FileDown,     label: "Export PDF"            },
-                ].map(f => (
-                  <span
-                    key={f.label}
-                    className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/45"
-                  >
-                    <f.icon size={11} className="text-[#c9a55a]" />
-                    {f.label}
-                  </span>
-                ))}
-              </div>
-
-              <button
-                onClick={newNote}
-                className="mt-2 flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-5 py-2.5 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:shadow-[0_6px_24px_rgba(201,165,90,0.45)] active:scale-[0.97]"
-              >
-                <Plus size={15} /> Nouvelle note
-              </button>
-            </motion.div>
-          )}
-        </main>
+            {/* AI Actions row */}
+            <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.05] bg-[#0b0d14] px-5 py-2.5 scrollbar-hide">
+              {AI_ACTIONS.map(a=>(
+                <button key={a.action}
+                  onClick={()=>{
+                    if(a.action==="chat"){setAiAction("chat");setAiPanel(true);setAiResult("");}
+                    else void callAI(a.action);
+                  }}
+                  disabled={aiLoading}
+                  className="flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.65rem] font-bold transition hover:opacity-80 disabled:opacity-30"
+                  style={{color:a.color,borderColor:`${a.color}30`,background:`${a.color}12`}}>
+                  <a.icon size={11}/>{a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── Modals ── */}
+      {/* ── MODAL: TEMPLATES ── */}
       <AnimatePresence>
-        {confirmDel && <ConfirmDialog onConfirm={handleDelete} onCancel={() => setConfirmDel(false)} />}
+        {showTemplates&&(
+          <>
+            <motion.div key="tb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setShowTemplates(false)}/>
+            <motion.div key="td" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-2xl -translate-y-1/2 rounded-[1.75rem] border border-white/10 bg-[#0c0e16] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-base font-extrabold text-white">Templates</h2>
+                <button onClick={()=>setShowTemplates(false)} className="text-white/30 hover:text-white/70"><X size={15}/></button>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {TEMPLATES.map(t=>(
+                  <button key={t.label} onClick={()=>{createNote(t.type, t.content);setShowTemplates(false);}}
+                    className="flex flex-col items-start gap-2 rounded-[1.25rem] border border-white/[0.07] bg-white/[0.03] p-4 text-left transition hover:border-white/15 hover:bg-white/[0.06]">
+                    <span className="text-2xl">{t.icon}</span>
+                    <span className="text-sm font-extrabold text-white">{t.label}</span>
+                    <span className="text-[0.65rem] text-white/35 line-clamp-2">{t.content.slice(0,80)}…</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
       </AnimatePresence>
+
+      {/* ── MODAL: NOUVEAU DOSSIER ── */}
       <AnimatePresence>
-        {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+        {folderModal&&(
+          <>
+            <motion.div key="fb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setFolderModal(false)}/>
+            <motion.div key="fd" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-[1.75rem] border border-white/10 bg-[#0c0e16] p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-sm font-extrabold text-white">Nouveau dossier</h2>
+                <button onClick={()=>setFolderModal(false)} className="text-white/30 hover:text-white/70"><X size={14}/></button>
+              </div>
+              <input value={newFolderName} onChange={e=>setNewFolderName(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&void handleCreateFolder()}
+                placeholder="Nom du dossier"
+                className="mb-4 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(245,158,11,0.35)]"/>
+              <div className="mb-4 flex flex-wrap gap-2">
+                {FOLDER_COLORS.map(c=>(
+                  <button key={c} onClick={()=>setNewFolderColor(c)}
+                    className="h-7 w-7 rounded-full transition hover:scale-110" style={{background:c,outline:newFolderColor===c?"2px solid white":"none",outlineOffset:"2px"}}/>
+                ))}
+              </div>
+              <div className="flex gap-3">
+                <button onClick={()=>setFolderModal(false)} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/50">Annuler</button>
+                <button onClick={handleCreateFolder} disabled={!newFolderName.trim()}
+                  className="flex-1 rounded-xl py-2.5 text-sm font-extrabold text-[#080a0f] disabled:opacity-40"
+                  style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>Créer</button>
+              </div>
+            </motion.div>
+          </>
+        )}
       </AnimatePresence>
+
+      {/* ── Confirm delete ── */}
+      <AnimatePresence>
+        {confirmDel&&(
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <motion.div initial={{scale:0.93,y:16,opacity:0}} animate={{scale:1,y:0,opacity:1}} exit={{scale:0.95,opacity:0}} transition={{duration:0.3,ease}}
+              className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10"><Trash2 size={18} className="text-red-400"/></div>
+              <h3 className="text-base font-extrabold text-white">Supprimer cette note ?</h3>
+              <p className="mt-1.5 text-sm text-white/40">Cette action est irréversible.</p>
+              <div className="mt-5 flex gap-3">
+                <button onClick={()=>setConfirmDel(false)} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/60">Annuler</button>
+                <button onClick={handleDelete} className="flex-1 rounded-xl bg-red-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-red-500">Supprimer</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Toast ── */}
+      <AnimatePresence>{toast&&<Toast toast={toast} onClose={()=>setToast(null)}/>}</AnimatePresence>
     </div>
   );
 }
