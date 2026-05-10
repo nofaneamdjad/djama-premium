@@ -1,391 +1,753 @@
 "use client";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase";
+import Toast, { type ToastData } from "@/components/ui/Toast";
 
-/**
- * /client/assistant — Radar Argent Perdu · Relances
- *
- * Page dédiée : tous les dossiers à relancer, avec génération IA.
- * Le coaching (score + actions) est sur le dashboard principal.
- */
+// ── Constants ──────────────────────────────────────────────────────────────────
+const CYAN   = "#22d3ee";
+const VIOLET = "#8b5cf6";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence }          from "framer-motion";
-import {
-  Send, Copy, Check, X, RefreshCw, Sparkles,
-  MessageCircle, Mail, AlertCircle, ChevronLeft,
-} from "lucide-react";
-import Link from "next/link";
-import type {
-  RadarItem,      RadarResponse,
-  RelanceRequest, RelanceResponse,
-  UrgencyLevel,
-} from "@/lib/assistant/types";
-import { fmtEurInt } from "@/lib/format";
+const ACTIONS = [
+  { icon: "💰", label: "Finances du mois",   color: "#10b981", prompt: "Analyse mes finances du mois : revenus, dépenses, factures impayées. Donne un résumé actionnable avec les chiffres clés." },
+  { icon: "⚡", label: "Tâches urgentes",    color: "#ef4444", prompt: "Quelles sont mes tâches urgentes et en retard ? Que dois-je faire en priorité aujourd'hui ?" },
+  { icon: "👥", label: "Clients impayés",    color: "#f59e0b", prompt: "Liste les clients avec des factures impayées. Donne les montants, les délais de retard et suggère une action de relance." },
+  { icon: "📦", label: "Alertes stock",      color: "#8b5cf6", prompt: "Quels produits sont en stock faible ou en rupture ? Lesquels dois-je réapprovisionner en urgence ?" },
+  { icon: "🗓", label: "Organiser ma journée",color: "#3b82f6", prompt: "Organise ma journée idéale en tenant compte de mes tâches prioritaires, réunions prévues et objectifs." },
+  { icon: "📊", label: "Rapport business",   color: CYAN,      prompt: "Génère un rapport business complet : revenus, dépenses, tâches terminées, clients actifs, alertes importantes." },
+  { icon: "⚠️", label: "Risques & alertes",  color: "#f97316", prompt: "Détecte tous les risques business : retards de paiement, stock bas, surcharge équipe, projets en retard." },
+  { icon: "✍️", label: "Créer un document",  color: "#a78bfa", prompt: "Quels documents puis-je générer depuis DJAMA ? Guide-moi pour créer une facture, un contrat, un devis ou une note." },
+];
 
-const URGENCY: Record<UrgencyLevel, {
-  bg: string; border: string; text: string; dot: string;
-  label: string; badge: string; ctaBg: string;
-}> = {
-  critique: {
-    bg: "bg-red-500/[0.07]",    border: "border-red-500/25",
-    text: "text-red-400",        dot: "bg-red-500",
-    label: "Critique",           badge: "bg-red-500/15 text-red-400 border-red-500/20",
-    ctaBg: "bg-red-500/15 border-red-500/25 text-red-300 hover:bg-red-500/25",
-  },
-  urgent: {
-    bg: "bg-amber-500/[0.07]",  border: "border-amber-500/20",
-    text: "text-amber-400",      dot: "bg-amber-400",
-    label: "Urgent",             badge: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-    ctaBg: "bg-amber-500/12 border-amber-500/20 text-amber-300 hover:bg-amber-500/22",
-  },
-  surveiller: {
-    bg: "bg-white/[0.025]",     border: "border-white/[0.07]",
-    text: "text-white/45",       dot: "bg-white/25",
-    label: "Surveiller",         badge: "bg-white/8 text-white/40 border-white/10",
-    ctaBg: "bg-white/6 border-white/10 text-white/50 hover:bg-white/10",
-  },
-};
+const SUGGESTIONS = [
+  "Montre les contrats du mois",
+  "Quels fournisseurs coûtent le plus cher ?",
+  "Résume mes réunions de la semaine",
+  "Quel est mon chiffre d'affaires ce mois-ci ?",
+  "Qui sont mes clients les plus actifs ?",
+  "Combien de tâches j'ai en retard ?",
+];
 
-/* ── Messages rapides sans IA ── */
-const quickMsg = (item: RadarItem) => {
-  const type = item.type === "facture" ? "facture" : "devis";
-  return `Bonjour,\n\nJe vous relance concernant notre ${type} ${item.reference} d'un montant de ${fmtEurInt(item.amount)}.\n\nPourriez-vous me confirmer la prise en charge ?\n\nCordialement`;
-};
-const quickWa   = (item: RadarItem) =>
-  `https://wa.me/?text=${encodeURIComponent(quickMsg(item))}`;
-const quickMail = (item: RadarItem) =>
-  `mailto:${item.client_email ?? ""}?subject=${encodeURIComponent(`Relance ${item.type === "facture" ? "facture" : "devis"} ${item.reference}`)}&body=${encodeURIComponent(quickMsg(item))}`;
-
-/* ── Mini-composants ── */
-function Sk({ h = "h-14" }: { h?: string }) {
-  return <div className={`animate-pulse rounded-2xl bg-white/[0.04] ${h} w-full`} />;
-}
-function UrgentDot({ urgency }: { urgency: UrgencyLevel }) {
-  return <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${URGENCY[urgency].dot} ${urgency === "critique" ? "animate-pulse" : ""}`} />;
+// ── Types ──────────────────────────────────────────────────────────────────────
+interface Msg {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  modules?: string[];
+  loading?: boolean;
 }
 
-/* ════════════════════════════════════════════
-   PAGE
-════════════════════════════════════════════ */
-export default function RadarPage() {
-  const [radar,         setRadar]         = useState<RadarResponse | null>(null);
-  const [loading,       setLoading]       = useState(true);
-  const [fetchError,    setFetchError]    = useState(false);
-  const [relanceItem,   setRelanceItem]   = useState<RadarItem | null>(null);
-  const [relanceLoading,setRelanceLoading]= useState(false);
-  const [relanceMsg,    setRelanceMsg]    = useState<RelanceResponse | null>(null);
-  const [relanceError,  setRelanceError]  = useState(false);
-  const [copied,        setCopied]        = useState(false);
+interface Conv {
+  id: string;
+  title: string;
+  created_at: string;
+}
 
-  const fetchRadar = useCallback(async () => {
-    setLoading(true);
-    setFetchError(false);
+interface LiveInsights {
+  lateTasks:     number;
+  urgentTasks:   number;
+  unpaidCount:   number;
+  unpaidTotal:   number;
+  lowStock:      number;
+  pendingLeaves: number;
+  todayEvents:   number;
+}
+
+// ── Context builder ────────────────────────────────────────────────────────────
+async function buildContext(prompt: string): Promise<{ ctx: string; modules: string[] }> {
+  const q = prompt.toLowerCase();
+  const parts: string[] = [];
+  const used: string[]  = [];
+
+  async function get(table: string, sel: string): Promise<Record<string, unknown>[]> {
     try {
-      const res = await fetch("/api/assistant/radar");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const r: RadarResponse = await res.json();
-      setRadar(r);
-    } catch {
-      setFetchError(true);
-      setRadar(null);
-    } finally {
-      setLoading(false);
+      const { data } = await supabase.from(table).select(sel).limit(80);
+      return (data ?? []) as unknown as Record<string, unknown>[];
+    } catch { return []; }
+  }
+
+  // ── Always: tâches (contexte universel)
+  const tasks = await get("productivity_tasks", "title,status,priority,due_date");
+  if (tasks.length) {
+    const todayStr = new Date().toDateString();
+    const late     = tasks.filter(t => t.due_date && new Date(String(t.due_date) + "T00:00:00") < new Date(todayStr) && t.status !== "done");
+    const urgent   = tasks.filter(t => t.priority === "urgent");
+    const inprog   = tasks.filter(t => t.status === "in_progress");
+    used.push("Tâches");
+    parts.push(`TÂCHES (${tasks.length} total): ${urgent.length} urgentes · ${late.length} en retard · ${inprog.length} en cours.`);
+    if (urgent.length) parts.push(`  ↳ Urgentes: ${urgent.slice(0, 6).map(t => t.title).join(" | ")}`);
+    if (late.length)   parts.push(`  ↳ En retard: ${late.slice(0, 4).map(t => t.title).join(" | ")}`);
+  }
+
+  // ── Factures / finances
+  if (q.match(/facture|impay|client|paiement|revenu|chiffre|argent|rentr/)) {
+    const inv = await get("factures", "statut,montant_ttc,client_nom,date_echeance,numero");
+    if (inv.length) {
+      used.push("Factures");
+      const unpaid = inv.filter(i => ["en_attente", "envoyée", "retard"].includes(String(i.statut)));
+      const paid   = inv.filter(i => i.statut === "payée");
+      const tot    = unpaid.reduce((s, i) => s + Number(i.montant_ttc ?? 0), 0);
+      const totpaid = paid.reduce((s, i) => s + Number(i.montant_ttc ?? 0), 0);
+      const clients = [...new Set(unpaid.map(i => i.client_nom))];
+      parts.push(`FACTURES (${inv.length}): ${unpaid.length} impayées = ${tot.toFixed(0)}€ · ${paid.length} payées = ${totpaid.toFixed(0)}€.`);
+      if (clients.length) parts.push(`  ↳ Clients impayés: ${clients.slice(0, 6).join(", ")}`);
     }
-  }, []);
+  }
 
-  useEffect(() => { fetchRadar(); }, [fetchRadar]);
-
-  const openRelance = useCallback(async (item: RadarItem) => {
-    setRelanceItem(item);
-    setRelanceMsg(null);
-    setRelanceError(false);
-    setRelanceLoading(true);
-    setCopied(false);
-    const body: RelanceRequest = {
-      type: item.type, id: item.id, client_name: item.client,
-      reference: item.reference, amount: item.amount, days: item.days,
-    };
-    try {
-      const res = await fetch("/api/assistant/relance", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: RelanceResponse = await res.json();
-      setRelanceMsg(data);
-    } catch {
-      setRelanceError(true);
-    } finally {
-      setRelanceLoading(false);
+  // ── Dépenses + trésorerie
+  if (q.match(/dépense|budget|coût|charge|finance|trésor|cashflow|argent|solde|bilan/)) {
+    const dep = await get("depenses", "montant,categorie,date_depense,libelle");
+    if (dep.length) {
+      used.push("Dépenses");
+      const tot = dep.reduce((s, d) => s + Number(d.montant ?? 0), 0);
+      const bycat: Record<string, number> = {};
+      dep.forEach(d => { const c = String(d.categorie || "Autre"); bycat[c] = (bycat[c] || 0) + Number(d.montant ?? 0); });
+      const top3 = Object.entries(bycat).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k}: ${v.toFixed(0)}€`).join(" · ");
+      parts.push(`DÉPENSES (${dep.length} transactions): total ${tot.toFixed(0)}€. Top catégories: ${top3}.`);
     }
-  }, []);
+    const tr = await get("tresorerie_transactions", "type,montant,libelle,date_transaction");
+    if (tr.length) {
+      used.push("Trésorerie");
+      const ent = tr.filter(t => t.type === "entree").reduce((s, t) => s + Number(t.montant ?? 0), 0);
+      const sor = tr.filter(t => t.type === "sortie").reduce((s, t) => s + Number(t.montant ?? 0), 0);
+      parts.push(`TRÉSORERIE: entrées ${ent.toFixed(0)}€ · sorties ${sor.toFixed(0)}€ · solde net ${(ent - sor).toFixed(0)}€`);
+    }
+  }
 
-  const copyMessage = useCallback(async () => {
-    if (!relanceMsg) return;
-    await navigator.clipboard.writeText(`Objet : ${relanceMsg.subject}\n\n${relanceMsg.message}`).catch(() => null);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2_500);
-  }, [relanceMsg]);
+  // ── CRM
+  if (q.match(/client|crm|contact|prospect|relation|commercial/)) {
+    const crm = await get("crm_clients", "nom,statut,email,chiffre_affaires");
+    if (crm.length) {
+      used.push("CRM");
+      const actifs    = crm.filter(c => c.statut === "client").length;
+      const prospects = crm.filter(c => c.statut === "prospect").length;
+      const topCA     = crm.sort((a, b) => Number(b.chiffre_affaires ?? 0) - Number(a.chiffre_affaires ?? 0)).slice(0, 5).map(c => c.nom);
+      parts.push(`CRM (${crm.length} contacts): ${actifs} clients actifs · ${prospects} prospects. Top clients: ${topCA.join(", ")}.`);
+    }
+  }
 
-  const closeModal = () => { setRelanceItem(null); setRelanceMsg(null); };
-  const waLink   = (m: RelanceResponse) => `https://wa.me/?text=${encodeURIComponent(`${m.subject}\n\n${m.message}`)}`;
-  const mailLink = (m: RelanceResponse, email: string | null) =>
-    `mailto:${email ?? ""}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.message)}`;
+  // ── Stocks
+  if (q.match(/stock|inventaire|produit|réappro|fourniss|marchand/)) {
+    const st = await get("stock_products", "name,quantity,min_quantity,category");
+    if (st.length) {
+      used.push("Stocks");
+      const low  = st.filter(s => Number(s.quantity) <= Number(s.min_quantity));
+      const zero = st.filter(s => Number(s.quantity) === 0);
+      parts.push(`STOCKS (${st.length} produits): ${low.length} stock faible · ${zero.length} rupture totale.`);
+      if (low.length) parts.push(`  ↳ À réapprovisionner: ${low.slice(0, 6).map(s => `${s.name} (${s.quantity}/${s.min_quantity})`).join(" · ")}`);
+    }
+  }
 
-  const items  = radar?.items ?? [];
-  const total  = radar?.total ?? 0;
-  const counts = { critique: 0, urgent: 0, surveiller: 0 };
-  items.forEach(i => counts[i.urgency]++);
+  // ── Planning
+  if (q.match(/planning|agenda|réunion|journée|semaine|événement|organis/)) {
+    const today = new Date().toISOString().slice(0, 10);
+    const ev    = await get("planning_events", "title,start_at,end_at,event_type,location");
+    if (ev.length) {
+      used.push("Planning");
+      const todayEv  = ev.filter(e => String(e.start_at ?? "").slice(0, 10) === today);
+      const upcoming = ev.filter(e => String(e.start_at ?? "").slice(0, 10) > today).slice(0, 8);
+      if (todayEv.length)  parts.push(`PLANNING AUJOURD'HUI: ${todayEv.map(e => `${e.title} (${String(e.start_at).slice(11, 16)})`).join(" · ")}`);
+      if (upcoming.length) parts.push(`PLANNING À VENIR: ${upcoming.map(e => `${e.title} le ${String(e.start_at).slice(0, 10)}`).join(" · ")}`);
+    }
+    const goals = await get("planning_goals", "title,status,progress,period");
+    if (goals.length) {
+      used.push("Objectifs");
+      const actifs = goals.filter(g => g.status === "active");
+      if (actifs.length) parts.push(`OBJECTIFS ACTIFS: ${actifs.slice(0, 4).map(g => `${g.title} (${g.progress}%)`).join(" · ")}`);
+    }
+  }
+
+  // ── Équipe
+  if (q.match(/équipe|membre|team|congé|collaborat|rh|absence/)) {
+    const tm = await get("team_members", "name,role,status,department");
+    if (tm.length) {
+      used.push("Équipe");
+      parts.push(`ÉQUIPE (${tm.length}): ${tm.filter(m => m.status === "active").length} actifs · ${tm.filter(m => m.status === "leave").length} en congé.`);
+    }
+    const tl = await get("team_leaves", "status,member_name,type,start_date");
+    if (tl.length) {
+      used.push("Congés");
+      const pend = tl.filter(l => l.status === "pending");
+      if (pend.length) parts.push(`CONGÉS EN ATTENTE: ${pend.length} demandes: ${pend.slice(0, 4).map(l => l.member_name).join(", ")}`);
+    }
+  }
+
+  // ── Contrats
+  if (q.match(/contrat|accord|convention|document/)) {
+    const cont = await get("contracts", "title,status,client_name,amount,end_date");
+    if (cont.length) {
+      used.push("Contrats");
+      const actifs = cont.filter(c => c.status === "active").length;
+      const expiring = cont.filter(c => c.end_date && new Date(String(c.end_date)) < new Date(Date.now() + 30 * 86400000));
+      parts.push(`CONTRATS (${cont.length}): ${actifs} actifs. ${expiring.length} expirent dans 30 jours.`);
+    }
+  }
+
+  // ── Notes
+  if (q.match(/note|idée|document|résumé|compte.rendu/)) {
+    const notes = await get("notes", "title,type,created_at");
+    if (notes.length) {
+      used.push("Notes IA");
+      parts.push(`NOTES (${notes.length}): ${notes.slice(0, 5).map(n => n.title).join(" · ")}`);
+    }
+  }
+
+  const sys = `Tu es DJAMA AI, le cerveau central de la plateforme DJAMA SaaS. Tu as accès aux données réelles de l'utilisateur. Réponds TOUJOURS en français, de façon concise, professionnelle et actionnable. Utilise des listes à puces quand c'est utile. Si tu détectes un problème (impayé, stock bas, retard, surcharge), propose une action concrète immédiate. Ne te contente pas de lister des données — analyse et conseille.`;
+
+  const ctx = parts.length > 0
+    ? `${sys}\n\n[DONNÉES TEMPS RÉEL — ${new Date().toLocaleDateString("fr-FR")}]\n${parts.join("\n")}\n[FIN DONNÉES]`
+    : sys;
+
+  return { ctx, modules: used };
+}
+
+// ── Markdown renderer ──────────────────────────────────────────────────────────
+function MsgContent({ text }: { text: string }) {
+  const lines = text.split("\n");
+  const out: React.ReactNode[] = [];
+  let listBuf: React.ReactNode[] = [];
+
+  function flushList() {
+    if (listBuf.length) {
+      out.push(<ul key={`ul-${out.length}`} className="space-y-1 my-1.5 pl-1">{listBuf}</ul>);
+      listBuf = [];
+    }
+  }
+
+  lines.forEach((line, i) => {
+    if (line.startsWith("## ") || line.startsWith("### ")) {
+      flushList();
+      out.push(<p key={i} className="text-[0.82rem] font-bold text-white/95 mt-3 mb-1 first:mt-0">{line.replace(/^#{2,3}\s/, "")}</p>);
+    } else if (line.match(/^[-•*]\s/)) {
+      const content = line.replace(/^[-•*]\s/, "");
+      listBuf.push(
+        <li key={i} className="flex gap-2 text-[0.8rem] text-white/82 leading-relaxed">
+          <span className="mt-2 h-1.5 w-1.5 rounded-full shrink-0 flex-none" style={{ background: CYAN }} />
+          <span>{bold(content)}</span>
+        </li>
+      );
+    } else if (line.match(/^\d+\.\s/)) {
+      const content = line.replace(/^\d+\.\s/, "");
+      const num = line.match(/^(\d+)\./)?.[1];
+      listBuf.push(
+        <li key={i} className="flex gap-2 text-[0.8rem] text-white/82 leading-relaxed">
+          <span className="shrink-0 text-[0.7rem] font-bold" style={{ color: CYAN }}>{num}.</span>
+          <span>{bold(content)}</span>
+        </li>
+      );
+    } else if (line.trim() === "") {
+      flushList();
+      out.push(<div key={i} className="h-1" />);
+    } else {
+      flushList();
+      out.push(<p key={i} className="text-[0.8rem] text-white/82 leading-relaxed">{bold(line)}</p>);
+    }
+  });
+  flushList();
+
+  return <div className="space-y-0.5">{out}</div>;
+}
+
+function bold(text: string): React.ReactNode {
+  return text.split(/\*\*(.*?)\*\*/g).map((p, i) =>
+    i % 2 === 1 ? <strong key={i} className="font-semibold text-white">{p}</strong> : p
+  );
+}
+
+// ── Live Insights Panel ────────────────────────────────────────────────────────
+function InsightsPanel({ insights, loading }: { insights: LiveInsights | null; loading: boolean }) {
+  const items = insights ? [
+    { icon: "⚡", label: "Tâches urgentes",  value: insights.urgentTasks, color: "#ef4444", warn: insights.urgentTasks > 0 },
+    { icon: "⏰", label: "En retard",         value: insights.lateTasks,   color: "#f97316", warn: insights.lateTasks > 0 },
+    { icon: "💳", label: "Factures impayées", value: insights.unpaidCount, color: "#f59e0b", warn: insights.unpaidCount > 0 },
+    { icon: "💰", label: "Montant impayé",    value: `${insights.unpaidTotal.toFixed(0)}€`, color: "#10b981", warn: false },
+    { icon: "📦", label: "Stock faible",      value: insights.lowStock,    color: "#8b5cf6", warn: insights.lowStock > 0 },
+    { icon: "🗓", label: "Réunions du jour",  value: insights.todayEvents, color: CYAN,      warn: false },
+  ] : [];
 
   return (
-    <div className="min-h-screen bg-[#080a0f] text-white pb-28">
+    <div className="space-y-2">
+      <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/20 mb-3">Tableau de bord live</p>
+      {loading && (
+        <div className="flex items-center gap-2 text-xs text-white/30 py-4">
+          <span className="animate-spin inline-block">⚙</span> Chargement…
+        </div>
+      )}
+      {!loading && items.map(item => (
+        <div key={item.label}
+          className={`flex items-center justify-between rounded-xl border px-3 py-2.5 transition ${item.warn ? "border-white/[0.1] bg-white/[0.03]" : "border-white/[0.05] bg-transparent"}`}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">{item.icon}</span>
+            <span className="text-[0.72rem] text-white/55">{item.label}</span>
+          </div>
+          <span className={`text-sm font-bold ${item.warn ? "animate-pulse" : ""}`}
+            style={{ color: item.color }}>
+            {item.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-      {/* ── Sub-header ── */}
-      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#22d3ee30" }} />
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
-                style={{ backgroundColor: "#22d3ee14", borderColor: "#22d3ee28" }}>
-                <Sparkles size={18} style={{ color: "#22d3ee" }} />
-              </div>
-            </div>
+// ── Main Page ──────────────────────────────────────────────────────────────────
+export default function AssistantPage() {
+  const [convs,        setConvs]        = useState<Conv[]>([]);
+  const [activeConv,   setActiveConv]   = useState<string | null>(null);
+  const [msgs,         setMsgs]         = useState<Msg[]>([]);
+  const [input,        setInput]        = useState("");
+  const [sending,      setSending]      = useState(false);
+  const [consulting,   setConsulting]   = useState<string[]>([]);
+  const [showActions,  setShowActions]  = useState(true);
+  const [showInsights, setShowInsights] = useState(true);
+  const [insights,     setInsights]     = useState<LiveInsights | null>(null);
+  const [insLoading,   setInsLoading]   = useState(true);
+  const [toastData,    setToastData]    = useState<ToastData | null>(null);
+
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef  = useRef<HTMLTextAreaElement>(null);
+
+  const toast = useCallback((msg: string, type: ToastData["type"] = "success") => {
+    setToastData({ msg, type });
+    setTimeout(() => setToastData(null), 3000);
+  }, []);
+
+  // ── Load conversations ──────────────────────────────────────────────────────
+  const loadConvs = useCallback(async () => {
+    const { data } = await supabase
+      .from("ai_conversations")
+      .select("id,title,created_at")
+      .order("updated_at", { ascending: false })
+      .limit(30);
+    setConvs((data ?? []) as Conv[]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Load messages for a conversation ───────────────────────────────────────
+  const loadMsgs = useCallback(async (convId: string) => {
+    const { data } = await supabase
+      .from("ai_messages")
+      .select("id,role,content,modules_used,created_at")
+      .eq("conversation_id", convId)
+      .order("created_at");
+    setMsgs((data ?? []).map((m: Record<string, unknown>) => ({
+      id: String(m.id), role: m.role as "user" | "assistant",
+      content: String(m.content),
+      modules: Array.isArray(m.modules_used) ? m.modules_used.map(String) : [],
+    })));
+  }, []);
+
+  // ── Load live insights ──────────────────────────────────────────────────────
+  const loadInsights = useCallback(async () => {
+    setInsLoading(true);
+    try {
+      const [tasks, inv, st, lv, ev] = await Promise.all([
+        supabase.from("productivity_tasks").select("status,priority,due_date").limit(200),
+        supabase.from("factures").select("statut,montant_ttc").limit(200),
+        supabase.from("stock_products").select("quantity,min_quantity").limit(200),
+        supabase.from("team_leaves").select("status").limit(50),
+        supabase.from("planning_events").select("start_at").limit(50),
+      ]);
+
+      const todayStr  = new Date().toDateString();
+      const todayIso  = new Date().toISOString().slice(0, 10);
+      const taskList  = (tasks.data ?? []) as Record<string, unknown>[];
+      const invList   = (inv.data   ?? []) as Record<string, unknown>[];
+      const stList    = (st.data    ?? []) as Record<string, unknown>[];
+      const lvList    = (lv.data    ?? []) as Record<string, unknown>[];
+      const evList    = (ev.data    ?? []) as Record<string, unknown>[];
+
+      const late    = taskList.filter(t => t.due_date && new Date(String(t.due_date) + "T00:00:00") < new Date(todayStr) && t.status !== "done").length;
+      const urgent  = taskList.filter(t => t.priority === "urgent").length;
+      const unpaid  = invList.filter(i => ["en_attente", "envoyée", "retard"].includes(String(i.statut)));
+      const low     = stList.filter(s => Number(s.quantity) <= Number(s.min_quantity)).length;
+      const pLeaves = lvList.filter(l => l.status === "pending").length;
+      const todayEv = evList.filter(e => String(e.start_at ?? "").slice(0, 10) === todayIso).length;
+
+      setInsights({
+        lateTasks: late, urgentTasks: urgent,
+        unpaidCount: unpaid.length,
+        unpaidTotal: unpaid.reduce((s, i) => s + Number(i.montant_ttc ?? 0), 0),
+        lowStock: low, pendingLeaves: pLeaves, todayEvents: todayEv,
+      });
+    } catch { /* silently */ }
+    setInsLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => { loadConvs(); loadInsights(); }, [loadConvs, loadInsights]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs]);
+
+  // ── New conversation ────────────────────────────────────────────────────────
+  const newConv = useCallback(async (): Promise<string> => {
+    const { data, error } = await supabase
+      .from("ai_conversations")
+      .insert({ title: "Nouvelle conversation" })
+      .select("id,title,created_at")
+      .single();
+    if (error || !data) return "";
+    const conv = data as Conv;
+    setConvs(cs => [conv, ...cs]);
+    setActiveConv(conv.id);
+    setMsgs([]);
+    setShowActions(true);
+    return conv.id;
+  }, []);
+
+  // ── Send message ────────────────────────────────────────────────────────────
+  const send = useCallback(async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || sending) return;
+
+    setSending(true);
+    setShowActions(false);
+    setInput("");
+
+    // Create or reuse conversation
+    let convId = activeConv;
+    if (!convId) {
+      convId = await newConv();
+      if (!convId) { setSending(false); return; }
+    }
+
+    // Add user message
+    const userMsg: Msg = {
+      id: crypto.randomUUID(), role: "user", content: trimmed,
+    };
+    setMsgs(ms => [...ms, userMsg]);
+
+    // Persist user message
+    await supabase.from("ai_messages").insert({
+      conversation_id: convId, role: "user", content: trimmed,
+    });
+
+    // Build context (show which modules are being consulted)
+    setConsulting(["…"]);
+    const { ctx, modules } = await buildContext(trimmed);
+    setConsulting(modules.length > 0 ? modules : []);
+
+    // Placeholder loading message
+    const aId = crypto.randomUUID();
+    setMsgs(ms => [...ms, { id: aId, role: "assistant", content: "", modules, loading: true }]);
+
+    try {
+      const res = await fetch("/api/notes/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "chat", content: ctx, prompt: trimmed }),
+      });
+      const d = await res.json();
+      const reply = String(d.result ?? d.error ?? "Désolé, je n'ai pas pu répondre.");
+
+      // Typing animation
+      setMsgs(ms => ms.map(m => m.id === aId ? { ...m, loading: false, content: "" } : m));
+      let i = 0;
+      const STEP = 4;
+      await new Promise<void>(resolve => {
+        const iv = setInterval(() => {
+          i = Math.min(i + STEP, reply.length);
+          setMsgs(ms => ms.map(m => m.id === aId ? { ...m, content: reply.slice(0, i) } : m));
+          if (i >= reply.length) { clearInterval(iv); resolve(); }
+        }, 8);
+      });
+
+      // Persist assistant message
+      await supabase.from("ai_messages").insert({
+        conversation_id: convId, role: "assistant", content: reply, modules_used: modules,
+      });
+
+      // Update conversation title if first message
+      if (msgs.length === 0) {
+        const title = trimmed.length > 50 ? trimmed.slice(0, 50) + "…" : trimmed;
+        await supabase.from("ai_conversations").update({ title }).eq("id", convId);
+        setConvs(cs => cs.map(c => c.id === convId ? { ...c, title } : c));
+      }
+
+    } catch {
+      setMsgs(ms => ms.map(m => m.id === aId
+        ? { ...m, loading: false, content: "Erreur de connexion à l'IA. Vérifiez votre connexion." }
+        : m));
+    }
+
+    setConsulting([]);
+    setSending(false);
+    inputRef.current?.focus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeConv, sending, msgs.length, newConv]);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+  const selectConv = async (id: string) => {
+    setActiveConv(id); setShowActions(false);
+    await loadMsgs(id);
+  };
+
+  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); }
+  };
+
+  const copyMsg = (content: string) => {
+    navigator.clipboard.writeText(content).then(() => toast("Copié !"));
+  };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+  return (
+    <div className="flex h-[calc(100vh-56px)] bg-[#080a10] text-white overflow-hidden">
+
+      {/* ── LEFT SIDEBAR ──────────────────────────────────────────────────── */}
+      <div className="w-[260px] shrink-0 flex flex-col border-r border-white/[0.06] bg-[#09090f]">
+
+        {/* Header */}
+        <div className="px-4 py-4 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-7 w-7 rounded-lg flex items-center justify-center text-sm"
+              style={{ background: CYAN + "20", border: `1px solid ${CYAN}30` }}>✨</div>
             <div>
-              <h1 className="text-base font-extrabold text-white">Assistant IA</h1>
-              <p className="text-[0.65rem] text-white/30">Relances intelligentes · Radar argent perdu</p>
+              <p className="text-[0.82rem] font-black text-white/90">DJAMA AI</p>
+              <p className="text-[0.58rem] text-white/30">Cerveau central</p>
             </div>
           </div>
-          <button
-            onClick={fetchRadar} disabled={loading}
-            className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08] disabled:opacity-40"
-          >
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-            Actualiser
+          <button onClick={() => { setActiveConv(null); setMsgs([]); setShowActions(true); }}
+            className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white transition hover:opacity-90"
+            style={{ background: `linear-gradient(135deg, ${CYAN}, ${VIOLET})` }}>
+            + Nouvelle conversation
           </button>
+        </div>
+
+        {/* Quick actions */}
+        <div className="px-3 py-3 border-b border-white/[0.06]">
+          <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2 px-1">Actions rapides</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {ACTIONS.map(a => (
+              <button key={a.label} onClick={() => send(a.prompt)}
+                className="flex flex-col items-center gap-1 rounded-xl border border-white/[0.05] bg-white/[0.02] px-2 py-2.5 text-center transition hover:border-white/10 hover:bg-white/[0.04]">
+                <span className="text-lg leading-none">{a.icon}</span>
+                <span className="text-[0.58rem] text-white/50 leading-tight">{a.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* History */}
+        <div className="flex-1 overflow-y-auto px-2 py-2">
+          <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2 px-2">Historique</p>
+          {convs.length === 0 && (
+            <p className="text-center text-[0.68rem] text-white/20 py-4">Aucune conversation</p>
+          )}
+          {convs.map(c => (
+            <button key={c.id} onClick={() => selectConv(c.id)}
+              className={`w-full text-left rounded-lg px-2.5 py-2 text-xs transition mb-0.5 ${activeConv === c.id
+                ? "text-white" : "text-white/45 hover:bg-white/[0.04] hover:text-white/75"}`}
+              style={activeConv === c.id ? { background: CYAN + "18" } : {}}>
+              <p className="truncate font-medium">{c.title}</p>
+              <p className="text-[0.58rem] text-white/25 mt-0.5">
+                {new Date(c.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+              </p>
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-5 space-y-4">
+      {/* ── MAIN CHAT ─────────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0">
 
-        {/* ── Résumé ── */}
-        {!loading && items.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between rounded-2xl border border-white/[0.07] bg-[#0f1117] px-5 py-4"
-          >
-            <div>
-              <p className="text-xl font-black text-white">{fmtEurInt(total)}</p>
-              <p className="text-xs text-white/30 mt-0.5">{items.length} dossier{items.length > 1 ? "s" : ""} à traiter</p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              {counts.critique > 0 && (
-                <span className="text-[10px] px-2 py-1 rounded-full bg-red-500/15 border border-red-500/20 text-red-400 font-bold">
-                  {counts.critique} critique{counts.critique > 1 ? "s" : ""}
-                </span>
-              )}
-              {counts.urgent > 0 && (
-                <span className="text-[10px] px-2 py-1 rounded-full bg-amber-500/15 border border-amber-500/20 text-amber-400 font-bold">
-                  {counts.urgent} urgent{counts.urgent > 1 ? "s" : ""}
-                </span>
-              )}
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.06] shrink-0">
+          <div>
+            <h1 className="text-sm font-bold text-white/85">
+              {activeConv ? convs.find(c => c.id === activeConv)?.title ?? "Conversation" : "Assistant IA"}
+            </h1>
+            <p className="text-[0.65rem] text-white/30">Connecté à tous vos modules DJAMA</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {consulting.length > 0 && (
+              <div className="flex items-center gap-1.5 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-1">
+                <span className="text-[0.65rem] animate-spin inline-block">⚙</span>
+                <span className="text-[0.65rem] text-cyan-300">Consultation: {consulting.join(", ")}</span>
+              </div>
+            )}
+            <button onClick={() => setShowInsights(s => !s)}
+              className={`rounded-xl border px-3 py-1.5 text-xs transition ${showInsights
+                ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-300"
+                : "border-white/[0.07] text-white/40 hover:border-white/15"}`}>
+              📊 Live
+            </button>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+
+          {/* Welcome / quick actions (empty state) */}
+          <AnimatePresence>
+            {showActions && msgs.length === 0 && (
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }} className="space-y-6">
+
+                {/* Hero */}
+                <div className="text-center py-8">
+                  <div className="mx-auto mb-4 h-14 w-14 rounded-2xl flex items-center justify-center text-2xl"
+                    style={{ background: `linear-gradient(135deg, ${CYAN}20, ${VIOLET}20)`, border: `1px solid ${CYAN}30` }}>
+                    ✨
+                  </div>
+                  <h2 className="text-xl font-black text-white/90 mb-2">Bonjour 👋</h2>
+                  <p className="text-sm text-white/45 max-w-md mx-auto leading-relaxed">
+                    Je suis DJAMA AI, votre assistant business intelligent. Je connais vos factures, tâches, clients, stocks et finances en temps réel.
+                  </p>
+                </div>
+
+                {/* Suggestions */}
+                <div>
+                  <p className="text-[0.68rem] font-black uppercase tracking-widest text-white/25 mb-3 text-center">Essayez de demander…</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {SUGGESTIONS.map(s => (
+                      <button key={s} onClick={() => send(s)}
+                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/55 transition hover:border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10">
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Messages */}
+          <AnimatePresence initial={false}>
+            {msgs.map(m => (
+              <motion.div key={m.id}
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+
+                {/* Avatar */}
+                <div className={`shrink-0 h-8 w-8 rounded-xl flex items-center justify-center text-sm font-bold ${m.role === "user"
+                  ? "bg-violet-500/20 text-violet-300 border border-violet-500/30"
+                  : "text-cyan-300 border border-cyan-500/30"}`}
+                  style={m.role === "assistant" ? { background: CYAN + "15" } : {}}>
+                  {m.role === "user" ? "U" : "✨"}
+                </div>
+
+                {/* Bubble */}
+                <div className={`max-w-[72%] space-y-2 ${m.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
+                  <div className={`rounded-2xl px-4 py-3 ${m.role === "user"
+                    ? "rounded-tr-sm bg-violet-600/25 border border-violet-500/20"
+                    : "rounded-tl-sm bg-[#0e1018] border border-white/[0.07]"}`}
+                    style={m.role === "assistant" ? { borderLeft: `2px solid ${CYAN}40` } : {}}>
+
+                    {m.loading ? (
+                      <div className="flex items-center gap-1.5 py-1">
+                        {[0, 1, 2].map(j => (
+                          <motion.span key={j} className="h-1.5 w-1.5 rounded-full"
+                            style={{ background: CYAN }}
+                            animate={{ opacity: [0.3, 1, 0.3], y: [0, -4, 0] }}
+                            transition={{ repeat: Infinity, duration: 0.8, delay: j * 0.15 }} />
+                        ))}
+                      </div>
+                    ) : m.role === "assistant" ? (
+                      <MsgContent text={m.content} />
+                    ) : (
+                      <p className="text-[0.82rem] text-white/88 leading-relaxed">{m.content}</p>
+                    )}
+                  </div>
+
+                  {/* Module tags + copy */}
+                  {m.role === "assistant" && !m.loading && (
+                    <div className="flex items-center gap-1.5 flex-wrap px-1">
+                      {m.modules?.map(mod => (
+                        <span key={mod} className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[0.58rem] text-cyan-300/70">
+                          {mod}
+                        </span>
+                      ))}
+                      <button onClick={() => copyMsg(m.content)}
+                        className="rounded-full border border-white/[0.06] px-2 py-0.5 text-[0.58rem] text-white/25 hover:text-white/60 hover:border-white/15 transition ml-1">
+                        📋 copier
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input bar */}
+        <div className="shrink-0 border-t border-white/[0.06] px-6 py-4">
+          <div className="flex items-end gap-3 rounded-2xl border border-white/[0.09] bg-[#0c0e16] px-4 py-3 focus-within:border-cyan-500/40 transition">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKey}
+              placeholder="Posez une question sur vos finances, tâches, clients… (Entrée pour envoyer)"
+              rows={1}
+              className="flex-1 resize-none bg-transparent text-sm text-white/85 outline-none placeholder:text-white/25 max-h-32 scrollbar-none"
+              style={{ lineHeight: "1.5" }}
+              onInput={e => {
+                const el = e.currentTarget;
+                el.style.height = "auto";
+                el.style.height = Math.min(el.scrollHeight, 128) + "px";
+              }}
+            />
+            <button
+              onClick={() => send(input)}
+              disabled={!input.trim() || sending}
+              className="shrink-0 h-8 w-8 rounded-xl flex items-center justify-center text-sm transition disabled:opacity-30 hover:opacity-90"
+              style={{ background: sending ? VIOLET + "60" : `linear-gradient(135deg, ${CYAN}, ${VIOLET})` }}>
+              {sending ? <span className="animate-spin text-[0.7rem]">⚙</span> : "→"}
+            </button>
+          </div>
+          <p className="text-center text-[0.6rem] text-white/18 mt-2">
+            Maj+Entrée pour saut de ligne · DJAMA AI a accès à vos données en temps réel
+          </p>
+        </div>
+      </div>
+
+      {/* ── RIGHT INSIGHTS PANEL ──────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showInsights && (
+          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 260, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }} transition={{ type: "spring", damping: 22 }}
+            className="shrink-0 border-l border-white/[0.06] bg-[#09090f] overflow-hidden">
+            <div className="w-[260px] h-full overflow-y-auto px-4 py-4 space-y-4">
+
+              <InsightsPanel insights={insights} loading={insLoading} />
+
+              {/* Refresh */}
+              <button onClick={loadInsights}
+                className="w-full rounded-xl border border-white/[0.06] py-2 text-xs text-white/30 hover:text-white/60 hover:border-white/15 transition">
+                ↻ Actualiser
+              </button>
+
+              {/* Module shortcuts */}
+              <div>
+                <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2">Accès rapides</p>
+                {[
+                  { icon: "🧾", label: "Factures",     href: "/client/factures"     },
+                  { icon: "⚡", label: "Tâches",        href: "/client/productivite" },
+                  { icon: "👥", label: "CRM",            href: "/client/crm"          },
+                  { icon: "📦", label: "Stocks",         href: "/client/stocks"       },
+                  { icon: "🗓", label: "Planning",       href: "/client/planning"     },
+                  { icon: "👫", label: "Équipe",         href: "/client/equipe"       },
+                ].map(s => (
+                  <a key={s.href} href={s.href}
+                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-white/45 hover:bg-white/[0.04] hover:text-white/75 transition">
+                    <span>{s.icon}</span><span>{s.label}</span>
+                    <span className="ml-auto text-white/20">→</span>
+                  </a>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* ── Liste ── */}
-        {loading ? (
-          <div className="space-y-2"><Sk /><Sk /><Sk h="h-12" /></div>
-        ) : fetchError ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-500/[0.15] bg-red-500/[0.04] py-16">
-            <AlertCircle className="w-6 h-6 text-red-400/60" />
-            <p className="text-sm text-white/40 font-semibold">Impossible de charger les données</p>
-            <p className="text-xs text-white/20">Vérifiez votre connexion et réessayez.</p>
-            <button onClick={fetchRadar} className="mt-1 flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/40 hover:text-white/60 transition-colors">
-              <RefreshCw className="w-3 h-3" /> Réessayer
-            </button>
-          </div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#0f1117] py-16">
-            <Check className="w-6 h-6 text-emerald-400" />
-            <p className="text-sm text-white/25 font-semibold">Aucun argent perdu détecté</p>
-            <p className="text-xs text-white/15">Toutes vos factures et devis sont à jour.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {items.map((item, i) => {
-              const u = URGENCY[item.urgency];
-              return (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  className={`rounded-2xl border p-4 ${u.bg} ${u.border}`}
-                >
-                  {/* Info */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <UrgentDot urgency={item.urgency} />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold">{item.client}</p>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-bold ${u.badge}`}>{u.label}</span>
-                        </div>
-                        <p className="text-[11px] text-white/30 mt-0.5">
-                          {item.type === "facture" ? "Facture" : "Devis"} {item.reference} · J+{item.days}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`text-base font-black tabular-nums ${u.text}`}>
-                      {fmtEurInt(item.amount)}
-                    </span>
-                  </div>
-
-                  {/* Boutons d'action directe */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <a
-                      href={quickWa(item)} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/18 transition-all"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
-                    </a>
-                    <a
-                      href={quickMail(item)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold bg-sky-500/10 border border-sky-500/18 text-sky-400 hover:bg-sky-500/18 transition-all"
-                    >
-                      <Mail className="w-3.5 h-3.5" /> Email
-                    </a>
-                    <button
-                      onClick={() => openRelance(item)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition-all border ${u.ctaBg}`}
-                    >
-                      <Sparkles className="w-3.5 h-3.5" /> Rédiger avec l&apos;IA
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ══════════════════════════════════════
-          MODALE RELANCE
-      ══════════════════════════════════════ */}
+      {/* Toast */}
       <AnimatePresence>
-        {relanceItem && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="fixed inset-0 bg-black/72 backdrop-blur-sm z-40"
-              onClick={closeModal}
-            />
-            <motion.div
-              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 32, stiffness: 270 }}
-              className="fixed bottom-0 inset-x-0 z-50 max-w-2xl mx-auto bg-[#0f1117] border-t border-x border-white/[0.07] rounded-t-[2rem] px-5 pb-10 pt-4 max-h-[90vh] overflow-y-auto shadow-[0_-24px_80px_rgba(0,0,0,0.7)]"
-            >
-              <div className="w-9 h-1 bg-white/10 rounded-full mx-auto mb-5" />
-
-              <div className="flex items-start justify-between mb-5">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-[15px]">{relanceItem.client}</h3>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${URGENCY[relanceItem.urgency].badge}`}>
-                      {URGENCY[relanceItem.urgency].label}
-                    </span>
-                  </div>
-                  <p className="text-xs text-white/28">
-                    {relanceItem.type === "facture" ? "Facture" : "Devis"} {relanceItem.reference}
-                    <span className="mx-1 opacity-40">·</span>
-                    <span className="font-bold text-amber-400">{fmtEurInt(relanceItem.amount)}</span>
-                    <span className="mx-1 opacity-40">·</span>J+{relanceItem.days}
-                  </p>
-                </div>
-                <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.05]">
-                  <X className="w-4 h-4 text-white/45" />
-                </button>
-              </div>
-
-              {relanceLoading && (
-                <div className="space-y-3">
-                  <motion.div
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                    className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-amber-500/[0.05] border border-amber-500/12"
-                  >
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}>
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    </motion.div>
-                    <p className="text-sm text-amber-400/60">Rédaction en cours...</p>
-                  </motion.div>
-                  <Sk h="h-11" /><Sk h="h-36" />
-                </div>
-              )}
-
-              {relanceMsg && !relanceLoading && (
-                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                  <div className="rounded-xl border border-white/[0.07] bg-[#0f1117] px-4 py-3">
-                    <p className="text-[10px] uppercase tracking-widest text-white/22 font-bold mb-1.5">Objet</p>
-                    <p className="text-sm font-semibold">{relanceMsg.subject}</p>
-                  </div>
-                  <div className="rounded-xl border border-white/[0.07] bg-[#0f1117] px-4 py-3">
-                    <p className="text-[10px] uppercase tracking-widest text-white/22 font-bold mb-2">Message</p>
-                    <p className="text-sm text-white/60 leading-relaxed whitespace-pre-wrap">{relanceMsg.message}</p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 pt-1">
-                    <button
-                      onClick={copyMessage}
-                      className={`flex flex-col items-center gap-1.5 py-4 rounded-2xl text-xs font-bold transition-all border ${copied ? "bg-emerald-500/15 border-emerald-500/25 text-emerald-400" : "bg-white/[0.04] border-white/[0.07] text-white/50 hover:bg-white/[0.07]"}`}
-                    >
-                      <motion.div key={String(copied)} initial={{ scale: 0.7 }} animate={{ scale: 1 }}>
-                        {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                      </motion.div>
-                      {copied ? "Copié !" : "Copier"}
-                    </button>
-                    <a
-                      href={waLink(relanceMsg)} target="_blank" rel="noopener noreferrer"
-                      className="flex flex-col items-center gap-1.5 py-4 rounded-2xl text-xs font-bold bg-emerald-500/10 border border-emerald-500/18 text-emerald-400 hover:bg-emerald-500/18 transition-all"
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                      WhatsApp
-                    </a>
-                    <a
-                      href={mailLink(relanceMsg, relanceItem.client_email)}
-                      className="flex flex-col items-center gap-1.5 py-4 rounded-2xl text-xs font-bold bg-sky-500/10 border border-sky-500/18 text-sky-400 hover:bg-sky-500/18 transition-all"
-                    >
-                      <Mail className="w-5 h-5" />
-                      Email
-                    </a>
-                  </div>
-
-                  <button
-                    onClick={() => openRelance(relanceItem)}
-                    className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[11px] text-white/20 hover:text-white/40 transition-colors"
-                  >
-                    <RefreshCw className="w-3 h-3" /> Régénérer
-                  </button>
-                </motion.div>
-              )}
-
-              {relanceError && !relanceLoading && (
-                <div className="text-center py-8">
-                  <AlertCircle className="w-7 h-7 text-red-400/40 mx-auto mb-3" />
-                  <p className="text-sm text-white/40 mb-1">La génération a échoué.</p>
-                  <p className="text-xs text-white/20 mb-4">Vérifiez votre connexion et réessayez.</p>
-                  <button
-                    onClick={() => openRelance(relanceItem)}
-                    className="flex items-center gap-2 mx-auto px-5 py-2.5 rounded-xl bg-white/[0.05] text-sm text-white/45 hover:bg-white/[0.08] transition-colors"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" /> Réessayer
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </>
-        )}
+        {toastData && <Toast toast={toastData} onClose={() => setToastData(null)} />}
       </AnimatePresence>
     </div>
   );
