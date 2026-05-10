@@ -3,9 +3,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DollarSign, Zap, Users, Package, Calendar, BarChart2,
-  AlertTriangle, PenLine, Loader2, ArrowRight, RefreshCw,
+  AlertTriangle, PenLine, Loader2, RefreshCw,
   Copy, Sparkles, Clock, CreditCard, Receipt, ListTodo,
-  UserCheck, ChevronRight, Activity, Target, ListChecks,
+  UserCheck, ChevronRight, Menu, X, Send,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -16,14 +16,14 @@ const CYAN   = "#22d3ee";
 const VIOLET = "#8b5cf6";
 
 const ACTIONS: { icon: LucideIcon; label: string; color: string; prompt: string }[] = [
-  { icon: DollarSign,    label: "Finances du mois",    color: "#10b981", prompt: "Analyse mes finances du mois : revenus, dépenses, factures impayées. Donne un résumé actionnable avec les chiffres clés." },
-  { icon: Zap,           label: "Tâches urgentes",     color: "#ef4444", prompt: "Quelles sont mes tâches urgentes et en retard ? Que dois-je faire en priorité aujourd'hui ?" },
-  { icon: Users,         label: "Clients impayés",     color: "#f59e0b", prompt: "Liste les clients avec des factures impayées. Donne les montants, les délais de retard et suggère une action de relance." },
-  { icon: Package,       label: "Alertes stock",       color: "#8b5cf6", prompt: "Quels produits sont en stock faible ou en rupture ? Lesquels dois-je réapprovisionner en urgence ?" },
-  { icon: Calendar,      label: "Organiser ma journée",color: "#3b82f6", prompt: "Organise ma journée idéale en tenant compte de mes tâches prioritaires, réunions prévues et objectifs." },
-  { icon: BarChart2,     label: "Rapport business",    color: CYAN,      prompt: "Génère un rapport business complet : revenus, dépenses, tâches terminées, clients actifs, alertes importantes." },
-  { icon: AlertTriangle, label: "Risques & alertes",   color: "#f97316", prompt: "Détecte tous les risques business : retards de paiement, stock bas, surcharge équipe, projets en retard." },
-  { icon: PenLine,       label: "Créer un document",   color: "#a78bfa", prompt: "Quels documents puis-je générer depuis DJAMA ? Guide-moi pour créer une facture, un contrat, un devis ou une note." },
+  { icon: DollarSign,    label: "Finances du mois",     color: "#10b981", prompt: "Analyse mes finances du mois : revenus, dépenses, factures impayées. Donne un résumé actionnable avec les chiffres clés." },
+  { icon: Zap,           label: "Tâches urgentes",      color: "#ef4444", prompt: "Quelles sont mes tâches urgentes et en retard ? Que dois-je faire en priorité aujourd'hui ?" },
+  { icon: Users,         label: "Clients impayés",      color: "#f59e0b", prompt: "Liste les clients avec des factures impayées. Donne les montants, les délais de retard et suggère une action de relance." },
+  { icon: Package,       label: "Alertes stock",        color: "#8b5cf6", prompt: "Quels produits sont en stock faible ou en rupture ? Lesquels dois-je réapprovisionner en urgence ?" },
+  { icon: Calendar,      label: "Ma journée",           color: "#3b82f6", prompt: "Organise ma journée idéale en tenant compte de mes tâches prioritaires, réunions prévues et objectifs." },
+  { icon: BarChart2,     label: "Rapport business",     color: CYAN,      prompt: "Génère un rapport business complet : revenus, dépenses, tâches terminées, clients actifs, alertes importantes." },
+  { icon: AlertTriangle, label: "Risques & alertes",    color: "#f97316", prompt: "Détecte tous les risques business : retards de paiement, stock bas, surcharge équipe, projets en retard." },
+  { icon: PenLine,       label: "Créer un document",    color: "#a78bfa", prompt: "Quels documents puis-je générer depuis DJAMA ? Guide-moi pour créer une facture, un contrat, un devis ou une note." },
 ];
 
 const SUGGESTIONS = [
@@ -73,7 +73,6 @@ async function buildContext(prompt: string): Promise<{ ctx: string; modules: str
     } catch { return []; }
   }
 
-  // ── Always: tâches (contexte universel)
   const tasks = await get("productivity_tasks", "title,status,priority,due_date");
   if (tasks.length) {
     const todayStr = new Date().toDateString();
@@ -86,14 +85,13 @@ async function buildContext(prompt: string): Promise<{ ctx: string; modules: str
     if (late.length)   parts.push(`  ↳ En retard: ${late.slice(0, 4).map(t => t.title).join(" | ")}`);
   }
 
-  // ── Factures / finances
   if (q.match(/facture|impay|client|paiement|revenu|chiffre|argent|rentr/)) {
     const inv = await get("factures", "statut,montant_ttc,client_nom,date_echeance,numero");
     if (inv.length) {
       used.push("Factures");
-      const unpaid = inv.filter(i => ["en_attente", "envoyée", "retard"].includes(String(i.statut)));
-      const paid   = inv.filter(i => i.statut === "payée");
-      const tot    = unpaid.reduce((s, i) => s + Number(i.montant_ttc ?? 0), 0);
+      const unpaid  = inv.filter(i => ["en_attente", "envoyée", "retard"].includes(String(i.statut)));
+      const paid    = inv.filter(i => i.statut === "payée");
+      const tot     = unpaid.reduce((s, i) => s + Number(i.montant_ttc ?? 0), 0);
       const totpaid = paid.reduce((s, i) => s + Number(i.montant_ttc ?? 0), 0);
       const clients = [...new Set(unpaid.map(i => i.client_nom))];
       parts.push(`FACTURES (${inv.length}): ${unpaid.length} impayées = ${tot.toFixed(0)}€ · ${paid.length} payées = ${totpaid.toFixed(0)}€.`);
@@ -101,7 +99,6 @@ async function buildContext(prompt: string): Promise<{ ctx: string; modules: str
     }
   }
 
-  // ── Dépenses + trésorerie
   if (q.match(/dépense|budget|coût|charge|finance|trésor|cashflow|argent|solde|bilan/)) {
     const dep = await get("depenses", "montant,categorie,date_depense,libelle");
     if (dep.length) {
@@ -121,7 +118,6 @@ async function buildContext(prompt: string): Promise<{ ctx: string; modules: str
     }
   }
 
-  // ── CRM
   if (q.match(/client|crm|contact|prospect|relation|commercial/)) {
     const crm = await get("crm_clients", "nom,statut,email,chiffre_affaires");
     if (crm.length) {
@@ -133,7 +129,6 @@ async function buildContext(prompt: string): Promise<{ ctx: string; modules: str
     }
   }
 
-  // ── Stocks
   if (q.match(/stock|inventaire|produit|réappro|fourniss|marchand/)) {
     const st = await get("stock_products", "name,quantity,min_quantity,category");
     if (st.length) {
@@ -145,7 +140,6 @@ async function buildContext(prompt: string): Promise<{ ctx: string; modules: str
     }
   }
 
-  // ── Planning
   if (q.match(/planning|agenda|réunion|journée|semaine|événement|organis/)) {
     const today = new Date().toISOString().slice(0, 10);
     const ev    = await get("planning_events", "title,start_at,end_at,event_type,location");
@@ -164,7 +158,6 @@ async function buildContext(prompt: string): Promise<{ ctx: string; modules: str
     }
   }
 
-  // ── Équipe
   if (q.match(/équipe|membre|team|congé|collaborat|rh|absence/)) {
     const tm = await get("team_members", "name,role,status,department");
     if (tm.length) {
@@ -179,18 +172,16 @@ async function buildContext(prompt: string): Promise<{ ctx: string; modules: str
     }
   }
 
-  // ── Contrats
   if (q.match(/contrat|accord|convention|document/)) {
     const cont = await get("contracts", "title,status,client_name,amount,end_date");
     if (cont.length) {
       used.push("Contrats");
-      const actifs = cont.filter(c => c.status === "active").length;
+      const actifs   = cont.filter(c => c.status === "active").length;
       const expiring = cont.filter(c => c.end_date && new Date(String(c.end_date)) < new Date(Date.now() + 30 * 86400000));
       parts.push(`CONTRATS (${cont.length}): ${actifs} actifs. ${expiring.length} expirent dans 30 jours.`);
     }
   }
 
-  // ── Notes
   if (q.match(/note|idée|document|résumé|compte.rendu/)) {
     const notes = await get("notes", "title,type,created_at");
     if (notes.length) {
@@ -264,17 +255,16 @@ function bold(text: string): React.ReactNode {
 // ── Live Insights Panel ────────────────────────────────────────────────────────
 function InsightsPanel({ insights, loading }: { insights: LiveInsights | null; loading: boolean }) {
   const items: { icon: LucideIcon; label: string; value: number | string; color: string; warn: boolean }[] = insights ? [
-    { icon: Zap,          label: "Tâches urgentes",  value: insights.urgentTasks,                       color: "#ef4444", warn: insights.urgentTasks > 0 },
-    { icon: Clock,        label: "En retard",         value: insights.lateTasks,                         color: "#f97316", warn: insights.lateTasks > 0 },
-    { icon: CreditCard,   label: "Factures impayées", value: insights.unpaidCount,                       color: "#f59e0b", warn: insights.unpaidCount > 0 },
-    { icon: DollarSign,   label: "Montant impayé",    value: `${insights.unpaidTotal.toFixed(0)}€`,      color: "#10b981", warn: false },
-    { icon: Package,      label: "Stock faible",      value: insights.lowStock,                          color: "#8b5cf6", warn: insights.lowStock > 0 },
-    { icon: Calendar,     label: "Réunions du jour",  value: insights.todayEvents,                       color: CYAN,      warn: false },
+    { icon: Zap,        label: "Tâches urgentes",  value: insights.urgentTasks,                  color: "#ef4444", warn: insights.urgentTasks > 0 },
+    { icon: Clock,      label: "En retard",         value: insights.lateTasks,                    color: "#f97316", warn: insights.lateTasks > 0 },
+    { icon: CreditCard, label: "Factures impayées", value: insights.unpaidCount,                  color: "#f59e0b", warn: insights.unpaidCount > 0 },
+    { icon: DollarSign, label: "Montant impayé",    value: `${insights.unpaidTotal.toFixed(0)}€`, color: "#10b981", warn: false },
+    { icon: Package,    label: "Stock faible",      value: insights.lowStock,                     color: "#8b5cf6", warn: insights.lowStock > 0 },
+    { icon: Calendar,   label: "Réunions du jour",  value: insights.todayEvents,                  color: CYAN,      warn: false },
   ] : [];
 
   return (
     <div className="space-y-2">
-      <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/20 mb-3">Tableau de bord live</p>
       {loading && (
         <div className="flex items-center gap-2 text-xs text-white/30 py-4">
           <Loader2 size={12} className="animate-spin" /> Chargement…
@@ -297,6 +287,136 @@ function InsightsPanel({ insights, loading }: { insights: LiveInsights | null; l
   );
 }
 
+// ── Sidebar inner content ──────────────────────────────────────────────────────
+function SidebarInner({
+  convs, activeConv, onNew, onSend, onSelect, onClose,
+}: {
+  convs: Conv[];
+  activeConv: string | null;
+  onNew: () => void;
+  onSend: (prompt: string) => void;
+  onSelect: (id: string) => void;
+  onClose?: () => void;
+}) {
+  return (
+    <>
+      {/* Header */}
+      <div className="px-4 py-4 border-b border-white/[0.06] shrink-0">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg flex items-center justify-center"
+              style={{ background: CYAN + "20", border: `1px solid ${CYAN}30` }}>
+              <Sparkles size={14} style={{ color: CYAN }} />
+            </div>
+            <div>
+              <p className="text-[0.82rem] font-black text-white/90">DJAMA AI</p>
+              <p className="text-[0.58rem] text-white/30">Cerveau central</p>
+            </div>
+          </div>
+          {onClose && (
+            <button onClick={onClose} className="p-2 text-white/40 hover:text-white/70 rounded-lg transition">
+              <X size={18} />
+            </button>
+          )}
+        </div>
+        <button onClick={onNew}
+          className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-semibold text-white transition hover:opacity-90 active:scale-[0.98]"
+          style={{ background: `linear-gradient(135deg, ${CYAN}, ${VIOLET})` }}>
+          + Nouvelle conversation
+        </button>
+      </div>
+
+      {/* Quick actions */}
+      <div className="px-3 py-3 border-b border-white/[0.06] shrink-0">
+        <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2 px-1">Actions rapides</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {ACTIONS.map(a => (
+            <button key={a.label}
+              onClick={() => { onSend(a.prompt); onClose?.(); }}
+              className="flex flex-col items-center gap-1 rounded-xl border border-white/[0.05] bg-white/[0.02] px-2 py-2.5 text-center transition hover:border-white/10 hover:bg-white/[0.04] active:scale-95">
+              <a.icon size={18} style={{ color: a.color }} />
+              <span className="text-[0.58rem] text-white/50 leading-tight">{a.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* History */}
+      <div className="flex-1 overflow-y-auto px-2 py-2">
+        <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2 px-2">Historique</p>
+        {convs.length === 0 && (
+          <p className="text-center text-[0.68rem] text-white/20 py-4">Aucune conversation</p>
+        )}
+        {convs.map(c => (
+          <button key={c.id} onClick={() => { onSelect(c.id); onClose?.(); }}
+            className={`w-full text-left rounded-lg px-2.5 py-2.5 text-xs transition mb-0.5 ${activeConv === c.id
+              ? "text-white" : "text-white/45 hover:bg-white/[0.04] hover:text-white/75"}`}
+            style={activeConv === c.id ? { background: CYAN + "18" } : {}}>
+            <p className="truncate font-medium">{c.title}</p>
+            <p className="text-[0.58rem] text-white/25 mt-0.5">
+              {new Date(c.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+            </p>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// ── Insights drawer inner content ──────────────────────────────────────────────
+function InsightsInner({
+  insights, insLoading, onRefresh, onClose,
+}: {
+  insights: LiveInsights | null;
+  insLoading: boolean;
+  onRefresh: () => void;
+  onClose?: () => void;
+}) {
+  return (
+    <>
+      {onClose && (
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">
+          <p className="text-xs font-bold text-white/60">Tableau de bord live</p>
+          <button onClick={onClose} className="p-2 text-white/40 hover:text-white/70 rounded-lg transition">
+            <X size={18} />
+          </button>
+        </div>
+      )}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {!onClose && (
+          <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/20">Tableau de bord live</p>
+        )}
+
+        <InsightsPanel insights={insights} loading={insLoading} />
+
+        <button onClick={onRefresh}
+          className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.06] py-2.5 text-xs text-white/30 hover:text-white/60 hover:border-white/15 transition">
+          <RefreshCw size={11} /> Actualiser
+        </button>
+
+        <div>
+          <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2">Accès rapides</p>
+          {([
+            { Icon: Receipt,   label: "Factures",  href: "/client/factures"     },
+            { Icon: ListTodo,  label: "Tâches",    href: "/client/productivite" },
+            { Icon: Users,     label: "CRM",       href: "/client/crm"          },
+            { Icon: Package,   label: "Stocks",    href: "/client/stocks"       },
+            { Icon: Calendar,  label: "Planning",  href: "/client/planning"     },
+            { Icon: UserCheck, label: "Équipe",    href: "/client/equipe"       },
+          ] as { Icon: LucideIcon; label: string; href: string }[]).map(s => (
+            <a key={s.href} href={s.href}
+              className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-xs text-white/45 hover:bg-white/[0.04] hover:text-white/75 transition">
+              <s.Icon size={13} className="text-white/30" />
+              <span>{s.label}</span>
+              <ChevronRight size={11} className="ml-auto text-white/20" />
+            </a>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function AssistantPage() {
   const [convs,        setConvs]        = useState<Conv[]>([]);
@@ -306,7 +426,8 @@ export default function AssistantPage() {
   const [sending,      setSending]      = useState(false);
   const [consulting,   setConsulting]   = useState<string[]>([]);
   const [showActions,  setShowActions]  = useState(true);
-  const [showInsights, setShowInsights] = useState(true);
+  const [showInsights, setShowInsights] = useState(false);
+  const [showSidebar,  setShowSidebar]  = useState(false);
   const [insights,     setInsights]     = useState<LiveInsights | null>(null);
   const [insLoading,   setInsLoading]   = useState(true);
   const [toastData,    setToastData]    = useState<ToastData | null>(null);
@@ -319,7 +440,6 @@ export default function AssistantPage() {
     setTimeout(() => setToastData(null), 3000);
   }, []);
 
-  // ── Load conversations ──────────────────────────────────────────────────────
   const loadConvs = useCallback(async () => {
     const { data } = await supabase
       .from("ai_conversations")
@@ -330,7 +450,6 @@ export default function AssistantPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Load messages for a conversation ───────────────────────────────────────
   const loadMsgs = useCallback(async (convId: string) => {
     const { data } = await supabase
       .from("ai_messages")
@@ -344,7 +463,6 @@ export default function AssistantPage() {
     })));
   }, []);
 
-  // ── Load live insights ──────────────────────────────────────────────────────
   const loadInsights = useCallback(async () => {
     setInsLoading(true);
     try {
@@ -356,13 +474,13 @@ export default function AssistantPage() {
         supabase.from("planning_events").select("start_at").limit(50),
       ]);
 
-      const todayStr  = new Date().toDateString();
-      const todayIso  = new Date().toISOString().slice(0, 10);
-      const taskList  = (tasks.data ?? []) as Record<string, unknown>[];
-      const invList   = (inv.data   ?? []) as Record<string, unknown>[];
-      const stList    = (st.data    ?? []) as Record<string, unknown>[];
-      const lvList    = (lv.data    ?? []) as Record<string, unknown>[];
-      const evList    = (ev.data    ?? []) as Record<string, unknown>[];
+      const todayStr = new Date().toDateString();
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const taskList = (tasks.data ?? []) as Record<string, unknown>[];
+      const invList  = (inv.data   ?? []) as Record<string, unknown>[];
+      const stList   = (st.data    ?? []) as Record<string, unknown>[];
+      const lvList   = (lv.data    ?? []) as Record<string, unknown>[];
+      const evList   = (ev.data    ?? []) as Record<string, unknown>[];
 
       const late    = taskList.filter(t => t.due_date && new Date(String(t.due_date) + "T00:00:00") < new Date(todayStr) && t.status !== "done").length;
       const urgent  = taskList.filter(t => t.priority === "urgent").length;
@@ -388,7 +506,6 @@ export default function AssistantPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs]);
 
-  // ── New conversation ────────────────────────────────────────────────────────
   const newConv = useCallback(async (): Promise<string> => {
     const { data, error } = await supabase
       .from("ai_conversations")
@@ -404,7 +521,6 @@ export default function AssistantPage() {
     return conv.id;
   }, []);
 
-  // ── Send message ────────────────────────────────────────────────────────────
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || sending) return;
@@ -413,30 +529,23 @@ export default function AssistantPage() {
     setShowActions(false);
     setInput("");
 
-    // Create or reuse conversation
     let convId = activeConv;
     if (!convId) {
       convId = await newConv();
       if (!convId) { setSending(false); return; }
     }
 
-    // Add user message
-    const userMsg: Msg = {
-      id: crypto.randomUUID(), role: "user", content: trimmed,
-    };
+    const userMsg: Msg = { id: crypto.randomUUID(), role: "user", content: trimmed };
     setMsgs(ms => [...ms, userMsg]);
 
-    // Persist user message
     await supabase.from("ai_messages").insert({
       conversation_id: convId, role: "user", content: trimmed,
     });
 
-    // Build context (show which modules are being consulted)
     setConsulting(["…"]);
     const { ctx, modules } = await buildContext(trimmed);
     setConsulting(modules.length > 0 ? modules : []);
 
-    // Placeholder loading message
     const aId = crypto.randomUUID();
     setMsgs(ms => [...ms, { id: aId, role: "assistant", content: "", modules, loading: true }]);
 
@@ -449,7 +558,6 @@ export default function AssistantPage() {
       const d = await res.json();
       const reply = String(d.result ?? d.error ?? "Désolé, je n'ai pas pu répondre.");
 
-      // Typing animation
       setMsgs(ms => ms.map(m => m.id === aId ? { ...m, loading: false, content: "" } : m));
       let i = 0;
       const STEP = 4;
@@ -461,18 +569,15 @@ export default function AssistantPage() {
         }, 8);
       });
 
-      // Persist assistant message
       await supabase.from("ai_messages").insert({
         conversation_id: convId, role: "assistant", content: reply, modules_used: modules,
       });
 
-      // Update conversation title if first message
       if (msgs.length === 0) {
         const title = trimmed.length > 50 ? trimmed.slice(0, 50) + "…" : trimmed;
         await supabase.from("ai_conversations").update({ title }).eq("id", convId);
         setConvs(cs => cs.map(c => c.id === convId ? { ...c, title } : c));
       }
-
     } catch {
       setMsgs(ms => ms.map(m => m.id === aId
         ? { ...m, loading: false, content: "Erreur de connexion à l'IA. Vérifiez votre connexion." }
@@ -485,9 +590,9 @@ export default function AssistantPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConv, sending, msgs.length, newConv]);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
   const selectConv = async (id: string) => {
-    setActiveConv(id); setShowActions(false);
+    setActiveConv(id);
+    setShowActions(false);
     await loadMsgs(id);
   };
 
@@ -499,121 +604,144 @@ export default function AssistantPage() {
     navigator.clipboard.writeText(content).then(() => toast("Copié !"));
   };
 
+  const handleNew = () => {
+    setActiveConv(null);
+    setMsgs([]);
+    setShowActions(true);
+    setShowSidebar(false);
+  };
+
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-[calc(100vh-56px)] bg-[#080a10] text-white overflow-hidden">
+    <div className="flex h-[calc(100dvh-56px)] bg-[#080a10] text-white overflow-hidden">
 
-      {/* ── LEFT SIDEBAR ──────────────────────────────────────────────────── */}
-      <div className="w-[260px] shrink-0 flex flex-col border-r border-white/[0.06] bg-[#09090f]">
+      {/* ── MOBILE SIDEBAR DRAWER ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showSidebar && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 z-40 lg:hidden"
+              onClick={() => setShowSidebar(false)}
+            />
+            <motion.div
+              initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
+              className="fixed left-0 top-0 bottom-0 w-[300px] z-50 bg-[#09090f] border-r border-white/[0.06] flex flex-col lg:hidden overflow-hidden"
+            >
+              <SidebarInner
+                convs={convs}
+                activeConv={activeConv}
+                onNew={handleNew}
+                onSend={send}
+                onSelect={selectConv}
+                onClose={() => setShowSidebar(false)}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-        {/* Header */}
-        <div className="px-4 py-4 border-b border-white/[0.06]">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="h-7 w-7 rounded-lg flex items-center justify-center"
-              style={{ background: CYAN + "20", border: `1px solid ${CYAN}30` }}>
-              <Sparkles size={14} style={{ color: CYAN }} />
-            </div>
-            <div>
-              <p className="text-[0.82rem] font-black text-white/90">DJAMA AI</p>
-              <p className="text-[0.58rem] text-white/30">Cerveau central</p>
-            </div>
-          </div>
-          <button onClick={() => { setActiveConv(null); setMsgs([]); setShowActions(true); }}
-            className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white transition hover:opacity-90"
-            style={{ background: `linear-gradient(135deg, ${CYAN}, ${VIOLET})` }}>
-            + Nouvelle conversation
-          </button>
-        </div>
-
-        {/* Quick actions */}
-        <div className="px-3 py-3 border-b border-white/[0.06]">
-          <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2 px-1">Actions rapides</p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {ACTIONS.map(a => (
-              <button key={a.label} onClick={() => send(a.prompt)}
-                className="flex flex-col items-center gap-1 rounded-xl border border-white/[0.05] bg-white/[0.02] px-2 py-2.5 text-center transition hover:border-white/10 hover:bg-white/[0.04]">
-                <a.icon size={18} style={{ color: a.color }} />
-                <span className="text-[0.58rem] text-white/50 leading-tight">{a.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* History */}
-        <div className="flex-1 overflow-y-auto px-2 py-2">
-          <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2 px-2">Historique</p>
-          {convs.length === 0 && (
-            <p className="text-center text-[0.68rem] text-white/20 py-4">Aucune conversation</p>
-          )}
-          {convs.map(c => (
-            <button key={c.id} onClick={() => selectConv(c.id)}
-              className={`w-full text-left rounded-lg px-2.5 py-2 text-xs transition mb-0.5 ${activeConv === c.id
-                ? "text-white" : "text-white/45 hover:bg-white/[0.04] hover:text-white/75"}`}
-              style={activeConv === c.id ? { background: CYAN + "18" } : {}}>
-              <p className="truncate font-medium">{c.title}</p>
-              <p className="text-[0.58rem] text-white/25 mt-0.5">
-                {new Date(c.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-              </p>
-            </button>
-          ))}
-        </div>
+      {/* ── DESKTOP SIDEBAR ───────────────────────────────────────────────── */}
+      <div className="hidden lg:flex w-[260px] shrink-0 flex-col border-r border-white/[0.06] bg-[#09090f]">
+        <SidebarInner
+          convs={convs}
+          activeConv={activeConv}
+          onNew={handleNew}
+          onSend={send}
+          onSelect={selectConv}
+        />
       </div>
 
       {/* ── MAIN CHAT ─────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top bar */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.06] shrink-0">
-          <div>
-            <h1 className="text-sm font-bold text-white/85">
-              {activeConv ? convs.find(c => c.id === activeConv)?.title ?? "Conversation" : "Assistant IA"}
-            </h1>
-            <p className="text-[0.65rem] text-white/30">Connecté à tous vos modules DJAMA</p>
+        <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b border-white/[0.06] shrink-0 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="lg:hidden shrink-0 h-9 w-9 flex items-center justify-center rounded-xl text-white/40 hover:text-white/70 hover:bg-white/[0.05] transition">
+              <Menu size={19} />
+            </button>
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold text-white/85 truncate">
+                {activeConv ? convs.find(c => c.id === activeConv)?.title ?? "Conversation" : "Assistant IA"}
+              </h1>
+              <p className="hidden sm:block text-[0.62rem] text-white/30 truncate">
+                Connecté à tous vos modules DJAMA
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Consulting indicator */}
             {consulting.length > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-1">
-                <Loader2 size={11} className="animate-spin text-cyan-400" />
-                <span className="text-[0.65rem] text-cyan-300">Consultation : {consulting.join(", ")}</span>
+              <div className="flex items-center gap-1.5">
+                <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-2.5 py-1">
+                  <Loader2 size={11} className="animate-spin text-cyan-400" />
+                  <span className="text-[0.62rem] text-cyan-300 max-w-[120px] truncate">
+                    {consulting.join(", ")}
+                  </span>
+                </div>
+                <Loader2 size={14} className="animate-spin text-cyan-400 sm:hidden" />
               </div>
             )}
-            <button onClick={() => setShowInsights(s => !s)}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs transition ${showInsights
+            {/* Live insights toggle */}
+            <button
+              onClick={() => setShowInsights(s => !s)}
+              className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs transition ${showInsights
                 ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-300"
                 : "border-white/[0.07] text-white/40 hover:border-white/15"}`}>
-              <BarChart2 size={11} /> Live
+              <BarChart2 size={13} />
+              <span className="hidden sm:inline font-medium">Live</span>
             </button>
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto px-3 sm:px-5 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
 
-          {/* Welcome / quick actions (empty state) */}
+          {/* Welcome / empty state */}
           <AnimatePresence>
             {showActions && msgs.length === 0 && (
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }} className="space-y-6">
+                exit={{ opacity: 0 }} className="space-y-5 md:space-y-7">
 
                 {/* Hero */}
-                <div className="text-center py-8">
+                <div className="text-center pt-4 pb-2">
                   <div className="mx-auto mb-4 h-14 w-14 rounded-2xl flex items-center justify-center"
                     style={{ background: `linear-gradient(135deg, ${CYAN}20, ${VIOLET}20)`, border: `1px solid ${CYAN}30` }}>
-                    <Sparkles size={26} style={{ color: CYAN }} />
+                    <Sparkles size={24} style={{ color: CYAN }} />
                   </div>
                   <h2 className="text-xl font-black text-white/90 mb-2">Bonjour</h2>
-                  <p className="text-sm text-white/45 max-w-md mx-auto leading-relaxed">
-                    Je suis DJAMA AI, votre assistant business intelligent. Je connais vos factures, tâches, clients, stocks et finances en temps réel.
+                  <p className="text-sm text-white/45 max-w-sm mx-auto leading-relaxed px-2">
+                    Je suis DJAMA AI, votre assistant business intelligent — factures, tâches, clients, stocks en temps réel.
                   </p>
+                </div>
+
+                {/* Quick actions */}
+                <div>
+                  <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/25 mb-3 text-center">Actions rapides</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {ACTIONS.map(a => (
+                      <button key={a.label} onClick={() => send(a.prompt)}
+                        className="flex flex-col items-center gap-1.5 rounded-xl border border-white/[0.05] bg-white/[0.02] px-2 py-3.5 text-center transition hover:border-white/10 hover:bg-white/[0.05] active:scale-95">
+                        <a.icon size={22} style={{ color: a.color }} />
+                        <span className="text-[0.65rem] text-white/55 leading-snug">{a.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Suggestions */}
                 <div>
-                  <p className="text-[0.68rem] font-black uppercase tracking-widest text-white/25 mb-3 text-center">Essayez de demander…</p>
+                  <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/25 mb-3 text-center">Essayez de demander…</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {SUGGESTIONS.map(s => (
                       <button key={s} onClick={() => send(s)}
-                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/55 transition hover:border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10">
+                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-2 text-xs text-white/55 transition hover:border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10 active:scale-95">
                         {s}
                       </button>
                     ))}
@@ -628,7 +756,7 @@ export default function AssistantPage() {
             {msgs.map(m => (
               <motion.div key={m.id}
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                className={`flex gap-2 md:gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
 
                 {/* Avatar */}
                 <div className={`shrink-0 h-8 w-8 rounded-xl flex items-center justify-center text-sm font-bold ${m.role === "user"
@@ -639,8 +767,8 @@ export default function AssistantPage() {
                 </div>
 
                 {/* Bubble */}
-                <div className={`max-w-[72%] space-y-2 ${m.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
-                  <div className={`rounded-2xl px-4 py-3 ${m.role === "user"
+                <div className={`max-w-[84%] md:max-w-[76%] space-y-2 ${m.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
+                  <div className={`rounded-2xl px-3.5 md:px-4 py-3 ${m.role === "user"
                     ? "rounded-tr-sm bg-violet-600/25 border border-violet-500/20"
                     : "rounded-tl-sm bg-[#0e1018] border border-white/[0.07]"}`}
                     style={m.role === "assistant" ? { borderLeft: `2px solid ${CYAN}40` } : {}}>
@@ -657,7 +785,7 @@ export default function AssistantPage() {
                     ) : m.role === "assistant" ? (
                       <MsgContent text={m.content} />
                     ) : (
-                      <p className="text-[0.82rem] text-white/88 leading-relaxed">{m.content}</p>
+                      <p className="text-sm text-white/88 leading-relaxed">{m.content}</p>
                     )}
                   </div>
 
@@ -670,7 +798,7 @@ export default function AssistantPage() {
                         </span>
                       ))}
                       <button onClick={() => copyMsg(m.content)}
-                        className="flex items-center gap-1 rounded-full border border-white/[0.06] px-2 py-0.5 text-[0.58rem] text-white/25 hover:text-white/60 hover:border-white/15 transition ml-1">
+                        className="flex items-center gap-1 rounded-full border border-white/[0.06] px-2.5 py-1 text-[0.62rem] text-white/30 hover:text-white/60 hover:border-white/15 transition ml-0.5">
                         <Copy size={9} /> Copier
                       </button>
                     </div>
@@ -684,14 +812,14 @@ export default function AssistantPage() {
         </div>
 
         {/* Input bar */}
-        <div className="shrink-0 border-t border-white/[0.06] px-6 py-4">
-          <div className="flex items-end gap-3 rounded-2xl border border-white/[0.09] bg-[#0c0e16] px-4 py-3 focus-within:border-cyan-500/40 transition">
+        <div className="shrink-0 border-t border-white/[0.06] px-3 sm:px-5 md:px-6 py-3 md:py-4">
+          <div className="flex items-end gap-2 md:gap-3 rounded-2xl border border-white/[0.09] bg-[#0c0e16] px-3 md:px-4 py-2.5 md:py-3 focus-within:border-cyan-500/40 transition">
             <textarea
               ref={inputRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKey}
-              placeholder="Posez une question sur vos finances, tâches, clients… (Entrée pour envoyer)"
+              placeholder="Posez une question sur vos finances, tâches, clients…"
               rows={1}
               className="flex-1 resize-none bg-transparent text-sm text-white/85 outline-none placeholder:text-white/25 max-h-32 scrollbar-none"
               style={{ lineHeight: "1.5" }}
@@ -704,51 +832,55 @@ export default function AssistantPage() {
             <button
               onClick={() => send(input)}
               disabled={!input.trim() || sending}
-              className="shrink-0 h-8 w-8 rounded-xl flex items-center justify-center text-sm transition disabled:opacity-30 hover:opacity-90"
+              className="shrink-0 h-10 w-10 rounded-xl flex items-center justify-center transition disabled:opacity-30 hover:opacity-90 active:scale-95"
               style={{ background: sending ? VIOLET + "60" : `linear-gradient(135deg, ${CYAN}, ${VIOLET})` }}>
-              {sending ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
+              {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
             </button>
           </div>
-          <p className="text-center text-[0.6rem] text-white/18 mt-2">
+          <p className="hidden md:block text-center text-[0.6rem] text-white/18 mt-2">
             Maj+Entrée pour saut de ligne · DJAMA AI a accès à vos données en temps réel
           </p>
         </div>
       </div>
 
-      {/* ── RIGHT INSIGHTS PANEL ──────────────────────────────────────────── */}
+      {/* ── MOBILE INSIGHTS DRAWER ────────────────────────────────────────── */}
       <AnimatePresence>
         {showInsights && (
-          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 260, opacity: 1 }}
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 z-40 lg:hidden"
+              onClick={() => setShowInsights(false)}
+            />
+            <motion.div
+              initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
+              className="fixed right-0 top-0 bottom-0 w-[300px] z-50 bg-[#09090f] border-l border-white/[0.06] flex flex-col lg:hidden overflow-hidden"
+            >
+              <InsightsInner
+                insights={insights}
+                insLoading={insLoading}
+                onRefresh={loadInsights}
+                onClose={() => setShowInsights(false)}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── DESKTOP INSIGHTS PANEL ────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showInsights && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }} animate={{ width: 260, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }} transition={{ type: "spring", damping: 22 }}
-            className="shrink-0 border-l border-white/[0.06] bg-[#09090f] overflow-hidden">
-            <div className="w-[260px] h-full overflow-y-auto px-4 py-4 space-y-4">
-
-              <InsightsPanel insights={insights} loading={insLoading} />
-
-              {/* Refresh */}
-              <button onClick={loadInsights}
-                className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.06] py-2 text-xs text-white/30 hover:text-white/60 hover:border-white/15 transition">
-                <RefreshCw size={11} /> Actualiser
-              </button>
-
-              {/* Module shortcuts */}
-              <div>
-                <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2">Accès rapides</p>
-                {([
-                  { Icon: Receipt,   label: "Factures",  href: "/client/factures"     },
-                  { Icon: ListTodo,  label: "Tâches",    href: "/client/productivite" },
-                  { Icon: Users,     label: "CRM",       href: "/client/crm"          },
-                  { Icon: Package,   label: "Stocks",    href: "/client/stocks"       },
-                  { Icon: Calendar,  label: "Planning",  href: "/client/planning"     },
-                  { Icon: UserCheck, label: "Équipe",    href: "/client/equipe"       },
-                ] as { Icon: LucideIcon; label: string; href: string }[]).map(s => (
-                  <a key={s.href} href={s.href}
-                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-white/45 hover:bg-white/[0.04] hover:text-white/75 transition">
-                    <s.Icon size={12} className="text-white/30" /><span>{s.label}</span>
-                    <ChevronRight size={11} className="ml-auto text-white/20" />
-                  </a>
-                ))}
-              </div>
+            className="hidden lg:flex shrink-0 flex-col border-l border-white/[0.06] bg-[#09090f] overflow-hidden">
+            <div className="w-[260px] h-full flex flex-col overflow-hidden">
+              <InsightsInner
+                insights={insights}
+                insLoading={insLoading}
+                onRefresh={loadInsights}
+              />
             </div>
           </motion.div>
         )}
