@@ -783,15 +783,15 @@ export default function BlocNotesPage() {
         {/* Sort + type filter */}
         <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-2">
           <select value={sortBy} onChange={e=>setSortBy(e.target.value as SortBy)}
-            className="flex-1 rounded-lg border border-white/8 bg-transparent py-1 pl-2 pr-1 text-[0.65rem] text-white/50 outline-none">
-            <option value="date">Récentes</option>
-            <option value="alpha">A–Z</option>
-            <option value="type">Type</option>
+            className="flex-1 cursor-pointer rounded-lg border border-white/[0.08] bg-[#0c0e16] py-1 pl-2 pr-1 text-[0.65rem] text-white/55 outline-none appearance-none transition hover:border-white/20">
+            <option value="date" className="bg-[#0c0e16] text-white/70">📅 Récentes</option>
+            <option value="alpha" className="bg-[#0c0e16] text-white/70">🔤 A–Z</option>
+            <option value="type" className="bg-[#0c0e16] text-white/70">🏷 Type</option>
           </select>
           <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value as NoteType|"all")}
-            className="flex-1 rounded-lg border border-white/8 bg-transparent py-1 pl-2 pr-1 text-[0.65rem] text-white/50 outline-none">
-            <option value="all">Tous types</option>
-            {NOTE_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
+            className="flex-1 cursor-pointer rounded-lg border border-white/[0.08] bg-[#0c0e16] py-1 pl-2 pr-1 text-[0.65rem] text-white/55 outline-none appearance-none transition hover:border-white/20">
+            <option value="all" className="bg-[#0c0e16] text-white/70">Tous types</option>
+            {NOTE_TYPES.map(t=><option key={t.value} value={t.value} className="bg-[#0c0e16] text-white/70">{t.label}</option>)}
           </select>
         </div>
 
@@ -961,7 +961,7 @@ export default function BlocNotesPage() {
                 )}
                 {folders.length>0&&(
                   <select value={dFolderId??""} onChange={e=>{setDFolderId(e.target.value||null);setIsDirty(true)}}
-                    className="rounded-full border border-white/10 bg-transparent px-2 py-0.5 text-[0.65rem] text-white/30 outline-none">
+                    className="cursor-pointer rounded-full border border-white/10 bg-[#0a0c13] px-2 py-0.5 text-[0.65rem] text-white/40 outline-none appearance-none hover:border-white/20 transition">
                     <option value="">📂 Dossier</option>
                     {folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
                   </select>

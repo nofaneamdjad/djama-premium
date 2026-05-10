@@ -1054,7 +1054,7 @@ export default function DepensesPage() {
                           </div>
 
                           <select value={e.status} onChange={ev => updateStatus(e.id, ev.target.value as ExpStatus)}
-                            className="shrink-0 cursor-pointer rounded-lg border border-white/[0.05] bg-transparent px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 hover:border-white/15 group-hover:opacity-100 transition-all"
+                            className="shrink-0 cursor-pointer rounded-lg border border-white/[0.05] bg-[#0c0c10] px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 hover:border-white/15 group-hover:opacity-100 transition-all appearance-none"
                             style={{ minWidth: "90px" }}>
                             {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                           </select>
