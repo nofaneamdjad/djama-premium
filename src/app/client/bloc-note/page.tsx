@@ -1,586 +1,1002 @@
+/**
+ * Bloc Note — capture rapide, personnel, instantané
+ * Distinct de Notes IA (qui gère documents importants & collaboration)
+ */
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState, useEffect, useRef, useCallback, useMemo,
+} from "react";
+import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Mic, MicOff, Square, Play, Pause, Download, Copy, Trash2,
-  Sparkles, FileText, CheckSquare, ClipboardList, Loader2,
-  Clock, Volume2, ChevronDown, Check, AlertCircle, Wand2,
-  BookOpen, RotateCcw,
+  Search, Mic, X, Pin, Archive, Trash2, Palette,
+  Loader2, Plus, Check, AlignLeft, RotateCcw,
+  StopCircle, Hash,
 } from "lucide-react";
+import Toast, { type ToastData } from "@/components/ui/Toast";
 
-/* ─── Types ─────────────────────────────────────── */
-type RecordState = "idle" | "recording" | "paused" | "stopped";
-type SummaryMode = "resume" | "actions" | "minutes";
-interface Chunk { index: number; text: string; duration: string; }
+/* ══════════════════════════════════════════════════════════
+   Types
+══════════════════════════════════════════════════════════ */
+type NoteType  = "text" | "checklist" | "voice";
+type FilterKey = "all" | "pinned" | "checklist" | "voice" | "archived";
 
-/* ─── Utilitaires ───────────────────────────────── */
-function fmtSeconds(s: number) {
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-  return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+interface Item { id: string; text: string; done: boolean }
+interface QNote {
+  id: string; type: NoteType; title: string; content: string;
+  items: Item[]; color: string; tags: string[];
+  is_pinned: boolean; is_archived: boolean;
+  reminder_at: string | null; created_at: string; updated_at: string;
 }
 
-const CHUNK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes par chunk
+/* ══════════════════════════════════════════════════════════
+   Constants
+══════════════════════════════════════════════════════════ */
+const PAL = [
+  { bg: "#1a1a2e", ac: "#a78bfa" },
+  { bg: "#2d1515", ac: "#f87171" },
+  { bg: "#2d1f12", ac: "#fb923c" },
+  { bg: "#2b2a12", ac: "#fbbf24" },
+  { bg: "#122d1c", ac: "#34d399" },
+  { bg: "#122b29", ac: "#2dd4bf" },
+  { bg: "#12202d", ac: "#60a5fa" },
+  { bg: "#1e122d", ac: "#c084fc" },
+  { bg: "#2d1220", ac: "#f472b6" },
+];
 
-/* ─── Composant principal ───────────────────────── */
-export default function BlocNotePage() {
-  /* ─ Enregistrement ─ */
-  const [recordState, setRecordState] = useState<RecordState>("idle");
-  const [elapsed, setElapsed]         = useState(0);
-  const [chunks, setChunks]           = useState<Chunk[]>([]);
-  const [liveChunkIdx, setLiveChunkIdx] = useState(0);
+const FILTERS: { key: FilterKey; label: string; emoji: string }[] = [
+  { key: "all",       label: "Tout",      emoji: "📋" },
+  { key: "pinned",    label: "Épinglées", emoji: "📌" },
+  { key: "checklist", label: "Tâches",    emoji: "✅" },
+  { key: "voice",     label: "Vocales",   emoji: "🎤" },
+  { key: "archived",  label: "Archives",  emoji: "📦" },
+];
 
-  /* ─ Transcription ─ */
-  const [fullTranscript, setFullTranscript] = useState("");
-  const [transcribing, setTranscribing]     = useState(false);
-  const [transcribeError, setTranscribeError] = useState("");
+const AI_ACTIONS = [
+  { id: "correct",   label: "Corriger",   emoji: "✏️" },
+  { id: "summarize", label: "Résumer",    emoji: "📋" },
+  { id: "to-tasks",  label: "→ Tâches",   emoji: "✅" },
+  { id: "rephrase",  label: "Reformuler", emoji: "🔄" },
+  { id: "translate", label: "Traduire",   emoji: "🌐" },
+];
 
-  /* ─ Résumé ─ */
-  const [summary, setSummary]           = useState("");
-  const [summaryMode, setSummaryMode]   = useState<SummaryMode>("resume");
-  const [summarizing, setSummarizing]   = useState(false);
-  const [summaryError, setSummaryError] = useState("");
+/* ══════════════════════════════════════════════════════════
+   Helpers
+══════════════════════════════════════════════════════════ */
+const uid = () => Math.random().toString(36).slice(2, 9);
+const acOf = (color: string) => PAL.find(p => p.bg === color)?.ac ?? "#a78bfa";
 
-  /* ─ UI ─ */
-  const [copied, setCopied]   = useState(false);
-  const [activeTab, setActiveTab] = useState<"transcript" | "summary">("transcript");
-
-  /* ─ Refs ─ */
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef   = useRef<Blob[]>([]);
-  const streamRef        = useRef<MediaStream | null>(null);
-  const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
-  const chunkTimerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
-  const elapsedRef       = useRef(0);
-  const chunkCountRef    = useRef(0);
-  const transcriptRef    = useRef("");
-
-  /* ─── Transcription d'un blob audio ─────────────── */
-  const transcribeBlob = useCallback(async (blob: Blob, chunkIdx: number, chunkDuration: string) => {
-    setTranscribing(true);
-    setTranscribeError("");
-    try {
-      const formData = new FormData();
-      const ext = blob.type.includes("ogg") ? "ogg" : blob.type.includes("mp4") ? "mp4" : "webm";
-      formData.append("audio", new File([blob], `chunk-${chunkIdx}.${ext}`, { type: blob.type }));
-
-      const res = await fetch("/api/transcribe", { method: "POST", body: formData });
-      const data = await res.json() as { text?: string; error?: string };
-
-      if (!res.ok || data.error) throw new Error(data.error ?? "Erreur transcription");
-
-      const text = data.text?.trim() ?? "";
-      if (!text) return;
-
-      const newChunk: Chunk = { index: chunkIdx, text, duration: chunkDuration };
-      setChunks((prev) => {
-        const updated = [...prev.filter((c) => c.index !== chunkIdx), newChunk].sort((a, b) => a.index - b.index);
-        const full = updated.map((c) => c.text).join(" ");
-        setFullTranscript(full);
-        transcriptRef.current = full;
-        return updated;
-      });
-    } catch (err) {
-      setTranscribeError(err instanceof Error ? err.message : "Erreur transcription");
-    } finally {
-      setTranscribing(false);
-    }
-  }, []);
-
-  /* ─── Finaliser le chunk en cours ───────────────── */
-  const flushCurrentChunk = useCallback(() => {
-    const mr = mediaRecorderRef.current;
-    if (!mr || mr.state === "inactive") return;
-
-    const currentBlobs = [...audioChunksRef.current];
-    audioChunksRef.current = [];
-    const idx = chunkCountRef.current;
-    chunkCountRef.current += 1;
-    setLiveChunkIdx(chunkCountRef.current);
-
-    if (currentBlobs.length === 0) return;
-
-    const blob = new Blob(currentBlobs, { type: currentBlobs[0].type });
-    const duration = fmtSeconds(Math.round(elapsedRef.current));
-    transcribeBlob(blob, idx, duration);
-  }, [transcribeBlob]);
-
-  /* ─── Démarrer l'enregistrement ─────────────────── */
-  const startRecording = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-
-      const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg", "audio/mp4"]
-        .find((m) => MediaRecorder.isTypeSupported(m)) ?? "";
-
-      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      mediaRecorderRef.current = mr;
-      audioChunksRef.current = [];
-      chunkCountRef.current = 0;
-      elapsedRef.current = 0;
-      transcriptRef.current = "";
-      setChunks([]);
-      setFullTranscript("");
-      setSummary("");
-      setTranscribeError("");
-      setSummaryError("");
-
-      mr.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-
-      mr.start(1000); // collecte toutes les secondes
-      setRecordState("recording");
-      setElapsed(0);
-
-      // Timer d'affichage
-      timerRef.current = setInterval(() => {
-        setElapsed((p) => { elapsedRef.current = p + 1; return p + 1; });
-      }, 1000);
-
-      // Auto-transcription toutes les 5 minutes
-      chunkTimerRef.current = setInterval(() => {
-        flushCurrentChunk();
-      }, CHUNK_INTERVAL_MS);
-
-    } catch {
-      setTranscribeError("Accès au micro refusé. Vérifiez les permissions du navigateur.");
-    }
-  }, [flushCurrentChunk]);
-
-  /* ─── Pause ──────────────────────────────────────── */
-  const pauseRecording = useCallback(() => {
-    mediaRecorderRef.current?.pause();
-    if (timerRef.current) clearInterval(timerRef.current);
-    setRecordState("paused");
-  }, []);
-
-  /* ─── Reprendre ──────────────────────────────────── */
-  const resumeRecording = useCallback(() => {
-    mediaRecorderRef.current?.resume();
-    timerRef.current = setInterval(() => {
-      setElapsed((p) => { elapsedRef.current = p + 1; return p + 1; });
-    }, 1000);
-    setRecordState("recording");
-  }, []);
-
-  /* ─── Arrêter ────────────────────────────────────── */
-  const stopRecording = useCallback(() => {
-    if (chunkTimerRef.current) clearInterval(chunkTimerRef.current);
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    const mr = mediaRecorderRef.current;
-    if (!mr) return;
-
-    mr.onstop = () => {
-      // Transcrit le dernier chunk
-      const remaining = [...audioChunksRef.current];
-      audioChunksRef.current = [];
-      if (remaining.length > 0) {
-        const blob = new Blob(remaining, { type: remaining[0].type });
-        const duration = fmtSeconds(Math.round(elapsedRef.current));
-        const idx = chunkCountRef.current;
-        transcribeBlob(blob, idx, duration);
-      }
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
-
-    mr.stop();
-    setRecordState("stopped");
-  }, [transcribeBlob]);
-
-  /* ─── Résumer ────────────────────────────────────── */
-  const summarize = useCallback(async () => {
-    const transcript = transcriptRef.current || fullTranscript;
-    if (!transcript.trim()) return;
-    setSummarizing(true);
-    setSummaryError("");
-    setSummary("");
-    setActiveTab("summary");
-    try {
-      const res = await fetch("/api/summarize-meeting", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript, mode: summaryMode }),
-      });
-      const data = await res.json() as { summary?: string; error?: string };
-      if (!res.ok || data.error) throw new Error(data.error ?? "Erreur résumé");
-      setSummary(data.summary ?? "");
-    } catch (err) {
-      setSummaryError(err instanceof Error ? err.message : "Erreur résumé");
-    } finally {
-      setSummarizing(false);
-    }
-  }, [fullTranscript, summaryMode]);
-
-  /* ─── Copier ─────────────────────────────────────── */
-  const copyText = useCallback(async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, []);
-
-  /* ─── Exporter TXT ───────────────────────────────── */
-  const exportTxt = useCallback((text: string, name: string) => {
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = name; a.click();
-    URL.revokeObjectURL(url);
-  }, []);
-
-  /* ─── Reset ──────────────────────────────────────── */
-  const reset = useCallback(() => {
-    setRecordState("idle");
-    setElapsed(0);
-    setChunks([]);
-    setFullTranscript("");
-    setSummary("");
-    setTranscribeError("");
-    setSummaryError("");
-    setActiveTab("transcript");
-    transcriptRef.current = "";
-    chunkCountRef.current = 0;
-    elapsedRef.current = 0;
-  }, []);
-
-  /* ─── Cleanup ────────────────────────────────────── */
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (chunkTimerRef.current) clearInterval(chunkTimerRef.current);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
-  }, []);
-
-  const hasTranscript = fullTranscript.trim().length > 0;
-  const isRecording   = recordState === "recording";
-  const isPaused      = recordState === "paused";
-  const isStopped     = recordState === "stopped";
-  const isIdle        = recordState === "idle";
-
-  const MODE_LABELS: Record<SummaryMode, { label: string; icon: React.ElementType; desc: string }> = {
-    resume:  { label: "Résumé complet",     icon: BookOpen,      desc: "Résumé + décisions + actions + questions ouvertes" },
-    actions: { label: "Plan d'actions",     icon: CheckSquare,   desc: "Uniquement les actions concrètes à réaliser" },
-    minutes: { label: "Compte-rendu officiel", icon: ClipboardList, desc: "Format compte-rendu formel" },
+function parseRow(row: Record<string, unknown>): QNote {
+  const content = (row.content as string) ?? "";
+  let items: Item[] = [];
+  if (row.type === "checklist") {
+    try { items = JSON.parse(content); } catch { items = []; }
+  }
+  return {
+    id:          row.id as string,
+    type:        (row.type as NoteType) ?? "text",
+    title:       (row.title as string) ?? "",
+    content,
+    items,
+    color:       (row.color as string) ?? PAL[0].bg,
+    tags:        (row.tags as string[]) ?? [],
+    is_pinned:   Boolean(row.is_pinned),
+    is_archived: Boolean(row.is_archived),
+    reminder_at: (row.reminder_at as string | null) ?? null,
+    created_at:  (row.created_at as string) ?? "",
+    updated_at:  (row.updated_at as string) ?? "",
   };
+}
+
+function relTime(iso: string): string {
+  const d = Date.now() - new Date(iso).getTime();
+  if (d < 60_000)     return "À l'instant";
+  if (d < 3_600_000)  return `${Math.floor(d / 60_000)} min`;
+  if (d < 86_400_000) return `${Math.floor(d / 3_600_000)} h`;
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+
+/* ══════════════════════════════════════════════════════════
+   NoteCard
+══════════════════════════════════════════════════════════ */
+function ActionBtn({
+  children, onClick, title, danger = false,
+}: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean }) {
+  return (
+    <button onClick={onClick} title={title}
+      className={`p-1.5 rounded-lg transition-all ${danger
+        ? "text-white/40 hover:text-red-400 hover:bg-red-500/15"
+        : "text-white/40 hover:text-white hover:bg-white/10"}`}>
+      {children}
+    </button>
+  );
+}
+
+function NoteCard({
+  note, onOpen, onPin, onArchive, onDelete, onColor,
+}: {
+  note: QNote; onOpen: () => void; onPin: () => void;
+  onArchive: () => void; onDelete: () => void; onColor: (c: string) => void;
+}) {
+  const [hover,   setHover]   = useState(false);
+  const [showPal, setShowPal] = useState(false);
+  const ac = acOf(note.color);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
+    <motion.div layout
+      initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+      className="relative rounded-2xl border cursor-pointer"
+      style={{ background: note.color, borderColor: hover ? ac : `${ac}30` }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => { setHover(false); setShowPal(false); }}
+      onClick={() => !showPal && onOpen()}>
 
-      {/* ─── Header ─────────────────────────────────── */}
-      <div>
-        <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] px-3 py-1 text-xs font-bold text-[#a78bfa]">
-          <Mic size={11} /> Bloc Note Vocal
+      {note.is_pinned && (
+        <div className="absolute top-2.5 right-2.5 z-10" style={{ color: ac }}>
+          <Pin size={11} fill="currentColor" />
         </div>
-        <h1 className="mt-2 text-2xl font-extrabold text-[var(--ink)]">Enregistrement & Transcription</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Enregistrez vos réunions (même 2h+), obtenez la transcription automatique et un résumé IA en 1 clic.
-        </p>
-      </div>
+      )}
 
-      {/* ─── Zone d'enregistrement ───────────────────── */}
-      <div className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-sm">
+      <div className="p-4 pb-2 min-h-[90px]">
+        {note.title && <p className="font-semibold text-sm text-white mb-1.5 line-clamp-1 pr-5">{note.title}</p>}
 
-        {/* Visualiseur / timer */}
-        <div className="mb-6 flex flex-col items-center gap-4">
-          {/* Orbe animé */}
-          <div className="relative flex h-28 w-28 items-center justify-center">
-            <AnimatePresence>
-              {isRecording && (
-                <>
-                  <motion.div key="ring1" className="absolute inset-0 rounded-full border-2 border-[#a78bfa]/30"
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0, 0.6] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
-                  <motion.div key="ring2" className="absolute inset-0 rounded-full border-2 border-[#a78bfa]/20"
-                    animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.4 }} />
-                </>
-              )}
-            </AnimatePresence>
-            <div className={`flex h-20 w-20 items-center justify-center rounded-full transition-all duration-500 ${
-              isRecording ? "bg-gradient-to-br from-[#a78bfa] to-[#7c6fcd] shadow-[0_0_40px_rgba(167,139,250,0.4)]"
-              : isPaused ? "bg-gradient-to-br from-[#fbbf24] to-[#f59e0b] shadow-[0_0_30px_rgba(251,191,36,0.3)]"
-              : isStopped ? "bg-gradient-to-br from-[#34d399] to-[#10b981] shadow-[0_0_30px_rgba(52,211,153,0.3)]"
-              : "bg-[var(--border)] "
-            }`}>
-              {isRecording ? <Volume2 size={32} className="text-white animate-pulse" />
-                : isPaused ? <Pause size={32} className="text-white" />
-                : isStopped ? <CheckSquare size={32} className="text-white" />
-                : <Mic size={32} className="text-[var(--muted)]" />}
-            </div>
-          </div>
-
-          {/* Timer */}
-          <div className="text-center">
-            <p className={`text-4xl font-extrabold tabular-nums tracking-tight ${
-              isRecording ? "text-[#a78bfa]" : isPaused ? "text-[#fbbf24]" : "text-[var(--ink)]"
-            }`}>{fmtSeconds(elapsed)}</p>
-            <p className="mt-1 text-xs text-[var(--muted)]">
-              {isRecording ? "Enregistrement en cours" : isPaused ? "En pause" : isStopped ? "Terminé" : "Prêt à enregistrer"}
-            </p>
-            {(isRecording || isPaused) && chunks.length > 0 && (
-              <p className="mt-1 text-[0.65rem] text-[#a78bfa]">
-                {chunks.length} segment{chunks.length > 1 ? "s" : ""} transcrit{chunks.length > 1 ? "s" : ""}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Contrôles */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          {isIdle && (
-            <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-              onClick={startRecording}
-              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] px-8 py-3.5 text-sm font-bold text-white shadow-[0_4px_20px_rgba(167,139,250,0.35)] transition hover:shadow-[0_6px_28px_rgba(167,139,250,0.5)]">
-              <Mic size={16} /> Démarrer l&apos;enregistrement
-            </motion.button>
-          )}
-
-          {isRecording && (
-            <>
-              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                onClick={pauseRecording}
-                className="flex items-center gap-2 rounded-2xl border border-[rgba(251,191,36,0.4)] bg-[rgba(251,191,36,0.08)] px-6 py-3 text-sm font-bold text-[#fbbf24] transition hover:bg-[rgba(251,191,36,0.15)]">
-                <Pause size={15} /> Pause
-              </motion.button>
-              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                onClick={stopRecording}
-                className="flex items-center gap-2 rounded-2xl bg-[#ef4444] px-6 py-3 text-sm font-bold text-white shadow-[0_4px_16px_rgba(239,68,68,0.3)]">
-                <Square size={15} /> Terminer
-              </motion.button>
-            </>
-          )}
-
-          {isPaused && (
-            <>
-              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                onClick={resumeRecording}
-                className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] px-6 py-3 text-sm font-bold text-white">
-                <Play size={15} /> Reprendre
-              </motion.button>
-              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                onClick={stopRecording}
-                className="flex items-center gap-2 rounded-2xl bg-[#ef4444] px-6 py-3 text-sm font-bold text-white">
-                <Square size={15} /> Terminer
-              </motion.button>
-            </>
-          )}
-
-          {isStopped && (
-            <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-              onClick={reset}
-              className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-6 py-3 text-sm font-bold text-[var(--muted)] transition hover:border-[rgba(var(--gold),0.4)]">
-              <RotateCcw size={15} /> Nouvel enregistrement
-            </motion.button>
-          )}
-        </div>
-
-        {/* Transcription en cours */}
-        {transcribing && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="mt-4 flex items-center justify-center gap-2 text-xs text-[#a78bfa]">
-            <Loader2 size={13} className="animate-spin" />
-            Transcription du segment {liveChunkIdx + 1} en cours…
-          </motion.div>
-        )}
-
-        {/* Erreur */}
-        {transcribeError && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="mt-4 flex items-center gap-2 rounded-xl border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-4 py-2.5 text-xs text-[#ef4444]">
-            <AlertCircle size={13} /> {transcribeError}
-          </motion.div>
-        )}
-
-        {/* Info chunking */}
-        {(isRecording || isPaused) && (
-          <p className="mt-4 text-center text-[0.6rem] text-[var(--muted)]">
-            Transcription automatique toutes les 5 min · Jusqu&apos;à 2h de réunion supportées
-          </p>
-        )}
-      </div>
-
-      {/* ─── Résumé IA ───────────────────────────────── */}
-      {(hasTranscript || isStopped) && (
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-sm">
-
-          <h2 className="mb-4 flex items-center gap-2 text-base font-extrabold text-[var(--ink)]">
-            <Wand2 size={18} className="text-[#a78bfa]" />
-            Résumé IA
-          </h2>
-
-          {/* Mode selector */}
-          <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {(Object.entries(MODE_LABELS) as [SummaryMode, typeof MODE_LABELS[SummaryMode]][]).map(([key, { label, icon: Icon, desc }]) => (
-              <button key={key} type="button" onClick={() => setSummaryMode(key)}
-                className={`flex items-start gap-2.5 rounded-2xl border p-3 text-left transition-all ${
-                  summaryMode === key
-                    ? "border-[rgba(167,139,250,0.5)] bg-[rgba(167,139,250,0.08)] text-[#a78bfa]"
-                    : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[rgba(167,139,250,0.3)]"
-                }`}>
-                <Icon size={15} className="mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs font-bold leading-tight">{label}</p>
-                  <p className="mt-0.5 text-[0.6rem] leading-tight opacity-70">{desc}</p>
+        {note.type === "checklist" ? (
+          <div className="space-y-1.5">
+            {note.items.slice(0, 4).map(i => (
+              <div key={i.id} className="flex items-center gap-2">
+                <div className="w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center"
+                  style={{ borderColor: ac, background: i.done ? ac : "transparent" }}>
+                  {i.done && <Check size={9} className="text-black" strokeWidth={3} />}
                 </div>
-              </button>
-            ))}
-          </div>
-
-          <motion.button whileHover={{ scale: hasTranscript ? 1.02 : 1 }} whileTap={{ scale: hasTranscript ? 0.98 : 1 }}
-            onClick={summarize}
-            disabled={!hasTranscript || summarizing}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_4px_20px_rgba(167,139,250,0.25)] transition hover:shadow-[0_6px_28px_rgba(167,139,250,0.4)] disabled:cursor-not-allowed disabled:opacity-50">
-            {summarizing ? <><Loader2 size={15} className="animate-spin" /> Génération du résumé…</> : <><Sparkles size={15} /> Générer le résumé IA</>}
-          </motion.button>
-
-          {summaryError && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="mt-3 flex items-center gap-2 rounded-xl border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-4 py-2.5 text-xs text-[#ef4444]">
-              <AlertCircle size={13} /> {summaryError}
-            </motion.div>
-          )}
-        </motion.div>
-      )}
-
-      {/* ─── Onglets Transcription / Résumé ─────────── */}
-      {(hasTranscript || summary) && (
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-[var(--border)] bg-white shadow-sm overflow-hidden">
-
-          {/* Tabs */}
-          <div className="flex border-b border-[var(--border)]">
-            {([
-              { key: "transcript", label: "Transcription", icon: FileText },
-              { key: "summary",    label: "Résumé IA",     icon: Sparkles },
-            ] as const).map(({ key, label, icon: Icon }) => (
-              <button key={key} type="button" onClick={() => setActiveTab(key)}
-                className={`flex items-center gap-2 px-6 py-3.5 text-sm font-bold transition-all border-b-2 ${
-                  activeTab === key
-                    ? "border-[#a78bfa] text-[#a78bfa] bg-[rgba(167,139,250,0.04)]"
-                    : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-                }`}>
-                <Icon size={14} />
-                {label}
-                {key === "transcript" && hasTranscript && (
-                  <span className="rounded-full bg-[rgba(167,139,250,0.15)] px-1.5 py-0.5 text-[0.55rem] font-bold text-[#a78bfa]">
-                    {fullTranscript.split(" ").length} mots
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          <div className="p-6">
-            <AnimatePresence mode="wait">
-              {activeTab === "transcript" && hasTranscript && (
-                <motion.div key="transcript" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  {/* Actions */}
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => copyText(fullTranscript)}
-                      className="flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-1.5 text-xs font-bold text-[var(--muted)] transition hover:border-[rgba(var(--gold),0.4)] hover:text-[rgb(var(--gold))]">
-                      {copied ? <><Check size={12} /> Copié</> : <><Copy size={12} /> Copier</>}
-                    </button>
-                    <button type="button" onClick={() => exportTxt(fullTranscript, `transcription-${Date.now()}.txt`)}
-                      className="flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-1.5 text-xs font-bold text-[var(--muted)] transition hover:border-[rgba(var(--gold),0.4)] hover:text-[rgb(var(--gold))]">
-                      <Download size={12} /> Exporter .txt
-                    </button>
-                    {chunks.length > 1 && (
-                      <span className="flex items-center gap-1.5 rounded-xl bg-[rgba(167,139,250,0.08)] px-3 py-1.5 text-xs font-bold text-[#a78bfa]">
-                        <Clock size={12} /> {chunks.length} segments · {fmtSeconds(elapsed)} total
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Segments */}
-                  {chunks.length > 1 ? (
-                    <div className="space-y-3">
-                      {chunks.map((chunk) => (
-                        <div key={chunk.index} className="rounded-xl border border-[var(--border)] bg-[var(--bg)] p-4">
-                          <div className="mb-2 flex items-center gap-2">
-                            <span className="rounded-full bg-[rgba(167,139,250,0.1)] px-2 py-0.5 text-[0.6rem] font-bold text-[#a78bfa]">
-                              Segment {chunk.index + 1}
-                            </span>
-                            <span className="text-[0.6rem] text-[var(--muted)]">@ {chunk.duration}</span>
-                          </div>
-                          <p className="text-sm leading-relaxed text-[var(--ink)]">{chunk.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl bg-[var(--bg)] p-5">
-                      <p className="text-sm leading-relaxed text-[var(--ink)] whitespace-pre-wrap">{fullTranscript}</p>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-
-              {activeTab === "summary" && (
-                <motion.div key="summary" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  {summarizing && (
-                    <div className="flex flex-col items-center gap-3 py-12 text-[var(--muted)]">
-                      <Loader2 size={24} className="animate-spin text-[#a78bfa]" />
-                      <p className="text-sm">Analyse de la réunion en cours…</p>
-                    </div>
-                  )}
-                  {!summarizing && summary && (
-                    <>
-                      <div className="mb-4 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => copyText(summary)}
-                          className="flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-1.5 text-xs font-bold text-[var(--muted)] transition hover:border-[rgba(var(--gold),0.4)] hover:text-[rgb(var(--gold))]">
-                          {copied ? <><Check size={12} /> Copié</> : <><Copy size={12} /> Copier</>}
-                        </button>
-                        <button type="button" onClick={() => exportTxt(summary, `resume-reunion-${Date.now()}.txt`)}
-                          className="flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-1.5 text-xs font-bold text-[var(--muted)] transition hover:border-[rgba(var(--gold),0.4)] hover:text-[rgb(var(--gold))]">
-                          <Download size={12} /> Exporter .txt
-                        </button>
-                        <button type="button" onClick={summarize}
-                          className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.06)] px-3 py-1.5 text-xs font-bold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.12)]">
-                          <RotateCcw size={12} /> Régénérer
-                        </button>
-                      </div>
-                      <div className="rounded-2xl bg-[var(--bg)] p-5">
-                        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--ink)]">{summary}</pre>
-                      </div>
-                    </>
-                  )}
-                  {!summarizing && !summary && (
-                    <div className="flex flex-col items-center gap-3 py-12 text-[var(--muted)]">
-                      <Sparkles size={24} className="opacity-30" />
-                      <p className="text-sm">Cliquez sur &quot;Générer le résumé IA&quot; pour analyser votre réunion</p>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ─── Aide ────────────────────────────────────── */}
-      {isIdle && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            { icon: Mic,         color: "#a78bfa", title: "Enregistrement illimité", desc: "Jusqu'à 2h+ de réunion. Transcription automatique toutes les 5 minutes." },
-            { icon: FileText,    color: "#34d399", title: "Transcription précise",   desc: "Whisper d'OpenAI — reconnu comme le meilleur modèle de transcription au monde." },
-            { icon: Sparkles,    color: "#f59e0b", title: "Résumé IA sur demande",   desc: "Claude analyse la réunion et produit : résumé, actions, ou compte-rendu officiel." },
-          ].map(({ icon: Icon, color, title, desc }) => (
-            <div key={title} className="rounded-2xl border border-[var(--border)] bg-white p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: color + "18" }}>
-                <Icon size={18} style={{ color }} />
+                <span className={`text-xs leading-tight ${i.done ? "line-through text-white/30" : "text-white/65"}`}>{i.text}</span>
               </div>
-              <p className="mb-1 text-sm font-bold text-[var(--ink)]">{title}</p>
-              <p className="text-xs leading-relaxed text-[var(--muted)]">{desc}</p>
+            ))}
+            {note.items.length > 4 && <span className="text-[10px] text-white/25">+{note.items.length - 4} autres</span>}
+          </div>
+        ) : note.type === "voice" ? (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: `${ac}20` }}>
+              <Mic size={13} style={{ color: ac }} />
             </div>
+            <p className="text-xs text-white/55 line-clamp-3 flex-1">{note.content || "Note vocale"}</p>
+          </div>
+        ) : (
+          <p className="text-xs text-white/60 line-clamp-5 whitespace-pre-line leading-relaxed">{note.content}</p>
+        )}
+      </div>
+
+      {note.tags.length > 0 && (
+        <div className="px-4 pb-2 flex flex-wrap gap-1">
+          {note.tags.slice(0, 3).map(t => (
+            <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full border"
+              style={{ borderColor: `${ac}40`, color: ac, background: `${ac}12` }}>#{t}</span>
           ))}
         </div>
       )}
+
+      <div className="px-4 pb-3 flex items-center justify-between">
+        <span className="text-[10px] text-white/20">{relTime(note.updated_at)}</span>
+        {note.type === "checklist" && note.items.length > 0 && (
+          <span className="text-[10px] text-white/20">
+            {note.items.filter(i => i.done).length}/{note.items.length}
+          </span>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {hover && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-3 py-2 rounded-b-2xl"
+            style={{ background: `linear-gradient(transparent, ${note.color}e0 35%, ${note.color})` }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex gap-0.5">
+              <ActionBtn onClick={onPin} title={note.is_pinned ? "Désépingler" : "Épingler"}>
+                <Pin size={13} fill={note.is_pinned ? "currentColor" : "none"} />
+              </ActionBtn>
+              <ActionBtn onClick={onArchive} title="Archiver"><Archive size={13} /></ActionBtn>
+              <ActionBtn onClick={onDelete} title="Supprimer" danger><Trash2 size={13} /></ActionBtn>
+            </div>
+            <div className="relative">
+              <ActionBtn onClick={() => setShowPal(p => !p)} title="Couleur"><Palette size={13} /></ActionBtn>
+              <AnimatePresence>
+                {showPal && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                    className="absolute bottom-9 right-0 flex gap-1 p-2 rounded-xl border border-white/10 shadow-xl z-50 bg-[#1a1a2e]">
+                    {PAL.map(p => (
+                      <button key={p.bg}
+                        onClick={() => { onColor(p.bg); setShowPal(false); }}
+                        className="w-5 h-5 rounded-full border-2 hover:scale-125 transition-transform"
+                        style={{ background: p.bg, borderColor: note.color === p.bg ? p.ac : "transparent" }} />
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Page
+══════════════════════════════════════════════════════════ */
+export default function BlocNotePage() {
+  
+
+  const [notes,   setNotes]   = useState<QNote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search,  setSearch]  = useState("");
+  const [filter,  setFilter]  = useState<FilterKey>("all");
+  const [toastData, setToastData] = useState<ToastData | null>(null);
+
+  /* quick create */
+  const [creating, setCreating] = useState(false);
+  const [dType,    setDType]    = useState<NoteType>("text");
+  const [dTitle,   setDTitle]   = useState("");
+  const [dContent, setDContent] = useState("");
+  const [dItems,   setDItems]   = useState<Item[]>([{ id: uid(), text: "", done: false }]);
+  const [dColor,   setDColor]   = useState(PAL[0].bg);
+  const [dTags,    setDTags]    = useState<string[]>([]);
+  const [dTagIn,   setDTagIn]   = useState("");
+  const [showDPal, setShowDPal] = useState(false);
+  const createRef   = useRef<HTMLDivElement>(null);
+  const cTextRef    = useRef<HTMLTextAreaElement>(null);
+  const cItemRef    = useRef<HTMLInputElement>(null);
+
+  /* edit */
+  const [editNote, setEditNote] = useState<QNote | null>(null);
+  const [eDraft,   setEDraft]   = useState<Partial<QNote>>({});
+  const [saving,   setSaving]   = useState(false);
+  const [showEPal, setShowEPal] = useState(false);
+  const [eTagIn,   setETagIn]   = useState("");
+
+  /* AI */
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult,  setAiResult]  = useState("");
+  const [aiAction,  setAiAction]  = useState("");
+
+  /* voice */
+  const [recording,    setRecording]    = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const mediaRef  = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  /* ── Load ── */
+  const load = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+    const { data } = await supabase.from("quick_notes").select("*")
+      .eq("user_id", user.id)
+      .order("is_pinned", { ascending: false })
+      .order("updated_at",  { ascending: false });
+    setNotes((data ?? []).map((r: Record<string, unknown>) => parseRow(r)));
+    setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  /* click outside create → save */
+  useEffect(() => {
+    if (!creating) return;
+    const fn = (e: MouseEvent) => {
+      if (!createRef.current?.contains(e.target as Node)) commitCreate();
+    };
+    document.addEventListener("mousedown", fn);
+    return () => document.removeEventListener("mousedown", fn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creating, dTitle, dContent, dItems, dColor, dTags]);
+
+  /* ── Filter ── */
+  const visible = useMemo(() => {
+    let l = notes;
+    if      (filter === "archived")   l = l.filter(n =>  n.is_archived);
+    else if (filter === "pinned")     l = l.filter(n =>  n.is_pinned && !n.is_archived);
+    else if (filter === "checklist")  l = l.filter(n =>  n.type === "checklist" && !n.is_archived);
+    else if (filter === "voice")      l = l.filter(n =>  n.type === "voice" && !n.is_archived);
+    else                              l = l.filter(n => !n.is_archived);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      l = l.filter(n =>
+        n.title.toLowerCase().includes(q) ||
+        n.content.toLowerCase().includes(q) ||
+        n.tags.some(t => t.toLowerCase().includes(q))
+      );
+    }
+    return l;
+  }, [notes, filter, search]);
+
+  const pinned = visible.filter(n =>  n.is_pinned);
+  const others = visible.filter(n => !n.is_pinned);
+
+  /* ── Quick create ── */
+  function openCreate(type: NoteType = "text") {
+    setDType(type); setDTitle(""); setDContent("");
+    setDItems([{ id: uid(), text: "", done: false }]);
+    setDColor(PAL[0].bg); setDTags([]); setDTagIn(""); setShowDPal(false);
+    setCreating(true);
+    if (type === "voice") startRec(true);
+    else setTimeout(() => { (type === "checklist" ? cItemRef : cTextRef).current?.focus(); }, 80);
+  }
+
+  async function commitCreate() {
+    if (!creating) return;
+    const has = dType === "checklist" ? dItems.some(i => i.text.trim()) : dContent.trim() || dTitle.trim();
+    if (!has) { setCreating(false); return; }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const content = dType === "checklist"
+      ? JSON.stringify(dItems.filter(i => i.text.trim()))
+      : dContent;
+
+    const { data, error } = await supabase.from("quick_notes").insert({
+      user_id: user.id, type: dType, title: dTitle, content,
+      color: dColor, tags: dTags, is_pinned: false, is_archived: false,
+    }).select().single();
+
+    if (error) { setToastData({ type: "error", msg: "Erreur de sauvegarde" }); return; }
+    setNotes(p => [parseRow(data as Record<string, unknown>), ...p]);
+    setCreating(false);
+    setToastData({ type: "success", msg: "Note créée ⚡" });
+  }
+
+  /* draft checklist */
+  const dAddItem  = () => setDItems(p => [...p, { id: uid(), text: "", done: false }]);
+  const dToggle   = (id: string) => setDItems(p => p.map(i => i.id === id ? { ...i, done: !i.done } : i));
+  const dSetText  = (id: string, text: string) => setDItems(p => p.map(i => i.id === id ? { ...i, text } : i));
+  const dRemove   = (id: string) => setDItems(p => p.filter(i => i.id !== id));
+
+  /* ── CRUD ── */
+  async function patchNote(id: string, changes: Partial<QNote>) {
+    const db: Record<string, unknown> = { ...changes };
+    if (changes.items !== undefined) { db.content = JSON.stringify(changes.items); delete db.items; }
+    delete db.id; delete db.created_at;
+    await supabase.from("quick_notes").update(db).eq("id", id);
+    setNotes(p => p.map(n => n.id === id ? { ...n, ...changes } : n));
+    if (editNote?.id === id) setEditNote(p => p ? { ...p, ...changes } : null);
+  }
+
+  async function delNote(id: string) {
+    await supabase.from("quick_notes").delete().eq("id", id);
+    setNotes(p => p.filter(n => n.id !== id));
+    if (editNote?.id === id) setEditNote(null);
+    setToastData({ type: "success", msg: "Supprimée" });
+  }
+
+  /* ── Voice ── */
+  async function startRec(forDraft = false) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunksRef.current = [];
+      const mr = new MediaRecorder(stream);
+      mr.ondataavailable = e => chunksRef.current.push(e.data);
+      mr.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach(t => t.stop());
+        transcribeBlob(blob, forDraft);
+      };
+      mr.start(); mediaRef.current = mr; setRecording(true);
+    } catch { setToastData({ type: "error", msg: "Micro non disponible" }); }
+  }
+
+  function stopRec() { mediaRef.current?.stop(); setRecording(false); }
+
+  async function transcribeBlob(blob: Blob, forDraft: boolean) {
+    setTranscribing(true);
+    try {
+      const form = new FormData();
+      form.append("file", blob, "audio.webm");
+      const res = await fetch("/api/notes/transcribe", { method: "POST", body: form });
+      const { text = "" } = await res.json() as { text?: string };
+      if (forDraft) setDContent(p => (p ? `${p}\n${text}` : text).trim());
+      else setEDraft(p => ({ ...p, content: (`${p.content ?? editNote?.content ?? ""}\n${text}`).trim() }));
+    } catch { setToastData({ type: "error", msg: "Transcription échouée" }); }
+    finally { setTranscribing(false); }
+  }
+
+  /* ── AI ── */
+  async function callAI(action: string, content: string) {
+    if (!content.trim()) { setToastData({ type: "error", msg: "Contenu vide" }); return; }
+    setAiLoading(true); setAiAction(action); setAiResult("");
+    try {
+      const r = await fetch("/api/notes/ai", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, content }),
+      });
+      const j = await r.json() as { result?: string; error?: string };
+      setAiResult(j.result ?? j.error ?? "Erreur");
+    } catch { setAiResult("Erreur réseau"); }
+    finally { setAiLoading(false); }
+  }
+
+  function applyAI() {
+    if (!aiResult || !editNote) return;
+    const replaces = ["correct","rephrase","translate","improve"].includes(aiAction);
+    setEDraft(p => ({
+      ...p,
+      content: replaces ? aiResult : (`${p.content ?? editNote.content}\n\n${aiResult}`),
+    }));
+    setAiResult(""); setAiAction("");
+  }
+
+  /* ── Edit ── */
+  function openEdit(n: QNote) {
+    setEditNote(n); setEDraft({ ...n });
+    setAiResult(""); setAiAction(""); setShowEPal(false); setETagIn("");
+  }
+
+  async function saveEdit() {
+    if (!editNote) return;
+    setSaving(true);
+    await patchNote(editNote.id, eDraft as Partial<QNote>);
+    setSaving(false);
+    setToastData({ type: "success", msg: "Sauvegardé ✓" });
+  }
+
+  const eItems: Item[] = (eDraft.type ?? editNote?.type) === "checklist"
+    ? (eDraft.items ?? editNote?.items ?? []) : [];
+
+  const eUpdateItems = (fn: (p: Item[]) => Item[]) =>
+    setEDraft(p => ({ ...p, items: fn(p.items ?? editNote?.items ?? []) }));
+
+  const editAc  = acOf(eDraft.color  ?? editNote?.color  ?? PAL[0].bg);
+  const editBg  =      eDraft.color  ?? editNote?.color  ?? PAL[0].bg;
+  const eTags   =      eDraft.tags   ?? editNote?.tags   ?? [];
+
+  /* ══════════════════════════════════════════════════════
+     RENDER
+  ══════════════════════════════════════════════════════ */
+  return (
+    <div className="min-h-screen bg-[#0f0f1a] text-white pb-24">
+      <AnimatePresence>
+        {toastData && <Toast toast={toastData} onClose={() => setToastData(null)} />}
+      </AnimatePresence>
+
+      {/* ── Header ── */}
+      <div className="sticky top-0 z-30 bg-[#0f0f1a]/95 backdrop-blur border-b border-white/5 px-4 py-3">
+        <div className="max-w-5xl mx-auto flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 mr-auto">
+            <span className="text-2xl">🗒️</span>
+            <h1 className="font-bold text-lg">Bloc Note</h1>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
+              Capture rapide
+            </span>
+          </div>
+          <div className="relative w-48 sm:w-60">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher…"
+              className="w-full pl-8 pr-7 py-1.5 text-sm bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500/40" />
+            {search && (
+              <button onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white">
+                <X size={12} />
+              </button>
+            )}
+          </div>
+          <span className="text-xs text-white/25 hidden sm:block">
+            {notes.filter(n => !n.is_archived).length} note{notes.filter(n => !n.is_archived).length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 py-5 space-y-5">
+
+        {/* ── Create trigger / expanded panel ── */}
+        <div ref={createRef}>
+          {!creating ? (
+            <div className="flex gap-2 flex-wrap">
+              {(["text","checklist","voice"] as NoteType[]).map(t => (
+                <button key={t} onClick={() => openCreate(t)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-500/30 text-sm text-white/55 hover:text-white transition-all">
+                  {t === "text"      && <><AlignLeft size={15} />Texte</>}
+                  {t === "checklist" && <><svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-current" strokeWidth={2}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Checklist</>}
+                  {t === "voice"     && <><Mic size={15} />Vocal</>}
+                </button>
+              ))}
+              <button onClick={() => openCreate()}
+                className="ml-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 transition-all">
+                <Plus size={15} />Nouvelle
+              </button>
+            </div>
+          ) : (
+            <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }}
+              className="rounded-2xl border shadow-2xl overflow-hidden"
+              style={{ background: dColor, borderColor: `${acOf(dColor)}40` }}>
+
+              {/* Type tabs */}
+              <div className="flex gap-1 px-4 pt-3">
+                {(["text","checklist","voice"] as NoteType[]).map(t => (
+                  <button key={t} onClick={() => { setDType(t); if (t === "voice") startRec(true); }}
+                    className="px-3 py-1 rounded-lg text-xs font-medium transition-all"
+                    style={{
+                      background: dType === t ? `${acOf(dColor)}30` : "transparent",
+                      color:      dType === t ? acOf(dColor) : "rgba(255,255,255,.35)",
+                    }}>
+                    {t === "text" ? "✍️ Texte" : t === "checklist" ? "✅ Checklist" : "🎤 Vocal"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Title */}
+              <input value={dTitle} onChange={e => setDTitle(e.target.value)}
+                placeholder="Titre (optionnel)"
+                className="w-full px-4 py-2 bg-transparent text-sm font-semibold text-white placeholder:text-white/20 focus:outline-none" />
+
+              {/* Body */}
+              {dType === "text" && (
+                <textarea ref={cTextRef} value={dContent} onChange={e => setDContent(e.target.value)}
+                  placeholder="Écris ta note ici…" rows={4}
+                  className="w-full px-4 py-1 bg-transparent text-sm text-white/75 placeholder:text-white/20 focus:outline-none resize-none leading-relaxed" />
+              )}
+
+              {dType === "checklist" && (
+                <div className="px-4 py-1 space-y-2">
+                  {dItems.map((item, idx) => (
+                    <div key={item.id} className="flex items-center gap-2 group">
+                      <button onClick={() => dToggle(item.id)}
+                        className="w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all"
+                        style={{ borderColor: acOf(dColor), background: item.done ? acOf(dColor) : "transparent" }}>
+                        {item.done && <Check size={9} className="text-black" strokeWidth={3} />}
+                      </button>
+                      <input ref={idx === 0 ? cItemRef : undefined}
+                        value={item.text} onChange={e => dSetText(item.id, e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") { e.preventDefault(); dAddItem(); }
+                          if (e.key === "Backspace" && !item.text && dItems.length > 1) dRemove(item.id);
+                        }}
+                        placeholder="Élément…"
+                        className="flex-1 bg-transparent text-sm text-white/75 placeholder:text-white/20 focus:outline-none" />
+                      {dItems.length > 1 && (
+                        <button onClick={() => dRemove(item.id)}
+                          className="opacity-0 group-hover:opacity-100 text-white/25 hover:text-red-400 transition-all">
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button onClick={dAddItem} className="flex items-center gap-1 text-xs mt-1 transition-all"
+                    style={{ color: acOf(dColor) }}>
+                    <Plus size={12} />Ajouter
+                  </button>
+                </div>
+              )}
+
+              {dType === "voice" && (
+                <div className="px-4 py-2 space-y-2">
+                  {recording ? (
+                    <button onClick={stopRec}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm animate-pulse">
+                      <StopCircle size={14} />Arrêter l&apos;enregistrement
+                    </button>
+                  ) : transcribing ? (
+                    <span className="flex items-center gap-2 text-sm text-white/40">
+                      <Loader2 size={13} className="animate-spin" />Transcription en cours…
+                    </span>
+                  ) : (
+                    <button onClick={() => startRec(true)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
+                      style={{ background: `${acOf(dColor)}15`, border: `1px solid ${acOf(dColor)}35`, color: acOf(dColor) }}>
+                      <Mic size={14} />Enregistrer
+                    </button>
+                  )}
+                  {dContent && (
+                    <p className="text-xs text-white/55 bg-white/5 rounded-xl p-3 whitespace-pre-line leading-relaxed">
+                      {dContent}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Footer: tags + palette + actions */}
+              <div className="flex items-center gap-2 px-4 pb-3 pt-2 flex-wrap border-t border-white/5 mt-2">
+                <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+                  {dTags.map(t => (
+                    <span key={t} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+                      style={{ background: `${acOf(dColor)}18`, color: acOf(dColor) }}>
+                      #{t}<button onClick={() => setDTags(p => p.filter(x => x !== t))}><X size={8} /></button>
+                    </span>
+                  ))}
+                  <input value={dTagIn} onChange={e => setDTagIn(e.target.value)}
+                    onKeyDown={e => {
+                      if ((e.key === "Enter" || e.key === " ") && dTagIn.trim()) {
+                        e.preventDefault();
+                        const tag = dTagIn.trim().replace(/^#/, "");
+                        if (tag && !dTags.includes(tag)) setDTags(p => [...p, tag]);
+                        setDTagIn("");
+                      }
+                    }}
+                    placeholder="#tag"
+                    className="text-xs bg-transparent text-white/50 placeholder:text-white/15 focus:outline-none w-14" />
+                </div>
+                <div className="relative">
+                  <button onClick={() => setShowDPal(p => !p)}
+                    className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all">
+                    <Palette size={14} />
+                  </button>
+                  <AnimatePresence>
+                    {showDPal && (
+                      <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0 }}
+                        className="absolute bottom-9 right-0 flex gap-1 p-2 rounded-xl border border-white/10 shadow-xl z-50 bg-[#1a1a2e]">
+                        {PAL.map(p => (
+                          <button key={p.bg}
+                            onClick={() => { setDColor(p.bg); setShowDPal(false); }}
+                            className="w-5 h-5 rounded-full border-2 hover:scale-125 transition-transform"
+                            style={{ background: p.bg, borderColor: dColor === p.bg ? p.ac : "transparent" }} />
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <button onClick={() => setCreating(false)}
+                  className="px-3 py-1.5 rounded-xl text-xs text-white/35 hover:text-white hover:bg-white/10 transition-all">
+                  Annuler
+                </button>
+                <button onClick={commitCreate}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                  style={{ background: `${acOf(dColor)}22`, color: acOf(dColor), border: `1px solid ${acOf(dColor)}40` }}>
+                  Enregistrer
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* ── Filter tabs ── */}
+        <div className="flex gap-1 overflow-x-auto pb-1">
+          {FILTERS.map(f => (
+            <button key={f.key} onClick={() => setFilter(f.key)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all flex-shrink-0"
+              style={{
+                background: filter === f.key ? "rgba(16,185,129,.12)" : "rgba(255,255,255,.04)",
+                color:      filter === f.key ? "#10b981" : "rgba(255,255,255,.4)",
+                border:     `1px solid ${filter === f.key ? "rgba(16,185,129,.28)" : "rgba(255,255,255,.07)"}`,
+              }}>
+              {f.emoji} {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Loading ── */}
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 size={24} className="animate-spin text-white/25" />
+          </div>
+        )}
+
+        {/* ── Notes ── */}
+        {!loading && (
+          <>
+            {pinned.length > 0 && (
+              <section>
+                <p className="text-[11px] font-semibold text-white/25 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                  <Pin size={10} />Épinglées
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <AnimatePresence mode="popLayout">
+                    {pinned.map(n => (
+                      <NoteCard key={n.id} note={n}
+                        onOpen={() => openEdit(n)}
+                        onPin={() => patchNote(n.id, { is_pinned: !n.is_pinned })}
+                        onArchive={() => patchNote(n.id, { is_archived: true, is_pinned: false })}
+                        onDelete={() => delNote(n.id)}
+                        onColor={c => patchNote(n.id, { color: c })} />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </section>
+            )}
+
+            {others.length > 0 && (
+              <section>
+                {pinned.length > 0 && (
+                  <p className="text-[11px] font-semibold text-white/25 uppercase tracking-widest mb-3">Autres</p>
+                )}
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <AnimatePresence mode="popLayout">
+                    {others.map(n => (
+                      <NoteCard key={n.id} note={n}
+                        onOpen={() => openEdit(n)}
+                        onPin={() => patchNote(n.id, { is_pinned: !n.is_pinned })}
+                        onArchive={() => patchNote(n.id, { is_archived: !n.is_archived })}
+                        onDelete={() => delNote(n.id)}
+                        onColor={c => patchNote(n.id, { color: c })} />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </section>
+            )}
+
+            {visible.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-3xl">
+                  {filter === "archived" ? "📦" : filter === "voice" ? "🎤" : filter === "checklist" ? "✅" : "🗒️"}
+                </div>
+                <div>
+                  <p className="text-white/45 font-medium">
+                    {search ? "Aucun résultat" : "Aucune note"}
+                  </p>
+                  <p className="text-sm text-white/25 mt-1">
+                    {search ? `Rien pour "${search}"` : "Crée ta première note rapide ⚡"}
+                  </p>
+                </div>
+                {!search && filter === "all" && (
+                  <button onClick={() => openCreate()}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 transition-all">
+                    <Plus size={15} />Créer une note
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════
+          Edit Modal
+      ══════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {editNote && (
+          <>
+            <motion.div
+              initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+              onClick={() => { saveEdit(); setEditNote(null); }} />
+
+            <motion.div
+              initial={{ opacity:0, scale:0.94, y:16 }}
+              animate={{ opacity:1, scale:1,    y:0  }}
+              exit={{   opacity:0, scale:0.94, y:16 }}
+              className="fixed inset-x-4 top-[4%] bottom-[4%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-xl z-50 rounded-3xl border shadow-2xl flex flex-col overflow-hidden"
+              style={{ background: editBg, borderColor: `${editAc}45` }}
+              onClick={e => e.stopPropagation()}>
+
+              {/* Modal header */}
+              <div className="flex items-center gap-2 px-5 pt-4 pb-1 flex-shrink-0">
+                <span className="text-xs px-2 py-0.5 rounded-full border"
+                  style={{ borderColor:`${editAc}40`, color:editAc, background:`${editAc}12` }}>
+                  {(eDraft.type ?? editNote.type) === "text" ? "✍️ Texte"
+                    : (eDraft.type ?? editNote.type) === "checklist" ? "✅ Checklist" : "🎤 Vocal"}
+                </span>
+                <span className="text-xs text-white/20 ml-auto">{relTime(editNote.updated_at)}</span>
+                <button onClick={() => patchNote(editNote.id, { is_pinned: !editNote.is_pinned })}
+                  style={{ color: editNote.is_pinned ? editAc : "rgba(255,255,255,.3)" }}
+                  className="p-1.5 rounded-lg hover:bg-white/10 transition-all">
+                  <Pin size={14} fill={editNote.is_pinned ? "currentColor" : "none"} />
+                </button>
+                <div className="relative">
+                  <button onClick={() => setShowEPal(p => !p)}
+                    className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all">
+                    <Palette size={14} />
+                  </button>
+                  <AnimatePresence>
+                    {showEPal && (
+                      <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0 }}
+                        className="absolute top-9 right-0 flex gap-1 p-2 rounded-xl border border-white/10 shadow-xl z-50 bg-[#1a1a2e]">
+                        {PAL.map(p => (
+                          <button key={p.bg}
+                            onClick={() => { setEDraft(prev => ({ ...prev, color: p.bg })); setShowEPal(false); }}
+                            className="w-5 h-5 rounded-full border-2 hover:scale-125 transition-transform"
+                            style={{ background: p.bg, borderColor: editBg === p.bg ? p.ac : "transparent" }} />
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <button onClick={() => { saveEdit(); setEditNote(null); }}
+                  className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all">
+                  <X size={15} />
+                </button>
+              </div>
+
+              {/* Title */}
+              <input value={eDraft.title ?? ""}
+                onChange={e => setEDraft(p => ({ ...p, title: e.target.value }))}
+                placeholder="Titre…"
+                className="px-5 py-1.5 bg-transparent font-bold text-base text-white placeholder:text-white/18 focus:outline-none flex-shrink-0" />
+
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-3 min-h-0">
+
+                {(eDraft.type ?? editNote.type) === "text" && (
+                  <textarea value={eDraft.content ?? ""}
+                    onChange={e => setEDraft(p => ({ ...p, content: e.target.value }))}
+                    placeholder="Contenu…"
+                    className="w-full bg-transparent text-sm text-white/72 placeholder:text-white/18 focus:outline-none resize-none leading-relaxed min-h-[160px]" />
+                )}
+
+                {(eDraft.type ?? editNote.type) === "voice" && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      {recording ? (
+                        <button onClick={stopRec}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-xs animate-pulse">
+                          <StopCircle size={13} />Arrêter
+                        </button>
+                      ) : transcribing ? (
+                        <span className="flex items-center gap-2 text-xs text-white/35">
+                          <Loader2 size={12} className="animate-spin" />Transcription…
+                        </span>
+                      ) : (
+                        <button onClick={() => startRec(false)}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs"
+                          style={{ background:`${editAc}12`, border:`1px solid ${editAc}30`, color:editAc }}>
+                          <Mic size={13} />Ajouter vocal
+                        </button>
+                      )}
+                    </div>
+                    <textarea value={eDraft.content ?? ""}
+                      onChange={e => setEDraft(p => ({ ...p, content: e.target.value }))}
+                      placeholder="Transcription…"
+                      className="w-full bg-white/5 rounded-xl p-3 text-sm text-white/70 placeholder:text-white/18 focus:outline-none resize-none leading-relaxed min-h-[120px] border border-white/10" />
+                  </div>
+                )}
+
+                {(eDraft.type ?? editNote.type) === "checklist" && (
+                  <div className="space-y-2">
+                    {eItems.map(item => (
+                      <div key={item.id} className="flex items-center gap-2.5 group">
+                        <button
+                          onClick={() => eUpdateItems(p => p.map(i => i.id === item.id ? { ...i, done: !i.done } : i))}
+                          className="w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all"
+                          style={{ borderColor: editAc, background: item.done ? editAc : "transparent" }}>
+                          {item.done && <Check size={11} className="text-black" strokeWidth={3} />}
+                        </button>
+                        <input value={item.text}
+                          onChange={e => eUpdateItems(p => p.map(i => i.id === item.id ? { ...i, text: e.target.value } : i))}
+                          onKeyDown={e => {
+                            if (e.key === "Enter") { e.preventDefault(); eUpdateItems(p => [...p, { id: uid(), text: "", done: false }]); }
+                          }}
+                          className={`flex-1 bg-transparent text-sm focus:outline-none ${item.done ? "line-through text-white/28" : "text-white/75"}`} />
+                        <button onClick={() => eUpdateItems(p => p.filter(i => i.id !== item.id))}
+                          className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all">
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    <button onClick={() => eUpdateItems(p => [...p, { id: uid(), text: "", done: false }])}
+                      className="flex items-center gap-1 text-xs transition-all" style={{ color: editAc }}>
+                      <Plus size={12} />Ajouter
+                    </button>
+                    {eItems.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-white/8">
+                        <div className="flex justify-between text-[10px] text-white/25 mb-1">
+                          <span>{eItems.filter(i => i.done).length}/{eItems.length} fait{eItems.filter(i=>i.done).length>1?"s":""}</span>
+                          <span>{Math.round(eItems.filter(i=>i.done).length/eItems.length*100)}%</span>
+                        </div>
+                        <div className="h-1 bg-white/10 rounded-full">
+                          <div className="h-full rounded-full transition-all"
+                            style={{ width:`${Math.round(eItems.filter(i=>i.done).length/eItems.length*100)}%`, background:editAc }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* AI row */}
+                <div className="border-t border-white/8 pt-3">
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {AI_ACTIONS.map(a => (
+                      <button key={a.id}
+                        onClick={() => callAI(a.id, (eDraft.type ?? editNote.type) === "checklist"
+                          ? eItems.map(i=>i.text).join("\n")
+                          : eDraft.content ?? editNote.content ?? "")}
+                        disabled={aiLoading}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-all disabled:opacity-40"
+                        style={{
+                          background: aiAction===a.id&&aiResult ? `${editAc}22` : "rgba(255,255,255,.05)",
+                          color:      aiAction===a.id&&aiResult ? editAc : "rgba(255,255,255,.45)",
+                          border:     `1px solid ${aiAction===a.id&&aiResult ? `${editAc}38` : "rgba(255,255,255,.07)"}`,
+                        }}>
+                        {aiLoading && aiAction===a.id ? <Loader2 size={10} className="animate-spin" /> : <span>{a.emoji}</span>}
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
+                  <AnimatePresence>
+                    {aiResult && (
+                      <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
+                        className="rounded-xl border p-3 space-y-2"
+                        style={{ background:`${editAc}0d`, borderColor:`${editAc}28` }}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-semibold" style={{ color:editAc }}>✨ IA</span>
+                          <button onClick={() => { setAiResult(""); setAiAction(""); }} className="text-white/25 hover:text-white"><X size={11}/></button>
+                        </div>
+                        <p className="text-xs text-white/65 whitespace-pre-line leading-relaxed max-h-36 overflow-y-auto">{aiResult}</p>
+                        <div className="flex gap-2">
+                          <button onClick={applyAI}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                            style={{ background:editAc, color:"#000" }}>
+                            <Check size={10}/>Appliquer
+                          </button>
+                          <button onClick={() => { setAiResult(""); setAiAction(""); }}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-white/35 hover:text-white bg-white/5 hover:bg-white/10 transition-all">
+                            <RotateCcw size={10}/>Ignorer
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Tags */}
+                <div className="border-t border-white/8 pt-3 flex flex-wrap gap-1.5 items-center">
+                  <Hash size={11} className="text-white/20" />
+                  {eTags.map(t => (
+                    <span key={t} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+                      style={{ background:`${editAc}12`, color:editAc, border:`1px solid ${editAc}28` }}>
+                      {t}
+                      <button onClick={() => setEDraft(p => ({ ...p, tags: eTags.filter(x => x!==t) }))}><X size={8}/></button>
+                    </span>
+                  ))}
+                  <input value={eTagIn} onChange={e => setETagIn(e.target.value)}
+                    onKeyDown={e => {
+                      if ((e.key==="Enter"||e.key===" ") && eTagIn.trim()) {
+                        e.preventDefault();
+                        const tag = eTagIn.trim().replace(/^#/,"");
+                        if (tag && !eTags.includes(tag)) setEDraft(p => ({ ...p, tags:[...eTags,tag] }));
+                        setETagIn("");
+                      }
+                    }}
+                    placeholder="#tag…"
+                    className="text-xs bg-transparent text-white/40 placeholder:text-white/12 focus:outline-none w-14" />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center gap-2 px-5 py-3 border-t border-white/8 flex-shrink-0">
+                <button onClick={() => delNote(editNote.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                  <Trash2 size={12}/>Supprimer
+                </button>
+                <button onClick={() => patchNote(editNote.id, { is_archived: !editNote.is_archived })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-white/35 hover:text-white hover:bg-white/10 transition-all">
+                  <Archive size={12}/>{editNote.is_archived ? "Désarchiver" : "Archiver"}
+                </button>
+                <button onClick={() => { saveEdit(); setEditNote(null); }}
+                  className="ml-auto flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                  style={{ background:`${editAc}22`, color:editAc, border:`1px solid ${editAc}38` }}>
+                  {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11}/>}
+                  {saving ? "Sauvegarde…" : "Enregistrer"}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* FAB mobile */}
+      {!creating && !editNote && (
+        <motion.button initial={{ scale:0 }} animate={{ scale:1 }}
+          onClick={() => openCreate()}
+          className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center z-20 sm:hidden"
+          style={{ background:"linear-gradient(135deg,#10b981,#059669)" }}>
+          <Plus size={24} className="text-white" strokeWidth={2.5} />
+        </motion.button>
+      )}
+
+      {/* Recording indicator */}
+      <AnimatePresence>
+        {recording && (
+          <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:20 }}
+            className="fixed bottom-24 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#1a0808] border border-red-500/40 shadow-2xl z-50">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-sm text-red-400 font-medium">Enregistrement…</span>
+            <button onClick={stopRec}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs hover:bg-red-500/30 transition-all">
+              <StopCircle size={12}/>Arrêter
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
