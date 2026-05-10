@@ -326,7 +326,7 @@ export default function PlanificationPage() {
       const { data, error } = await supabase.from("shifts").update(payload).eq("id", editShiftId).select().single();
       if (error) { showToast("error", error.message); setSavingShift(false); return; }
       setShifts(prev => prev.map(s => s.id === editShiftId ? data as Shift : s));
-      showToast("success", "Shift modifié ✓");
+      showToast("success", "Shift modifié");
     } else {
       const { data, error } = await supabase.from("shifts").insert({ ...payload, status: "draft" }).select().single();
       if (error) { showToast("error", error.message); setSavingShift(false); return; }
@@ -356,12 +356,12 @@ export default function PlanificationPage() {
             .then(j => console.log("[planif] notify →", j))
             .catch(e => console.error("[planif] notify erreur:", e));
 
-          showToast("success", `Shift ajouté ✓ · Email envoyé à ${assignedEmp.name}`);
+          showToast("success", `Shift ajouté · Email envoyé à ${assignedEmp.name}`);
         } else {
-          showToast("success", "Shift ajouté ✓");
+          showToast("success", "Shift ajouté");
         }
       } else {
-        showToast("success", "Shift ajouté ✓");
+        showToast("success", "Shift ajouté");
       }
     }
 
@@ -385,12 +385,12 @@ export default function PlanificationPage() {
       const { data, error } = await supabase.from("employees").update(payload).eq("id", editEmpId).select().single();
       if (error) { showToast("error", error.message); setSavingEmp(false); return; }
       setEmployees(prev => prev.map(e => e.id === editEmpId ? data as Employee : e));
-      showToast("success", "Employé modifié ✓");
+      showToast("success", "Employé modifié");
     } else {
       const { data, error } = await supabase.from("employees").insert(payload).select().single();
       if (error) { showToast("error", error.message); setSavingEmp(false); return; }
       setEmployees(prev => [...prev, data as Employee]);
-      showToast("success", "Employé ajouté ✓");
+      showToast("success", "Employé ajouté");
     }
 
     setSavingEmp(false);
@@ -408,7 +408,7 @@ export default function PlanificationPage() {
     if (delConfirm.type === "shift") setShifts(prev => prev.filter(s => s.id !== delConfirm.id));
     else setEmployees(prev => prev.filter(e => e.id !== delConfirm.id));
     setDelConfirm(null);
-    showToast("success", "Supprimé ✓");
+    showToast("success", "Supprimé");
   };
 
   /* ── Publish ── */
@@ -431,8 +431,8 @@ export default function PlanificationPage() {
         showToast("error", `Planning publié mais : ${json.warning}`);
       } else {
         showToast("success", json.emails_sent
-          ? `Planning publié ✓ · ${json.emails_sent} email${json.emails_sent > 1 ? "s" : ""} envoyé${json.emails_sent > 1 ? "s" : ""}`
-          : "Planning publié ✓ (aucun email — vérifiez les adresses)");
+          ? `Planning publié · ${json.emails_sent} email${json.emails_sent > 1 ? "s" : ""} envoyé${json.emails_sent > 1 ? "s" : ""}`
+          : "Planning publié (aucun email — vérifiez les adresses)");
       }
     } catch (e: unknown) {
       showToast("error", e instanceof Error ? e.message : "Erreur publication");

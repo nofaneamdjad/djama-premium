@@ -13,8 +13,9 @@ import {
   ChevronLeft, ChevronRight, Plus, X, Check, Loader2,
   MapPin, Bell, Trash2, Clock, Target, Sparkles,
   CheckCircle2, Circle, AlertCircle, Zap, Video,
-  Tag, AlignLeft, Calendar,
+  Tag, AlignLeft, Calendar, Users, BarChart2,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
 /* ══════════════════════════════════════════════════════════
@@ -56,11 +57,11 @@ const EV_COLORS = [
   "#60a5fa","#c084fc","#34d399","#fb923c","#f472b6",
 ];
 
-const EV_TYPES: { v: EventType; l: string; e: string }[] = [
-  { v:"event",    l:"Événement", e:"📅" },
-  { v:"meeting",  l:"Réunion",   e:"👥" },
-  { v:"task",     l:"Tâche",     e:"✅" },
-  { v:"reminder", l:"Rappel",    e:"🔔" },
+const EV_TYPES: { v: EventType; l: string; icon: LucideIcon }[] = [
+  { v:"event",    l:"Événement", icon: Calendar },
+  { v:"meeting",  l:"Réunion",   icon: Users },
+  { v:"task",     l:"Tâche",     icon: CheckCircle2 },
+  { v:"reminder", l:"Rappel",    icon: Bell },
 ];
 
 const PRIO_COL: Record<TaskPriority, string> = {
@@ -333,14 +334,14 @@ export default function PlanningPage() {
         .from("planning_events").update(payload).eq("id", editEvent.id).select().single();
       if (!error && data) {
         setEvents(p => p.map(e => e.id === editEvent.id ? parseEvent(data as Record<string,unknown>) : e));
-        setToastData({ type:"success", msg:"Événement mis à jour ✓" });
+        setToastData({ type:"success", msg:"Événement mis à jour" });
       }
     } else {
       const { data, error } = await supabase
         .from("planning_events").insert(payload).select().single();
       if (!error && data) {
         setEvents(p => [parseEvent(data as Record<string,unknown>), ...p]);
-        setToastData({ type:"success", msg:"Événement créé ✓" });
+        setToastData({ type:"success", msg:"Événement créé" });
       }
       if (error) setToastData({ type:"error", msg:"Erreur de sauvegarde" });
     }
@@ -609,12 +610,13 @@ export default function PlanningPage() {
                 const hhmm = `${String(s.getHours()).padStart(2,"0")}:${String(s.getMinutes()).padStart(2,"0")}`;
                 const dur  = Math.round((e.getTime() - s.getTime()) / 60_000);
                 const durS = dur >= 60 ? `${Math.floor(dur/60)}h${dur%60>0?String(dur%60).padStart(2,"0"):""}` : `${dur} min`;
-                const TypeEmoji = EV_TYPES.find(t=>t.v===ev.event_type)?.e ?? "📅";
+                const EvType = EV_TYPES.find(t=>t.v===ev.event_type);
+                const EvIcon = EvType?.icon ?? Calendar;
                 return (
                   <button key={ev.id} onClick={() => openEdit(ev)}
                     className="w-full text-left flex items-start gap-3 p-3 rounded-xl border transition-all hover:border-white/15"
                     style={{ background:`${ev.color}0d`, borderColor:`${ev.color}25` }}>
-                    <span className="text-base leading-none mt-0.5">{TypeEmoji}</span>
+                    <EvIcon size={14} className="text-white/40 mt-0.5 shrink-0"/>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white truncate">{ev.title}</p>
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -863,15 +865,15 @@ export default function PlanningPage() {
               className="border-b border-white/[0.06] bg-[#0b0d14] overflow-hidden shrink-0">
               <div className="px-5 py-3 space-y-2">
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    { l:"🗓 Organise ma journée", p:"Organise ma journée de manière optimale en tenant compte des événements et tâches du jour. Propose un emploi du temps heure par heure." },
-                    { l:"⚡ Tâches urgentes", p:"Identifie les tâches urgentes et les deadlines critiques. Donne-moi les 3 priorités absolues aujourd'hui." },
-                    { l:"🧘 Temps libre", p:"Identifie les créneaux libres dans ma journée et suggère comment les utiliser intelligemment." },
-                    { l:"📊 Analyse semaine", p:"Analyse mon planning de la semaine. Suis-je sur la bonne voie pour mes objectifs ? Quels ajustements suggères-tu ?" },
-                  ].map(a => (
+                  {([
+                    { Icon:Calendar,  l:"Organise ma journée", p:"Organise ma journée de manière optimale en tenant compte des événements et tâches du jour. Propose un emploi du temps heure par heure." },
+                    { Icon:Zap,       l:"Tâches urgentes",     p:"Identifie les tâches urgentes et les deadlines critiques. Donne-moi les 3 priorités absolues aujourd'hui." },
+                    { Icon:Clock,     l:"Temps libre",         p:"Identifie les créneaux libres dans ma journée et suggère comment les utiliser intelligemment." },
+                    { Icon:BarChart2, l:"Analyse semaine",     p:"Analyse mon planning de la semaine. Suis-je sur la bonne voie pour mes objectifs ? Quels ajustements suggères-tu ?" },
+                  ] as {Icon:LucideIcon;l:string;p:string}[]).map(a => (
                     <button key={a.l} onClick={() => runAI(a.p)} disabled={aiLoading}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50 border border-white/8 hover:border-white/20 text-white/55 hover:text-white">
-                      {aiLoading ? <Loader2 size={11} className="animate-spin"/> : null}
+                      {aiLoading ? <Loader2 size={11} className="animate-spin"/> : <a.Icon size={11}/>}
                       {a.l}
                     </button>
                   ))}
@@ -953,17 +955,20 @@ export default function PlanningPage() {
 
                 {/* Type selector */}
                 <div className="flex gap-1 flex-wrap flex-1">
-                  {EV_TYPES.map(t => (
-                    <button key={t.v} onClick={() => setForm(p => ({...p, event_type:t.v}))}
-                      className="px-2 py-1 rounded-lg text-xs font-medium transition-all"
-                      style={{
-                        background: form.event_type===t.v ? `${form.color ?? INDIGO}22` : "rgba(255,255,255,.05)",
-                        color:      form.event_type===t.v ? (form.color ?? INDIGO) : "rgba(255,255,255,.4)",
-                        border:     `1px solid ${form.event_type===t.v ? `${form.color ?? INDIGO}35` : "transparent"}`,
-                      }}>
-                      {t.e} {t.l}
-                    </button>
-                  ))}
+                  {EV_TYPES.map(t => {
+                    const TIcon = t.icon;
+                    return (
+                      <button key={t.v} onClick={() => setForm(p => ({...p, event_type:t.v}))}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all"
+                        style={{
+                          background: form.event_type===t.v ? `${form.color ?? INDIGO}22` : "rgba(255,255,255,.05)",
+                          color:      form.event_type===t.v ? (form.color ?? INDIGO) : "rgba(255,255,255,.4)",
+                          border:     `1px solid ${form.event_type===t.v ? `${form.color ?? INDIGO}35` : "transparent"}`,
+                        }}>
+                        <TIcon size={10}/>{t.l}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <button onClick={() => setShowModal(false)}

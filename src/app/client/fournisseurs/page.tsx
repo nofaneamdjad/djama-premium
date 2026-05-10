@@ -6,9 +6,11 @@ import {
   Truck, Plus, Search, X, RefreshCw, Trash2, Edit2, Check,
   AlertTriangle, CheckCircle, XCircle, Clock, Star, Download,
   FileText, Package, DollarSign, Calendar, AlertOctagon,
-  ShoppingCart, BarChart2, ChevronRight, Building2, Globe,
+  ShoppingCart, BarChart2, ChevronRight, ChevronLeft, Building2, Globe,
   CreditCard, Shield, Activity, Zap, TrendingUp, Eye,
+  Wrench, Monitor, Factory,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -65,13 +67,13 @@ interface FRating {
 const violet = "#8b5cf6";
 const ease   = [0.16, 1, 0.3, 1] as const;
 
-const CATEGORIES: { value: FournCat; label: string; icon: string }[] = [
-  { value: "produits",  label: "Produits",         icon: "📦" },
-  { value: "services",  label: "Services",          icon: "🛠️" },
-  { value: "logiciels", label: "Logiciels/SaaS",    icon: "💻" },
-  { value: "matieres",  label: "Matières premières",icon: "🏭" },
-  { value: "transport", label: "Transport/Logistique",icon: "🚚" },
-  { value: "autre",     label: "Autre",             icon: "📋" },
+const CATEGORIES: { value: FournCat; label: string; icon: LucideIcon }[] = [
+  { value: "produits",  label: "Produits",           icon: Package },
+  { value: "services",  label: "Services",            icon: Wrench },
+  { value: "logiciels", label: "Logiciels/SaaS",      icon: Monitor },
+  { value: "matieres",  label: "Matières premières",  icon: Factory },
+  { value: "transport", label: "Transport/Logistique", icon: Truck },
+  { value: "autre",     label: "Autre",               icon: FileText },
 ];
 
 const ORDER_STATUS: Record<OrderStatus, { label: string; color: string; bg: string }> = {
@@ -129,7 +131,7 @@ function Stars({ value, onChange }: { value: number; onChange?: (n: number) => v
         <button key={n} type="button" onClick={() => onChange?.(n)}
           className={`text-base transition-all ${onChange ? "cursor-pointer hover:scale-110" : "cursor-default"}`}
           style={{ color: n <= value ? "#f59e0b" : "rgba(255,255,255,0.15)" }}>
-          ★
+          <Star size={16} fill="currentColor" strokeWidth={1}/>
         </button>
       ))}
     </div>
@@ -187,7 +189,7 @@ function FournModal({ data, onSave, onClose }: {
                 </div>
                 <div><Lbl>Catégorie</Lbl>
                   <select value={form.category ?? "produits"} onChange={(e) => set("category", e.target.value)} className={inp("appearance-none")}>
-                    {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
+                    {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                 </div>
               </div>
@@ -275,12 +277,12 @@ function FournModal({ data, onSave, onClose }: {
         </div>
 
         <div className="flex gap-3 px-6 pb-6 pt-2">
-          {step > 1 && <button onClick={() => setStep((s) => s - 1)} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">← Retour</button>}
+          {step > 1 && <button onClick={() => setStep((s) => s - 1)} className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors"><ChevronLeft size={14}/>Retour</button>}
           {step < 3 ? (
             <button onClick={() => setStep((s) => s + 1)} disabled={!form.company_name}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
               style={{ background: violet, color: "#fff" }}>
-              Suivant →
+              Suivant <ChevronRight size={14} className="inline-block"/>
             </button>
           ) : (
             <button onClick={async () => { setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.company_name}
@@ -624,7 +626,7 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
                   <span className="text-xs font-black text-white/20 w-4 shrink-0">{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-white/80 truncate">{f.company_name}</p>
-                    <p className="text-[10px] text-white/35">{cat?.icon} {cat?.label}</p>
+                    <p className="text-[10px] text-white/35">{cat?.label}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-extrabold" style={{ color: score >= 4 ? "#10b981" : score >= 3 ? violet : "#f97316" }}>{score.toFixed(1)}/5</p>
@@ -705,7 +707,7 @@ function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDel
         <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
           className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none">
           <option value="all">Toutes catégories</option>
-          {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
+          {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
         <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: violet, color: "#fff" }}>
           <Plus size={13}/> Nouveau
@@ -734,7 +736,7 @@ function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDel
                   </div>
                   <div>
                     <p className="text-sm font-extrabold text-white/90">{f.company_name}</p>
-                    <p className="text-[10px] text-white/40">{cat?.icon} {cat?.label} {f.city ? `· ${f.city}` : ""}</p>
+                    <p className="text-[10px] text-white/40">{cat?.label}{f.city ? ` · ${f.city}` : ""}</p>
                   </div>
                 </div>
                 <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
@@ -815,7 +817,7 @@ function OrdersView({ orders, fournisseurs, onNew, onEdit, onDelete }: {
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <p className="text-sm font-semibold text-white/85 truncate">{o.fournisseur_name}</p>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${s.color} ${s.bg}`}>{s.label}</span>
-                  {isLate && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-semibold">⚠️ En retard</span>}
+                  {isLate && <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-semibold"><AlertTriangle size={9}/>En retard</span>}
                 </div>
                 <p className="text-xs text-white/35">
                   {o.order_number} · Commandé le {fmtDate(o.order_date)}
@@ -882,7 +884,7 @@ function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }: {
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <p className="text-sm font-semibold text-white/85 truncate">{inv.fournisseur_name}</p>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${s.color} ${s.bg}`}>{s.label}</span>
-                  {overdue && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-semibold">⚠️ Échue</span>}
+                  {overdue && <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-semibold"><AlertTriangle size={9}/>Échue</span>}
                 </div>
                 <p className="text-xs text-white/35">
                   {inv.invoice_number || "N° non défini"} · Émise le {fmtDate(inv.issue_date)}
@@ -954,12 +956,12 @@ export default function FournisseursPage() {
       const { data, error } = await supabase.from("fournisseurs").update({ ...form, updated_at: new Date().toISOString() }).eq("id", form.id).select().single();
       if (error) { toast(error.message, "error"); return; }
       setFournisseurs((prev) => prev.map((f) => f.id === form.id ? data as Fournisseur : f));
-      toast("Fournisseur mis à jour ✓", "success");
+      toast("Fournisseur mis à jour", "success");
     } else {
       const { data, error } = await supabase.from("fournisseurs").insert({ ...form, user_id: userId }).select().single();
       if (error) { toast(error.message, "error"); return; }
       setFournisseurs((prev) => [...prev, data as Fournisseur].sort((a, b) => a.company_name.localeCompare(b.company_name)));
-      toast("Fournisseur créé ✓", "success");
+      toast("Fournisseur créé", "success");
     }
     setShowFournModal(false);
     setEditFourn(EMPTY_FOURN());
@@ -971,12 +973,12 @@ export default function FournisseursPage() {
       const { data, error } = await supabase.from("fournisseur_orders").update({ ...form, updated_at: new Date().toISOString() }).eq("id", form.id).select().single();
       if (error) { toast(error.message, "error"); return; }
       setOrders((prev) => prev.map((o) => o.id === form.id ? data as FOrder : o));
-      toast("Commande mise à jour ✓", "success");
+      toast("Commande mise à jour", "success");
     } else {
       const { data, error } = await supabase.from("fournisseur_orders").insert({ ...form, user_id: userId }).select().single();
       if (error) { toast(error.message, "error"); return; }
       setOrders((prev) => [data as FOrder, ...prev]);
-      toast("Commande créée ✓", "success");
+      toast("Commande créée", "success");
       // Update total_orders on fournisseur
       if (form.fournisseur_id) {
         const f = fournisseurs.find((f) => f.id === form.fournisseur_id);
@@ -993,12 +995,12 @@ export default function FournisseursPage() {
       const { data, error } = await supabase.from("fournisseur_invoices").update({ ...form, updated_at: new Date().toISOString() }).eq("id", form.id).select().single();
       if (error) { toast(error.message, "error"); return; }
       setInvoices((prev) => prev.map((i) => i.id === form.id ? data as FInvoice : i));
-      toast("Facture mise à jour ✓", "success");
+      toast("Facture mise à jour", "success");
     } else {
       const { data, error } = await supabase.from("fournisseur_invoices").insert({ ...form, user_id: userId }).select().single();
       if (error) { toast(error.message, "error"); return; }
       setInvoices((prev) => [data as FInvoice, ...prev]);
-      toast("Facture créée ✓", "success");
+      toast("Facture créée", "success");
     }
     setShowInvModal(false);
     setEditInv(EMPTY_INVOICE());
@@ -1020,7 +1022,7 @@ export default function FournisseursPage() {
       const { data } = await supabase.from("fournisseurs").update(upd).eq("id", ratingFourn.id).select().single();
       if (data) setFournisseurs((prev) => prev.map((f) => f.id === ratingFourn.id ? data as Fournisseur : f));
     }
-    toast("Évaluation enregistrée ✓", "success");
+    toast("Évaluation enregistrée", "success");
     setRatingFourn(null);
   }, [userId, ratingFourn, toast]);
 

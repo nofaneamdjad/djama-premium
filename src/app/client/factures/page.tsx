@@ -606,7 +606,7 @@ export default function FacturesPage() {
       }
     }
 
-    showToast("success", "Document enregistré ✓");
+    showToast("success", "Document enregistré");
     setDirty(false);
     setSaving(false);
     await fetchDocs();
@@ -708,7 +708,7 @@ export default function FacturesPage() {
         }),
       });
       if (!res.ok) throw new Error("Erreur envoi");
-      showToast("success", "Email envoyé ✓");
+      showToast("success", "Email envoyé");
       setEmailModal(false);
     } catch {
       showToast("error", "Erreur lors de l'envoi de l'email");
@@ -976,7 +976,7 @@ export default function FacturesPage() {
                   {selected?.type === "devis" && (
                     <button onClick={handleConvert} disabled={converting}
                       className="hidden items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400 disabled:opacity-40 sm:flex">
-                      {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} → Facture
+                      {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
                     </button>
                   )}
                   {/* Aperçu */}
@@ -1308,7 +1308,7 @@ export default function FacturesPage() {
                     {selected?.type === "devis" && (
                       <button onClick={handleConvert} disabled={converting}
                         className="flex items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400 transition hover:bg-blue-400/8 disabled:opacity-40">
-                        {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} → Facture
+                        {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
                       </button>
                     )}
                     <button onClick={() => setShowPreview(true)}
@@ -1486,7 +1486,7 @@ export default function FacturesPage() {
                     </button>
                     <a href={payLinkUrl} target="_blank" rel="noopener noreferrer"
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a78bfa] to-[#8b5cf6] py-2.5 text-sm font-bold text-white transition hover:opacity-90">
-                      Ouvrir →
+                      Ouvrir
                     </a>
                   </div>
                 </div>
@@ -1542,7 +1542,7 @@ export default function FacturesPage() {
                     </button>
                     <a href={portalUrl} target="_blank" rel="noopener noreferrer"
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#22d3ee] to-[#0ea5e9] py-2.5 text-sm font-bold text-[#09090b] transition hover:opacity-90">
-                      Aperçu →
+                      Aperçu
                     </a>
                   </div>
                 </div>

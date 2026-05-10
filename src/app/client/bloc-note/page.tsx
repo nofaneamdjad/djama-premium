@@ -12,8 +12,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Mic, X, Pin, Archive, Trash2, Palette,
   Loader2, Plus, Check, AlignLeft, RotateCcw,
-  StopCircle, Hash,
+  StopCircle, Hash, Pencil, Globe, ArrowRight,
+  FileText, Sparkles,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
 /* ══════════════════════════════════════════════════════════
@@ -45,20 +47,20 @@ const PAL = [
   { bg: "#2d1220", ac: "#f472b6" },
 ];
 
-const FILTERS: { key: FilterKey; label: string; emoji: string }[] = [
-  { key: "all",       label: "Tout",      emoji: "📋" },
-  { key: "pinned",    label: "Épinglées", emoji: "📌" },
-  { key: "checklist", label: "Tâches",    emoji: "✅" },
-  { key: "voice",     label: "Vocales",   emoji: "🎤" },
-  { key: "archived",  label: "Archives",  emoji: "📦" },
+const FILTERS: { key: FilterKey; label: string; icon: LucideIcon }[] = [
+  { key: "all",       label: "Tout",      icon: AlignLeft },
+  { key: "pinned",    label: "Épinglées", icon: Pin },
+  { key: "checklist", label: "Tâches",    icon: Check },
+  { key: "voice",     label: "Vocales",   icon: Mic },
+  { key: "archived",  label: "Archives",  icon: Archive },
 ];
 
-const AI_ACTIONS = [
-  { id: "correct",   label: "Corriger",   emoji: "✏️" },
-  { id: "summarize", label: "Résumer",    emoji: "📋" },
-  { id: "to-tasks",  label: "→ Tâches",   emoji: "✅" },
-  { id: "rephrase",  label: "Reformuler", emoji: "🔄" },
-  { id: "translate", label: "Traduire",   emoji: "🌐" },
+const AI_ACTIONS: { id: string; label: string; icon: LucideIcon }[] = [
+  { id: "correct",   label: "Corriger",   icon: Pencil },
+  { id: "summarize", label: "Résumer",    icon: AlignLeft },
+  { id: "to-tasks",  label: "Tâches",     icon: ArrowRight },
+  { id: "rephrase",  label: "Reformuler", icon: RotateCcw },
+  { id: "translate", label: "Traduire",   icon: Globe },
 ];
 
 /* ══════════════════════════════════════════════════════════
@@ -345,7 +347,7 @@ export default function BlocNotePage() {
     if (error) { setToastData({ type: "error", msg: "Erreur de sauvegarde" }); return; }
     setNotes(p => [parseRow(data as Record<string, unknown>), ...p]);
     setCreating(false);
-    setToastData({ type: "success", msg: "Note créée ⚡" });
+    setToastData({ type: "success", msg: "Note créée" });
   }
 
   /* draft checklist */
@@ -438,7 +440,7 @@ export default function BlocNotePage() {
     setSaving(true);
     await patchNote(editNote.id, eDraft as Partial<QNote>);
     setSaving(false);
-    setToastData({ type: "success", msg: "Sauvegardé ✓" });
+    setToastData({ type: "success", msg: "Sauvegardé" });
   }
 
   const eItems: Item[] = (eDraft.type ?? editNote?.type) === "checklist"
@@ -464,7 +466,7 @@ export default function BlocNotePage() {
       <div className="sticky top-0 z-30 bg-[#0f0f1a]/95 backdrop-blur border-b border-white/5 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 mr-auto">
-            <span className="text-2xl">🗒️</span>
+            <FileText size={20} className="text-emerald-400"/>
             <h1 className="font-bold text-lg">Bloc Note</h1>
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
               Capture rapide
@@ -521,7 +523,7 @@ export default function BlocNotePage() {
                       background: dType === t ? `${acOf(dColor)}30` : "transparent",
                       color:      dType === t ? acOf(dColor) : "rgba(255,255,255,.35)",
                     }}>
-                    {t === "text" ? "✍️ Texte" : t === "checklist" ? "✅ Checklist" : "🎤 Vocal"}
+                    {t === "text" ? "Texte" : t === "checklist" ? "Checklist" : "Vocal"}
                   </button>
                 ))}
               </div>
@@ -660,7 +662,7 @@ export default function BlocNotePage() {
                 color:      filter === f.key ? "#10b981" : "rgba(255,255,255,.4)",
                 border:     `1px solid ${filter === f.key ? "rgba(16,185,129,.28)" : "rgba(255,255,255,.07)"}`,
               }}>
-              {f.emoji} {f.label}
+              <f.icon size={11}/>{f.label}
             </button>
           ))}
         </div>
@@ -717,15 +719,15 @@ export default function BlocNotePage() {
 
             {visible.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-3xl">
-                  {filter === "archived" ? "📦" : filter === "voice" ? "🎤" : filter === "checklist" ? "✅" : "🗒️"}
+                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center">
+                  {filter === "archived" ? <Archive size={28} className="text-white/25"/> : filter === "voice" ? <Mic size={28} className="text-white/25"/> : filter === "checklist" ? <Check size={28} className="text-white/25"/> : <FileText size={28} className="text-white/25"/>}
                 </div>
                 <div>
                   <p className="text-white/45 font-medium">
                     {search ? "Aucun résultat" : "Aucune note"}
                   </p>
                   <p className="text-sm text-white/25 mt-1">
-                    {search ? `Rien pour "${search}"` : "Crée ta première note rapide ⚡"}
+                    {search ? `Rien pour "${search}"` : "Crée ta première note rapide"}
                   </p>
                 </div>
                 {!search && filter === "all" && (
@@ -763,8 +765,8 @@ export default function BlocNotePage() {
               <div className="flex items-center gap-2 px-5 pt-4 pb-1 flex-shrink-0">
                 <span className="text-xs px-2 py-0.5 rounded-full border"
                   style={{ borderColor:`${editAc}40`, color:editAc, background:`${editAc}12` }}>
-                  {(eDraft.type ?? editNote.type) === "text" ? "✍️ Texte"
-                    : (eDraft.type ?? editNote.type) === "checklist" ? "✅ Checklist" : "🎤 Vocal"}
+                  {(eDraft.type ?? editNote.type) === "text" ? "Texte"
+                    : (eDraft.type ?? editNote.type) === "checklist" ? "Checklist" : "Vocal"}
                 </span>
                 <span className="text-xs text-white/20 ml-auto">{relTime(editNote.updated_at)}</span>
                 <button onClick={() => patchNote(editNote.id, { is_pinned: !editNote.is_pinned })}
@@ -896,7 +898,7 @@ export default function BlocNotePage() {
                           color:      aiAction===a.id&&aiResult ? editAc : "rgba(255,255,255,.45)",
                           border:     `1px solid ${aiAction===a.id&&aiResult ? `${editAc}38` : "rgba(255,255,255,.07)"}`,
                         }}>
-                        {aiLoading && aiAction===a.id ? <Loader2 size={10} className="animate-spin" /> : <span>{a.emoji}</span>}
+                        {aiLoading && aiAction===a.id ? <Loader2 size={10} className="animate-spin" /> : <a.icon size={10}/>}
                         {a.label}
                       </button>
                     ))}
@@ -907,7 +909,7 @@ export default function BlocNotePage() {
                         className="rounded-xl border p-3 space-y-2"
                         style={{ background:`${editAc}0d`, borderColor:`${editAc}28` }}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-semibold" style={{ color:editAc }}>✨ IA</span>
+                          <span className="text-xs font-semibold flex items-center gap-1" style={{ color:editAc }}><Sparkles size={11}/>IA</span>
                           <button onClick={() => { setAiResult(""); setAiAction(""); }} className="text-white/25 hover:text-white"><X size={11}/></button>
                         </div>
                         <p className="text-xs text-white/65 whitespace-pre-line leading-relaxed max-h-36 overflow-y-auto">{aiResult}</p>

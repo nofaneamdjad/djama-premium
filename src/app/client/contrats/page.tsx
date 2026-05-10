@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, FileText, Copy, Check, Plus, Trash2, X, RefreshCw,
-  Edit2, ChevronRight, Download, Eye, Send, Receipt, Users,
+  Edit2, ChevronRight, ChevronLeft, Download, Eye, Send, Receipt, Users,
   Clock, CheckCircle, XCircle, AlertTriangle, Shield, Brain,
   Activity, MessageSquare, Calendar, TrendingUp, Pen, DollarSign,
   AlertOctagon, Lightbulb, Award, BarChart2, FileSignature,
-  ChevronDown, Globe, Lock, Star,
+  ChevronDown, Globe, Lock, Star, Wrench, Monitor, ShoppingCart,
+  Cloud, Home, Briefcase, File,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { downloadContractPDF, openContractPDF } from "@/lib/contract-pdf";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -108,18 +110,18 @@ type DraftForm = {
 const gold = "#c9a55a";
 const ease = [0.16, 1, 0.3, 1] as const;
 
-const CONTRACT_TYPES: { value: ContractType; label: string; icon: string; desc: string }[] = [
-  { value: "prestation", label: "Prestation",     icon: "🛠️", desc: "Mission, livrables" },
-  { value: "freelance",  label: "Freelance",       icon: "💻", desc: "Indépendant, TJM" },
-  { value: "nda",        label: "NDA",             icon: "🔒", desc: "Confidentialité" },
-  { value: "partenariat",label: "Partenariat",     icon: "🤝", desc: "Co-business" },
-  { value: "vente",      label: "Vente",           icon: "🛒", desc: "Biens, livraison" },
-  { value: "saas",       label: "SaaS",            icon: "☁️", desc: "Abonnement logiciel" },
-  { value: "location",   label: "Location",        icon: "🏠", desc: "Bien, loyer" },
-  { value: "cdi",        label: "CDI",             icon: "👔", desc: "Contrat permanent" },
-  { value: "cdd",        label: "CDD",             icon: "📅", desc: "Contrat temporaire" },
-  { value: "devis",      label: "Devis → Contrat", icon: "📋", desc: "Bon de commande" },
-  { value: "autre",      label: "Autre",           icon: "📄", desc: "Personnalisé" },
+const CONTRACT_TYPES: { value: ContractType; label: string; icon: LucideIcon; desc: string }[] = [
+  { value: "prestation", label: "Prestation",    icon: Wrench,       desc: "Mission, livrables" },
+  { value: "freelance",  label: "Freelance",      icon: Monitor,      desc: "Indépendant, TJM" },
+  { value: "nda",        label: "NDA",            icon: Lock,         desc: "Confidentialité" },
+  { value: "partenariat",label: "Partenariat",    icon: Users,        desc: "Co-business" },
+  { value: "vente",      label: "Vente",          icon: ShoppingCart, desc: "Biens, livraison" },
+  { value: "saas",       label: "SaaS",           icon: Cloud,        desc: "Abonnement logiciel" },
+  { value: "location",   label: "Location",       icon: Home,         desc: "Bien, loyer" },
+  { value: "cdi",        label: "CDI",            icon: Briefcase,    desc: "Contrat permanent" },
+  { value: "cdd",        label: "CDD",            icon: Calendar,     desc: "Contrat temporaire" },
+  { value: "devis",      label: "Devis",          icon: FileText,     desc: "Bon de commande" },
+  { value: "autre",      label: "Autre",          icon: File,         desc: "Personnalisé" },
 ];
 
 const TYPE_MAP: Record<ContractType, string> = Object.fromEntries(
@@ -389,7 +391,7 @@ function SignModal({
               <button key={m} onClick={() => setMode(m)}
                 className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all ${mode === m ? "border-transparent" : "border-white/10 text-white/40 hover:border-white/20"}`}
                 style={mode === m ? { background: gold + "20", color: gold, border: `1px solid ${gold}40` } : {}}>
-                {m === "draw" ? "✏️ Dessiner" : "⌨️ Taper mon nom"}
+                {m === "draw" ? <><Pen size={12}/>Dessiner</> : <><Edit2 size={12}/>Taper mon nom</>}
               </button>
             ))}
           </div>
@@ -571,7 +573,7 @@ function ContractCard({ contract, isSelected, onSelect, onDelete }: {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[10.5px] px-2 py-0.5 rounded-full border font-medium"
             style={{ color: gold + "cc", borderColor: gold + "30", background: gold + "0d" }}>
-            {t?.icon} {t?.label ?? contract.contract_type}
+            {t?.label ?? contract.contract_type}
           </span>
           {contract.amount != null && (
             <span className="text-xs text-white/35">{fmtEur(contract.amount)}</span>
@@ -748,7 +750,7 @@ function DetailPanel({
             <button onClick={onClose} className="md:hidden rounded-lg p-1 text-white/40 hover:text-white/70 transition-colors"><X size={15}/></button>
             <span className="text-[10.5px] px-2.5 py-0.5 rounded-full border font-bold"
               style={{ color: gold, borderColor: gold + "35", background: gold + "12" }}>
-              {t?.icon} {t?.label}
+              {t?.label}
             </span>
             <div className="relative">
               <button onClick={() => setShowStatusMenu((v) => !v)}
@@ -817,7 +819,7 @@ function DetailPanel({
               ))}
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={onToFacture}
                 className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] transition-all">
-                <Receipt size={11}/> → Facture
+                <Receipt size={11}/> Facture
               </motion.button>
             </div>
             <div className="flex-1 overflow-auto p-5">
@@ -1026,15 +1028,18 @@ function CreateModal({
             <div>
               <p className="text-sm font-bold text-white/70 mb-4">Quel type de contrat ?</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {CONTRACT_TYPES.map((t) => (
+                {CONTRACT_TYPES.map((t) => {
+                  const TIcon = t.icon;
+                  return (
                   <button key={t.value} onClick={() => set("type", t.value)}
                     className={`flex flex-col items-start gap-1 p-3 rounded-2xl border text-left transition-all ${form.type === t.value ? "border-transparent" : "border-white/[0.07] hover:border-white/[0.14] bg-[#0f1117]"}`}
                     style={form.type === t.value ? { background: gold + "14", border: `1px solid ${gold}40` } : {}}>
-                    <span className="text-lg">{t.icon}</span>
+                    <TIcon size={18} className="text-white/50 mb-0.5"/>
                     <span className="text-xs font-bold text-white/80">{t.label}</span>
                     <span className="text-[10px] text-white/35">{t.desc}</span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1128,14 +1133,14 @@ function CreateModal({
           {step > 1 && (
             <button onClick={() => setStep((s) => s - 1)}
               className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">
-              ← Retour
+              <ChevronLeft size={14} className="inline-block"/>Retour
             </button>
           )}
           {step < 3 ? (
             <button onClick={() => setStep((s) => s + 1)} disabled={!canNext}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
               style={{ background: gold, color: "#080a0f" }}>
-              Suivant →
+              Suivant <ChevronRight size={14} className="inline-block"/>
             </button>
           ) : (
             <div className="flex-1 flex gap-2">
@@ -1283,7 +1288,7 @@ export default function ContratsPage() {
     const data = getPDFData();
     if (!data) return;
     if (!data.content.trim()) { toast("Contrat vide — ajoutez du contenu d'abord", "error"); return; }
-    try { downloadContractPDF(data); toast("PDF téléchargé ✓", "success"); }
+    try { downloadContractPDF(data); toast("PDF téléchargé", "success"); }
     catch (e) { console.error(e); toast("Erreur PDF", "error"); }
   }, [getPDFData, toast]);
 
@@ -1300,7 +1305,7 @@ export default function ContratsPage() {
     const subject = encodeURIComponent(`Contrat : ${selected.title}`);
     const body = encodeURIComponent(`Bonjour,\n\nVeuillez trouver en pièce jointe le contrat « ${selected.title} ».\n\nCordialement`);
     window.open(`mailto:${selected.client_email ?? ""}?subject=${subject}&body=${body}`, "_blank");
-    toast("Téléchargez le PDF puis joignez-le à votre email ✓", "info");
+    toast("Téléchargez le PDF puis joignez-le à votre email", "info");
   }, [selected, toast]);
 
   const handleToFacture = useCallback(() => {
@@ -1330,7 +1335,7 @@ export default function ContratsPage() {
       setContracts((prev) => [newC, ...prev]);
       setShowModal(false);
       selectContract(newC);
-      toast(generatedContent ? "Contrat généré ✓" : "Brouillon créé ✓", "success");
+      toast(generatedContent ? "Contrat généré" : "Brouillon créé", "success");
       await logActivity(newC.id, "created", `Type : ${TYPE_MAP[form.type]}`);
     } catch (err: unknown) {
       toast(err instanceof Error ? err.message : "Erreur création", "error");
@@ -1387,7 +1392,7 @@ export default function ContratsPage() {
     }).eq("id", signerToSign.id);
     if (!error) {
       setSigners((prev) => prev.map((s) => s.id === signerToSign.id ? { ...s, status: "signed", signed_at: now, signature_data: sigData, certificate: cert } : s));
-      toast("Contrat signé ✓", "success");
+      toast("Contrat signé", "success");
       await logActivity(selected.id, "signed", `Signé par ${signerToSign.signer_name}`);
       const allSigned = signers.every((s) => s.id === signerToSign.id || s.status === "signed");
       if (allSigned) await handleStatusChange("signé");

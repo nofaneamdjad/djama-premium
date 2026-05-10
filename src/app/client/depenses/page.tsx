@@ -327,7 +327,7 @@ function ExpenseModal({
           </div>
           {ocrHint && (
             <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-[0.65rem] text-purple-300">
-              ✨ Lecture automatique du ticket par IA — bientôt disponible.
+              Lecture automatique du ticket par IA — bientôt disponible.
             </div>
           )}
           {form.receipt_url ? (
@@ -843,7 +843,7 @@ export default function DepensesPage() {
       const { data, error } = await supabase.from("expense_reports").insert({ ...form, user_id: userId }).select().single();
       if (error) return toast$("Erreur de création", "error");
       setReports(rs => [data as ExpenseReport, ...rs]);
-      toast$("Note de frais créée ✓");
+      toast$("Note de frais créée");
     }
     setShowReportModal(false);
     setEditReport(null);
@@ -1190,10 +1190,10 @@ export default function DepensesPage() {
             onSave={saved => {
               if (editExpense) {
                 setExpenses(es => es.map(e => e.id === saved.id ? saved : e));
-                toast$("Dépense mise à jour ✓");
+                toast$("Dépense mise à jour");
               } else {
                 setExpenses(es => [saved, ...es]);
-                toast$("Dépense ajoutée ✓");
+                toast$("Dépense ajoutée");
               }
               setShowModal(false);
               setEditExpense(null);

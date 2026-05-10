@@ -66,8 +66,8 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
           onClick={() => onChange(i)}
           onMouseEnter={() => setHover(i)}
           onMouseLeave={() => setHover(0)}
-          className={`text-2xl transition-all ${i <= (hover || value) ? "text-amber-400 scale-110" : "text-white/15"}`}
-        >★</button>
+          className={`transition-all ${i <= (hover || value) ? "text-amber-400 scale-110" : "text-white/15"}`}
+        ><Star size={22} fill="currentColor" strokeWidth={1}/></button>
       ))}
     </div>
   );
@@ -80,7 +80,7 @@ function StarDisplay({ rating, size = "sm" }: { rating: number; size?: "sm" | "m
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} className={`${size === "sm" ? "text-sm" : "text-base"} ${i <= rating ? "text-amber-400" : "text-white/12"}`}>★</span>
+        <Star key={i} size={size === "sm" ? 12 : 15} fill="currentColor" strokeWidth={1} className={i <= rating ? "text-amber-400" : "text-white/12"}/>
       ))}
     </div>
   );
@@ -248,7 +248,7 @@ export default function ReputationPage() {
     setReviews(prev => [data as Review, ...prev]);
     setForm(EMPTY_FORM());
     setShowForm(false);
-    toast("Avis ajouté ✓", "success");
+    toast("Avis ajouté", "success");
   }, [form, userId, toast]);
 
   /* ── Delete ── */
@@ -389,7 +389,7 @@ export default function ReputationPage() {
                   <div key={star} className="flex items-center gap-3">
                     <div className="flex w-12 items-center justify-end gap-1 shrink-0">
                       <span className="text-[11px] font-bold text-white/50">{star}</span>
-                      <span className="text-amber-400 text-xs">★</span>
+                      <Star size={10} fill="currentColor" strokeWidth={1} className="text-amber-400"/>
                     </div>
                     <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
                       <motion.div
@@ -409,13 +409,13 @@ export default function ReputationPage() {
               {/* Légende sentiment */}
               <div className="mt-4 flex items-center gap-3 pt-3 border-t border-white/[0.05]">
                 <div className="flex items-center gap-1.5 text-[9.5px] font-semibold text-emerald-400">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400" />Excellent (4-5★)
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />Excellent (4-5)
                 </div>
                 <div className="flex items-center gap-1.5 text-[9.5px] font-semibold text-amber-400">
-                  <span className="h-2 w-2 rounded-full bg-amber-400" />Bon (3★)
+                  <span className="h-2 w-2 rounded-full bg-amber-400" />Bon (3/5)
                 </div>
                 <div className="flex items-center gap-1.5 text-[9.5px] font-semibold text-red-400">
-                  <span className="h-2 w-2 rounded-full bg-red-400" />Faible (1-2★)
+                  <span className="h-2 w-2 rounded-full bg-red-400" />Faible (1-2)
                 </div>
               </div>
             </div>

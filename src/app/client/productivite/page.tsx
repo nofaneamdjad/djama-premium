@@ -1,6 +1,10 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Zap, ListChecks, Activity, Target, ArrowRight, Loader2,
+  Play, Square, CornerDownLeft, AlertTriangle, Sparkles, FileText,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
@@ -138,8 +142,9 @@ const SEL = "rounded-lg border border-white/[0.08] bg-[#0e1018] py-1.5 pl-3 pr-8
 function PBadge({ p }: { p: Priority }) {
   const c = PRIO[p];
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.62rem] font-semibold ${c.bg} ${c.txt}`}>
-      {p === "urgent" ? "🔴" : p === "high" ? "🟠" : p === "normal" ? "🔵" : "⚪"} {c.label}
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.62rem] font-semibold ${c.bg} ${c.txt}`}>
+      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: c.color }} />
+      {c.label}
     </span>
   );
 }
@@ -225,12 +230,12 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
         <div className="flex items-center gap-2">
           {task.due_date && (
             <span className={`text-[0.62rem] font-medium ${late ? "text-red-400" : "text-white/35"}`}>
-              {late && "⚠ "}{fmtDate(task.due_date)}
+              {late && <AlertTriangle size={10} className="inline mr-0.5" />}{fmtDate(task.due_date)}
             </span>
           )}
           {elapsed > 0 && (
             <span className={`text-[0.58rem] ${running ? "text-green-400" : "text-white/25"}`}>
-              ⏱ {fmtSec(elapsed)}
+              {fmtSec(elapsed)}
             </span>
           )}
         </div>
@@ -252,12 +257,12 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
               className={`rounded-md px-1.5 py-0.5 text-[0.62rem] font-medium transition ${running
                 ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                 : "bg-white/5 text-white/40 hover:bg-violet-500/20 hover:text-violet-400"}`}>
-              {running ? "⏹ Stop" : "▶ Timer"}
+              {running ? <><Square size={9}/> Stop</> : <><Play size={9}/> Timer</>}
             </button>
             {nextSt && (
               <button onClick={() => onMove(nextSt)}
-                className="rounded-md bg-white/5 px-1.5 py-0.5 text-[0.62rem] text-white/40 hover:bg-blue-500/20 hover:text-blue-400 transition">
-                → {STAT[nextSt].label}
+                className="flex items-center gap-0.5 rounded-md bg-white/5 px-1.5 py-0.5 text-[0.62rem] text-white/40 hover:bg-blue-500/20 hover:text-blue-400 transition">
+                <ArrowRight size={9} /> {STAT[nextSt].label}
               </button>
             )}
           </motion.div>
@@ -290,10 +295,10 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
   }
 
   const QUICK = [
-    { i: "⚡", l: "Tâches urgentes",    p: "Identifie et priorise les tâches critiques. Sois concis." },
-    { i: "📋", l: "Planning optimal",   p: "Propose un planning de travail optimisé pour aujourd'hui." },
-    { i: "🔥", l: "Surcharge ?",        p: "Détecte les signaux de surcharge et propose des ajustements." },
-    { i: "🎯", l: "Réorganiser",        p: "Réorganise les priorités pour maximiser la productivité." },
+    { Icon: Zap,        l: "Tâches urgentes",  p: "Identifie et priorise les tâches critiques. Sois concis." },
+    { Icon: ListChecks, l: "Planning optimal", p: "Propose un planning de travail optimisé pour aujourd'hui." },
+    { Icon: Activity,   l: "Surcharge ?",      p: "Détecte les signaux de surcharge et propose des ajustements." },
+    { Icon: Target,     l: "Réorganiser",      p: "Réorganise les priorités pour maximiser la productivité." },
   ];
 
   return (
@@ -302,8 +307,10 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
       className="fixed right-0 top-0 h-full w-[340px] bg-[#080b12] border-l border-white/[0.07] z-50 flex flex-col shadow-2xl">
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/[0.07]">
         <div className="flex items-center gap-2">
-          <div className="h-5 w-5 rounded-full flex items-center justify-center text-[0.7rem]"
-            style={{ background: VIOLET + "30", border: `1px solid ${VIOLET}50` }}>✨</div>
+          <div className="h-5 w-5 rounded-full flex items-center justify-center"
+            style={{ background: VIOLET + "30", border: `1px solid ${VIOLET}50` }}>
+            <Sparkles size={11} style={{ color: VIOLET }} />
+          </div>
           <span className="text-sm font-semibold text-white/85">IA Productivité</span>
         </div>
         <button onClick={onClose} className="text-white/30 hover:text-white/70 text-xl leading-none">×</button>
@@ -315,14 +322,14 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
           {QUICK.map(q => (
             <button key={q.l} onClick={() => ask(q.p)}
               className="flex flex-col items-center gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-center transition hover:border-violet-500/40 hover:bg-violet-500/10">
-              <span className="text-xl">{q.i}</span>
+              <q.Icon size={18} style={{ color: VIOLET }} />
               <span className="text-[0.63rem] text-white/55 leading-tight">{q.l}</span>
             </button>
           ))}
         </div>
         {loading && (
           <div className="flex items-center gap-2 text-xs text-white/40">
-            <span className="animate-spin inline-block">⚙</span> Analyse en cours…
+            <Loader2 size={12} className="animate-spin" /> Analyse en cours…
           </div>
         )}
         {resp && (
@@ -339,7 +346,7 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
           className="flex-1 rounded-lg border border-white/[0.07] bg-white/[0.04] px-3 py-2 text-xs text-white/75 outline-none placeholder:text-white/25 hover:border-white/15" />
         <button onClick={() => { if (msg.trim()) { ask(msg.trim()); setMsg(""); } }}
           className="rounded-lg px-3 py-2 text-sm text-white transition hover:opacity-90"
-          style={{ background: VIOLET }}>→</button>
+          style={{ background: VIOLET }}><ArrowRight size={13} /></button>
       </div>
     </motion.div>
   );
@@ -444,7 +451,7 @@ export default function ProductivitePage() {
     } else {
       const { error } = await supabase.from("productivity_tasks").insert(payload);
       if (error) toast(error.message, "error");
-      else { toast("Tâche créée ✓"); setShowModal(false); await load(); }
+      else { toast("Tâche créée"); setShowModal(false); await load(); }
     }
     setSaving(false);
   };
@@ -559,7 +566,7 @@ export default function ProductivitePage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white/90 flex items-center gap-2">
-              <span style={{ color: VIOLET }}>⚡</span> Productivité
+              <Zap size={20} style={{ color: VIOLET }} /> Productivité
             </h1>
             <p className="text-sm text-white/35 mt-0.5">
               {completionRate}% de complétion · {tasks.filter(isLate).length} en retard
@@ -570,7 +577,7 @@ export default function ProductivitePage() {
               className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${showAI
                 ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
                 : "border-white/[0.08] text-white/50 hover:border-violet-500/30 hover:text-violet-300"}`}>
-              ✨ IA
+              <Sparkles size={14}/> IA
             </button>
             <button onClick={() => openNew()}
               className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
@@ -707,7 +714,7 @@ export default function ProductivitePage() {
                         className="flex-1 rounded-lg bg-white/[0.03] border border-white/[0.05] px-2.5 py-1.5 text-xs text-white/60 outline-none placeholder:text-white/20 focus:border-white/10 hover:border-white/[0.08]" />
                       <button onClick={() => quickAddTask(col.key)}
                         className="rounded-lg px-2 py-1.5 text-xs text-white/40 hover:text-white/80 hover:bg-white/5 transition">
-                        ↵
+                        <CornerDownLeft size={12} />
                       </button>
                     </div>
                   </div>
@@ -775,14 +782,14 @@ export default function ProductivitePage() {
                       {t.assignees.slice(0, 3).map(a => <Av key={a} name={a} size={20} />)}
                       {totalSec(t, now) > 0 && (
                         <span className={`text-[0.62rem] ${t.timer_started_at ? "text-green-400" : "text-white/30"}`}>
-                          ⏱ {fmtSec(totalSec(t, now))}
+                          {fmtSec(totalSec(t, now))}
                         </span>
                       )}
                       <button onClick={e => { e.stopPropagation(); toggleTimer(t.id); }}
                         className={`rounded-lg px-2 py-1 text-[0.62rem] transition ${t.timer_started_at
                           ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                           : "bg-white/5 text-white/35 hover:bg-violet-500/15 hover:text-violet-400"}`}>
-                        {t.timer_started_at ? "⏹" : "▶"}
+                        {t.timer_started_at ? <Square size={10}/> : <Play size={10}/>}
                       </button>
                     </div>
                   </motion.div>
@@ -791,7 +798,7 @@ export default function ProductivitePage() {
 
               {listTasks[listTab].length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
-                  <span className="text-5xl mb-3 opacity-15">📋</span>
+                  <FileText size={40} className="text-white/15 mb-3"/>
                   <p className="text-sm text-white/25">Aucune tâche dans cette vue</p>
                 </div>
               )}
@@ -1043,9 +1050,9 @@ export default function ProductivitePage() {
               {/* Modal footer */}
               <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.07]">
                 <div className="text-xs text-white/30">
-                  {form.time_spent > 0 && `⏱ Temps passé : ${fmtSec(form.time_spent)}`}
+                  {form.time_spent > 0 && `Temps passé : ${fmtSec(form.time_spent)}`}
                   {form.estimated_minutes > 0 && (
-                    <span className="ml-3">🎯 Estimé : {form.estimated_minutes}min</span>
+                    <span className="ml-3">Estimé : {form.estimated_minutes}min</span>
                   )}
                 </div>
                 <div className="flex gap-2">

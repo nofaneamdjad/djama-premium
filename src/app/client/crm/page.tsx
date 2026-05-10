@@ -1221,7 +1221,7 @@ export default function CRMPage() {
       const { data, error } = await supabase.from("contacts").insert({ ...form, user_id: userId }).select().single();
       if (error || !data) return showToast("Erreur de création", "error");
       setContacts(cs => [data as Contact, ...cs]);
-      showToast("Contact créé ✓");
+      showToast("Contact créé");
     }
     setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" });
   }
@@ -1238,7 +1238,7 @@ export default function CRMPage() {
     if (error) return showToast("Erreur", "error");
     setContacts(cs => cs.map(c => c.id === id ? { ...c, ...data } as Contact : c));
     setSelected(s => s?.id === id ? { ...s, ...data } as Contact : s);
-    showToast("Enregistré ✓");
+    showToast("Enregistré");
   }
 
   /* ── Activities ── */
@@ -1247,7 +1247,7 @@ export default function CRMPage() {
     const { data: d, error } = await supabase.from("contact_activities").insert({
       ...data, user_id: userId, contact_id: contactId,
     }).select().single();
-    if (!error && d) { setActivities(a => [d as Activity, ...a]); showToast("Activité ajoutée ✓"); }
+    if (!error && d) { setActivities(a => [d as Activity, ...a]); showToast("Activité ajoutée"); }
   }
 
   async function deleteActivity(id: string) {
@@ -1266,14 +1266,14 @@ export default function CRMPage() {
         if (c) opp.contact = { name: c.name, company: c.company };
       }
       setOpportunities(o => [opp, ...o]);
-      showToast("Opportunité créée ✓");
+      showToast("Opportunité créée");
     }
   }
 
   async function updateOpportunity(id: string, data: Partial<Opportunity>) {
     await supabase.from("opportunities").update(data).eq("id", id);
     setOpportunities(o => o.map(op => op.id === id ? { ...op, ...data } : op));
-    showToast("Opportunité mise à jour ✓");
+    showToast("Opportunité mise à jour");
   }
 
   async function deleteOpportunity(id: string) {
@@ -1292,7 +1292,7 @@ export default function CRMPage() {
         if (c) task.contact = { name: c.name, company: c.company };
       }
       setTasks(t => [...t, task]);
-      showToast("Tâche créée ✓");
+      showToast("Tâche créée");
     }
   }
 
@@ -1317,7 +1317,7 @@ export default function CRMPage() {
         if (c) ticket.contact = { name: c.name, company: c.company };
       }
       setTickets(t => [ticket, ...t]);
-      showToast("Ticket créé ✓");
+      showToast("Ticket créé");
     }
   }
 

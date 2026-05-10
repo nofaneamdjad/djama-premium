@@ -1,6 +1,13 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  DollarSign, Zap, Users, Package, Calendar, BarChart2,
+  AlertTriangle, PenLine, Loader2, ArrowRight, RefreshCw,
+  Copy, Sparkles, Clock, CreditCard, Receipt, ListTodo,
+  UserCheck, ChevronRight, Activity, Target, ListChecks,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
@@ -8,15 +15,15 @@ import Toast, { type ToastData } from "@/components/ui/Toast";
 const CYAN   = "#22d3ee";
 const VIOLET = "#8b5cf6";
 
-const ACTIONS = [
-  { icon: "💰", label: "Finances du mois",   color: "#10b981", prompt: "Analyse mes finances du mois : revenus, dépenses, factures impayées. Donne un résumé actionnable avec les chiffres clés." },
-  { icon: "⚡", label: "Tâches urgentes",    color: "#ef4444", prompt: "Quelles sont mes tâches urgentes et en retard ? Que dois-je faire en priorité aujourd'hui ?" },
-  { icon: "👥", label: "Clients impayés",    color: "#f59e0b", prompt: "Liste les clients avec des factures impayées. Donne les montants, les délais de retard et suggère une action de relance." },
-  { icon: "📦", label: "Alertes stock",      color: "#8b5cf6", prompt: "Quels produits sont en stock faible ou en rupture ? Lesquels dois-je réapprovisionner en urgence ?" },
-  { icon: "🗓", label: "Organiser ma journée",color: "#3b82f6", prompt: "Organise ma journée idéale en tenant compte de mes tâches prioritaires, réunions prévues et objectifs." },
-  { icon: "📊", label: "Rapport business",   color: CYAN,      prompt: "Génère un rapport business complet : revenus, dépenses, tâches terminées, clients actifs, alertes importantes." },
-  { icon: "⚠️", label: "Risques & alertes",  color: "#f97316", prompt: "Détecte tous les risques business : retards de paiement, stock bas, surcharge équipe, projets en retard." },
-  { icon: "✍️", label: "Créer un document",  color: "#a78bfa", prompt: "Quels documents puis-je générer depuis DJAMA ? Guide-moi pour créer une facture, un contrat, un devis ou une note." },
+const ACTIONS: { icon: LucideIcon; label: string; color: string; prompt: string }[] = [
+  { icon: DollarSign,    label: "Finances du mois",    color: "#10b981", prompt: "Analyse mes finances du mois : revenus, dépenses, factures impayées. Donne un résumé actionnable avec les chiffres clés." },
+  { icon: Zap,           label: "Tâches urgentes",     color: "#ef4444", prompt: "Quelles sont mes tâches urgentes et en retard ? Que dois-je faire en priorité aujourd'hui ?" },
+  { icon: Users,         label: "Clients impayés",     color: "#f59e0b", prompt: "Liste les clients avec des factures impayées. Donne les montants, les délais de retard et suggère une action de relance." },
+  { icon: Package,       label: "Alertes stock",       color: "#8b5cf6", prompt: "Quels produits sont en stock faible ou en rupture ? Lesquels dois-je réapprovisionner en urgence ?" },
+  { icon: Calendar,      label: "Organiser ma journée",color: "#3b82f6", prompt: "Organise ma journée idéale en tenant compte de mes tâches prioritaires, réunions prévues et objectifs." },
+  { icon: BarChart2,     label: "Rapport business",    color: CYAN,      prompt: "Génère un rapport business complet : revenus, dépenses, tâches terminées, clients actifs, alertes importantes." },
+  { icon: AlertTriangle, label: "Risques & alertes",   color: "#f97316", prompt: "Détecte tous les risques business : retards de paiement, stock bas, surcharge équipe, projets en retard." },
+  { icon: PenLine,       label: "Créer un document",   color: "#a78bfa", prompt: "Quels documents puis-je générer depuis DJAMA ? Guide-moi pour créer une facture, un contrat, un devis ou une note." },
 ];
 
 const SUGGESTIONS = [
@@ -256,13 +263,13 @@ function bold(text: string): React.ReactNode {
 
 // ── Live Insights Panel ────────────────────────────────────────────────────────
 function InsightsPanel({ insights, loading }: { insights: LiveInsights | null; loading: boolean }) {
-  const items = insights ? [
-    { icon: "⚡", label: "Tâches urgentes",  value: insights.urgentTasks, color: "#ef4444", warn: insights.urgentTasks > 0 },
-    { icon: "⏰", label: "En retard",         value: insights.lateTasks,   color: "#f97316", warn: insights.lateTasks > 0 },
-    { icon: "💳", label: "Factures impayées", value: insights.unpaidCount, color: "#f59e0b", warn: insights.unpaidCount > 0 },
-    { icon: "💰", label: "Montant impayé",    value: `${insights.unpaidTotal.toFixed(0)}€`, color: "#10b981", warn: false },
-    { icon: "📦", label: "Stock faible",      value: insights.lowStock,    color: "#8b5cf6", warn: insights.lowStock > 0 },
-    { icon: "🗓", label: "Réunions du jour",  value: insights.todayEvents, color: CYAN,      warn: false },
+  const items: { icon: LucideIcon; label: string; value: number | string; color: string; warn: boolean }[] = insights ? [
+    { icon: Zap,          label: "Tâches urgentes",  value: insights.urgentTasks,                       color: "#ef4444", warn: insights.urgentTasks > 0 },
+    { icon: Clock,        label: "En retard",         value: insights.lateTasks,                         color: "#f97316", warn: insights.lateTasks > 0 },
+    { icon: CreditCard,   label: "Factures impayées", value: insights.unpaidCount,                       color: "#f59e0b", warn: insights.unpaidCount > 0 },
+    { icon: DollarSign,   label: "Montant impayé",    value: `${insights.unpaidTotal.toFixed(0)}€`,      color: "#10b981", warn: false },
+    { icon: Package,      label: "Stock faible",      value: insights.lowStock,                          color: "#8b5cf6", warn: insights.lowStock > 0 },
+    { icon: Calendar,     label: "Réunions du jour",  value: insights.todayEvents,                       color: CYAN,      warn: false },
   ] : [];
 
   return (
@@ -270,14 +277,14 @@ function InsightsPanel({ insights, loading }: { insights: LiveInsights | null; l
       <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/20 mb-3">Tableau de bord live</p>
       {loading && (
         <div className="flex items-center gap-2 text-xs text-white/30 py-4">
-          <span className="animate-spin inline-block">⚙</span> Chargement…
+          <Loader2 size={12} className="animate-spin" /> Chargement…
         </div>
       )}
       {!loading && items.map(item => (
         <div key={item.label}
           className={`flex items-center justify-between rounded-xl border px-3 py-2.5 transition ${item.warn ? "border-white/[0.1] bg-white/[0.03]" : "border-white/[0.05] bg-transparent"}`}>
           <div className="flex items-center gap-2">
-            <span className="text-base">{item.icon}</span>
+            <item.icon size={14} style={{ color: item.color }} />
             <span className="text-[0.72rem] text-white/55">{item.label}</span>
           </div>
           <span className={`text-sm font-bold ${item.warn ? "animate-pulse" : ""}`}
@@ -502,8 +509,10 @@ export default function AssistantPage() {
         {/* Header */}
         <div className="px-4 py-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-2 mb-3">
-            <div className="h-7 w-7 rounded-lg flex items-center justify-center text-sm"
-              style={{ background: CYAN + "20", border: `1px solid ${CYAN}30` }}>✨</div>
+            <div className="h-7 w-7 rounded-lg flex items-center justify-center"
+              style={{ background: CYAN + "20", border: `1px solid ${CYAN}30` }}>
+              <Sparkles size={14} style={{ color: CYAN }} />
+            </div>
             <div>
               <p className="text-[0.82rem] font-black text-white/90">DJAMA AI</p>
               <p className="text-[0.58rem] text-white/30">Cerveau central</p>
@@ -523,7 +532,7 @@ export default function AssistantPage() {
             {ACTIONS.map(a => (
               <button key={a.label} onClick={() => send(a.prompt)}
                 className="flex flex-col items-center gap-1 rounded-xl border border-white/[0.05] bg-white/[0.02] px-2 py-2.5 text-center transition hover:border-white/10 hover:bg-white/[0.04]">
-                <span className="text-lg leading-none">{a.icon}</span>
+                <a.icon size={18} style={{ color: a.color }} />
                 <span className="text-[0.58rem] text-white/50 leading-tight">{a.label}</span>
               </button>
             ))}
@@ -564,15 +573,15 @@ export default function AssistantPage() {
           <div className="flex items-center gap-2">
             {consulting.length > 0 && (
               <div className="flex items-center gap-1.5 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-1">
-                <span className="text-[0.65rem] animate-spin inline-block">⚙</span>
-                <span className="text-[0.65rem] text-cyan-300">Consultation: {consulting.join(", ")}</span>
+                <Loader2 size={11} className="animate-spin text-cyan-400" />
+                <span className="text-[0.65rem] text-cyan-300">Consultation : {consulting.join(", ")}</span>
               </div>
             )}
             <button onClick={() => setShowInsights(s => !s)}
-              className={`rounded-xl border px-3 py-1.5 text-xs transition ${showInsights
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs transition ${showInsights
                 ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-300"
                 : "border-white/[0.07] text-white/40 hover:border-white/15"}`}>
-              📊 Live
+              <BarChart2 size={11} /> Live
             </button>
           </div>
         </div>
@@ -588,11 +597,11 @@ export default function AssistantPage() {
 
                 {/* Hero */}
                 <div className="text-center py-8">
-                  <div className="mx-auto mb-4 h-14 w-14 rounded-2xl flex items-center justify-center text-2xl"
+                  <div className="mx-auto mb-4 h-14 w-14 rounded-2xl flex items-center justify-center"
                     style={{ background: `linear-gradient(135deg, ${CYAN}20, ${VIOLET}20)`, border: `1px solid ${CYAN}30` }}>
-                    ✨
+                    <Sparkles size={26} style={{ color: CYAN }} />
                   </div>
-                  <h2 className="text-xl font-black text-white/90 mb-2">Bonjour 👋</h2>
+                  <h2 className="text-xl font-black text-white/90 mb-2">Bonjour</h2>
                   <p className="text-sm text-white/45 max-w-md mx-auto leading-relaxed">
                     Je suis DJAMA AI, votre assistant business intelligent. Je connais vos factures, tâches, clients, stocks et finances en temps réel.
                   </p>
@@ -626,7 +635,7 @@ export default function AssistantPage() {
                   ? "bg-violet-500/20 text-violet-300 border border-violet-500/30"
                   : "text-cyan-300 border border-cyan-500/30"}`}
                   style={m.role === "assistant" ? { background: CYAN + "15" } : {}}>
-                  {m.role === "user" ? "U" : "✨"}
+                  {m.role === "user" ? "U" : <Sparkles size={13} style={{ color: CYAN }} />}
                 </div>
 
                 {/* Bubble */}
@@ -661,8 +670,8 @@ export default function AssistantPage() {
                         </span>
                       ))}
                       <button onClick={() => copyMsg(m.content)}
-                        className="rounded-full border border-white/[0.06] px-2 py-0.5 text-[0.58rem] text-white/25 hover:text-white/60 hover:border-white/15 transition ml-1">
-                        📋 copier
+                        className="flex items-center gap-1 rounded-full border border-white/[0.06] px-2 py-0.5 text-[0.58rem] text-white/25 hover:text-white/60 hover:border-white/15 transition ml-1">
+                        <Copy size={9} /> Copier
                       </button>
                     </div>
                   )}
@@ -697,7 +706,7 @@ export default function AssistantPage() {
               disabled={!input.trim() || sending}
               className="shrink-0 h-8 w-8 rounded-xl flex items-center justify-center text-sm transition disabled:opacity-30 hover:opacity-90"
               style={{ background: sending ? VIOLET + "60" : `linear-gradient(135deg, ${CYAN}, ${VIOLET})` }}>
-              {sending ? <span className="animate-spin text-[0.7rem]">⚙</span> : "→"}
+              {sending ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
             </button>
           </div>
           <p className="text-center text-[0.6rem] text-white/18 mt-2">
@@ -718,25 +727,25 @@ export default function AssistantPage() {
 
               {/* Refresh */}
               <button onClick={loadInsights}
-                className="w-full rounded-xl border border-white/[0.06] py-2 text-xs text-white/30 hover:text-white/60 hover:border-white/15 transition">
-                ↻ Actualiser
+                className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.06] py-2 text-xs text-white/30 hover:text-white/60 hover:border-white/15 transition">
+                <RefreshCw size={11} /> Actualiser
               </button>
 
               {/* Module shortcuts */}
               <div>
                 <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2">Accès rapides</p>
-                {[
-                  { icon: "🧾", label: "Factures",     href: "/client/factures"     },
-                  { icon: "⚡", label: "Tâches",        href: "/client/productivite" },
-                  { icon: "👥", label: "CRM",            href: "/client/crm"          },
-                  { icon: "📦", label: "Stocks",         href: "/client/stocks"       },
-                  { icon: "🗓", label: "Planning",       href: "/client/planning"     },
-                  { icon: "👫", label: "Équipe",         href: "/client/equipe"       },
-                ].map(s => (
+                {([
+                  { Icon: Receipt,   label: "Factures",  href: "/client/factures"     },
+                  { Icon: ListTodo,  label: "Tâches",    href: "/client/productivite" },
+                  { Icon: Users,     label: "CRM",       href: "/client/crm"          },
+                  { Icon: Package,   label: "Stocks",    href: "/client/stocks"       },
+                  { Icon: Calendar,  label: "Planning",  href: "/client/planning"     },
+                  { Icon: UserCheck, label: "Équipe",    href: "/client/equipe"       },
+                ] as { Icon: LucideIcon; label: string; href: string }[]).map(s => (
                   <a key={s.href} href={s.href}
                     className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-white/45 hover:bg-white/[0.04] hover:text-white/75 transition">
-                    <span>{s.icon}</span><span>{s.label}</span>
-                    <span className="ml-auto text-white/20">→</span>
+                    <s.Icon size={12} className="text-white/30" /><span>{s.label}</span>
+                    <ChevronRight size={11} className="ml-auto text-white/20" />
                   </a>
                 ))}
               </div>

@@ -1490,8 +1490,8 @@ export default function TresoreriePage() {
               {userId && (
                 <TransactionsView
                   transactions={transactions} accounts={accounts} userId={userId}
-                  onAdd={t => { setTransactions(ts => [t, ...ts]); toast$("Transaction ajoutée ✓"); }}
-                  onEdit={t => { setTransactions(ts => ts.map(x => x.id === t.id ? t : x)); toast$("Mise à jour ✓"); }}
+                  onAdd={t => { setTransactions(ts => [t, ...ts]); toast$("Transaction ajoutée"); }}
+                  onEdit={t => { setTransactions(ts => ts.map(x => x.id === t.id ? t : x)); toast$("Mise à jour"); }}
                   onDelete={deleteTx}
                   onStatusChange={updateTxStatus}
                 />
@@ -1505,7 +1505,7 @@ export default function TresoreriePage() {
                 <PrevisionsView
                   transactions={transactions} accounts={accounts}
                   recurring={recurring} invoices={invoices} userId={userId}
-                  onRecurringAdd={r => { setRecurring(rs => [...rs, r]); toast$("Récurrent ajouté ✓"); }}
+                  onRecurringAdd={r => { setRecurring(rs => [...rs, r]); toast$("Récurrent ajouté"); }}
                   onRecurringEdit={r => setRecurring(rs => rs.map(x => x.id === r.id ? r : x))}
                   onRecurringDelete={deleteRecurring}
                 />
@@ -1518,10 +1518,10 @@ export default function TresoreriePage() {
               {userId && (
                 <ComptesView
                   accounts={accounts} userId={userId} transactions={transactions}
-                  onAccountAdd={a => { setAccounts(as => [...as, a]); toast$("Compte ajouté ✓"); }}
+                  onAccountAdd={a => { setAccounts(as => [...as, a]); toast$("Compte ajouté"); }}
                   onAccountEdit={a => setAccounts(as => as.map(x => x.id === a.id ? a : x))}
                   onAccountDelete={deleteAccount}
-                  onTxImported={txs => { setTransactions(ts => [...txs, ...ts]); toast$(`${txs.length} transactions importées ✓`); }}
+                  onTxImported={txs => { setTransactions(ts => [...txs, ...ts]); toast$(`${txs.length} transactions importées`); }}
                 />
               )}
             </motion.div>

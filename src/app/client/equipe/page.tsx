@@ -14,7 +14,10 @@ import {
   Building, Calendar, Sparkles, Zap, Send, Search,
   Edit2, ChevronDown, Star, AlertCircle, Clock,
   Video, Hash, AtSign, MoreHorizontal,
+  Umbrella, Thermometer, BookOpen, FileText,
+  BarChart2, AlertTriangle, RefreshCw, Target, Folder,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
 /* ══════════════════════════════════════════════════════════
@@ -95,12 +98,12 @@ const TASK_COLS: { k:TaskStatus; l:string; c:string }[] = [
   { k:"late",        l:"En retard", c:"#f87171" },
 ];
 
-const LEAVE_TYPES: { v:LeaveType; l:string; e:string }[] = [
-  { v:"vacation", l:"Congés payés",   e:"🏖" },
-  { v:"sick",     l:"Maladie",        e:"🤒" },
-  { v:"personal", l:"Personnel",      e:"👤" },
-  { v:"training", l:"Formation",      e:"📚" },
-  { v:"other",    l:"Autre",          e:"📋" },
+const LEAVE_TYPES: { v:LeaveType; l:string; icon:LucideIcon }[] = [
+  { v:"vacation", l:"Congés payés",   icon: Umbrella },
+  { v:"sick",     l:"Maladie",        icon: Thermometer },
+  { v:"personal", l:"Personnel",      icon: User },
+  { v:"training", l:"Formation",      icon: BookOpen },
+  { v:"other",    l:"Autre",          icon: FileText },
 ];
 
 const CHANNELS = ["général","dev","design","marketing","direction","rh"];
@@ -110,11 +113,11 @@ const AVATAR_COLORS = [
   "#60a5fa","#c084fc","#fb923c","#f472b6","#34d399","#0ea5e9",
 ];
 
-const TABS: { k:AppTab; l:string; e:string }[] = [
-  { k:"members", l:"Membres",       e:"👥" },
-  { k:"tasks",   l:"Tâches",        e:"✅" },
-  { k:"chat",    l:"Chat",          e:"💬" },
-  { k:"hr",      l:"RH",            e:"📋" },
+const TABS: { k:AppTab; l:string; icon:LucideIcon }[] = [
+  { k:"members", l:"Membres",  icon: Users },
+  { k:"tasks",   l:"Tâches",   icon: CheckSquare },
+  { k:"chat",    l:"Chat",     icon: MessageSquare },
+  { k:"hr",      l:"RH",       icon: Briefcase },
 ];
 
 /* ══════════════════════════════════════════════════════════
@@ -297,7 +300,7 @@ export default function EquipePage() {
       if (data) setMembers(p=>[parseMember(data as Record<string,unknown>),...p]);
     }
     setSavingM(false); setShowMemberModal(false);
-    setToastData({type:"success",msg:editMember?"Membre mis à jour":"Membre ajouté ✓"});
+    setToastData({type:"success",msg:editMember?"Membre mis à jour":"Membre ajouté"});
   }
   async function deleteMember(id:string) {
     await supabase.from("team_members").delete().eq("id",id);
@@ -328,7 +331,7 @@ export default function EquipePage() {
       if (data) setTasks(p=>[parseTask(data as Record<string,unknown>),...p]);
     }
     setSavingT(false); setShowTaskModal(false);
-    setToastData({type:"success",msg:editTask?"Tâche mise à jour":"Tâche créée ✓"});
+    setToastData({type:"success",msg:editTask?"Tâche mise à jour":"Tâche créée"});
   }
   async function deleteTask(id:string) {
     await supabase.from("team_tasks").delete().eq("id",id);
@@ -396,7 +399,7 @@ export default function EquipePage() {
     }).select().single();
     if (data) setMeetings(p=>[data as TeamMeeting,...p]);
     setSavingMeet(false); setShowMeetModal(false);
-    setToastData({type:"success",msg:"Réunion créée ✓"});
+    setToastData({type:"success",msg:"Réunion créée"});
   }
 
   /* ── AI ── */
@@ -455,13 +458,13 @@ export default function EquipePage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5 py-4 border-b border-white/[0.06] shrink-0">
           {[
-            { l:"Membres actifs",  v:stats.active,  c:"#10b981", e:"🟢" },
-            { l:"Tâches en cours", v:stats.inProg,  c:"#f59e0b", e:"⚡" },
-            { l:"En retard",       v:stats.late,    c:"#f87171", e:"⚠️" },
-            { l:"En congé",        v:stats.onLeave, c:"#60a5fa", e:"🏖" },
+            { l:"Membres actifs",  v:stats.active,  c:"#10b981" },
+            { l:"Tâches en cours", v:stats.inProg,  c:"#f59e0b" },
+            { l:"En retard",       v:stats.late,    c:"#f87171" },
+            { l:"En congé",        v:stats.onLeave, c:"#60a5fa" },
           ].map(s=>(
             <div key={s.l} className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3">
-              <span className="text-xl leading-none">{s.e}</span>
+              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{background:s.c}}/>
               <div>
                 <p className="text-xl font-extrabold" style={{color:s.c}}>{s.v}</p>
                 <p className="text-[10px] text-white/35">{s.l}</p>
@@ -582,7 +585,9 @@ export default function EquipePage() {
                           </button>
                         </div>
                         {t.project && (
-                          <p className="text-[10px] text-white/30 mt-1 ml-4">📁 {t.project}</p>
+                          <p className="text-[10px] text-white/30 mt-1 ml-4 flex items-center gap-1">
+                            <Folder size={9}/>{t.project}
+                          </p>
                         )}
                         <div className="flex items-center gap-2 mt-2 ml-4">
                           {member && (
@@ -761,7 +766,7 @@ export default function EquipePage() {
                 : {c:"#f59e0b",l:"En attente"};
               return (
                 <div key={l.id} className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
-                  <span className="text-xl leading-none">{lt?.e??""}</span>
+                  {lt && <lt.icon size={16} className="text-white/40 shrink-0"/>}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{l.member_name}</p>
                     <p className="text-xs text-white/40">
@@ -832,7 +837,9 @@ export default function EquipePage() {
                       )}
                     </div>
                     {m.participants.length>0 && (
-                      <p className="text-[10px] text-white/25 mt-1">👥 {m.participants.join(", ")}</p>
+                      <p className="text-[10px] text-white/25 mt-1 flex items-center gap-1">
+                        <Users size={9}/>{m.participants.join(", ")}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -859,7 +866,7 @@ export default function EquipePage() {
       {/* ── Top bar ── */}
       <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.06] shrink-0 flex-wrap gap-y-2">
         <div className="flex items-center gap-2 mr-auto">
-          <span className="text-2xl">👥</span>
+          <Users size={20} style={{color:SKY}}/>
           <h1 className="font-bold text-lg">Équipe</h1>
           <span className="text-[11px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-medium">
             {members.length} membre{members.length!==1?"s":""}
@@ -908,15 +915,15 @@ export default function EquipePage() {
             className="border-b border-white/[0.06] bg-[#0b0d14] overflow-hidden shrink-0">
             <div className="px-5 py-3 space-y-2">
               <div className="flex flex-wrap gap-2">
-                {[
-                  {l:"📊 Résumer activité",  p:"Résume l'activité de l'équipe. Qui est productif ? Y a-t-il des blocages ?"},
-                  {l:"⚠️ Détecter surcharge",p:"Analyse la charge de travail. Y a-t-il des membres surchargés ? Qui a trop de tâches ?"},
-                  {l:"🔄 Répartir tâches",   p:"Propose une meilleure répartition des tâches en cours selon les membres disponibles."},
-                  {l:"🎯 Points clés RH",    p:"Quels sont les points RH importants à surveiller (congés, absentéisme, performance) ?"},
-                ].map(a=>(
+                {([
+                  {Icon:BarChart2,     l:"Résumer activité",  p:"Résume l'activité de l'équipe. Qui est productif ? Y a-t-il des blocages ?"},
+                  {Icon:AlertTriangle, l:"Détecter surcharge", p:"Analyse la charge de travail. Y a-t-il des membres surchargés ? Qui a trop de tâches ?"},
+                  {Icon:RefreshCw,     l:"Répartir tâches",   p:"Propose une meilleure répartition des tâches en cours selon les membres disponibles."},
+                  {Icon:Target,        l:"Points clés RH",    p:"Quels sont les points RH importants à surveiller (congés, absentéisme, performance) ?"},
+                ] as {Icon:LucideIcon;l:string;p:string}[]).map(a=>(
                   <button key={a.l} onClick={()=>runAI(a.p)} disabled={aiLoad}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs border border-white/8 hover:border-white/20 text-white/55 hover:text-white transition-all disabled:opacity-40">
-                    {aiLoad ? <Loader2 size={10} className="animate-spin"/> : null}{a.l}
+                    {aiLoad ? <Loader2 size={10} className="animate-spin"/> : <a.Icon size={10}/>}{a.l}
                   </button>
                 ))}
               </div>
@@ -946,7 +953,7 @@ export default function EquipePage() {
               color:       tab===t.k ? SKY : "rgba(255,255,255,.4)",
               borderColor: tab===t.k ? SKY : "transparent",
             }}>
-            <span>{t.e}</span>{t.l}
+            <t.icon size={13}/>{t.l}
             {t.k==="tasks" && stats.late > 0 && (
               <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">{stats.late}</span>
             )}
@@ -1210,7 +1217,7 @@ export default function EquipePage() {
                   <label className="text-[10px] text-white/35 uppercase tracking-wide">Type</label>
                   <select value={lForm.type??"vacation"} onChange={e=>setLForm(p=>({...p,type:e.target.value as LeaveType}))}
                     className="w-full cursor-pointer bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
-                    {LEAVE_TYPES.map(t=><option key={t.v} value={t.v} className="bg-[#0e1018]">{t.e} {t.l}</option>)}
+                    {LEAVE_TYPES.map(t=><option key={t.v} value={t.v} className="bg-[#0e1018]">{t.l}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

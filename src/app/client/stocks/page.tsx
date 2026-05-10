@@ -583,7 +583,7 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
                   className="group grid grid-cols-12 gap-3 items-center bg-[#0f1117] border border-white/[0.07] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
                   <div className="col-span-4 flex items-center gap-3 min-w-0">
                     <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-white/[0.05] text-lg">
-                      {p.category === "alimentaire" ? "🍎" : p.category === "électronique" ? "📱" : p.category === "vêtement" ? "👕" : "📦"}
+                      <Package size={14} className="text-white/40"/>
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-white/85 truncate">{p.name}</p>
@@ -893,12 +893,12 @@ export default function StocksPage() {
       const { data, error } = await supabase.from("stock_products").update({ ...form, updated_at: new Date().toISOString() }).eq("id", form.id).select().single();
       if (error) { toast(error.message, "error"); return; }
       setProducts((prev) => prev.map((p) => p.id === form.id ? data as Product : p));
-      toast("Produit mis à jour ✓", "success");
+      toast("Produit mis à jour", "success");
     } else {
       const { data, error } = await supabase.from("stock_products").insert({ ...form, user_id: userId }).select().single();
       if (error) { toast(error.message, "error"); return; }
       setProducts((prev) => [data as Product, ...prev]);
-      toast("Produit créé ✓", "success");
+      toast("Produit créé", "success");
     }
     setShowProductModal(false);
     setEditProduct(EMPTY_PRODUCT());
@@ -932,7 +932,7 @@ export default function StocksPage() {
 
     setMovements((prev) => [movData as Movement, ...prev]);
     setProducts((prev) => prev.map((p) => p.id === product.id ? prodData as Product : p));
-    toast("Mouvement enregistré ✓", "success");
+    toast("Mouvement enregistré", "success");
     setShowMovModal(false);
     setMovProductPreset(null);
   }, [userId, products, toast]);
@@ -943,12 +943,12 @@ export default function StocksPage() {
       const { data, error } = await supabase.from("stock_suppliers").update(form).eq("id", form.id).select().single();
       if (error) { toast(error.message, "error"); return; }
       setSuppliers((prev) => prev.map((s) => s.id === form.id ? data as Supplier : s));
-      toast("Fournisseur mis à jour ✓", "success");
+      toast("Fournisseur mis à jour", "success");
     } else {
       const { data, error } = await supabase.from("stock_suppliers").insert({ ...form, user_id: userId }).select().single();
       if (error) { toast(error.message, "error"); return; }
       setSuppliers((prev) => [data as Supplier, ...prev]);
-      toast("Fournisseur créé ✓", "success");
+      toast("Fournisseur créé", "success");
     }
     setShowSupplierModal(false);
     setEditSupplier(EMPTY_SUPPLIER());

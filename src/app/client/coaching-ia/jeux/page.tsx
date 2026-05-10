@@ -279,7 +279,7 @@ export default function JeuxPage() {
                         <div key={i} className={`h-1.5 rounded-full transition-all ${i < qIndex ? "w-4 bg-[#a78bfa]" : i === qIndex ? "w-4 bg-[#a78bfa] opacity-50" : "w-4 bg-white/10"}`} />
                       ))}
                     </div>
-                    <span className="text-xs font-bold text-[#4ade80]">{answers.filter((a, i) => a === QUIZ_QUESTIONS[i].correct).length} ✓</span>
+                    <span className="text-xs font-bold text-[#4ade80]">{answers.filter((a, i) => a === QUIZ_QUESTIONS[i].correct).length} bonnes</span>
                   </div>
                   <AnimatePresence mode="wait">
                     <motion.div key={qIndex} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
@@ -378,7 +378,7 @@ export default function JeuxPage() {
         )}
 
         {/* ══════════════════════════════
-            ⚡ SPEED QUIZ (8 questions)
+            SPEED QUIZ (8 questions)
         ══════════════════════════════ */}
         {activeGame === "speed" && (
           <motion.div key="speed" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
@@ -442,7 +442,7 @@ export default function JeuxPage() {
         )}
 
         {/* ══════════════════════════════
-            🎯 VRAI OU FAUX (8 questions)
+            VRAI OU FAUX (8 questions)
         ══════════════════════════════ */}
         {activeGame === "vraifaux" && (
           <motion.div key="vraifaux" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
@@ -542,7 +542,7 @@ export default function JeuxPage() {
                 <p className="text-xs font-bold text-white/50">Conseils pour un prompt parfait :</p>
                 {DEFI.tips.map((tip) => (
                   <p key={tip} className="flex items-start gap-2 text-xs text-white/40">
-                    <span className="shrink-0 mt-0.5 text-[#f472b6]">→</span>{tip}
+                    <ChevronRight size={11} className="shrink-0 mt-0.5 text-[#f472b6]"/>{tip}
                   </p>
                 ))}
               </div>

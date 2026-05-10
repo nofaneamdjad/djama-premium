@@ -14,8 +14,9 @@ import {
   MessageSquare, Mic, Square, Pause, Play, RotateCcw, ArrowLeft,
   Folder, FolderPlus, Tag, CheckSquare, BookOpen, Users, Lightbulb,
   Code, ClipboardList, Archive, Download, Clock, Brain, RefreshCw,
-  Languages, FileSearch, Zap, Check, MoreHorizontal, Hash,
+  Languages, FileSearch, Zap, Check, MoreHorizontal, Hash, BarChart2,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
@@ -84,16 +85,16 @@ const AI_ACTIONS: { action: AiAction; label: string; icon: React.ElementType; co
   { action:"correct",         label:"Corriger",     icon:Check,       color:"#4ade80", replaces:true  },
   { action:"rephrase",        label:"Reformuler",   icon:RefreshCw,   color:"#60a5fa", replaces:true  },
   { action:"summarize",       label:"Résumer",      icon:FileText,    color:"#f59e0b", replaces:false },
-  { action:"to-tasks",        label:"→ Tâches",     icon:ListChecks,  color:"#34d399", replaces:false },
+  { action:"to-tasks",        label:"Tâches",       icon:ListChecks,  color:"#34d399", replaces:false },
   { action:"translate",       label:"Traduire",     icon:Languages,   color:"#38bdf8", replaces:true  },
   { action:"meeting-report",  label:"CR Réunion",   icon:ClipboardList,color:"#f472b6",replaces:false },
   { action:"extract-actions", label:"Extraire",     icon:Zap,         color:"#fb923c", replaces:false },
   { action:"chat",            label:"Chat IA",      icon:MessageSquare,color:"#c9a55a",replaces:false },
 ];
 
-const TEMPLATES: { label: string; type: NoteType; icon: string; content: string }[] = [
+const TEMPLATES: { label: string; type: NoteType; icon: LucideIcon; content: string }[] = [
   {
-    label:"Réunion", type:"réunion", icon:"👥",
+    label:"Réunion", type:"réunion", icon:Users,
     content:`# Réunion — ${new Date().toLocaleDateString("fr-FR")}
 
 **Participants :**
@@ -114,7 +115,7 @@ const TEMPLATES: { label: string; type: NoteType; icon: string; content: string 
 **Prochaine réunion :**`,
   },
   {
-    label:"Brainstorming", type:"idée", icon:"💡",
+    label:"Brainstorming", type:"idée", icon:Lightbulb,
     content:`# Brainstorming
 
 **Idée principale :**
@@ -134,7 +135,7 @@ const TEMPLATES: { label: string; type: NoteType; icon: string; content: string 
 **Prochaine action :**`,
   },
   {
-    label:"Projet", type:"compte-rendu", icon:"🚀",
+    label:"Projet", type:"compte-rendu", icon:Zap,
     content:`# Projet :
 
 **Objectif :**
@@ -158,7 +159,7 @@ const TEMPLATES: { label: string; type: NoteType; icon: string; content: string 
 - `,
   },
   {
-    label:"Journal", type:"journal", icon:"📓",
+    label:"Journal", type:"journal", icon:BookOpen,
     content:`# Journal — ${new Date().toLocaleDateString("fr-FR")}
 
 **Aujourd'hui :**
@@ -177,7 +178,7 @@ const TEMPLATES: { label: string; type: NoteType; icon: string; content: string 
 - [ ] `,
   },
   {
-    label:"Business Plan", type:"texte", icon:"📊",
+    label:"Business Plan", type:"texte", icon:BarChart2,
     content:`# Business Plan
 
 ## Vision
@@ -207,7 +208,7 @@ Le problème que l'on résout :
 - [ ] `,
   },
   {
-    label:"Notes de cours", type:"texte", icon:"📚",
+    label:"Notes de cours", type:"texte", icon:BookOpen,
     content:`# Cours :
 
 **Date :** ${new Date().toLocaleDateString("fr-FR")}
@@ -464,7 +465,7 @@ export default function BlocNotesPage() {
     setIsSaving(false);
     setIsDirty(false);
     setSavedAgo("il y a quelques secondes");
-    if (!silent) showToast("success","Note sauvegardée ✓");
+    if (!silent) showToast("success","Note sauvegardée");
   }, [dTitle, dContent, dType, dFolderId, dTags, dLinked, selected]);
 
   saveRef.current = handleSave;
@@ -571,7 +572,7 @@ export default function BlocNotesPage() {
     setIsDirty(true);
     setAiPanel(false);
     setAiResult("");
-    showToast("success","Résultat IA appliqué ✓");
+    showToast("success","Résultat IA appliqué");
   }
 
   /* ── Create folder ── */
@@ -593,13 +594,13 @@ export default function BlocNotesPage() {
   function exportTXT() {
     const blob = new Blob([`${dTitle}\n${"=".repeat(dTitle.length)}\n\n${dContent}`],{type:"text/plain;charset=utf-8"});
     const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${dTitle||"note"}.txt`; a.click();
-    showToast("success","Export TXT ✓");
+    showToast("success","Export TXT");
   }
 
   function exportMarkdown() {
     const blob = new Blob([`# ${dTitle}\n\n${dContent}`],{type:"text/markdown;charset=utf-8"});
     const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${dTitle||"note"}.md`; a.click();
-    showToast("success","Export Markdown ✓");
+    showToast("success","Export Markdown");
   }
 
   async function exportPDF() {
@@ -615,7 +616,7 @@ export default function BlocNotesPage() {
       const lines = doc.splitTextToSize(dContent, W);
       doc.text(lines, 20, 40);
       doc.save(`${dTitle||"note"}.pdf`);
-      showToast("success","Export PDF ✓");
+      showToast("success","Export PDF");
     } catch { showToast("error","Erreur PDF — réessayez."); }
   }
 
@@ -722,13 +723,13 @@ export default function BlocNotesPage() {
           {/* Filters */}
           <div className="space-y-0.5 mb-4">
             {[
-              { key:"all",       label:"Toutes",   count:counts.all,      icon:"📝" },
-              { key:"favorites", label:"Favoris",  count:counts.favs,     icon:"⭐" },
-              { key:"archived",  label:"Archives", count:counts.archived, icon:"📦" },
+              { key:"all",       label:"Toutes",   count:counts.all,      icon:StickyNote },
+              { key:"favorites", label:"Favoris",  count:counts.favs,     icon:Star },
+              { key:"archived",  label:"Archives", count:counts.archived, icon:Archive },
             ].map(f=>(
               <button key={f.key} onClick={()=>setFilter(f.key)}
                 className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition ${filter===f.key?"text-white bg-white/[0.07]":"text-white/40 hover:text-white/60 hover:bg-white/[0.03]"}`}>
-                <span>{f.icon}</span>
+                <f.icon size={12}/>
                 <span className="flex-1 text-left">{f.label}</span>
                 <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px]">{f.count}</span>
               </button>
@@ -984,8 +985,8 @@ export default function BlocNotesPage() {
                 { label:"• ",  fn:()=>insertLinePrefix("- ")      },
                 { label:"☑",   fn:()=>insertLinePrefix("- [ ] ")  },
                 { label:"›",   fn:()=>insertLinePrefix("> ")      },
-                { label:"🔗",  fn:()=>insertFormat("[","](url)")  },
-                { label:"📊",  fn:()=>insertFormat("\n| Col 1 | Col 2 |\n| ----- | ----- |\n| ", " | |\n") },
+                { label:"lien", fn:()=>insertFormat("[","](url)")  },
+                { label:"tbl",  fn:()=>insertFormat("\n| Col 1 | Col 2 |\n| ----- | ----- |\n| ", " | |\n") },
                 { label:"---", fn:()=>setDContent(c=>c+"\n\n---\n\n") },
               ].map((b,i)=>(
                 <button key={i} onClick={b.fn} className={`shrink-0 rounded-lg px-2 py-1.5 text-[0.65rem] font-bold text-white/40 transition hover:bg-white/[0.06] hover:text-white/80 ${b.label==="B"?"font-extrabold":""}`}>
@@ -1154,14 +1155,17 @@ export default function BlocNotesPage() {
                 <button onClick={()=>setShowTemplates(false)} className="text-white/30 hover:text-white/70"><X size={15}/></button>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
-                {TEMPLATES.map(t=>(
+                {TEMPLATES.map(t=>{
+                  const TIcon = t.icon;
+                  return (
                   <button key={t.label} onClick={()=>{createNote(t.type, t.content);setShowTemplates(false);}}
                     className="flex flex-col items-start gap-2 rounded-[1.25rem] border border-white/[0.07] bg-white/[0.03] p-4 text-left transition hover:border-white/15 hover:bg-white/[0.06]">
-                    <span className="text-2xl">{t.icon}</span>
+                    <TIcon size={22} className="text-white/50 mb-0.5"/>
                     <span className="text-sm font-extrabold text-white">{t.label}</span>
                     <span className="text-[0.65rem] text-white/35 line-clamp-2">{t.content.slice(0,80)}…</span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </motion.div>
           </>

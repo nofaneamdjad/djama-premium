@@ -328,10 +328,10 @@ export default function ChronoPage() {
       void saveSession(Math.round(POM_WORK/60), "pomodoro", cycle+1);
       pomCycleRef.current = cycle+1; setPomCycle(cycle+1);
       pomPhaseRef.current = "break"; setPomPhase("break");
-      showToast("success", `✅ Pomodoro #${cycle+1} terminé ! Pause 5 min.`);
+      showToast("success", `Pomodoro #${cycle+1} terminé — Pause 5 min.`);
     } else {
       pomPhaseRef.current = "work"; setPomPhase("work");
-      showToast("info", "⚡ Pause terminée — au travail !");
+      showToast("info", "Pause terminée — au travail !");
     }
     setElapsed(0);
     const newMs = Date.now();
@@ -522,13 +522,13 @@ export default function ChronoPage() {
     const tot = last50.reduce((a,e)=>a+e.duration_minutes,0);
     const bil = last50.filter(e=>e.is_billable??true).reduce((a,e)=>a+e.duration_minutes,0);
     const ratio = tot>0?Math.round((bil/tot)*100):0;
-    if (ratio<60)    insights.push(`⚠️ ${ratio}% d'heures facturables — objectif : dépasser 70%.`);
-    else if (ratio>=80) insights.push(`✅ Excellent ratio facturable : ${ratio}% — continuez ainsi !`);
+    if (ratio<60)    insights.push(`${ratio}% d'heures facturables — objectif : dépasser 70%.`);
+    else if (ratio>=80) insights.push(`Excellent ratio facturable : ${ratio}% — continuez ainsi !`);
     const avg7 = dailyData.reduce((a,d)=>a+d.minutes,0)/7;
     if (todayStats.minutes>avg7*1.2&&avg7>30) insights.push(`🔥 +${Math.round(((todayStats.minutes/avg7)-1)*100)}% au-dessus de votre moyenne quotidienne.`);
     else if (todayStats.minutes<avg7*0.5&&avg7>60) insights.push(`💤 Journée en dessous de votre moyenne (${fmtMin(Math.round(avg7))}/j).`);
-    if (catBreakdown.length>0) insights.push(`📊 Cette semaine : ${getCategoryLabel(catBreakdown[0].cat)} = ${catBreakdown[0].pct}% de votre temps.`);
-    if (unbilledAmt>0) insights.push(`💰 ${fmtEur(unbilledAmt)} d'heures non facturées — à facturer dans l'onglet Facturable.`);
+    if (catBreakdown.length>0) insights.push(`Cette semaine : ${getCategoryLabel(catBreakdown[0].cat)} = ${catBreakdown[0].pct}% de votre temps.`);
+    if (unbilledAmt>0) insights.push(`${fmtEur(unbilledAmt)} d'heures non facturées — à facturer dans l'onglet Facturable.`);
     if (pomCycle>0) insights.push(`🍅 ${pomCycle} Pomodoro${pomCycle>1?"s":""} terminé${pomCycle>1?"s":""} aujourd'hui !`);
     return insights.slice(0,4);
   },[entries,todayStats,dailyData,catBreakdown,unbilledAmt,pomCycle]);
