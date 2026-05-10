@@ -10,7 +10,7 @@ import {
   Bell, X, Menu,
   CreditCard, Wallet, Users, FileText, Timer, CalendarRange, Search, Star,
   LayoutDashboard, Brain, Zap, Mic, ChevronRight,
-  Globe, Package, Truck,
+  Globe, Package, Truck, ListTodo,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRequireSubscription } from "@/lib/use-require-subscription";
@@ -45,11 +45,12 @@ const NAV_GROUPS: { label: string | null; items: NavEntry[] }[] = [
   {
     label: "Productivité",
     items: [
+      { href: "/client/productivite",   label: "Tâches",      icon: ListTodo,     color: "#8b5cf6" },
       { href: "/client/chrono",        label: "Chrono",      icon: Timer,        color: "#a78bfa" },
       { href: "/client/notes",         label: "Notes IA",    icon: StickyNote,   color: "#fbbf24" },
       { href: "/client/bloc-note",     label: "Bloc Note",   icon: Mic,          color: "#a78bfa" },
       { href: "/client/planning",      label: "Planning",    icon: Calendar,     color: "#60a5fa" },
-      { href: "/client/planification", label: "Équipe",      icon: CalendarRange,color: "#38bdf8" },
+      { href: "/client/equipe",        label: "Équipe",      icon: CalendarRange,color: "#38bdf8" },
     ],
   },
   {
