@@ -128,63 +128,66 @@ function HomeContent() {
   const ctaSecHref       = (settings?.cta_secondary_href ?? "/services")                                   as string;
 
   return (
-    <div className="overflow-hidden bg-[#0a0f1e]">
+    <div className="overflow-hidden">
 
-            <section className="relative overflow-hidden pt-20 pb-16 sm:pt-28 sm:pb-20">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[340px] bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(201,165,90,.09),transparent)]" />
-
+      <section className="bg-white px-5 pb-12 pt-14 sm:pb-16 sm:pt-20">
         <motion.div
           initial="hidden" animate="visible" variants={staggerContainer}
-          className="relative z-10 mx-auto max-w-4xl px-6 text-center"
+          className="mx-auto max-w-md text-center"
         >
-          <motion.div
+          <motion.h1
             variants={fadeIn}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
-            style={{ color: GOLD }}
+            className="text-[2.7rem] font-extrabold leading-[1.12] tracking-tight text-gray-900 sm:text-[3.5rem]"
           >
-            <Sparkles size={11} /> Plateforme tout-en-un pour entrepreneurs
+            Tout votre business<br />
+            sur{" "}
+            <span
+              className="relative inline-block -rotate-[0.5deg] rounded-lg px-2 py-0.5"
+              style={{ background: GOLD, color: "#0a0f1e" }}
+            >
+              une plateforme
+            </span>.
+          </motion.h1>
+
+          <motion.p
+            variants={fadeIn}
+            className="mt-5 text-[1.05rem] font-semibold text-gray-700"
+          >
+            Simple, efficace, et{" "}
+            <span className="underline decoration-[#6366f1] decoration-[3px] underline-offset-4">
+              abordable
+            </span>{" "}!
+          </motion.p>
+
+          <motion.div variants={fadeIn} className="mt-8 flex flex-col gap-3">
+            <Link
+              href="/espace-client"
+              className="w-full rounded-2xl py-4 text-center text-[1rem] font-bold text-white shadow-md transition-all duration-200 hover:opacity-90 active:scale-[.98]"
+              style={{ background: "#6366f1" }}
+            >
+              Lancez-vous
+            </Link>
+            <Link
+              href="/reserver-appel"
+              className="w-full rounded-2xl bg-gray-100 py-4 text-center text-[1rem] font-semibold text-gray-600 transition-all duration-200 hover:bg-gray-200 active:scale-[.98]"
+            >
+              Rencontrer un conseiller
+            </Link>
           </motion.div>
 
-          <h1 className="text-[2.6rem] font-extrabold leading-[1.1] tracking-tight text-white sm:text-[3.6rem] lg:text-[4.4rem]">
-            <MultiLineReveal
-              lines={["Gérez votre business.", "Depuis un seul espace."]}
-              highlight={1} stagger={0.1} wordStagger={0.04}
-              lineClassName="justify-center text-white"
-            />
-          </h1>
-
-          <FadeReveal delay={0.22} as="p"
-            className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white/50 sm:text-lg"
-          >
-            Factures, CRM, trésorerie, contrats, planning — 10 outils pros réunis.{" "}
-            <span className="font-semibold text-white/75">11,90€/mois</span>, sans engagement.
-          </FadeReveal>
-
-          <FadeReveal delay={0.34} className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/espace-client"
-              className="btn-primary group relative overflow-hidden px-7 py-3.5 text-[0.95rem]">
-              <span className="relative z-10 flex items-center gap-2">
-                Commencer maintenant
-                <ArrowRight size={15} className="transition-transform duration-300 group-hover:translate-x-1" />
-              </span>
-              <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
-            </Link>
-            <Link href="/reserver-appel" className="btn-ghost px-7 py-3.5 text-[0.95rem]">
-              Appel découverte gratuit
-            </Link>
-          </FadeReveal>
-
-          <FadeReveal
-            delay={0.46}
-            className="mt-10 flex flex-wrap justify-center gap-x-8 gap-y-3 border-t border-white/[.05] pt-8"
+          <motion.div
+            variants={fadeIn}
+            className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-gray-100 pt-6"
           >
             {HERO_STATS.map(({ value, label }) => (
-              <div key={label} className="flex items-center gap-2">
-                <span className="text-xl font-extrabold text-white"><SmartStat value={value} /></span>
-                <span className="text-sm text-white/35">{label}</span>
+              <div key={label} className="flex items-center gap-1.5">
+                <span className="text-lg font-extrabold text-gray-900">
+                  <SmartStat value={value} />
+                </span>
+                <span className="text-sm text-gray-400">{label}</span>
               </div>
             ))}
-          </FadeReveal>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -237,19 +240,19 @@ function HomeContent() {
               <motion.div
                 key={title}
                 variants={cardReveal}
-                whileHover={{ y: -5, scale: 1.03 }}
+                whileHover={{ y: -4, boxShadow: "0 8px 24px rgba(0,0,0,.13)" }}
                 whileTap={{ scale: 0.93 }}
-                transition={{ duration: 0.2, ease }}
+                transition={{ duration: 0.18, ease }}
               >
                 <Link
                   href="/espace-client"
-                  className="flex flex-col items-center gap-2.5 rounded-2xl bg-white px-2 py-5 shadow-[0_2px_12px_rgba(0,0,0,.07)] transition-shadow duration-200 hover:shadow-[0_6px_22px_rgba(0,0,0,.12)]"
+                  className="flex flex-col items-center gap-3 rounded-2xl bg-white px-2 py-5 shadow-[0_2px_10px_rgba(0,0,0,.07)] transition-all duration-200"
                 >
                   <div
-                    className="flex h-12 w-12 items-center justify-center rounded-xl"
+                    className="flex h-14 w-14 items-center justify-center rounded-2xl"
                     style={{ background: `${color}18` }}
                   >
-                    <Icon size={22} style={{ color }} strokeWidth={1.8} />
+                    <Icon size={26} style={{ color }} strokeWidth={1.6} />
                   </div>
                   <span className="text-center text-[10.5px] font-semibold leading-tight text-gray-700">
                     {title}
