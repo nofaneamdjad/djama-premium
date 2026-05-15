@@ -264,8 +264,8 @@ export default function Footer() {
 
             {/* Links */}
             <ul className="flex flex-col gap-3">
-              {col.items.map((item) => (
-                <li key={`${col.title}-${item.href}`}>
+              {col.items.map((item, i) => (
+                <li key={`${col.title}-${i}`}>
                   <Link
                     href={item.href}
                     className="group inline-flex items-center gap-1 text-[0.82rem] font-medium transition-all duration-200"
