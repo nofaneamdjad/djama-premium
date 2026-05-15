@@ -13,7 +13,12 @@ import {
   RefreshCw, PieChart, Layers, Bell, Hash,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import Toast, { type ToastData } from "@/components/ui/Toast";
+import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
+import Pagination from "@/components/client/Pagination";
+import { usePagination } from "@/hooks/usePagination";
+import { GridSkeleton } from "@/components/client/Skeleton";
+import EmptyState from "@/components/client/EmptyState";
+import { validate, ContactSchema } from "@/lib/schemas/client";
 
 /* ════════════════════════════════════════════════════════════
    TYPES
@@ -1170,8 +1175,9 @@ export default function CRMPage() {
   const [addModal,      setAddModal]      = useState(false);
   const [editContact,   setEditContact]   = useState<Contact | null>(null);
   const [form,          setForm]          = useState<Partial<Contact>>({ status: "prospect", type: "prospect" });
-  const [toast,         setToast]         = useState<ToastData | null>(null);
+  const [formErrors,    setFormErrors]    = useState<Record<string, string>>({});
   const [userId,        setUserId]        = useState<string | null>(null);
+  const { toasts, add: toast, remove: removeToast } = useToastStack();
 
   /* ── Auth ── */
   useEffect(() => {
@@ -1189,15 +1195,20 @@ export default function CRMPage() {
       supabase.from("crm_tasks").select("*, contacts(name,company)").eq("user_id", userId).order("due_date", { ascending: true }).limit(200),
       supabase.from("tickets").select("*, contacts(name,company)").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
     ]);
-    if (ctRes.data) setContacts(ctRes.data as Contact[]);
-    if (acRes.data) setActivities(acRes.data as Activity[]);
-    if (opRes.data) setOpportunities(opRes.data.map((o: Record<string, unknown>) => ({
+    if (ctRes.error) toast("Impossible de charger les contacts", "error");
+    else if (ctRes.data) setContacts(ctRes.data as Contact[]);
+    if (acRes.error) toast("Impossible de charger les activités", "error");
+    else if (acRes.data) setActivities(acRes.data as Activity[]);
+    if (opRes.error) toast("Impossible de charger les opportunités", "error");
+    else if (opRes.data) setOpportunities(opRes.data.map((o: Record<string, unknown>) => ({
       ...o, contact: o.contacts as Pick<Contact, "name"|"company"> | undefined,
     })) as Opportunity[]);
-    if (tkRes.data) setTasks(tkRes.data.map((t: Record<string, unknown>) => ({
+    if (tkRes.error) toast("Impossible de charger les tâches", "error");
+    else if (tkRes.data) setTasks(tkRes.data.map((t: Record<string, unknown>) => ({
       ...t, contact: t.contacts as Pick<Contact, "name"|"company"> | undefined,
     })) as CrmTask[]);
-    if (tiRes.data) setTickets(tiRes.data.map((t: Record<string, unknown>) => ({
+    if (tiRes.error) toast("Impossible de charger les tickets", "error");
+    else if (tiRes.data) setTickets(tiRes.data.map((t: Record<string, unknown>) => ({
       ...t, contact: t.contacts as Pick<Contact, "name"|"company"> | undefined,
     })) as SupportTicket[]);
     setLoading(false);
@@ -1205,40 +1216,40 @@ export default function CRMPage() {
 
   useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
 
-  const showToast = (msg: string, type: "success" | "error" = "success") =>
-    setToast({ msg, type });
-
   /* ── Contacts CRUD ── */
   async function saveContact() {
-    if (!form.name || !userId) return;
+    if (!userId) return;
+    const errors = validate(ContactSchema, form);
+    if (errors !== null) { setFormErrors(errors); return; }
     if (editContact) {
       const { error } = await supabase.from("contacts").update({ ...form, updated_at: new Date().toISOString() }).eq("id", editContact.id);
-      if (error) return showToast("Erreur de mise à jour", "error");
+      if (error) { toast("Erreur de mise à jour", "error"); return; }
       setContacts(cs => cs.map(c => c.id === editContact.id ? { ...c, ...form } as Contact : c));
       if (selected?.id === editContact.id) setSelected(s => s ? { ...s, ...form } as Contact : s);
-      showToast("Contact mis à jour");
+      toast("Contact mis à jour", "success");
     } else {
       const { data, error } = await supabase.from("contacts").insert({ ...form, user_id: userId }).select().single();
-      if (error || !data) return showToast("Erreur de création", "error");
+      if (error || !data) { toast("Erreur de création", "error"); return; }
       setContacts(cs => [data as Contact, ...cs]);
-      showToast("Contact créé");
+      toast("Contact créé", "success");
     }
-    setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" });
+    setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); setFormErrors({});
   }
 
   async function deleteContact(id: string) {
-    await supabase.from("contacts").delete().eq("id", id);
+    const { error } = await supabase.from("contacts").delete().eq("id", id);
+    if (error) { toast("Erreur lors de la suppression", "error"); return; }
     setContacts(cs => cs.filter(c => c.id !== id));
     setSelected(null);
-    showToast("Contact supprimé");
+    toast("Contact supprimé", "success");
   }
 
   async function updateContact(id: string, data: Partial<Contact>) {
     const { error } = await supabase.from("contacts").update({ ...data, updated_at: new Date().toISOString() }).eq("id", id);
-    if (error) return showToast("Erreur", "error");
+    if (error) { toast("Erreur", "error"); return; }
     setContacts(cs => cs.map(c => c.id === id ? { ...c, ...data } as Contact : c));
     setSelected(s => s?.id === id ? { ...s, ...data } as Contact : s);
-    showToast("Enregistré");
+    toast("Enregistré", "success");
   }
 
   /* ── Activities ── */
@@ -1247,7 +1258,8 @@ export default function CRMPage() {
     const { data: d, error } = await supabase.from("contact_activities").insert({
       ...data, user_id: userId, contact_id: contactId,
     }).select().single();
-    if (!error && d) { setActivities(a => [d as Activity, ...a]); showToast("Activité ajoutée"); }
+    if (error) { toast("Erreur lors de l'ajout de l'activité", "error"); return; }
+    if (d) { setActivities(a => [d as Activity, ...a]); toast("Activité ajoutée", "success"); }
   }
 
   async function deleteActivity(id: string) {
@@ -1259,21 +1271,23 @@ export default function CRMPage() {
   async function addOpportunity(data: Partial<Opportunity>) {
     if (!userId || !data.title) return;
     const { data: d, error } = await supabase.from("opportunities").insert({ ...data, user_id: userId }).select().single();
-    if (!error && d) {
+    if (error) { toast("Erreur lors de la création de l'opportunité", "error"); return; }
+    if (d) {
       const opp = d as Opportunity;
       if (opp.contact_id) {
         const c = contacts.find(c => c.id === opp.contact_id);
         if (c) opp.contact = { name: c.name, company: c.company };
       }
       setOpportunities(o => [opp, ...o]);
-      showToast("Opportunité créée");
+      toast("Opportunité créée", "success");
     }
   }
 
   async function updateOpportunity(id: string, data: Partial<Opportunity>) {
-    await supabase.from("opportunities").update(data).eq("id", id);
+    const { error } = await supabase.from("opportunities").update(data).eq("id", id);
+    if (error) { toast("Erreur de mise à jour de l'opportunité", "error"); return; }
     setOpportunities(o => o.map(op => op.id === id ? { ...op, ...data } : op));
-    showToast("Opportunité mise à jour");
+    toast("Opportunité mise à jour", "success");
   }
 
   async function deleteOpportunity(id: string) {
@@ -1285,14 +1299,15 @@ export default function CRMPage() {
   async function addTask(data: Partial<CrmTask>) {
     if (!userId || !data.title) return;
     const { data: d, error } = await supabase.from("crm_tasks").insert({ ...data, user_id: userId }).select().single();
-    if (!error && d) {
+    if (error) { toast("Erreur lors de la création de la tâche", "error"); return; }
+    if (d) {
       const task = d as CrmTask;
       if (task.contact_id) {
         const c = contacts.find(c => c.id === task.contact_id);
         if (c) task.contact = { name: c.name, company: c.company };
       }
       setTasks(t => [...t, task]);
-      showToast("Tâche créée");
+      toast("Tâche créée", "success");
     }
   }
 
@@ -1310,19 +1325,21 @@ export default function CRMPage() {
   async function addTicket(data: Partial<SupportTicket>) {
     if (!userId || !data.title) return;
     const { data: d, error } = await supabase.from("tickets").insert({ ...data, user_id: userId }).select().single();
-    if (!error && d) {
+    if (error) { toast("Erreur lors de la création du ticket", "error"); return; }
+    if (d) {
       const ticket = d as SupportTicket;
       if (ticket.contact_id) {
         const c = contacts.find(c => c.id === ticket.contact_id);
         if (c) ticket.contact = { name: c.name, company: c.company };
       }
       setTickets(t => [ticket, ...t]);
-      showToast("Ticket créé");
+      toast("Ticket créé", "success");
     }
   }
 
   async function updateTicket(id: string, data: Partial<SupportTicket>) {
-    await supabase.from("tickets").update(data).eq("id", id);
+    const { error } = await supabase.from("tickets").update(data).eq("id", id);
+    if (error) { toast("Erreur de mise à jour du ticket", "error"); return; }
     setTickets(t => t.map(tk => tk.id === id ? { ...tk, ...data } : tk));
   }
 
@@ -1373,9 +1390,7 @@ export default function CRMPage() {
   /* ── Render ── */
   return (
     <div className="relative flex h-full flex-col gap-0">
-      <AnimatePresence>
-        {toast && <Toast toast={toast} onClose={() => setToast(null)}/>}
-      </AnimatePresence>
+      <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-white/[0.05]">

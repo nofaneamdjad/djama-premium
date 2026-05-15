@@ -12,7 +12,10 @@ import {
   UserPlus, CalendarDays, LayoutList, Info,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import Toast, { type ToastData } from "@/components/ui/Toast";
+import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
+import EmptyState from "@/components/client/EmptyState";
+import { ListSkeleton } from "@/components/client/Skeleton";
+import { validate, ShiftSchema } from "@/lib/schemas/client";
 
 /* ══════════════════════════════════════════════════════════
    TYPES
@@ -192,14 +195,15 @@ export default function PlanificationPage() {
   const [loading,    setLoading]    = useState(true);
   const [view,       setView]       = useState<View>("grille");
   const [weekRef,    setWeekRef]    = useState<Date>(new Date());
-  const [toast,      setToast]      = useState<ToastData | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const { toasts, add: addToast, remove: removeToast } = useToastStack();
 
   /* ── Shift modal ── */
   const [shiftModal,  setShiftModal]  = useState(false);
   const [editShiftId, setEditShiftId] = useState<string | null>(null);
   const [shiftDraft,  setShiftDraft]  = useState<DraftShift>(emptyShift());
   const [savingShift, setSavingShift] = useState(false);
+  const [shiftErrors, setShiftErrors] = useState<Record<string, string>>({});
 
   /* ── Employee modal ── */
   const [empModal,  setEmpModal]  = useState(false);
@@ -222,24 +226,33 @@ export default function PlanificationPage() {
   const allPublished   = shifts.length > 0 && shifts.every(s => s.status === "published");
   const hasUnpublished = shifts.some(s => s.status === "draft");
 
-  const showToast = (type: "success" | "error", msg: string) => setToast({ type, msg });
+  const showToast = (type: "success" | "error", msg: string) => addToast(msg, type);
 
   /* ── Fetch employees ── */
   const fetchEmployees = useCallback(async (uid: string) => {
-    const { data } = await supabase.from("employees").select("*").eq("user_id", uid).order("created_at").limit(100);
+    const { data, error } = await supabase.from("employees").select("*").eq("user_id", uid).order("created_at").limit(100);
+    if (error) { showToast("error", "Erreur chargement employés : " + error.message); return; }
     if (data) setEmployees(data as Employee[]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ── Fetch shifts ── */
   const fetchShifts = useCallback(async (uid: string, days: Date[]) => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("shifts").select("*")
       .eq("user_id", uid)
       .gte("date", toISO(days[0])).lte("date", toISO(days[6]))
       .order("start_time");
+    if (error) showToast("error", "Erreur chargement shifts : " + error.message);
     if (data) setShifts(data as Shift[]);
     setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── Mobile: default to list view ── */
+  useEffect(() => {
+    if (window.innerWidth < 640) setView("liste");
   }, []);
 
   /* ── Auth + initial fetch ── */
@@ -271,6 +284,17 @@ export default function PlanificationPage() {
 
   const getShiftsFor = (empId: string | null, date: string) =>
     shiftsByKey.get(`${empId ?? "open"}|${date}`) ?? [];
+
+  const shiftIndex = useMemo(() => {
+    const idx: Record<string, Record<string, typeof shifts[0][]>> = {};
+    shifts.forEach(s => {
+      const empKey = s.employee_id ?? "__open__";
+      if (!idx[empKey]) idx[empKey] = {};
+      if (!idx[empKey][s.date]) idx[empKey][s.date] = [];
+      idx[empKey][s.date].push(s);
+    });
+    return idx;
+  }, [shifts]);
 
   const empMap = useMemo(() => {
     const m = new Map<string, Employee>();
@@ -1158,9 +1182,7 @@ export default function PlanificationPage() {
       </AnimatePresence>
 
       {/* ══ TOAST ══ */}
-      <AnimatePresence>
-        {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
-      </AnimatePresence>
+      <ToastStack toasts={toasts} remove={removeToast} />
     </div>
   );
 }

@@ -5,101 +5,96 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  StickyNote, Calendar, ReceiptText, Sparkles,
+  StickyNote, Calendar, ReceiptText,
   LogOut, Lock, Clock, CheckCircle2, MessageCircle,
   Bell, X, Menu,
   CreditCard, Wallet, Users, FileText, Timer, CalendarRange, Search, Star,
   LayoutDashboard, Brain, Zap, Mic, ChevronRight,
-  Globe, Package, Truck, ListTodo,
+  Package, Truck, ListTodo, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRequireSubscription } from "@/lib/use-require-subscription";
 
 const GOLD = "#c9a55a";
+const NAVY = "#0a0f1e";
+const SIDEBAR_BG = "#070c18";
+const BORDER = "rgba(255,255,255,0.06)";
 
-/* ═══════════════════════════════════════════════════
-   NAVIGATION — groupée par catégorie
-═══════════════════════════════════════════════════ */
-type NavEntry = { href: string; label: string; icon: React.ElementType; color: string; exact?: boolean };
+/* ─────────────────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────────────────── */
+type NavEntry = { href: string; label: string; icon: React.ElementType; exact?: boolean };
 
 const NAV_GROUPS: { label: string | null; items: NavEntry[] }[] = [
   {
     label: null,
     items: [
-      { href: "/client",           label: "Cockpit",      icon: Sparkles,       exact: true, color: "#c9a55a" },
-      { href: "/client/dashboard", label: "Dashboard",    icon: LayoutDashboard,             color: "#c9a55a" },
+      { href: "/client",           label: "Cockpit",      icon: LayoutDashboard, exact: true },
+      { href: "/client/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
     ],
   },
   {
-    label: "Gestion",
+    label: "Finance",
     items: [
-      { href: "/client/factures",   label: "Factures",    icon: ReceiptText,   color: "#4ade80" },
-      { href: "/client/crm",        label: "CRM",         icon: Users,         color: "#60a5fa" },
-      { href: "/client/depenses",   label: "Dépenses",    icon: CreditCard,    color: "#f97316" },
-      { href: "/client/tresorerie", label: "Trésorerie",  icon: Wallet,        color: "#34d399" },
-      { href: "/client/contrats",   label: "Contrats IA", icon: FileText,      color: "#c9a55a" },
-      { href: "/client/stocks",       label: "Stocks",        icon: Package,       color: "#10b981" },
-      { href: "/client/fournisseurs", label: "Fournisseurs",  icon: Truck,         color: "#8b5cf6" },
+      { href: "/client/factures",   label: "Factures & Devis", icon: ReceiptText  },
+      { href: "/client/depenses",   label: "Dépenses",         icon: CreditCard   },
+      { href: "/client/tresorerie", label: "Trésorerie",       icon: Wallet       },
     ],
   },
   {
-    label: "Productivité",
+    label: "Commercial",
     items: [
-      { href: "/client/productivite",   label: "Tâches",      icon: ListTodo,     color: "#8b5cf6" },
-      { href: "/client/chrono",        label: "Chrono",      icon: Timer,        color: "#a78bfa" },
-      { href: "/client/notes",         label: "Notes IA",    icon: StickyNote,   color: "#fbbf24" },
-      { href: "/client/bloc-note",     label: "Bloc Note",   icon: Mic,          color: "#a78bfa" },
-      { href: "/client/planning",      label: "Planning",    icon: Calendar,     color: "#60a5fa" },
-      { href: "/client/equipe",        label: "Équipe",      icon: CalendarRange,color: "#38bdf8" },
+      { href: "/client/crm",         label: "CRM",          icon: Users    },
+      { href: "/client/contrats",    label: "Contrats",     icon: FileText },
+      { href: "/client/fournisseurs",label: "Fournisseurs", icon: Truck    },
+      { href: "/client/stocks",      label: "Stocks",       icon: Package  },
+    ],
+  },
+  {
+    label: "Opérations",
+    items: [
+      { href: "/client/productivite", label: "Tâches",       icon: ListTodo      },
+      { href: "/client/planning",     label: "Planning",     icon: Calendar      },
+      { href: "/client/equipe",       label: "Équipe",       icon: CalendarRange },
+      { href: "/client/chrono",       label: "Chrono",       icon: Timer         },
+    ],
+  },
+  {
+    label: "Notes",
+    items: [
+      { href: "/client/notes",    label: "Notes IA",   icon: StickyNote },
+      { href: "/client/bloc-note",label: "Bloc-note",  icon: Mic        },
     ],
   },
   {
     label: "Intelligence",
     items: [
-      { href: "/client/sourcing",   label: "Sourcing IA",   icon: Search,  color: "#818cf8" },
-      { href: "/coaching-ia/espace",label: "Coaching IA",   icon: Brain,   color: "#d946ef" },
-      { href: "/client/assistant",  label: "Assistant IA",  icon: Zap,     color: "#22d3ee" },
-      { href: "/client/reputation", label: "Réputation",    icon: Star,    color: "#f59e0b" },
+      { href: "/client/sourcing",    label: "Sourcing IA",  icon: Search },
+      { href: "/client/assistant",   label: "Assistant IA", icon: Zap    },
+      { href: "/client/reputation",  label: "Réputation",   icon: Star   },
+      { href: "/coaching-ia/espace", label: "Coaching IA",  icon: Brain  },
     ],
   },
 ];
 
-/* ═══════════════════════════════════════════════════
-   TYPES
-═══════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────
+   TYPES — notifications
+───────────────────────────────────────────────── */
 type UpcomingEvent = {
-  id: string;
-  title: string;
-  event_date: string;
-  event_time: string | null;
-  category: string;
+  id: string; title: string;
+  event_date: string; event_time: string | null; category: string;
 };
 
-const CAT_COLORS: Record<string, { color: string; bg: string }> = {
-  travail:   { color: "#c9a55a", bg: "rgba(201,165,90,0.12)" },
-  réunion:   { color: "#60a5fa", bg: "rgba(96,165,250,0.12)" },
-  personnel: { color: "#4ade80", bg: "rgba(74,222,128,0.10)" },
-  autre:     { color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },
-};
-
-function isoToday() { return new Date().toISOString().split("T")[0]; }
-function isoTomorrow() {
-  const d = new Date(); d.setDate(d.getDate() + 1);
-  return d.toISOString().split("T")[0];
-}
-function isoIn7() {
-  const d = new Date(); d.setDate(d.getDate() + 7);
-  return d.toISOString().split("T")[0];
-}
-function fmtDate(iso: string) {
-  return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", {
-    weekday: "short", day: "numeric", month: "short",
-  });
+function isoToday()    { return new Date().toISOString().split("T")[0]; }
+function isoTomorrow() { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split("T")[0]; }
+function isoIn7()      { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split("T")[0]; }
+function fmtEvtDate(iso: string) {
+  return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 }
 
-/* ═══════════════════════════════════════════════════
-   CLOCHE NOTIFICATIONS
-═══════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────
+   CLOCHE
+───────────────────────────────────────────────── */
 function NotifBell({ ready }: { ready: boolean }) {
   const [open,   setOpen]   = useState(false);
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
@@ -116,8 +111,7 @@ function NotifBell({ ready }: { ready: boolean }) {
         .eq("user_id", user.id)
         .gte("event_date", isoToday())
         .lte("event_date", isoIn7())
-        .order("event_date", { ascending: true })
-        .order("event_time", { ascending: true, nullsFirst: false });
+        .order("event_date", { ascending: true });
       if (data) setEvents(data as UpcomingEvent[]);
     }
     load();
@@ -133,118 +127,89 @@ function NotifBell({ ready }: { ready: boolean }) {
     return () => document.removeEventListener("mousedown", onOut);
   }, []);
 
-  const today    = isoToday();
-  const tomorrow = isoTomorrow();
+  const today        = isoToday();
+  const tomorrow     = isoTomorrow();
   const todayEvts    = events.filter(e => e.event_date === today);
   const tomorrowEvts = events.filter(e => e.event_date === tomorrow);
   const laterEvts    = events.filter(e => e.event_date > tomorrow);
   const badge        = todayEvts.length;
 
-  const groups = [
-    { label: "Aujourd'hui",   evts: todayEvts,    highlight: true,  showDate: false },
-    { label: "Demain",        evts: tomorrowEvts, highlight: false, showDate: false },
-    { label: "Cette semaine", evts: laterEvts,    highlight: false, showDate: true  },
-  ];
-
   return (
     <div className="relative" ref={ref}>
-      <motion.button
+      <button
         onClick={() => setOpen(v => !v)}
-        whileTap={{ scale: 0.9 }}
         aria-label={`Notifications${badge > 0 ? ` — ${badge} aujourd'hui` : ""}`}
-        className="relative flex h-8 w-8 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/[0.06] hover:text-white/70"
+        className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200"
       >
         <Bell size={15} />
         {badge > 0 && (
-          <motion.span
-            initial={{ scale: 0 }} animate={{ scale: 1 }}
-            className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#c9a55a] text-[0.52rem] font-black text-[#09090b]"
-          >
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[0.52rem] font-black"
+            style={{ background: GOLD, color: "#07090f" }}>
             {badge > 9 ? "9+" : badge}
-          </motion.span>
+          </span>
         )}
-      </motion.button>
+      </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            initial={{ opacity: 0, y: 6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.97 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0f1117] shadow-[0_24px_60px_rgba(0,0,0,0.65)]"
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute right-0 top-10 z-50 w-76 overflow-hidden rounded-xl border shadow-2xl"
+            style={{ background: "#0d1220", borderColor: BORDER }}
           >
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Bell size={13} style={{ color: GOLD }} />
-                <span className="text-[0.78rem] font-bold text-white">Événements à venir</span>
-                {events.length > 0 && (
-                  <span className="rounded-full bg-[rgba(201,165,90,0.14)] px-1.5 py-0.5 text-[0.6rem] font-black" style={{ color: GOLD }}>
-                    {events.length}
-                  </span>
-                )}
-              </div>
-              <button onClick={() => setOpen(false)} className="text-white/25 transition hover:text-white/60">
+            <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: BORDER }}>
+              <span className="text-xs font-semibold text-slate-300">Événements à venir</span>
+              <button onClick={() => setOpen(false)} aria-label="Fermer" className="text-slate-500 hover:text-slate-300 transition">
                 <X size={13} />
               </button>
             </div>
 
-            <div className="max-h-[340px] overflow-y-auto">
+            <div className="max-h-[320px] overflow-y-auto">
               {events.length === 0 ? (
                 <div className="px-4 py-8 text-center">
-                  <Calendar size={24} className="mx-auto mb-2 text-white/15" />
-                  <p className="text-[0.75rem] text-white/30">Aucun événement cette semaine</p>
+                  <Calendar size={20} className="mx-auto mb-2 text-slate-600" />
+                  <p className="text-xs text-slate-500">Aucun événement cette semaine</p>
                   <Link href="/client/planning" onClick={() => setOpen(false)}
-                    className="mt-3 inline-flex items-center gap-1 text-[0.72rem] font-semibold transition hover:opacity-75"
+                    className="mt-2 inline-block text-xs font-medium transition hover:opacity-80"
                     style={{ color: GOLD }}>
-                    + Ajouter un événement
+                    + Ajouter
                   </Link>
                 </div>
               ) : (
                 <div className="py-1">
-                  {groups.map(({ label, evts, highlight, showDate }) =>
-                    evts.length === 0 ? null : (
-                      <div key={label}>
-                        <p className="flex items-center gap-1.5 px-4 pb-1 pt-3 text-[0.6rem] font-black uppercase tracking-widest"
-                          style={{ color: highlight ? GOLD : "rgba(255,255,255,0.25)" }}>
-                          {label}
-                          {highlight && (
-                            <span className="rounded-full bg-[rgba(201,165,90,0.15)] px-1.5 py-0.5" style={{ color: GOLD }}>
-                              {evts.length}
-                            </span>
-                          )}
-                        </p>
-                        {evts.map(ev => {
-                          const cc = CAT_COLORS[ev.category] ?? CAT_COLORS.autre;
-                          return (
-                            <Link href="/client/planning" key={ev.id} onClick={() => setOpen(false)}
-                              className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-white/[0.04]">
-                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl" style={{ background: cc.bg }}>
-                                <Calendar size={11} style={{ color: cc.color }} />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-[0.78rem] font-semibold text-white/85">{ev.title}</p>
-                                <p className="text-[0.67rem] text-white/35">
-                                  {showDate ? `${fmtDate(ev.event_date)} · ` : ""}
-                                  {ev.event_time ?? "Sans heure"}
-                                </p>
-                              </div>
-                              <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: cc.color }} />
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )
-                  )}
+                  {[
+                    { label: "Aujourd'hui",   evts: todayEvts,    showDate: false },
+                    { label: "Demain",        evts: tomorrowEvts, showDate: false },
+                    { label: "Cette semaine", evts: laterEvts,    showDate: true  },
+                  ].map(({ label, evts, showDate }) => evts.length === 0 ? null : (
+                    <div key={label}>
+                      <p className="px-4 pb-1 pt-3 text-[0.6rem] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+                      {evts.map(ev => (
+                        <Link href="/client/planning" key={ev.id} onClick={() => setOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 transition hover:bg-white/[0.03]">
+                          <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: GOLD }} />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-medium text-slate-200">{ev.title}</p>
+                            <p className="text-[0.65rem] text-slate-500">
+                              {showDate ? `${fmtEvtDate(ev.event_date)} · ` : ""}{ev.event_time ?? "Sans heure"}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
 
-            <div className="border-t border-white/[0.06] px-4 py-2.5">
+            <div className="border-t px-4 py-2.5" style={{ borderColor: BORDER }}>
               <Link href="/client/planning" onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-1.5 text-[0.72rem] font-semibold transition hover:opacity-75"
+                className="flex items-center justify-center gap-1.5 text-xs font-medium transition hover:opacity-75"
                 style={{ color: GOLD }}>
-                <Calendar size={11} /> Voir le planning complet
+                Voir le planning complet <ChevronRight size={11} />
               </Link>
             </div>
           </motion.div>
@@ -254,48 +219,32 @@ function NotifBell({ ready }: { ready: boolean }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   ÉCRAN EN ATTENTE D'ACTIVATION
-═══════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────
+   PENDING SCREEN
+───────────────────────────────────────────────── */
 function PendingScreen() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-0 bg-[#080a0f] px-6">
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="h-[400px] w-[400px] rounded-full bg-[rgba(249,168,38,0.06)] blur-[120px]" />
-      </div>
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-md text-center"
-      >
-        <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full border border-[rgba(249,168,38,0.25)] bg-[rgba(249,168,38,0.08)]">
-          <Clock size={36} className="text-[#f9a826]" />
+    <div className="flex min-h-screen flex-col items-center justify-center gap-0 px-6" style={{ background: NAVY }}>
+      <div className="w-full max-w-md text-center">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border"
+          style={{ background: "rgba(201,165,90,0.08)", borderColor: "rgba(201,165,90,0.2)" }}>
+          <Clock size={28} style={{ color: GOLD }} />
         </div>
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(249,168,38,0.25)] bg-[rgba(249,168,38,0.07)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#f9a826]">
-          <CheckCircle2 size={11} /> Paiement confirmé
-        </div>
-        <h1 className="mb-4 text-2xl font-black text-white sm:text-3xl">
-          Votre accès sera activé prochainement
-        </h1>
-        <p className="mb-8 text-sm leading-relaxed text-white/40">
-          Votre paiement a bien été reçu. Notre équipe va activer votre espace dans les{" "}
-          <strong className="text-white/65">plus brefs délais</strong> (généralement sous 24h).
+        <h1 className="mb-3 text-xl font-bold text-white">Votre accès sera activé prochainement</h1>
+        <p className="mb-8 text-sm leading-relaxed text-slate-400">
+          Votre paiement a bien été reçu. Notre équipe activera votre espace sous 24h.
         </p>
-        <div className="mb-8 space-y-3 rounded-2xl border border-white/[0.07] bg-[#111113] p-5 text-left">
+        <div className="mb-6 space-y-2.5 rounded-xl border p-4 text-left" style={{ borderColor: BORDER, background: "#0d1220" }}>
           {[
-            { icon: CheckCircle2, color: "#4ade80", label: "Paiement reçu et validé",                     badge: "Fait",     badgeColor: "#4ade80" },
-            { icon: Clock,        color: "#f9a826", label: "Activation de votre accès par DJAMA",          badge: "En cours", badgeColor: "#f9a826" },
-            { icon: MessageCircle,color: "#c9a55a", label: "Email de confirmation envoyé dès l'activation", badge: null,      badgeColor: "" },
+            { icon: CheckCircle2,  color: "#4ade80", label: "Paiement reçu et validé",           badge: "Fait",     badgeColor: "#4ade80" },
+            { icon: Clock,         color: GOLD,      label: "Activation de votre accès par DJAMA", badge: "En cours", badgeColor: GOLD },
+            { icon: MessageCircle, color: "#60a5fa", label: "Email de confirmation à l'activation", badge: null,       badgeColor: "" },
           ].map(({ icon: Icon, color, label, badge, badgeColor }, i) => (
             <div key={i} className="flex items-center gap-3">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border"
-                style={{ background: `${color}1a`, borderColor: `${color}40` }}>
-                <Icon size={13} style={{ color }} />
-              </div>
-              <p className="flex-1 text-sm text-white/55">{label}</p>
+              <Icon size={14} style={{ color }} />
+              <p className="flex-1 text-sm text-slate-300">{label}</p>
               {badge && (
-                <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold"
+                <span className="rounded-md px-2 py-0.5 text-[0.65rem] font-semibold"
                   style={{ background: `${badgeColor}1a`, color: badgeColor }}>
                   {badge}
                 </span>
@@ -303,68 +252,62 @@ function PendingScreen() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:justify-center">
           <a href="https://wa.me/262693523665" target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[rgba(37,211,102,0.25)] bg-[rgba(37,211,102,0.07)] px-5 py-3 text-sm font-bold text-[#25d366] transition-all hover:bg-[rgba(37,211,102,0.12)]">
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-[#25d366] transition hover:opacity-80"
+            style={{ background: "rgba(37,211,102,0.08)", border: "1px solid rgba(37,211,102,0.2)" }}>
             <MessageCircle size={15} /> Contacter DJAMA
           </a>
           <Link href="/"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] px-5 py-3 text-sm font-semibold text-white/40 transition-all hover:text-white/70">
+            className="inline-flex items-center justify-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-slate-200"
+            style={{ borderColor: BORDER }}>
             Retour au site
           </Link>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   SIDEBAR NAV ITEM
-═══════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────
+   NAV ITEM
+───────────────────────────────────────────────── */
 function NavItem({
-  href, label, icon: Icon, color, exact = false, pathname, onClick,
+  href, label, icon: Icon, exact = false, pathname, onClick,
 }: {
   href: string; label: string; icon: React.ElementType;
-  color: string; exact?: boolean; pathname: string;
-  onClick?: () => void;
+  exact?: boolean; pathname: string; onClick?: () => void;
 }) {
   const active = exact ? pathname === href : pathname.startsWith(href);
   return (
     <Link
       href={href}
       onClick={onClick}
-      className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.82rem] font-semibold transition-all duration-150 ${
+      className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.8rem] font-medium transition-colors duration-100 ${
         active
           ? "text-white"
-          : "text-white/40 hover:bg-white/[0.04] hover:text-white/75"
+          : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
       }`}
-      style={active ? { background: `${color}18`, color } : {}}
+      style={active ? { background: `${GOLD}14` } : {}}
     >
-      {/* Active left bar */}
-      {active && (
-        <span
-          className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full"
-          style={{ background: color }}
-        />
-      )}
-      <div
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all"
-        style={active
-          ? { background: `${color}22`, border: `1px solid ${color}33` }
-          : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }
-        }
-      >
-        <Icon size={13} style={{ color: active ? color : "rgba(255,255,255,0.35)" }} />
-      </div>
-      <span className="flex-1">{label}</span>
-      {active && <ChevronRight size={11} style={{ color }} className="opacity-60" />}
+      {/* Active indicator */}
+      <span
+        className="absolute left-0 h-4 w-0.5 rounded-r-full transition-opacity"
+        style={{ background: GOLD, opacity: active ? 1 : 0 }}
+      />
+      <Icon
+        size={14}
+        style={{ color: active ? GOLD : undefined }}
+        className={active ? "" : "text-slate-500 group-hover:text-slate-300"}
+      />
+      <span className="flex-1 truncate">{label}</span>
     </Link>
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   LAYOUT PRINCIPAL
-═══════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────
+   LAYOUT
+───────────────────────────────────────────────── */
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname  = usePathname();
   const { ready, pending } = useRequireSubscription();
@@ -380,7 +323,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     });
   }, []);
 
-  // Close sidebar on route change (mobile)
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   async function handleLogout() {
@@ -388,87 +330,85 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     window.location.href = "/login";
   }
 
+  const currentLabel = NAV_GROUPS
+    .flatMap(g => g.items)
+    .find(item => item.exact ? pathname === item.href : pathname.startsWith(item.href))
+    ?.label ?? "Espace client";
+
   if (pending) return <PendingScreen />;
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[#080a0f]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
-        <div className="text-center">
-          <p className="text-xs font-semibold text-white/40">Vérification de l&apos;accès…</p>
-          <p className="mt-1 flex items-center justify-center gap-1.5 text-[0.65rem] text-white/20">
-            <Lock size={9} /> Espace sécurisé DJAMA
-          </p>
-        </div>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4" style={{ background: NAVY }}>
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
+        <p className="text-xs text-slate-500 flex items-center gap-1.5">
+          <Lock size={10} /> Vérification de l&apos;accès…
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#080a0f]">
+    <div className="flex h-screen overflow-hidden" style={{ background: NAVY }}>
 
-      {/* ── Mobile overlay ── */}
+      {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-30 bg-black/50 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════════════════════════
-          SIDEBAR
-      ══════════════════════════════════════════ */}
-      <motion.aside
-        initial={false}
-        animate={{ x: sidebarOpen ? 0 : undefined }}
+      {/* ── SIDEBAR ── */}
+      <aside
         className={`
-          fixed inset-y-0 left-0 z-40 flex w-[240px] flex-col
-          border-r border-white/[0.06] bg-[#0a0b10]
-          transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+          fixed inset-y-0 left-0 z-40 flex w-56 flex-col
+          border-r transition-transform duration-250 ease-out
           lg:static lg:z-auto lg:translate-x-0
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
+        style={{ background: SIDEBAR_BG, borderColor: BORDER }}
       >
         {/* Logo */}
-        <div className="flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.06] px-5">
+        <div className="flex h-13 shrink-0 items-center justify-between border-b px-4 py-3.5" style={{ borderColor: BORDER }}>
           <Link href="/client" className="flex items-center gap-2.5">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-lg blur-sm" style={{ background: GOLD + "30" }} />
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-lg border"
-                style={{ backgroundColor: GOLD + "15", borderColor: GOLD + "28" }}>
-                <Sparkles size={14} style={{ color: GOLD }} />
-              </div>
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+              style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}28` }}>
+              <Sparkles size={13} style={{ color: GOLD }} />
             </div>
-            <div>
-              <p className="text-[0.92rem] font-black leading-none tracking-wider" style={{ color: GOLD }}>DJAMA</p>
-              <p className="mt-0.5 text-[0.6rem] font-bold uppercase leading-none tracking-[.18em] text-white/25">Pro</p>
+            <div className="leading-none">
+              <p className="text-[0.88rem] font-bold tracking-wide" style={{ color: GOLD }}>DJAMA</p>
+              <p className="text-[0.55rem] uppercase tracking-widest text-slate-600 mt-0.5">Pro</p>
             </div>
           </Link>
-          <button onClick={() => setSidebarOpen(false)} className="ml-auto text-white/25 hover:text-white/60 lg:hidden transition">
-            <X size={15} />
+          <button
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Fermer le menu"
+            className="text-slate-500 hover:text-slate-300 transition lg:hidden">
+            <X size={14} />
           </button>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-3 scrollbar-none">
+        <nav className="relative flex-1 overflow-y-auto px-2 py-2 scrollbar-none">
           {NAV_GROUPS.map((group, gi) => (
-            <div key={gi} className={gi > 0 ? "mt-4" : ""}>
+            <div key={gi} className={gi > 0 ? "mt-3" : ""}>
               {group.label && (
-                <p className="mb-1 px-3 text-[0.58rem] font-black uppercase tracking-[0.18em] text-white/20">
+                <p className="mb-1 px-2.5 text-[0.6rem] font-semibold uppercase tracking-wider text-slate-600">
                   {group.label}
                 </p>
               )}
-              <div className="space-y-0.5">
+              <div className="space-y-px relative">
                 {group.items.map(item => (
                   <NavItem
                     key={item.href}
                     href={item.href}
                     label={item.label}
                     icon={item.icon}
-                    color={item.color}
                     exact={item.exact ?? false}
                     pathname={pathname}
                     onClick={() => setSidebarOpen(false)}
@@ -480,56 +420,53 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </nav>
 
         {/* User footer */}
-        <div className="shrink-0 border-t border-white/[0.06] p-3">
-          <div className="flex items-center gap-2.5 rounded-xl px-2.5 py-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-[0.7rem] font-black"
-              style={{ borderColor: GOLD + "30", background: GOLD + "12", color: GOLD }}>
+        <div className="shrink-0 border-t p-2" style={{ borderColor: BORDER }}>
+          <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.65rem] font-bold"
+              style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}25`, color: GOLD }}>
               {userInitial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[0.72rem] font-semibold text-white/70">{userEmail || "Mon compte"}</p>
-              <p className="text-[0.6rem] text-white/25">DJAMA PRO</p>
+              <p className="truncate text-[0.72rem] font-medium text-slate-300">{userEmail || "Mon compte"}</p>
+              <p className="text-[0.58rem] text-slate-600">DJAMA PRO</p>
             </div>
-            <button onClick={handleLogout} title="Se déconnecter"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white/25 transition hover:bg-white/[0.06] hover:text-white/55">
-              <LogOut size={13} />
+            <button
+              onClick={handleLogout}
+              aria-label="Se déconnecter"
+              title="Se déconnecter"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-600 transition hover:bg-white/[0.05] hover:text-slate-400">
+              <LogOut size={12} />
             </button>
           </div>
         </div>
-      </motion.aside>
+      </aside>
 
-      {/* ══════════════════════════════════════════
-          CONTENU PRINCIPAL
-      ══════════════════════════════════════════ */}
+      {/* ── CONTENU ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* Top bar */}
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.06] bg-[#080a0f]/95 px-4 backdrop-blur-xl">
-          {/* Hamburger mobile */}
+        <header
+          className="flex h-13 shrink-0 items-center gap-3 border-b px-4"
+          style={{ borderColor: BORDER, background: `${SIDEBAR_BG}f0`, backdropFilter: "blur(12px)" }}
+        >
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/[0.06] hover:text-white/70 lg:hidden"
-          >
+            aria-label="Ouvrir le menu"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200 lg:hidden">
             <Menu size={16} />
           </button>
 
-          {/* Page title (mobile) */}
-          <div className="flex-1 lg:hidden">
-            <p className="text-sm font-bold text-white/70 capitalize">
-              {NAV_GROUPS.flatMap(g => g.items).find(item =>
-                item.exact ? pathname === item.href : pathname.startsWith(item.href)
-              )?.label ?? "Espace client"}
-            </p>
-          </div>
+          {/* Breadcrumb mobile */}
+          <p className="flex-1 text-sm font-semibold text-slate-200 lg:hidden">{currentLabel}</p>
 
           <div className="hidden flex-1 lg:block" />
 
-          {/* Actions */}
-          <NotifBell ready={ready} />
-
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-[0.7rem] font-black"
-            style={{ borderColor: GOLD + "30", background: GOLD + "12", color: GOLD }}>
-            {userInitial}
+          <div className="flex items-center gap-2">
+            <NotifBell ready={ready} />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg text-[0.65rem] font-bold"
+              style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}25`, color: GOLD }}>
+              {userInitial}
+            </div>
           </div>
         </header>
 

@@ -2,18 +2,18 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   ReceiptText, Users, Timer, CreditCard, FileText, Search,
   Wallet, StickyNote, Calendar, CalendarRange, Brain, Zap, Star, Mic,
-  Sparkles, TrendingUp, TrendingDown, Euro, Clock,
+  TrendingUp, TrendingDown, LayoutGrid, Package, ClipboardList,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
 
-/* ═══════════════════════════════════════════════════════
-   HELPERS
-═══════════════════════════════════════════════════════ */
+/* ─── Constants ──────────────────────────────────────────────────────────── */
+const GOLD   = "#c9a55a";
+const NAVY   = "#0a0f1e";
+
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Bonjour";
@@ -21,212 +21,119 @@ function getGreeting() {
   return "Bonsoir";
 }
 
-/* ═══════════════════════════════════════════════════════
-   APPS — chaque outil avec son identité visuelle
-═══════════════════════════════════════════════════════ */
-const APPS = [
+/* ─── Module catalogue ───────────────────────────────────────────────────── */
+const MODULES = [
   {
-    href: "/client/factures",
-    label: "Factures & Devis",
-    desc: "Documents pro, PDF, TVA auto",
-    icon: ReceiptText,
-    from: "#0d9e61", to: "#059669",
-    deco: ["#34d399", "#6ee7b7"],
+    group: "Finance",
+    items: [
+      { href: "/client/factures",   label: "Factures & Devis", desc: "Facturation, devis, TVA auto",      icon: ReceiptText,  hue: "#3b82f6" },
+      { href: "/client/depenses",   label: "Dépenses",         desc: "Frais pro, catégories, export",     icon: CreditCard,   hue: "#f97316" },
+      { href: "/client/tresorerie", label: "Trésorerie",       desc: "Cash-flow, flux consolidés",        icon: Wallet,       hue: "#10b981" },
+    ],
   },
   {
-    href: "/client/crm",
-    label: "CRM",
-    desc: "Contacts, prospects, pipeline",
-    icon: Users,
-    from: "#1d5fcc", to: "#2563eb",
-    deco: ["#60a5fa", "#93c5fd"],
+    group: "Commercial",
+    items: [
+      { href: "/client/crm",        label: "CRM",              desc: "Contacts, prospects, pipeline",     icon: Users,        hue: "#6366f1" },
+      { href: "/client/contrats",   label: "Contrats IA",      desc: "Génération IA, PDF en secondes",    icon: FileText,     hue: GOLD      },
+      { href: "/client/stocks",     label: "Stocks",           desc: "Produits, niveaux, alertes",        icon: Package,      hue: "#14b8a6" },
+    ],
   },
   {
-    href: "/client/depenses",
-    label: "Dépenses",
-    desc: "Frais pros, catégories, export",
-    icon: CreditCard,
-    from: "#c2410c", to: "#ea580c",
-    deco: ["#fb923c", "#fed7aa"],
+    group: "Opérations",
+    items: [
+      { href: "/client/planning",       label: "Planning",        desc: "Agenda, rendez-vous, tâches",   icon: Calendar,     hue: "#8b5cf6" },
+      { href: "/client/planification",  label: "Équipe",          desc: "Shifts, congés, emails auto",   icon: CalendarRange,hue: "#0ea5e9" },
+      { href: "/client/taches",         label: "Tâches",          desc: "To-do, priorités, suivi",       icon: ClipboardList,hue: "#ec4899" },
+      { href: "/client/chrono",         label: "Chrono Pro",      desc: "Timer, pause/reprise, projets", icon: Timer,        hue: "#a78bfa" },
+    ],
   },
   {
-    href: "/client/tresorerie",
-    label: "Trésorerie",
-    desc: "Cash-flow, flux consolidés",
-    icon: Wallet,
-    from: "#0f766e", to: "#0d9488",
-    deco: ["#2dd4bf", "#99f6e4"],
-  },
-  {
-    href: "/client/contrats",
-    label: "Contrats IA",
-    desc: "Génération IA en secondes, PDF",
-    icon: FileText,
-    from: "#92640a", to: "#b45309",
-    deco: ["#c9a55a", "#fde68a"],
-  },
-  {
-    href: "/client/chrono",
-    label: "Chrono Pro",
-    desc: "Timer, pause/reprise, projets",
-    icon: Timer,
-    from: "#5b21b6", to: "#7c3aed",
-    deco: ["#a78bfa", "#ddd6fe"],
-  },
-  {
-    href: "/client/notes",
-    label: "Notes IA",
-    desc: "Notes intelligentes, résumés auto",
-    icon: StickyNote,
-    from: "#92400e", to: "#b45309",
-    deco: ["#fbbf24", "#fde68a"],
-  },
-  {
-    href: "/client/bloc-note",
-    label: "Bloc Note vocal",
-    desc: "Dictée, transcription IA live",
-    icon: Mic,
-    from: "#6b21a8", to: "#9333ea",
-    deco: ["#c084fc", "#e9d5ff"],
-  },
-  {
-    href: "/client/planning",
-    label: "Planning",
-    desc: "Agenda, rendez-vous, tâches",
-    icon: Calendar,
-    from: "#1e40af", to: "#1d4ed8",
-    deco: ["#60a5fa", "#bfdbfe"],
-  },
-  {
-    href: "/client/planification",
-    label: "Équipe",
-    desc: "Shifts, planning, emails auto",
-    icon: CalendarRange,
-    from: "#075985", to: "#0284c7",
-    deco: ["#38bdf8", "#bae6fd"],
-  },
-  {
-    href: "/client/sourcing",
-    label: "Sourcing IA",
-    desc: "Fournisseurs mondiaux avec IA",
-    icon: Search,
-    from: "#3730a3", to: "#4338ca",
-    deco: ["#818cf8", "#c7d2fe"],
-  },
-  {
-    href: "/coaching-ia/espace",
-    label: "Coaching IA",
-    desc: "Objectifs, modules, progression",
-    icon: Brain,
-    from: "#86198f", to: "#a21caf",
-    deco: ["#d946ef", "#f5d0fe"],
-  },
-  {
-    href: "/client/assistant",
-    label: "Assistant IA",
-    desc: "Relances auto, actions urgentes",
-    icon: Zap,
-    from: "#0e7490", to: "#0891b2",
-    deco: ["#22d3ee", "#a5f3fc"],
-  },
-  {
-    href: "/client/reputation",
-    label: "Réputation",
-    desc: "Avis clients, tendance, export",
-    icon: Star,
-    from: "#92400e", to: "#b45309",
-    deco: ["#f59e0b", "#fde68a"],
+    group: "Intelligence",
+    items: [
+      { href: "/client/notes",          label: "Notes IA",        desc: "Notes intelligentes, résumés",  icon: StickyNote,   hue: "#fbbf24" },
+      { href: "/client/bloc-note",      label: "Bloc-note vocal", desc: "Dictée, transcription en live", icon: Mic,          hue: "#c084fc" },
+      { href: "/client/sourcing",       label: "Sourcing IA",     desc: "Fournisseurs mondiaux avec IA", icon: Search,       hue: "#818cf8" },
+      { href: "/client/assistant",      label: "Assistant IA",    desc: "Relances auto, actions urgentes",icon: Zap,         hue: "#22d3ee" },
+      { href: "/client/reputation",     label: "Réputation",      desc: "Avis clients, tendance, export",icon: Star,         hue: "#f59e0b" },
+      { href: "/coaching-ia/espace",    label: "Coaching IA",     desc: "Objectifs, modules, progression",icon: Brain,       hue: "#d946ef" },
+    ],
   },
 ] as const;
 
-/* ═══════════════════════════════════════════════════════
-   APP CARD
-═══════════════════════════════════════════════════════ */
-function AppCard({ app, index }: { app: typeof APPS[number]; index: number }) {
-  const Icon = app.icon;
+/* ─── Module card ────────────────────────────────────────────────────────── */
+type ModuleItem = {
+  href: string;
+  label: string;
+  desc: string;
+  icon: React.ElementType;
+  hue: string;
+};
+
+function ModuleCard({ item }: { item: ModuleItem }) {
+  const Icon = item.icon;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
-    >
-      <Link href={app.href} className="group block">
-        <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1117] transition-all duration-300 hover:-translate-y-1.5 hover:border-white/[0.14] hover:shadow-[0_16px_48px_rgba(0,0,0,0.5)]">
-
-          {/* ── Illustration zone ── */}
-          <div
-            className="relative flex h-[130px] items-center justify-center overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${app.from}, ${app.to})` }}
-          >
-            {/* Background texture — circles */}
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-20"
-                style={{ background: app.deco[0] }} />
-              <div className="absolute -bottom-8 -left-4 h-28 w-28 rounded-full opacity-15"
-                style={{ background: app.deco[1] }} />
-              <div className="absolute right-6 bottom-4 h-10 w-10 rounded-full opacity-25"
-                style={{ background: app.deco[0] }} />
-            </div>
-
-            {/* Shine overlay */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.12] via-transparent to-black/[0.15]" />
-
-            {/* Main icon container */}
-            <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.18] shadow-[0_4px_20px_rgba(0,0,0,0.25)] backdrop-blur-sm ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110">
-              <Icon size={28} color="white" strokeWidth={1.8} />
-            </div>
-
-            {/* Decorative mini dots */}
-            <div className="absolute top-4 left-5 h-1.5 w-1.5 rounded-full bg-white/30" />
-            <div className="absolute top-7 left-8 h-1 w-1 rounded-full bg-white/20" />
-            <div className="absolute bottom-5 right-5 h-1.5 w-1.5 rounded-full bg-white/25" />
-          </div>
-
-          {/* ── Text zone ── */}
-          <div className="px-4 py-3.5">
-            <p className="text-[0.85rem] font-bold text-white/90 leading-tight">{app.label}</p>
-            <p className="mt-0.5 text-[0.7rem] text-white/35 leading-snug">{app.desc}</p>
-          </div>
-
-          {/* Hover bottom glow */}
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-px opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-            style={{ background: `linear-gradient(90deg, transparent, ${app.from}80, transparent)` }}
-          />
+    <Link href={item.href} className="group block">
+      <div className="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3.5 py-3 transition-colors duration-150 hover:border-white/[0.11] hover:bg-white/[0.04]">
+        {/* Icon */}
+        <div
+          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-opacity duration-150"
+          style={{ background: `${item.hue}1a`, border: `1px solid ${item.hue}30` }}
+        >
+          <Icon size={15} style={{ color: item.hue }} strokeWidth={1.8} />
         </div>
-      </Link>
-    </motion.div>
+        {/* Text */}
+        <div className="min-w-0">
+          <p className="text-[0.8rem] font-semibold text-white/85 leading-tight group-hover:text-white transition-colors duration-150">
+            {item.label}
+          </p>
+          <p className="mt-0.5 text-[0.68rem] text-white/35 leading-snug">{item.desc}</p>
+        </div>
+      </div>
+    </Link>
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   KPI CARD
-═══════════════════════════════════════════════════════ */
-function KpiCard({ label, value, sub, icon: Icon, color, loading }: {
+/* ─── KPI card ───────────────────────────────────────────────────────────── */
+function KpiCard({ label, value, sub, icon: Icon, loading, accent = false }: {
   label: string; value: string; sub?: string;
-  icon: React.ElementType; color: string; loading: boolean;
+  icon: React.ElementType; loading: boolean; accent?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#0f1117] px-4 py-3.5">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-        style={{ background: `${color}18`, border: `1px solid ${color}28` }}>
-        <Icon size={16} style={{ color }} />
+    <div
+      className="flex items-center gap-3 rounded-xl border px-4 py-3.5"
+      style={{
+        background: accent ? `${GOLD}0d` : "rgba(255,255,255,0.025)",
+        borderColor: accent ? `${GOLD}25` : "rgba(255,255,255,0.06)",
+      }}
+    >
+      <div
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+        style={{
+          background: accent ? `${GOLD}1a` : "rgba(255,255,255,0.05)",
+          border: `1px solid ${accent ? GOLD + "30" : "rgba(255,255,255,0.08)"}`,
+        }}
+      >
+        <Icon size={15} style={{ color: accent ? GOLD : "rgba(255,255,255,0.5)" }} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">{label}</p>
+        <p className="text-[0.65rem] font-medium text-white/35">{label}</p>
         {loading
-          ? <div className="mt-1 h-5 w-20 animate-pulse rounded-lg bg-white/[0.05]" />
-          : <p className="mt-0.5 text-base font-black text-white leading-none">{value}</p>
+          ? <div className="mt-1 h-4 w-16 animate-pulse rounded-md bg-white/[0.06]" />
+          : <p className="mt-0.5 text-[0.95rem] font-semibold leading-none"
+              style={{ color: accent ? GOLD : "rgba(255,255,255,0.9)" }}>
+              {value}
+            </p>
         }
-        {sub && !loading && <p className="mt-0.5 text-[0.62rem] text-white/25">{sub}</p>}
+        {sub && !loading && (
+          <p className="mt-0.5 text-[0.62rem] text-white/25">{sub}</p>
+        )}
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   PAGE
-═══════════════════════════════════════════════════════ */
+/* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function CockpitPage() {
   const [firstName,  setFirstName]  = useState("");
   const [kpiLoading, setKpiLoading] = useState(true);
@@ -244,25 +151,22 @@ export default function CockpitPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Name
       const emailName = user.email?.split("@")[0] ?? "";
       setFirstName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
 
-      // KPIs en parallèle
-      const now   = new Date();
-      const y     = now.getFullYear();
-      const m     = String(now.getMonth() + 1).padStart(2, "0");
-      const start = `${y}-${m}-01`;
-      const end   = `${y}-${m}-31`;
-
-      const prevM    = now.getMonth() === 0 ? 12 : now.getMonth();
-      const prevY    = now.getMonth() === 0 ? y - 1 : y;
-      const prevStart = `${prevY}-${String(prevM).padStart(2, "0")}-01`;
-      const prevEnd   = `${prevY}-${String(prevM).padStart(2, "0")}-31`;
+      const now    = new Date();
+      const y      = now.getFullYear();
+      const m      = String(now.getMonth() + 1).padStart(2, "0");
+      const start  = `${y}-${m}-01`;
+      const end    = `${y}-${m}-31`;
+      const prevM  = now.getMonth() === 0 ? 12 : now.getMonth();
+      const prevY  = now.getMonth() === 0 ? y - 1 : y;
+      const pStart = `${prevY}-${String(prevM).padStart(2, "0")}-01`;
+      const pEnd   = `${prevY}-${String(prevM).padStart(2, "0")}-31`;
 
       const [facRes, prevRes, crmRes, pendRes] = await Promise.all([
         supabase.from("factures").select("montant_ttc").eq("user_id", user.id).gte("date_emission", start).lte("date_emission", end),
-        supabase.from("factures").select("montant_ttc").eq("user_id", user.id).gte("date_emission", prevStart).lte("date_emission", prevEnd),
+        supabase.from("factures").select("montant_ttc").eq("user_id", user.id).gte("date_emission", pStart).lte("date_emission", pEnd),
         supabase.from("clients_crm").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("factures").select("id", { count: "exact", head: true }).eq("user_id", user.id).in("statut", ["envoyée", "en_attente"]),
       ]);
@@ -281,57 +185,37 @@ export default function CockpitPage() {
     ? `${caEvo >= 0 ? "+" : ""}${caEvo}% vs mois dernier`
     : undefined;
 
+  const totalModules = MODULES.reduce((s, g) => s + g.items.length, 0);
+
   return (
-    <div className="min-h-full bg-[#080a0f] pb-12">
+    <div className="min-h-full pb-16" style={{ background: NAVY }}>
+      <div className="mx-auto max-w-5xl px-5 pt-8 sm:px-8">
 
-      {/* Ambient glow */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute left-[20%] top-0 h-[500px] w-[600px] rounded-full bg-[rgba(201,165,90,0.04)] blur-[160px]" />
-        <div className="absolute bottom-0 right-[10%] h-[400px] w-[500px] rounded-full bg-[rgba(139,92,246,0.03)] blur-[140px]" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-6xl px-5 pt-8 sm:px-8">
-
-        {/* ── Greeting ── */}
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-8"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles size={14} style={{ color: "#c9a55a" }} />
-            <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-white/30">
-              Espace DJAMA PRO
-            </p>
-          </div>
-          <h1 className="text-2xl font-black text-white sm:text-3xl">
+        {/* ── Header ─────────────────────────────────────────── */}
+        <div className="mb-7">
+          <p className="mb-1 text-[0.7rem] font-medium text-white/30 capitalize">{today}</p>
+          <h1 className="text-xl font-semibold text-white sm:text-2xl">
             {getGreeting()}{firstName ? `, ${firstName}` : ""}
           </h1>
-          <p className="mt-1 text-sm capitalize text-white/30">{today}</p>
-        </motion.div>
+          <p className="mt-1 text-[0.8rem] text-white/35">
+            Votre espace de gestion DJAMA PRO
+          </p>
+        </div>
 
-        {/* ── KPIs ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
-        >
+        {/* ── KPIs ───────────────────────────────────────────── */}
+        <div className="mb-10 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           <KpiCard
             label="CA ce mois"
             value={fmtEurInt(caMonth)}
             sub={caEvoLabel}
             icon={caEvo !== null && caEvo < 0 ? TrendingDown : TrendingUp}
-            color="#4ade80"
             loading={kpiLoading}
           />
           <KpiCard
             label="Contacts CRM"
             value={String(nbContacts)}
-            sub="total"
+            sub="contacts actifs"
             icon={Users}
-            color="#60a5fa"
             loading={kpiLoading}
           />
           <KpiCard
@@ -339,54 +223,41 @@ export default function CockpitPage() {
             value={String(nbFactures)}
             sub="à relancer"
             icon={ReceiptText}
-            color="#f97316"
             loading={kpiLoading}
           />
-          <div className="flex items-center gap-3 rounded-2xl border border-[rgba(201,165,90,0.15)] bg-[rgba(201,165,90,0.05)] px-4 py-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: "rgba(201,165,90,0.14)", border: "1px solid rgba(201,165,90,0.22)" }}>
-              <Clock size={16} style={{ color: "#c9a55a" }} />
-            </div>
-            <div>
-              <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">Accès</p>
-              <p className="mt-0.5 text-sm font-black" style={{ color: "#c9a55a" }}>PRO Actif</p>
-              <p className="text-[0.62rem] text-white/25">Tous les outils</p>
-            </div>
-          </div>
-        </motion.div>
+          <KpiCard
+            label="Accès"
+            value="PRO Actif"
+            sub="Tous les outils"
+            icon={LayoutGrid}
+            loading={false}
+            accent
+          />
+        </div>
 
-        {/* ── Section title ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="mb-5 flex items-center gap-3"
-        >
-          <p className="text-[0.7rem] font-black uppercase tracking-[0.18em] text-white/25">
-            Vos outils
-          </p>
-          <div className="flex-1 border-t border-white/[0.06]" />
-          <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-[0.65rem] font-bold text-white/30">
-            {APPS.length} outils
-          </span>
-        </motion.div>
-
-        {/* ── App Grid ── */}
-        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {APPS.map((app, i) => (
-            <AppCard key={app.href} app={app} index={i} />
+        {/* ── Module groups ───────────────────────────────────── */}
+        <div className="space-y-8">
+          {MODULES.map((group) => (
+            <section key={group.group}>
+              {/* Group header */}
+              <div className="mb-3 flex items-center gap-3">
+                <h2 className="text-[0.72rem] font-semibold text-white/40">{group.group}</h2>
+                <div className="flex-1 border-t border-white/[0.05]" />
+              </div>
+              {/* Grid */}
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {group.items.map((item) => (
+                  <ModuleCard key={item.href} item={item} />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
 
-        {/* ── Footer hint ── */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="mt-10 text-center text-[0.65rem] text-white/15"
-        >
-          Utilisez la barre latérale pour naviguer rapidement entre les outils
-        </motion.p>
+        {/* ── Footer ─────────────────────────────────────────── */}
+        <p className="mt-10 text-center text-[0.63rem] text-white/15">
+          {totalModules} modules disponibles · Barre latérale pour navigation rapide
+        </p>
 
       </div>
     </div>

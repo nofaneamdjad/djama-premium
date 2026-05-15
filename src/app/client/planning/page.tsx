@@ -13,10 +13,11 @@ import {
   ChevronLeft, ChevronRight, Plus, X, Check, Loader2,
   MapPin, Bell, Trash2, Clock, Target, Sparkles,
   CheckCircle2, Circle, AlertCircle, Zap, Video,
-  Tag, AlignLeft, Calendar, Users, BarChart2,
+  Tag, AlignLeft, Calendar, Users, BarChart2, Menu,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import Toast, { type ToastData } from "@/components/ui/Toast";
+import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
+import { validate, EventSchema } from "@/lib/schemas/client";
 
 /* ══════════════════════════════════════════════════════════
    Types
@@ -219,20 +220,23 @@ function TaskRow({ task, onToggle, onDelete }: {
 ══════════════════════════════════════════════════════════ */
 export default function PlanningPage() {
   /* ── State ── */
-  const [view,       setView]       = useState<CalView>("week");
-  const [current,    setCurrent]    = useState(new Date());
-  const [events,     setEvents]     = useState<PlanEvent[]>([]);
-  const [tasks,      setTasks]      = useState<PlanTask[]>([]);
-  const [goals,      setGoals]      = useState<PlanGoal[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [toastData,  setToastData]  = useState<ToastData | null>(null);
+  const [view,          setView]          = useState<CalView>("week");
+  const [current,       setCurrent]       = useState(new Date());
+  const [events,        setEvents]        = useState<PlanEvent[]>([]);
+  const [tasks,         setTasks]         = useState<PlanTask[]>([]);
+  const [goals,         setGoals]         = useState<PlanGoal[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [showSidePanel, setShowSidePanel] = useState(false);
+
+  const { toasts, add: addToast, remove: removeToast } = useToastStack();
 
   /* modal */
-  const [showModal,  setShowModal]  = useState(false);
-  const [editEvent,  setEditEvent]  = useState<PlanEvent | null>(null);
-  const [form,       setForm]       = useState<Partial<PlanEvent>>(newEventForm());
-  const [saving,     setSaving]     = useState(false);
-  const [showColPal, setShowColPal] = useState(false);
+  const [showModal,   setShowModal]   = useState(false);
+  const [editEvent,   setEditEvent]   = useState<PlanEvent | null>(null);
+  const [form,        setForm]        = useState<Partial<PlanEvent>>(newEventForm());
+  const [formErrors,  setFormErrors]  = useState<Record<string, string>>({});
+  const [saving,      setSaving]      = useState(false);
+  const [showColPal,  setShowColPal]  = useState(false);
 
   /* task quick-add */
   const [newTask,    setNewTask]    = useState("");
@@ -334,16 +338,16 @@ export default function PlanningPage() {
         .from("planning_events").update(payload).eq("id", editEvent.id).select().single();
       if (!error && data) {
         setEvents(p => p.map(e => e.id === editEvent.id ? parseEvent(data as Record<string,unknown>) : e));
-        setToastData({ type:"success", msg:"Événement mis à jour" });
+        addToast("Événement mis à jour", "success");
       }
     } else {
       const { data, error } = await supabase
         .from("planning_events").insert(payload).select().single();
       if (!error && data) {
         setEvents(p => [parseEvent(data as Record<string,unknown>), ...p]);
-        setToastData({ type:"success", msg:"Événement créé" });
+        addToast("Événement créé", "success");
       }
-      if (error) setToastData({ type:"error", msg:"Erreur de sauvegarde" });
+      if (error) addToast("Erreur de sauvegarde", "error");
     }
     setSaving(false);
     setShowModal(false);
@@ -353,7 +357,7 @@ export default function PlanningPage() {
     await supabase.from("planning_events").delete().eq("id", id);
     setEvents(p => p.filter(e => e.id !== id));
     setShowModal(false);
-    setToastData({ type:"success", msg:"Supprimé" });
+    addToast("Supprimé", "success");
   }
 
   /* ── CRUD tasks ── */
@@ -652,9 +656,7 @@ export default function PlanningPage() {
   ══════════════════════════════════════════════════════ */
   return (
     <div className="flex h-[calc(100vh-56px)] bg-[#080a0f] overflow-hidden text-white">
-      <AnimatePresence>
-        {toastData && <Toast toast={toastData} onClose={() => setToastData(null)} />}
-      </AnimatePresence>
+      <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* ═══════════════ LEFT SIDEBAR ═══════════════ */}
       <div className="hidden lg:flex w-64 xl:w-72 flex-col shrink-0 border-r border-white/[0.06] bg-[#0b0d14] overflow-y-auto">
