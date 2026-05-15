@@ -363,7 +363,6 @@ export default function ProductivitePage() {
   const [newTag,     setNewTag]     = useState("");
   const [newAssignee,setNewAssignee]= useState("");
 
-
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(iv);
@@ -373,7 +372,6 @@ export default function ProductivitePage() {
     setToastData({ msg, type });
     setTimeout(() => setToastData(null), 3500);
   }, []);
-
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -388,7 +386,6 @@ export default function ProductivitePage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
 
   const openNew = (defaultStatus?: Status) => {
     setForm({ ...BLANK, status: defaultStatus ?? "todo" });
@@ -414,7 +411,6 @@ export default function ProductivitePage() {
       .from("task_comments").select("*").eq("task_id", taskId).order("created_at");
     setComments((data ?? []) as Cmt[]);
   };
-
 
   const save = async () => {
     if (!form.title.trim()) { toast("Le titre est requis", "error"); return; }
@@ -449,7 +445,6 @@ export default function ProductivitePage() {
     else { toast("Tâche supprimée", "info"); setShowModal(false); await load(); }
   };
 
-
   const changeStatus = async (id: string, status: Status) => {
     setTasks(ts => ts.map(t => t.id === id ? { ...t, status } : t));
     await supabase.from("productivity_tasks").update({ status }).eq("id", id);
@@ -465,7 +460,6 @@ export default function ProductivitePage() {
     await supabase.from("productivity_tasks").update(update).eq("id", id);
   };
 
-
   const quickAddTask = async (status: Status) => {
     const title = (quickAdd[status] ?? "").trim();
     if (!title) return;
@@ -478,7 +472,6 @@ export default function ProductivitePage() {
     setQuickAdd(q => ({ ...q, [status]: "" }));
   };
 
-
   const addComment = async () => {
     if (!cmt.trim() || !editId) return;
     const { data, error } = await supabase
@@ -488,7 +481,6 @@ export default function ProductivitePage() {
     if (error) toast(error.message, "error");
     else if (data) { setComments(cs => [...cs, data as Cmt]); setCmt(""); }
   };
-
 
   const addSub = () => {
     if (!newSub.trim()) return;
@@ -511,7 +503,6 @@ export default function ProductivitePage() {
     setNewAssignee("");
   };
 
-
   const filtered = tasks.filter(t => {
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (fprio  && t.priority !== fprio) return false;
@@ -530,7 +521,6 @@ export default function ProductivitePage() {
     done:  filtered.filter(t => t.status === "done"),
   };
 
-
   const kpis = [
     { l: "Total",      v: tasks.length,                                          col: "#6b7280" },
     { l: "En cours",   v: tasks.filter(t => t.status === "in_progress").length,  col: "#3b82f6" },
@@ -542,7 +532,6 @@ export default function ProductivitePage() {
   const completionRate = tasks.length
     ? Math.round((tasks.filter(t => t.status === "done").length / tasks.length) * 100)
     : 0;
-
 
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-white">

@@ -485,7 +485,6 @@ function DashboardView({
   const incomePct  = lastIncome  > 0 ? ((thisIncome  - lastIncome)  / lastIncome  * 100) : 0;
   const expensePct = lastExpense > 0 ? ((thisExpense - lastExpense) / lastExpense * 100) : 0;
 
-
   const months6 = Array.from({ length: 6 }, (_, i) => {
     const d   = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
     const key = monthKey(d);
@@ -494,7 +493,6 @@ function DashboardView({
     return { label: d.toLocaleDateString("fr-FR", { month: "short" }), key, inc, exp };
   });
   const maxVal = Math.max(...months6.flatMap(m => [m.inc, m.exp]), 1);
-
 
   const overdue = invoices.filter(inv => {
     if (!inv.date_echeance || inv.statut === "payé") return false;
@@ -812,10 +810,8 @@ function PrevisionsView({
   const mrrExpense = recurring.filter(r => r.active && r.type === "expense").reduce((a, r) => a + recurringMonthly(r), 0);
   const months     = horizon / 30;
 
-
   const openInvoices = invoices.filter(inv => inv.statut !== "payé").reduce((a, inv) => a + inv.total_ttc, 0);
   const forecast = totalBalance + (mrrIncome - mrrExpense) * months + (horizon <= 90 ? openInvoices : 0);
-
 
   const forecastPoints = Array.from({ length: Math.min(Math.ceil(months), 12) }, (_, i) => ({
     label: new Date(new Date().getFullYear(), new Date().getMonth() + i + 1, 1).toLocaleDateString("fr-FR", { month: "short" }),
@@ -1183,7 +1179,6 @@ function RapportView({ transactions, recurring, accounts }: {
   const now   = new Date();
   const valid = transactions.filter(t => t.status === "completed");
 
-
   const last3Months = Array.from({ length: 3 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     return valid.filter(t => t.type === "expense" && t.date.startsWith(monthKey(d))).reduce((a, t) => a + t.amount, 0);
@@ -1200,14 +1195,12 @@ function RapportView({ transactions, recurring, accounts }: {
   const thisExpense = valid.filter(t => t.type === "expense" && t.date.startsWith(thisMonth)).reduce((a, t) => a + t.amount, 0);
   const margin = thisIncome > 0 ? ((thisIncome - thisExpense) / thisIncome * 100) : 0;
 
-
   const byExpCat: Record<string, number> = {};
   valid.filter(t => t.type === "expense").forEach(t => {
     byExpCat[t.category] = (byExpCat[t.category] ?? 0) + t.amount;
   });
   const expCatList = Object.entries(byExpCat).sort((a, b) => b[1] - a[1]);
   const maxExpCat  = expCatList[0]?.[1] ?? 1;
-
 
   const byIncCat: Record<string, number> = {};
   valid.filter(t => t.type === "income").forEach(t => {

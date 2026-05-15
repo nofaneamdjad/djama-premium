@@ -24,7 +24,6 @@ export default function Pagination({
   const from = (page - 1) * pageSize + 1;
   const to   = Math.min(page * pageSize, totalItems);
 
-
   function pages(): (number | "...")[] {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
     const result: (number | "...")[] = [1];

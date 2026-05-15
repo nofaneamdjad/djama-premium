@@ -402,7 +402,6 @@ export default function PlanningPage() {
   const todayTasks = tasks.filter(t => t.due_date === today);
   const doneTasks  = todayTasks.filter(t => t.status === "done");
 
-
     function renderMonth() {
     const grid = getMonthGrid(current.getFullYear(), current.getMonth());
     return (

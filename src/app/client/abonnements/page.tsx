@@ -63,7 +63,6 @@ export default function AbonnementsPage() {
 
   const isPaid = client?.paid === true || client?.statut === "actif";
 
-
   useEffect(() => {
     if (!loading && isPaid) {
       router.replace("/client/dashboard");

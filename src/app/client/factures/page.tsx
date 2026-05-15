@@ -150,7 +150,6 @@ async function exportPDFWithTemplate(
 ) {
   const { generatePdf } = await import("@/lib/pdf/generatePdf");
 
-
   const mainTaxRate = items[0]?.vat_rate ?? 20;
 
   await generatePdf({

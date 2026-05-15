@@ -38,7 +38,6 @@ export default function Modal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId   = useId();
 
-
   useEffect(() => {
     if (!open) return;
 
@@ -57,7 +56,6 @@ export default function Modal({
     const focusable = Array.from(el.querySelectorAll<HTMLElement>(SELECTORS));
     const first = focusable[0];
     const last  = focusable[focusable.length - 1];
-
 
     requestAnimationFrame(() => first?.focus());
 

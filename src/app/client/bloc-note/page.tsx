@@ -211,7 +211,6 @@ function NoteCard({
 
 export default function BlocNotePage() {
 
-
   const [notes,   setNotes]   = useState<QNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [search,  setSearch]  = useState("");

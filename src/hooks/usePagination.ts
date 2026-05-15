@@ -10,9 +10,7 @@ export function usePagination<T>(items: T[], pageSize = 25) {
     [items, page, pageSize],
   );
 
-
   const reset = useCallback(() => setPage(1), []);
-
 
   const safePage = Math.min(page, totalPages);
   if (safePage !== page) setPage(safePage);

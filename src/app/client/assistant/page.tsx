@@ -600,7 +600,6 @@ export default function AssistantPage() {
     setShowSidebar(false);
   };
 
-
   return (
     <div className="flex h-[calc(100dvh-56px)] bg-[#0a0f1e] text-white overflow-hidden">
 

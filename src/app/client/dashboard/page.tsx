@@ -140,7 +140,6 @@ export default function DashboardPage() {
       });
       setStatsLoading(false);
 
-
       const today = new Date();
       const monthData: MonthRevenue[] = [];
       for (let i = 5; i >= 0; i--) {
@@ -152,7 +151,6 @@ export default function DashboardPage() {
       }
       setRevenues(monthData);
 
-
       const threeAgo = new Date(today.getFullYear(), today.getMonth()-3, 1).toISOString().slice(0,10);
       const { data: paidDocs } = await supabase.from("documents").select("client_nom,total_ttc").eq("type","facture").eq("statut","payé").gte("date_document",threeAgo);
       const clientMap = new Map<string,number>();
@@ -161,7 +159,6 @@ export default function DashboardPage() {
         clientMap.set(n, (clientMap.get(n) ?? 0) + ((d.total_ttc as number) ?? 0));
       }
       setTopClients([...clientMap.entries()].sort((a,b) => b[1]-a[1]).slice(0,5).map(([name,amount]) => ({ name, amount })));
-
 
       const { data: overdueDocs } = await supabase.from("documents").select("id,numero,client_nom,total_ttc,date_echeance").eq("type","facture").eq("statut","en_retard").order("date_echeance",{ascending:true}).limit(5);
       setOverdue((overdueDocs ?? []) as OverdueInvoice[]);

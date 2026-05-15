@@ -412,7 +412,6 @@ export default function EquipePage() {
     return groups;
   },[channelMessages]);
 
-
     function renderMembers() {
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
