@@ -573,7 +573,7 @@ export default function EquipePage() {
                     return (
                       <motion.div key={t.id} layout
                         initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0}}
-                        className="group rounded-xl border border-white/[0.07] bg-[#0b0d14] p-3 cursor-pointer hover:border-white/15 transition-all"
+                        className="group rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 cursor-pointer hover:border-white/15 transition-all"
                         onClick={()=>openEditTask(t)}>
                         <div className="flex items-start gap-2">
                           <div className="w-2 h-2 rounded-full mt-1.5 shrink-0"
@@ -648,7 +648,7 @@ export default function EquipePage() {
     return (
       <div className="flex flex-1 overflow-hidden">
         {/* Channel sidebar */}
-        <div className="w-48 shrink-0 border-r border-white/[0.06] bg-[#0b0d14] p-3 space-y-1">
+        <div className="w-48 shrink-0 border-r border-white/[0.06] bg-white/[0.025] p-3 space-y-1">
           <p className="text-[10px] font-bold text-white/25 uppercase tracking-wider px-2 mb-3">Canaux</p>
           {CHANNELS.map(ch=>(
             <button key={ch} onClick={()=>setChatChannel(ch)}
@@ -858,7 +858,7 @@ export default function EquipePage() {
      MAIN RENDER
   ══════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] bg-[#080a0f] text-white overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-56px)] bg-[#0a0f1e] text-white overflow-hidden">
       <AnimatePresence>
         {toastData && <Toast toast={toastData} onClose={()=>setToastData(null)}/>}
       </AnimatePresence>
@@ -912,7 +912,7 @@ export default function EquipePage() {
       <AnimatePresence>
         {showAI && (
           <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}}
-            className="border-b border-white/[0.06] bg-[#0b0d14] overflow-hidden shrink-0">
+            className="border-b border-white/[0.06] bg-white/[0.025] overflow-hidden shrink-0">
             <div className="px-5 py-3 space-y-2">
               <div className="flex flex-wrap gap-2">
                 {([
@@ -988,7 +988,7 @@ export default function EquipePage() {
               className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40" onClick={()=>setShowMemberModal(false)}/>
             <motion.div
               initial={{opacity:0,scale:0.95,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
-              className="fixed inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-50 rounded-3xl border border-white/[0.08] bg-[#0e1018] shadow-2xl flex flex-col overflow-hidden"
+              className="fixed inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-50 rounded-3xl border border-white/[0.08] bg-white/[0.025] shadow-2xl flex flex-col overflow-hidden"
               onClick={e=>e.stopPropagation()}>
 
               {/* Header */}
@@ -1018,15 +1018,15 @@ export default function EquipePage() {
                   <div className="space-y-1">
                     <label className="text-[10px] text-white/35 uppercase tracking-wide">Rôle</label>
                     <select value={mForm.role??"employee"} onChange={e=>setMForm(p=>({...p,role:e.target.value as MemberRole}))}
-                      className="w-full cursor-pointer bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
-                      {ROLES.map(r=><option key={r.v} value={r.v} className="bg-[#0e1018]">{r.l}</option>)}
+                      className="w-full cursor-pointer bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
+                      {ROLES.map(r=><option key={r.v} value={r.v} className="bg-white/[0.025]">{r.l}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] text-white/35 uppercase tracking-wide">Statut</label>
                     <select value={mForm.status??"active"} onChange={e=>setMForm(p=>({...p,status:e.target.value as MemberStatus}))}
-                      className="w-full cursor-pointer bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
-                      {STATUSES.map(s=><option key={s.v} value={s.v} className="bg-[#0e1018]">{s.l}</option>)}
+                      className="w-full cursor-pointer bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
+                      {STATUSES.map(s=><option key={s.v} value={s.v} className="bg-white/[0.025]">{s.l}</option>)}
                     </select>
                   </div>
                 </div>
@@ -1118,7 +1118,7 @@ export default function EquipePage() {
               className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40" onClick={()=>setShowTaskModal(false)}/>
             <motion.div
               initial={{opacity:0,scale:0.95,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md z-50 rounded-3xl border border-white/[0.08] bg-[#0e1018] shadow-2xl flex flex-col overflow-hidden"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md z-50 rounded-3xl border border-white/[0.08] bg-white/[0.025] shadow-2xl flex flex-col overflow-hidden"
               onClick={e=>e.stopPropagation()}>
               <div className="flex items-center gap-3 px-5 pt-5 pb-3 shrink-0 border-b border-white/[0.06]">
                 <CheckSquare size={16} style={{color:SKY}}/>
@@ -1136,16 +1136,16 @@ export default function EquipePage() {
                   <div className="space-y-1">
                     <label className="text-[10px] text-white/35 uppercase tracking-wide">Assigné à</label>
                     <select value={tForm.assigned_to??""} onChange={e=>setTForm(p=>({...p,assigned_to:e.target.value||null}))}
-                      className="w-full cursor-pointer bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
-                      <option value="" className="bg-[#0e1018]">— Non assignée</option>
-                      {members.map(m=><option key={m.id} value={m.id} className="bg-[#0e1018]">{m.name}</option>)}
+                      className="w-full cursor-pointer bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
+                      <option value="" className="bg-white/[0.025]">— Non assignée</option>
+                      {members.map(m=><option key={m.id} value={m.id} className="bg-white/[0.025]">{m.name}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] text-white/35 uppercase tracking-wide">Priorité</label>
                     <select value={tForm.priority??"normal"} onChange={e=>setTForm(p=>({...p,priority:e.target.value as TaskPriority}))}
-                      className="w-full cursor-pointer bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
-                      {PRIOS.map(p=><option key={p.v} value={p.v} className="bg-[#0e1018]">{p.l}</option>)}
+                      className="w-full cursor-pointer bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
+                      {PRIOS.map(p=><option key={p.v} value={p.v} className="bg-white/[0.025]">{p.l}</option>)}
                     </select>
                   </div>
                 </div>
@@ -1153,13 +1153,13 @@ export default function EquipePage() {
                   <div className="space-y-1">
                     <label className="text-[10px] text-white/35 uppercase tracking-wide">Échéance</label>
                     <input type="date" value={tForm.due_date??""} onChange={e=>setTForm(p=>({...p,due_date:e.target.value||null}))}
-                      className="w-full bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none [color-scheme:dark]"/>
+                      className="w-full bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none [color-scheme:dark]"/>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] text-white/35 uppercase tracking-wide">Statut</label>
                     <select value={tForm.status??"todo"} onChange={e=>setTForm(p=>({...p,status:e.target.value as TaskStatus}))}
-                      className="w-full cursor-pointer bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
-                      {TASK_COLS.map(c=><option key={c.k} value={c.k} className="bg-[#0e1018]">{c.l}</option>)}
+                      className="w-full cursor-pointer bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
+                      {TASK_COLS.map(c=><option key={c.k} value={c.k} className="bg-white/[0.025]">{c.l}</option>)}
                     </select>
                   </div>
                 </div>
@@ -1197,7 +1197,7 @@ export default function EquipePage() {
               className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40" onClick={()=>setShowLeaveModal(false)}/>
             <motion.div
               initial={{opacity:0,scale:0.95,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}}
-              className="fixed inset-x-4 top-[15%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md z-50 rounded-3xl border border-white/[0.08] bg-[#0e1018] shadow-2xl"
+              className="fixed inset-x-4 top-[15%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md z-50 rounded-3xl border border-white/[0.08] bg-white/[0.025] shadow-2xl"
               onClick={e=>e.stopPropagation()}>
               <div className="flex items-center gap-3 px-5 pt-5 pb-3 border-b border-white/[0.06]">
                 <Calendar size={15} style={{color:SKY}}/>
@@ -1208,16 +1208,16 @@ export default function EquipePage() {
                 <div className="space-y-1">
                   <label className="text-[10px] text-white/35 uppercase tracking-wide">Membre</label>
                   <select value={lForm.member_id??""} onChange={e=>setLForm(p=>({...p,member_id:e.target.value}))}
-                    className="w-full cursor-pointer bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
-                    <option value="" className="bg-[#0e1018]">— Choisir un membre</option>
-                    {members.map(m=><option key={m.id} value={m.id} className="bg-[#0e1018]">{m.name}</option>)}
+                    className="w-full cursor-pointer bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
+                    <option value="" className="bg-white/[0.025]">— Choisir un membre</option>
+                    {members.map(m=><option key={m.id} value={m.id} className="bg-white/[0.025]">{m.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] text-white/35 uppercase tracking-wide">Type</label>
                   <select value={lForm.type??"vacation"} onChange={e=>setLForm(p=>({...p,type:e.target.value as LeaveType}))}
-                    className="w-full cursor-pointer bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
-                    {LEAVE_TYPES.map(t=><option key={t.v} value={t.v} className="bg-[#0e1018]">{t.l}</option>)}
+                    className="w-full cursor-pointer bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none appearance-none">
+                    {LEAVE_TYPES.map(t=><option key={t.v} value={t.v} className="bg-white/[0.025]">{t.l}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -1225,7 +1225,7 @@ export default function EquipePage() {
                     <div key={f.k} className="space-y-1">
                       <label className="text-[10px] text-white/35 uppercase tracking-wide">{f.l}</label>
                       <input type="date" value={(lForm as Record<string,string>)[f.k]??""} onChange={e=>setLForm(p=>({...p,[f.k]:e.target.value}))}
-                        className="w-full bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none [color-scheme:dark]"/>
+                        className="w-full bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none [color-scheme:dark]"/>
                     </div>
                   ))}
                 </div>
@@ -1257,7 +1257,7 @@ export default function EquipePage() {
               className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40" onClick={()=>setShowMeetModal(false)}/>
             <motion.div
               initial={{opacity:0,scale:0.95,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md z-50 rounded-3xl border border-white/[0.08] bg-[#0e1018] shadow-2xl"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md z-50 rounded-3xl border border-white/[0.08] bg-white/[0.025] shadow-2xl"
               onClick={e=>e.stopPropagation()}>
               <div className="flex items-center gap-3 px-5 pt-5 pb-3 border-b border-white/[0.06]">
                 <Video size={15} style={{color:SKY}}/>
@@ -1272,13 +1272,13 @@ export default function EquipePage() {
                   <div className="space-y-1">
                     <label className="text-[10px] text-white/35 uppercase tracking-wide">Date & heure</label>
                     <input type="datetime-local" value={meetForm.date_at??""} onChange={e=>setMeetForm(p=>({...p,date_at:e.target.value}))}
-                      className="w-full bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none [color-scheme:dark]"/>
+                      className="w-full bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none [color-scheme:dark]"/>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] text-white/35 uppercase tracking-wide">Durée (min)</label>
                     <input type="number" value={meetForm.duration_minutes??60} onChange={e=>setMeetForm(p=>({...p,duration_minutes:Number(e.target.value)}))}
                       min={15} max={480} step={15}
-                      className="w-full bg-[#0e1018] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none [color-scheme:dark]"/>
+                      className="w-full bg-white/[0.025] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none [color-scheme:dark]"/>
                   </div>
                 </div>
                 <input value={meetForm.meet_link??""} onChange={e=>setMeetForm(p=>({...p,meet_link:e.target.value}))}

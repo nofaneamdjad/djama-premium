@@ -351,10 +351,9 @@ export default function CoursDetailPage() {
 
   /* Cours verrouillé */
   if (!cours) {
-    const color = "#6366f1";
     return (
-      <div className="min-h-screen bg-[#080a0f]">
-        <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.88)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
+      <div className="min-h-screen bg-[#0a0f1e]">
+        <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
           <div className="mx-auto flex max-w-3xl items-center gap-3">
             <Link href="/client/coaching-ia" className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
               <ChevronLeft size={13} /> Coaching IA
@@ -363,10 +362,10 @@ export default function CoursDetailPage() {
         </div>
         <div className="relative z-10 mx-auto max-w-3xl px-5 py-16 sm:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-white/8 bg-white/5">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-xl border border-white/8 bg-white/5">
               <Lock size={32} className="text-white/20" />
             </div>
-            <h1 className="text-2xl font-black text-white">Module {id} — Bientôt disponible</h1>
+            <h1 className="text-2xl font-bold text-white">Module {id} — Bientôt disponible</h1>
             <p className="text-sm text-white/40 max-w-md mx-auto">Terminez les modules précédents pour débloquer ce cours. La progression est la clé de l'apprentissage.</p>
             <Link href="/client/coaching-ia" className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white/60 hover:text-white transition-colors">
               <ChevronLeft size={14} /> Retour au hub
@@ -381,14 +380,10 @@ export default function CoursDetailPage() {
   const score = answers.filter((a, i) => a === cours.quiz[i].correct).length;
 
   return (
-    <div className="min-h-screen bg-[#080a0f]">
-      {/* Ambient glow */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute left-[10%] top-[5%] h-[600px] w-[600px] rounded-full blur-[180px]" style={{ backgroundColor: cours.color + "08" }} />
-      </div>
+    <div className="min-h-screen bg-[#0a0f1e]">
 
       {/* Sub-header */}
-      <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.88)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
+      <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/client/coaching-ia" className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
@@ -411,14 +406,14 @@ export default function CoursDetailPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease }}
-          className="relative overflow-hidden rounded-[1.75rem] border bg-[rgba(15,17,23,0.75)] p-6"
+          className="relative overflow-hidden rounded-2xl border bg-white/[0.025] p-6"
           style={{ borderColor: cours.color + "30" }}
         >
           <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${cours.color}60, transparent)` }} />
           <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 50% at 50% 0%, ${cours.color}09 0%, transparent 60%)` }} />
           <div className="relative">
-            <p className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: cours.color }}>Module {id} / 20</p>
-            <h1 className="mt-1 text-2xl font-black text-white">{cours.title}</h1>
+            <p className="text-[0.65rem] font-medium text-white/35" style={{ color: cours.color }}>Module {id} / 20</p>
+            <h1 className="mt-1 text-2xl font-bold text-white">{cours.title}</h1>
             <p className="mt-1 text-sm text-white/45">{cours.subtitle}</p>
             {cours.done && (
               <div className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-[#4ade80]" style={{ backgroundColor: "#4ade8018", border: "1px solid #4ade8030" }}>
@@ -472,7 +467,7 @@ export default function CoursDetailPage() {
             className="space-y-5"
           >
             {/* Content card */}
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.65)] p-6">
+            <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.025] p-6">
               <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 50% 40% at 0% 0%, ${cours.color}08 0%, transparent 60%)` }} />
               <div className="relative">
                 <div className="mb-4 flex items-center gap-3">
@@ -496,7 +491,7 @@ export default function CoursDetailPage() {
               </p>
               <div className="grid gap-2 sm:grid-cols-3">
                 {chap.concepts.map(({ term, def }) => (
-                  <div key={term} className="relative overflow-hidden rounded-2xl border border-white/6 bg-[rgba(15,17,23,0.6)] p-4">
+                  <div key={term} className="relative overflow-hidden rounded-2xl border border-white/6 bg-white/[0.025] p-4">
                     <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 80% 60% at 0% 0%, ${cours.color}08 0%, transparent 70%)` }} />
                     <p className="relative text-xs font-extrabold" style={{ color: cours.color }}>{term}</p>
                     <p className="relative mt-1.5 text-[0.7rem] leading-relaxed text-white/40">{def}</p>
@@ -531,7 +526,7 @@ export default function CoursDetailPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease, delay: 0.2 }}
-          className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(245,158,11,0.2)] bg-[rgba(15,17,23,0.65)]"
+          className="relative overflow-hidden rounded-2xl border border-[rgba(245,158,11,0.2)] bg-white/[0.025]"
         >
           <button
             onClick={() => setShowExercise(e => !e)}
@@ -573,7 +568,7 @@ export default function CoursDetailPage() {
                         exit={{ opacity: 0, y: -8 }}
                         className="rounded-xl border border-[rgba(245,158,11,0.2)] bg-[rgba(245,158,11,0.05)] p-4"
                       >
-                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-[#f59e0b] mb-2">Exemple</p>
+                        <p className="text-[0.65rem] font-medium text-white/35 text-[#f59e0b] mb-2">Exemple</p>
                         <pre className="text-xs leading-relaxed text-white/55 whitespace-pre-wrap font-sans">{cours.exercise.exemple}</pre>
                       </motion.div>
                     )}
@@ -589,7 +584,7 @@ export default function CoursDetailPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease, delay: 0.25 }}
-          className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(167,139,250,0.2)] bg-[rgba(15,17,23,0.65)] p-6"
+          className="relative overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.2)] bg-white/[0.025] p-6"
         >
           <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
           <div className="relative">
@@ -615,7 +610,7 @@ export default function CoursDetailPage() {
               </motion.button>
             ) : quizDone ? (
               <div className="space-y-4 text-center py-2">
-                <p className="text-xl font-black text-white">{score}/{cours.quiz.length}</p>
+                <p className="text-xl font-bold text-white">{score}/{cours.quiz.length}</p>
                 <p className="text-xs text-white/40">{score === cours.quiz.length ? "Parfait ! Module maîtrisé." : "Relisez le cours et réessayez."}</p>
                 <button onClick={resetQuiz} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white transition-colors">
                   <RefreshCw size={11} /> Rejouer
@@ -652,7 +647,7 @@ export default function CoursDetailPage() {
                               "border-white/4 bg-white/2 text-white/20"
                             }`}
                           >
-                            <span className="mr-2 font-black">{String.fromCharCode(65 + i)}.</span>{opt}
+                            <span className="mr-2 font-semibold">{String.fromCharCode(65 + i)}.</span>{opt}
                             {revealed && isCorrect && <CheckCircle2 size={12} className="inline ml-2 text-[#4ade80]" />}
                           </motion.button>
                         );

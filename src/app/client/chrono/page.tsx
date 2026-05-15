@@ -581,13 +581,7 @@ export default function ChronoPage() {
      RENDER
   ═══════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#080a0f]">
-
-      {/* Ambient glows */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute left-[5%] top-[4%] h-[600px] w-[600px] rounded-full blur-[180px]" style={{background:"rgba(139,92,246,0.04)"}} />
-        <div className="absolute bottom-[5%] right-[5%] h-[400px] w-[400px] rounded-full blur-[150px]" style={{background:"rgba(248,113,113,0.03)"}} />
-      </div>
+    <div className="min-h-screen bg-[#0a0f1e]">
 
       {/* FOCUS MODE OVERLAY */}
       <AnimatePresence>
@@ -602,7 +596,7 @@ export default function ChronoPage() {
               <X size={16}/>
             </button>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-white/30">{sProject||"Focus"}</p>
-            <div className="font-mono text-[5rem] font-black leading-none tracking-tighter sm:text-[7rem]" style={{color:"#34d399",textShadow:"0 0 60px rgba(52,211,153,0.4)"}}>
+            <div className="font-mono text-[5rem] font-bold leading-none tracking-tighter sm:text-[7rem]" style={{color:"#34d399",textShadow:"0 0 60px rgba(52,211,153,0.4)"}}>
               {timerDisplay}
             </div>
             {paused&&<span className="mt-3 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-400">EN PAUSE</span>}
@@ -630,7 +624,6 @@ export default function ChronoPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-sm" style={{background:`${violet}30`}}/>
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border" style={{backgroundColor:`${violet}14`,borderColor:`${violet}28`}}>
                 <Timer size={18} style={{color:violet}}/>
               </div>
@@ -663,7 +656,7 @@ export default function ChronoPage() {
               <t.Icon size={13}/>
               {t.label}
               {t.value==="billing"&&unbilled.length>0&&(
-                <span className="ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-full text-[9px] font-black" style={{background:"#f87171",color:"#fff"}}>
+                <span className="ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-full text-[9px] font-bold" style={{background:"#f87171",color:"#fff"}}>
                   {unbilled.length}
                 </span>
               )}
@@ -692,9 +685,9 @@ export default function ChronoPage() {
                 {label:"Revenus",value:todayStats.earnings>0?fmtEur(todayStats.earnings):"—",sub:"aujourd'hui",color:"#c9a55a"},
                 {label:"Objectif",value:dailyGoalPct!==null?`${dailyGoalPct}%`:"—",sub:goal?`/${fmtMin(goal.daily_minutes)}`:"Non défini",color:dailyGoalPct!==null&&dailyGoalPct>=100?"#34d399":"#a78bfa"},
               ].map((k,i)=>(
-                <div key={i} className="flex flex-col justify-between rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] px-4 py-3">
+                <div key={i} className="flex flex-col justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3">
                   <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{k.label}</p>
-                  <p className="mt-1 text-xl font-black" style={{color:k.color}}>{k.value}</p>
+                  <p className="mt-1 text-xl font-bold" style={{color:k.color}}>{k.value}</p>
                   <p className="text-[0.65rem] text-white/30">{k.sub}</p>
                 </div>
               ))}
@@ -702,10 +695,10 @@ export default function ChronoPage() {
 
             {/* Goal progress bar */}
             {dailyGoalPct!==null&&(
-              <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-[#0f1117] px-5 py-3">
+              <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025] px-5 py-3">
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className="text-xs font-bold text-white/50">Objectif quotidien</span>
-                  <span className="text-xs font-black" style={{color:dailyGoalPct>=100?"#34d399":violet}}>{dailyGoalPct}%</span>
+                  <span className="text-xs font-bold" style={{color:dailyGoalPct>=100?"#34d399":violet}}>{dailyGoalPct}%</span>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/8">
                   <motion.div className="h-full rounded-full" initial={{width:0}} animate={{width:`${dailyGoalPct}%`}} transition={{duration:0.8,ease:[0.16,1,0.3,1]}}
@@ -729,7 +722,7 @@ export default function ChronoPage() {
 
             {/* Timer card */}
             <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.4,ease}}
-              className="overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[#0f1117] shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
+              className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
 
               <AnimatePresence>
                 {(running||paused)&&(
@@ -800,7 +793,7 @@ export default function ChronoPage() {
                   <div className="sm:col-span-2">
                     <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Catégorie</label>
                     <select value={sCat} onChange={e=>setSCat(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-[#0f1117] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]">
+                      className="w-full rounded-xl border border-white/10 bg-white/[0.025] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]">
                       {CATEGORIES.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
@@ -832,7 +825,7 @@ export default function ChronoPage() {
                       </svg>
                     )}
                     <div>
-                      <motion.div className="font-mono font-black leading-none tracking-tighter"
+                      <motion.div className="font-mono font-bold leading-none tracking-tighter"
                         style={{fontSize:"3.8rem",color:timerColor,textShadow:`0 0 50px ${timerGlow}`}}>
                         {timerDisplay}
                       </motion.div>
@@ -905,7 +898,7 @@ export default function ChronoPage() {
                 {loading&&<Loader2 size={12} className="animate-spin text-white/20"/>}
               </div>
               {grouped.length===0&&!loading?(
-                <div className="flex flex-col items-center gap-4 rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] py-14 text-center">
+                <div className="flex flex-col items-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.025] py-14 text-center">
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(139,92,246,0.08)]">
                     <Timer size={24} style={{color:violet}}/>
                   </div>
@@ -919,7 +912,7 @@ export default function ChronoPage() {
                         <div className="flex items-center gap-1.5"><CalendarDays size={11} className="text-white/25"/><span className="text-xs font-bold text-white/40">{isoToLabel(date)}</span></div>
                         <span className="text-[0.65rem] text-white/25">Total: {fmtMin(day.reduce((a,e)=>a+e.duration_minutes,0))}</span>
                       </div>
-                      <div className="overflow-hidden rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117]">
+                      <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025]">
                         {day.map((e,i)=>{
                           const earn = e.hourly_rate&&(e.is_billable??true)?(e.duration_minutes/60)*e.hourly_rate:null;
                           return (
@@ -969,16 +962,16 @@ export default function ChronoPage() {
                 {label:"Ce mois",value:fmtMin(monthStats.minutes),sub:fmtEur(monthStats.earnings),color:"#c9a55a"},
                 {label:"Non facturé",value:fmtEur(unbilledAmt),sub:`${unbilled.length} entrée${unbilled.length!==1?"s":""}`,color:"#f87171"},
               ].map((k,i)=>(
-                <div key={i} className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] px-5 py-4">
+                <div key={i} className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-5 py-4">
                   <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{k.label}</p>
-                  <p className="mt-2 text-2xl font-black" style={{color:k.color}}>{k.value}</p>
+                  <p className="mt-2 text-2xl font-bold" style={{color:k.color}}>{k.value}</p>
                   <p className="mt-0.5 text-xs text-white/30">{k.sub}</p>
                 </div>
               ))}
             </div>
 
             {/* Daily bars — last 7 days */}
-            <div className="rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-5">
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
               <p className="mb-4 text-xs font-bold uppercase tracking-widest text-white/40">7 Derniers jours</p>
               {(() => {
                 const maxMin = Math.max(...dailyData.map(d=>d.minutes),1);
@@ -997,7 +990,7 @@ export default function ChronoPage() {
             </div>
 
             {/* Project breakdown */}
-            <div className="rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-5">
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
               <p className="mb-4 text-xs font-bold uppercase tracking-widest text-white/40">Temps par projet</p>
               {projectStats.length===0?(
                 <p className="py-6 text-center text-sm text-white/25">Aucune donnée</p>
@@ -1028,7 +1021,7 @@ export default function ChronoPage() {
             </div>
 
             {/* Category breakdown */}
-            <div className="rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-5">
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
               <p className="mb-4 text-xs font-bold uppercase tracking-widest text-white/40">Catégories cette semaine</p>
               {catBreakdown.length===0?(
                 <p className="py-6 text-center text-sm text-white/25">Aucune donnée</p>
@@ -1054,7 +1047,7 @@ export default function ChronoPage() {
 
             {/* AI Insights */}
             {aiInsights.length>0&&(
-              <div className="rounded-[1.5rem] border border-[rgba(167,139,250,0.15)] bg-[rgba(139,92,246,0.06)] p-5">
+              <div className="rounded-xl border border-[rgba(167,139,250,0.15)] bg-[rgba(139,92,246,0.06)] p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <Brain size={16} style={{color:violet}}/>
                   <p className="text-xs font-bold uppercase tracking-widest" style={{color:violet}}>Analyse IA Productivité</p>
@@ -1086,7 +1079,7 @@ export default function ChronoPage() {
             {loading?(
               <div className="flex items-center justify-center py-16"><Loader2 size={22} className="animate-spin text-white/20"/></div>
             ):projects.length===0?(
-              <div className="flex flex-col items-center gap-4 rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] py-16 text-center">
+              <div className="flex flex-col items-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.025] py-16 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(139,92,246,0.08)]">
                   <Briefcase size={24} style={{color:violet}}/>
                 </div>
@@ -1099,7 +1092,7 @@ export default function ChronoPage() {
                   const earn = p.hourly_rate>0?(mins/60)*p.hourly_rate:0;
                   const budgetPct = p.budget_hours>0?Math.min(100,Math.round((mins/60/p.budget_hours)*100)):null;
                   return (
-                    <div key={p.id} className="rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-5">
+                    <div key={p.id} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
                       <div className="mb-4 flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-xl" style={{background:`${p.color}20`,border:`1px solid ${p.color}40`}}>
@@ -1120,12 +1113,12 @@ export default function ChronoPage() {
                       <div className="grid grid-cols-2 gap-3 mb-3">
                         <div>
                           <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Temps total</p>
-                          <p className="mt-0.5 text-lg font-black" style={{color:p.color}}>{fmtMin(mins)}</p>
+                          <p className="mt-0.5 text-lg font-bold" style={{color:p.color}}>{fmtMin(mins)}</p>
                         </div>
                         {p.hourly_rate>0&&(
                           <div>
                             <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Revenus</p>
-                            <p className="mt-0.5 text-lg font-black" style={{color:"#c9a55a"}}>{fmtEur(earn)}</p>
+                            <p className="mt-0.5 text-lg font-bold" style={{color:"#c9a55a"}}>{fmtEur(earn)}</p>
                           </div>
                         )}
                       </div>
@@ -1151,7 +1144,7 @@ export default function ChronoPage() {
 
             {/* All-time project stats from entries (no chrono_project entry) */}
             {projectStats.filter(ps=>!projects.find(p=>p.name===ps.name)).length>0&&(
-              <div className="rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-5">
+              <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
                 <p className="mb-3 text-xs font-bold uppercase tracking-widest text-white/30">Autres projets (sans fiche)</p>
                 <div className="space-y-2">
                   {projectStats.filter(ps=>!projects.find(p=>p.name===ps.name)).map((ps,i)=>(
@@ -1179,10 +1172,10 @@ export default function ChronoPage() {
           <div className="space-y-4">
 
             {/* Banner total */}
-            <div className="flex items-center justify-between rounded-[1.5rem] border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] px-6 py-4">
+            <div className="flex items-center justify-between rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] px-6 py-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-white/40">Total non facturé</p>
-                <p className="mt-1 text-3xl font-black" style={{color:"#c9a55a"}}>{fmtEur(unbilledAmt)}</p>
+                <p className="mt-1 text-3xl font-bold" style={{color:"#c9a55a"}}>{fmtEur(unbilledAmt)}</p>
                 <p className="mt-0.5 text-xs text-white/30">{unbilled.length} entrée{unbilled.length!==1?"s":""}</p>
               </div>
               {unbilledAmt>0&&(
@@ -1197,7 +1190,7 @@ export default function ChronoPage() {
             </div>
 
             {unbilled.length===0?(
-              <div className="flex flex-col items-center gap-4 rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] py-14 text-center">
+              <div className="flex flex-col items-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.025] py-14 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/8">
                   <CheckCircle size={24} className="text-emerald-400"/>
                 </div>
@@ -1218,7 +1211,7 @@ export default function ChronoPage() {
                       const projMins = ents.reduce((a,e)=>a+e.duration_minutes,0);
                       const projAmt  = ents.reduce((a,e)=>e.hourly_rate?a+(e.duration_minutes/60)*e.hourly_rate:a,0);
                       return (
-                        <div key={proj} className="overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117]">
+                        <div key={proj} className="overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025]">
                           <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
                             <div className="flex items-center gap-2">
                               <Briefcase size={13} style={{color:violet}}/>
@@ -1276,7 +1269,7 @@ export default function ChronoPage() {
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setManualOpen(false)}/>
             <motion.div key="ms" initial={{y:"100%",opacity:0}} animate={{y:0,opacity:1}} exit={{y:"100%",opacity:0}}
               transition={{type:"spring",damping:30,stiffness:260}}
-              className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-[2rem] border-t border-x border-white/10 bg-[#0c0e16] shadow-[0_-24px_80px_rgba(0,0,0,0.7)]">
+              className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-[2rem] border-t border-x border-white/10 bg-white/[0.025] shadow-[0_-24px_80px_rgba(0,0,0,0.7)]">
               <div className="flex justify-center pt-3 pb-1"><div className="h-1 w-10 rounded-full bg-white/15"/></div>
               <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-4">
                 <div className="flex items-center gap-2.5">
@@ -1308,7 +1301,7 @@ export default function ChronoPage() {
                   <div>
                     <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Catégorie</label>
                     <select value={manualDraft.category} onChange={e=>setManualDraft(d=>({...d,category:e.target.value}))}
-                      className="w-full rounded-xl border border-white/10 bg-[#0c0e16] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]">
+                      className="w-full rounded-xl border border-white/10 bg-white/[0.025] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]">
                       {CATEGORIES.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
@@ -1368,7 +1361,7 @@ export default function ChronoPage() {
           <>
             <motion.div key="pb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setProjOpen(false)}/>
             <motion.div key="pd" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95,y:10}}
-              transition={{duration:0.3,ease}} className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-[1.75rem] border border-white/10 bg-[#0c0e16] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
+              transition={{duration:0.3,ease}} className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
               <div className="mb-5 flex items-center justify-between">
                 <h2 className="text-base font-extrabold text-white">Nouveau projet</h2>
                 <button onClick={()=>setProjOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 hover:text-white/70"><X size={15}/></button>
@@ -1428,7 +1421,7 @@ export default function ChronoPage() {
           <>
             <motion.div key="gb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setGoalOpen(false)}/>
             <motion.div key="gd" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95,y:10}}
-              transition={{duration:0.3,ease}} className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-[1.75rem] border border-white/10 bg-[#0c0e16] p-6">
+              transition={{duration:0.3,ease}} className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-2xl border border-white/10 bg-white/[0.025] p-6">
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5"><Settings size={15} style={{color:violet}}/><h2 className="text-sm font-extrabold text-white">Objectifs quotidiens</h2></div>
                 <button onClick={()=>setGoalOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 hover:text-white/70"><X size={15}/></button>
@@ -1465,7 +1458,7 @@ export default function ChronoPage() {
         {confirmDel&&(
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{scale:0.93,y:16,opacity:0}} animate={{scale:1,y:0,opacity:1}} exit={{scale:0.95,y:8,opacity:0}} transition={{duration:0.3,ease}}
-              className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6">
+              className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.025] p-6">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10"><Trash2 size={18} className="text-red-400"/></div>
               <h3 className="text-base font-extrabold text-white">Supprimer cette entrée ?</h3>
               <p className="mt-1.5 text-sm text-white/40">Cette action est irréversible.</p>

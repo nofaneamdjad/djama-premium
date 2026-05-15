@@ -89,7 +89,7 @@ function inp(extra = "") {
   return `w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors ${extra}`;
 }
 function Label({ children }: { children: React.ReactNode }) {
-  return <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">{children}</label>;
+  return <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">{children}</label>;
 }
 
 // ─────────────────────────── PRODUCT MODAL ───────────────────────────
@@ -115,13 +115,13 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-2xl bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] shadow-2xl overflow-hidden">
+        className="w-full max-w-2xl bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: green + "18", border: `1px solid ${green}30` }}>
               <Package size={14} style={{ color: green }}/>
             </div>
-            <h3 className="text-sm font-extrabold text-white/90">{form.id ? "Modifier le produit" : "Nouveau produit"}</h3>
+            <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier le produit" : "Nouveau produit"}</h3>
           </div>
           <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors"><X size={14}/></button>
         </div>
@@ -203,7 +203,7 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
           <button onClick={save} disabled={saving || !form.name}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-            style={{ background: green, color: "#080a0f" }}>
+            style={{ background: green, color: "#0a0f1e" }}>
             {saving ? <RefreshCw size={14} className="animate-spin"/> : <Check size={14}/>}
             {form.id ? "Enregistrer" : "Créer le produit"}
           </button>
@@ -238,9 +238,9 @@ function MovementModal({ products, warehouses, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-lg bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] shadow-2xl overflow-hidden">
+        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-sm font-extrabold text-white/90">Nouveau mouvement de stock</h3>
+          <h3 className="text-sm font-semibold text-white/90">Nouveau mouvement de stock</h3>
           <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors"><X size={14}/></button>
         </div>
         <div className="p-6 space-y-4">
@@ -307,7 +307,7 @@ function MovementModal({ products, warehouses, onSave, onClose }: {
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
           <button onClick={save} disabled={saving || !form.product_id || !form.quantity}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-            style={{ background: movType.color, color: "#080a0f" }}>
+            style={{ background: movType.color, color: "#0a0f1e" }}>
             {saving ? <RefreshCw size={14} className="animate-spin"/> : <Check size={14}/>}
             Enregistrer
           </button>
@@ -332,9 +332,9 @@ function SupplierModal({ supplier, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-lg bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] shadow-2xl overflow-hidden">
+        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-sm font-extrabold text-white/90">{form.id ? "Modifier fournisseur" : "Nouveau fournisseur"}</h3>
+          <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier fournisseur" : "Nouveau fournisseur"}</h3>
           <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
         </div>
         <div className="p-6 space-y-3 overflow-y-auto max-h-[65vh]">
@@ -355,7 +355,7 @@ function SupplierModal({ supplier, onSave, onClose }: {
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
           <button onClick={async () => { if (!form.name) return; setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.name}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-            style={{ background: green, color: "#080a0f" }}>
+            style={{ background: green, color: "#0a0f1e" }}>
             {saving ? <RefreshCw size={13} className="animate-spin inline"/> : form.id ? "Enregistrer" : "Créer"}
           </button>
         </div>
@@ -399,12 +399,12 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpis.map((k) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/[0.07] bg-[#0f1117] p-4 flex flex-col gap-2">
+            className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 flex flex-col gap-2">
             <div className={`h-8 w-8 flex items-center justify-center rounded-xl ${k.bg}`}>
               <k.icon size={15} style={{ color: k.color }}/>
             </div>
             <div>
-              <div className={`font-extrabold text-white/90 ${k.isStr ? "text-sm" : "text-xl"}`}>{k.value}</div>
+              <div className={`font-bold text-white/90 ${k.isStr ? "text-sm" : "text-xl"}`}>{k.value}</div>
               <div className="text-[10px] text-white/35 mt-0.5">{k.label}</div>
             </div>
           </motion.div>
@@ -441,7 +441,7 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
         {/* Top produits */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><Star size={12} style={{ color: gold }}/> Top produits par valeur</h3>
-          <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
+          <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
             {topProducts.length === 0 ? (
               <p className="text-center text-white/25 text-sm py-8">Aucun produit</p>
             ) : topProducts.map((p, i) => {
@@ -449,7 +449,7 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
               const maxVal = topProducts[0] ? topProducts[0].stock_current * topProducts[0].purchase_price : 1;
               return (
                 <div key={p.id} className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0">
-                  <span className="text-xs font-black text-white/20 w-4 shrink-0">{i + 1}</span>
+                  <span className="text-xs font-semibold text-white/20 w-4 shrink-0">{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2 mb-1">
                       <span className="text-sm font-semibold text-white/80 truncate">{p.name}</span>
@@ -471,7 +471,7 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
         {/* Derniers mouvements */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><Activity size={12} className="text-blue-400"/> Derniers mouvements</h3>
-          <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
+          <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
             {recentMov.length === 0 ? (
               <p className="text-center text-white/25 text-sm py-8">Aucun mouvement</p>
             ) : recentMov.map((m) => {
@@ -555,7 +555,7 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
           <option value="out">Ruptures</option>
         </select>
         <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
-          style={{ background: green, color: "#080a0f" }}>
+          style={{ background: green, color: "#0a0f1e" }}>
           <Plus size={13}/> Nouveau produit
         </button>
       </div>
@@ -570,7 +570,7 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
         ) : (
           <div className="p-4 space-y-2">
             {/* Column headers */}
-            <div className="grid grid-cols-12 gap-3 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/20">
+            <div className="grid grid-cols-12 gap-3 px-4 py-1.5 text-[10px] font-medium text-white/20">
               <span className="col-span-4">Produit</span>
               <span className="col-span-2">SKU / Catégorie</span>
               <span className="col-span-2 text-right">Prix achat</span>
@@ -580,7 +580,7 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
             <AnimatePresence>
               {filtered.map((p) => (
                 <motion.div key={p.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                  className="group grid grid-cols-12 gap-3 items-center bg-[#0f1117] border border-white/[0.07] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
+                  className="group grid grid-cols-12 gap-3 items-center bg-white/[0.025] border border-white/[0.06] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
                   <div className="col-span-4 flex items-center gap-3 min-w-0">
                     <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-white/[0.05] text-lg">
                       <Package size={14} className="text-white/40"/>
@@ -602,7 +602,7 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
                   </div>
                   <div className="col-span-2 flex items-center justify-end gap-2">
                     <div className="text-right">
-                      <p className={`text-sm font-extrabold ${getStockColor(p)}`}>{p.stock_current}</p>
+                      <p className={`text-sm font-bold ${getStockColor(p)}`}>{p.stock_current}</p>
                       <p className="text-[10px] text-white/25">{p.unit} · min {p.stock_minimum}</p>
                     </div>
                     {/* Actions */}
@@ -649,7 +649,7 @@ function MovementsView({ movements, products, warehouses, onNew }: {
           <option value="all">Tous produits</option>
           {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
-        <button onClick={onNew} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: green, color: "#080a0f" }}>
+        <button onClick={onNew} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: green, color: "#0a0f1e" }}>
           <Plus size={13}/> Mouvement
         </button>
       </div>
@@ -662,7 +662,7 @@ function MovementsView({ movements, products, warehouses, onNew }: {
               const mt = MOV_TYPES.find((t) => t.value === m.type) ?? MOV_TYPES[0];
               return (
                 <motion.div key={m.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-3 bg-[#0f1117] border border-white/[0.07] rounded-2xl px-4 py-3">
+                  className="flex items-center gap-3 bg-white/[0.025] border border-white/[0.06] rounded-2xl px-4 py-3">
                   <div className="h-9 w-9 flex items-center justify-center rounded-xl shrink-0" style={{ background: mt.color + "18" }}>
                     {mt.sign > 0 ? <ArrowUpCircle size={16} style={{ color: mt.color }}/> : mt.sign < 0 ? <ArrowDownCircle size={16} style={{ color: mt.color }}/> : <RotateCcw size={16} style={{ color: mt.color }}/>}
                   </div>
@@ -676,7 +676,7 @@ function MovementsView({ movements, products, warehouses, onNew }: {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-extrabold" style={{ color: mt.color }}>
+                    <p className="text-sm font-bold" style={{ color: mt.color }}>
                       {mt.sign > 0 ? "+" : mt.sign < 0 ? "-" : ""}{m.quantity}
                     </p>
                     <p className="text-[10px] text-white/30">{m.before_qty} → {m.after_qty}</p>
@@ -701,7 +701,7 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
     <div className="flex-1 overflow-y-auto p-5 space-y-5">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-white/60">{suppliers.length} fournisseur{suppliers.length > 1 ? "s" : ""}</h3>
-        <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: green, color: "#080a0f" }}>
+        <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: green, color: "#0a0f1e" }}>
           <Plus size={13}/> Nouveau fournisseur
         </button>
       </div>
@@ -719,9 +719,9 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
             const prodCount = products.filter((p) => p.supplier_id === s.id).length;
             return (
               <motion.div key={s.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="group bg-[#0f1117] border border-white/[0.07] rounded-2xl p-5 hover:border-white/[0.14] transition-all">
+                className="group bg-white/[0.025] border border-white/[0.06] rounded-2xl p-5 hover:border-white/[0.14] transition-all">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="h-10 w-10 flex items-center justify-center rounded-xl text-sm font-black" style={{ background: green + "18", color: green, border: `1px solid ${green}30` }}>
+                  <div className="h-10 w-10 flex items-center justify-center rounded-xl text-sm font-semibold" style={{ background: green + "18", color: green, border: `1px solid ${green}30` }}>
                     {s.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
@@ -729,7 +729,7 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
                     <button onClick={() => onDelete(s.id)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/30 hover:text-red-400"><Trash2 size={12}/></button>
                   </div>
                 </div>
-                <h4 className="text-sm font-extrabold text-white/90 mb-1">{s.name}</h4>
+                <h4 className="text-sm font-semibold text-white/90 mb-1">{s.name}</h4>
                 {s.contact && <p className="text-xs text-white/45 mb-0.5">{s.contact}</p>}
                 {s.email && <p className="text-xs text-white/35 mb-0.5">{s.email}</p>}
                 {s.phone && <p className="text-xs text-white/35 mb-3">{s.phone}</p>}
@@ -783,9 +783,9 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
     <div className="flex-1 overflow-y-auto p-5 space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {kpis.map((k, i) => (
-          <div key={i} className="bg-[#0f1117] border border-white/[0.07] rounded-2xl p-4">
+          <div key={i} className="bg-white/[0.025] border border-white/[0.06] rounded-2xl p-4">
             <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2">{k.label}</p>
-            <p className="text-xl font-extrabold text-white/90">{k.value}</p>
+            <p className="text-xl font-bold text-white/90">{k.value}</p>
             <p className="text-xs text-white/35 mt-1">{k.sub}</p>
           </div>
         ))}
@@ -794,7 +794,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
       {catStats.length > 0 && (
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><BarChart2 size={12} style={{ color: green }}/> Valeur stock par catégorie</h3>
-          <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl p-4 space-y-3">
+          <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl p-4 space-y-3">
             {catStats.map(({ cat, count, val }) => (
               <div key={cat}>
                 <div className="flex items-center justify-between mb-1">
@@ -987,21 +987,18 @@ export default function StocksPage() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-[#080a0f] text-white flex flex-col">
+    <div className="min-h-screen bg-[#0a0f1e] text-white flex flex-col">
       <ToastStack toasts={toasts} remove={removeToast}/>
 
       {/* Sub-header */}
-      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sticky top-0 z-10">
+      <div className="border-b border-white/[0.06] bg-white/[0.025] px-5 py-4 backdrop-blur-xl sticky top-0 z-10">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: green + "30" }}/>
-              <div className="relative h-10 w-10 flex items-center justify-center rounded-xl border" style={{ background: green + "14", borderColor: green + "28" }}>
-                <Package size={18} style={{ color: green }}/>
-              </div>
+            <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
+              <Package size={16} style={{ color: gold }}/>
             </div>
             <div>
-              <h1 className="text-base font-extrabold text-white">Stocks & Inventaire</h1>
+              <h1 className="text-base font-semibold text-white">Stocks & Inventaire</h1>
               <p className="text-[0.65rem] text-white/30">Gestion · Mouvements · Alertes · Fournisseurs</p>
             </div>
           </div>
@@ -1010,7 +1007,7 @@ export default function StocksPage() {
               <Download size={14}/>
             </button>
             <button onClick={() => { setEditProduct(EMPTY_PRODUCT()); setShowProductModal(true); }}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition-all hover:opacity-90"
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-[#0a0f1e] transition-all hover:opacity-90"
               style={{ background: green, boxShadow: `0 4px 16px ${green}40` }}>
               <Plus size={13}/> Nouveau produit
             </button>
@@ -1019,7 +1016,7 @@ export default function StocksPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-white/[0.06] px-5 flex gap-1 bg-[#080a0f]">
+      <div className="border-b border-white/[0.06] px-5 flex gap-1 bg-[#0a0f1e]">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setTab(key)}
             className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-all -mb-px ${tab === key ? "text-white/90" : "border-transparent text-white/35 hover:text-white/60"}`}

@@ -134,7 +134,7 @@ function StBadge({ st }: { st: ExpStatus }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{label}</label>
+      <label className="text-[0.65rem] font-medium text-white/35">{label}</label>
       {children}
     </div>
   );
@@ -200,7 +200,7 @@ function ExpenseModal({
       <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl border border-white/[0.08] bg-[#0c0c10] p-5 space-y-4"
+        className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 space-y-4"
         onClick={e => e.stopPropagation()}>
 
         <div className="flex items-center justify-between">
@@ -319,7 +319,7 @@ function ExpenseModal({
         {/* Justificatif */}
         <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Justificatif</span>
+            <span className="text-[0.65rem] font-medium text-white/35">Justificatif</span>
             <button type="button" onClick={() => setOcrHint(h => !h)}
               className="flex items-center gap-1.5 text-[0.65rem] text-purple-400/60 hover:text-purple-400 transition-colors">
               <Zap size={11} /> Scan IA
@@ -403,7 +403,7 @@ function ReportModal({
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#0c0c10] p-5 space-y-4"
+        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 space-y-4"
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-white">
@@ -544,7 +544,7 @@ function BudgetView({
           const pct  = budget > 0 ? Math.min((s / budget) * 100, 100) : 0;
           const catOver = budget > 0 && s > budget;
           return (
-            <div key={v} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 space-y-2">
+            <div key={v} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 space-y-2">
               <div className="flex items-center gap-3">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
                   style={{ backgroundColor: c + "22" }}>
@@ -631,9 +631,9 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
       {/* KPI */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {KPI.map(({ l, v, sub, c }) => (
-          <div key={l} className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-1">
-            <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">{l}</p>
-            <p className="text-xl font-black leading-none text-white">{v}</p>
+          <div key={l} className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-1">
+            <p className="text-[0.65rem] font-medium text-white/35">{l}</p>
+            <p className="text-xl font-bold leading-none text-white">{v}</p>
             <p className="text-[0.62rem] leading-tight" style={{ color: c }}>{sub}</p>
           </div>
         ))}
@@ -641,7 +641,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Trend 6 mois */}
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Tendance 6 mois</h3>
           <div className="flex items-end gap-2" style={{ height: "100px" }}>
             {trend.map(({ label, key, total }) => (
@@ -663,7 +663,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
         </div>
 
         {/* Par catégorie */}
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Par catégorie</h3>
           {byCat.length === 0
             ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
@@ -693,7 +693,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Par moyen de paiement */}
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Par moyen de paiement</h3>
           {byPay.length === 0
             ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
@@ -726,7 +726,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
         </div>
 
         {/* Top 5 dépenses */}
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Top dépenses</h3>
           {top5.length === 0
             ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
@@ -734,7 +734,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
               <div className="space-y-1.5">
                 {top5.map((e, i) => (
                   <div key={e.id} className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/[0.02] transition-colors">
-                    <span className="w-4 text-[0.6rem] font-black text-white/20">#{i + 1}</span>
+                    <span className="w-4 text-[0.6rem] font-semibold text-white/20">#{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-[0.75rem] font-semibold text-white/80">{e.description}</p>
                       <p className="text-[0.6rem] text-white/30">{fmtDate(e.date)} · {getCat(e.category).l}</p>
@@ -898,7 +898,7 @@ export default function DepensesPage() {
       {/* ── Header ── */}
       <div className="shrink-0 flex items-center justify-between gap-4 border-b border-white/[0.05] p-4 sm:p-6">
         <div>
-          <h1 className="text-xl font-black tracking-tight text-white">Dépenses</h1>
+          <h1 className="text-xl font-bold tracking-tight text-white">Dépenses</h1>
           <p className="mt-0.5 text-[0.65rem] text-white/30">
             {expenses.length} dépense{expenses.length !== 1 ? "s" : ""} · {fmtCur(grandTotal)} total
           </p>
@@ -946,9 +946,9 @@ export default function DepensesPage() {
                   { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#10b981" },
                   { l: "À rembourser",    v: fmtCur(filteredReimb), c: "#f59e0b" },
                 ].map(({ l, v }) => (
-                  <div key={l} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-                    <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">{l}</p>
-                    <p className="mt-0.5 text-[1.05rem] font-black leading-tight text-white">{v}</p>
+                  <div key={l} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+                    <p className="text-[0.65rem] font-medium text-white/35">{l}</p>
+                    <p className="mt-0.5 text-[1.05rem] font-semibold leading-tight text-white">{v}</p>
                   </div>
                 ))}
               </div>
@@ -961,22 +961,22 @@ export default function DepensesPage() {
                     className="flex-1 bg-transparent text-[0.78rem] text-white placeholder-white/20 outline-none" />
                 </div>
                 <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-                  className="rounded-xl border border-white/[0.08] bg-[#0c0c10] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
+                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
                   <option value="">Toutes catégories</option>
                   {CATS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
                 </select>
                 <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
-                  className="rounded-xl border border-white/[0.08] bg-[#0c0c10] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
+                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
                   <option value="">Tous statuts</option>
                   {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                 </select>
                 <select value={filterPay} onChange={e => setFilterPay(e.target.value)}
-                  className="rounded-xl border border-white/[0.08] bg-[#0c0c10] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
+                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
                   <option value="">Tous paiements</option>
                   {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
                 </select>
                 <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
-                  className="rounded-xl border border-white/[0.08] bg-[#0c0c10] px-3 py-2 text-[0.75rem] text-white/50 outline-none" />
+                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none" />
                 {hasFilters && (
                   <button onClick={() => { setSearch(""); setFilterCat(""); setFilterSt(""); setFilterMonth(""); setFilterPay(""); }}
                     className="flex items-center gap-1 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.72rem] text-white/30 hover:text-white/60 transition-colors">
@@ -1008,7 +1008,7 @@ export default function DepensesPage() {
                       return (
                         <motion.div key={e.id} layout
                           initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
-                          className="group flex items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 hover:bg-white/[0.03] transition-all">
+                          className="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 hover:bg-white/[0.03] transition-all">
 
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                             style={{ backgroundColor: ci.c + "22" }}>
@@ -1054,7 +1054,7 @@ export default function DepensesPage() {
                           </div>
 
                           <select value={e.status} onChange={ev => updateStatus(e.id, ev.target.value as ExpStatus)}
-                            className="shrink-0 cursor-pointer rounded-lg border border-white/[0.05] bg-[#0c0c10] px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 hover:border-white/15 group-hover:opacity-100 transition-all appearance-none"
+                            className="shrink-0 cursor-pointer rounded-lg border border-white/[0.05] bg-white/[0.025] px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 hover:border-white/15 group-hover:opacity-100 transition-all appearance-none"
                             style={{ minWidth: "90px" }}>
                             {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                           </select>
@@ -1101,7 +1101,7 @@ export default function DepensesPage() {
                     const total  = linked.reduce((a, e) => a + e.amount, 0);
                     const vatRec = linked.filter(e => e.vat_recoverable).reduce((a, e) => a + e.vat_amount, 0);
                     return (
-                      <div key={r.id} className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+                      <div key={r.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
                         <div className="flex items-start gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
@@ -1117,7 +1117,7 @@ export default function DepensesPage() {
                             {r.notes && <p className="mt-1 text-[0.65rem] italic text-white/25 truncate">{r.notes}</p>}
                           </div>
                           <div className="shrink-0 text-right">
-                            <p className="text-[0.95rem] font-black text-white">{fmtCur(total)}</p>
+                            <p className="text-[0.95rem] font-semibold text-white">{fmtCur(total)}</p>
                             {vatRec > 0 && <p className="text-[0.6rem] text-green-400/60">TVA {fmtCur(vatRec)}</p>}
                           </div>
                           <div className="shrink-0 flex gap-1">

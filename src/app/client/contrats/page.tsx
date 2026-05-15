@@ -311,7 +311,7 @@ function inp(extra = "") {
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">{children}</label>;
+  return <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">{children}</label>;
 }
 
 // ─────────────────────────── SIGNATURE MODAL ───────────────────────────
@@ -359,7 +359,7 @@ function SignModal({
       const canvas = document.createElement("canvas");
       canvas.width = 400; canvas.height = 120;
       const ctx = canvas.getContext("2d")!;
-      ctx.fillStyle = "#0f1117";
+      ctx.fillStyle = "#0a0f1e";
       ctx.fillRect(0, 0, 400, 120);
       ctx.font = "italic 42px Georgia, serif";
       ctx.fillStyle = "#c9a55a";
@@ -377,10 +377,10 @@ function SignModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
-        className="w-full max-w-lg bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] overflow-hidden shadow-2xl">
+        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
           <div>
-            <h3 className="text-sm font-extrabold text-white/90">Signer électroniquement</h3>
+            <h3 className="text-sm font-semibold text-white/90">Signer électroniquement</h3>
             <p className="text-[11px] text-white/35 mt-0.5">{contractTitle} — {signer.signer_name}</p>
           </div>
           <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors"><X size={14}/></button>
@@ -429,7 +429,7 @@ function SignModal({
             <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
             <button onClick={confirm}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
-              style={{ background: gold, color: "#080a0f" }}>
+              style={{ background: gold, color: "#0a0f1e" }}>
               <FileSignature size={15}/> Signer
             </button>
           </div>
@@ -455,14 +455,14 @@ function AIModal({ contract, onClose }: { contract: Contract; onClose: () => voi
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
-        className="w-full max-w-xl bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] overflow-hidden shadow-2xl max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] sticky top-0 bg-[#0f1117]">
+        className="w-full max-w-xl bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden shadow-2xl max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] sticky top-0 bg-white/[0.025]">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: gold + "18", border: `1px solid ${gold}30` }}>
+            <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
               <Brain size={14} style={{ color: gold }}/>
             </div>
             <div>
-              <h3 className="text-sm font-extrabold text-white/90">Analyse IA Juridique</h3>
+              <h3 className="text-sm font-semibold text-white/90">Analyse IA Juridique</h3>
               <p className="text-[11px] text-white/35">{contract.title}</p>
             </div>
           </div>
@@ -488,7 +488,7 @@ function AIModal({ contract, onClose }: { contract: Contract; onClose: () => voi
                       strokeLinecap="round" strokeDasharray="100" initial={{ strokeDashoffset: 100 }}
                       animate={{ strokeDashoffset: 100 - result.score }} transition={{ duration: 1.2, ease: "easeOut" }}/>
                   </svg>
-                  <div className="absolute inset-0 flex items-center justify-center text-sm font-extrabold" style={{ color: gold }}>{result.score}%</div>
+                  <div className="absolute inset-0 flex items-center justify-center text-sm font-bold" style={{ color: gold }}>{result.score}%</div>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-white/80">Score de conformité</p>
@@ -552,7 +552,7 @@ function ContractCard({ contract, isSelected, onSelect, onDelete }: {
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease }} onClick={onSelect}
       className={`group relative flex flex-col gap-2 rounded-2xl border cursor-pointer transition-all duration-200 overflow-hidden
-        ${isSelected ? "border-white/[0.14] bg-[#0f1117]" : "border-white/[0.07] bg-[#0f1117] hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]"}`}>
+        ${isSelected ? "border-white/[0.14] bg-white/[0.025]" : "border-white/[0.06] bg-white/[0.025] hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]"}`}>
       <div className="h-[2px] w-full" style={{ background: isSelected ? `linear-gradient(90deg, ${gold}80, transparent)` : "transparent" }}/>
       <div className="px-4 pb-4 pt-2">
         {isSelected && <div className="absolute left-0 top-6 bottom-3 w-[2px] rounded-full" style={{ backgroundColor: gold }}/>}
@@ -620,12 +620,12 @@ function DashboardView({ contracts, onNew, onSelect }: {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpis.map((k) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/[0.07] bg-[#0f1117] p-4 flex flex-col gap-2">
+            className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 flex flex-col gap-2">
             <div className={`h-8 w-8 flex items-center justify-center rounded-xl ${k.bg}`}>
               <k.icon size={15} className={k.color}/>
             </div>
             <div>
-              <div className={`text-xl font-extrabold ${k.isStr ? "text-base" : ""} text-white/90`}>
+              <div className={`text-xl font-bold ${k.isStr ? "text-base" : ""} text-white/90`}>
                 {k.isStr ? k.value : k.value}
               </div>
               <div className="text-[10px] text-white/35 mt-0.5">{k.label}</div>
@@ -642,7 +642,7 @@ function DashboardView({ contracts, onNew, onSelect }: {
             const stageContracts = contracts.filter((c) => c.status === stage);
             const s = STATUS_CFG[stage];
             return (
-              <div key={stage} className="min-w-[180px] flex-1 bg-[#0f1117] rounded-2xl border border-white/[0.07] p-3">
+              <div key={stage} className="min-w-[180px] flex-1 bg-white/[0.025] rounded-2xl border border-white/[0.06] p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-xs font-bold ${s.text}`}>{s.label}</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${s.bg} ${s.text}`}>{stageContracts.length}</span>
@@ -760,7 +760,7 @@ function DetailPanel({
               <AnimatePresence>
                 {showStatusMenu && (
                   <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                    className="absolute top-full left-0 mt-1 z-20 bg-[#0f1117] border border-white/[0.08] rounded-xl overflow-hidden shadow-2xl min-w-[140px]">
+                    className="absolute top-full left-0 mt-1 z-20 bg-white/[0.025] border border-white/[0.08] rounded-xl overflow-hidden shadow-2xl min-w-[140px]">
                     {STATUS_FLOW.concat(["refusé", "expiré"] as ContractStatus[]).map((s) => (
                       <button key={s} onClick={() => { onStatusChange(s); setShowStatusMenu(false); }}
                         className={`w-full text-left px-3 py-2 text-xs hover:bg-white/[0.05] transition-colors ${STATUS_CFG[s].text}`}>
@@ -772,7 +772,7 @@ function DetailPanel({
               </AnimatePresence>
             </div>
           </div>
-          <h2 className="text-[15px] font-extrabold text-white/90 truncate">{contract.title}</h2>
+          <h2 className="text-[15px] font-semibold text-white/90 truncate">{contract.title}</h2>
           <p className="mt-0.5 text-xs text-white/45">
             {contract.client_name}
             {contract.client_company && <> · {contract.client_company}</>}
@@ -850,7 +850,7 @@ function DetailPanel({
             {signers.length > 0 ? (
               <div className="space-y-2">
                 {signers.map((s) => (
-                  <div key={s.id} className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4">
+                  <div key={s.id} className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
                     <div className="h-9 w-9 flex items-center justify-center rounded-xl bg-white/[0.05] text-sm font-bold text-white/60">
                       {s.signer_name.charAt(0).toUpperCase()}
                     </div>
@@ -882,7 +882,7 @@ function DetailPanel({
             ) : (
               <div className="text-center py-6 text-white/30 text-sm">Aucun signataire ajouté</div>
             )}
-            <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 space-y-3">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 space-y-3">
               <p className="text-xs font-bold text-white/60">+ Ajouter un signataire</p>
               <div className="grid grid-cols-2 gap-2">
                 <input value={signerForm.name} onChange={(e) => setSignerForm((p) => ({ ...p, name: e.target.value }))}
@@ -918,7 +918,7 @@ function DetailPanel({
             </div>
             <button onClick={onShowAI}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
-              style={{ background: gold, color: "#080a0f", boxShadow: `0 4px 16px ${gold}40` }}>
+              style={{ background: gold, color: "#0a0f1e", boxShadow: `0 4px 16px ${gold}40` }}>
               <Sparkles size={15}/> Analyser le contrat
             </button>
             {contract.ai_summary && (
@@ -999,15 +999,15 @@ function CreateModal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ opacity: 0, y: 40, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.97 }} transition={{ duration: 0.4, ease }}
-        className="w-full max-w-lg bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] shadow-[0_32px_80px_rgba(0,0,0,0.6)] overflow-hidden">
+        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-[0_32px_80px_rgba(0,0,0,0.6)] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: gold + "18", border: `1px solid ${gold}30` }}>
+            <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
               <FileText size={14} style={{ color: gold }}/>
             </div>
             <div>
-              <h3 className="text-sm font-extrabold text-white/90">Nouveau contrat IA</h3>
+              <h3 className="text-sm font-semibold text-white/90">Nouveau contrat IA</h3>
               <p className="text-[10px] text-white/30">Étape {step} / 3</p>
             </div>
           </div>
@@ -1032,7 +1032,7 @@ function CreateModal({
                   const TIcon = t.icon;
                   return (
                   <button key={t.value} onClick={() => set("type", t.value)}
-                    className={`flex flex-col items-start gap-1 p-3 rounded-2xl border text-left transition-all ${form.type === t.value ? "border-transparent" : "border-white/[0.07] hover:border-white/[0.14] bg-[#0f1117]"}`}
+                    className={`flex flex-col items-start gap-1 p-3 rounded-2xl border text-left transition-all ${form.type === t.value ? "border-transparent" : "border-white/[0.06] hover:border-white/[0.14] bg-white/[0.025]"}`}
                     style={form.type === t.value ? { background: gold + "14", border: `1px solid ${gold}40` } : {}}>
                     <TIcon size={18} className="text-white/50 mb-0.5"/>
                     <span className="text-xs font-bold text-white/80">{t.label}</span>
@@ -1107,11 +1107,11 @@ function CreateModal({
                 <div className="space-y-1.5">
                   {SUGGESTED_CLAUSES[form.type].map((clause) => (
                     <button key={clause} onClick={() => toggleClause(clause)}
-                      className={`w-full flex items-center gap-2.5 text-left px-3 py-2.5 rounded-xl border text-xs transition-all ${form.selected_clauses.includes(clause) ? "border-transparent" : "border-white/[0.07] text-white/50 hover:border-white/[0.14]"}`}
+                      className={`w-full flex items-center gap-2.5 text-left px-3 py-2.5 rounded-xl border text-xs transition-all ${form.selected_clauses.includes(clause) ? "border-transparent" : "border-white/[0.06] text-white/50 hover:border-white/[0.14]"}`}
                       style={form.selected_clauses.includes(clause) ? { background: gold + "12", border: `1px solid ${gold}35`, color: gold } : {}}>
                       <div className={`h-4 w-4 rounded flex items-center justify-center shrink-0 border transition-all ${form.selected_clauses.includes(clause) ? "" : "border-white/20"}`}
                         style={form.selected_clauses.includes(clause) ? { background: gold, border: "none" } : {}}>
-                        {form.selected_clauses.includes(clause) && <Check size={9} color="#080a0f"/>}
+                        {form.selected_clauses.includes(clause) && <Check size={9} color="#0a0f1e"/>}
                       </div>
                       {clause}
                     </button>
@@ -1139,7 +1139,7 @@ function CreateModal({
           {step < 3 ? (
             <button onClick={() => setStep((s) => s + 1)} disabled={!canNext}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-              style={{ background: gold, color: "#080a0f" }}>
+              style={{ background: gold, color: "#0a0f1e" }}>
               Suivant <ChevronRight size={14} className="inline-block"/>
             </button>
           ) : (
@@ -1147,7 +1147,7 @@ function CreateModal({
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 onClick={() => onGenerate(form)} disabled={generating || creating}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 transition-all"
-                style={{ background: gold, color: "#080a0f", boxShadow: `0 4px 16px ${gold}40` }}>
+                style={{ background: gold, color: "#0a0f1e", boxShadow: `0 4px 16px ${gold}40` }}>
                 {generating ? <><motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}><Sparkles size={15}/></motion.div>Génération…</> : <><Sparkles size={15}/> Générer IA</>}
               </motion.button>
               <button onClick={() => onCreateBlank(form)} disabled={generating || creating}
@@ -1442,21 +1442,18 @@ export default function ContratsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#080a0f] text-white">
+    <div className="min-h-screen bg-[#0a0f1e] text-white">
       <ToastStack toasts={toasts} remove={removeToast}/>
 
       {/* Sub-header */}
-      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8 sticky top-0 z-10">
+      <div className="border-b border-white/[0.06] bg-white/[0.025] px-5 py-4 backdrop-blur-xl sm:px-8 sticky top-0 z-10">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: gold + "30" }}/>
-              <div className="relative h-10 w-10 flex items-center justify-center rounded-xl border" style={{ background: gold + "14", borderColor: gold + "28" }}>
-                <FileText size={18} style={{ color: gold }}/>
-              </div>
+            <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
+              <FileText size={16} style={{ color: gold }}/>
             </div>
             <div>
-              <h1 className="text-base font-extrabold text-white">Contrats IA</h1>
+              <h1 className="text-base font-semibold text-white">Contrats IA</h1>
               <p className="text-[0.65rem] text-white/30">Génération · Signature · Suivi juridique</p>
             </div>
           </div>
@@ -1465,7 +1462,7 @@ export default function ContratsPage() {
             <div className="flex rounded-xl border border-white/[0.07] overflow-hidden">
               {(["list", "dashboard"] as const).map((v) => (
                 <button key={v} onClick={() => setView(v)}
-                  className={`px-3 py-1.5 text-xs font-semibold transition-all ${view === v ? "text-[#080a0f]" : "text-white/40 hover:text-white/60"}`}
+                  className={`px-3 py-1.5 text-xs font-semibold transition-all ${view === v ? "text-[#0a0f1e]" : "text-white/40 hover:text-white/60"}`}
                   style={view === v ? { background: gold } : {}}>
                   {v === "list" ? "Liste" : "Dashboard"}
                 </button>
@@ -1475,7 +1472,7 @@ export default function ContratsPage() {
               <Download size={14}/>
             </button>
             <button onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition-all hover:opacity-90"
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-[#0a0f1e] transition-all hover:opacity-90"
               style={{ background: gold, boxShadow: `0 4px 16px ${gold}40` }}>
               <Plus size={13}/> Nouveau
             </button>
@@ -1517,14 +1514,11 @@ export default function ContratsPage() {
                 <div className="flex items-center justify-center h-32"><RefreshCw size={20} className="animate-spin text-white/30"/></div>
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center gap-4 py-16 text-center">
-                  <div className="relative">
-                    <div className="absolute inset-0 rounded-2xl blur-xl" style={{ background: gold + "20" }}/>
-                    <div className="relative h-16 w-16 flex items-center justify-center rounded-2xl" style={{ background: gold + "15", border: `1px solid ${gold}30` }}>
-                      <FileText size={28} style={{ color: gold }}/>
-                    </div>
+                  <div className="h-16 w-16 flex items-center justify-center rounded-2xl" style={{ background: gold + "15", border: `1px solid ${gold}30` }}>
+                    <FileText size={28} style={{ color: gold }}/>
                   </div>
                   <div>
-                    <p className="text-sm font-extrabold text-white/80">Aucun contrat</p>
+                    <p className="text-sm font-semibold text-white/80">Aucun contrat</p>
                     <p className="text-xs text-white/35 mt-1.5 max-w-[200px] leading-relaxed">Créez votre premier contrat et laissez l'IA le rédiger en quelques secondes.</p>
                   </div>
                   <button onClick={() => setShowModal(true)}

@@ -164,15 +164,10 @@ export default function JeuxPage() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-[#080a0f]">
-      {/* Ambient glow */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute left-[20%] top-[10%] h-[500px] w-[500px] rounded-full bg-[rgba(167,139,250,0.05)] blur-[160px]" />
-        <div className="absolute bottom-[10%] right-[10%] h-[400px] w-[400px] rounded-full bg-[rgba(56,189,248,0.04)] blur-[140px]" />
-      </div>
+    <div className="min-h-screen bg-[#0a0f1e]">
 
       {/* Sub-header */}
-      <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.88)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
+      <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <Link href="/client/coaching-ia" className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
             <ChevronLeft size={13} /> Coaching IA
@@ -198,7 +193,7 @@ export default function JeuxPage() {
             className="space-y-5"
           >
             <div>
-              <h1 className="text-xl font-black text-white">Choisissez votre jeu</h1>
+              <h1 className="text-xl font-bold text-white">Choisissez votre jeu</h1>
               <p className="mt-1 text-sm text-white/35">5 jeux pour apprendre l'IA en vous amusant</p>
             </div>
 
@@ -212,7 +207,7 @@ export default function JeuxPage() {
                   whileHover={{ scale: 1.03, y: -4 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setActiveGame(id)}
-                  className="relative overflow-hidden rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.65)] p-5 text-left transition-all hover:border-white/15"
+                  className="relative overflow-hidden rounded-xl border border-white/8 bg-white/[0.025] p-5 text-left transition-all hover:border-white/15"
                 >
                   <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 50% at 50% 0%, ${color}10 0%, transparent 60%)` }} />
                   <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
@@ -232,7 +227,7 @@ export default function JeuxPage() {
         )}
 
         {/* ══════════════════════════════
-            🧩 QUIZ IA (10 questions)
+            QUIZ IA (10 questions)
         ══════════════════════════════ */}
         {activeGame === "quiz" && (
           <motion.div key="quiz" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
@@ -243,12 +238,12 @@ export default function JeuxPage() {
               <span className="text-sm font-bold text-white">Quiz IA — 10 questions</span>
             </div>
 
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(167,139,250,0.25)] bg-[rgba(15,17,23,0.75)] p-6">
+            <div className="relative overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.25)] bg-white/[0.025] p-6">
               <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(167,139,250,0.08) 0%, transparent 60%)" }} />
 
               {!quizStarted ? (
                 <div className="relative text-center py-6 space-y-4">
-                  <h2 className="text-2xl font-black text-white">Quiz IA</h2>
+                  <h2 className="text-2xl font-bold text-white">Quiz IA</h2>
                   <p className="text-sm text-white/40">10 questions · Explication après chaque réponse · Score final</p>
                   <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
                     onClick={() => setQuizStarted(true)}
@@ -259,7 +254,7 @@ export default function JeuxPage() {
                 </div>
               ) : quizDone ? (
                 <div className="relative text-center py-6 space-y-4">
-                  <h2 className="text-3xl font-black text-white">{quizScore}/10</h2>
+                  <h2 className="text-3xl font-bold text-white">{quizScore}/10</h2>
                   <p className="text-sm text-white/40">{quizScore === 10 ? "Parfait ! Vous maîtrisez les bases de l'IA." : quizScore >= 7 ? "Excellent résultat !" : quizScore >= 5 ? "Bon début — continuez à apprendre !" : "Relisez les cours et recommencez !"}</p>
                   <div className="mx-auto max-w-xs">
                     <div className="h-3 overflow-hidden rounded-full bg-white/8">
@@ -298,7 +293,7 @@ export default function JeuxPage() {
                                 isSelected ? "border-[rgba(248,113,113,0.5)] bg-[rgba(248,113,113,0.12)] text-[#f87171]" :
                                 "border-white/5 bg-white/2 text-white/25"
                               }`}>
-                              <span className="mr-3 font-black">{String.fromCharCode(65 + i)}.</span>{opt}
+                              <span className="mr-3 font-semibold">{String.fromCharCode(65 + i)}.</span>{opt}
                               {revealed && isCorrect && <CheckCircle2 size={14} className="inline ml-2 text-[#4ade80]" />}
                             </motion.button>
                           );
@@ -320,7 +315,7 @@ export default function JeuxPage() {
         )}
 
         {/* ══════════════════════════════
-            🃏 FLASH CARDS (12 cartes)
+            FLASH CARDS (12 cartes)
         ══════════════════════════════ */}
         {activeGame === "flash" && (
           <motion.div key="flash" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
@@ -341,17 +336,17 @@ export default function JeuxPage() {
                 style={{ transformStyle: "preserve-3d", position: "relative" }}
                 className="h-56"
               >
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-[1.75rem] border border-[rgba(56,189,248,0.25)] bg-[rgba(15,17,23,0.8)] p-6 text-center"
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl border border-[rgba(56,189,248,0.25)] bg-white/[0.025] p-6 text-center"
                   style={{ backfaceVisibility: "hidden" }}>
-                  <div className="pointer-events-none absolute inset-0 rounded-[1.75rem]" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(56,189,248,0.08) 0%, transparent 70%)" }} />
-                  <span className="relative text-4xl font-black text-[#38bdf8]">{FLASH_CARDS[cardIndex].term}</span>
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(56,189,248,0.08) 0%, transparent 70%)" }} />
+                  <span className="relative text-4xl font-bold text-[#38bdf8]">{FLASH_CARDS[cardIndex].term}</span>
                   <div className="relative flex items-center gap-1.5 text-xs text-white/25">
                     <RotateCcw size={10} /> Cliquez pour retourner
                   </div>
                 </div>
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-[1.75rem] border border-[rgba(56,189,248,0.35)] bg-[rgba(15,20,35,0.9)] p-6 text-center"
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl border border-[rgba(56,189,248,0.35)] bg-white/[0.025] p-6 text-center"
                   style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-                  <div className="pointer-events-none absolute inset-0 rounded-[1.75rem]" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(56,189,248,0.12) 0%, transparent 70%)" }} />
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(56,189,248,0.12) 0%, transparent 70%)" }} />
                   <p className="relative text-sm font-extrabold text-[#38bdf8]">{FLASH_CARDS[cardIndex].term}</p>
                   <p className="relative text-sm leading-relaxed text-white/70">{FLASH_CARDS[cardIndex].def}</p>
                 </div>
@@ -390,12 +385,12 @@ export default function JeuxPage() {
               {!speedDone && <span className="ml-auto rounded-full bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.25)] px-2.5 py-0.5 text-xs font-bold text-[#f59e0b]">Score: {speedScore}</span>}
             </div>
 
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(245,158,11,0.25)] bg-[rgba(15,17,23,0.75)] p-6">
+            <div className="relative overflow-hidden rounded-2xl border border-[rgba(245,158,11,0.25)] bg-white/[0.025] p-6">
               <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(245,158,11,0.07) 0%, transparent 60%)" }} />
 
               {speedDone ? (
                 <div className="relative text-center py-6 space-y-4">
-                  <h2 className="text-2xl font-black text-white">{speedScore}/{SPEED_QUESTIONS.length}</h2>
+                  <h2 className="text-2xl font-bold text-white">{speedScore}/{SPEED_QUESTIONS.length}</h2>
                   <p className="text-sm text-white/40">{speedScore === SPEED_QUESTIONS.length ? "Parfait ! Vous connaissez tous les acteurs de l'IA." : speedScore >= 5 ? "Bon résultat !" : "Relisez le module 2 sur les modèles IA !"}</p>
                   <button onClick={resetSpeed} className="inline-flex items-center gap-2 rounded-2xl border border-white/12 bg-white/5 px-6 py-2.5 text-sm font-bold text-white/60 hover:text-white transition-colors">
                     <RefreshCw size={13} /> Rejouer
@@ -454,12 +449,12 @@ export default function JeuxPage() {
               {!vfDone && <span className="ml-auto rounded-full bg-[rgba(74,222,128,0.15)] border border-[rgba(74,222,128,0.25)] px-2.5 py-0.5 text-xs font-bold text-[#4ade80]">Score: {vfScore}</span>}
             </div>
 
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(74,222,128,0.2)] bg-[rgba(15,17,23,0.75)] p-6">
+            <div className="relative overflow-hidden rounded-2xl border border-[rgba(74,222,128,0.2)] bg-white/[0.025] p-6">
               <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(74,222,128,0.06) 0%, transparent 60%)" }} />
 
               {vfDone ? (
                 <div className="relative text-center py-6 space-y-4">
-                  <h2 className="text-2xl font-black text-white">{vfScore}/{VRAI_FAUX.length}</h2>
+                  <h2 className="text-2xl font-bold text-white">{vfScore}/{VRAI_FAUX.length}</h2>
                   <p className="text-sm text-white/40">{vfScore >= 7 ? "Excellent ! Vous connaissez bien l'IA." : "Relisez les cours pour consolider vos bases."}</p>
                   <button onClick={resetVF} className="inline-flex items-center gap-2 rounded-2xl border border-white/12 bg-white/5 px-6 py-2.5 text-sm font-bold text-white/60 hover:text-white transition-colors">
                     <RefreshCw size={13} /> Rejouer
@@ -518,7 +513,7 @@ export default function JeuxPage() {
         )}
 
         {/* ══════════════════════════════
-            🔥 DÉFI DU JOUR
+            DÉFI DU JOUR
         ══════════════════════════════ */}
         {activeGame === "defi" && (
           <motion.div key="defi" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
@@ -529,12 +524,12 @@ export default function JeuxPage() {
               <span className="text-sm font-bold text-white">Défi du jour</span>
             </div>
 
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(244,114,182,0.2)] bg-[rgba(15,17,23,0.75)] p-6 space-y-5">
+            <div className="relative overflow-hidden rounded-2xl border border-[rgba(244,114,182,0.2)] bg-white/[0.025] p-6 space-y-5">
               <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(244,114,182,0.07) 0%, transparent 60%)" }} />
 
               <div className="relative">
-                <span className="text-[0.6rem] font-bold uppercase tracking-widest text-[#f472b6]">Mission du jour</span>
-                <h2 className="mt-1 text-xl font-black text-white">{DEFI.title}</h2>
+                <span className="text-[0.65rem] font-medium text-white/35" style={{ color: "#f472b6" }}>Mission du jour</span>
+                <h2 className="mt-1 text-xl font-bold text-white">{DEFI.title}</h2>
                 <p className="mt-2 text-sm leading-relaxed text-white/55">{DEFI.desc}</p>
               </div>
 
@@ -587,7 +582,7 @@ export default function JeuxPage() {
                     {showExemple && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                         <div className="rounded-xl border border-[rgba(244,114,182,0.2)] bg-[rgba(244,114,182,0.05)] p-4">
-                          <p className="mb-2 text-[0.6rem] font-bold uppercase tracking-widest text-[#f472b6]">Exemple expert</p>
+                          <p className="mb-2 text-[0.65rem] font-medium text-white/35" style={{ color: "#f472b6" }}>Exemple expert</p>
                           <pre className="text-xs leading-relaxed text-white/60 whitespace-pre-wrap font-sans italic">{DEFI.exemple}</pre>
                         </div>
                       </motion.div>

@@ -121,7 +121,7 @@ const recurringMonthly = (r: Recurring) => {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{label}</label>
+      <label className="text-[0.65rem] font-medium text-white/35">{label}</label>
       {children}
     </div>
   );
@@ -183,7 +183,7 @@ function TransactionModal({
       onClick={onClose}>
       <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/[0.08] bg-[#0c0c10] p-5 space-y-4"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 space-y-4"
         onClick={e => e.stopPropagation()}>
 
         <div className="flex items-center justify-between">
@@ -336,7 +336,7 @@ function AccountModal({
       onClick={onClose}>
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#0c0c10] p-5 space-y-4"
+        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 space-y-4"
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-white">{account ? "Modifier le compte" : "Nouveau compte"}</h2>
@@ -414,7 +414,7 @@ function RecurringModal({
       onClick={onClose}>
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#0c0c10] p-5 space-y-4"
+        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 space-y-4"
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-white">{item ? "Modifier" : "Nouvel élément récurrent"}</h2>
@@ -564,15 +564,15 @@ function DashboardView({
       {/* KPI Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {KPI.map(({ l, v, c, sub, I, delta }) => (
-          <div key={l} className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-2">
+          <div key={l} className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">{l}</p>
+              <p className="text-[0.65rem] font-medium text-white/35">{l}</p>
               <div className="flex h-6 w-6 items-center justify-center rounded-lg"
                 style={{ backgroundColor: c + "20" }}>
                 <I size={12} style={{ color: c }} />
               </div>
             </div>
-            <p className="text-xl font-black leading-none" style={{ color: v < 0 && delta === null ? "#ef4444" : "white" }}>
+            <p className="text-xl font-bold leading-none" style={{ color: v < 0 && delta === null ? "#ef4444" : "white" }}>
               {fmtC(Math.abs(v))}{v < 0 ? " ↓" : ""}
             </p>
             <div className="flex items-center gap-1.5">
@@ -588,7 +588,7 @@ function DashboardView({
       </div>
 
       {/* Cashflow Chart */}
-      <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Cashflow — 6 mois</h3>
           <div className="flex items-center gap-3 text-[0.62rem] text-white/30">
@@ -616,7 +616,7 @@ function DashboardView({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Upcoming recurring */}
         {upcoming30.length > 0 && (
-          <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
             <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Prochains paiements</h3>
             <div className="space-y-2">
               {upcoming30.map(r => {
@@ -638,7 +638,7 @@ function DashboardView({
         )}
 
         {/* Recent transactions */}
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Dernières transactions</h3>
           {recent5.length === 0
             ? <p className="py-4 text-center text-[0.72rem] text-white/20">Aucune transaction</p>
@@ -713,18 +713,18 @@ function TransactionsView({
             className="flex-1 bg-transparent text-[0.78rem] text-white placeholder-white/20 outline-none" />
         </div>
         <select value={filterType} onChange={e => setFilterType(e.target.value as "" | TxType)}
-          className="rounded-xl border border-white/[0.08] bg-[#0c0c10] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
+          className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
           <option value="">Tout</option>
           <option value="income">Encaissements</option>
           <option value="expense">Dépenses</option>
         </select>
         <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
-          className="rounded-xl border border-white/[0.08] bg-[#0c0c10] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
+          className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
           <option value="">Tous statuts</option>
           {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
         </select>
         <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
-          className="rounded-xl border border-white/[0.08] bg-[#0c0c10] px-3 py-2 text-[0.75rem] text-white/50 outline-none" />
+          className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none" />
         {(search || filterType || filterSt || filterMonth) && (
           <button onClick={() => { setSearch(""); setFilterType(""); setFilterSt(""); setFilterMonth(""); }}
             className="flex items-center gap-1 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.72rem] text-white/30 hover:text-white/60">
@@ -739,17 +739,17 @@ function TransactionsView({
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Entrées (filtré)</p>
-          <p className="mt-0.5 text-base font-black text-green-400">{fmtC(totalIn)}</p>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+          <p className="text-[0.65rem] font-medium text-white/35">Entrées (filtré)</p>
+          <p className="mt-0.5 text-base font-bold text-green-400">{fmtC(totalIn)}</p>
         </div>
-        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Sorties (filtré)</p>
-          <p className="mt-0.5 text-base font-black text-red-400">{fmtC(totalOut)}</p>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+          <p className="text-[0.65rem] font-medium text-white/35">Sorties (filtré)</p>
+          <p className="mt-0.5 text-base font-bold text-red-400">{fmtC(totalOut)}</p>
         </div>
-        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Net</p>
-          <p className={`mt-0.5 text-base font-black ${totalIn - totalOut >= 0 ? "text-green-400" : "text-red-400"}`}>{fmtC(totalIn - totalOut)}</p>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+          <p className="text-[0.65rem] font-medium text-white/35">Net</p>
+          <p className={`mt-0.5 text-base font-bold ${totalIn - totalOut >= 0 ? "text-green-400" : "text-red-400"}`}>{fmtC(totalIn - totalOut)}</p>
         </div>
       </div>
 
@@ -768,7 +768,7 @@ function TransactionsView({
               return (
                 <motion.div key={t.id} layout
                   initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="group flex items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 hover:bg-white/[0.03] transition-all">
+                  className="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 hover:bg-white/[0.03] transition-all">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                     style={{ backgroundColor: ci.c + "22" }}>
                     <CI size={14} style={{ color: ci.c }} />
@@ -798,7 +798,7 @@ function TransactionsView({
                     </button>
                   </div>
                   <select value={t.status} onChange={e => onStatusChange(t.id, e.target.value as TxStatus)}
-                    className="shrink-0 cursor-pointer rounded-lg border border-white/[0.05] bg-[#0c0c10] px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 group-hover:opacity-100 transition-all appearance-none"
+                    className="shrink-0 cursor-pointer rounded-lg border border-white/[0.05] bg-white/[0.025] px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 group-hover:opacity-100 transition-all appearance-none"
                     style={{ minWidth: "90px" }}>
                     {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                   </select>
@@ -867,28 +867,28 @@ function PrevisionsView({
     <div className="space-y-5">
       {/* Summary bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Solde actuel</p>
-          <p className="mt-0.5 text-lg font-black text-white">{fmtC(totalBalance)}</p>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+          <p className="text-[0.65rem] font-medium text-white/35">Solde actuel</p>
+          <p className="mt-0.5 text-lg font-bold text-white">{fmtC(totalBalance)}</p>
         </div>
-        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">MRR</p>
-          <p className="mt-0.5 text-lg font-black text-green-400">{fmtC(mrrIncome)}</p>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+          <p className="text-[0.65rem] font-medium text-white/35">MRR</p>
+          <p className="mt-0.5 text-lg font-bold text-green-400">{fmtC(mrrIncome)}</p>
         </div>
-        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Burn rate</p>
-          <p className="mt-0.5 text-lg font-black text-red-400">{fmtC(burnRate)}/mois</p>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+          <p className="text-[0.65rem] font-medium text-white/35">Burn rate</p>
+          <p className="mt-0.5 text-lg font-bold text-red-400">{fmtC(burnRate)}/mois</p>
         </div>
-        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Runway</p>
-          <p className="mt-0.5 text-lg font-black" style={{ color: runway === null ? "#6b7280" : runway < 3 ? "#ef4444" : runway < 6 ? "#f59e0b" : "#10b981" }}>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+          <p className="text-[0.65rem] font-medium text-white/35">Runway</p>
+          <p className="mt-0.5 text-lg font-bold" style={{ color: runway === null ? "#6b7280" : runway < 3 ? "#ef4444" : runway < 6 ? "#f59e0b" : "#10b981" }}>
             {runway === null ? "∞" : `${runway} mois`}
           </p>
         </div>
       </div>
 
       {/* Horizon selector + forecast */}
-      <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-4">
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 className="text-[0.78rem] font-bold text-white">Projection trésorerie</h3>
@@ -910,7 +910,7 @@ function PrevisionsView({
           <Target size={16} className="shrink-0 text-purple-400" />
           <div>
             <p className="text-[0.65rem] text-white/30">Trésorerie dans {horizon} jours</p>
-            <p className={`text-2xl font-black ${forecast < 0 ? "text-red-400" : "text-white"}`}>{fmtC(forecast)}</p>
+            <p className={`text-2xl font-bold ${forecast < 0 ? "text-red-400" : "text-white"}`}>{fmtC(forecast)}</p>
           </div>
           {forecast < totalBalance
             ? <TrendingDown size={20} className="ml-auto text-red-400/60" />
@@ -979,7 +979,7 @@ function PrevisionsView({
                     const ci = getCat(r.type as TxType, r.category);
                     const CI = ci.I;
                     return (
-                      <div key={r.id} className={`group flex items-center gap-3 rounded-xl border p-3 transition-all ${r.active ? "border-white/[0.05] bg-white/[0.02]" : "border-white/[0.03] bg-white/[0.01] opacity-50"}`}>
+                      <div key={r.id} className={`group flex items-center gap-3 rounded-xl border p-3 transition-all ${r.active ? "border-white/[0.06] bg-white/[0.025]" : "border-white/[0.03] bg-white/[0.01] opacity-50"}`}>
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: ci.c + "22" }}>
                           <CI size={13} style={{ color: ci.c }} />
                         </div>
@@ -1090,7 +1090,7 @@ function ComptesView({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[0.65rem] text-white/30">Solde total consolidé</p>
-          <p className="text-2xl font-black text-white">{fmtC(totalBalance)}</p>
+          <p className="text-2xl font-bold text-white">{fmtC(totalBalance)}</p>
         </div>
         <button onClick={() => { setEditAccount(null); setShowModal(true); }}
           className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-[0.72rem] font-bold text-black hover:bg-white/90">
@@ -1112,7 +1112,7 @@ function ComptesView({
           {accounts.map(a => {
             const txCount = transactions.filter(t => t.account_id === a.id).length;
             return (
-              <div key={a.id} className="group rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3 hover:bg-white/[0.03] transition-all">
+              <div key={a.id} className="group rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3 hover:bg-white/[0.03] transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
@@ -1136,7 +1136,7 @@ function ComptesView({
                   </div>
                 </div>
                 <div>
-                  <p className="text-2xl font-black" style={{ color: a.balance < 0 ? "#ef4444" : "white" }}>
+                  <p className="text-2xl font-bold" style={{ color: a.balance < 0 ? "#ef4444" : "white" }}>
                     {fmtC(a.balance, a.currency)}
                   </p>
                   {a.iban && <p className="mt-0.5 text-[0.6rem] text-white/20 font-mono">{a.iban}</p>}
@@ -1148,7 +1148,7 @@ function ComptesView({
       )}
 
       {/* CSV Import */}
-      <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
         <div className="flex items-center gap-3">
           <Download size={15} className="text-white/30" />
           <div>
@@ -1274,9 +1274,9 @@ function RapportView({ transactions, recurring, accounts }: {
       {/* Advanced KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {advKPI.map(({ l, v, sub, c }) => (
-          <div key={l} className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-1">
-            <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">{l}</p>
-            <p className="text-xl font-black leading-none text-white">{v}</p>
+          <div key={l} className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-1">
+            <p className="text-[0.65rem] font-medium text-white/35">{l}</p>
+            <p className="text-xl font-bold leading-none text-white">{v}</p>
             <p className="text-[0.62rem]" style={{ color: c }}>{sub}</p>
           </div>
         ))}
@@ -1284,7 +1284,7 @@ function RapportView({ transactions, recurring, accounts }: {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Expense breakdown */}
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Répartition dépenses</h3>
           {expCatList.length === 0
             ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
@@ -1309,7 +1309,7 @@ function RapportView({ transactions, recurring, accounts }: {
         </div>
 
         {/* Income breakdown */}
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4 space-y-3">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Répartition revenus</h3>
           {incCatList.length === 0
             ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucun revenu</p>
@@ -1448,7 +1448,7 @@ export default function TresoreriePage() {
       {/* ── Header ── */}
       <div className="shrink-0 flex items-center justify-between gap-4 border-b border-white/[0.05] p-4 sm:p-6">
         <div>
-          <h1 className="text-xl font-black tracking-tight text-white">Trésorerie</h1>
+          <h1 className="text-xl font-bold tracking-tight text-white">Trésorerie</h1>
           <p className="mt-0.5 text-[0.65rem] text-white/30">
             Solde : <span className={totalBalance < 0 ? "text-red-400 font-bold" : "text-white font-semibold"}>{fmtC(totalBalance)}</span>
             {" · "}{transactions.length} transactions

@@ -270,18 +270,14 @@ export default function ReputationPage() {
      RENDER
   ════════════════════════════════════════= */
   return (
-    <div className="min-h-screen bg-[#080a0f] text-white">
+    <div className="min-h-screen bg-[#0a0f1e] text-white">
       <ToastStack toasts={toasts} remove={removeToast} />
-
-      {/* Ambient glow */}
-      <div className="pointer-events-none fixed left-1/4 top-0 h-[300px] w-[400px] rounded-full bg-[rgba(245,158,11,0.05)] blur-[120px]" />
 
       {/* ── Sub-header ── */}
       <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: GOLD + "30" }} />
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
                 style={{ backgroundColor: GOLD + "14", borderColor: GOLD + "28" }}>
                 <Star size={18} style={{ color: GOLD }} />
@@ -325,12 +321,12 @@ export default function ReputationPage() {
           className="grid grid-cols-3 gap-3"
         >
           {/* Note moyenne */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1117] p-4">
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
             <div className="absolute right-3 top-3 opacity-10">
               <Star size={28} style={{ color: GOLD }} />
             </div>
-            <p className="text-[9.5px] font-bold uppercase tracking-widest text-white/35 mb-1">Note moyenne</p>
-            <p className="text-[2rem] font-black leading-none tracking-tight" style={{ color: GOLD }}>
+            <p className="text-[0.65rem] font-medium text-white/35 mb-1">Note moyenne</p>
+            <p className="text-[2rem] font-bold leading-none" style={{ color: GOLD }}>
               {totalReviews > 0 ? avgRating.toFixed(1) : "—"}
             </p>
             <div className="mt-1.5">
@@ -339,24 +335,24 @@ export default function ReputationPage() {
           </div>
 
           {/* Total avis */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1117] p-4">
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
             <div className="absolute right-3 top-3 opacity-10">
               <Award size={28} className="text-blue-400" />
             </div>
-            <p className="text-[9.5px] font-bold uppercase tracking-widest text-white/35 mb-1">Total avis</p>
-            <p className="text-[2rem] font-black leading-none tracking-tight text-blue-400">
+            <p className="text-[0.65rem] font-medium text-white/35 mb-1">Total avis</p>
+            <p className="text-[2rem] font-bold leading-none text-blue-400">
               {totalReviews}
             </p>
             <p className="mt-1.5 text-[10px] text-white/30">collectés</p>
           </div>
 
           {/* % positifs */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1117] p-4">
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
             <div className="absolute right-3 top-3 opacity-10">
               <TrendingUp size={28} className="text-emerald-400" />
             </div>
-            <p className="text-[9.5px] font-bold uppercase tracking-widest text-white/35 mb-1">Satisfaits</p>
-            <p className="text-[2rem] font-black leading-none tracking-tight text-emerald-400">
+            <p className="text-[0.65rem] font-medium text-white/35 mb-1">Satisfaits</p>
+            <p className="text-[2rem] font-bold leading-none text-emerald-400">
               {positiveRate}%
             </p>
             <p className="mt-1.5 text-[10px] text-white/30">≥ 4 étoiles</p>
@@ -372,16 +368,16 @@ export default function ReputationPage() {
             className="grid gap-4 sm:grid-cols-2"
           >
             {/* Graphique tendance */}
-            <div className="rounded-2xl border border-white/[0.07] bg-[#0f1117] p-5">
-              <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-white/35">
+            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
+              <p className="mb-4 text-[0.65rem] font-medium text-white/35">
                 Évolution — 6 derniers mois
               </p>
               <TrendChart data={trendData} />
             </div>
 
             {/* Distribution étoiles */}
-            <div className="rounded-2xl border border-white/[0.07] bg-[#0f1117] p-5">
-              <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-white/35">
+            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
+              <p className="mb-4 text-[0.65rem] font-medium text-white/35">
                 Distribution des notes
               </p>
               <div className="flex flex-col gap-2.5">
@@ -432,7 +428,7 @@ export default function ReputationPage() {
               transition={{ duration: 0.35, ease }}
               className="overflow-hidden"
             >
-              <div className="rounded-2xl border border-white/[0.07] bg-[#0f1117] p-6 flex flex-col gap-4">
+              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 flex flex-col gap-4">
                 <div className="flex items-center gap-2 mb-1">
                   <Star size={14} style={{ color: GOLD }} />
                   <h3 className="text-[13px] font-extrabold text-white/85">Nouvel avis client</h3>
@@ -440,7 +436,7 @@ export default function ReputationPage() {
 
                 {/* Nom client */}
                 <div>
-                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
+                  <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">
                     Nom du client *
                   </label>
                   <input
@@ -453,7 +449,7 @@ export default function ReputationPage() {
 
                 {/* Note */}
                 <div>
-                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
+                  <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">
                     Note *
                   </label>
                   <StarRating value={form.rating} onChange={v => setForm(p => ({ ...p, rating: v }))} />
@@ -461,7 +457,7 @@ export default function ReputationPage() {
 
                 {/* Message */}
                 <div>
-                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
+                  <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">
                     Message
                   </label>
                   <textarea
@@ -475,7 +471,7 @@ export default function ReputationPage() {
 
                 {/* Source */}
                 <div>
-                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
+                  <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">
                     Source
                   </label>
                   <div className="flex gap-2 flex-wrap">
@@ -498,7 +494,7 @@ export default function ReputationPage() {
 
                 {/* Projet */}
                 <div>
-                  <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">
+                  <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">
                     Projet (optionnel)
                   </label>
                   <input
@@ -540,7 +536,7 @@ export default function ReputationPage() {
         {/* ── Filtres source ── */}
         {reviews.length > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-white/25 mr-1">Filtrer :</span>
+            <span className="text-[0.65rem] font-medium text-white/35 mr-1">Filtrer :</span>
             {([["all", "Tous", reviews.length], ...Object.entries(SOURCE_STYLES).map(([k, s]) => [k, s.label, reviews.filter(r => r.source === k).length])] as [string, string, number][]).map(([key, label, count]) => {
               const active = activeSource === key;
               const style = key !== "all" ? SOURCE_STYLES[key as ReviewSource] : null;
@@ -557,7 +553,7 @@ export default function ReputationPage() {
                   }`}
                 >
                   {label}
-                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${active ? "bg-white/15" : "bg-white/[0.06]"}`}>
+                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${active ? "bg-white/15" : "bg-white/[0.06]"}`}>
                     {count}
                   </span>
                 </button>
@@ -576,7 +572,7 @@ export default function ReputationPage() {
           <EmptyState onAdd={() => setShowForm(true)} />
         ) : (
           <div className="flex flex-col gap-3">
-            <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-white/22">
+            <p className="px-1 text-[0.65rem] font-medium text-white/35">
               {filteredReviews.length} avis{activeSource !== "all" ? ` · ${SOURCE_STYLES[activeSource as ReviewSource].label}` : " · tous les canaux"}
             </p>
             <AnimatePresence mode="popLayout">
@@ -625,7 +621,7 @@ function ReviewCard({ review, index, onDelete }: { review: Review; index: number
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: index * 0.03 }}
-      className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1117] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+      className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
     >
       {/* Top accent bar */}
       <div className="absolute inset-x-0 top-0 h-[2px]"
@@ -633,7 +629,7 @@ function ReviewCard({ review, index, onDelete }: { review: Review; index: number
 
       <div className="flex items-start gap-4">
         {/* Avatar */}
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-black"
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold"
           style={{ background: ratingColor + "18", borderColor: ratingColor + "30", color: ratingColor }}>
           {initial}
         </div>
@@ -698,7 +694,6 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-16 text-center">
       <div className="relative">
-        <div className="absolute inset-0 rounded-2xl bg-amber-500/20 blur-md" />
         <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/25 bg-amber-500/12">
           <Star size={28} style={{ color: GOLD }} />
         </div>

@@ -156,7 +156,7 @@ function ReasoningBlock({ text }: { text: string }) {
           <Brain size={13} className="text-violet-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10.5px] font-bold uppercase tracking-widest text-violet-400/80">
+          <p className="text-[10.5px] font-medium text-violet-400/80">
             Analyse stratégique
           </p>
         </div>
@@ -223,7 +223,7 @@ function SupplierCard({ item }: { item: SourcingItem }) {
 function StepItem({ item, index }: { item: SourcingItem; index: number }) {
   return (
     <div className="flex gap-3.5 pb-4 last:pb-0">
-      <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-black text-white">
+      <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-bold text-white">
         {index + 1}
       </div>
       <div className="flex-1 border-b border-white/[0.05] last:border-0 pb-4 last:pb-0">
@@ -292,7 +292,7 @@ function SectionBlock({ section }: { section: SourcingSection }) {
       {/* Section header */}
       <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-xl border ${col.bg} ${col.border}`}>
         <Icon size={13} className={col.text} />
-        <p className={`text-[11px] font-extrabold uppercase tracking-widest ${col.text}`}>
+        <p className={`text-[11px] font-semibold ${col.text}`}>
           {section.title}
         </p>
         <span className="ml-auto text-[10px] text-white/20 font-medium">
@@ -672,14 +672,13 @@ export default function SourcingPage() {
      RENDU
   ════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#080a0f] text-white pb-40">
+    <div className="min-h-screen bg-[#0a0f1e] text-white pb-40">
 
       {/* ── Sub-header ── */}
       <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#818cf830" }} />
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
                 style={{ backgroundColor: "#818cf814", borderColor: "#818cf828" }}>
                 <Search size={18} style={{ color: "#818cf8" }} />
@@ -733,7 +732,6 @@ export default function SourcingPage() {
               {/* Welcome */}
               <div className="text-center mb-8 pt-4">
                 <div className="relative inline-flex mb-4">
-                  <div className="absolute inset-0 rounded-2xl blur-xl bg-blue-500/20" />
                   <div className="relative w-14 h-14 rounded-2xl bg-blue-500/12 border border-blue-500/20 flex items-center justify-center">
                     <Sparkles size={24} className="text-blue-400" />
                   </div>

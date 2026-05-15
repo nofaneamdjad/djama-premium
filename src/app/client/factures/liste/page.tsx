@@ -136,7 +136,7 @@ export default function ListeFactures() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease }}
-            className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_12px_rgba(9,9,11,0.05)]"
+            className="overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-[0_2px_12px_rgba(9,9,11,0.05)]"
           >
             {/* En-tête */}
             <div className="grid grid-cols-[auto_1fr_1fr_auto_auto] items-center gap-4 border-b border-[var(--border)] bg-[var(--surface)] px-6 py-3">

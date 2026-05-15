@@ -83,19 +83,12 @@ export default function AbonnementsPage() {
      RENDER
   ══════════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#080a0f]">
-
-      {/* Ambient glows */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute left-[10%] top-[5%] h-[600px] w-[600px] rounded-full bg-[rgba(201,165,90,0.05)] blur-[160px]" />
-        <div className="absolute bottom-[10%] right-[5%] h-[500px] w-[500px] rounded-full bg-[rgba(139,92,246,0.04)] blur-[140px]" />
-      </div>
+    <div className="min-h-screen bg-[#0a0f1e]">
 
       {/* ── Sub-header ── */}
-      <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.88)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
+      <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <div className="relative">
-            <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: GOLD + "30" }} />
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border" style={{ backgroundColor: GOLD + "14", borderColor: GOLD + "30" }}>
               <Crown size={16} style={{ color: GOLD }} />
             </div>
@@ -115,7 +108,7 @@ export default function AbonnementsPage() {
           {loading ? (
             <motion.div key="loading"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex items-center gap-3 rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.6)] px-6 py-5"
+              className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.025] px-6 py-5"
             >
               <Loader2 size={18} className="animate-spin text-white/30" />
               <span className="text-sm text-white/30">Chargement de votre abonnement…</span>
@@ -123,7 +116,7 @@ export default function AbonnementsPage() {
           ) : isPaid ? (
             <motion.div key="active"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
-              className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(74,222,128,0.25)] bg-[rgba(15,17,23,0.7)] p-6"
+              className="relative overflow-hidden rounded-2xl border border-[rgba(74,222,128,0.25)] bg-white/[0.025] p-6"
             >
               {/* Glow */}
               <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 60% at 0% 50%, rgba(74,222,128,0.07) 0%, transparent 70%)" }} />
@@ -135,7 +128,7 @@ export default function AbonnementsPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-base font-extrabold text-white">Abonnement actif</p>
-                      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/12 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-widest text-emerald-400">
+                      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/12 px-2 py-0.5 text-[0.6rem] font-bold text-emerald-400">
                         Pro
                       </span>
                     </div>
@@ -160,7 +153,7 @@ export default function AbonnementsPage() {
           ) : (
             <motion.div key="inactive"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
-              className="relative overflow-hidden rounded-[1.75rem] border border-amber-500/20 bg-[rgba(15,17,23,0.7)] p-6"
+              className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-white/[0.025] p-6"
             >
               <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 60% at 0% 50%, rgba(245,158,11,0.05) 0%, transparent 70%)" }} />
               <div className="relative flex items-center gap-4">
@@ -183,7 +176,7 @@ export default function AbonnementsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease, delay: 0.1 }}
-          className="relative overflow-hidden rounded-[2rem] border bg-[rgba(15,17,23,0.75)] shadow-[0_16px_60px_rgba(0,0,0,0.5)]"
+          className="relative overflow-hidden rounded-2xl border bg-white/[0.025] shadow-[0_16px_60px_rgba(0,0,0,0.5)]"
           style={{ borderColor: GOLD + "28" }}
         >
           {/* Top gradient bar */}
@@ -201,11 +194,11 @@ export default function AbonnementsPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl border" style={{ backgroundColor: GOLD + "14", borderColor: GOLD + "30" }}>
                     <Crown size={18} style={{ color: GOLD }} />
                   </div>
-                  <span className="rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest" style={{ color: GOLD, borderColor: GOLD + "40", backgroundColor: GOLD + "12" }}>
+                  <span className="rounded-full border px-3 py-1 text-[0.65rem] font-bold" style={{ color: GOLD, borderColor: GOLD + "40", backgroundColor: GOLD + "12" }}>
                     Recommandé
                   </span>
                 </div>
-                <h2 className="text-2xl font-black text-white">DJAMA PRO</h2>
+                <h2 className="text-2xl font-bold text-white">DJAMA PRO</h2>
                 <p className="mt-1 text-sm text-white/40">Accès complet à la suite d'outils professionnels</p>
 
                 {/* ── Coaching IA offert ── */}
@@ -223,7 +216,7 @@ export default function AbonnementsPage() {
               {/* Price */}
               <div className="text-right shrink-0">
                 <div className="flex items-end justify-end gap-1">
-                  <span className="text-4xl font-black text-white">11,90</span>
+                  <span className="text-4xl font-bold text-white">11,90</span>
                   <span className="mb-1 text-lg font-bold text-white/60">€</span>
                 </div>
                 <p className="text-xs text-white/35">/ mois · sans engagement</p>
@@ -237,7 +230,7 @@ export default function AbonnementsPage() {
                 return (
                   <div
                     key={label}
-                    className={`flex items-start gap-3 rounded-[1rem] border px-4 py-3 ${
+                    className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
                       isCoaching
                         ? "border-[rgba(217,70,239,0.25)] bg-[rgba(217,70,239,0.06)]"
                         : "border-white/6 bg-white/3"
@@ -257,7 +250,7 @@ export default function AbonnementsPage() {
                       <div className="flex items-center gap-1.5">
                         <p className={`text-xs font-bold ${isCoaching ? "text-fuchsia-300" : "text-white/85"}`}>{label}</p>
                         {isCoaching && (
-                          <span className="rounded-full border border-[rgba(217,70,239,0.4)] bg-[rgba(217,70,239,0.15)] px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-wider text-fuchsia-300">
+                          <span className="rounded-full border border-[rgba(217,70,239,0.4)] bg-[rgba(217,70,239,0.15)] px-1.5 py-0.5 text-[0.55rem] font-bold text-fuchsia-300">
                             Offert
                           </span>
                         )}
@@ -301,7 +294,7 @@ export default function AbonnementsPage() {
             { title: "Sans engagement",     desc: "Résiliez à tout moment depuis votre espace" },
             { title: "Accès immédiat",      desc: "Outils disponibles dès la confirmation"  },
           ].map((g) => (
-            <div key={g.title} className="flex items-start gap-3 rounded-[1.25rem] border border-white/6 bg-[rgba(15,17,23,0.5)] px-4 py-4">
+            <div key={g.title} className="flex items-start gap-3 rounded-xl border border-white/6 bg-white/[0.025] px-4 py-4">
               <div>
                 <p className="text-xs font-bold text-white/80">{g.title}</p>
                 <p className="mt-0.5 text-[0.65rem] leading-tight text-white/35">{g.desc}</p>
@@ -315,9 +308,9 @@ export default function AbonnementsPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.4 }}
-          className="rounded-[1.5rem] border border-white/6 bg-[rgba(15,17,23,0.5)] p-6 space-y-4"
+          className="rounded-xl border border-white/6 bg-white/[0.025] p-6 space-y-4"
         >
-          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/30 mb-2">Questions fréquentes</p>
+          <p className="text-[0.65rem] font-medium text-white/35 mb-2">Questions fréquentes</p>
           {[
             { q: "Puis-je résilier à tout moment ?",          r: "Oui. Vous pouvez annuler votre abonnement depuis votre portail Stripe à tout moment, sans frais." },
             { q: "Que se passe-t-il après résiliation ?",     r: "Votre accès reste actif jusqu'à la fin de la période payée. Vos données sont conservées 30 jours." },

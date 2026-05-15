@@ -300,7 +300,7 @@ function DInput({ label, value, onChange, placeholder, type="text", small }:
     : "w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20";
   return (
     <div>
-      {label && <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{label}</label>}
+      {label && <label className="mb-1 block text-[0.65rem] font-medium text-white/35">{label}</label>}
       <div className="relative">
         <motion.div animate={{ opacity: focused ? 1 : 0 }} transition={{ duration: 0.15 }}
           className="pointer-events-none absolute inset-0 rounded-xl"
@@ -317,7 +317,7 @@ function DTextarea({ label, value, onChange, placeholder, rows=3 }:
   { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; rows?:number }) {
   return (
     <div>
-      {label && <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{label}</label>}
+      {label && <label className="mb-1 block text-[0.65rem] font-medium text-white/35">{label}</label>}
       <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
         className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
     </div>
@@ -329,7 +329,7 @@ function ColorPicker({ value, onChange }: { value:string; onChange:(v:string)=>v
   const isPreset = COLOR_PRESETS.some(p => p.hex === value);
   return (
     <div>
-      <label className="mb-2 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">
+      <label className="mb-2 block text-[0.65rem] font-medium text-white/35">
         <Palette size={9} className="mr-1 inline-block"/>Couleur du document
       </label>
       <div className="flex flex-wrap items-center gap-2">
@@ -368,7 +368,7 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
   }
   return (
     <div>
-      <label className="mb-2 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">
+      <label className="mb-2 block text-[0.65rem] font-medium text-white/35">
         <ImagePlus size={9} className="mr-1 inline-block"/>Logo entreprise
       </label>
       <div className="flex items-center gap-3">
@@ -377,7 +377,7 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={value} alt="Logo" className="h-12 w-auto max-w-[120px] rounded-lg border border-white/10 bg-white/5 object-contain p-1"/>
             <button onClick={() => onChange("")}
-              className="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full border border-red-500/30 bg-[#0f1117] text-red-400 transition group-hover:flex">
+              className="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full border border-red-500/30 bg-white/[0.025] text-red-400 transition group-hover:flex">
               <X size={10}/>
             </button>
           </div>
@@ -810,23 +810,15 @@ export default function FacturesPage() {
      RENDER
   ══════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col bg-[#080a0f]">
-
-      {/* Glows */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute left-[15%] top-[8%] h-[500px] w-[500px] rounded-full bg-[rgba(176,141,87,0.04)] blur-[140px]"/>
-        <div className="absolute bottom-[5%] right-[10%] h-[400px] w-[400px] rounded-full bg-[rgba(34,197,94,0.03)] blur-[120px]"/>
-      </div>
+    <div className="flex flex-col bg-[#0a0f1e]">
 
       {/* ── Sub-header ── */}
       <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#4ade8030" }} />
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
-                style={{ backgroundColor: "#4ade8014", borderColor: "#4ade8028" }}>
-                <ReceiptText size={18} style={{ color: "#4ade80" }} />
+              <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
+                <ReceiptText size={16} style={{ color: "#c9a55a" }} />
               </div>
             </div>
             <div>
@@ -852,7 +844,7 @@ export default function FacturesPage() {
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 px-5 py-5 sm:px-5">
 
         {/* ══ Liste ══ */}
-        <aside className={`flex w-full flex-col border-r border-white/[0.06] bg-[#0f1117] sm:w-[300px] sm:flex-none sm:rounded-[1.5rem] sm:border sm:border-white/[0.07] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}>
+        <aside className={`flex w-full flex-col border-r border-white/[0.06] bg-white/[0.025] sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-white/[0.07] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}>
           <div className="space-y-2.5 border-b border-white/6 p-4">
             <div className="relative">
               <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25"/>
@@ -917,7 +909,7 @@ export default function FacturesPage() {
         <main className={`flex flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
           {!draft ? (
             <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-              className="flex h-full flex-col items-center justify-center gap-4 rounded-[1.5rem] border border-white/[0.07] bg-[#0f1117] p-8 text-center">
+              className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.025] p-8 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)]">
                 <ReceiptText size={28} style={{ color: "#c9a55a" }}/>
               </div>
@@ -939,7 +931,7 @@ export default function FacturesPage() {
           ) : (
             <motion.div key={selected?.id ?? "new"} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
               transition={{ duration:0.3, ease }}
-              className="flex h-full flex-col overflow-hidden rounded-none bg-[#0f1117] sm:rounded-[1.5rem] sm:border sm:border-white/[0.07]">
+              className="flex h-full flex-col overflow-hidden rounded-none bg-white/[0.025] sm:rounded-xl sm:border sm:border-white/[0.07]">
 
               {/* ── Toolbar ── */}
               <div className="flex flex-wrap items-center gap-2 border-b border-white/6 px-5 py-3">
@@ -1039,7 +1031,7 @@ export default function FacturesPage() {
                 <div className="mx-auto max-w-3xl space-y-7">
 
                   {/* Aperçu mini-header */}
-                  <div className="overflow-hidden rounded-[1.25rem] border border-white/8">
+                  <div className="overflow-hidden rounded-xl border border-white/8">
                     <div className="flex items-center gap-4 px-5 py-4"
                       style={{ background:"linear-gradient(135deg,#080a0f 0%,rgba(8,10,15,0.92) 100%)", borderBottom:`2px solid ${activeColor}` }}>
                       {draft.emetteur_logo ? (
@@ -1057,7 +1049,7 @@ export default function FacturesPage() {
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-[0.6rem] text-white/30">{fmtDate(draft.date_document)}</p>
-                        <p className="text-base font-black" style={{ color: activeColor }}>{fmtEur(totals.ttc)}</p>
+                        <p className="text-base font-bold" style={{ color: activeColor }}>{fmtEur(totals.ttc)}</p>
                       </div>
                     </div>
                   </div>
@@ -1076,7 +1068,7 @@ export default function FacturesPage() {
                   <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
 
                   {/* Template PDF */}
-                  <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
+                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                     <TemplateSelector
                       value={draft.template ?? "modern"}
                       onChange={v => { setDraft(d => d ? { ...d, template: v } : d); setDirty(true); }}
@@ -1087,7 +1079,7 @@ export default function FacturesPage() {
                   {/* Émetteur | Client */}
                   <div className="grid gap-5 sm:grid-cols-2">
                     {/* Émetteur */}
-                    <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
+                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <Building2 size={13} style={{ color: activeColor }}/>
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Votre entreprise</span>
@@ -1100,7 +1092,7 @@ export default function FacturesPage() {
                           <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 space-y-3">
                             {/* Taille logo */}
                             <div>
-                              <p className="mb-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Taille du logo</p>
+                              <p className="mb-1.5 text-[0.65rem] font-medium text-white/35">Taille du logo</p>
                               <div className="flex gap-1.5">
                                 {([
                                   { val: "sm" as const, label: "S", desc: "Petit" },
@@ -1150,7 +1142,7 @@ export default function FacturesPage() {
                       </div>
                     </div>
                     {/* Client */}
-                    <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
+                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <User size={13} className="text-blue-400"/>
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Client</span>
@@ -1166,7 +1158,7 @@ export default function FacturesPage() {
                   </div>
 
                   {/* Coordonnées bancaires */}
-                  <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
+                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                     <div className="mb-3 flex items-center gap-2">
                       <Landmark size={13} style={{ color: activeColor }}/>
                       <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Coordonnées bancaires</span>
@@ -1204,7 +1196,7 @@ export default function FacturesPage() {
                           return (
                             <motion.div key={idx} layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
                               transition={{ duration:0.2, ease }}
-                              className="group grid grid-cols-1 gap-2 rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-3 sm:grid-cols-[1fr_60px_80px_70px_80px_32px] sm:items-center">
+                              className="group grid grid-cols-1 gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 sm:grid-cols-[1fr_60px_80px_70px_80px_32px] sm:items-center">
                               <DInput small value={it.description} onChange={v => updItem(idx, "description", v)} placeholder="Description de la prestation"/>
                               <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx, "quantity",   parseFloat(v) || 0)} placeholder="1"/>
                               <DInput small type="number" value={String(it.unit_price)} onChange={v => updItem(idx, "unit_price", parseFloat(v) || 0)} placeholder="0.00"/>
@@ -1228,7 +1220,7 @@ export default function FacturesPage() {
 
                   {/* Remise & Acompte */}
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
+                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <Percent size={12} style={{ color: activeColor }}/>
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Remise globale</span>
@@ -1245,7 +1237,7 @@ export default function FacturesPage() {
                         )}
                       </div>
                     </div>
-                    <div className="rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-4">
+                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <BadgeCheck size={12} className="text-green-400"/>
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Acompte versé</span>
@@ -1263,7 +1255,7 @@ export default function FacturesPage() {
 
                   {/* Totaux */}
                   <div className="flex justify-end">
-                    <div className="w-full max-w-xs rounded-[1.25rem] border border-white/[0.07] bg-[#0f1117] p-5 space-y-2">
+                    <div className="w-full max-w-xs rounded-xl border border-white/[0.07] bg-white/[0.025] p-5 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-white/50">Sous-total HT</span>
                         <span className="text-sm font-semibold text-white/80">{fmtEur(totals.subtotal_ht)}</span>
@@ -1280,7 +1272,7 @@ export default function FacturesPage() {
                       </div>
                       <div className="border-t border-white/8 pt-2 flex items-center justify-between">
                         <span className="text-base font-extrabold text-white">Total TTC</span>
-                        <span className="text-xl font-black" style={{ color: activeColor }}>{fmtEur(totals.ttc)}</span>
+                        <span className="text-xl font-bold" style={{ color: activeColor }}>{fmtEur(totals.ttc)}</span>
                       </div>
                       {totals.acompte > 0 && (
                         <>
@@ -1290,7 +1282,7 @@ export default function FacturesPage() {
                           </div>
                           <div className="border-t border-white/8 pt-2 flex items-center justify-between">
                             <span className="text-sm font-bold text-white/70">Net à payer</span>
-                            <span className="text-base font-black" style={{ color: activeColor }}>{fmtEur(totals.ttc - totals.acompte)}</span>
+                            <span className="text-base font-bold" style={{ color: activeColor }}>{fmtEur(totals.ttc - totals.acompte)}</span>
                           </div>
                         </>
                       )}
@@ -1375,7 +1367,7 @@ export default function FacturesPage() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10">
                 <Trash2 size={18} className="text-red-400"/>
               </div>
@@ -1401,7 +1393,7 @@ export default function FacturesPage() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-md rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-sky-400/25 bg-sky-400/8">
@@ -1416,18 +1408,18 @@ export default function FacturesPage() {
               </div>
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Destinataire</label>
+                  <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Destinataire</label>
                   <input value={emailTo} onChange={e => setEmailTo(e.target.value)}
                     placeholder="email@client.com"
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Objet</label>
+                  <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Objet</label>
                   <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Message</label>
+                  <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Message</label>
                   <textarea value={emailMsg} onChange={e => setEmailMsg(e.target.value)} rows={4}
                     className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
                 </div>
@@ -1453,7 +1445,7 @@ export default function FacturesPage() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)]">
@@ -1503,7 +1495,7 @@ export default function FacturesPage() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(34,211,238,0.25)] bg-[rgba(34,211,238,0.08)]">

@@ -122,7 +122,7 @@ function inp(extra = "") {
   return `w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors ${extra}`;
 }
 function Lbl({ children }: { children: React.ReactNode }) {
-  return <label className="mb-1.5 block text-[0.6rem] font-black uppercase tracking-widest text-white/25">{children}</label>;
+  return <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">{children}</label>;
 }
 function Stars({ value, onChange }: { value: number; onChange?: (n: number) => void }) {
   return (
@@ -154,7 +154,7 @@ function FournModal({ data, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-2xl bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] shadow-2xl overflow-hidden">
+        className="w-full max-w-2xl bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-2.5">
@@ -162,7 +162,7 @@ function FournModal({ data, onSave, onClose }: {
               <Truck size={14} style={{ color: violet }}/>
             </div>
             <div>
-              <h3 className="text-sm font-extrabold text-white/90">{form.id ? "Modifier fournisseur" : "Nouveau fournisseur"}</h3>
+              <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier fournisseur" : "Nouveau fournisseur"}</h3>
               <p className="text-[10px] text-white/30">Étape {step} / 3</p>
             </div>
           </div>
@@ -316,9 +316,9 @@ function OrderModal({ fournisseurs, order, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-lg bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] shadow-2xl overflow-hidden">
+        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-sm font-extrabold text-white/90">{form.id ? "Modifier la commande" : "Nouvelle commande fournisseur"}</h3>
+          <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier la commande" : "Nouvelle commande fournisseur"}</h3>
           <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
         </div>
         <div className="p-6 space-y-3 overflow-y-auto max-h-[70vh]">
@@ -412,9 +412,9 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-lg bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] shadow-2xl overflow-hidden">
+        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-sm font-extrabold text-white/90">{form.id ? "Modifier facture" : "Nouvelle facture fournisseur"}</h3>
+          <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier facture" : "Nouvelle facture fournisseur"}</h3>
           <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
         </div>
         <div className="p-6 space-y-3 overflow-y-auto max-h-[70vh]">
@@ -509,9 +509,9 @@ function RatingModal({ fournisseur, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-md bg-[#0f1117] border border-white/[0.07] rounded-[1.75rem] shadow-2xl overflow-hidden">
+        className="w-full max-w-md bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-sm font-extrabold text-white/90">Évaluer — {fournisseur.company_name}</h3>
+          <h3 className="text-sm font-semibold text-white/90">Évaluer — {fournisseur.company_name}</h3>
           <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
         </div>
         <div className="p-6 space-y-4">
@@ -526,7 +526,7 @@ function RatingModal({ fournisseur, onSave, onClose }: {
           </div>
           <div className="text-center p-3 bg-white/[0.03] rounded-xl border border-white/[0.06]">
             <p className="text-xs text-white/40 mb-1">Score moyen</p>
-            <p className="text-2xl font-extrabold" style={{ color: violet }}>
+            <p className="text-2xl font-bold" style={{ color: violet }}>
               {((form.reliability + form.quality + form.price + form.delays) / 4).toFixed(1)}/5
             </p>
           </div>
@@ -587,12 +587,12 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpis.map((k) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/[0.07] bg-[#0f1117] p-4 flex flex-col gap-2">
+            className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 flex flex-col gap-2">
             <div className={`h-8 w-8 flex items-center justify-center rounded-xl ${k.bg}`}>
               <k.icon size={15} style={{ color: k.color }}/>
             </div>
             <div>
-              <div className={`font-extrabold text-white/90 ${k.isStr ? "text-sm" : "text-xl"}`}>{k.value}</div>
+              <div className={`font-bold text-white/90 ${k.isStr ? "text-sm" : "text-xl"}`}>{k.value}</div>
               <div className="text-[10px] text-white/35 mt-0.5">{k.label}</div>
             </div>
           </motion.div>
@@ -615,7 +615,7 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
         {/* Top fournisseurs */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><Star size={12} style={{ color: violet }}/> Top fournisseurs</h3>
-          <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
+          <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
             {topFourn.length === 0 ? (
               <p className="text-center text-white/25 text-sm py-8">Aucune évaluation — notez vos fournisseurs</p>
             ) : topFourn.map((f, i) => {
@@ -623,13 +623,13 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
               const cat = CATEGORIES.find((c) => c.value === f.category);
               return (
                 <div key={f.id} className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0">
-                  <span className="text-xs font-black text-white/20 w-4 shrink-0">{i + 1}</span>
+                  <span className="text-xs font-semibold text-white/20 w-4 shrink-0">{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-white/80 truncate">{f.company_name}</p>
                     <p className="text-[10px] text-white/35">{cat?.label}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-extrabold" style={{ color: score >= 4 ? "#10b981" : score >= 3 ? violet : "#f97316" }}>{score.toFixed(1)}/5</p>
+                    <p className="text-sm font-bold" style={{ color: score >= 4 ? "#10b981" : score >= 3 ? violet : "#f97316" }}>{score.toFixed(1)}/5</p>
                     <Stars value={Math.round(score)}/>
                   </div>
                 </div>
@@ -641,7 +641,7 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
         {/* Commandes récentes */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><ShoppingCart size={12} className="text-blue-400"/> Commandes récentes</h3>
-          <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
+          <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
             {orders.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
                 <p className="text-white/25 text-sm">Aucune commande</p>
@@ -727,15 +727,15 @@ function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDel
 
           return (
             <motion.div key={f.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="group bg-[#0f1117] border border-white/[0.07] rounded-2xl p-5 hover:border-white/[0.14] transition-all flex flex-col gap-3">
+              className="group bg-white/[0.025] border border-white/[0.06] rounded-2xl p-5 hover:border-white/[0.14] transition-all flex flex-col gap-3">
               {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-11 w-11 flex items-center justify-center rounded-xl text-sm font-black shrink-0" style={{ background: violet + "18", color: violet, border: `1px solid ${violet}30` }}>
+                  <div className="h-11 w-11 flex items-center justify-center rounded-xl text-sm font-semibold shrink-0" style={{ background: violet + "18", color: violet, border: `1px solid ${violet}30` }}>
                     {f.company_name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-extrabold text-white/90">{f.company_name}</p>
+                    <p className="text-sm font-semibold text-white/90">{f.company_name}</p>
                     <p className="text-[10px] text-white/40">{cat?.label}{f.city ? ` · ${f.city}` : ""}</p>
                   </div>
                 </div>
@@ -812,7 +812,7 @@ function OrdersView({ orders, fournisseurs, onNew, onEdit, onDelete }: {
           const isLate = o.expected_date && o.expected_date < today && !["received", "cancelled"].includes(o.status);
           return (
             <motion.div key={o.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              className="group flex items-center gap-3 bg-[#0f1117] border border-white/[0.07] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
+              className="group flex items-center gap-3 bg-white/[0.025] border border-white/[0.06] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <p className="text-sm font-semibold text-white/85 truncate">{o.fournisseur_name}</p>
@@ -826,7 +826,7 @@ function OrdersView({ orders, fournisseurs, onNew, onEdit, onDelete }: {
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-extrabold text-white/80">{fmtEur(o.total_amount)}</p>
+                <p className="text-sm font-bold text-white/80">{fmtEur(o.total_amount)}</p>
                 <p className="text-[10px] text-white/30">HT : {fmtEur(o.subtotal)}</p>
               </div>
               <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all shrink-0">
@@ -879,7 +879,7 @@ function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }: {
           const overdue = inv.due_date && inv.due_date < today && inv.status !== "paid";
           return (
             <motion.div key={inv.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              className="group flex items-center gap-3 bg-[#0f1117] border border-white/[0.07] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
+              className="group flex items-center gap-3 bg-white/[0.025] border border-white/[0.06] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <p className="text-sm font-semibold text-white/85 truncate">{inv.fournisseur_name}</p>
@@ -892,7 +892,7 @@ function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }: {
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-extrabold text-white/80">{fmtEur(inv.total_amount)}</p>
+                <p className="text-sm font-bold text-white/80">{fmtEur(inv.total_amount)}</p>
                 {remaining > 0 && remaining < inv.total_amount && (
                   <p className="text-xs text-orange-400">Restant : {fmtEur(remaining)}</p>
                 )}
@@ -1058,21 +1058,18 @@ export default function FournisseursPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#080a0f] text-white flex flex-col">
+    <div className="min-h-screen bg-[#0a0f1e] text-white flex flex-col">
       <ToastStack toasts={toasts} remove={removeToast}/>
 
       {/* Sub-header */}
-      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sticky top-0 z-10">
+      <div className="border-b border-white/[0.06] bg-white/[0.025] px-5 py-4 backdrop-blur-xl sticky top-0 z-10">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: violet + "30" }}/>
-              <div className="relative h-10 w-10 flex items-center justify-center rounded-xl border" style={{ background: violet + "14", borderColor: violet + "28" }}>
-                <Truck size={18} style={{ color: violet }}/>
-              </div>
+            <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
+              <Truck size={16} style={{ color: "#c9a55a" }}/>
             </div>
             <div>
-              <h1 className="text-base font-extrabold text-white">Fournisseurs</h1>
+              <h1 className="text-base font-semibold text-white">Fournisseurs</h1>
               <p className="text-[0.65rem] text-white/30">Fiches · Commandes · Factures · Évaluation</p>
             </div>
           </div>
@@ -1081,7 +1078,7 @@ export default function FournisseursPage() {
               <Download size={14}/>
             </button>
             <button onClick={() => { setEditFourn(EMPTY_FOURN()); setShowFournModal(true); }}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-white transition-all hover:opacity-90"
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-all hover:opacity-90"
               style={{ background: violet, boxShadow: `0 4px 16px ${violet}40` }}>
               <Plus size={13}/> Nouveau fournisseur
             </button>
@@ -1090,14 +1087,14 @@ export default function FournisseursPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-white/[0.06] px-5 flex gap-1 bg-[#080a0f]">
+      <div className="border-b border-white/[0.06] px-5 flex gap-1 bg-[#0a0f1e]">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setTab(key)}
             className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-all -mb-px ${tab === key ? "text-white/90" : "border-transparent text-white/35 hover:text-white/60"}`}
             style={tab === key ? { borderBottomColor: violet, color: violet } : {}}>
             <Icon size={12}/> {label}
             {key === "invoices" && invoices.filter((i) => i.status !== "paid").length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-black" style={{ background: violet + "30", color: violet }}>
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold" style={{ background: violet + "30", color: violet }}>
                 {invoices.filter((i) => i.status !== "paid").length}
               </span>
             )}

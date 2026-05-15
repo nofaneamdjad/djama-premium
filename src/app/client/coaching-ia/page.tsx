@@ -59,18 +59,12 @@ export default function CoachingIAPage() {
   const [tab, setTab] = useState<"cours" | "activites" | "jeux">("cours");
 
   return (
-    <div className="min-h-screen bg-[#080a0f]">
-      {/* Ambient glows */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute left-[10%] top-[5%] h-[500px] w-[500px] rounded-full bg-[rgba(217,70,239,0.05)] blur-[160px]" />
-        <div className="absolute bottom-[10%] right-[5%] h-[400px] w-[400px] rounded-full bg-[rgba(201,165,90,0.04)] blur-[140px]" />
-      </div>
+    <div className="min-h-screen bg-[#0a0f1e]">
 
       {/* Sub-header */}
-      <div className="relative z-10 border-b border-white/6 bg-[rgba(15,17,23,0.88)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
+      <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <div className="relative">
-            <div className="absolute inset-0 rounded-xl blur-sm" style={{ background: "#d946ef30" }} />
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border" style={{ backgroundColor: "#d946ef14", borderColor: "#d946ef30" }}>
               <Brain size={16} style={{ color: "#d946ef" }} />
             </div>
@@ -89,7 +83,7 @@ export default function CoachingIAPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease }}
-          className="relative overflow-hidden rounded-[1.75rem] border bg-[rgba(15,17,23,0.75)] p-6"
+          className="relative overflow-hidden rounded-2xl border bg-white/[0.025] p-6"
           style={{ borderColor: "#d946ef25" }}
         >
           <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, #d946ef60, transparent)" }} />
@@ -107,7 +101,7 @@ export default function CoachingIAPage() {
                 { val: "5",              label: "Jeux",        color: "#4ade80" },
               ].map(({ val, label, color }) => (
                 <div key={label} className="text-center">
-                  <p className="text-xl font-black" style={{ color }}>{val}</p>
+                  <p className="text-xl font-semibold" style={{ color }}>{val}</p>
                   <p className="text-[0.6rem] text-white/35">{label}</p>
                 </div>
               ))}
@@ -133,7 +127,7 @@ export default function CoachingIAPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease, delay: 0.1 }}
-          className="flex gap-2 rounded-2xl border border-white/8 bg-[rgba(15,17,23,0.6)] p-1.5"
+          className="flex gap-2 rounded-2xl border border-white/8 bg-white/[0.025] p-1.5"
         >
           {([
             { id: "cours",    label: "Cours",     count: "20" },
@@ -156,7 +150,7 @@ export default function CoachingIAPage() {
                 />
               )}
               <span className="relative">{label}</span>
-              <span className={`relative rounded-full px-1.5 py-0.5 text-[0.55rem] font-black ${tab === id ? "bg-[rgba(217,70,239,0.3)] text-fuchsia-300" : "bg-white/8 text-white/30"}`}>
+              <span className={`relative rounded-full px-1.5 py-0.5 text-[0.55rem] font-semibold ${tab === id ? "bg-[rgba(217,70,239,0.3)] text-fuchsia-300" : "bg-white/8 text-white/30"}`}>
                 {count}
               </span>
             </button>
@@ -192,7 +186,7 @@ export default function CoachingIAPage() {
                         ? "border-[rgba(74,222,128,0.2)] bg-[rgba(74,222,128,0.05)] hover:border-[rgba(74,222,128,0.35)]"
                         : isActive
                         ? "border-[rgba(217,70,239,0.35)] bg-[rgba(217,70,239,0.08)] hover:border-[rgba(217,70,239,0.5)]"
-                        : "border-white/6 bg-[rgba(15,17,23,0.5)]"
+                        : "border-white/6 bg-white/[0.025]"
                     } ${isUnlocked ? "cursor-pointer" : "cursor-default opacity-60"}`}
                   >
                     {/* Status icon */}
@@ -207,7 +201,7 @@ export default function CoachingIAPage() {
                       }
                     </div>
 
-                    <span className={`w-6 shrink-0 text-xs font-black tabular-nums ${c.done ? "text-[#4ade80]" : isActive ? "text-fuchsia-400" : "text-white/20"}`}>
+                    <span className={`w-6 shrink-0 text-xs font-semibold tabular-nums ${c.done ? "text-[#4ade80]" : isActive ? "text-fuchsia-400" : "text-white/20"}`}>
                       {c.num}
                     </span>
 
@@ -220,7 +214,7 @@ export default function CoachingIAPage() {
                     </span>
 
                     {c.done && <span className="shrink-0 rounded-full bg-[rgba(74,222,128,0.15)] px-2 py-0.5 text-[0.55rem] font-bold text-[#4ade80]">Terminé</span>}
-                    {isActive && <span className="shrink-0 rounded-full bg-[rgba(217,70,239,0.2)] px-2 py-0.5 text-[0.55rem] font-bold text-fuchsia-300">En cours</span>}
+                    {isActive && <span className="shrink-0 rounded-full bg-[rgba(217,70,239,0.2)] px-2 py-0.5 text-[0.55rok] font-bold text-fuchsia-300">En cours</span>}
                     {isUnlocked && !isActive && !c.done && (
                       <ArrowRight size={12} className="shrink-0 text-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
                     )}
@@ -257,7 +251,7 @@ export default function CoachingIAPage() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, ease, delay: i * 0.06 }}
-                  className="group relative overflow-hidden rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.65)] p-5 transition-all hover:border-white/15"
+                  className="group relative overflow-hidden rounded-xl border border-white/8 bg-white/[0.025] p-5 transition-all hover:border-white/15"
                 >
                   <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: `radial-gradient(ellipse 60% 50% at 0% 0%, ${color}18 0%, transparent 60%)` }} />
                   <div className="absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: `linear-gradient(90deg, transparent, ${color}50, transparent)` }} />
@@ -295,7 +289,7 @@ export default function CoachingIAPage() {
               <Link href="/client/coaching-ia/jeux">
                 <motion.div
                   whileHover={{ scale: 1.01 }}
-                  className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(167,139,250,0.3)] bg-[rgba(15,17,23,0.75)] p-6 cursor-pointer"
+                  className="relative overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.3)] bg-white/[0.025] p-6 cursor-pointer"
                 >
                   <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(167,139,250,0.6), transparent)" }} />
                   <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(167,139,250,0.09) 0%, transparent 60%)" }} />
@@ -329,7 +323,7 @@ export default function CoachingIAPage() {
                       transition={{ duration: 0.3, ease, delay: i * 0.06 }}
                       whileHover={{ scale: 1.03, y: -3 }}
                       whileTap={{ scale: 0.97 }}
-                      className="relative overflow-hidden rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.65)] p-4 text-left transition-all hover:border-white/15"
+                      className="relative overflow-hidden rounded-xl border border-white/8 bg-white/[0.025] p-4 text-left transition-all hover:border-white/15"
                     >
                       <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 50% at 50% 0%, ${color}10 0%, transparent 60%)` }} />
                       <div className="relative flex items-start justify-between mb-3">

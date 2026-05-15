@@ -136,7 +136,7 @@ const ini = (n: string) =>
 const AV_COLS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
 const avCol = (n: string) => AV_COLS[(n.charCodeAt(0) || 0) % AV_COLS.length];
 
-const SEL = "rounded-lg border border-white/[0.08] bg-[#0e1018] py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition";
+const SEL = "rounded-lg border border-white/[0.08] bg-white/[0.025] py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition";
 
 // ── Micro-components ───────────────────────────────────────────────────────────
 function PBadge({ p }: { p: Priority }) {
@@ -196,7 +196,7 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
     <motion.div layout
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      className="relative rounded-xl border border-white/[0.07] bg-[#0d0f17] p-3 cursor-pointer transition-all hover:border-white/[0.16] hover:shadow-lg hover:shadow-black/30"
+      className="relative rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 cursor-pointer transition-all hover:border-white/[0.16] hover:shadow-lg hover:shadow-black/30"
       style={{ borderLeft: `3px solid ${pc.color}` }}
       onClick={onEdit}>
 
@@ -304,7 +304,7 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
   return (
     <motion.div initial={{ x: 360 }} animate={{ x: 0 }} exit={{ x: 360 }}
       transition={{ type: "spring", damping: 24, stiffness: 200 }}
-      className="fixed right-0 top-0 h-full w-[340px] bg-[#080b12] border-l border-white/[0.07] z-50 flex flex-col shadow-2xl">
+      className="fixed right-0 top-0 h-full w-[340px] bg-white/[0.025] border-l border-white/[0.07] z-50 flex flex-col shadow-2xl">
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/[0.07]">
         <div className="flex items-center gap-2">
           <div className="h-5 w-5 rounded-full flex items-center justify-center"
@@ -559,7 +559,7 @@ export default function ProductivitePage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#080a10] text-white">
+    <div className="min-h-screen bg-[#0a0f1e] text-white">
       <div className="mx-auto max-w-[1600px] px-6 py-8 space-y-6">
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
@@ -590,7 +590,7 @@ export default function ProductivitePage() {
         {/* ── KPI bar ─────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-5 gap-3">
           {kpis.map(k => (
-            <div key={k.l} className="rounded-xl border border-white/[0.06] bg-[#0c0e16] p-4">
+            <div key={k.l} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
               <p className="text-[0.7rem] text-white/40 mb-1">{k.l}</p>
               <p className="text-2xl font-bold" style={{ color: k.col }}>{k.v}</p>
             </div>
@@ -610,24 +610,24 @@ export default function ProductivitePage() {
         <div className="flex flex-wrap items-center gap-2">
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="🔍 Rechercher une tâche…"
-            className="rounded-xl border border-white/[0.08] bg-[#0c0e16] px-3 py-2 text-sm text-white/70 outline-none placeholder:text-white/25 w-52 hover:border-white/15 focus:border-violet-500/40" />
+            className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-sm text-white/70 outline-none placeholder:text-white/25 w-52 hover:border-white/15 focus:border-violet-500/40" />
 
           <select value={fprio} onChange={e => setFprio(e.target.value)} className={SEL}>
-            <option value="" className="bg-[#0e1018] text-white/70">Toutes priorités</option>
+            <option value="" className="bg-white/[0.025] text-white/70">Toutes priorités</option>
             {(Object.keys(PRIO) as Priority[]).map(p => (
-              <option key={p} value={p} className="bg-[#0e1018] text-white/70">{PRIO[p].label}</option>
+              <option key={p} value={p} className="bg-white/[0.025] text-white/70">{PRIO[p].label}</option>
             ))}
           </select>
 
           <select value={fcat} onChange={e => setFcat(e.target.value)} className={SEL}>
-            <option value="" className="bg-[#0e1018] text-white/70">Toutes catégories</option>
-            {CATS.map(c => <option key={c} value={c} className="bg-[#0e1018] text-white/70">{c}</option>)}
+            <option value="" className="bg-white/[0.025] text-white/70">Toutes catégories</option>
+            {CATS.map(c => <option key={c} value={c} className="bg-white/[0.025] text-white/70">{c}</option>)}
           </select>
 
           <select value={fstat} onChange={e => setFstat(e.target.value)} className={SEL}>
-            <option value="" className="bg-[#0e1018] text-white/70">Tous statuts</option>
+            <option value="" className="bg-white/[0.025] text-white/70">Tous statuts</option>
             {(Object.keys(STAT) as Status[]).map(s => (
-              <option key={s} value={s} className="bg-[#0e1018] text-white/70">{STAT[s].label}</option>
+              <option key={s} value={s} className="bg-white/[0.025] text-white/70">{STAT[s].label}</option>
             ))}
           </select>
 
@@ -656,7 +656,7 @@ export default function ProductivitePage() {
               const colTasks = filtered.filter(t => t.status === col.key);
               return (
                 <div key={col.key}
-                  className="flex flex-col rounded-2xl border border-white/[0.06] bg-[#0a0c14] overflow-hidden">
+                  className="flex flex-col rounded-2xl border border-white/[0.06] bg-white/[0.025] overflow-hidden">
 
                   {/* Column header */}
                   <div className="px-4 py-3 border-b border-white/[0.06]"
@@ -728,7 +728,7 @@ export default function ProductivitePage() {
         {view === "list" && (
           <div className="space-y-4">
             {/* Tabs */}
-            <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-[#0a0c14] p-1 w-fit">
+            <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.025] p-1 w-fit">
               {([
                 { k: "today", l: "Aujourd'hui", n: listTasks.today.length },
                 { k: "week",  l: "Cette semaine", n: listTasks.week.length },
@@ -755,7 +755,7 @@ export default function ProductivitePage() {
                   <motion.div key={t.id}
                     initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                     onClick={() => openEdit(t)}
-                    className="flex items-center gap-4 rounded-xl border border-white/[0.07] bg-[#0d0f17] px-4 py-3 cursor-pointer transition hover:border-white/15 hover:bg-[#0e1018]"
+                    className="flex items-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 cursor-pointer transition hover:border-white/15 hover:bg-white/[0.025]"
                     style={{ borderLeft: `3px solid ${PRIO[t.priority].color}` }}>
 
                     <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: STAT[t.status].col }} />
@@ -815,7 +815,7 @@ export default function ProductivitePage() {
             onClick={() => setShowModal(false)}>
             <motion.div initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.97 }}
-              className="relative w-full max-w-3xl rounded-2xl border border-white/[0.09] bg-[#0c0e16] shadow-2xl"
+              className="relative w-full max-w-3xl rounded-2xl border border-white/[0.09] bg-white/[0.025] shadow-2xl"
               onClick={e => e.stopPropagation()}>
 
               {/* Modal header */}
@@ -840,12 +840,12 @@ export default function ProductivitePage() {
                 {/* Title */}
                 <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="Titre de la tâche *"
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#0e1018] px-4 py-3 text-base font-medium text-white/90 outline-none placeholder:text-white/25 focus:border-violet-500/50 transition" />
+                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-base font-medium text-white/90 outline-none placeholder:text-white/25 focus:border-violet-500/50 transition" />
 
                 {/* Description */}
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="Description (optionnel)…" rows={3}
-                  className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#0e1018] px-4 py-3 text-sm text-white/75 outline-none placeholder:text-white/25 focus:border-white/15 transition" />
+                  className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-sm text-white/75 outline-none placeholder:text-white/25 focus:border-white/15 transition" />
 
                 {/* Priority + Status + Category */}
                 <div className="grid grid-cols-3 gap-3">
@@ -854,7 +854,7 @@ export default function ProductivitePage() {
                     <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))}
                       className={SEL + " w-full"}>
                       {(Object.keys(PRIO) as Priority[]).map(p => (
-                        <option key={p} value={p} className="bg-[#0e1018] text-white/70">{PRIO[p].label}</option>
+                        <option key={p} value={p} className="bg-white/[0.025] text-white/70">{PRIO[p].label}</option>
                       ))}
                     </select>
                   </div>
@@ -863,7 +863,7 @@ export default function ProductivitePage() {
                     <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))}
                       className={SEL + " w-full"}>
                       {(Object.keys(STAT) as Status[]).map(s => (
-                        <option key={s} value={s} className="bg-[#0e1018] text-white/70">{STAT[s].label}</option>
+                        <option key={s} value={s} className="bg-white/[0.025] text-white/70">{STAT[s].label}</option>
                       ))}
                     </select>
                   </div>
@@ -871,8 +871,8 @@ export default function ProductivitePage() {
                     <label className="text-[0.68rem] text-white/40 mb-1.5 block">Catégorie</label>
                     <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
                       className={SEL + " w-full"}>
-                      <option value="" className="bg-[#0e1018] text-white/70">Sans catégorie</option>
-                      {CATS.map(c => <option key={c} value={c} className="bg-[#0e1018] text-white/70">{c}</option>)}
+                      <option value="" className="bg-white/[0.025] text-white/70">Sans catégorie</option>
+                      {CATS.map(c => <option key={c} value={c} className="bg-white/[0.025] text-white/70">{c}</option>)}
                     </select>
                   </div>
                 </div>
@@ -902,7 +902,7 @@ export default function ProductivitePage() {
                   <label className="text-[0.68rem] text-white/40 mb-1.5 block">Responsable</label>
                   <input value={form.responsible} onChange={e => setForm(f => ({ ...f, responsible: e.target.value }))}
                     placeholder="Nom du responsable"
-                    className="w-full rounded-xl border border-white/[0.08] bg-[#0e1018] px-3 py-2 text-sm text-white/75 outline-none focus:border-white/15 transition" />
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-sm text-white/75 outline-none focus:border-white/15 transition" />
                 </div>
 
                 {/* Assignees */}
@@ -924,7 +924,7 @@ export default function ProductivitePage() {
                     <input value={newAssignee} onChange={e => setNewAssignee(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") addAssignee(); }}
                       placeholder="Ajouter un collaborateur…"
-                      className="flex-1 rounded-lg border border-white/[0.08] bg-[#0e1018] px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
+                      className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
                     <button onClick={addAssignee}
                       className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-white/50 hover:bg-violet-500/20 hover:text-violet-400 transition">+</button>
                   </div>
@@ -966,7 +966,7 @@ export default function ProductivitePage() {
                     <input value={newSub} onChange={e => setNewSub(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") addSub(); }}
                       placeholder="Nouvelle sous-tâche…"
-                      className="flex-1 rounded-lg border border-white/[0.08] bg-[#0e1018] px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
+                      className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
                     <button onClick={addSub}
                       className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-white/50 hover:bg-violet-500/20 hover:text-violet-400 transition">+</button>
                   </div>
@@ -989,7 +989,7 @@ export default function ProductivitePage() {
                       <input value={newTag} onChange={e => setNewTag(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter") addTag(); }}
                         placeholder="Ajouter un tag…"
-                        className="flex-1 rounded-lg border border-white/[0.08] bg-[#0e1018] px-2.5 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
+                        className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.025] px-2.5 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
                       <button onClick={addTag}
                         className="rounded-lg bg-white/5 px-2.5 text-xs text-white/50 hover:bg-violet-500/20 hover:text-violet-400 transition">+</button>
                     </div>
@@ -999,7 +999,7 @@ export default function ProductivitePage() {
                     <select value={form.recurrence}
                       onChange={e => setForm(f => ({ ...f, recurrence: e.target.value, is_recurring: e.target.value !== "none" }))}
                       className={SEL + " w-full"}>
-                      {RECURS.map(r => <option key={r.v} value={r.v} className="bg-[#0e1018] text-white/70">{r.l}</option>)}
+                      {RECURS.map(r => <option key={r.v} value={r.v} className="bg-white/[0.025] text-white/70">{r.l}</option>)}
                     </select>
                     {form.linked_module && (
                       <p className="mt-2 text-[0.62rem] text-white/30">🔗 Lié à : {form.linked_module}</p>
@@ -1035,11 +1035,11 @@ export default function ProductivitePage() {
                     )}
                     <div className="flex gap-2">
                       <input value={cmtAuthor} onChange={e => setCmtAuthor(e.target.value)}
-                        className="w-24 rounded-lg border border-white/[0.08] bg-[#0e1018] px-2 py-1.5 text-xs text-white/60 outline-none focus:border-white/15 transition" />
+                        className="w-24 rounded-lg border border-white/[0.08] bg-white/[0.025] px-2 py-1.5 text-xs text-white/60 outline-none focus:border-white/15 transition" />
                       <input value={cmt} onChange={e => setCmt(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter") addComment(); }}
                         placeholder="Ajouter un commentaire…"
-                        className="flex-1 rounded-lg border border-white/[0.08] bg-[#0e1018] px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
+                        className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
                       <button onClick={addComment}
                         className="rounded-lg bg-white/5 px-3 text-xs text-white/50 hover:bg-violet-500/20 hover:text-violet-400 transition">↵</button>
                     </div>

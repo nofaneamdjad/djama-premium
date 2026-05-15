@@ -309,7 +309,7 @@ function SidebarInner({
               <Sparkles size={14} style={{ color: CYAN }} />
             </div>
             <div>
-              <p className="text-[0.82rem] font-black text-white/90">DJAMA AI</p>
+              <p className="text-[0.82rem] font-semibold text-white/90">DJAMA AI</p>
               <p className="text-[0.58rem] text-white/30">Cerveau central</p>
             </div>
           </div>
@@ -328,7 +328,7 @@ function SidebarInner({
 
       {/* Quick actions */}
       <div className="px-3 py-3 border-b border-white/[0.06] shrink-0">
-        <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2 px-1">Actions rapides</p>
+        <p className="text-[0.65rem] font-medium text-white/35 mb-2 px-1">Actions rapides</p>
         <div className="grid grid-cols-2 gap-1.5">
           {ACTIONS.map(a => (
             <button key={a.label}
@@ -343,7 +343,7 @@ function SidebarInner({
 
       {/* History */}
       <div className="flex-1 overflow-y-auto px-2 py-2">
-        <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2 px-2">Historique</p>
+        <p className="text-[0.65rem] font-medium text-white/35 mb-2 px-2">Historique</p>
         {convs.length === 0 && (
           <p className="text-center text-[0.68rem] text-white/20 py-4">Aucune conversation</p>
         )}
@@ -384,7 +384,7 @@ function InsightsInner({
       )}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {!onClose && (
-          <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/20">Tableau de bord live</p>
+          <p className="text-[0.65rem] font-medium text-white/35">Tableau de bord live</p>
         )}
 
         <InsightsPanel insights={insights} loading={insLoading} />
@@ -395,7 +395,7 @@ function InsightsInner({
         </button>
 
         <div>
-          <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/20 mb-2">Accès rapides</p>
+          <p className="text-[0.65rem] font-medium text-white/35 mb-2">Accès rapides</p>
           {([
             { Icon: Receipt,   label: "Factures",  href: "/client/factures"     },
             { Icon: ListTodo,  label: "Tâches",    href: "/client/productivite" },
@@ -613,7 +613,7 @@ export default function AssistantPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-[calc(100dvh-56px)] bg-[#080a10] text-white overflow-hidden">
+    <div className="flex h-[calc(100dvh-56px)] bg-[#0a0f1e] text-white overflow-hidden">
 
       {/* ── MOBILE SIDEBAR DRAWER ─────────────────────────────────────────── */}
       <AnimatePresence>
@@ -627,7 +627,7 @@ export default function AssistantPage() {
             <motion.div
               initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="fixed left-0 top-0 bottom-0 w-[300px] z-50 bg-[#09090f] border-r border-white/[0.06] flex flex-col lg:hidden overflow-hidden"
+              className="fixed left-0 top-0 bottom-0 w-[300px] z-50 bg-white/[0.025] border-r border-white/[0.06] flex flex-col lg:hidden overflow-hidden"
             >
               <SidebarInner
                 convs={convs}
@@ -643,7 +643,7 @@ export default function AssistantPage() {
       </AnimatePresence>
 
       {/* ── DESKTOP SIDEBAR ───────────────────────────────────────────────── */}
-      <div className="hidden lg:flex w-[260px] shrink-0 flex-col border-r border-white/[0.06] bg-[#09090f]">
+      <div className="hidden lg:flex w-[260px] shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.025]">
         <SidebarInner
           convs={convs}
           activeConv={activeConv}
@@ -715,7 +715,7 @@ export default function AssistantPage() {
                     style={{ background: `linear-gradient(135deg, ${CYAN}20, ${VIOLET}20)`, border: `1px solid ${CYAN}30` }}>
                     <Sparkles size={24} style={{ color: CYAN }} />
                   </div>
-                  <h2 className="text-xl font-black text-white/90 mb-2">Bonjour</h2>
+                  <h2 className="text-xl font-bold text-white/90 mb-2">Bonjour</h2>
                   <p className="text-sm text-white/45 max-w-sm mx-auto leading-relaxed px-2">
                     Je suis DJAMA AI, votre assistant business intelligent — factures, tâches, clients, stocks en temps réel.
                   </p>
@@ -723,7 +723,7 @@ export default function AssistantPage() {
 
                 {/* Quick actions */}
                 <div>
-                  <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/25 mb-3 text-center">Actions rapides</p>
+                  <p className="text-[0.65rem] font-medium text-white/35 mb-3 text-center">Actions rapides</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {ACTIONS.map(a => (
                       <button key={a.label} onClick={() => send(a.prompt)}
@@ -737,7 +737,7 @@ export default function AssistantPage() {
 
                 {/* Suggestions */}
                 <div>
-                  <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/25 mb-3 text-center">Essayez de demander…</p>
+                  <p className="text-[0.65rem] font-medium text-white/35 mb-3 text-center">Essayez de demander…</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {SUGGESTIONS.map(s => (
                       <button key={s} onClick={() => send(s)}
@@ -770,7 +770,7 @@ export default function AssistantPage() {
                 <div className={`max-w-[84%] md:max-w-[76%] space-y-2 ${m.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
                   <div className={`rounded-2xl px-3.5 md:px-4 py-3 ${m.role === "user"
                     ? "rounded-tr-sm bg-violet-600/25 border border-violet-500/20"
-                    : "rounded-tl-sm bg-[#0e1018] border border-white/[0.07]"}`}
+                    : "rounded-tl-sm bg-white/[0.025] border border-white/[0.07]"}`}
                     style={m.role === "assistant" ? { borderLeft: `2px solid ${CYAN}40` } : {}}>
 
                     {m.loading ? (
@@ -813,7 +813,7 @@ export default function AssistantPage() {
 
         {/* Input bar */}
         <div className="shrink-0 border-t border-white/[0.06] px-3 sm:px-5 md:px-6 py-3 md:py-4">
-          <div className="flex items-end gap-2 md:gap-3 rounded-2xl border border-white/[0.09] bg-[#0c0e16] px-3 md:px-4 py-2.5 md:py-3 focus-within:border-cyan-500/40 transition">
+          <div className="flex items-end gap-2 md:gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.025] px-3 md:px-4 py-2.5 md:py-3 focus-within:border-cyan-500/40 transition">
             <textarea
               ref={inputRef}
               value={input}
@@ -855,7 +855,7 @@ export default function AssistantPage() {
             <motion.div
               initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="fixed right-0 top-0 bottom-0 w-[300px] z-50 bg-[#09090f] border-l border-white/[0.06] flex flex-col lg:hidden overflow-hidden"
+              className="fixed right-0 top-0 bottom-0 w-[300px] z-50 bg-white/[0.025] border-l border-white/[0.06] flex flex-col lg:hidden overflow-hidden"
             >
               <InsightsInner
                 insights={insights}
@@ -874,7 +874,7 @@ export default function AssistantPage() {
           <motion.div
             initial={{ width: 0, opacity: 0 }} animate={{ width: 260, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }} transition={{ type: "spring", damping: 22 }}
-            className="hidden lg:flex shrink-0 flex-col border-l border-white/[0.06] bg-[#09090f] overflow-hidden">
+            className="hidden lg:flex shrink-0 flex-col border-l border-white/[0.06] bg-white/[0.025] overflow-hidden">
             <div className="w-[260px] h-full flex flex-col overflow-hidden">
               <InsightsInner
                 insights={insights}

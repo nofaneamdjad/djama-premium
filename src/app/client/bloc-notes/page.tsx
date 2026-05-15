@@ -298,7 +298,7 @@ function ChecklistView({ content, onToggle }: { content: string; onToggle: (c: s
               style={{background:state!=="pending"?`${col}10`:"transparent"}}>
               <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border" style={{borderColor:col,background:`${col}18`}}>
                 {state==="done"&&<Check size={10} style={{color:col}}/>}
-                {state==="progress"&&<span className="text-[8px] font-black" style={{color:col}}>~</span>}
+                {state==="progress"&&<span className="text-[8px] font-bold" style={{color:col}}>~</span>}
               </div>
               <span className={`flex-1 text-sm ${state==="done"?"text-white/30 line-through":state==="progress"?"text-amber-300/80":"text-white/80"}`}>{text}</span>
             </div>
@@ -708,10 +708,10 @@ export default function BlocNotesPage() {
      RENDER
   ══════════════════════════════════════════════════════════ */
   return (
-    <div className="flex h-[calc(100vh-56px)] bg-[#080a0f] overflow-hidden">
+    <div className="flex h-[calc(100vh-56px)] bg-[#0a0f1e] overflow-hidden">
 
       {/* ── SIDEBAR ── */}
-      <div className="hidden w-56 shrink-0 flex-col border-r border-white/[0.06] bg-[#0b0d14] lg:flex">
+      <div className="hidden w-56 shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.025] lg:flex">
         <div className="p-4">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{background:`${amber}18`,border:`1px solid ${amber}30`}}>
@@ -761,7 +761,7 @@ export default function BlocNotesPage() {
       </div>
 
       {/* ── LIST PANEL ── */}
-      <div className={`flex flex-col border-r border-white/[0.06] bg-[#0c0e16] ${view==="editor"&&selected?"hidden lg:flex":""} w-full lg:w-80 shrink-0`}>
+      <div className={`flex flex-col border-r border-white/[0.06] bg-white/[0.025] ${view==="editor"&&selected?"hidden lg:flex":""} w-full lg:w-80 shrink-0`}>
 
         {/* Header */}
         <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
@@ -784,15 +784,15 @@ export default function BlocNotesPage() {
         {/* Sort + type filter */}
         <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-2">
           <select value={sortBy} onChange={e=>setSortBy(e.target.value as SortBy)}
-            className="flex-1 cursor-pointer rounded-lg border border-white/[0.08] bg-[#0c0e16] py-1 pl-2 pr-1 text-[0.65rem] text-white/55 outline-none appearance-none transition hover:border-white/20">
-            <option value="date" className="bg-[#0c0e16] text-white/70">📅 Récentes</option>
-            <option value="alpha" className="bg-[#0c0e16] text-white/70">🔤 A–Z</option>
-            <option value="type" className="bg-[#0c0e16] text-white/70">🏷 Type</option>
+            className="flex-1 cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.025] py-1 pl-2 pr-1 text-[0.65rem] text-white/55 outline-none appearance-none transition hover:border-white/20">
+            <option value="date" className="bg-white/[0.025] text-white/70">📅 Récentes</option>
+            <option value="alpha" className="bg-white/[0.025] text-white/70">🔤 A–Z</option>
+            <option value="type" className="bg-white/[0.025] text-white/70">🏷 Type</option>
           </select>
           <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value as NoteType|"all")}
-            className="flex-1 cursor-pointer rounded-lg border border-white/[0.08] bg-[#0c0e16] py-1 pl-2 pr-1 text-[0.65rem] text-white/55 outline-none appearance-none transition hover:border-white/20">
-            <option value="all" className="bg-[#0c0e16] text-white/70">Tous types</option>
-            {NOTE_TYPES.map(t=><option key={t.value} value={t.value} className="bg-[#0c0e16] text-white/70">{t.label}</option>)}
+            className="flex-1 cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.025] py-1 pl-2 pr-1 text-[0.65rem] text-white/55 outline-none appearance-none transition hover:border-white/20">
+            <option value="all" className="bg-white/[0.025] text-white/70">Tous types</option>
+            {NOTE_TYPES.map(t=><option key={t.value} value={t.value} className="bg-white/[0.025] text-white/70">{t.label}</option>)}
           </select>
         </div>
 
@@ -854,7 +854,7 @@ export default function BlocNotesPage() {
 
         {/* Back button (mobile) */}
         {view==="editor"&&(
-          <div className="flex items-center gap-3 border-b border-white/[0.06] bg-[#0c0e16] px-4 py-2.5 lg:hidden">
+          <div className="flex items-center gap-3 border-b border-white/[0.06] bg-white/[0.025] px-4 py-2.5 lg:hidden">
             <button onClick={()=>{setView("list");setSelected(null)}} className="flex items-center gap-1.5 text-xs font-bold text-white/50 transition hover:text-white/80">
               <ArrowLeft size={14}/> Notes
             </button>
@@ -882,10 +882,10 @@ export default function BlocNotesPage() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-1 flex-col overflow-hidden bg-[#0a0c13]">
+          <div className="flex flex-1 flex-col overflow-hidden bg-white/[0.025]">
 
             {/* Editor top bar */}
-            <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] bg-[#0b0d14] px-5 py-2.5">
+            <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] bg-white/[0.025] px-5 py-2.5">
               <div className="flex items-center gap-2 flex-wrap">
                 {NOTE_TYPES.map(t=>(
                   <button key={t.value} onClick={()=>{setDType(t.value);setIsDirty(true)}}
@@ -910,7 +910,7 @@ export default function BlocNotesPage() {
                   <AnimatePresence>
                     {exportMenu&&(
                       <motion.div initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-                        className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border border-white/10 bg-[#0f1117] shadow-xl">
+                        className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border border-white/10 bg-white/[0.025] shadow-xl">
                         {[{label:"PDF",fn:exportPDF},{label:"Markdown (.md)",fn:exportMarkdown},{label:"Texte (.txt)",fn:exportTXT}].map(opt=>(
                           <button key={opt.label} onClick={()=>{void opt.fn();setExportMenu(false)}}
                             className="flex w-full items-center px-4 py-2.5 text-xs font-bold text-white/60 transition hover:bg-white/[0.06] hover:text-white/90">
@@ -962,7 +962,7 @@ export default function BlocNotesPage() {
                 )}
                 {folders.length>0&&(
                   <select value={dFolderId??""} onChange={e=>{setDFolderId(e.target.value||null);setIsDirty(true)}}
-                    className="cursor-pointer rounded-full border border-white/10 bg-[#0a0c13] px-2 py-0.5 text-[0.65rem] text-white/40 outline-none appearance-none hover:border-white/20 transition">
+                    className="cursor-pointer rounded-full border border-white/10 bg-white/[0.025] px-2 py-0.5 text-[0.65rem] text-white/40 outline-none appearance-none hover:border-white/20 transition">
                     <option value="">📂 Dossier</option>
                     {folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
                   </select>
@@ -972,7 +972,7 @@ export default function BlocNotesPage() {
             </div>
 
             {/* Toolbar */}
-            <div className="flex items-center gap-0.5 overflow-x-auto border-b border-white/[0.04] bg-[#0b0d14] px-4 py-1.5 scrollbar-hide">
+            <div className="flex items-center gap-0.5 overflow-x-auto border-b border-white/[0.04] bg-white/[0.025] px-4 py-1.5 scrollbar-hide">
               {[
                 { label:"H1",  fn:()=>insertLinePrefix("# ")      },
                 { label:"H2",  fn:()=>insertLinePrefix("## ")     },
@@ -1028,7 +1028,7 @@ export default function BlocNotesPage() {
                 )}
 
                 {/* Footer bar */}
-                <div className="flex items-center justify-between border-t border-white/[0.04] bg-[#0b0d14] px-5 py-2">
+                <div className="flex items-center justify-between border-t border-white/[0.04] bg-white/[0.025] px-5 py-2">
                   <div className="flex items-center gap-3">
                     <span className="text-[0.6rem] text-white/20">{wordCnt} mot{wordCnt!==1?"s":""}</span>
                     <span className="text-[0.6rem] text-white/20">{dContent.length} car.</span>
@@ -1067,7 +1067,7 @@ export default function BlocNotesPage() {
               <AnimatePresence>
                 {aiPanel&&(
                   <motion.div initial={{width:0,opacity:0}} animate={{width:320,opacity:1}} exit={{width:0,opacity:0}}
-                    transition={{duration:0.3,ease}} className="overflow-hidden border-l border-white/[0.06] bg-[#0b0d14]"
+                    transition={{duration:0.3,ease}} className="overflow-hidden border-l border-white/[0.06] bg-white/[0.025]"
                     style={{minWidth:0}}>
                     <div className="flex h-full w-80 flex-col p-4">
                       <div className="mb-3 flex items-center justify-between">
@@ -1125,7 +1125,7 @@ export default function BlocNotesPage() {
             </div>
 
             {/* AI Actions row */}
-            <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.05] bg-[#0b0d14] px-5 py-2.5 scrollbar-hide">
+            <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.05] bg-white/[0.025] px-5 py-2.5 scrollbar-hide">
               {AI_ACTIONS.map(a=>(
                 <button key={a.action}
                   onClick={()=>{
@@ -1149,7 +1149,7 @@ export default function BlocNotesPage() {
           <>
             <motion.div key="tb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setShowTemplates(false)}/>
             <motion.div key="td" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-2xl -translate-y-1/2 rounded-[1.75rem] border border-white/10 bg-[#0c0e16] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-2xl -translate-y-1/2 rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-base font-extrabold text-white">Templates</h2>
                 <button onClick={()=>setShowTemplates(false)} className="text-white/30 hover:text-white/70"><X size={15}/></button>
@@ -1159,7 +1159,7 @@ export default function BlocNotesPage() {
                   const TIcon = t.icon;
                   return (
                   <button key={t.label} onClick={()=>{createNote(t.type, t.content);setShowTemplates(false);}}
-                    className="flex flex-col items-start gap-2 rounded-[1.25rem] border border-white/[0.07] bg-white/[0.03] p-4 text-left transition hover:border-white/15 hover:bg-white/[0.06]">
+                    className="flex flex-col items-start gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 text-left transition hover:border-white/15 hover:bg-white/[0.06]">
                     <TIcon size={22} className="text-white/50 mb-0.5"/>
                     <span className="text-sm font-extrabold text-white">{t.label}</span>
                     <span className="text-[0.65rem] text-white/35 line-clamp-2">{t.content.slice(0,80)}…</span>
@@ -1178,7 +1178,7 @@ export default function BlocNotesPage() {
           <>
             <motion.div key="fb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setFolderModal(false)}/>
             <motion.div key="fd" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-[1.75rem] border border-white/10 bg-[#0c0e16] p-6">
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-2xl border border-white/10 bg-white/[0.025] p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-extrabold text-white">Nouveau dossier</h2>
                 <button onClick={()=>setFolderModal(false)} className="text-white/30 hover:text-white/70"><X size={14}/></button>
@@ -1209,7 +1209,7 @@ export default function BlocNotesPage() {
         {confirmDel&&(
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{scale:0.93,y:16,opacity:0}} animate={{scale:1,y:0,opacity:1}} exit={{scale:0.95,opacity:0}} transition={{duration:0.3,ease}}
-              className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[#0f1117] p-6">
+              className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.025] p-6">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10"><Trash2 size={18} className="text-red-400"/></div>
               <h3 className="text-base font-extrabold text-white">Supprimer cette note ?</h3>
               <p className="mt-1.5 text-sm text-white/40">Cette action est irréversible.</p>
