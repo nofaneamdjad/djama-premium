@@ -97,7 +97,7 @@ export default function TestimonialsSection({
   if (visible.length === 0) return null;
 
   return (
-    <section className="relative overflow-hidden bg-[#09090b] py-16 sm:py-20">
+    <section className="relative overflow-hidden bg-white py-16 sm:py-20 border-y border-gray-100">
       <motion.div
         initial="hidden"
         whileInView="visible"
@@ -108,15 +108,15 @@ export default function TestimonialsSection({
         <div className="mb-10 text-center">
           <motion.div
             variants={fadeIn}
-            className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.24em]"
-            style={{ color: "#c9a55a" }}
+            className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.4)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.24em]"
+            style={{ color: "#b08d57" }}
           >
-            <Star size={10} fill="#c9a55a" /> {badge}
+            <Star size={10} fill="#c9a55a" style={{ color: "#c9a55a" }} /> {badge}
           </motion.div>
-          <motion.h2 variants={fadeIn} className="text-[1.9rem] font-extrabold text-white sm:text-[2.3rem]">
+          <motion.h2 variants={fadeIn} className="text-[1.9rem] font-extrabold text-gray-900 sm:text-[2.3rem]">
             {title}
           </motion.h2>
-          <motion.p variants={fadeIn} className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-white/40">
+          <motion.p variants={fadeIn} className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-gray-500">
             {subtitle}
           </motion.p>
         </div>
@@ -126,11 +126,11 @@ export default function TestimonialsSection({
             <motion.div
               key={t.name}
               variants={cardReveal}
-              className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-white/[.07] bg-white/[.025] p-5 transition-all duration-300 hover:border-white/[.12] hover:bg-white/[.035]"
+              className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:border-gray-300 hover:shadow-[0_6px_24px_rgba(0,0,0,.1)]"
             >
               <div
                 className="absolute inset-x-0 top-0 h-[2px]"
-                style={{ background: `linear-gradient(90deg,transparent,rgba(${t.rgb},.5),transparent)` }}
+                style={{ background: `linear-gradient(90deg,transparent,rgba(${t.rgb},.4),transparent)` }}
               />
 
               <div className="flex items-center gap-1">
@@ -139,7 +139,7 @@ export default function TestimonialsSection({
                 ))}
               </div>
 
-              <p className="flex-1 text-[0.88rem] leading-relaxed text-white/60">
+              <p className="flex-1 text-[0.88rem] leading-relaxed text-gray-600">
                 &ldquo;{t.text}&rdquo;
               </p>
 
@@ -156,18 +156,18 @@ export default function TestimonialsSection({
                 </div>
               )}
 
-              <div className="flex items-center gap-3 border-t border-white/[.05] pt-4">
+              <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
                 <div
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-bold"
-                  style={{ background: `rgba(${t.rgb},.18)`, color: t.color }}
+                  style={{ background: `rgba(${t.rgb},.15)`, color: t.color }}
                 >
                   {t.avatar}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.84rem] font-semibold text-white/85">{t.name}</p>
-                  <p className="text-[0.72rem] text-white/35">{t.role}</p>
+                  <p className="text-[0.84rem] font-semibold text-gray-800">{t.name}</p>
+                  <p className="text-[0.72rem] text-gray-400">{t.role}</p>
                 </div>
-                <div className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/[.08] px-2 py-0.5 text-[0.62rem] font-semibold text-emerald-400">
+                <div className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[0.62rem] font-semibold text-emerald-600">
                   <BadgeCheck size={10} />
                   Vérifié
                 </div>
@@ -176,7 +176,7 @@ export default function TestimonialsSection({
           ))}
         </div>
 
-        <motion.p variants={fadeIn} className="mt-6 text-center text-[0.72rem] text-white/20">
+        <motion.p variants={fadeIn} className="mt-6 text-center text-[0.72rem] text-gray-400">
           Prénoms modifiés — témoignages authentiques collectés par email et WhatsApp.
         </motion.p>
       </motion.div>

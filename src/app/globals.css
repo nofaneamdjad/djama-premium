@@ -25,7 +25,7 @@
    * forced-color-adjust: none — protège la palette contre Windows
    *   High Contrast / Forced Colors (accessibilité OS).
    */
-  color-scheme: dark;
+  color-scheme: light;
   forced-color-adjust: none;
 
   /* ═══════════════════════════════════════
@@ -140,18 +140,13 @@
 /* ── BASE ──────────────────────────────────── */
 html {
   scroll-behavior: smooth;
-  /*
-   * Renforce le signal dark-mode au niveau CSS.
-   * background-color solide = fallback avant que les CSS vars se chargent
-   * (évite le flash blanc / fond transparent dans les WebViews lents).
-   */
-  color-scheme: dark;
-  background-color: #09090b;
+  color-scheme: light;
+  background-color: #ffffff;
 }
 
 body {
-  background-color: var(--bg-base);
-  color: var(--text-primary);
+  background-color: #ffffff;
+  color: #111827;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "ss01", "ss02", "cv01", "kern";
@@ -836,32 +831,10 @@ a:focus:not(:focus-visible)      { outline: none; }
 ══════════════════════════════════════════════ */
 
 /*
- * 1. Override complet si WebView signale prefers-color-scheme: light
- *    (Force Dark désactivé, mais page pensée dark-only)
+ * 1. Le site utilise un thème clair (light) sur la homepage.
+ *    On laisse les WebViews utiliser leur mode natif.
+ *    Les backgrounds explicites (bg-white, bg-[#f0f2f5]...) priment.
  */
-@media (prefers-color-scheme: light) {
-  html {
-    color-scheme: dark;
-    background-color: #09090b;
-  }
-  body {
-    background-color: #09090b;
-    color: rgba(255, 255, 255, 0.92);
-  }
-  /*
-   * Réaffirme les tokens critiques en cas d'inversion partielle.
-   * Les propriétés CSS custom ne sont pas inversées par Force Dark,
-   * mais certains WebViews peuvent les recalculer.
-   */
-  :root {
-    --bg-base:   #09090b;
-    --bg-card:   #111113;
-    --bg-card-2: #18181b;
-    --bg-card-3: #1e1e22;
-    --text-primary: rgba(255, 255, 255, 0.92);
-    color-scheme: dark;
-  }
-}
 
 /*
  * 2. Fallback backdrop-filter

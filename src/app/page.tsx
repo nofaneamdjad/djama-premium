@@ -9,11 +9,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight, Mail, Star, Zap, Users2, Shield,
-  CheckCircle2, Sparkles, TrendingUp, HeartHandshake,
+  ArrowRight, Mail, Users2, Shield,
+  CheckCircle2, Sparkles, HeartHandshake,
   Globe, Brain, MessageCircle,
-  LineChart, Code2, BarChart3,
-  Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem,
+  Code2, BarChart3,
+  Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem, Star,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import {
@@ -61,10 +61,10 @@ function SmartStat({ value }: { value: string }) {
 }
 
 const SCHEMA_STEPS = [
-  { num: "01", icon: Sparkles,  color: GOLD,       bg: `rgba(${GOLDR},.12)`,    border: `rgba(${GOLDR},.22)`,    title: "Idée / besoin",               desc: "Vous arrivez avec un besoin, un projet ou un problème à résoudre." },
-  { num: "02", icon: Brain,     color: "#a78bfa",  bg: "rgba(167,139,250,.12)", border: "rgba(167,139,250,.22)", title: "Assistant IA DJAMA",          desc: "L'IA vous guide, clarifie vos options et vous aide à choisir la bonne direction." },
-  { num: "03", icon: Code2,     color: "#60a5fa",  bg: "rgba(96,165,250,.12)",  border: "rgba(96,165,250,.22)",  title: "Construction de la solution", desc: "Site, application, outil métier, automatisation ou espace client sur mesure." },
-  { num: "04", icon: BarChart3, color: "#4ade80",  bg: "rgba(74,222,128,.10)",  border: "rgba(74,222,128,.20)",  title: "Croissance & gestion",        desc: "Vous pilotez, améliorez et développez votre activité avec une base solide." },
+  { num: "01", icon: Sparkles,  color: GOLD,       bg: `rgba(${GOLDR},.07)`,    border: `rgba(${GOLDR},.22)`,    title: "Idée / besoin",               desc: "Vous arrivez avec un besoin, un projet ou un problème à résoudre." },
+  { num: "02", icon: Brain,     color: "#a78bfa",  bg: "rgba(167,139,250,.07)", border: "rgba(167,139,250,.22)", title: "Assistant IA DJAMA",          desc: "L'IA vous guide, clarifie vos options et vous aide à choisir la bonne direction." },
+  { num: "03", icon: Code2,     color: "#60a5fa",  bg: "rgba(96,165,250,.07)",  border: "rgba(96,165,250,.22)",  title: "Construction de la solution", desc: "Site, application, outil métier, automatisation ou espace client sur mesure." },
+  { num: "04", icon: BarChart3, color: "#4ade80",  bg: "rgba(74,222,128,.06)",  border: "rgba(74,222,128,.20)",  title: "Croissance & gestion",        desc: "Vous pilotez, améliorez et développez votre activité avec une base solide." },
 ] as const;
 
 const TICKER_ITEMS = [
@@ -73,16 +73,16 @@ const TICKER_ITEMS = [
 ] as const;
 
 const ESPACE_TOOLS = [
-  { icon: Receipt,      color: GOLD,       title: "Factures & devis",       desc: "Documents pro en quelques clics." },
-  { icon: CalendarRange, color: "#60a5fa", title: "Agenda & Planification",  desc: "Rendez-vous, équipes et tâches." },
-  { icon: StickyNote,   color: "#4ade80",  title: "Bloc-notes pro",          desc: "Idées et mémos centralisés." },
-  { icon: Brain,        color: "#a78bfa",  title: "Coach Business IA",       desc: "Conseils précis et actionnables." },
-  { icon: Users2,       color: "#22d3ee",  title: "CRM Client",              desc: "Contacts, prospects et historique." },
-  { icon: Timer,        color: "#fb923c",  title: "Chrono Pro",              desc: "Temps par projet et rentabilité." },
-  { icon: CreditCard,   color: "#f43f5e",  title: "Dépenses Pro",            desc: "Frais pro par catégorie." },
-  { icon: TrendingUp,   color: "#34d399",  title: "Trésorerie",              desc: "Flux, solde et finances." },
-  { icon: Shield,       color: "#eab308",  title: "Contrats IA",             desc: "Contrats personnalisés en secondes." },
-  { icon: Globe,        color: "#f59e0b",  title: "Sourcing IA",             desc: "Fournisseurs et marchés publics." },
+  { icon: Receipt,       color: GOLD,       title: "Factures & devis",       desc: "Documents pro en quelques clics." },
+  { icon: CalendarRange, color: "#60a5fa",  title: "Agenda & Planification",  desc: "Rendez-vous, équipes et tâches." },
+  { icon: StickyNote,    color: "#4ade80",  title: "Bloc-notes pro",          desc: "Idées et mémos centralisés." },
+  { icon: Brain,         color: "#a78bfa",  title: "Coach Business IA",       desc: "Conseils précis et actionnables." },
+  { icon: Users2,        color: "#22d3ee",  title: "CRM Client",              desc: "Contacts, prospects et historique." },
+  { icon: Timer,         color: "#fb923c",  title: "Chrono Pro",              desc: "Temps par projet et rentabilité." },
+  { icon: CreditCard,    color: "#f43f5e",  title: "Dépenses Pro",            desc: "Frais pro par catégorie." },
+  { icon: Shield,        color: "#34d399",  title: "Trésorerie",              desc: "Flux, solde et finances." },
+  { icon: Shield,        color: "#eab308",  title: "Contrats IA",             desc: "Contrats personnalisés en secondes." },
+  { icon: Globe,         color: "#f59e0b",  title: "Sourcing IA",             desc: "Fournisseurs et marchés publics." },
 ] as const;
 
 const FAQ_ITEMS = [
@@ -130,6 +130,7 @@ function HomeContent() {
   return (
     <div className="overflow-hidden">
 
+      {/* ── Hero ───────────────────────────────────────────── */}
       <section className="bg-white px-5 pb-12 pt-14 sm:pb-16 sm:pt-20">
         <motion.div
           initial="hidden" animate="visible" variants={staggerContainer}
@@ -191,7 +192,8 @@ function HomeContent() {
         </motion.div>
       </section>
 
-            <section style={{ background: "#f0f2f5" }} className="py-14 sm:py-20">
+      {/* ── Espace client tools ────────────────────────────── */}
+      <section style={{ background: "#f0f2f5" }} className="py-14 sm:py-20">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
@@ -281,7 +283,8 @@ function HomeContent() {
         </motion.div>
       </section>
 
-      <section className="bg-[#0a0f1e] py-14 sm:py-20">
+      {/* ── Services ───────────────────────────────────────── */}
+      <section className="bg-white py-14 sm:py-20">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
@@ -290,23 +293,23 @@ function HomeContent() {
           <div className="mb-10 text-center">
             <motion.div
               variants={fadeIn}
-              className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
-              style={{ color: GOLD }}
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(99,102,241,.25)] bg-[rgba(99,102,241,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
+              style={{ color: "#6366f1" }}
             >
               <Sparkles size={11} /> Nos services
             </motion.div>
             <motion.h2
               variants={fadeIn}
-              className="text-[1.9rem] font-extrabold leading-tight text-white sm:text-[2.4rem]"
+              className="text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]"
             >
               Tout ce que DJAMA peut faire{" "}
-              <span style={{ color: GOLD }}>pour vous</span>.
+              <span style={{ color: "#6366f1" }}>pour vous</span>.
             </motion.h2>
             <motion.p
               variants={fadeIn}
-              className="mx-auto mt-3 max-w-md text-[0.9rem] text-white/40"
+              className="mx-auto mt-3 max-w-md text-[0.9rem] text-gray-500"
             >
-              Des outils à 11,90€/mois jusqu'aux projets sur mesure — DJAMA vous accompagne à chaque étape.
+              Des outils à 11,90€/mois jusqu&apos;aux projets sur mesure — DJAMA vous accompagne à chaque étape.
             </motion.p>
           </div>
 
@@ -318,8 +321,6 @@ function HomeContent() {
               {
                 icon: Globe,
                 color: "#60a5fa",
-                bg: "rgba(96,165,250,.1)",
-                border: "rgba(96,165,250,.2)",
                 title: "Sites web & E-commerce",
                 desc: "Sites vitrine, boutiques et plateformes sur mesure — livrés en 7 à 14 jours.",
                 href: "/services",
@@ -328,8 +329,6 @@ function HomeContent() {
               {
                 icon: Code2,
                 color: "#a78bfa",
-                bg: "rgba(167,139,250,.1)",
-                border: "rgba(167,139,250,.2)",
                 title: "Applications mobiles",
                 desc: "iOS & Android sur mesure pour digitaliser votre activité et fidéliser vos clients.",
                 href: "/services",
@@ -338,8 +337,6 @@ function HomeContent() {
               {
                 icon: Brain,
                 color: GOLD,
-                bg: `rgba(${GOLDR},.1)`,
-                border: `rgba(${GOLDR},.2)`,
                 title: "Coaching IA",
                 desc: "6 modules pour maîtriser l'IA, automatiser vos tâches et gagner 10h par semaine.",
                 href: "/services/coaching-ia",
@@ -348,20 +345,17 @@ function HomeContent() {
               {
                 icon: HeartHandshake,
                 color: "#f59e0b",
-                bg: "rgba(245,158,11,.1)",
-                border: "rgba(245,158,11,.2)",
                 title: "Accompagnement",
                 desc: "Sourcing, marchés publics, conseil stratégique et soutien administratif sur devis.",
                 href: "/contact",
                 cta: "Demander un devis",
               },
-            ] as const).map(({ icon: Icon, color, bg, border, title, desc, href, cta }) => (
+            ] as const).map(({ icon: Icon, color, title, desc, href, cta }) => (
               <motion.div
                 key={title}
                 variants={cardReveal}
                 whileHover={{ y: -6, transition: { duration: 0.25, ease } }}
-                className="group flex flex-col overflow-hidden rounded-2xl border p-5 transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,.35)]"
-                style={{ borderColor: border, background: bg }}
+                className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:border-gray-300 hover:shadow-[0_8px_30px_rgba(0,0,0,.11)]"
               >
                 <div
                   className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border"
@@ -369,8 +363,8 @@ function HomeContent() {
                 >
                   <Icon size={20} style={{ color }} strokeWidth={1.7} />
                 </div>
-                <h3 className="text-[0.92rem] font-bold text-white/90">{title}</h3>
-                <p className="mt-2 flex-1 text-[0.8rem] leading-relaxed text-white/42">{desc}</p>
+                <h3 className="text-[0.92rem] font-bold text-gray-900">{title}</h3>
+                <p className="mt-2 flex-1 text-[0.8rem] leading-relaxed text-gray-500">{desc}</p>
                 <Link
                   href={href}
                   className="mt-4 inline-flex items-center gap-1.5 text-[0.78rem] font-semibold transition-opacity hover:opacity-75"
@@ -386,7 +380,7 @@ function HomeContent() {
           <FadeReveal delay={0.3} className="mt-8 flex justify-center">
             <Link
               href="/services"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/[.1] bg-white/[.04] px-6 py-3 text-[0.88rem] font-semibold text-white/60 transition-all hover:border-white/[.2] hover:text-white/85"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-6 py-3 text-[0.88rem] font-semibold text-gray-500 transition-all hover:border-gray-300 hover:bg-gray-100 hover:text-gray-700"
             >
               Voir tous nos services <ArrowRight size={14} />
             </Link>
@@ -394,34 +388,39 @@ function HomeContent() {
         </motion.div>
       </section>
 
-            <section className="relative py-16 sm:py-20">
+      {/* ── Processus ──────────────────────────────────────── */}
+      <section className="bg-[#f0f2f5] relative py-16 sm:py-20">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
           className="mx-auto max-w-6xl px-6"
         >
           <div className="mb-10 text-center">
-            <motion.span variants={fadeIn} className="badge badge-gold-dark">
+            <motion.div
+              variants={fadeIn}
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.4)] bg-[rgba(201,165,90,.09)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
+              style={{ color: "#b08d57" }}
+            >
               <Sparkles size={10} /> Notre processus
-            </motion.span>
-            <h2 className="mt-4 text-[1.9rem] font-extrabold leading-tight text-white sm:text-[2.4rem]">
+            </motion.div>
+            <h2 className="mt-2 text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]">
               De l&apos;idée à la solution en 4 étapes.
             </h2>
           </div>
 
           <motion.div variants={staggerContainerFast} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {SCHEMA_STEPS.map(({ num, icon: Icon, color, bg, border, title, desc }) => (
+            {SCHEMA_STEPS.map(({ num, icon: Icon, color, border, title, desc }) => (
               <motion.div key={title} variants={cardReveal}
                 whileHover={{ y: -5, transition: { duration: 0.25, ease } }}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border p-5 transition-all duration-300"
-                style={{ borderColor: border, background: bg }}
+                className="group relative flex flex-col overflow-hidden rounded-2xl border bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:shadow-[0_8px_25px_rgba(0,0,0,.11)]"
+                style={{ borderColor: border }}
               >
                 <div className="mb-4 flex items-center justify-between">
                   <span
                     className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[0.68rem] font-bold"
                     style={{ background: `${color}22`, color }}
                   >{num}</span>
-                  <span className="select-none text-4xl font-extrabold leading-none opacity-[.07]" style={{ color }}>{num}</span>
+                  <span className="select-none text-4xl font-extrabold leading-none opacity-[.06]" style={{ color }}>{num}</span>
                 </div>
                 <div
                   className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border"
@@ -429,8 +428,8 @@ function HomeContent() {
                 >
                   <Icon size={19} style={{ color }} />
                 </div>
-                <h3 className="text-[0.88rem] font-bold text-white/90">{title}</h3>
-                <p className="mt-1.5 flex-1 text-[0.78rem] leading-relaxed text-white/42">{desc}</p>
+                <h3 className="text-[0.88rem] font-bold text-gray-900">{title}</h3>
+                <p className="mt-1.5 flex-1 text-[0.78rem] leading-relaxed text-gray-500">{desc}</p>
                 <div
                   className="mt-4 h-0.5 w-6 rounded-full transition-all duration-300 group-hover:w-full"
                   style={{ background: `linear-gradient(90deg,${color},${color}33)` }}
@@ -441,17 +440,22 @@ function HomeContent() {
         </motion.div>
       </section>
 
-            <section className="bg-[#0f0f13] py-12 sm:py-16">
+      {/* ── Social proof ticker ────────────────────────────── */}
+      <section className="bg-white py-12 sm:py-16 border-y border-gray-100">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
           className="mx-auto max-w-5xl px-6"
         >
           <div className="mb-8 text-center">
-            <motion.span variants={fadeIn} className="badge badge-gold-dark">
+            <motion.div
+              variants={fadeIn}
+              className="mb-3 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.4)] bg-[rgba(201,165,90,.07)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
+              style={{ color: "#b08d57" }}
+            >
               <Star size={10} /> Ils nous font confiance
-            </motion.span>
-            <FadeReveal delay={0.1} as="p" className="mt-3 text-sm text-white/35">
+            </motion.div>
+            <FadeReveal delay={0.1} as="p" className="mt-2 text-sm text-gray-400">
               50+ projets accompagnés · entrepreneurs, PME et créateurs
             </FadeReveal>
           </div>
@@ -462,10 +466,10 @@ function HomeContent() {
               .djama-ticker-track { animation: djama-ticker 28s linear infinite; }
               .djama-ticker-wrap:hover .djama-ticker-track { animation-play-state: paused; }
             `}</style>
-            <div className="djama-ticker-wrap overflow-hidden rounded-xl border border-white/[.07] bg-white/[.03] py-3">
+            <div className="djama-ticker-wrap overflow-hidden rounded-xl border border-gray-200 bg-gray-50 py-3">
               <div className="djama-ticker-track flex items-center whitespace-nowrap">
                 {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-                  <span key={i} className="inline-flex shrink-0 items-center gap-3 px-5 text-[0.82rem] font-medium text-white/38">
+                  <span key={i} className="inline-flex shrink-0 items-center gap-3 px-5 text-[0.82rem] font-medium text-gray-400">
                     {item}
                     <span className="h-1 w-1 shrink-0 rounded-full" style={{ background: GOLD }} />
                   </span>
@@ -479,40 +483,44 @@ function HomeContent() {
       <PartnerLogosSection />
       <TestimonialsSection dynamic />
 
-            <section className="relative overflow-hidden bg-[#0d0b1a] py-16 sm:py-24">
-        <div className="pointer-events-none absolute left-0 top-0 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-[rgba(167,139,250,.06)] blur-[100px]" />
-
+      {/* ── AI section ─────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-[#f0f2f5] py-16 sm:py-24">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
           className="relative z-10 mx-auto max-w-6xl px-6"
         >
           <div className="mb-12 text-center">
-            <motion.span variants={fadeIn} className="badge badge-gold-dark">
+            <motion.div
+              variants={fadeIn}
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,.35)] bg-[rgba(167,139,250,.09)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
+              style={{ color: "#7c5cbf" }}
+            >
               <Brain size={10} /> Intelligence Artificielle
-            </motion.span>
-            <h2 className="mt-4 text-[1.9rem] font-extrabold leading-tight text-white sm:text-[2.4rem]">
+            </motion.div>
+            <h2 className="mt-2 text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]">
               L&apos;IA au cœur de votre activité.
             </h2>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
 
+            {/* Coaching card */}
             <motion.div
               variants={cardReveal}
-              className="relative overflow-hidden rounded-2xl border border-[rgba(167,139,250,.22)] bg-white/[.025] p-6"
+              className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_4px_20px_rgba(0,0,0,.08)]"
             >
               <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#a78bfa] to-transparent" />
               <div className="mb-4 flex items-start justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(167,139,250,.15)]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(167,139,250,.12)]">
                   <Brain size={20} style={{ color: "#a78bfa" }} />
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(167,139,250,.28)] bg-[rgba(167,139,250,.09)] px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-[#a78bfa]">
                   Nouveau
                 </span>
               </div>
-              <h3 className="text-[1.1rem] font-extrabold text-white">Coaching IA DJAMA</h3>
-              <p className="mt-2 text-[0.85rem] leading-relaxed text-white/45">
+              <h3 className="text-[1.1rem] font-extrabold text-gray-900">Coaching IA DJAMA</h3>
+              <p className="mt-2 text-[0.85rem] leading-relaxed text-gray-500">
                 Apprenez à utiliser l&apos;IA pour gagner du temps, automatiser vos tâches et vendre mieux — 6 modules, 4h d&apos;accompagnement.
               </p>
 
@@ -523,39 +531,40 @@ function HomeContent() {
                   { val: "4h",   sub: "accompagnement", color: "#4ade80" },
                   { val: "190€", sub: "paiement unique", color: GOLD    },
                 ] as const).map(({ val, sub, color }) => (
-                  <div key={sub} className="flex flex-col items-center rounded-xl border border-white/[.06] bg-white/[.03] px-3 py-2.5 text-center">
+                  <div key={sub} className="flex flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-center">
                     <span className="text-lg font-extrabold leading-none" style={{ color }}>{val}</span>
-                    <span className="mt-0.5 text-[0.58rem] text-white/35">{sub}</span>
+                    <span className="mt-0.5 text-[0.58rem] text-gray-400">{sub}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-[rgba(74,222,128,.18)] bg-[rgba(74,222,128,.05)] px-4 py-2">
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-[rgba(74,222,128,.25)] bg-[rgba(74,222,128,.07)] px-4 py-2">
                 <Shield size={12} style={{ color: "#4ade80" }} />
-                <span className="text-[0.7rem] font-semibold text-[#4ade80]">Satisfait ou remboursé 7 jours</span>
+                <span className="text-[0.7rem] font-semibold text-emerald-600">Satisfait ou remboursé 7 jours</span>
               </div>
 
               <Link href="/services/coaching-ia"
-                className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-[rgba(167,139,250,.3)] bg-[rgba(167,139,250,.1)] px-5 py-2.5 text-[0.875rem] font-bold text-[#a78bfa] transition-all hover:border-[rgba(167,139,250,.55)] hover:bg-[rgba(167,139,250,.18)]">
+                className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-[rgba(167,139,250,.3)] bg-[rgba(167,139,250,.08)] px-5 py-2.5 text-[0.875rem] font-bold text-[#a78bfa] transition-all hover:border-[rgba(167,139,250,.5)] hover:bg-[rgba(167,139,250,.15)]">
                 Découvrir le coaching IA <ArrowRight size={13} />
               </Link>
             </motion.div>
 
+            {/* Chat mockup */}
             <motion.div variants={cardReveal}>
-              <div className="relative overflow-hidden rounded-2xl border border-[rgba(167,139,250,.18)] bg-white/[.02] shadow-[0_28px_70px_rgba(0,0,0,.4)]">
-                <div className="flex items-center gap-3 border-b border-white/[.07] px-5 py-4">
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_4px_24px_rgba(0,0,0,.10)]">
+                <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
                   <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#a78bfa] to-[#7c5cbf]">
                     <Brain size={14} className="text-white" />
-                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#0d0b1a] bg-green-400" />
+                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-400" />
                   </div>
                   <div>
-                    <p className="text-[0.85rem] font-bold text-white">Assistant DJAMA</p>
-                    <p className="text-[0.65rem] text-white/30">En ligne · Répond instantanément</p>
+                    <p className="text-[0.85rem] font-bold text-gray-900">Assistant DJAMA</p>
+                    <p className="text-[0.65rem] text-gray-400">En ligne · Répond instantanément</p>
                   </div>
                   <div className="ml-auto flex gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-white/[.07]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-white/[.07]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-white/[.07]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-gray-200" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-gray-200" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-gray-200" />
                   </div>
                 </div>
 
@@ -581,8 +590,8 @@ function HomeContent() {
                       )}
                       <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[0.82rem] leading-relaxed whitespace-pre-line ${
                         msg.type === "ai"
-                          ? "rounded-tl-sm border border-white/[.06] bg-white/[.06] text-white/75"
-                          : "rounded-tr-sm bg-[#a78bfa] font-medium text-white"
+                          ? "rounded-tl-sm border border-gray-200 bg-gray-100 text-gray-700"
+                          : "rounded-tr-sm bg-[#6366f1] font-medium text-white"
                       }`}>
                         {msg.text}
                       </div>
@@ -593,11 +602,11 @@ function HomeContent() {
                     <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#a78bfa] to-[#7c5cbf]">
                       <Brain size={11} className="text-white" />
                     </div>
-                    <div className="rounded-2xl rounded-tl-sm border border-white/[.06] bg-white/[.06] px-4 py-3">
+                    <div className="rounded-2xl rounded-tl-sm border border-gray-200 bg-gray-100 px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         {([0, 0.18, 0.36] as const).map((delay, i) => (
                           <motion.div key={i}
-                            className="h-1.5 w-1.5 rounded-full bg-white/40"
+                            className="h-1.5 w-1.5 rounded-full bg-gray-400"
                             animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
                             transition={{ duration: 0.9, delay, repeat: Infinity, ease: "easeInOut" }}
                           />
@@ -607,8 +616,8 @@ function HomeContent() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 border-t border-white/[.07] bg-white/[.02] px-4 py-3.5">
-                  <div className="flex-1 rounded-xl border border-white/[.08] bg-white/[.04] px-3.5 py-2 text-xs text-white/20">
+                <div className="flex items-center gap-2 border-t border-gray-100 bg-gray-50 px-4 py-3.5">
+                  <div className="flex-1 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-300">
                     Décrivez votre projet…
                   </div>
                   <button
@@ -641,9 +650,8 @@ function HomeContent() {
         </motion.div>
       </section>
 
-            <section className="relative overflow-hidden bg-[#09090b] py-16 sm:py-20">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[280px] w-[480px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.03)] blur-[110px]" />
-
+      {/* ── FAQ ────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-white py-16 sm:py-20">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainerFast}
@@ -651,36 +659,36 @@ function HomeContent() {
         >
           <motion.div variants={fadeIn} className="mb-10 text-center">
             <div
-              className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.24em]"
-              style={{ color: GOLD }}
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.4)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.24em]"
+              style={{ color: "#b08d57" }}
             >
               <Sparkles size={10} /> Questions fréquentes
             </div>
-            <h2 className="text-[1.8rem] font-extrabold leading-tight text-white sm:text-[2.2rem]">
+            <h2 className="text-[1.8rem] font-extrabold leading-tight text-gray-900 sm:text-[2.2rem]">
               Tout ce que vous<br />voulez savoir.
             </h2>
-            <p className="mx-auto mt-3 max-w-md text-[0.88rem] text-white/40">
+            <p className="mx-auto mt-3 max-w-md text-[0.88rem] text-gray-500">
               Des réponses claires, sans jargon.{" "}
-              <a href="/contact" className="font-semibold underline underline-offset-2 transition hover:text-white/70" style={{ color: GOLD }}>
+              <a href="/contact" className="font-semibold underline underline-offset-2 transition hover:opacity-75" style={{ color: GOLD }}>
                 Contactez-nous.
               </a>
             </p>
           </motion.div>
 
-          <div className="overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.025]">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,.06)]">
             {FAQ_ITEMS.map(({ q, a }, i) => {
               const isOpen = openFaq === i;
               return (
                 <motion.div
                   key={i} variants={cardReveal}
-                  className={`border-b border-white/[.06] last:border-0 ${isOpen ? "bg-white/[.025]" : ""} transition-colors duration-200`}
+                  className={`border-b border-gray-100 last:border-0 ${isOpen ? "bg-gray-50" : ""} transition-colors duration-200`}
                 >
                   <button
                     onClick={() => setOpenFaq(isOpen ? null : i)}
                     className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left"
                     aria-expanded={isOpen}
                   >
-                    <span className={`text-[0.9rem] font-semibold transition-colors duration-200 ${isOpen ? "text-white" : "text-white/75 hover:text-white"}`}>
+                    <span className={`text-[0.9rem] font-semibold transition-colors duration-200 ${isOpen ? "text-gray-900" : "text-gray-600 hover:text-gray-900"}`}>
                       {q}
                     </span>
                     <motion.span
@@ -688,8 +696,8 @@ function HomeContent() {
                       transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                       className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-sm font-light transition-colors duration-200"
                       style={{
-                        borderColor: isOpen ? "rgba(201,165,90,.5)" : "rgba(255,255,255,.12)",
-                        color:       isOpen ? GOLD                  : "rgba(255,255,255,.38)",
+                        borderColor: isOpen ? "rgba(201,165,90,.5)" : "rgba(0,0,0,.14)",
+                        color:       isOpen ? GOLD                  : "rgba(0,0,0,.35)",
                         background:  isOpen ? "rgba(201,165,90,.08)" : "transparent",
                       }}
                     >+</motion.span>
@@ -704,7 +712,7 @@ function HomeContent() {
                         transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
                         style={{ overflow: "hidden" }}
                       >
-                        <p className="px-6 pb-5 pt-1 text-[0.85rem] leading-[1.8] text-white/50">{a}</p>
+                        <p className="px-6 pb-5 pt-1 text-[0.85rem] leading-[1.8] text-gray-500">{a}</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -715,13 +723,13 @@ function HomeContent() {
 
           <FadeReveal delay={0.3} className="mt-8 flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-center sm:gap-6">
             <Link href="/contact"
-              className="flex items-center gap-2 rounded-xl border border-white/[.08] bg-white/[.03] px-5 py-2.5 text-[0.82rem] font-semibold text-white/55 transition hover:border-white/[.16] hover:text-white/80">
+              className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-5 py-2.5 text-[0.82rem] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 hover:bg-gray-100">
               <Mail size={13} style={{ color: GOLD }} />
               Poser une question par email
             </Link>
             <Link href="/reserver-appel"
-              className="flex items-center gap-2 rounded-xl border border-[rgba(201,165,90,.22)] bg-[rgba(201,165,90,.06)] px-5 py-2.5 text-[0.82rem] font-semibold transition hover:bg-[rgba(201,165,90,.14)]"
-              style={{ color: GOLD }}>
+              className="flex items-center gap-2 rounded-xl border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.07)] px-5 py-2.5 text-[0.82rem] font-semibold transition hover:bg-[rgba(201,165,90,.14)]"
+              style={{ color: "#b08d57" }}>
               <MessageCircle size={13} />
               Appel découverte gratuit
             </Link>
@@ -729,21 +737,25 @@ function HomeContent() {
         </motion.div>
       </section>
 
-            <section className="mx-auto max-w-6xl px-6 pb-20 pt-14">
+      {/* ── Final CTA ──────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-6 pb-20 pt-14">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
-          className="relative overflow-hidden rounded-[2rem] border bg-[#0d0d10] px-8 py-20 text-center md:px-20"
-          style={{ borderColor: "rgba(201,165,90,.2)" }}
+          className="relative overflow-hidden rounded-[2rem] px-8 py-20 text-center md:px-20"
+          style={{ background: "linear-gradient(135deg,#6366f1 0%,#4f46e5 50%,#7c3aed 100%)" }}
         >
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[200px] bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(201,165,90,.07),transparent)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[200px] bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(255,255,255,.18),transparent)]" />
 
           <div className="relative z-10">
-            <motion.span variants={fadeIn} className="badge badge-gold-dark">
+            <motion.div
+              variants={fadeIn}
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em] text-white"
+            >
               <Sparkles size={10} /> Prêt à commencer ?
-            </motion.span>
+            </motion.div>
 
-            <h2 className="mt-6 text-[2.1rem] font-extrabold leading-tight text-white sm:text-[2.8rem]">
+            <h2 className="text-[2.1rem] font-extrabold leading-tight text-white sm:text-[2.8rem]">
               <MultiLineReveal
                 lines={[ctaFinalTitle1, ctaFinalTitle2]}
                 highlight={1} stagger={0.13} wordStagger={0.065}
@@ -751,7 +763,7 @@ function HomeContent() {
               />
             </h2>
 
-            <FadeReveal delay={0.26} as="p" className="mx-auto mt-5 max-w-md text-base leading-relaxed text-white/40">
+            <FadeReveal delay={0.26} as="p" className="mx-auto mt-5 max-w-md text-base leading-relaxed text-white/75">
               {ctaFinalSubtitle}
             </FadeReveal>
 
@@ -764,7 +776,8 @@ function HomeContent() {
                 </span>
                 <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
               </Link>
-              <Link href={ctaSecHref} className="btn-ghost px-8 py-[0.95rem] text-[0.925rem]">
+              <Link href={ctaSecHref}
+                className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-white/30 bg-white/10 px-8 py-[0.95rem] text-[0.925rem] font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20 hover:border-white/50">
                 {ctaSecText}
               </Link>
             </FadeReveal>
@@ -772,19 +785,19 @@ function HomeContent() {
             <FadeReveal delay={0.52} className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-7">
               <a
                 href={`mailto:${data.contact.email}`}
-                className="flex items-center gap-2 text-[0.82rem] text-white/28 transition-colors duration-200 hover:text-white/58"
+                className="flex items-center gap-2 text-[0.82rem] text-white/65 transition-colors duration-200 hover:text-white/90"
               >
-                <Mail size={12} style={{ color: GOLD }} />
+                <Mail size={12} className="text-white/50" />
                 {data.contact.email}
               </a>
-              <span className="hidden text-white/10 sm:inline">·</span>
-              <span className="flex items-center gap-2 text-[0.82rem] text-white/28">
-                <CheckCircle2 size={12} style={{ color: GOLD }} />
+              <span className="hidden text-white/30 sm:inline">·</span>
+              <span className="flex items-center gap-2 text-[0.82rem] text-white/65">
+                <CheckCircle2 size={12} className="text-white/50" />
                 Sans engagement · Réponse sous 24h
               </span>
-              <span className="hidden text-white/10 sm:inline">·</span>
-              <span className="flex items-center gap-2 text-[0.82rem] text-white/28">
-                <CheckCircle2 size={12} style={{ color: GOLD }} />
+              <span className="hidden text-white/30 sm:inline">·</span>
+              <span className="flex items-center gap-2 text-[0.82rem] text-white/65">
+                <CheckCircle2 size={12} className="text-white/50" />
                 Appel découverte gratuit · 30 min
               </span>
             </FadeReveal>
