@@ -131,7 +131,7 @@ function HomeContent() {
     <div className="overflow-hidden">
 
       {/* ── Hero ───────────────────────────────────────────── */}
-      <section className="bg-white px-5 pb-12 pt-14 sm:pb-16 sm:pt-20">
+      <section className="bg-white px-5 pb-12 pt-[108px] sm:pb-16 sm:pt-[128px]">
         <motion.div
           initial="hidden" animate="visible" variants={staggerContainer}
           className="mx-auto max-w-md text-center"
