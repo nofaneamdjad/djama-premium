@@ -19,7 +19,7 @@ import { useLanguage } from "@/lib/language-context";
 import { WordLift } from "@/components/ui/HoverText";
 
 /* ─────────────────────────────────────────────────────────
-   DESIGN SYSTEM PAR CATÉGORIE
+   DESIGN SYSTEM PAR CATÉGORIE — light cards with accent border
 ───────────────────────────────────────────────────────── */
 const CAT_CONFIG = {
   "Digital": {
@@ -29,7 +29,7 @@ const CAT_CONFIG = {
     accent:      "#7c6fcd",
     accentRgb:   "124,111,205",
     border:      "rgba(124,111,205,0.28)",
-    hoverShadow: "0 32px 72px rgba(124,111,205,0.24), 0 8px 20px rgba(0,0,0,0.6)",
+    hoverShadow: "0 32px 72px rgba(124,111,205,0.18), 0 8px 20px rgba(0,0,0,0.08)",
     label:       "Digital",
     emoji:       "◆",
   },
@@ -40,7 +40,7 @@ const CAT_CONFIG = {
     accent:      "#dc5078",
     accentRgb:   "220,80,120",
     border:      "rgba(220,80,120,0.28)",
-    hoverShadow: "0 32px 72px rgba(220,80,120,0.22), 0 8px 20px rgba(0,0,0,0.6)",
+    hoverShadow: "0 32px 72px rgba(220,80,120,0.16), 0 8px 20px rgba(0,0,0,0.08)",
     label:       "Création",
     emoji:       "✦",
   },
@@ -51,7 +51,7 @@ const CAT_CONFIG = {
     accent:      "#34d399",
     accentRgb:   "52,211,153",
     border:      "rgba(52,211,153,0.28)",
-    hoverShadow: "0 32px 72px rgba(52,211,153,0.20), 0 8px 20px rgba(0,0,0,0.6)",
+    hoverShadow: "0 32px 72px rgba(52,211,153,0.14), 0 8px 20px rgba(0,0,0,0.08)",
     label:       "Outils",
     emoji:       "◈",
   },
@@ -62,7 +62,7 @@ const CAT_CONFIG = {
     accent:      "#f9a826",
     accentRgb:   "249,168,38",
     border:      "rgba(249,168,38,0.28)",
-    hoverShadow: "0 32px 72px rgba(249,168,38,0.20), 0 8px 20px rgba(0,0,0,0.6)",
+    hoverShadow: "0 32px 72px rgba(249,168,38,0.14), 0 8px 20px rgba(0,0,0,0.08)",
     label:       "Accompagnement",
     emoji:       "◎",
   },
@@ -73,7 +73,7 @@ const CAT_CONFIG = {
     accent:      "#c9a55a",
     accentRgb:   "201,165,90",
     border:      "rgba(201,165,90,0.28)",
-    hoverShadow: "0 32px 72px rgba(201,165,90,0.22), 0 8px 20px rgba(0,0,0,0.6)",
+    hoverShadow: "0 32px 72px rgba(201,165,90,0.16), 0 8px 20px rgba(0,0,0,0.08)",
     label:       "Coaching",
     emoji:       "◉",
   },
@@ -171,7 +171,7 @@ function CardVisual({ icon: Icon, config }: {
 }
 
 /* ─────────────────────────────────────────────────────────
-   SERVICE CARD — premium glassmorphism
+   SERVICE CARD — light glassmorphism
 ───────────────────────────────────────────────────────── */
 function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en" }) {
   const config  = CAT_CONFIG[service.category as CatKey];
@@ -292,12 +292,9 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
 
       {/* Main card — lift + shadow on hover */}
       <motion.div
-        className="relative flex flex-col overflow-hidden rounded-[1.75rem] border bg-[#09090b] transition-shadow duration-500"
+        className="relative flex flex-col overflow-hidden rounded-[1.75rem] border bg-white transition-shadow duration-500 shadow-[0_2px_10px_rgba(0,0,0,.06)]"
         style={{
-          borderColor: isOutil ? config.border : "rgba(255,255,255,0.08)",
-          boxShadow: isOutil
-            ? `0 4px 24px rgba(${config.accentRgb}, 0.12), inset 0 1px 0 rgba(255,255,255,0.04)`
-            : "0 2px 16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
+          borderColor: isOutil ? config.border : "rgba(0,0,0,0.08)",
         }}
         whileHover={{
           y: -8,
@@ -310,7 +307,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
         <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[1.75rem]">
           <div
             className="absolute inset-y-0 -left-[60%] w-[45%] -skew-x-12 transition-all duration-700 ease-out group-hover:left-[160%]"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.045), transparent)" }}
+            style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)" }}
           />
         </div>
 
@@ -364,7 +361,6 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
               className="object-cover object-top"
               sizes="(max-width: 640px) 100vw, 480px"
             />
-            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#09090b] to-transparent" />
           </div>
         ) : (
           <CardVisual icon={Icon} config={config} />
@@ -375,7 +371,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
           <div
             className="flex items-center justify-center gap-1.5 py-1.5 text-[0.6rem] font-black uppercase tracking-[0.15em]"
             style={{
-              background: `rgba(${config.accentRgb}, 0.1)`,
+              background: `rgba(${config.accentRgb}, 0.08)`,
               color: config.accent,
               borderBottom: `1px solid rgba(${config.accentRgb}, 0.15)`,
             }}
@@ -404,7 +400,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
                 className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold"
                 style={{
                   background: isOutil ? `rgba(${config.accentRgb}, 0.12)` : "transparent",
-                  color: isOutil ? config.accent : "rgba(255,255,255,0.3)",
+                  color: isOutil ? config.accent : "rgba(0,0,0,0.35)",
                   border: isOutil ? `1px solid rgba(${config.accentRgb}, 0.22)` : "none",
                 }}
               >
@@ -413,18 +409,18 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
             )}
           </div>
 
-          <h2 className="text-[1.05rem] font-extrabold leading-snug text-white/90">
-            <WordLift text={service.title} yOffset={4} stagger={25} hoverColor="rgba(255,255,255,1)" />
+          <h2 className="text-[1.05rem] font-extrabold leading-snug text-gray-800">
+            <WordLift text={service.title} yOffset={4} stagger={25} hoverColor="rgba(0,0,0,1)" />
           </h2>
 
-          <p className="mt-2.5 text-sm leading-relaxed text-white/40">
+          <p className="mt-2.5 text-sm leading-relaxed text-gray-500">
             {excerpt}
           </p>
 
           {extraBullets.length > 0 && (
             <ul className="mt-5 space-y-2">
               {extraBullets.map((hl) => (
-                <li key={hl} className="flex items-start gap-2 text-xs text-white/50">
+                <li key={hl} className="flex items-start gap-2 text-xs text-gray-600">
                   <CheckCircle2 size={12} className="mt-0.5 shrink-0" style={{ color: config.accent }} />
                   {hl}
                 </li>
@@ -437,7 +433,7 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
             <Link
               href={href}
               className="group/cta relative z-[1] mt-5 flex items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
-              style={{ background: config.accent, color: "#09090b" }}
+              style={{ background: config.accent, color: "#fff" }}
             >
               <span>{ctaLabel}</span>
               <motion.span
@@ -505,17 +501,16 @@ function OutilsBlock({ lang }: { lang: "fr" | "en" }) {
       />
 
       <motion.div
-        className="relative overflow-hidden rounded-[1.75rem] border bg-[#09090b]"
+        className="relative overflow-hidden rounded-[1.75rem] border bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)]"
         style={{
           borderColor: cfg.border,
-          boxShadow: `0 4px 28px rgba(${cfg.accentRgb},0.11), inset 0 1px 0 rgba(255,255,255,0.04)`,
         }}
         whileHover={{ y: -6, boxShadow: cfg.hoverShadow }}
         transition={{ duration: 0.38, ease }}
       >
         {/* Shimmer sweep */}
         <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[1.75rem]">
-          <div className="absolute inset-y-0 -left-[60%] w-[40%] -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent transition-all duration-700 ease-out group-hover:left-[160%]" />
+          <div className="absolute inset-y-0 -left-[60%] w-[40%] -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.3] to-transparent transition-all duration-700 ease-out group-hover:left-[160%]" />
         </div>
         {/* Top edge glow on hover */}
         <div
@@ -542,17 +537,17 @@ function OutilsBlock({ lang }: { lang: "fr" | "en" }) {
             {OUTILS_LIST.map((tool) => (
               <div
                 key={tool}
-                className="flex items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-2.5 transition-all hover:border-[rgba(52,211,153,0.22)] hover:bg-[rgba(52,211,153,0.05)]"
+                className="flex items-center gap-2.5 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 transition-all hover:border-[rgba(52,211,153,0.22)] hover:bg-[rgba(52,211,153,0.05)]"
               >
                 <CheckCircle2 size={11} className="shrink-0" style={{ color: cfg.accent }} />
-                <span className="truncate text-[0.77rem] font-semibold text-white/60">{tool}</span>
+                <span className="truncate text-[0.77rem] font-semibold text-gray-600">{tool}</span>
               </div>
             ))}
           </div>
 
           {/* Footer */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[0.72rem] text-white/28">
+            <p className="text-[0.72rem] text-gray-400">
               {lang === "fr"
                 ? "Accès depuis votre espace client · Synchronisation en temps réel"
                 : "Access from your client space · Real-time sync"}
@@ -560,7 +555,7 @@ function OutilsBlock({ lang }: { lang: "fr" | "en" }) {
             <Link
               href="/abonnement"
               className="group/cta relative z-[1] inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-6 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
-              style={{ background: cfg.accent, color: "#09090b" }}
+              style={{ background: cfg.accent, color: "#fff" }}
             >
               {lang === "fr" ? "Accéder aux outils" : "Access tools"}
               <motion.span
@@ -617,7 +612,7 @@ function CategoryFilter({
             style={{
               color: isActive
                 ? config ? config.accent : "#c9a55a"
-                : "rgba(255,255,255,0.35)",
+                : "rgba(0,0,0,0.4)",
             }}
           >
             {/* Animated active pill */}
@@ -626,7 +621,7 @@ function CategoryFilter({
                 layoutId="active-cat-pill"
                 className="absolute inset-0 rounded-full"
                 style={{
-                  background: config ? `rgba(${config.accentRgb}, 0.12)` : "rgba(201,165,90,0.12)",
+                  background: config ? `rgba(${config.accentRgb}, 0.10)` : "rgba(201,165,90,0.10)",
                   border: `1px solid ${config ? config.border : "rgba(201,165,90,0.3)"}`,
                 }}
                 transition={{ type: "spring", bounce: 0.18, duration: 0.48 }}
@@ -635,8 +630,8 @@ function CategoryFilter({
               <span
                 className="absolute inset-0 rounded-full"
                 style={{
-                  background: "rgba(255,255,255,0.025)",
-                  border: "1px solid rgba(255,255,255,0.07)",
+                  background: "rgba(0,0,0,0.03)",
+                  border: "1px solid rgba(0,0,0,0.08)",
                 }}
               />
             )}
@@ -646,11 +641,11 @@ function CategoryFilter({
               className="relative z-10 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[0.55rem] font-black"
               style={{
                 background: isActive
-                  ? config ? `rgba(${config.accentRgb}, 0.2)` : "rgba(201,165,90,0.2)"
-                  : "rgba(255,255,255,0.07)",
+                  ? config ? `rgba(${config.accentRgb}, 0.15)` : "rgba(201,165,90,0.15)"
+                  : "rgba(0,0,0,0.06)",
                 color: isActive
                   ? config ? config.accent : "#c9a55a"
-                  : "rgba(255,255,255,0.3)",
+                  : "rgba(0,0,0,0.35)",
               }}
             >
               {count}
@@ -664,7 +659,6 @@ function CategoryFilter({
 
 /* ─────────────────────────────────────────────────────────
    DONNÉES STATIQUES FALLBACK
-   Utilisées quand Supabase retourne 0 résultats ou échoue.
 ───────────────────────────────────────────────────────── */
 const NOW = new Date().toISOString();
 const STATIC_SERVICES: ServiceRow[] = [
@@ -742,24 +736,21 @@ export default function ServicesPage() {
   ] as const;
 
   return (
-    <div className="bg-[#09090b]">
+    <div className="bg-white">
 
       {/* ══════════════════════════════════════════════════
           HERO
       ══════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pb-14 pt-24 sm:pb-32 sm:pt-40">
-
-        {/* Grid */}
-        <div className="hero-grid absolute inset-0 opacity-40" />
+      <section className="relative overflow-hidden pb-14 pt-[108px] sm:pb-32 sm:pt-[128px] bg-white">
 
         {/* Breathing mesh gradient */}
         <motion.div
           className="pointer-events-none absolute inset-0"
           animate={{
             background: [
-              "radial-gradient(ellipse 65% 55% at 50% 0%, rgba(201,165,90,0.07) 0%, transparent 72%)",
-              "radial-gradient(ellipse 75% 60% at 50% 0%, rgba(124,111,205,0.05) 0%, transparent 72%)",
-              "radial-gradient(ellipse 65% 55% at 50% 0%, rgba(201,165,90,0.07) 0%, transparent 72%)",
+              "radial-gradient(ellipse 65% 55% at 50% 0%, rgba(201,165,90,0.05) 0%, transparent 72%)",
+              "radial-gradient(ellipse 75% 60% at 50% 0%, rgba(124,111,205,0.04) 0%, transparent 72%)",
+              "radial-gradient(ellipse 65% 55% at 50% 0%, rgba(201,165,90,0.05) 0%, transparent 72%)",
             ],
           }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
@@ -768,29 +759,15 @@ export default function ServicesPage() {
         {/* Orb 1 — gold, top center */}
         <motion.div
           className="pointer-events-none absolute inset-x-0 top-0 flex justify-center"
-          animate={{ y: [0, -18, 0], opacity: [0.7, 1, 0.7] }}
+          animate={{ y: [0, -18, 0], opacity: [0.5, 0.8, 0.5] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
-          <div className="h-[420px] w-[640px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[90px]" />
+          <div className="h-[420px] w-[640px] rounded-full bg-[rgba(201,165,90,0.05)] blur-[90px]" />
         </motion.div>
-
-        {/* Orb 2 — purple, top-right */}
-        <motion.div
-          className="pointer-events-none absolute right-[8%] top-[20%] h-[280px] w-[280px] rounded-full bg-[rgba(167,139,250,0.045)] blur-[70px]"
-          animate={{ x: [0, 12, 0], y: [0, -10, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-        />
-
-        {/* Orb 3 — blue, bottom-left */}
-        <motion.div
-          className="pointer-events-none absolute bottom-[5%] left-[5%] h-[240px] w-[240px] rounded-full bg-[rgba(96,165,250,0.035)] blur-[65px]"
-          animate={{ x: [0, -8, 0], y: [0, 12, 0] }}
-          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 2.5 }}
-        />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
 
-          {/* Badge with pulse ring */}
+          {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -802,7 +779,7 @@ export default function ServicesPage() {
           </motion.div>
 
           {/* Title */}
-          <h1 className="display-hero text-white">
+          <h1 className="display-hero text-gray-900">
             <MultiLineReveal
               lines={s.hero.titleLines}
               highlight={1}
@@ -816,7 +793,7 @@ export default function ServicesPage() {
           <FadeReveal
             delay={0.65}
             as="p"
-            className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-white/45"
+            className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-gray-500"
           >
             {s.hero.subtitle}
           </FadeReveal>
@@ -837,7 +814,7 @@ export default function ServicesPage() {
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
               <Link
                 href="#services"
-                className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.05] px-7 py-[0.875rem] text-sm font-bold text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+                className="inline-flex items-center gap-2 rounded-[1.25rem] border border-gray-200 bg-gray-50 px-7 py-[0.875rem] text-sm font-bold text-gray-600 transition-all duration-300 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900"
               >
                 {lang === "fr" ? "Explorer les services" : "Explore services"}
               </Link>
@@ -845,7 +822,7 @@ export default function ServicesPage() {
           </FadeReveal>
 
           {/* Stats */}
-          <FadeReveal delay={0.95} className="mt-14 border-t border-white/[0.06] pt-12">
+          <FadeReveal delay={0.95} className="mt-14 border-t border-gray-200 pt-12">
             <motion.div
               initial="hidden"
               animate="visible"
@@ -863,8 +840,8 @@ export default function ServicesPage() {
                   variants={blurReveal}
                   className="text-center"
                 >
-                  <p className="text-2xl font-black tracking-tight text-white">{value}</p>
-                  <p className="mt-0.5 text-xs text-white/30">{label}</p>
+                  <p className="text-2xl font-black tracking-tight text-gray-900">{value}</p>
+                  <p className="mt-0.5 text-xs text-gray-400">{label}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -898,15 +875,12 @@ export default function ServicesPage() {
             </motion.div>
           </FadeReveal>
         </div>
-
-        {/* Bottom fade to section */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#09090b] to-transparent" />
       </section>
 
       {/* ══════════════════════════════════════════════════
           FILTRES + GRILLE SERVICES
       ══════════════════════════════════════════════════ */}
-      <section id="services" className="border-t border-white/[0.05] px-6 py-12 sm:py-20">
+      <section id="services" className="border-t border-gray-200 px-6 py-12 sm:py-20 bg-[#f8f9fa]">
         <div className="mx-auto max-w-6xl">
 
           {/* Section header */}
@@ -917,10 +891,10 @@ export default function ServicesPage() {
             transition={{ duration: 0.65, ease }}
             className="mb-12 text-center"
           >
-            <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-white/30">
+            <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-gray-400">
               {lang === "fr" ? "Catalogue complet" : "Full catalogue"}
             </p>
-            <h2 className="mt-2 text-2xl font-extrabold text-white/80">
+            <h2 className="mt-2 text-2xl font-extrabold text-gray-700">
               {lang === "fr" ? "Filtrez par catégorie" : "Filter by category"}
             </h2>
             {/* Decorative line */}
@@ -939,7 +913,7 @@ export default function ServicesPage() {
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-[340px] sm:h-[400px] animate-pulse rounded-[1.75rem] border border-white/[0.05] bg-white/[0.015]"
+                  className="h-[340px] sm:h-[400px] animate-pulse rounded-[1.75rem] border border-gray-200 bg-gray-100"
                   style={{ animationDelay: `${i * 0.1}s` }}
                 />
               ))}
@@ -947,7 +921,7 @@ export default function ServicesPage() {
           ) : fetchErr ? (
             <div className="mt-10 rounded-2xl border border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.07)] px-6 py-8 text-center">
               <p className="text-sm font-bold text-[#f87171]">Impossible de charger les services</p>
-              <p className="mt-1 text-xs text-white/35">{fetchErr}</p>
+              <p className="mt-1 text-xs text-gray-500">{fetchErr}</p>
             </div>
           ) : (
             <AnimatePresence mode="wait">
@@ -978,12 +952,7 @@ export default function ServicesPage() {
       {/* ══════════════════════════════════════════════════
           POURQUOI DJAMA
       ══════════════════════════════════════════════════ */}
-      <section className="relative border-t border-white/[0.05] px-6 py-28 overflow-hidden">
-        {/* Subtle section glow */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[300px] w-[500px] rounded-full bg-[rgba(201,165,90,0.03)] blur-[100px]" />
-        </div>
-
+      <section className="relative border-t border-gray-200 px-6 py-28 overflow-hidden bg-white">
         <div className="relative mx-auto max-w-6xl">
           <motion.div
             initial="hidden"
@@ -999,10 +968,10 @@ export default function ServicesPage() {
               >
                 <Star size={10} /> {s.whyUs.badge}
               </motion.span>
-              <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">
+              <motion.h2 variants={fadeIn} className="display-section mt-4 text-gray-900">
                 {s.whyUs.title}
               </motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-base text-white/40">
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-base text-gray-500">
                 {lang === "fr" ? "Ce qui nous différencie, au-delà des mots." : "What actually sets us apart."}
               </motion.p>
             </div>
@@ -1020,11 +989,11 @@ export default function ServicesPage() {
                     key={title}
                     variants={cardRevealBlur}
                     whileHover={{ y: -6, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
-                    className="group relative overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#0c0c10] p-7 transition-all duration-300 hover:border-white/[0.14]"
+                    className="group relative overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white p-7 shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:border-gray-300"
                   >
                     {/* Faint number watermark */}
                     <span
-                      className="pointer-events-none absolute -right-1 -top-5 select-none text-[6.5rem] font-black leading-none text-white/[0.022]"
+                      className="pointer-events-none absolute -right-1 -top-5 select-none text-[6.5rem] font-black leading-none opacity-[0.03] text-gray-900"
                       aria-hidden="true"
                     >
                       {String(i + 1).padStart(2, "0")}
@@ -1033,13 +1002,7 @@ export default function ServicesPage() {
                     {/* Radial hover glow */}
                     <div
                       className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
-                      style={{ background: `radial-gradient(ellipse at 15% 0%, rgba(${rgb}, 0.13) 0%, transparent 60%)` }}
-                    />
-
-                    {/* Hover inset border glow */}
-                    <div
-                      className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
-                      style={{ boxShadow: `inset 0 0 0 1px rgba(${rgb}, 0.22)` }}
+                      style={{ background: `radial-gradient(ellipse at 15% 0%, rgba(${rgb}, 0.08) 0%, transparent 60%)` }}
                     />
 
                     {/* Icon */}
@@ -1048,16 +1011,16 @@ export default function ServicesPage() {
                       style={{
                         background: `rgba(${rgb}, 0.10)`,
                         borderColor: `rgba(${rgb}, 0.22)`,
-                        boxShadow: `0 0 14px rgba(${rgb}, 0.12)`,
+                        boxShadow: `0 0 14px rgba(${rgb}, 0.10)`,
                       }}
-                      whileHover={{ scale: 1.12, boxShadow: `0 0 28px rgba(${rgb}, 0.4)` }}
+                      whileHover={{ scale: 1.12, boxShadow: `0 0 28px rgba(${rgb}, 0.3)` }}
                       transition={{ duration: 0.25 }}
                     >
                       <Icon size={22} style={{ color }} />
                     </motion.div>
 
-                    <h3 className="relative text-[0.95rem] font-extrabold text-white/88">{title}</h3>
-                    <p className="relative mt-2.5 text-sm leading-relaxed text-white/42">{desc}</p>
+                    <h3 className="relative text-[0.95rem] font-extrabold text-gray-800">{title}</h3>
+                    <p className="relative mt-2.5 text-sm leading-relaxed text-gray-500">{desc}</p>
                   </motion.div>
                 );
               })}
@@ -1069,11 +1032,7 @@ export default function ServicesPage() {
       {/* ══════════════════════════════════════════════════
           LE SYSTÈME DJAMA
       ══════════════════════════════════════════════════ */}
-      <section className="relative border-t border-white/[0.05] bg-[#0b0b12] px-6 py-28 overflow-hidden">
-        {/* Background orb */}
-        <div className="pointer-events-none absolute right-0 top-0 h-[500px] w-[500px] rounded-full bg-[rgba(201,165,90,0.03)] blur-[120px]" />
-        <div className="pointer-events-none absolute left-0 bottom-0 h-[400px] w-[400px] rounded-full bg-[rgba(124,111,205,0.025)] blur-[100px]" />
-
+      <section className="relative border-t border-gray-200 bg-[#f8f9fa] px-6 py-28 overflow-hidden">
         <div className="relative mx-auto max-w-6xl">
           <motion.div
             initial="hidden"
@@ -1091,14 +1050,14 @@ export default function ServicesPage() {
                 >
                   <Layers size={10} /> {lang === "fr" ? "L'approche DJAMA" : "The DJAMA approach"}
                 </motion.span>
-                <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">
+                <motion.h2 variants={fadeIn} className="display-section mt-4 text-gray-900">
                   {lang === "fr" ? (
                     <>Plus qu&apos;un service.<br /><span className="text-gold">Un système complet.</span></>
                   ) : (
                     <>More than a service.<br /><span className="text-gold">A complete system.</span></>
                   )}
                 </motion.h2>
-                <motion.p variants={fadeIn} className="mt-5 max-w-md text-base leading-relaxed text-white/45">
+                <motion.p variants={fadeIn} className="mt-5 max-w-md text-base leading-relaxed text-gray-500">
                   {lang === "fr"
                     ? "Chez DJAMA, vous ne commandez pas une prestation isolée. Vous accédez à un écosystème : image, outils, accompagnement, performance."
                     : "At DJAMA, you don't just order a single service. You access an ecosystem: brand, tools, support, performance."}
@@ -1119,14 +1078,14 @@ export default function ServicesPage() {
                     <motion.div
                       key={label}
                       variants={cardReveal}
-                      className="group flex items-start gap-4 rounded-[1.25rem] border border-white/[0.07] bg-white/[0.025] p-4 transition-all duration-300 hover:border-[rgba(201,165,90,0.25)] hover:bg-[rgba(201,165,90,0.04)]"
+                      className="group flex items-start gap-4 rounded-[1.25rem] border border-gray-200 bg-white p-4 shadow-[0_2px_10px_rgba(0,0,0,.04)] transition-all duration-300 hover:border-[rgba(201,165,90,0.25)] hover:bg-[rgba(201,165,90,0.03)]"
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.1)] text-xs font-black text-[#c9a55a] transition-all duration-300 group-hover:bg-[rgba(201,165,90,0.18)]">
                         {i + 1}
                       </div>
                       <div>
-                        <p className="text-sm font-extrabold text-white/80">{label}</p>
-                        <p className="mt-0.5 text-xs text-white/35">{desc}</p>
+                        <p className="text-sm font-extrabold text-gray-800">{label}</p>
+                        <p className="mt-0.5 text-xs text-gray-400">{desc}</p>
                       </div>
                     </motion.div>
                   ))}
@@ -1144,13 +1103,9 @@ export default function ServicesPage() {
 
               {/* Visual right — system card */}
               <motion.div variants={cardRevealBlur}>
-                <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.09] bg-gradient-to-b from-white/[0.04] to-transparent p-8">
-                  {/* Corner glow */}
-                  <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[rgba(201,165,90,0.07)] blur-[80px]" />
-                  <div className="pointer-events-none absolute left-0 bottom-0 h-48 w-48 rounded-full bg-[rgba(124,111,205,0.04)] blur-[60px]" />
-
+                <div className="relative overflow-hidden rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_2px_10px_rgba(0,0,0,.06)]">
                   <div className="relative">
-                    <p className="text-[0.65rem] font-black uppercase tracking-[0.18em] text-white/25">
+                    <p className="text-[0.65rem] font-black uppercase tracking-[0.18em] text-gray-400">
                       {lang === "fr" ? "Ce que vous obtenez" : "What you get"}
                     </p>
 
@@ -1164,7 +1119,7 @@ export default function ServicesPage() {
                       ].map(({ icon: Icon, color, rgb, label, value }) => (
                         <motion.div
                           key={label}
-                          className="group/row flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]"
+                          className="group/row flex items-center gap-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all duration-300 hover:border-gray-300 hover:bg-white"
                           whileHover={{ x: 4 }}
                           transition={{ duration: 0.22 }}
                         >
@@ -1175,8 +1130,8 @@ export default function ServicesPage() {
                             <Icon size={15} style={{ color }} />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-[0.7rem] font-bold text-white/70">{label}</p>
-                            <p className="truncate text-[0.6rem] text-white/30">{value}</p>
+                            <p className="text-[0.7rem] font-bold text-gray-700">{label}</p>
+                            <p className="truncate text-[0.6rem] text-gray-400">{value}</p>
                           </div>
                           <motion.div
                             animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
@@ -1207,38 +1162,26 @@ export default function ServicesPage() {
       {/* ══════════════════════════════════════════════════
           CTA FINAL
       ══════════════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-12 sm:py-24">
+      <section className="border-t border-gray-200 px-6 py-12 sm:py-24">
         <div className="mx-auto max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 36 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport}
             transition={{ duration: 0.85, ease }}
-            className="relative overflow-hidden rounded-[2.5rem] border border-[rgba(201,165,90,0.18)] p-12 text-center"
+            className="relative overflow-hidden rounded-[2.5rem] p-12 text-center"
             style={{
-              background: "linear-gradient(145deg, rgba(201,165,90,0.08) 0%, rgba(9,9,11,0.9) 35%, rgba(124,111,205,0.05) 100%)",
-              boxShadow: "0 0 80px rgba(201,165,90,0.07), inset 0 1px 0 rgba(255,255,255,0.05)",
+              background: "linear-gradient(135deg,#6366f1 0%,#4f46e5 50%,#7c3aed 100%)",
             }}
           >
-            {/* Background glows */}
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <motion.div
-                className="h-64 w-96 rounded-full blur-[90px]"
-                style={{ background: "rgba(201,165,90,0.07)" }}
-                animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
-                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </div>
-            <div className="pointer-events-none absolute right-[10%] bottom-[10%] h-40 w-40 rounded-full bg-[rgba(124,111,205,0.05)] blur-[60px]" />
-
             {/* Top border highlight */}
             <div
               className="pointer-events-none absolute inset-x-0 top-0 h-px"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(201,165,90,0.5), transparent)" }}
+              style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)" }}
             />
 
             <div className="relative">
-              <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-white">
                 <Sparkles size={10} /> {lang === "fr" ? "On vous attend" : "We're ready for you"}
               </span>
 
@@ -1246,7 +1189,7 @@ export default function ServicesPage() {
                 {lang === "fr" ? "Parlons de votre projet." : "Let's talk about your project."}
               </h2>
 
-              <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/45">
+              <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/80">
                 {lang === "fr"
                   ? "Que vous ayez besoin d'un site, d'outils professionnels ou d'accompagnement — DJAMA vous aide à construire des solutions digitales modernes."
                   : "Whether you need a website, professional tools or expert guidance — DJAMA helps you build modern digital solutions."}
@@ -1267,7 +1210,7 @@ export default function ServicesPage() {
                 <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
                   <Link
                     href="/abonnement"
-                    className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.05] px-8 py-4 text-base font-bold text-white/65 backdrop-blur-sm transition-all duration-300 hover:border-[rgba(201,165,90,0.28)] hover:bg-[rgba(201,165,90,0.07)] hover:text-white/90"
+                    className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/30 bg-white/10 px-8 py-4 text-base font-bold text-white transition-all duration-300 hover:bg-white/20"
                   >
                     {lang === "fr" ? "Voir nos outils" : "View our tools"} <ChevronRight size={17} />
                   </Link>
@@ -1284,13 +1227,13 @@ export default function ServicesPage() {
                 ].map(({ icon: Icon, label }, i) => (
                   <motion.div
                     key={label}
-                    className="flex items-center gap-1.5 text-xs text-white/32"
+                    className="flex items-center gap-1.5 text-xs text-white/70"
                     initial={{ opacity: 0, y: 8 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={viewport}
                     transition={{ duration: 0.4, delay: i * 0.08 }}
                   >
-                    <Icon size={12} className="text-[#c9a55a]" />
+                    <Icon size={12} className="text-white/80" />
                     {label}
                   </motion.div>
                 ))}

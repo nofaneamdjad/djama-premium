@@ -10,7 +10,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import type { SiteSettingRow, SocialLinkRow, SocialPlatform } from "@/types/db";
 
-// ── Toast ─────────────────────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────
 
 type Toast = { id: number; msg: string; ok: boolean };
 
@@ -44,7 +44,7 @@ function ToastStack({ toasts }: { toasts: Toast[] }) {
   );
 }
 
-// ── Social platform meta ──────────────────────────────────────────
+// ── Social platform meta ──────────────────────────────────────
 
 const PLATFORM_META: Record<
   SocialPlatform,
@@ -59,7 +59,7 @@ const PLATFORM_META: Record<
   snapchat:  { label: "Snapchat",  icon: Globe,     color: "#fffc00" },
 };
 
-// ── Sections config ───────────────────────────────────────────────
+// ── Sections config ───────────────────────────────────────────
 
 const SETTINGS_SECTIONS = [
   {
@@ -115,12 +115,12 @@ const SETTINGS_SECTIONS = [
   }>;
 }>;
 
-// ── Skeleton ──────────────────────────────────────────────────────
+// ── Skeleton ──────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-xl bg-white/[0.04] ${className ?? ""}`}
+      className={`animate-pulse rounded-xl bg-gray-100 ${className ?? ""}`}
     />
   );
 }
@@ -141,7 +141,7 @@ function PageSkeleton() {
       </div>
 
       {[1, 2, 3].map(i => (
-        <div key={i} className="rounded-2xl border border-white/[0.06] bg-[#18181c] p-6 space-y-4">
+        <div key={i} className="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
           <div className="flex items-center gap-3 mb-5">
             <Skeleton className="h-8 w-8 rounded-xl" />
             <Skeleton className="h-4 w-40" />
@@ -158,7 +158,7 @@ function PageSkeleton() {
       ))}
 
       {/* social */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#18181c] p-6 space-y-4">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
         <div className="flex items-center gap-3 mb-5">
           <Skeleton className="h-8 w-8 rounded-xl" />
           <Skeleton className="h-4 w-36" />
@@ -176,7 +176,7 @@ function PageSkeleton() {
   );
 }
 
-// ── Social row ────────────────────────────────────────────────────
+// ── Social row ────────────────────────────────────────────────
 
 interface SocialRowProps {
   link: SocialLinkRow;
@@ -232,7 +232,7 @@ function SocialRow({ link, onUpdate, toast }: SocialRowProps) {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.03]">
+    <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 transition-colors hover:bg-gray-100">
       {/* Icon + label */}
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
@@ -240,7 +240,7 @@ function SocialRow({ link, onUpdate, toast }: SocialRowProps) {
       >
         <Icon size={15} style={{ color: meta.color }} />
       </div>
-      <span className="w-[100px] shrink-0 text-[0.8rem] font-semibold text-white/60">
+      <span className="w-[100px] shrink-0 text-[0.8rem] font-semibold text-gray-600">
         {meta.label}
       </span>
 
@@ -251,7 +251,7 @@ function SocialRow({ link, onUpdate, toast }: SocialRowProps) {
         onChange={e => handleUrlChange(e.target.value)}
         onBlur={handleBlur}
         placeholder={`https://${link.platform}.com/votre-page`}
-        className="min-w-0 flex-1 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-[0.82rem] text-white/75 outline-none transition-colors placeholder:text-white/20 focus:border-[rgba(201,165,90,0.35)] focus:bg-white/[0.05]"
+        className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-[0.82rem] text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-[rgba(201,165,90,0.35)]"
       />
 
       {/* Active toggle */}
@@ -264,14 +264,14 @@ function SocialRow({ link, onUpdate, toast }: SocialRowProps) {
         {link.active ? (
           <ToggleRight size={26} className="text-[#c9a55a]" />
         ) : (
-          <ToggleLeft size={26} className="text-white/20" />
+          <ToggleLeft size={26} className="text-gray-300" />
         )}
       </button>
     </div>
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────
+// ── Main page ─────────────────────────────────────────────────
 
 export default function AdminParametres() {
   const [loading, setLoading]     = useState(true);
@@ -312,7 +312,7 @@ export default function AdminParametres() {
     }
   }
 
-  // ── Save all settings ───────────────────────────────────────────
+  // ── Save all settings ───────────────────────────────────────
   async function saveAll() {
     setSaving(true);
     try {
@@ -331,7 +331,7 @@ export default function AdminParametres() {
     }
   }
 
-  // ── Update a social link (used by SocialRow) ────────────────────
+  // ── Update a social link (used by SocialRow) ────────────────
   async function handleSocialUpdate(
     id: string,
     patch: Partial<Pick<SocialLinkRow, "url" | "active" | "sort_order">>
@@ -347,12 +347,12 @@ export default function AdminParametres() {
     setSocialLinks(prev => prev.map(l => (l.id === id ? data : l)));
   }
 
-  // ── Field change ────────────────────────────────────────────────
+  // ── Field change ────────────────────────────────────────────
   function handleChange(key: string, value: string) {
     setValuesMap(prev => ({ ...prev, [key]: value }));
   }
 
-  // ── Render ──────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────
   if (loading) return <PageSkeleton />;
 
   return (
@@ -366,8 +366,8 @@ export default function AdminParametres() {
             <Settings size={17} className="text-[#c9a55a]" />
           </div>
           <div>
-            <h1 className="text-[1.3rem] font-black text-white">Paramètres</h1>
-            <p className="mt-0.5 text-[0.8rem] text-white/35">
+            <h1 className="text-[1.3rem] font-black text-gray-900">Paramètres</h1>
+            <p className="mt-0.5 text-[0.8rem] text-gray-500">
               Configuration globale du site DJAMA
             </p>
           </div>
@@ -377,7 +377,7 @@ export default function AdminParametres() {
           <button
             onClick={load}
             disabled={saving || loading}
-            className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[0.82rem] font-semibold text-white/45 transition-all hover:bg-white/[0.06] hover:text-white/70 disabled:opacity-40"
+            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[0.82rem] font-semibold text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
           >
             <RefreshCw size={13} /> Réinitialiser
           </button>
@@ -400,7 +400,7 @@ export default function AdminParametres() {
         return (
           <div
             key={id}
-            className="rounded-2xl border border-white/[0.06] bg-[#18181c] p-6"
+            className="rounded-2xl border border-gray-200 bg-white p-6"
           >
             {/* section header */}
             <div className="mb-5 flex items-center gap-3">
@@ -410,7 +410,7 @@ export default function AdminParametres() {
               >
                 <SectionIcon size={14} style={{ color }} />
               </div>
-              <h2 className="text-[0.9rem] font-bold text-white">{title}</h2>
+              <h2 className="text-[0.9rem] font-bold text-gray-900">{title}</h2>
             </div>
 
             {/* fields grid */}
@@ -423,7 +423,7 @@ export default function AdminParametres() {
                 const isColor = (f as { isColor?: boolean }).isColor;
                 return (
                   <div key={f.key}>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-[0.73rem] font-semibold uppercase tracking-[0.07em] text-white/30">
+                    <label className="mb-1.5 flex items-center gap-1.5 text-[0.73rem] font-semibold uppercase tracking-[0.07em] text-gray-400">
                       <FieldIcon size={11} />
                       {label}
                     </label>
@@ -433,14 +433,14 @@ export default function AdminParametres() {
                           type="color"
                           value={valuesMap[f.key] || f.placeholder || "#c9a55a"}
                           onChange={e => handleChange(f.key, e.target.value)}
-                          className="h-11 w-14 cursor-pointer rounded-xl border border-white/[0.08] bg-transparent p-0.5"
+                          className="h-11 w-14 cursor-pointer rounded-xl border border-gray-200 bg-transparent p-0.5"
                         />
                         <input
                           type="text"
                           value={valuesMap[f.key] ?? ""}
                           onChange={e => handleChange(f.key, e.target.value)}
                           placeholder={f.placeholder}
-                          className="flex-1 rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.04)] px-4 py-3 text-[0.84rem] text-white/80 outline-none transition-colors placeholder:text-white/20 focus:border-[rgba(201,165,90,0.35)] focus:bg-[rgba(255,255,255,0.06)]"
+                          className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-[rgba(201,165,90,0.35)]"
                         />
                       </div>
                     ) : (
@@ -449,7 +449,7 @@ export default function AdminParametres() {
                         value={valuesMap[f.key] ?? ""}
                         onChange={e => handleChange(f.key, e.target.value)}
                         placeholder={f.placeholder}
-                        className="w-full rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.04)] px-4 py-3 text-[0.84rem] text-white/80 outline-none transition-colors placeholder:text-white/20 focus:border-[rgba(201,165,90,0.35)] focus:bg-[rgba(255,255,255,0.06)]"
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-[rgba(201,165,90,0.35)]"
                       />
                     )}
                   </div>
@@ -461,22 +461,22 @@ export default function AdminParametres() {
       })}
 
       {/* ── Réseaux sociaux ─────────────────────────────────────── */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#18181c] p-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6">
         {/* section header */}
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[rgba(201,165,90,0.12)]">
             <Link2 size={14} className="text-[#c9a55a]" />
           </div>
           <div>
-            <h2 className="text-[0.9rem] font-bold text-white">Réseaux sociaux</h2>
-            <p className="mt-0.5 text-[0.73rem] text-white/30">
+            <h2 className="text-[0.9rem] font-bold text-gray-900">Réseaux sociaux</h2>
+            <p className="mt-0.5 text-[0.73rem] text-gray-400">
               URL mise à jour en temps réel · toggle pour activer/désactiver
             </p>
           </div>
         </div>
 
         {socialLinks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-10 text-white/25">
+          <div className="flex flex-col items-center justify-center gap-3 py-10 text-gray-400">
             <Globe size={28} />
             <p className="text-[0.84rem]">Aucun réseau social configuré</p>
           </div>
@@ -494,13 +494,13 @@ export default function AdminParametres() {
         )}
 
         {/* legend */}
-        <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-white/[0.05] pt-4">
-          <span className="flex items-center gap-1.5 text-[0.73rem] text-white/25">
+        <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-gray-200 pt-4">
+          <span className="flex items-center gap-1.5 text-[0.73rem] text-gray-400">
             <ToggleRight size={16} className="text-[#c9a55a]" />
             Actif — apparaît sur le site
           </span>
-          <span className="flex items-center gap-1.5 text-[0.73rem] text-white/25">
-            <ToggleLeft size={16} className="text-white/25" />
+          <span className="flex items-center gap-1.5 text-[0.73rem] text-gray-400">
+            <ToggleLeft size={16} className="text-gray-300" />
             Inactif — masqué du site
           </span>
         </div>
@@ -511,7 +511,7 @@ export default function AdminParametres() {
         <button
           onClick={load}
           disabled={saving || loading}
-          className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[0.82rem] font-semibold text-white/45 transition-all hover:bg-white/[0.06] hover:text-white/70 disabled:opacity-40"
+          className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[0.82rem] font-semibold text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
         >
           <RefreshCw size={13} /> Réinitialiser
         </button>

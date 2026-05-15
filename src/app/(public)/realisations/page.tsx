@@ -258,8 +258,8 @@ function PhoneMockup({ project }: { project: ProjectDisplay }) {
   return (
     <div className="relative flex justify-center transition-transform duration-700 ease-out group-hover:scale-[1.04]"
       style={{ transformOrigin: "center bottom" }}>
-      <div className="relative w-[160px] rounded-[2.5rem] border-[3px] border-white/15 bg-[#0d0d14] shadow-2xl overflow-hidden">
-        <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 w-16 h-4 rounded-full bg-[#0d0d14]" />
+      <div className="relative w-[160px] rounded-[2.5rem] border-[3px] border-gray-200 bg-gray-100 shadow-2xl overflow-hidden">
+        <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 w-16 h-4 rounded-full bg-gray-100" />
         <div className={`relative overflow-hidden bg-gradient-to-br ${project.gradient} px-4 py-10`} style={{ minHeight: 240 }}>
           <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full blur-3xl" style={{ background: project.glow }} />
           <div className="relative z-10 space-y-0">
@@ -277,10 +277,10 @@ function PhoneMockup({ project }: { project: ProjectDisplay }) {
           </div>
         </div>
         <div className="flex justify-center py-3">
-          <div className="h-1 w-16 rounded-full bg-white/20" />
+          <div className="h-1 w-16 rounded-full bg-gray-200" />
         </div>
       </div>
-      <div className="absolute -bottom-4 left-1/2 h-8 w-32 -translate-x-1/2 rounded-full blur-xl opacity-40" style={{ background: project.glow }} />
+      <div className="absolute -bottom-4 left-1/2 h-8 w-32 -translate-x-1/2 rounded-full blur-xl opacity-30" style={{ background: project.glow }} />
     </div>
   );
 }
@@ -290,19 +290,19 @@ function PhoneMockup({ project }: { project: ProjectDisplay }) {
 ══════════════════════════════════════════════════ */
 function BrowserMockup({ project }: { project: ProjectDisplay }) {
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-white/10 shadow-[0_24px_56px_rgba(0,0,0,0.45)] transition-transform duration-700 group-hover:scale-[1.02]"
+    <div className="w-full overflow-hidden rounded-2xl border border-gray-200 shadow-[0_24px_56px_rgba(0,0,0,0.12)] transition-transform duration-700 group-hover:scale-[1.02]"
       style={{ transformOrigin: "center top" }}>
       {/* Barre navigateur */}
-      <div className="flex items-center gap-2 border-b border-white/[0.08] bg-white/[0.05] px-4 py-2.5">
+      <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
         <div className="flex gap-1.5">
           {["rgba(255,95,86,0.6)","rgba(255,189,46,0.6)","rgba(39,201,63,0.6)"].map((c, i) => (
             <span key={i} className="h-2 w-2 rounded-full" style={{ background: c }} />
           ))}
         </div>
         {project.domain && (
-          <div className="mx-auto flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-1">
+          <div className="mx-auto flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1">
             <div className="h-1.5 w-1.5 rounded-full" style={{ background: project.accent, opacity: 0.7 }} />
-            <span className="text-[0.6rem] font-medium text-white/35">{project.domain}</span>
+            <span className="text-[0.6rem] font-medium text-gray-400">{project.domain}</span>
           </div>
         )}
       </div>
@@ -362,7 +362,7 @@ function MediaImage({ project }: { project: ProjectDisplay }) {
       {/* Voile gradient en bas */}
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3"
-        style={{ background: "linear-gradient(to top, rgba(14,14,16,0.85), transparent)" }}
+        style={{ background: "linear-gradient(to top, rgba(255,255,255,0.85), transparent)" }}
       />
     </div>
   );
@@ -385,7 +385,7 @@ function MediaVideo({ project }: { project: ProjectDisplay }) {
 
   if (embed.type === "direct") {
     return (
-      <div className="relative h-full w-full bg-black">
+      <div className="relative h-full w-full bg-gray-100">
         {thumbnail && (
           <Image src={thumbnail} alt={project.name} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover opacity-60" />
         )}
@@ -404,8 +404,7 @@ function MediaVideo({ project }: { project: ProjectDisplay }) {
   }
 
   return (
-    <div className="relative h-full w-full bg-black">
-      {/* Thumbnail cliquable + iframe au hover */}
+    <div className="relative h-full w-full bg-gray-100">
       {thumbnail ? (
         <Image src={thumbnail} alt={project.name} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
       ) : (
@@ -418,14 +417,13 @@ function MediaVideo({ project }: { project: ProjectDisplay }) {
           loading="lazy"
         />
       )}
-      {/* Icône play si thumbnail */}
       {thumbnail && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div
-            className="flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-black/50 backdrop-blur-sm"
-            style={{ boxShadow: `0 0 32px rgba(${project.glowRgb},0.4)` }}
+            className="flex h-14 w-14 items-center justify-center rounded-full border border-gray-200 bg-white/80 backdrop-blur-sm"
+            style={{ boxShadow: `0 0 32px rgba(${project.glowRgb},0.3)` }}
           >
-            <svg viewBox="0 0 24 24" fill="white" className="h-6 w-6 translate-x-0.5">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 translate-x-0.5 text-gray-700">
               <path d="M8 5v14l11-7z" />
             </svg>
           </div>
@@ -440,22 +438,17 @@ function MediaVideo({ project }: { project: ProjectDisplay }) {
 ══════════════════════════════════════════════════ */
 function ProjectCard({ project }: { project: ProjectDisplay }) {
   const statusBadge = project.isLive
-    ? { label: "En ligne",     color: "#34d399", bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.25)",  dot: true  }
-    : { label: "Confidentiel", color: "#f9a826", bg: "rgba(249,168,38,0.12)",  border: "rgba(249,168,38,0.25)",  dot: false };
+    ? { label: "En ligne",     color: "#34d399", bg: "rgba(52,211,153,0.10)",  border: "rgba(52,211,153,0.25)",  dot: true  }
+    : { label: "Confidentiel", color: "#f9a826", bg: "rgba(249,168,38,0.10)",  border: "rgba(249,168,38,0.25)",  dot: false };
   const isConfidential = !project.isLive;
 
   return (
     <motion.div
       layout
       variants={cardReveal}
-      className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[#0e0e10] transition-all duration-500 hover:border-white/[0.14]"
-      style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.45)" }}
-      whileHover={{ y: -6, boxShadow: `0 28px 64px rgba(${project.glowRgb},0.18)` }}
+      className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border border-gray-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-500 hover:border-gray-300"
+      whileHover={{ y: -6, boxShadow: `0 28px 64px rgba(${project.glowRgb},0.12)` }}
     >
-      {/* Glow au hover */}
-      <div className="pointer-events-none absolute inset-0 rounded-[1.75rem] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-        style={{ boxShadow: `inset 0 0 60px rgba(${project.glowRgb},0.07)` }} />
-
       {/* Visuel */}
       <div className="relative overflow-hidden" style={{ aspectRatio: project.kind === "app" ? "4/3" : "16/9" }}>
         {project.mediaType === "image" && project.imageUrl
@@ -480,7 +473,7 @@ function ProjectCard({ project }: { project: ProjectDisplay }) {
         </div>
         <div className="absolute right-4 top-4">
           <span className="rounded-full px-2.5 py-1 text-[0.58rem] font-bold uppercase tracking-wider"
-            style={{ background: "rgba(0,0,0,0.55)", color: "rgba(255,255,255,0.5)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            style={{ background: "rgba(255,255,255,0.85)", color: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", border: "1px solid rgba(0,0,0,0.08)" }}>
             {project.category}
           </span>
         </div>
@@ -494,12 +487,12 @@ function ProjectCard({ project }: { project: ProjectDisplay }) {
       <div className="flex flex-1 flex-col gap-4 p-6">
         {/* Nom + catégorie */}
         <div>
-          <h3 className="text-xl font-extrabold text-white/90">
+          <h3 className="text-xl font-extrabold text-gray-800">
             <WordLift
               text={project.name}
               yOffset={4}
               stagger={22}
-              hoverColor="rgba(255,255,255,1)"
+              hoverColor="rgba(0,0,0,1)"
             />
           </h3>
           <p className="mt-0.5 text-xs font-semibold" style={{ color: project.accent }}>
@@ -508,12 +501,12 @@ function ProjectCard({ project }: { project: ProjectDisplay }) {
         </div>
 
         {/* Description */}
-        <p className="text-sm leading-relaxed text-white/45">{project.description}</p>
+        <p className="text-sm leading-relaxed text-gray-500">{project.description}</p>
 
         {/* Points clés */}
         <ul className="flex flex-col gap-1.5">
           {project.highlights.map((h) => (
-            <li key={h} className="flex items-start gap-2 text-xs text-white/55">
+            <li key={h} className="flex items-start gap-2 text-xs text-gray-600">
               <CheckCircle2 size={12} className="mt-0.5 shrink-0" style={{ color: project.accent }} />
               {h}
             </li>
@@ -525,13 +518,13 @@ function ProjectCard({ project }: { project: ProjectDisplay }) {
           <div className="rounded-xl px-3 py-1.5 text-center"
             style={{ background: project.accentDim, border: `1px solid rgba(${project.glowRgb},0.2)` }}>
             <p className="text-[0.65rem] font-black" style={{ color: project.accent }}>{project.year}</p>
-            <p className="text-[0.55rem] text-white/30">Année</p>
+            <p className="text-[0.55rem] text-gray-400">Année</p>
           </div>
           {project.isLive && (
             <div className="rounded-xl px-3 py-1.5 text-center"
               style={{ background: project.accentDim, border: `1px solid rgba(${project.glowRgb},0.2)` }}>
               <p className="text-[0.65rem] font-black" style={{ color: project.accent }}>En ligne</p>
-              <p className="text-[0.55rem] text-white/30">Statut</p>
+              <p className="text-[0.55rem] text-gray-400">Statut</p>
             </div>
           )}
         </div>
@@ -539,7 +532,7 @@ function ProjectCard({ project }: { project: ProjectDisplay }) {
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5">
           {project.tags.map((tag) => (
-            <span key={tag} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-[0.6rem] font-medium text-white/40">
+            <span key={tag} className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-[0.6rem] font-medium text-gray-500">
               {tag}
             </span>
           ))}
@@ -554,7 +547,7 @@ function ProjectCard({ project }: { project: ProjectDisplay }) {
               rel="noopener noreferrer"
               className="group/btn inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all duration-200"
               style={{
-                background: `rgba(${project.glowRgb},0.10)`,
+                background: `rgba(${project.glowRgb},0.08)`,
                 color: project.accent,
                 border: `1px solid rgba(${project.glowRgb},0.22)`,
               }}
@@ -564,7 +557,7 @@ function ProjectCard({ project }: { project: ProjectDisplay }) {
             </a>
           ) : (
             <div className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold opacity-50"
-              style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              style={{ background: "rgba(0,0,0,0.04)", color: "rgba(0,0,0,0.4)", border: "1px solid rgba(0,0,0,0.08)" }}>
               <Lock size={12} />
               Mission confidentielle
             </div>
@@ -598,32 +591,31 @@ export default function RealisationsPage() {
     : display.filter(p => p.filter === activeFilter);
 
   return (
-    <div className="bg-[#09090b]">
+    <div className="bg-white">
 
       {/* ══════════════════════════════════════════
           HERO
       ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pb-12 pt-24 sm:pb-24 sm:pt-40">
-        <div className="hero-grid absolute inset-0 opacity-40" />
+      <section className="relative overflow-hidden pb-12 pt-[108px] sm:pb-24 sm:pt-[128px] bg-white">
         {/* Animated orbs */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[380px] w-[560px] animate-float-slow rounded-full bg-[rgba(201,165,90,0.07)] blur-[75px]" />
+          <div className="h-[380px] w-[560px] animate-float-slow rounded-full bg-[rgba(201,165,90,0.05)] blur-[75px]" />
         </div>
-        <div className="pointer-events-none absolute right-[10%] top-[35%] h-[240px] w-[240px] animate-float-delayed rounded-full bg-[rgba(96,165,250,0.04)] blur-[55px]" />
-        <div className="pointer-events-none absolute left-[8%] top-[45%] h-[180px] w-[180px] animate-float rounded-full bg-[rgba(167,139,250,0.04)] blur-[45px]" />
+        <div className="pointer-events-none absolute right-[10%] top-[35%] h-[240px] w-[240px] animate-float-delayed rounded-full bg-[rgba(96,165,250,0.03)] blur-[55px]" />
+        <div className="pointer-events-none absolute left-[8%] top-[45%] h-[180px] w-[180px] animate-float rounded-full bg-[rgba(167,139,250,0.03)] blur-[45px]" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease }}
-            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a] hover-glow-gold cursor-default"
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a] cursor-default"
           >
-            <span className="animate-pulse-ring relative flex h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
+            <span className="relative flex h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
             <Sparkles size={11} /> Portfolio & réalisations
           </motion.div>
 
-          <h1 className="display-hero text-white">
+          <h1 className="display-hero text-gray-900">
             <MultiLineReveal
               lines={["Des missions avec impact,", "des résultats mesurables."]}
               highlight={1}
@@ -634,13 +626,13 @@ export default function RealisationsPage() {
             />
           </h1>
 
-          <FadeReveal delay={0.65} as="p" className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-white/40">
+          <FadeReveal delay={0.65} as="p" className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-gray-500">
             Sites, apps, coaching IA, sourcing, accompagnement — des missions avec un impact financier
             concret et mesurable. Résultats réels, clients anonymisés.
           </FadeReveal>
 
           {/* Stats */}
-          <FadeReveal delay={0.82} className="mt-12 flex flex-wrap justify-center gap-6 border-t border-white/[0.07] pt-10">
+          <FadeReveal delay={0.82} className="mt-12 flex flex-wrap justify-center gap-6 border-t border-gray-200 pt-10">
             {[
               { value: "50+",   label: "Clients accompagnés",    color: "#c9a55a" },
               { value: "100+", label: "Missions livrées",       color: "#34d399" },
@@ -649,7 +641,7 @@ export default function RealisationsPage() {
             ].map(({ value, label, color }) => (
               <div key={label} className="text-center">
                 <p className="text-3xl font-black" style={{ color }}>{value}</p>
-                <p className="mt-0.5 text-xs text-white/35">{label}</p>
+                <p className="mt-0.5 text-xs text-gray-400">{label}</p>
               </div>
             ))}
           </FadeReveal>
@@ -659,11 +651,7 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           IMPACT FINANCIER — ÉTUDES DE CAS
       ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#0b0914] py-20 sm:py-28">
-        {/* Glows */}
-        <div className="pointer-events-none absolute left-0 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.06)] blur-[120px]" />
-        <div className="pointer-events-none absolute right-0 top-2/3 h-[300px] w-[300px] translate-x-1/2 rounded-full bg-[rgba(167,139,250,.05)] blur-[100px]" />
-
+      <section className="relative overflow-hidden bg-[#f8f9fa] py-20 sm:py-28">
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
@@ -677,10 +665,10 @@ export default function RealisationsPage() {
               <TrendingUp size={11} />
               Résultats concrets &amp; mesurés
             </motion.div>
-            <motion.h2 variants={fadeIn} className="display-section text-white">
+            <motion.h2 variants={fadeIn} className="display-section text-gray-900">
               Impact financier réel.
             </motion.h2>
-            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/40">
+            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-gray-500">
               Chaque mission vise un retour sur investissement concret. Voici 4 exemples représentatifs — noms et détails anonymisés pour respecter la confidentialité.
             </FadeReveal>
           </div>
@@ -690,31 +678,27 @@ export default function RealisationsPage() {
             {CASE_STUDIES.map(({ id, icon: Icon, profile, sector, color, rgb, solution, solutionHref, problem, after, stats }) => (
               <motion.div key={id} variants={cardReveal}
                 whileHover={{ y: -6, transition: { duration: 0.3, ease } }}
-                className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border transition-all duration-300 hover:shadow-[0_24px_60px_rgba(0,0,0,.45)]"
-                style={{ borderColor: `rgba(${rgb},.22)`, background: "rgba(255,255,255,.025)" }}
+                className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border border-gray-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:border-gray-300"
               >
                 {/* Top accent */}
                 <div className="h-[2.5px] w-full transition-all duration-300 group-hover:h-[4px]"
                   style={{ background: `linear-gradient(90deg,transparent,${color},transparent)` }} />
-                {/* Glow interne */}
-                <div className="pointer-events-none absolute inset-0 rounded-[1.75rem] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
-                  style={{ background: `radial-gradient(ellipse at 50% -10%, rgba(${rgb},.12) 0%, transparent 65%)` }} />
 
                 <div className="relative flex flex-1 flex-col p-6">
                   {/* Header profil */}
                   <div className="mb-5 flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border"
-                        style={{ background: `rgba(${rgb},.12)`, borderColor: `rgba(${rgb},.28)`, boxShadow: `0 0 14px rgba(${rgb},.18)` }}>
+                        style={{ background: `rgba(${rgb},.12)`, borderColor: `rgba(${rgb},.28)`, boxShadow: `0 0 14px rgba(${rgb},.12)` }}>
                         <Icon size={20} style={{ color }} />
                       </div>
                       <div>
-                        <p className="text-[0.88rem] font-extrabold text-white/88">{profile}</p>
-                        <p className="text-[0.7rem] text-white/35">{sector}</p>
+                        <p className="text-[0.88rem] font-extrabold text-gray-800">{profile}</p>
+                        <p className="text-[0.7rem] text-gray-400">{sector}</p>
                       </div>
                     </div>
                     <Link href={solutionHref}
-                      className="shrink-0 rounded-full border px-3 py-1 text-[0.62rem] font-black uppercase tracking-[.16em] transition-all duration-200 hover:brightness-125"
+                      className="shrink-0 rounded-full border px-3 py-1 text-[0.62rem] font-black uppercase tracking-[.16em] transition-all duration-200 hover:brightness-110"
                       style={{ borderColor: `rgba(${rgb},.3)`, background: `rgba(${rgb},.08)`, color }}>
                       {solution}
                     </Link>
@@ -724,11 +708,11 @@ export default function RealisationsPage() {
                   <div className="mb-5 grid grid-cols-3 gap-2.5">
                     {stats.map(({ value, label, icon: StatIcon, color: statColor }) => (
                       <div key={label}
-                        className="flex flex-col items-center rounded-2xl border border-white/[.06] bg-white/[.03] px-2 py-3.5 text-center"
+                        className="flex flex-col items-center rounded-2xl border border-gray-200 bg-gray-50 px-2 py-3.5 text-center"
                       >
                         <StatIcon size={13} className="mb-1.5 shrink-0" style={{ color: statColor }} />
                         <p className="text-[1.05rem] font-black leading-none" style={{ color: statColor }}>{value}</p>
-                        <p className="mt-1 text-[0.58rem] leading-tight text-white/35">{label}</p>
+                        <p className="mt-1 text-[0.58rem] leading-tight text-gray-400">{label}</p>
                       </div>
                     ))}
                   </div>
@@ -737,11 +721,11 @@ export default function RealisationsPage() {
                   <div className="mt-auto space-y-2">
                     <div className="flex items-start gap-2.5 rounded-xl border border-[rgba(239,68,68,.15)] bg-[rgba(239,68,68,.04)] px-3.5 py-3">
                       <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[rgba(239,68,68,.2)] text-[0.55rem] font-black text-[rgba(239,68,68,.8)]">✕</span>
-                      <p className="text-[0.78rem] leading-relaxed text-white/45">{problem}</p>
+                      <p className="text-[0.78rem] leading-relaxed text-gray-600">{problem}</p>
                     </div>
                     <div className="flex items-start gap-2.5 rounded-xl border border-[rgba(52,211,153,.18)] bg-[rgba(52,211,153,.04)] px-3.5 py-3">
                       <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#34d399]" />
-                      <p className="text-[0.78rem] leading-relaxed text-white/65">{after}</p>
+                      <p className="text-[0.78rem] leading-relaxed text-gray-700">{after}</p>
                     </div>
                   </div>
                 </div>
@@ -751,7 +735,7 @@ export default function RealisationsPage() {
 
           {/* Disclaimer */}
           <FadeReveal delay={0.4} className="mt-8 flex justify-center">
-            <p className="flex items-center gap-2 text-center text-[0.72rem] text-white/22">
+            <p className="flex items-center gap-2 text-center text-[0.72rem] text-gray-400">
               <Shield size={11} className="shrink-0" />
               Résultats basés sur des missions réelles — noms, secteurs et chiffres partiellement anonymisés pour respecter la confidentialité client.
             </p>
@@ -762,7 +746,7 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           FILTRES
       ══════════════════════════════════════════ */}
-      <section className="sticky top-[72px] z-30 border-b border-white/[0.05] bg-[rgba(9,9,11,0.85)] backdrop-blur-xl px-6 py-4">
+      <section className="sticky top-[72px] z-30 border-b border-gray-200 bg-white/90 backdrop-blur-xl px-6 py-4">
         <div className="mx-auto max-w-5xl">
           <div className="flex flex-wrap items-center justify-center gap-2">
             {FILTERS.map(({ id, label, icon: Icon }) => {
@@ -774,9 +758,9 @@ export default function RealisationsPage() {
                   whileTap={{ scale: 0.94 }}
                   className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all duration-200"
                   style={{
-                    background: isActive ? "rgba(201,165,90,0.15)" : "rgba(255,255,255,0.04)",
-                    color: isActive ? "#c9a55a" : "rgba(255,255,255,0.4)",
-                    border: isActive ? "1px solid rgba(201,165,90,0.35)" : "1px solid rgba(255,255,255,0.08)",
+                    background: isActive ? "rgba(201,165,90,0.12)" : "rgba(0,0,0,0.03)",
+                    color: isActive ? "#c9a55a" : "rgba(0,0,0,0.4)",
+                    border: isActive ? "1px solid rgba(201,165,90,0.35)" : "1px solid rgba(0,0,0,0.08)",
                   }}
                 >
                   <Icon size={11} />
@@ -784,7 +768,7 @@ export default function RealisationsPage() {
                   {isActive && (
                     <motion.span
                       layoutId="filter-count"
-                      className="ml-0.5 rounded-full bg-[rgba(201,165,90,0.2)] px-1.5 py-0.5 text-[0.55rem] font-black text-[#c9a55a]"
+                      className="ml-0.5 rounded-full bg-[rgba(201,165,90,0.15)] px-1.5 py-0.5 text-[0.55rem] font-black text-[#c9a55a]"
                     >
                       {id === "all" ? display.length : display.filter((p) => p.filter === id).length}
                     </motion.span>
@@ -799,12 +783,12 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           GRILLE PROJETS
       ══════════════════════════════════════════ */}
-      <section className="px-6 py-10 sm:py-20">
+      <section className="px-6 py-10 sm:py-20 bg-white">
         <div className="mx-auto max-w-6xl">
           {loading ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-[480px] animate-pulse rounded-[1.75rem] border border-white/[0.06] bg-white/[0.02]" />
+                <div key={i} className="h-[480px] animate-pulse rounded-[1.75rem] border border-gray-200 bg-gray-100" />
               ))}
             </div>
           ) : (
@@ -837,7 +821,7 @@ export default function RealisationsPage() {
               animate={{ opacity: 1 }}
               className="py-12 sm:py-24 text-center"
             >
-              <p className="text-white/30">Aucun projet dans cette catégorie pour le moment.</p>
+              <p className="text-gray-400">Aucun projet dans cette catégorie pour le moment.</p>
             </motion.div>
           )}
         </div>
@@ -846,27 +830,24 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           EN COULISSES
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-12 sm:py-24">
+      <section className="border-t border-gray-200 px-6 py-12 sm:py-24 bg-[#f8f9fa]">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.65, ease }}
-            className="relative overflow-hidden rounded-[2rem] border border-white/[0.07] bg-[#111113] px-8 py-14 text-center md:px-14"
+            className="relative overflow-hidden rounded-[2rem] border border-gray-200 bg-white px-8 py-14 text-center shadow-[0_2px_10px_rgba(0,0,0,.06)] md:px-14"
           >
-            {/* Glows */}
-            <div className="pointer-events-none absolute left-[-60px] top-[-40px] h-[180px] w-[240px] rounded-full bg-[rgba(201,165,90,0.05)] blur-[55px]" />
-
             <div className="relative z-10">
-              <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]">
-                <EyeOff size={24} className="text-white/40" />
+              <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50">
+                <EyeOff size={24} className="text-gray-400" />
               </div>
 
-              <h2 className="text-2xl font-extrabold text-white/85 md:text-3xl">
+              <h2 className="text-2xl font-extrabold text-gray-800 md:text-3xl">
                 Et bien plus en coulisses.
               </h2>
-              <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/35">
+              <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-gray-500">
                 Un grand nombre de missions réalisées pour nos clients ne sont pas présentées ici.
                 Confidentialité oblige — certains projets administratifs, stratégiques ou sensibles
                 restent strictement privés.
@@ -878,13 +859,13 @@ export default function RealisationsPage() {
                   { icon: EyeOff,      title: "Missions non publiques", desc: "Accompagnement, dossiers, sourcing — certains restent privés.", color: "#60a5fa", rgb: "96,165,250" },
                   { icon: Shield,      title: "Discrétion garantie",    desc: "Nos clients peuvent travailler avec nous en toute sérénité.", color: "#34d399", rgb: "52,211,153" },
                 ].map(({ icon: Icon, title, desc, color, rgb }) => (
-                  <div key={title} className="rounded-[1.25rem] border border-white/[0.06] bg-white/[0.02] p-5 text-left">
+                  <div key={title} className="rounded-[1.25rem] border border-gray-200 bg-gray-50 p-5 text-left">
                     <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl border"
                       style={{ background: `rgba(${rgb},0.10)`, borderColor: `rgba(${rgb},0.22)` }}>
                       <Icon size={16} style={{ color }} />
                     </div>
-                    <h3 className="text-sm font-extrabold text-white/75">{title}</h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-white/35">{desc}</p>
+                    <h3 className="text-sm font-extrabold text-gray-700">{title}</h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-gray-500">{desc}</p>
                   </div>
                 ))}
               </div>
@@ -896,7 +877,7 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           MÉTHODE
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-12 sm:py-24">
+      <section className="border-t border-gray-200 px-6 py-12 sm:py-24 bg-white">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
@@ -909,10 +890,10 @@ export default function RealisationsPage() {
               >
                 <Zap size={10} /> La même exigence sur chaque projet
               </motion.span>
-              <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">
+              <motion.h2 variants={fadeIn} className="display-section mt-4 text-gray-900">
                 Notre méthode.
               </motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-base text-white/35">
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-base text-gray-500">
                 Chaque projet, quel que soit son type ou sa taille, suit le même processus rigoureux.
               </motion.p>
             </div>
@@ -931,9 +912,9 @@ export default function RealisationsPage() {
                 <motion.div
                   key={step}
                   variants={cardReveal}
-                  className="group relative flex flex-col gap-3 overflow-hidden rounded-[1.5rem] border border-white/[0.07] bg-[#111113] p-5 transition-all duration-300 hover:border-white/[0.14] hover:-translate-y-1"
+                  className="group relative flex flex-col gap-3 overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:border-gray-300 hover:-translate-y-1"
                 >
-                  <div className="pointer-events-none absolute right-3 top-2 text-[3.5rem] font-black leading-none opacity-[0.04] select-none" style={{ color }}>
+                  <div className="pointer-events-none absolute right-3 top-2 text-[3.5rem] font-black leading-none opacity-[0.04] select-none text-gray-900">
                     {step}
                   </div>
                   <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border"
@@ -944,8 +925,8 @@ export default function RealisationsPage() {
                     <p className="text-[0.6rem] font-black uppercase tracking-[0.15em]" style={{ color }}>
                       {step}
                     </p>
-                    <h3 className="text-sm font-extrabold text-white/80">{title}</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-white/35">{desc}</p>
+                    <h3 className="text-sm font-extrabold text-gray-800">{title}</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-gray-500">{desc}</p>
                   </div>
                 </motion.div>
               ))}
@@ -957,7 +938,7 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           AVANTAGES
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-12 sm:py-24">
+      <section className="border-t border-gray-200 px-6 py-12 sm:py-24 bg-[#f8f9fa]">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
@@ -967,7 +948,7 @@ export default function RealisationsPage() {
               <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
                 <Star size={10} /> Ce qui nous différencie
               </motion.span>
-              <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">
+              <motion.h2 variants={fadeIn} className="display-section mt-4 text-gray-900">
                 L&apos;exigence DJAMA.
               </motion.h2>
             </div>
@@ -984,14 +965,14 @@ export default function RealisationsPage() {
                 <motion.div
                   key={title}
                   variants={cardReveal}
-                  className="group rounded-[1.5rem] border border-white/[0.07] bg-[#111113] p-6 transition-all duration-300 hover:border-white/[0.14] hover:bg-white/[0.04]"
+                  className="group rounded-[1.5rem] border border-gray-200 bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:border-gray-300"
                 >
                   <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl border"
                     style={{ background: `rgba(${rgb},0.10)`, borderColor: `rgba(${rgb},0.22)` }}>
                     <Icon size={18} style={{ color }} />
                   </div>
-                  <h3 className="text-sm font-extrabold text-white/80">{title}</h3>
-                  <p className="mt-2 text-xs leading-relaxed text-white/38">{desc}</p>
+                  <h3 className="text-sm font-extrabold text-gray-800">{title}</h3>
+                  <p className="mt-2 text-xs leading-relaxed text-gray-500">{desc}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -1002,19 +983,18 @@ export default function RealisationsPage() {
       {/* ══════════════════════════════════════════
           CTA FINAL
       ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] px-6 py-10 sm:py-20">
+      <section className="border-t border-gray-200 px-6 py-10 sm:py-20">
         <div className="mx-auto max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease }}
-            className="relative overflow-hidden rounded-[2rem] border border-[rgba(201,165,90,0.18)] bg-[#111113] px-8 py-10 sm:py-20 text-center md:px-16"
+            className="relative overflow-hidden rounded-[2rem] px-8 py-10 sm:py-20 text-center md:px-16"
+            style={{ background: "linear-gradient(135deg,#6366f1 0%,#4f46e5 50%,#7c3aed 100%)" }}
           >
-            <div className="pointer-events-none absolute left-[10%] top-[-40px] h-[180px] w-[240px] rounded-full bg-[rgba(201,165,90,0.08)] blur-[55px]" />
-
             <div className="relative z-10">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-white">
                 <MessageCircle size={11} /> Votre projet
               </div>
 
@@ -1028,7 +1008,7 @@ export default function RealisationsPage() {
                 />
               </h2>
 
-              <FadeReveal delay={0.3} as="p" className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white/35">
+              <FadeReveal delay={0.3} as="p" className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white/80">
                 Site, application, outils, accompagnement — discutons de votre projet
                 et construisons ensemble la solution qui vous correspond.
               </FadeReveal>
@@ -1037,7 +1017,10 @@ export default function RealisationsPage() {
                 <Link href="/contact" className="btn-primary px-8 py-4 text-base">
                   Demander un devis <ArrowRight size={16} />
                 </Link>
-                <Link href="/contact" className="btn-ghost px-8 py-4 text-base">
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-white/30 bg-white/10 px-8 py-[0.95rem] font-bold text-white transition hover:bg-white/20"
+                >
                   Parler de votre projet
                 </Link>
               </FadeReveal>
@@ -1048,8 +1031,8 @@ export default function RealisationsPage() {
                   { icon: Zap,          text: "Réponse sous 24h"     },
                   { icon: FileText,     text: "Devis gratuit & détaillé" },
                 ].map(({ icon: Icon, text }) => (
-                  <span key={text} className="flex items-center gap-1.5 text-xs text-white/25">
-                    <Icon size={12} className="text-[#c9a55a]" />
+                  <span key={text} className="flex items-center gap-1.5 text-xs text-white/70">
+                    <Icon size={12} className="text-white/80" />
                     {text}
                   </span>
                 ))}

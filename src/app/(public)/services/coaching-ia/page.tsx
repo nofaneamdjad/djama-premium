@@ -153,19 +153,19 @@ function FaqItem({
   return (
     <div
       onClick={onToggle}
-      className="cursor-pointer rounded-2xl border border-white/[0.07] bg-white/[0.03] transition-all hover:border-[rgba(167,139,250,0.2)]"
+      className="cursor-pointer rounded-2xl border border-gray-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,.05)] transition-all hover:border-[rgba(167,139,250,0.2)]"
     >
       <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6 sm:py-5">
-        <p className="text-sm font-semibold leading-relaxed text-white/80">{q}</p>
+        <p className="text-sm font-semibold leading-relaxed text-gray-800">{q}</p>
         <div
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all"
           style={{
-            borderColor: open ? `rgba(${ACCENT_RGB},0.35)` : "rgba(255,255,255,0.1)",
+            borderColor: open ? `rgba(${ACCENT_RGB},0.35)` : "rgba(0,0,0,0.1)",
             background:  open ? `rgba(${ACCENT_RGB},0.08)` : "transparent",
           }}
         >
           <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25 }}>
-            <ChevronDown size={14} style={{ color: open ? ACCENT : "rgba(255,255,255,0.3)" }} />
+            <ChevronDown size={14} style={{ color: open ? ACCENT : "#6b7280" }} />
           </motion.div>
         </div>
       </div>
@@ -178,7 +178,7 @@ function FaqItem({
             transition={{ duration: 0.28, ease }}
             className="overflow-hidden"
           >
-            <p className="border-t border-white/[0.05] px-5 pb-5 pt-4 text-sm leading-relaxed text-white/50 sm:px-6">
+            <p className="border-t border-gray-100 px-5 pb-5 pt-4 text-sm leading-relaxed text-gray-600 sm:px-6">
               {a}
             </p>
           </motion.div>
@@ -258,9 +258,9 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
               onClick={() => { setTab(id); setError(null); }}
               className="flex-1 rounded-xl border px-2 py-2.5 text-[0.72rem] font-semibold transition-all"
               style={{
-                borderColor: active ? `rgba(${ACCENT_RGB},0.5)` : "rgba(255,255,255,0.08)",
-                background:  active ? `rgba(${ACCENT_RGB},0.12)` : "rgba(255,255,255,0.03)",
-                color:       active ? ACCENT : "rgba(255,255,255,0.4)",
+                borderColor: active ? `rgba(${ACCENT_RGB},0.5)` : "rgba(0,0,0,0.1)",
+                background:  active ? `rgba(${ACCENT_RGB},0.12)` : "rgba(0,0,0,0.03)",
+                color:       active ? ACCENT : "rgba(107,114,128,1)",
               }}
             >
               {label}
@@ -289,15 +289,15 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
       {tab === "virement" && (
         <div className="space-y-3">
           <div className="mb-1 text-center">
-            <p className="text-xs font-bold text-white/60">🏦 Paiement par virement bancaire</p>
-            <p className="mt-0.5 text-[0.68rem] text-white/30">
+            <p className="text-xs font-bold text-gray-700">🏦 Paiement par virement bancaire</p>
+            <p className="mt-0.5 text-[0.68rem] text-gray-500">
               Effectuez votre virement puis confirmez pour activer votre accès
             </p>
           </div>
 
           {/* Coordonnées bancaires */}
-          <div className="overflow-hidden rounded-2xl border border-white/[0.1] bg-white/[0.04] transition-all hover:border-white/[0.14]">
-            <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all hover:border-gray-300">
+            <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
               <div
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                 style={{ background: `rgba(${ACCENT_RGB},0.12)`, border: `1px solid rgba(${ACCENT_RGB},0.22)` }}
@@ -305,8 +305,8 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
                 <Landmark size={15} style={{ color: ACCENT }} />
               </div>
               <div className="flex-1">
-                <p className="text-xs font-bold text-white/80">Coordonnées bancaires</p>
-                <p className="text-[0.62rem] text-white/30">BoursoBank · Virement SEPA</p>
+                <p className="text-xs font-bold text-gray-800">Coordonnées bancaires</p>
+                <p className="text-[0.62rem] text-gray-400">BoursoBank · Virement SEPA</p>
               </div>
               <div
                 className="rounded-xl px-3 py-1.5"
@@ -315,17 +315,17 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
                 <span className="text-sm font-black" style={{ color: ACCENT }}>190,00 €</span>
               </div>
             </div>
-            <div className="divide-y divide-white/[0.05]">
+            <div className="divide-y divide-gray-100">
               {BANK_ROWS.map(({ label, value, copy, field, mono, highlight }) => (
                 <div
                   key={field}
-                  className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-white/[0.03]"
+                  className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-gray-50"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.6rem] font-semibold uppercase tracking-wider text-white/25">{label}</p>
+                    <p className="text-[0.6rem] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
                     <p
                       className={`mt-0.5 break-all text-xs font-semibold sm:break-normal ${mono ? "font-mono tracking-wide" : ""}`}
-                      style={{ color: highlight ? ACCENT : "rgba(255,255,255,0.75)" }}
+                      style={{ color: highlight ? ACCENT : "rgba(17,24,39,0.75)" }}
                     >
                       {value}
                     </p>
@@ -336,13 +336,13 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
                     title={`Copier ${label}`}
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-all hover:scale-105 active:scale-95"
                     style={{
-                      borderColor: copiedField === field ? "rgba(74,222,128,0.35)" : "rgba(255,255,255,0.09)",
-                      background:  copiedField === field ? "rgba(74,222,128,0.1)"  : "rgba(255,255,255,0.04)",
+                      borderColor: copiedField === field ? "rgba(74,222,128,0.35)" : "rgba(0,0,0,0.09)",
+                      background:  copiedField === field ? "rgba(74,222,128,0.1)"  : "rgba(0,0,0,0.03)",
                     }}
                   >
                     {copiedField === field
                       ? <Check size={11} style={{ color: "#4ade80" }} />
-                      : <Copy  size={11} className="text-white/25" />
+                      : <Copy  size={11} className="text-gray-400" />
                     }
                   </button>
                 </div>
@@ -351,13 +351,13 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
           </div>
 
           {/* Bandeau rassurant */}
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
             {([
               { icon: Shield, label: "Paiement sécurisé",      color: "#4ade80" },
               { icon: Clock,  label: "Activation sous 24–48h", color: "#60a5fa" },
               { icon: Zap,    label: "Aucun frais caché",       color: ACCENT    },
             ] as const).map(({ icon: Icon, label, color }) => (
-              <div key={label} className="flex items-center gap-1.5 text-[0.63rem] text-white/40">
+              <div key={label} className="flex items-center gap-1.5 text-[0.63rem] text-gray-500">
                 <Icon size={9} style={{ color }} />
                 <span>{label}</span>
               </div>
@@ -369,12 +369,12 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
             <div className="rounded-2xl border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.06)] p-5 text-center">
               <div className="mb-2 text-2xl text-green-400">✓</div>
               <p className="text-sm font-bold text-green-400">Confirmation reçue !</p>
-              <p className="mt-1.5 text-xs leading-relaxed text-white/40">
+              <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
                 Votre accès sera activé sous 24 à 48h dès réception du virement.
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <div
                   className="flex h-6 w-6 items-center justify-center rounded-lg text-xs"
@@ -382,9 +382,9 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
                 >
                   @
                 </div>
-                <p className="text-xs font-bold text-white/60">Après votre virement</p>
+                <p className="text-xs font-bold text-gray-700">Après votre virement</p>
               </div>
-              <p className="mb-3.5 text-[0.68rem] leading-relaxed text-white/30">
+              <p className="mb-3.5 text-[0.68rem] leading-relaxed text-gray-500">
                 Entrez votre email pour que nous puissions activer votre accès dès réception du paiement.
               </p>
               <form onSubmit={handleVirement} className="space-y-2.5">
@@ -394,14 +394,14 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
                   placeholder="Votre adresse e-mail"
                   value={vEmail}
                   onChange={(e) => setVEmail(e.target.value)}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-colors focus:border-[rgba(167,139,250,0.4)]"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(167,139,250,0.4)]"
                 />
                 <input
                   type="text"
                   placeholder="Votre nom complet (optionnel)"
                   value={vName}
                   onChange={(e) => setVName(e.target.value)}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-colors focus:border-[rgba(167,139,250,0.4)]"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(167,139,250,0.4)]"
                 />
                 <button
                   type="submit"
@@ -432,16 +432,16 @@ function PaymentSelector({ user }: { user?: { id?: string; email?: string } | nu
 
       {/* Lien espace privé */}
       <div className="mt-4 flex items-center justify-center gap-2">
-        <div className="h-px flex-1 bg-white/[0.06]" />
+        <div className="h-px flex-1 bg-gray-200" />
         <Link
           href="/login?redirect=/coaching-ia/espace"
-          className="group flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.72rem] font-medium text-white/30 transition-all hover:bg-white/[0.04] hover:text-white/60"
+          className="group flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.72rem] font-medium text-gray-400 transition-all hover:bg-gray-50 hover:text-gray-600"
         >
           <Lock size={10} className="transition-colors group-hover:text-[#a78bfa]" />
           Déjà inscrit&nbsp;? Accéder à mon espace
           <ChevronRight size={10} className="transition-transform group-hover:translate-x-0.5" />
         </Link>
-        <div className="h-px flex-1 bg-white/[0.06]" />
+        <div className="h-px flex-1 bg-gray-200" />
       </div>
     </div>
   );
@@ -468,7 +468,7 @@ export default function CoachingIAPage() {
           Positionné juste au-dessus du bouton WhatsApp
       ══════════════════════════════════════════════════════════ */}
       <div className="fixed inset-x-0 bottom-0 z-40 sm:hidden">
-        <div className="border-t border-white/[0.06] bg-[#09090b]/95 px-4 pb-5 pt-3 backdrop-blur-xl">
+        <div className="border-t border-gray-200 bg-white/95 px-4 pb-5 pt-3 backdrop-blur-xl">
           <a
             href="#offre"
             className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-white shadow-[0_8px_24px_rgba(167,139,250,0.35)]"
@@ -476,7 +476,7 @@ export default function CoachingIAPage() {
           >
             <Zap size={15} /> Commencer maintenant — 190€
           </a>
-          <p className="mt-1.5 text-center text-[0.6rem] text-white/25">
+          <p className="mt-1.5 text-center text-[0.6rem] text-gray-400">
             Paiement sécurisé · Garantie 7 jours
           </p>
         </div>
@@ -485,7 +485,7 @@ export default function CoachingIAPage() {
       {/* ══════════════════════════════════════════════════════════
           MAIN WRAPPER — overflow-x-hidden évite le scroll horizontal
       ══════════════════════════════════════════════════════════ */}
-      <div className="w-full overflow-x-hidden bg-[#09090b]">
+      <div className="w-full overflow-x-hidden bg-white">
 
         {/* ════════════════════════════════════════════════════
             §1 · HERO PREMIUM
@@ -507,11 +507,11 @@ export default function CoachingIAPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease }}
-              className="mb-8 flex items-center justify-center gap-2 text-xs text-white/25"
+              className="mb-8 flex items-center justify-center gap-2 text-xs text-gray-400"
             >
-              <Link href="/services" className="transition-colors hover:text-white/50">← Services</Link>
+              <Link href="/services" className="transition-colors hover:text-gray-600">← Services</Link>
               <span>/</span>
-              <span className="text-white/40">Coaching IA</span>
+              <span className="text-gray-500">Coaching IA</span>
             </motion.div>
 
             {/* Badge produit */}
@@ -529,7 +529,7 @@ export default function CoachingIAPage() {
               initial={{ opacity: 0, y: 22 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease, delay: 0.1 }}
-              className="display-hero text-white"
+              className="display-hero text-gray-900"
             >
               Maîtrisez l&apos;IA pour{" "}
               <span style={{ color: ACCENT }}>gagner du temps,</span>
@@ -543,11 +543,11 @@ export default function CoachingIAPage() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease, delay: 0.32 }}
-              className="mx-auto mt-6 max-w-2xl text-base leading-[1.85] text-white/55 sm:text-lg"
+              className="mx-auto mt-6 max-w-2xl text-base leading-[1.85] text-gray-600 sm:text-lg"
             >
               Une formation pratique pour entrepreneurs, freelances et PME.
               Des cours clairs, des outils IA, un assistant pédagogique
-              et <strong className="font-semibold text-white/75">4h d&apos;accompagnement expert</strong> sur 3 mois.
+              et <strong className="font-semibold text-gray-800">4h d&apos;accompagnement expert</strong> sur 3 mois.
             </motion.p>
 
             {/* Boutons CTA */}
@@ -572,7 +572,7 @@ export default function CoachingIAPage() {
               </a>
               <a
                 href="#programme"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.12] bg-white/[0.05] px-8 py-4 text-base font-semibold text-white/70 transition-all hover:border-white/[0.2] hover:bg-white/[0.08] hover:text-white sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-8 py-4 text-base font-semibold text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900 sm:w-auto"
               >
                 Voir le programme <ArrowRight size={15} />
               </a>
@@ -583,13 +583,13 @@ export default function CoachingIAPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.78 }}
-              className="mt-12 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 border-t border-white/[0.07] pt-8"
+              className="mt-12 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 border-t border-gray-200 pt-8"
             >
               {[
                 "6 modules", "20 chapitres", "Assistant IA inclus",
                 "4h accompagnement expert", "Accès 3 mois", "Garantie 7 jours",
               ].map((label) => (
-                <div key={label} className="flex items-center gap-2 text-[0.72rem] font-medium text-white/35">
+                <div key={label} className="flex items-center gap-2 text-[0.72rem] font-medium text-gray-500">
                   <span>{label}</span>
                 </div>
               ))}
@@ -648,7 +648,7 @@ export default function CoachingIAPage() {
         {/* ════════════════════════════════════════════════════
             §3 · AVANT / APRÈS — fond sombre
         ════════════════════════════════════════════════════ */}
-        <section className="relative overflow-hidden bg-[#09090b] py-16 sm:py-24">
+        <section className="relative overflow-hidden bg-[#f8f9fa] py-16 sm:py-24">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute right-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 translate-x-1/2 rounded-full bg-[rgba(167,139,250,0.05)] blur-[100px]" />
           </div>
@@ -663,11 +663,11 @@ export default function CoachingIAPage() {
               <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(249,168,38,0.3)] bg-[rgba(249,168,38,0.08)] px-4 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#f9a826]">
                 <Zap size={9} /> Résultats concrets
               </span>
-              <h2 className="display-section text-white">
+              <h2 className="display-section text-gray-900">
                 Avant / Après{" "}
                 <span style={{ color: ACCENT }}>la formation.</span>
               </h2>
-              <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/45">
+              <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-gray-500">
                 Des cas concrets que vous vivrez dans votre activité.
               </p>
             </motion.div>
@@ -680,17 +680,17 @@ export default function CoachingIAPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={vp}
                   transition={{ duration: 0.45, delay: i * 0.09 }}
-                  className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03]"
+                  className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
                 >
-                  <div className="flex items-center gap-3 border-b border-white/[0.05] bg-white/[0.04] px-5 py-3.5">
-                    <p className="text-sm font-bold text-white/85">{task}</p>
+                  <div className="flex items-center gap-3 border-b border-gray-100 bg-gray-50 px-5 py-3.5">
+                    <p className="text-sm font-bold text-gray-800">{task}</p>
                   </div>
-                  <div className="grid grid-cols-1 divide-y divide-white/[0.05] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                  <div className="grid grid-cols-1 divide-y divide-gray-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                     <div className="bg-[rgba(248,113,113,0.04)] px-5 py-5">
                       <p className="mb-2.5 text-[0.6rem] font-bold uppercase tracking-widest text-red-400">
                         Sans la formation
                       </p>
-                      <p className="text-sm leading-relaxed text-white/45">{before}</p>
+                      <p className="text-sm leading-relaxed text-gray-500">{before}</p>
                     </div>
                     <div className="px-5 py-5" style={{ background: `rgba(${color.slice(1).match(/../g)!.map(x=>parseInt(x,16)).join(',')},0.06)` }}>
                       <p
@@ -699,7 +699,7 @@ export default function CoachingIAPage() {
                       >
                         Avec la formation
                       </p>
-                      <p className="text-sm font-semibold leading-relaxed text-white/80">{after}</p>
+                      <p className="text-sm font-semibold leading-relaxed text-gray-800">{after}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -812,7 +812,7 @@ export default function CoachingIAPage() {
         {/* ════════════════════════════════════════════════════
             §5 · OUTILS INCLUS — fond sombre
         ════════════════════════════════════════════════════ */}
-        <section className="relative overflow-hidden bg-[#09090b] py-16 sm:py-24">
+        <section className="relative overflow-hidden bg-[#f8f9fa] py-16 sm:py-24">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-0 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(167,139,250,0.05)] blur-[100px]" />
           </div>
@@ -827,11 +827,11 @@ export default function CoachingIAPage() {
               <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.08)] px-4 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#a78bfa]">
                 <Zap size={9} /> Inclus dans l&apos;espace membre
               </span>
-              <h2 className="display-section text-white">
+              <h2 className="display-section text-gray-900">
                 Des outils pensés{" "}
                 <span style={{ color: ACCENT }}>pour apprendre.</span>
               </h2>
-              <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/45">
+              <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-gray-500">
                 L&apos;espace membre va bien au-delà des cours. Chaque outil est conçu pour ancrer les apprentissages et accélérer votre progression.
               </p>
             </motion.div>
@@ -844,10 +844,7 @@ export default function CoachingIAPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={vp}
                   transition={{ duration: 0.4, delay: i * 0.05 }}
-                  className="group rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 transition-all hover:border-white/[0.13] hover:bg-white/[0.05]"
-                  style={{
-                    boxShadow: "0 0 0 0 transparent",
-                  }}
+                  className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-gray-300 hover:shadow-md"
                 >
                   <div
                     className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
@@ -855,8 +852,8 @@ export default function CoachingIAPage() {
                   >
                     <Icon size={19} style={{ color }} />
                   </div>
-                  <p className="mb-1.5 text-[0.87rem] font-bold text-white/85">{title}</p>
-                  <p className="text-[0.75rem] leading-relaxed text-white/40">{desc}</p>
+                  <p className="mb-1.5 text-[0.87rem] font-bold text-gray-800">{title}</p>
+                  <p className="text-[0.75rem] leading-relaxed text-gray-500">{desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -911,15 +908,15 @@ export default function CoachingIAPage() {
                 viewport={vp}
                 transition={{ duration: 0.6, ease, delay: 0.1 }}
               >
-                <div className="overflow-hidden rounded-3xl border border-[rgba(167,139,250,0.25)] bg-[#09090b] p-6 shadow-[0_32px_64px_rgba(0,0,0,0.2)]">
+                <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
                   {/* Header card */}
                   <div className="mb-5 flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(167,139,250,0.15)]">
                       <Users size={22} style={{ color: ACCENT }} />
                     </div>
                     <div>
-                      <p className="font-bold text-white">Accompagnement expert</p>
-                      <p className="text-xs text-white/40">Inclus dans votre accès 190€</p>
+                      <p className="font-bold text-gray-900">Accompagnement expert</p>
+                      <p className="text-xs text-gray-400">Inclus dans votre accès 190€</p>
                     </div>
                   </div>
                   {/* 4 blocs */}
@@ -932,10 +929,10 @@ export default function CoachingIAPage() {
                     ].map(({ val, sub, color }) => (
                       <div
                         key={sub}
-                        className="flex flex-col items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-4 text-center"
+                        className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-gray-50 px-3 py-4 text-center"
                       >
                         <span className="text-2xl font-black" style={{ color }}>{val}</span>
-                        <span className="mt-0.5 text-[0.6rem] leading-tight text-white/35">{sub}</span>
+                        <span className="mt-0.5 text-[0.6rem] leading-tight text-gray-500">{sub}</span>
                       </div>
                     ))}
                   </div>
@@ -953,9 +950,9 @@ export default function CoachingIAPage() {
         {/* ════════════════════════════════════════════════════
             §7 · PRIX & PAIEMENT — fond sombre
         ════════════════════════════════════════════════════ */}
-        <section id="offre" className="relative overflow-hidden bg-[#09090b] py-16 sm:py-24">
+        <section id="offre" className="relative overflow-hidden bg-white py-16 sm:py-24">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-1/2 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(167,139,250,0.07)] blur-[120px]" />
+            <div className="absolute left-1/2 top-1/2 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(167,139,250,0.04)] blur-[120px]" />
           </div>
 
           <div className="relative z-10 mx-auto max-w-lg px-4 sm:px-6">
@@ -969,11 +966,11 @@ export default function CoachingIAPage() {
               <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(249,168,38,0.3)] bg-[rgba(249,168,38,0.08)] px-4 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#f9a826]">
                 <Sparkles size={9} /> Accès complet
               </span>
-              <h2 className="display-section text-white">
+              <h2 className="display-section text-gray-900">
                 Un prix{" "}
                 <span style={{ color: ACCENT }}>transparent.</span>
               </h2>
-              <p className="mx-auto mt-3 max-w-xs text-sm text-white/40">
+              <p className="mx-auto mt-3 max-w-xs text-sm text-gray-500">
                 Paiement unique, sans abonnement. Accès immédiat par carte.
               </p>
             </motion.div>
@@ -983,7 +980,7 @@ export default function CoachingIAPage() {
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={vp}
               transition={{ duration: 0.65, ease }}
-              className="relative overflow-hidden rounded-[2rem] border border-[rgba(167,139,250,0.25)] bg-white/[0.03] shadow-[0_40px_80px_rgba(0,0,0,0.35)]"
+              className="relative overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow-[0_4px_24px_rgba(0,0,0,.08)]"
             >
               {/* Barre gradient en haut */}
               <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#a78bfa] to-transparent" />
@@ -1002,25 +999,25 @@ export default function CoachingIAPage() {
 
                 {/* Prix */}
                 <div className="mb-1 flex items-end gap-3">
-                  <span className="text-[3.5rem] font-black leading-none text-white sm:text-[4rem]">190€</span>
+                  <span className="text-[3.5rem] font-black leading-none text-gray-900 sm:text-[4rem]">190€</span>
                   <div className="mb-2 flex flex-col gap-1">
-                    <span className="rounded-full border border-white/[0.1] bg-white/[0.05] px-2.5 py-0.5 text-[0.6rem] font-bold text-white/40 line-through">
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-[0.6rem] font-bold text-gray-400 line-through">
                       350€
                     </span>
                   </div>
                 </div>
-                <p className="mb-1 text-base font-bold text-white/70">Accès 3 mois complet</p>
-                <p className="mb-1 text-xs text-white/30">Paiement unique · Sans abonnement</p>
+                <p className="mb-1 text-base font-bold text-gray-600">Accès 3 mois complet</p>
+                <p className="mb-1 text-xs text-gray-400">Paiement unique · Sans abonnement</p>
                 <p className="mb-6 text-[0.68rem] font-medium text-[#f9a826]">
                   = moins de 2h de consulting à 100€/h
                 </p>
 
-                <div className="mb-6 h-px bg-white/[0.07]" />
+                <div className="mb-6 h-px bg-gray-100" />
 
                 {/* Ce qui est inclus */}
                 <ul className="mb-8 space-y-3">
                   {INCLUDED.map((item) => (
-                    <li key={item} className="flex items-start gap-3 text-sm text-[#e5e7eb]">
+                    <li key={item} className="flex items-start gap-3 text-sm text-gray-700">
                       <CheckCircle2 size={14} className="mt-0.5 shrink-0" style={{ color: ACCENT }} />
                       {item}
                     </li>
@@ -1044,7 +1041,7 @@ export default function CoachingIAPage() {
                     { icon: Zap,    label: "Accès immédiat CB"  },
                     { icon: Shield, label: "Remboursé si besoin"},
                   ].map(({ icon: Icon, label }) => (
-                    <div key={label} className="flex items-center gap-1.5 text-[0.63rem] text-white/25">
+                    <div key={label} className="flex items-center gap-1.5 text-[0.63rem] text-gray-400">
                       <Icon size={9} style={{ color: ACCENT }} /> {label}
                     </div>
                   ))}
@@ -1088,7 +1085,7 @@ export default function CoachingIAPage() {
         {/* ════════════════════════════════════════════════════
             §9 · FAQ — fond sombre
         ════════════════════════════════════════════════════ */}
-        <section className="relative overflow-hidden bg-[#09090b] py-16 sm:py-24">
+        <section className="relative overflow-hidden bg-[#f8f9fa] py-16 sm:py-24">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute right-0 top-0 h-[400px] w-[400px] -translate-y-1/4 translate-x-1/4 rounded-full bg-[rgba(167,139,250,0.04)] blur-[80px]" />
           </div>
@@ -1100,10 +1097,10 @@ export default function CoachingIAPage() {
               transition={{ duration: 0.5 }}
               className="mb-12 text-center"
             >
-              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-white/50">
+              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-gray-500">
                 <MessageSquare size={9} /> Questions fréquentes
               </span>
-              <h2 className="display-section text-white">
+              <h2 className="display-section text-gray-900">
                 Tout ce que vous voulez{" "}
                 <span style={{ color: ACCENT }}>savoir.</span>
               </h2>
@@ -1132,9 +1129,9 @@ export default function CoachingIAPage() {
         {/* ════════════════════════════════════════════════════
             §10 · CTA FINAL — fond sombre avec glow
         ════════════════════════════════════════════════════ */}
-        <section className="relative overflow-hidden bg-[#09090b] pb-36 pt-12 sm:pb-24 sm:pt-20">
+        <section className="relative overflow-hidden bg-white pb-36 pt-12 sm:pb-24 sm:pt-20">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-1/2 h-[600px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(167,139,250,0.08)] blur-[130px]" />
+            <div className="absolute left-1/2 top-1/2 h-[600px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(167,139,250,0.04)] blur-[130px]" />
           </div>
 
           <motion.div
@@ -1149,19 +1146,19 @@ export default function CoachingIAPage() {
               <Sparkles size={11} /> Votre avantage compétitif commence ici
             </div>
 
-            <h2 className="display-section mb-5 text-white">
+            <h2 className="display-section mb-5 text-gray-900">
               190€ pour transformer{" "}
               <span style={{ color: ACCENT }}>votre façon de travailler.</span>
             </h2>
 
-            <p className="mx-auto mb-10 max-w-md text-base leading-relaxed text-white/45">
+            <p className="mx-auto mb-10 max-w-md text-base leading-relaxed text-gray-500">
               6 modules, 20 chapitres, un assistant IA, 4h d&apos;accompagnement expert.
               Accès complet pendant 3 mois. Garanti 7 jours.
             </p>
 
             <PaymentSelector user={user} />
 
-            <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-2 text-[0.72rem] text-white/25">
+            <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-2 text-[0.72rem] text-gray-400">
               <span>✓ Accès immédiat par carte</span>
               <span>✓ 6 modules · 20 chapitres</span>
               <span>✓ 4h accompagnement expert</span>

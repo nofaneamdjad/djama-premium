@@ -15,7 +15,6 @@ import { supabase } from "@/lib/supabase";
 import { fmtEurInt, fmtDuration } from "@/lib/format";
 
 const GOLD = "#c9a55a";
-const NAVY = "#0a0f1e";
 
 const TOOLS = [
   { href: "/client/factures",    label: "Factures & Devis",  desc: "Créez et envoyez vos documents",     icon: ReceiptText,  hue: "#3b82f6" },
@@ -82,18 +81,18 @@ function ToolCard({ item }: { item: typeof TOOLS[number] }) {
   const Icon = item.icon;
   return (
     <Link href={item.href} className="group block">
-      <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3.5 py-3 transition-colors duration-150 hover:border-white/[0.11] hover:bg-white/[0.04]">
+      <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-3 transition-colors duration-150 hover:border-gray-300 hover:bg-gray-100">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
           style={{ background: `${item.hue}1a`, border: `1px solid ${item.hue}30` }}>
           <Icon size={14} style={{ color: item.hue }} strokeWidth={1.8} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[0.8rem] font-semibold text-white/80 leading-tight group-hover:text-white transition-colors">
+          <p className="truncate text-[0.8rem] font-semibold text-gray-700 leading-tight group-hover:text-gray-900 transition-colors">
             {item.label}
           </p>
-          <p className="truncate text-[0.67rem] text-white/30">{item.desc}</p>
+          <p className="truncate text-[0.67rem] text-gray-400">{item.desc}</p>
         </div>
-        <ArrowUpRight size={12} className="shrink-0 text-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <ArrowUpRight size={12} className="shrink-0 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
     </Link>
   );
@@ -190,23 +189,24 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-full pb-16" style={{ background: NAVY }}>
+    <div className="min-h-full pb-16 bg-gray-50">
 
-            <div className="border-b border-white/[0.06] bg-[rgba(7,12,24,0.9)] px-5 py-4 backdrop-blur-xl sm:px-8">
+      {/* Header */}
+      <div className="border-b border-gray-200 bg-white px-5 py-4 sm:px-8">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
               <LayoutDashboard size={15} style={{ color: GOLD }} />
             </div>
             <div>
-              <h1 className="text-[0.9rem] font-semibold text-white">Tableau de bord</h1>
-              <p className="text-[0.65rem] text-white/35">Vue d'ensemble de votre activité</p>
+              <h1 className="text-[0.9rem] font-semibold text-gray-900">Tableau de bord</h1>
+              <p className="text-[0.65rem] text-gray-500">Vue d&apos;ensemble de votre activité</p>
             </div>
           </div>
           <button
             onClick={runRapport}
             disabled={rapportLoading}
-            className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[0.75rem] font-medium text-white/50 transition hover:bg-white/[0.07] hover:text-white/80 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-[0.75rem] font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
           >
             {rapportLoading ? <Loader2 size={12} className="animate-spin" /> : <FileBarChart2 size={12} />}
             <span className="hidden sm:inline">Rapport mensuel</span>
@@ -214,16 +214,16 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Body ─────────────────────────────────────────────── */}
+      {/* Body */}
       <div className="mx-auto max-w-5xl space-y-7 px-5 py-7 sm:px-8">
 
         {/* Greeting */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] px-5 py-4">
-          <p className="text-[0.68rem] font-medium text-white/30 capitalize">{fmtFullDate()}</p>
-          <h2 className="mt-1 text-lg font-semibold text-white sm:text-xl">
+        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
+          <p className="text-[0.68rem] font-medium text-gray-400 capitalize">{fmtFullDate()}</p>
+          <h2 className="mt-1 text-lg font-semibold text-gray-900 sm:text-xl">
             {getGreeting()}{userName ? `, ${userName}` : ""}
           </h2>
-          <p className="mt-0.5 text-[0.8rem] text-white/35">Voici un résumé de votre activité DJAMA PRO.</p>
+          <p className="mt-0.5 text-[0.8rem] text-gray-500">Voici un résumé de votre activité DJAMA PRO.</p>
         </div>
 
         {/* KPI Cards */}
@@ -232,15 +232,15 @@ export default function DashboardPage() {
             const Icon = kpi.icon;
             return (
               <Link key={kpi.label} href={kpi.href} className="group block">
-                <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-4 py-3.5 transition-colors hover:border-white/[0.1] hover:bg-white/[0.04]">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.05]">
-                    <Icon size={14} className="text-white/50" />
+                <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+                    <Icon size={14} className="text-gray-500" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.65rem] font-medium text-white/35">{kpi.label}</p>
+                    <p className="text-[0.65rem] font-medium text-gray-500">{kpi.label}</p>
                     {statsLoading
-                      ? <div className="mt-1 h-4 w-16 animate-pulse rounded-md bg-white/[0.06]" />
-                      : <p className="mt-0.5 text-[0.95rem] font-semibold text-white/90 leading-none">{kpi.value}</p>
+                      ? <div className="mt-1 h-4 w-16 animate-pulse rounded-md bg-gray-100" />
+                      : <p className="mt-0.5 text-[0.95rem] font-semibold text-gray-800 leading-none">{kpi.value}</p>
                     }
                   </div>
                 </div>
@@ -257,10 +257,10 @@ export default function DashboardPage() {
                 <AlertTriangle size={14} className="text-red-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[0.8rem] font-semibold text-white/90">
+                <p className="text-[0.8rem] font-semibold text-gray-800">
                   {overdue.length} facture{overdue.length > 1 ? "s" : ""} en retard
                 </p>
-                <p className="text-[0.68rem] text-white/35 truncate">
+                <p className="text-[0.68rem] text-gray-500 truncate">
                   {overdue.map(i => i.client_nom || i.numero).join(", ")}
                 </p>
               </div>
@@ -273,15 +273,15 @@ export default function DashboardPage() {
         <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
 
           {/* Revenue chart */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
-                  <BarChart3 size={13} className="text-white/50" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+                  <BarChart3 size={13} className="text-gray-500" />
                 </div>
                 <div>
-                  <p className="text-[0.8rem] font-semibold text-white/80">Revenus encaissés</p>
-                  <p className="text-[0.65rem] text-white/35">6 derniers mois</p>
+                  <p className="text-[0.8rem] font-semibold text-gray-700">Revenus encaissés</p>
+                  <p className="text-[0.65rem] text-gray-500">6 derniers mois</p>
                 </div>
               </div>
               {!chartsLoading && revenues.length > 0 && (
@@ -293,7 +293,7 @@ export default function DashboardPage() {
             {chartsLoading ? (
               <div className="flex items-end gap-3 h-28">
                 {[1,2,3,4,5,6].map(i => (
-                  <div key={i} className="flex-1 animate-pulse rounded-lg bg-white/5" style={{ height: `${40+i*10}%` }} />
+                  <div key={i} className="flex-1 animate-pulse rounded-lg bg-gray-100" style={{ height: `${40+i*10}%` }} />
                 ))}
               </div>
             ) : (
@@ -311,16 +311,16 @@ export default function DashboardPage() {
                               height: `${pct}%`,
                               background: isLast
                                 ? `${GOLD}cc`
-                                : "rgba(255,255,255,0.07)",
+                                : "rgba(0,0,0,0.07)",
                             }}
                           />
                           {r.amount > 0 && (
-                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-[#070c18] px-2 py-1 text-[0.6rem] font-medium text-white/80 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-2 py-1 text-[0.6rem] font-medium text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-sm">
                               {fmtEurInt(r.amount)}
                             </div>
                           )}
                         </div>
-                        <span className={`text-[0.6rem] font-medium ${isLast ? "" : "text-white/30"}`}
+                        <span className={`text-[0.6rem] font-medium ${isLast ? "" : "text-gray-400"}`}
                           style={isLast ? { color: GOLD } : {}}>
                           {r.label}
                         </span>
@@ -333,24 +333,24 @@ export default function DashboardPage() {
           </div>
 
           {/* Top clients */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
             <div className="mb-4 flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
-                <Star size={13} className="text-white/50" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+                <Star size={13} className="text-gray-500" />
               </div>
               <div>
-                <p className="text-[0.8rem] font-semibold text-white/80">Meilleurs clients</p>
-                <p className="text-[0.65rem] text-white/35">3 mois glissants</p>
+                <p className="text-[0.8rem] font-semibold text-gray-700">Meilleurs clients</p>
+                <p className="text-[0.65rem] text-gray-500">3 mois glissants</p>
               </div>
             </div>
             {chartsLoading ? (
               <div className="space-y-2.5">
-                {[1,2,3].map(i => <div key={i} className="h-9 animate-pulse rounded-lg bg-white/5" />)}
+                {[1,2,3].map(i => <div key={i} className="h-9 animate-pulse rounded-lg bg-gray-100" />)}
               </div>
             ) : topClients.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-center">
-                <Users size={18} className="text-white/15" />
-                <p className="text-[0.75rem] text-white/25">Aucun encaissement récent</p>
+                <Users size={18} className="text-gray-300" />
+                <p className="text-[0.75rem] text-gray-400">Aucun encaissement récent</p>
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -360,10 +360,10 @@ export default function DashboardPage() {
                   return (
                     <div key={c.name} className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[0.75rem] font-medium text-white/70 truncate max-w-[140px]">{c.name}</span>
+                        <span className="text-[0.75rem] font-medium text-gray-600 truncate max-w-[140px]">{c.name}</span>
                         <span className="text-[0.75rem] font-semibold" style={{ color: GOLD }}>{fmtEurInt(c.amount)}</span>
                       </div>
-                      <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
@@ -388,26 +388,26 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.25 }}
-              className="overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025]"
+              className="overflow-hidden rounded-xl border border-gray-200 bg-white"
             >
-              <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3.5">
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
-                    <FileBarChart2 size={12} className="text-white/50" />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+                    <FileBarChart2 size={12} className="text-gray-500" />
                   </div>
-                  <span className="text-[0.85rem] font-semibold text-white">
+                  <span className="text-[0.85rem] font-semibold text-gray-900">
                     Rapport — {new Date().toLocaleDateString("fr-FR",{ month:"long", year:"numeric" })}
                   </span>
                 </div>
-                <button onClick={() => setRapportOpen(false)} className="text-white/25 transition hover:text-white/60">
+                <button onClick={() => setRapportOpen(false)} className="text-gray-400 transition hover:text-gray-600">
                   <X size={14} />
                 </button>
               </div>
 
               {rapportLoading ? (
                 <div className="flex flex-col items-center gap-3 py-12">
-                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-white/50" />
-                  <p className="text-[0.8rem] text-white/40">Génération du rapport en cours…</p>
+                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-gray-500" />
+                  <p className="text-[0.8rem] text-gray-500">Génération du rapport en cours…</p>
                 </div>
               ) : rapport && (
                 <div className="p-5 space-y-5">
@@ -415,7 +415,7 @@ export default function DashboardPage() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                     <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
                       <svg className="absolute inset-0 -rotate-90" viewBox="0 0 64 64">
-                        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5"/>
+                        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="5"/>
                         <circle cx="32" cy="32" r="26" fill="none"
                           stroke={rapport.score_sante >= 70 ? "#10b981" : rapport.score_sante >= 40 ? "#f59e0b" : "#ef4444"}
                           strokeWidth="5" strokeLinecap="round"
@@ -430,8 +430,8 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex-1">
-                      <p className="text-[0.65rem] font-medium text-white/35">Santé financière</p>
-                      <p className="mt-1 text-[0.82rem] leading-relaxed text-white/60">{rapport.resume_executif}</p>
+                      <p className="text-[0.65rem] font-medium text-gray-500">Santé financière</p>
+                      <p className="mt-1 text-[0.82rem] leading-relaxed text-gray-600">{rapport.resume_executif}</p>
                     </div>
                   </div>
 
@@ -446,9 +446,9 @@ export default function DashboardPage() {
                         { label: "Factures",          value: String(rapport.kpis.nb_factures)          },
                         { label: "Clients actifs",    value: String(rapport.kpis.nb_clients)           },
                       ].map(k => (
-                        <div key={k.label} className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
-                          <p className="text-[0.62rem] font-medium text-white/35">{k.label}</p>
-                          <p className="mt-0.5 text-[0.95rem] font-semibold text-white/85">{k.value}</p>
+                        <div key={k.label} className="rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-3">
+                          <p className="text-[0.62rem] font-medium text-gray-500">{k.label}</p>
+                          <p className="mt-0.5 text-[0.95rem] font-semibold text-gray-800">{k.value}</p>
                         </div>
                       ))}
                     </div>
@@ -460,11 +460,11 @@ export default function DashboardPage() {
                       <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.05] p-4">
                         <div className="mb-2 flex items-center gap-2">
                           <ShieldCheck size={11} className="text-emerald-400" />
-                          <span className="text-[0.65rem] font-semibold text-emerald-400/80">Points forts</span>
+                          <span className="text-[0.65rem] font-semibold text-emerald-600">Points forts</span>
                         </div>
                         <ul className="space-y-1.5">
                           {rapport.points_forts.map((p, i) => (
-                            <li key={i} className="flex items-start gap-2 text-[0.75rem] text-white/55">
+                            <li key={i} className="flex items-start gap-2 text-[0.75rem] text-gray-600">
                               <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400/70" />{p}
                             </li>
                           ))}
@@ -475,11 +475,11 @@ export default function DashboardPage() {
                       <div className="rounded-lg border border-amber-500/15 bg-amber-500/[0.05] p-4">
                         <div className="mb-2 flex items-center gap-2">
                           <AlertTriangle size={11} className="text-amber-400" />
-                          <span className="text-[0.65rem] font-semibold text-amber-400/80">Alertes</span>
+                          <span className="text-[0.65rem] font-semibold text-amber-600">Alertes</span>
                         </div>
                         <ul className="space-y-1.5">
                           {rapport.alertes.map((a, i) => (
-                            <li key={i} className="flex items-start gap-2 text-[0.75rem] text-white/55">
+                            <li key={i} className="flex items-start gap-2 text-[0.75rem] text-gray-600">
                               <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400/70" />{a}
                             </li>
                           ))}
@@ -490,15 +490,15 @@ export default function DashboardPage() {
 
                   {/* Recommandations */}
                   {rapport.recommandations?.length > 0 && (
-                    <div className="rounded-lg border border-white/[0.06] bg-white/[0.025] p-4">
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                       <div className="mb-2 flex items-center gap-2">
-                        <Lightbulb size={11} className="text-white/50" />
-                        <span className="text-[0.65rem] font-semibold text-white/40">Recommandations</span>
+                        <Lightbulb size={11} className="text-gray-500" />
+                        <span className="text-[0.65rem] font-semibold text-gray-500">Recommandations</span>
                       </div>
                       <ol className="space-y-1.5">
                         {rapport.recommandations.map((r, i) => (
-                          <li key={i} className="flex items-start gap-2.5 text-[0.75rem] text-white/55">
-                            <span className="shrink-0 mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.05] text-[0.55rem] font-semibold text-white/50">{i+1}</span>
+                          <li key={i} className="flex items-start gap-2.5 text-[0.75rem] text-gray-600">
+                            <span className="shrink-0 mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-[0.55rem] font-semibold text-gray-500">{i+1}</span>
                             {r}
                           </li>
                         ))}
@@ -513,7 +513,7 @@ export default function DashboardPage() {
                       <TrendingUp size={13} className="mt-0.5 shrink-0" style={{ color: GOLD }} />
                       <div>
                         <p className="mb-1 text-[0.65rem] font-semibold" style={{ color: `${GOLD}aa` }}>Objectif mois prochain</p>
-                        <p className="text-[0.78rem] text-white/60">{rapport.objectif_mois_prochain}</p>
+                        <p className="text-[0.78rem] text-gray-600">{rapport.objectif_mois_prochain}</p>
                       </div>
                     </div>
                   )}
@@ -526,9 +526,9 @@ export default function DashboardPage() {
         {/* Tools grid */}
         <div>
           <div className="mb-3 flex items-center gap-3">
-            <h2 className="text-[0.72rem] font-semibold text-white/40">Vos outils</h2>
-            <div className="flex-1 border-t border-white/[0.05]" />
-            <span className="text-[0.65rem] text-white/25">{TOOLS.length} modules</span>
+            <h2 className="text-[0.72rem] font-semibold text-gray-500">Vos outils</h2>
+            <div className="flex-1 border-t border-gray-200" />
+            <span className="text-[0.65rem] text-gray-400">{TOOLS.length} modules</span>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {TOOLS.map((tool) => (
@@ -537,7 +537,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <p className="text-center text-[0.63rem] text-white/15">
+        <p className="text-center text-[0.63rem] text-gray-300">
           DJAMA PRO · Données mises à jour en temps réel
         </p>
       </div>

@@ -183,7 +183,7 @@ function FaqItem({ q, a, idx }: { q: string; a: string; idx: number }) {
   return (
     <motion.div
       variants={fadeIn}
-      className="overflow-hidden rounded-2xl border border-white/[.07] bg-white/[.025] transition-colors duration-200 hover:border-white/[.12]"
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-colors duration-200 hover:border-gray-300"
     >
       <button
         onClick={() => setOpen(!open)}
@@ -196,11 +196,11 @@ function FaqItem({ q, a, idx }: { q: string; a: string; idx: number }) {
           >
             {String(idx + 1).padStart(2, "0")}
           </span>
-          <span className="text-sm font-semibold text-white/80">{q}</span>
+          <span className="text-sm font-semibold text-gray-700">{q}</span>
         </div>
         <ChevronDown
           size={15}
-          className="shrink-0 text-white/30 transition-transform duration-300"
+          className="shrink-0 text-gray-400 transition-transform duration-300"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
         />
       </button>
@@ -214,8 +214,8 @@ function FaqItem({ q, a, idx }: { q: string; a: string; idx: number }) {
             transition={{ duration: 0.3, ease }}
             className="overflow-hidden"
           >
-            <div className="border-t border-white/[.05] px-6 py-4">
-              <p className="text-sm leading-relaxed text-white/50">{a}</p>
+            <div className="border-t border-gray-200 px-6 py-4">
+              <p className="text-sm leading-relaxed text-gray-500">{a}</p>
             </div>
           </motion.div>
         )}
@@ -232,27 +232,27 @@ export default function OffresPage() {
   const active = PROFILES.find((p) => p.id === activeProfile)!;
 
   return (
-    <div className="w-full overflow-x-hidden bg-[#09090b]">
+    <div className="w-full overflow-x-hidden bg-white">
 
       {/* ══════════════════════ HERO ══════════════════════════ */}
-      <section className="hero-dark hero-grid relative overflow-hidden">
-        <div className="pointer-events-none absolute -left-32 -top-16 h-[500px] w-[500px] animate-float-slow rounded-full bg-[rgba(201,165,90,.06)] blur-[130px]" />
-        <div className="pointer-events-none absolute right-[-60px] top-[30%] h-[350px] w-[350px] animate-float-delayed rounded-full bg-[rgba(167,139,250,.05)] blur-[100px]" />
+      <section className="relative overflow-hidden bg-white pt-[108px] pb-28 sm:pt-[128px]">
+        <div className="pointer-events-none absolute -left-32 -top-16 h-[500px] w-[500px] animate-float-slow rounded-full bg-[rgba(201,165,90,.05)] blur-[130px]" />
+        <div className="pointer-events-none absolute right-[-60px] top-[30%] h-[350px] w-[350px] animate-float-delayed rounded-full bg-[rgba(167,139,250,.04)] blur-[100px]" />
 
-        <div className="relative z-10 mx-auto max-w-4xl px-6 pb-28 pt-36 text-center">
+        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease }}
             className="mb-7"
           >
-            <span className="badge badge-gold-dark inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.4)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]" style={{ color: "#b08d57" }}>
               <Sparkles size={10} />
               Tarifs transparents &amp; profils adaptés
             </span>
           </motion.div>
 
-          <h1 className="display-hero text-white">
+          <h1 className="display-hero text-gray-900">
             <MultiLineReveal
               lines={["Choisissez votre profil,", "connaissez vos prix."]}
               highlight={1}
@@ -266,7 +266,7 @@ export default function OffresPage() {
           <FadeReveal
             delay={0.55}
             as="p"
-            className="mx-auto mt-6 max-w-[500px] text-base leading-[1.85] text-white/50"
+            className="mx-auto mt-6 max-w-[500px] text-base leading-[1.85] text-gray-500"
           >
             Indépendant, PME ou créatif — trouvez les services DJAMA qui correspondent
             à vos besoins et votre budget. Pas de surprise, pas d&apos;engagement caché.
@@ -281,7 +281,7 @@ export default function OffresPage() {
             ].map(({ icon: Icon, label }) => (
               <span
                 key={label}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/[.08] bg-white/[.03] px-3.5 py-1.5 text-[0.78rem] font-semibold text-white/45"
+                className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3.5 py-1.5 text-[0.78rem] font-semibold text-gray-500"
               >
                 <Icon size={12} style={{ color: GOLD }} />
                 {label}
@@ -289,13 +289,11 @@ export default function OffresPage() {
             ))}
           </FadeReveal>
         </div>
-
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#09090b] to-transparent" />
       </section>
 
       {/* ══════════════════════ PROFILS ═══════════════════════ */}
-      <section className="relative overflow-hidden bg-[#0e0b18] py-20 sm:py-28">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.035)] blur-[160px]" />
+      <section className="relative overflow-hidden bg-[#f8f9fa] py-20 sm:py-28">
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.03)] blur-[160px]" />
 
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
@@ -311,11 +309,11 @@ export default function OffresPage() {
             >
               <Users size={11} /> Quel est votre profil ?
             </motion.div>
-            <h2 className="display-section text-white">
+            <h2 className="display-section text-gray-900">
               <MultiLineReveal
                 lines={["Les packs recommandés", "par profil."]}
                 highlight={1} stagger={0.1} wordStagger={0.04}
-                lineClassName="justify-center text-white"
+                lineClassName="justify-center text-gray-900"
               />
             </h2>
           </div>
@@ -330,9 +328,9 @@ export default function OffresPage() {
                   onClick={() => setActiveProfile(p.id)}
                   className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all duration-200"
                   style={{
-                    borderColor: isActive ? `rgba(${p.rgb},.5)`   : "rgba(255,255,255,.08)",
-                    background:  isActive ? `rgba(${p.rgb},.12)` : "rgba(255,255,255,.03)",
-                    color:       isActive ? p.color               : "rgba(255,255,255,.4)",
+                    borderColor: isActive ? `rgba(${p.rgb},.5)`   : "rgba(0,0,0,.12)",
+                    background:  isActive ? `rgba(${p.rgb},.12)` : "rgba(0,0,0,.03)",
+                    color:       isActive ? p.color               : "rgba(0,0,0,.4)",
                     boxShadow:   isActive ? `0 0 18px rgba(${p.rgb},.15)` : "none",
                   }}
                 >
@@ -353,19 +351,13 @@ export default function OffresPage() {
               transition={{ duration: 0.35, ease }}
             >
               <div
-                className="relative overflow-hidden rounded-3xl border"
+                className="relative overflow-hidden rounded-3xl border bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)]"
                 style={{
                   borderColor: `rgba(${active.rgb},.25)`,
-                  background: `rgba(${active.rgb},.03)`,
                 }}
               >
                 {/* Top accent bar */}
                 <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg,transparent,${active.color},transparent)` }} />
-                {/* Top glow */}
-                <div
-                  className="pointer-events-none absolute inset-x-0 top-0 h-48"
-                  style={{ background: `radial-gradient(ellipse 80% 100% at 50% 0%, rgba(${active.rgb},.09), transparent)` }}
-                />
 
                 <div className="relative grid gap-0 lg:grid-cols-[1fr_280px]">
 
@@ -386,7 +378,7 @@ export default function OffresPage() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2.5">
-                          <h3 className="text-xl font-extrabold text-white">{active.label}</h3>
+                          <h3 className="text-xl font-extrabold text-gray-900">{active.label}</h3>
                           {active.badge && (
                             <span
                               className="rounded-full border px-2.5 py-0.5 text-[0.6rem] font-black uppercase tracking-[.14em]"
@@ -400,33 +392,33 @@ export default function OffresPage() {
                             </span>
                           )}
                         </div>
-                        <p className="mt-0.5 text-sm text-white/35">{active.sublabel}</p>
+                        <p className="mt-0.5 text-sm text-gray-400">{active.sublabel}</p>
                       </div>
                     </div>
 
-                    <p className="mb-8 text-[0.95rem] leading-relaxed text-white/50">{active.pitch}</p>
+                    <p className="mb-8 text-[0.95rem] leading-relaxed text-gray-500">{active.pitch}</p>
 
                     {/* Services recommandés — grille alignée */}
-                    <p className="mb-3 text-[0.68rem] font-black uppercase tracking-[.2em] text-white/25">
+                    <p className="mb-3 text-[0.68rem] font-black uppercase tracking-[.2em] text-gray-400">
                       Services recommandés
                     </p>
-                    <div className="overflow-hidden rounded-2xl border border-white/[.06]">
+                    <div className="overflow-hidden rounded-2xl border border-gray-200">
                       {active.recommended.map(({ name, price, href, highlight }, i) => (
                         <Link
                           key={name}
                           href={href}
-                          className={`group flex items-center justify-between gap-4 px-5 py-3.5 transition-all duration-200 hover:bg-white/[.035] ${
-                            i !== active.recommended.length - 1 ? "border-b border-white/[.05]" : ""
-                          } ${highlight ? "bg-white/[.025]" : ""}`}
+                          className={`group flex items-center justify-between gap-4 px-5 py-3.5 transition-all duration-200 hover:bg-gray-50 ${
+                            i !== active.recommended.length - 1 ? "border-b border-gray-200" : ""
+                          } ${highlight ? "bg-gray-50" : ""}`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <CheckCircle2
                               size={14}
                               className="shrink-0"
-                              style={{ color: highlight ? active.color : "rgba(255,255,255,.2)" }}
+                              style={{ color: highlight ? active.color : "rgba(0,0,0,.2)" }}
                             />
                             <span
-                              className="text-sm font-semibold leading-tight text-white/80 group-hover:text-white truncate"
+                              className="text-sm font-semibold leading-tight text-gray-700 group-hover:text-gray-900 truncate"
                             >
                               {name}
                             </span>
@@ -450,15 +442,15 @@ export default function OffresPage() {
                   </div>
 
                   {/* ─── Right : price + CTA ─── */}
-                  <div className="flex flex-col items-center justify-center gap-5 border-t border-white/[.06] p-8 text-center lg:border-l lg:border-t-0">
+                  <div className="flex flex-col items-center justify-center gap-5 border-t border-gray-200 p-8 text-center lg:border-l lg:border-t-0">
                     <div>
-                      <p className="mb-2 text-[0.62rem] font-black uppercase tracking-[.22em] text-white/25">
+                      <p className="mb-2 text-[0.62rem] font-black uppercase tracking-[.22em] text-gray-400">
                         À partir de
                       </p>
-                      <p className="text-[3rem] font-black leading-none tracking-tight text-white">
+                      <p className="text-[3rem] font-black leading-none tracking-tight text-gray-900">
                         {active.startingFrom}
                       </p>
-                      <p className="mt-1.5 text-[0.75rem] font-semibold text-white/35">
+                      <p className="mt-1.5 text-[0.75rem] font-semibold text-gray-400">
                         {active.startingUnit}
                       </p>
                     </div>
@@ -476,12 +468,12 @@ export default function OffresPage() {
 
                     <Link
                       href="/espace-client"
-                      className="w-full max-w-[200px] rounded-xl border border-white/[.08] bg-white/[.03] py-2.5 text-center text-sm font-semibold text-white/40 transition-all duration-200 hover:border-white/[.14] hover:text-white/65"
+                      className="w-full max-w-[200px] rounded-xl border border-gray-200 bg-gray-50 py-2.5 text-center text-sm font-semibold text-gray-500 transition-all duration-200 hover:border-gray-300 hover:text-gray-700"
                     >
                       Voir DJAMA Pro
                     </Link>
 
-                    <p className="text-[0.62rem] text-white/20">
+                    <p className="text-[0.62rem] text-gray-400">
                       Sans engagement · Réponse sous 24h
                     </p>
                   </div>
@@ -494,8 +486,8 @@ export default function OffresPage() {
       </section>
 
       {/* ══════════════════════ TARIFS ════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#09090b] py-20 sm:py-28">
-        <div className="pointer-events-none absolute right-[-80px] top-[20%] h-[350px] w-[350px] rounded-full bg-[rgba(96,165,250,.04)] blur-[100px]" />
+      <section className="relative overflow-hidden bg-white py-20 sm:py-28">
+        <div className="pointer-events-none absolute right-[-80px] top-[20%] h-[350px] w-[350px] rounded-full bg-[rgba(96,165,250,.03)] blur-[100px]" />
 
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
@@ -511,14 +503,14 @@ export default function OffresPage() {
             >
               <Receipt size={11} /> Grille tarifaire complète
             </motion.div>
-            <h2 className="display-section text-white">
+            <h2 className="display-section text-gray-900">
               <MultiLineReveal
                 lines={["Tous les services,", "tous les tarifs."]}
                 highlight={1} stagger={0.1} wordStagger={0.04}
-                lineClassName="justify-center text-white"
+                lineClassName="justify-center text-gray-900"
               />
             </h2>
-            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/40">
+            <FadeReveal delay={0.2} as="p" className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-gray-500">
               Tarifs indicatifs — les projets &quot;Sur devis&quot; font l&apos;objet d&apos;une estimation gratuite sous 24h.
             </FadeReveal>
           </div>
@@ -529,11 +521,11 @@ export default function OffresPage() {
               <motion.div
                 key={category}
                 variants={cardReveal}
-                className="overflow-hidden rounded-2xl border border-white/[.07] bg-white/[.02]"
+                className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)]"
               >
                 {/* En-tête catégorie */}
                 <div
-                  className="flex items-center gap-3 border-b border-white/[.06] px-5 py-3.5"
+                  className="flex items-center gap-3 border-b border-gray-200 px-5 py-3.5"
                   style={{ background: `rgba(${rgb},.04)` }}
                 >
                   <div
@@ -551,17 +543,17 @@ export default function OffresPage() {
                 </div>
 
                 {/* Lignes de service — 2 colonnes fixes : [info] [prix] */}
-                <div className="divide-y divide-white/[.04]">
+                <div className="divide-y divide-gray-100">
                   {services.map(({ name, desc, price, tag, href }) => (
                     <Link
                       key={name}
                       href={href}
-                      className="group flex items-center gap-4 px-5 py-4 transition-all duration-200 hover:bg-white/[.025]"
+                      className="group flex items-center gap-4 px-5 py-4 transition-all duration-200 hover:bg-gray-50"
                     >
                       {/* Colonne 1 : nom + desc */}
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2 leading-none">
-                          <span className="text-[0.9rem] font-semibold text-white/80 transition-colors group-hover:text-white">
+                          <span className="text-[0.9rem] font-semibold text-gray-700 transition-colors group-hover:text-gray-900">
                             {name}
                           </span>
                           {tag && (
@@ -577,7 +569,7 @@ export default function OffresPage() {
                             </span>
                           )}
                         </div>
-                        <p className="mt-1 text-[0.78rem] leading-snug text-white/35">
+                        <p className="mt-1 text-[0.78rem] leading-snug text-gray-400">
                           {desc}
                         </p>
                       </div>
@@ -604,13 +596,13 @@ export default function OffresPage() {
 
           {/* Note devis */}
           <FadeReveal delay={0.3} className="mt-8 flex justify-center">
-            <div className="flex items-center gap-2.5 rounded-2xl border border-white/[.06] bg-white/[.02] px-5 py-3">
+            <div className="flex items-center gap-2.5 rounded-2xl border border-gray-200 bg-gray-50 px-5 py-3">
               <MessageCircle size={13} style={{ color: GOLD }} />
-              <p className="text-[0.78rem] text-white/35">
+              <p className="text-[0.78rem] text-gray-500">
                 Devis gratuit pour tous les services &quot;Sur devis&quot; —{" "}
                 <Link
                   href="/contact"
-                  className="font-semibold underline underline-offset-2 transition-colors hover:text-white/65"
+                  className="font-semibold underline underline-offset-2 transition-colors hover:opacity-75"
                   style={{ color: GOLD }}
                 >
                   contactez-nous
@@ -622,8 +614,8 @@ export default function OffresPage() {
       </section>
 
       {/* ══════════════════════ FAQ ═══════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#0c0b13] py-20 sm:py-24">
-        <div className="pointer-events-none absolute left-[-60px] top-1/2 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-[rgba(167,139,250,.05)] blur-[90px]" />
+      <section className="relative overflow-hidden bg-[#f8f9fa] py-20 sm:py-24">
+        <div className="pointer-events-none absolute left-[-60px] top-1/2 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-[rgba(167,139,250,.04)] blur-[90px]" />
 
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
@@ -633,11 +625,11 @@ export default function OffresPage() {
           <div className="mb-10 text-center">
             <motion.div
               variants={fadeIn}
-              className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/[.08] bg-white/[.03] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em] text-white/35"
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em] text-gray-400"
             >
               <Sparkles size={10} /> Questions fréquentes
             </motion.div>
-            <motion.h2 variants={fadeIn} className="text-2xl font-extrabold text-white sm:text-3xl">
+            <motion.h2 variants={fadeIn} className="text-2xl font-extrabold text-gray-900 sm:text-3xl">
               Tout ce que vous devez savoir sur les tarifs
             </motion.h2>
           </div>
@@ -655,14 +647,11 @@ export default function OffresPage() {
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
-          className="relative overflow-hidden rounded-[2rem] border bg-[#0d0d10] px-8 py-20 text-center md:px-16"
-          style={{ borderColor: "rgba(201,165,90,.2)" }}
+          className="relative overflow-hidden rounded-[2rem] px-8 py-20 text-center md:px-16"
+          style={{ background: "linear-gradient(135deg,#6366f1 0%,#4f46e5 50%,#7c3aed 100%)" }}
         >
-          <div className="pointer-events-none absolute left-[8%] top-[-60px] h-[280px] w-[360px] animate-float-slow rounded-full bg-[rgba(201,165,90,.07)] blur-[75px]" />
-          <div className="pointer-events-none absolute bottom-[-40px] right-[6%] h-[220px] w-[260px] animate-float-delayed rounded-full bg-[rgba(96,165,250,.05)] blur-[65px]" />
-
           <div className="relative z-10">
-            <motion.span variants={fadeIn} className="badge badge-gold-dark">
+            <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em] text-white">
               <Network size={10} /> Rejoignez l&apos;écosystème DJAMA
             </motion.span>
 
@@ -674,7 +663,7 @@ export default function OffresPage() {
               />
             </h2>
 
-            <FadeReveal delay={0.26} as="p" className="mx-auto mt-5 max-w-md text-base leading-[1.8] text-white/40">
+            <FadeReveal delay={0.26} as="p" className="mx-auto mt-5 max-w-md text-base leading-[1.8] text-white/70">
               Appel découverte gratuit · Devis sous 24h · Sans engagement
             </FadeReveal>
 
@@ -691,7 +680,7 @@ export default function OffresPage() {
               </Link>
               <Link
                 href="/espace-client"
-                className="btn-ghost px-8 py-[0.9rem] text-sm"
+                className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-white/30 bg-white/10 px-8 py-[0.95rem] font-bold text-white transition hover:bg-white/20"
               >
                 Essayer DJAMA Pro — 11,90 €/mois
               </Link>

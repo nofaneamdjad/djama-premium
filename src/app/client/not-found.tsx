@@ -24,10 +24,10 @@ export default function ClientNotFound() {
           404
         </div>
 
-        <h2 className="mb-3 text-xl font-extrabold text-white">
+        <h2 className="mb-3 text-xl font-extrabold text-gray-900">
           Page introuvable
         </h2>
-        <p className="mb-8 text-sm leading-relaxed text-white/40">
+        <p className="mb-8 text-sm leading-relaxed text-gray-500">
           Cette page n&apos;existe pas dans votre espace client. Retournez au tableau de bord.
         </p>
 

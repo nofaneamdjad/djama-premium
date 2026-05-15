@@ -12,12 +12,12 @@ interface BadgeProps {
 }
 
 const VARIANT_CLASSES: Record<NonNullable<BadgeProps["variant"]>, string> = {
-  success: "bg-emerald-500/15 border-emerald-500/25 text-emerald-300",
-  warning: "bg-amber-500/15   border-amber-500/25   text-amber-300",
-  error:   "bg-red-500/15     border-red-500/25     text-red-300",
-  info:    "bg-blue-500/15    border-blue-500/25    text-blue-300",
-  neutral: "bg-white/[0.06]   border-white/[0.08]   text-white/50",
-  purple:  "bg-violet-500/15  border-violet-500/25  text-violet-300",
+  success: "bg-emerald-50  border-emerald-200 text-emerald-700",
+  warning: "bg-amber-50    border-amber-200   text-amber-700",
+  error:   "bg-red-50      border-red-200     text-red-600",
+  info:    "bg-blue-50     border-blue-200    text-blue-700",
+  neutral: "bg-gray-100    border-gray-200    text-gray-600",
+  purple:  "bg-violet-50   border-violet-200  text-violet-700",
 };
 
 export function Badge({

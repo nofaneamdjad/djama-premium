@@ -56,13 +56,13 @@ export default function WhatsAppButton() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.92 }}
                 transition={{ duration: 0.22, ease }}
-                className="relative max-w-[210px] rounded-2xl border border-white/[.09] bg-[#111113] px-4 py-3 shadow-2xl"
+                className="relative max-w-[210px] rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-[0_4px_16px_rgba(0,0,0,0.10)]"
               >
-                <p className="text-[0.78rem] font-semibold leading-snug text-white/75">
+                <p className="text-[0.78rem] font-semibold leading-snug text-gray-700">
                   Une question ? On répond sur WhatsApp en quelques minutes.
                 </p>
                 {/* Triangle */}
-                <div className="absolute -bottom-2 left-5 h-3 w-3 rotate-45 border-b border-l border-white/[.09] bg-[#111113]" />
+                <div className="absolute -bottom-2 left-5 h-3 w-3 rotate-45 border-b border-l border-gray-200 bg-white" />
               </motion.div>
             )}
           </AnimatePresence>
@@ -74,7 +74,7 @@ export default function WhatsAppButton() {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setDismiss(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[.09] bg-[#111113] text-white/30 transition-colors hover:text-white/70"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 transition-colors hover:text-gray-600 shadow-[0_2px_8px_rgba(0,0,0,.06)]"
               aria-label="Fermer"
             >
               <X size={12} />

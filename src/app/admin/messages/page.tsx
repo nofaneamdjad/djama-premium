@@ -21,7 +21,7 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
       <button
         onClick={() => onChange(page - 1)}
         disabled={page === 1}
-        className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.07] text-[0.8rem] text-white/35 transition-colors hover:border-white/[0.15] hover:text-white/65 disabled:opacity-30"
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200 text-[0.8rem] text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-600 disabled:opacity-30"
       >
         ←
       </button>
@@ -29,13 +29,13 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
         const prev = pageNums[i - 1];
         return (
           <div key={p} className="flex items-center gap-1.5">
-            {prev && p - prev > 1 && <span className="text-[0.75rem] text-white/20">…</span>}
+            {prev && p - prev > 1 && <span className="text-[0.75rem] text-gray-300">…</span>}
             <button
               onClick={() => onChange(p)}
               className={`flex h-8 min-w-[2rem] items-center justify-center rounded-xl px-2 text-[0.8rem] font-semibold transition-all ${
                 p === page
                   ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a] border border-[rgba(201,165,90,0.3)]"
-                  : "border border-white/[0.07] text-white/35 hover:border-white/[0.15] hover:text-white/65"
+                  : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-600"
               }`}
             >
               {p}
@@ -46,11 +46,11 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
       <button
         onClick={() => onChange(page + 1)}
         disabled={page === totalPages}
-        className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.07] text-[0.8rem] text-white/35 transition-colors hover:border-white/[0.15] hover:text-white/65 disabled:opacity-30"
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200 text-[0.8rem] text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-600 disabled:opacity-30"
       >
         →
       </button>
-      <span className="ml-2 text-[0.73rem] text-white/20">{total} total · page {page}/{totalPages}</span>
+      <span className="ml-2 text-[0.73rem] text-gray-300">{total} total · page {page}/{totalPages}</span>
     </div>
   );
 }
@@ -79,7 +79,7 @@ function exportCSV(messages: ContactMessageRow[]) {
   const csv = [headers, ...rows]
     .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
     .join("\n");
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
   const url  = URL.createObjectURL(blob);
   const a    = Object.assign(document.createElement("a"), { href: url, download: `messages_${new Date().toISOString().split("T")[0]}.csv` });
   a.click();
@@ -149,7 +149,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
       {toasts.map(t => (
         <div
           key={t.id}
-          className={`pointer-events-auto flex items-center gap-3 rounded-xl border px-4 py-3 text-[0.83rem] font-medium shadow-2xl backdrop-blur-sm transition-all duration-300 ${
+          className={`pointer-events-auto flex items-center gap-3 rounded-xl border px-4 py-3 text-[0.83rem] font-medium shadow-[0_8px_40px_rgba(0,0,0,0.08)] backdrop-blur-sm transition-all duration-300 ${
             t.type === "success"
               ? "border-[rgba(74,222,128,0.20)] bg-[rgba(74,222,128,0.10)] text-[#4ade80]"
               : "border-[rgba(248,113,113,0.20)] bg-[rgba(248,113,113,0.10)] text-[#f87171]"
@@ -173,22 +173,22 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-white/[0.06] bg-[#18181c] p-5 animate-pulse">
+    <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-5 animate-pulse">
       <div className="shrink-0">
-        <div className="h-5 w-20 rounded-full bg-white/[0.07] mb-2" />
-        <div className="h-4 w-28 rounded bg-white/[0.05]" />
-        <div className="h-3 w-24 rounded bg-white/[0.04] mt-1.5" />
+        <div className="h-5 w-20 rounded-full bg-gray-100 mb-2" />
+        <div className="h-4 w-28 rounded bg-gray-100" />
+        <div className="h-3 w-24 rounded bg-gray-50 mt-1.5" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="h-4 w-40 rounded bg-white/[0.07] mb-2" />
-        <div className="h-3 w-full max-w-xs rounded bg-white/[0.05]" />
+        <div className="h-4 w-40 rounded bg-gray-100 mb-2" />
+        <div className="h-3 w-full max-w-xs rounded bg-gray-100" />
       </div>
       <div className="shrink-0 text-right">
-        <div className="h-3 w-20 rounded bg-white/[0.05] mb-2" />
-        <div className="h-5 w-16 rounded-full bg-white/[0.07] mb-3" />
+        <div className="h-3 w-20 rounded bg-gray-100 mb-2" />
+        <div className="h-5 w-16 rounded-full bg-gray-100 mb-3" />
         <div className="flex gap-2 justify-end">
-          <div className="h-7 w-7 rounded-lg bg-white/[0.05]" />
-          <div className="h-7 w-7 rounded-lg bg-white/[0.05]" />
+          <div className="h-7 w-7 rounded-lg bg-gray-100" />
+          <div className="h-7 w-7 rounded-lg bg-gray-100" />
         </div>
       </div>
     </div>
@@ -211,19 +211,19 @@ function ConfirmModal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#18181c] p-6 shadow-2xl">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_8px_40px_rgba(0,0,0,0.08)]">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(248,113,113,0.12)] mb-4">
           <Trash2 size={20} className="text-[#f87171]" />
         </div>
-        <h3 className="text-[1rem] font-bold text-white mb-1.5">Supprimer le message</h3>
-        <p className="text-[0.82rem] text-white/45 mb-6">
+        <h3 className="text-[1rem] font-bold text-gray-900 mb-1.5">Supprimer le message</h3>
+        <p className="text-[0.82rem] text-gray-500 mb-6">
           Cette action est irréversible. Le message sera définitivement supprimé.
         </p>
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-[0.83rem] font-semibold text-white/60 transition-colors hover:bg-white/[0.07]"
+            className="flex-1 rounded-xl border border-gray-200 bg-gray-50 py-2.5 text-[0.83rem] font-semibold text-gray-600 transition-colors hover:bg-gray-100"
           >
             Annuler
           </button>
@@ -263,11 +263,11 @@ function DetailPanel({
 
   return (
     <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-white/[0.08] bg-[#18181c] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-gray-200 bg-white shadow-[0_8px_40px_rgba(0,0,0,0.08)] overflow-hidden max-h-[90vh] flex flex-col">
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-white/[0.06] bg-white/[0.01]">
+        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[0.62rem] font-black"
@@ -276,13 +276,13 @@ function DetailPanel({
               {msg.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="text-[0.95rem] font-bold text-white truncate">{msg.name}</p>
-              <p className="text-[0.75rem] text-white/40 truncate">{msg.email}</p>
+              <p className="text-[0.95rem] font-bold text-gray-900 truncate">{msg.name}</p>
+              <p className="text-[0.75rem] text-gray-500 truncate">{msg.email}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.05] text-white/40 transition-colors hover:bg-white/[0.09] hover:text-white/70"
+            className="shrink-0 flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
           >
             <X size={15} />
           </button>
@@ -305,48 +305,48 @@ function DetailPanel({
             >
               {STATUS_LABELS[msg.status]}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] px-3 py-1 text-[0.72rem] text-white/40">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-[0.72rem] text-gray-500">
               {formatDateLong(msg.created_at)}
             </span>
           </div>
 
           {/* Contact info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3">
-              <Mail size={13} className="text-white/30 shrink-0" />
-              <span className="text-[0.82rem] text-white/65 truncate">{msg.email}</span>
+            <div className="flex items-center gap-2.5 rounded-xl bg-gray-50 border border-gray-200 px-4 py-3">
+              <Mail size={13} className="text-gray-400 shrink-0" />
+              <span className="text-[0.82rem] text-gray-700 truncate">{msg.email}</span>
             </div>
             {msg.phone && (
-              <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3">
-                <Phone size={13} className="text-white/30 shrink-0" />
-                <span className="text-[0.82rem] text-white/65">{msg.phone}</span>
+              <div className="flex items-center gap-2.5 rounded-xl bg-gray-50 border border-gray-200 px-4 py-3">
+                <Phone size={13} className="text-gray-400 shrink-0" />
+                <span className="text-[0.82rem] text-gray-700">{msg.phone}</span>
               </div>
             )}
           </div>
 
           {/* Subject */}
           <div>
-            <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/25 mb-1.5">Sujet</p>
-            <p className="text-[0.92rem] font-semibold text-white/85">{msg.subject || "—"}</p>
+            <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-gray-400 mb-1.5">Sujet</p>
+            <p className="text-[0.92rem] font-semibold text-gray-800">{msg.subject || "—"}</p>
           </div>
 
           {/* Message */}
           <div>
-            <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/25 mb-2">Message</p>
-            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-4">
-              <p className="text-[0.84rem] text-white/70 leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+            <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2">Message</p>
+            <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-4">
+              <p className="text-[0.84rem] text-gray-700 leading-relaxed whitespace-pre-wrap">{msg.message}</p>
             </div>
           </div>
 
           {/* Metadata if any */}
           {msg.metadata && Object.keys(msg.metadata).length > 0 && (
             <div>
-              <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/25 mb-2">Informations supplémentaires</p>
-              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 space-y-1.5">
+              <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2">Informations supplémentaires</p>
+              <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 space-y-1.5">
                 {Object.entries(msg.metadata).map(([k, v]) => (
                   <div key={k} className="flex gap-2 text-[0.8rem]">
-                    <span className="text-white/30 shrink-0 capitalize">{k} :</span>
-                    <span className="text-white/55">{String(v)}</span>
+                    <span className="text-gray-400 shrink-0 capitalize">{k} :</span>
+                    <span className="text-gray-600">{String(v)}</span>
                   </div>
                 ))}
               </div>
@@ -355,7 +355,7 @@ function DetailPanel({
         </div>
 
         {/* Footer actions */}
-        <div className="flex flex-wrap items-center gap-2.5 px-6 py-4 border-t border-white/[0.06] bg-white/[0.01]">
+        <div className="flex flex-wrap items-center gap-2.5 px-6 py-4 border-t border-gray-200 bg-gray-50">
           {msg.status === "nouveau" && (
             <button
               onClick={onMarkLu}
@@ -415,10 +415,10 @@ function MessageRow({
 
   return (
     <div
-      className={`group relative flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border p-5 transition-all duration-150 cursor-pointer hover:border-white/[0.12] hover:bg-white/[0.015] ${
+      className={`group relative flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border p-5 transition-all duration-150 cursor-pointer hover:border-gray-300 hover:bg-gray-100 ${
         isNew
-          ? "border-[rgba(96,165,250,0.15)] bg-[#18181c]"
-          : "border-white/[0.06] bg-[#18181c]"
+          ? "border-[rgba(96,165,250,0.15)] bg-white"
+          : "border-gray-200 bg-white"
       }`}
       onClick={onSelect}
     >
@@ -447,17 +447,17 @@ function MessageRow({
               <span className="hidden sm:inline-block h-2 w-2 rounded-full bg-[#60a5fa]" />
             )}
           </div>
-          <p className="text-[0.84rem] font-semibold text-white/90 truncate">{msg.name}</p>
-          <p className="text-[0.75rem] text-white/35 truncate">{msg.email}</p>
+          <p className="text-[0.84rem] font-semibold text-gray-800 truncate">{msg.name}</p>
+          <p className="text-[0.75rem] text-gray-500 truncate">{msg.email}</p>
         </div>
       </div>
 
       {/* Center: subject + preview */}
       <div className="flex-1 min-w-0">
-        <p className={`text-[0.85rem] font-semibold mb-1 truncate ${isNew ? "text-white" : "text-white/70"}`}>
+        <p className={`text-[0.85rem] font-semibold mb-1 truncate ${isNew ? "text-gray-900" : "text-gray-700"}`}>
           {msg.subject || "(Pas de sujet)"}
         </p>
-        <p className="text-[0.78rem] text-white/35 line-clamp-2 leading-relaxed">
+        <p className="text-[0.78rem] text-gray-500 line-clamp-2 leading-relaxed">
           {msg.message}
         </p>
       </div>
@@ -467,7 +467,7 @@ function MessageRow({
         className="flex sm:flex-col sm:items-end items-center gap-3 sm:gap-2 sm:w-[140px] sm:shrink-0"
         onClick={e => e.stopPropagation()}
       >
-        <p className="text-[0.72rem] text-white/30 sm:order-1">{formatDate(msg.created_at)}</p>
+        <p className="text-[0.72rem] text-gray-400 sm:order-1">{formatDate(msg.created_at)}</p>
         <span
           className="inline-block rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold sm:order-2"
           style={{ backgroundColor: stColor.bg, color: stColor.text }}
@@ -478,7 +478,7 @@ function MessageRow({
           <button
             title="Voir le message"
             onClick={onSelect}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.05] text-white/35 transition-all hover:bg-white/[0.1] hover:text-white/70"
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-gray-500 transition-all hover:bg-gray-200 hover:text-gray-700"
           >
             <Eye size={12} />
           </button>
@@ -661,14 +661,14 @@ export default function AdminMessages() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-[1.3rem] font-black text-white">Messages</h1>
+              <h1 className="text-[1.3rem] font-black text-gray-900">Messages</h1>
               {nouveau > 0 && (
                 <span className="inline-flex items-center justify-center rounded-full bg-[rgba(96,165,250,0.15)] px-2.5 py-0.5 text-[0.72rem] font-bold text-[#60a5fa]">
                   {nouveau} nouveau{nouveau > 1 ? "x" : ""}
                 </span>
               )}
             </div>
-            <p className="mt-1 text-[0.8rem] text-white/35">
+            <p className="mt-1 text-[0.8rem] text-gray-500">
               {total} message{total !== 1 ? "s" : ""} reçu{total !== 1 ? "s" : ""}
             </p>
           </div>
@@ -677,7 +677,7 @@ export default function AdminMessages() {
               onClick={() => exportCSV(filtered)}
               disabled={loading || filtered.length === 0}
               title="Exporter en CSV"
-              className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-[0.82rem] font-semibold text-white/55 transition-all hover:bg-white/[0.07] hover:text-white/80 disabled:opacity-50"
+              className="flex shrink-0 items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-[0.82rem] font-semibold text-gray-600 transition-all hover:bg-gray-100 hover:text-gray-800 disabled:opacity-50"
             >
               <Download size={13} />
               CSV
@@ -685,7 +685,7 @@ export default function AdminMessages() {
             <button
               onClick={() => fetchDirect(true)}
               disabled={refreshing || loading}
-              className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-[0.82rem] font-semibold text-white/55 transition-all hover:bg-white/[0.07] hover:text-white/80 disabled:opacity-50"
+              className="flex shrink-0 items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[0.82rem] font-semibold text-gray-600 transition-all hover:bg-gray-100 hover:text-gray-800 disabled:opacity-50"
             >
               <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
               Actualiser
@@ -702,9 +702,9 @@ export default function AdminMessages() {
           ].map(s => (
             <div
               key={s.label}
-              className="rounded-2xl border border-white/[0.06] bg-[#18181c] px-4 py-4 sm:px-5"
+              className="rounded-2xl border border-gray-200 bg-white px-4 py-4 sm:px-5"
             >
-              <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/25 mb-1.5">{s.label}</p>
+              <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-gray-400 mb-1.5">{s.label}</p>
               <p className="text-[1.7rem] font-black" style={{ color: s.color }}>
                 {loading ? "—" : s.value}
               </p>
@@ -721,7 +721,7 @@ export default function AdminMessages() {
               className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-[0.8rem] font-semibold transition-all duration-150 ${
                 filter === t.key
                   ? "bg-[rgba(201,165,90,0.13)] text-[#c9a55a] border border-[rgba(201,165,90,0.25)]"
-                  : "text-white/40 hover:bg-white/[0.05] hover:text-white/65 border border-transparent"
+                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 border border-transparent"
               }`}
             >
               {t.label}
@@ -730,7 +730,7 @@ export default function AdminMessages() {
                   className={`rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold ${
                     filter === t.key
                       ? "bg-[rgba(201,165,90,0.2)] text-[#c9a55a]"
-                      : "bg-white/[0.07] text-white/30"
+                      : "bg-gray-100 text-gray-400"
                   }`}
                 >
                   {loading ? "·" : t.count}
@@ -745,9 +745,9 @@ export default function AdminMessages() {
           <div className="rounded-2xl border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.08)] px-5 py-4">
             <p className="text-[0.84rem] font-bold text-[#f87171] mb-1">Erreur de connexion Supabase</p>
             <p className="text-[0.78rem] text-[#f87171]/70 font-mono break-all">{loadError}</p>
-            <p className="text-[0.75rem] text-white/35 mt-2">
-              Vérifie que la table <code className="bg-white/[0.06] px-1 rounded">contact_messages</code> existe
-              et que les politiques RLS autorisent le SELECT. Voir la migration <code className="bg-white/[0.06] px-1 rounded">005_fix_messages_rls.sql</code>.
+            <p className="text-[0.75rem] text-gray-500 mt-2">
+              Vérifie que la table <code className="bg-gray-100 px-1 rounded">contact_messages</code> existe
+              et que les politiques RLS autorisent le SELECT. Voir la migration <code className="bg-gray-100 px-1 rounded">005_fix_messages_rls.sql</code>.
             </p>
           </div>
         )}
@@ -757,12 +757,12 @@ export default function AdminMessages() {
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-[#18181c] py-16 px-8 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04] mb-4">
-                <InboxIcon size={24} className="text-white/20" />
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white py-16 px-8 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50 mb-4">
+                <InboxIcon size={24} className="text-gray-300" />
               </div>
-              <p className="text-[0.92rem] font-semibold text-white/30">Aucun message</p>
-              <p className="text-[0.78rem] text-white/20 mt-1">
+              <p className="text-[0.92rem] font-semibold text-gray-400">Aucun message</p>
+              <p className="text-[0.78rem] text-gray-300 mt-1">
                 {filter === "tous"
                   ? "Vous n'avez reçu aucun message pour l'instant."
                   : `Aucun message avec le statut « ${filter} ».`}

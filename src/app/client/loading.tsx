@@ -12,7 +12,7 @@ export default function ClientLoading() {
             style={{ animationDuration: "1.4s", animationDirection: "reverse" }}
           />
         </div>
-        <p className="text-[0.68rem] font-black uppercase tracking-[.2em] text-white/20">
+        <p className="text-[0.68rem] font-black uppercase tracking-[.2em] text-gray-300">
           Chargement…
         </p>
       </div>

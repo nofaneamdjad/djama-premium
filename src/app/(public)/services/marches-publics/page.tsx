@@ -115,13 +115,13 @@ function FieldInput({
   const border   = showErr  ? "rgba(248,113,113,0.5)"
                  : showOk   ? "rgba(52,211,153,0.45)"
                  : focused  ? "rgba(249,168,38,0.5)"
-                 : "rgba(255,255,255,0.09)";
+                 : "rgba(0,0,0,0.12)";
   return (
     <div
-      className="flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 transition-all duration-200"
+      className="flex items-center gap-3 rounded-2xl border bg-gray-50 px-4 py-3.5 transition-all duration-200"
       style={{ borderColor: border, boxShadow: focused ? "0 0 0 3px rgba(249,168,38,0.08)" : "none" }}
     >
-      <Icon size={15} className="shrink-0" style={{ color: focused || value ? ACCENT : "rgba(255,255,255,0.25)" }} />
+      <Icon size={15} className="shrink-0" style={{ color: focused || value ? ACCENT : "#9ca3af" }} />
       <input
         type={type}
         placeholder={placeholder}
@@ -130,7 +130,7 @@ function FieldInput({
         onFocus={() => setFocused(true)}
         onBlur={() => { setFocused(false); setTouched(true); }}
         required={required}
-        className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none"
+        className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
       />
       <AnimatePresence>
         {showOk && (
@@ -146,7 +146,7 @@ function FieldInput({
 function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
   return (
     <div
-      className="cursor-pointer rounded-2xl border border-white/[0.07] bg-white transition-all duration-200 hover:border-[rgba(249,168,38,0.25)] hover:shadow-sm"
+      className="cursor-pointer rounded-2xl border border-gray-200 bg-white transition-all duration-200 hover:border-[rgba(249,168,38,0.25)] hover:shadow-sm"
       onClick={onToggle}
     >
       <div className="flex items-center justify-between gap-4 px-6 py-5">
@@ -232,8 +232,8 @@ function DevisForm() {
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(52,211,153,0.12)]">
           <CheckCircle2 size={26} className="text-[#34d399]" />
         </div>
-        <h3 className="mb-2 text-lg font-extrabold text-white">Demande envoyée !</h3>
-        <p className="text-sm text-white/50">
+        <h3 className="mb-2 text-lg font-extrabold text-gray-900">Demande envoyée !</h3>
+        <p className="text-sm text-gray-600">
           Nous reviendrons vers vous sous 24h pour discuter de votre projet.
         </p>
       </motion.div>
@@ -260,22 +260,22 @@ function DevisForm() {
 
       {/* Textarea projet */}
       <div
-        className="rounded-2xl border bg-white/[0.04] transition-all duration-200"
-        style={{ borderColor: projet.length > 10 ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.09)" }}
+        className="rounded-2xl border bg-gray-50 transition-all duration-200"
+        style={{ borderColor: projet.length > 10 ? "rgba(52,211,153,0.35)" : "rgba(0,0,0,0.12)" }}
       >
         <div className="flex items-start gap-3 px-4 pt-4">
-          <MessageSquare size={15} className="mt-0.5 shrink-0" style={{ color: projet ? ACCENT : "rgba(255,255,255,0.25)" }} />
+          <MessageSquare size={15} className="mt-0.5 shrink-0" style={{ color: projet ? ACCENT : "#9ca3af" }} />
           <textarea
             placeholder="Décrivez votre projet ou l'appel d'offres auquel vous souhaitez répondre…"
             value={projet}
             onChange={(e) => setProjet(e.target.value)}
             rows={5}
             required
-            className="flex-1 resize-none bg-transparent pb-4 text-sm text-white placeholder-white/25 outline-none"
+            className="flex-1 resize-none bg-transparent pb-4 text-sm text-gray-900 placeholder-gray-400 outline-none"
           />
         </div>
-        <div className="border-t border-white/[0.05] px-4 py-2 text-right">
-          <span className="text-[0.6rem] text-white/20">{projet.length} caractères</span>
+        <div className="border-t border-gray-200 px-4 py-2 text-right">
+          <span className="text-[0.6rem] text-gray-400">{projet.length} caractères</span>
         </div>
       </div>
 
@@ -297,7 +297,7 @@ function DevisForm() {
         )}
       </button>
 
-      <p className="text-center text-[0.68rem] text-white/20">
+      <p className="text-center text-[0.68rem] text-gray-400">
         Vos informations restent confidentielles · Réponse sous 24h · Sans engagement
       </p>
     </motion.form>
@@ -317,7 +317,7 @@ export default function MarchesPublicsPage() {
         {/* ════════════════════════════════════════════════════
             1. HERO
         ════════════════════════════════════════════════════ */}
-        <section className="hero-dark hero-grid relative overflow-hidden pb-14 pt-24 sm:pb-28 sm:pt-36">
+        <section className="relative overflow-hidden bg-[#f8f9fa] pb-14 pt-[108px] sm:pb-28 sm:pt-[128px]">
           <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
             <div className="h-[350px] w-[500px] rounded-full bg-[rgba(249,168,38,0.07)] blur-[90px]" />
           </div>
@@ -325,12 +325,12 @@ export default function MarchesPublicsPage() {
 
           <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
             <FadeReveal delay={0.05}>
-              <span className="badge badge-gold-dark mb-6 inline-flex">
+              <span className="badge badge-gold mb-6 inline-flex">
                 <Briefcase size={10} /> Accompagnement marchés publics & privés
               </span>
             </FadeReveal>
 
-            <h1 className="display-hero text-white">
+            <h1 className="display-hero text-gray-900">
               <MultiLineReveal
                 lines={["Répondez aux appels d'offres", "avec un dossier solide"]}
                 highlight={1}
@@ -341,7 +341,7 @@ export default function MarchesPublicsPage() {
               />
             </h1>
 
-            <FadeReveal delay={0.6} as="p" className="mx-auto mt-6 max-w-xl text-[1.05rem] leading-[1.85] text-white/50">
+            <FadeReveal delay={0.6} as="p" className="mx-auto mt-6 max-w-xl text-[1.05rem] leading-[1.85] text-gray-600">
               DJAMA accompagne les entreprises dans la préparation et la structuration
               de leur réponse aux appels d&apos;offres — de l&apos;analyse du dossier
               jusqu&apos;à la vérification finale avant dépôt.
@@ -349,10 +349,10 @@ export default function MarchesPublicsPage() {
 
             {/* Mention transparence */}
             <FadeReveal delay={0.75}>
-              <div className="mx-auto mt-7 flex max-w-lg items-start gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-5 py-4 text-left">
+              <div className="mx-auto mt-7 flex max-w-lg items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-left">
                 <AlertCircle size={15} className="mt-0.5 shrink-0 text-[rgba(249,168,38,0.7)]" />
-                <p className="text-xs leading-relaxed text-white/40">
-                  Nous n&apos;assurons <strong className="text-white/65 font-semibold">pas l&apos;obtention du marché</strong>.
+                <p className="text-xs leading-relaxed text-gray-600">
+                  Nous n&apos;assurons <strong className="text-gray-700 font-semibold">pas l&apos;obtention du marché</strong>.
                   Notre rôle est de vous aider à préparer le meilleur dossier possible.
                   La décision finale appartient à l&apos;organisme acheteur.
                 </p>
@@ -373,15 +373,15 @@ export default function MarchesPublicsPage() {
             </FadeReveal>
 
             {/* Stats */}
-            <FadeReveal delay={1.05} className="mt-14 flex flex-wrap justify-center gap-x-10 gap-y-4 border-t border-white/[0.06] pt-10">
+            <FadeReveal delay={1.05} className="mt-14 flex flex-wrap justify-center gap-x-10 gap-y-4 border-t border-gray-200 pt-10">
               {[
                 { val: "Sur devis", label: "Tarif selon le projet" },
                 { val: "24h",       label: "Délai de réponse" },
                 { val: "100%",      label: "Confidentiel" },
               ].map(({ val, label }) => (
                 <div key={label} className="text-center">
-                  <p className="text-2xl font-black text-white">{val}</p>
-                  <p className="mt-0.5 text-xs text-white/35">{label}</p>
+                  <p className="text-2xl font-black text-gray-900">{val}</p>
+                  <p className="mt-0.5 text-xs text-gray-500">{label}</p>
                 </div>
               ))}
             </FadeReveal>
@@ -437,7 +437,7 @@ export default function MarchesPublicsPage() {
         {/* ════════════════════════════════════════════════════
             3. NOTRE ACCOMPAGNEMENT
         ════════════════════════════════════════════════════ */}
-        <section className="bg-[var(--surface)] py-12 sm:py-24">
+        <section className="bg-[#f8f9fa] py-12 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div
               initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
@@ -519,7 +519,7 @@ export default function MarchesPublicsPage() {
         {/* ════════════════════════════════════════════════════
             5. NOTRE MÉTHODE
         ════════════════════════════════════════════════════ */}
-        <section id="methode" className="hero-dark relative overflow-hidden py-12 sm:py-24">
+        <section id="methode" className="relative overflow-hidden bg-[#f8f9fa] py-12 sm:py-24">
           <div className="pointer-events-none absolute left-[10%] top-[20%] h-[300px] w-[400px] rounded-full bg-[rgba(249,168,38,0.05)] blur-[80px]" />
 
           <div className="relative z-10 mx-auto max-w-4xl px-6">
@@ -527,12 +527,12 @@ export default function MarchesPublicsPage() {
               initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
               className="mb-14 text-center"
             >
-              <motion.span variants={fadeIn} className="badge badge-gold-dark mb-4 inline-flex">
+              <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
                 <ClipboardList size={10} /> Processus
               </motion.span>
-              <h2 className="display-section text-white">
+              <h2 className="display-section text-[#09090b]">
                 Notre méthode{" "}
-                <span className="text-gold">étape par étape</span>
+                <span className="text-[#c9a55a]">étape par étape</span>
               </h2>
             </motion.div>
 
@@ -544,7 +544,7 @@ export default function MarchesPublicsPage() {
                 <motion.div
                   key={num}
                   variants={cardReveal}
-                  className="flex items-start gap-5 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 backdrop-blur-sm transition-all duration-300 hover:border-white/[0.14] hover:bg-white/[0.05]"
+                  className="flex items-start gap-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:border-gray-300 hover:shadow-md"
                 >
                   <div
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-black"
@@ -555,9 +555,9 @@ export default function MarchesPublicsPage() {
                   <div className="flex-1">
                     <div className="mb-1.5 flex items-center gap-2.5">
                       <Icon size={15} style={{ color }} />
-                      <h3 className="text-sm font-bold text-white">{title}</h3>
+                      <h3 className="text-sm font-bold text-gray-900">{title}</h3>
                     </div>
-                    <p className="text-xs leading-relaxed text-white/45">{desc}</p>
+                    <p className="text-xs leading-relaxed text-gray-600">{desc}</p>
                   </div>
                 </motion.div>
               ))}
@@ -568,14 +568,14 @@ export default function MarchesPublicsPage() {
         {/* ════════════════════════════════════════════════════
             6. MENTION TRANSPARENCE
         ════════════════════════════════════════════════════ */}
-        <section className="bg-[var(--surface)] py-16">
+        <section className="bg-white py-16">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={viewport}
               transition={{ duration: 0.55, ease }}
-              className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(249,168,38,0.25)] bg-[#09090b] p-8 shadow-[0_24px_60px_rgba(0,0,0,0.18)]"
+              className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(249,168,38,0.25)] bg-[#f8f9fa] p-8 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
             >
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="h-[200px] w-[350px] rounded-full bg-[rgba(249,168,38,0.06)] blur-[60px]" />
@@ -588,14 +588,14 @@ export default function MarchesPublicsPage() {
                   <Shield size={20} style={{ color: ACCENT }} />
                 </div>
                 <div>
-                  <p className="mb-2 text-base font-extrabold text-white">Transparence & honnêteté</p>
-                  <p className="text-sm leading-relaxed text-white/55">
-                    DJAMA accompagne les entreprises dans la <strong className="text-white/80 font-semibold">préparation
+                  <p className="mb-2 text-base font-extrabold text-gray-900">Transparence & honnêteté</p>
+                  <p className="text-sm leading-relaxed text-gray-600">
+                    DJAMA accompagne les entreprises dans la <strong className="text-gray-700 font-semibold">préparation
                     et la structuration</strong> de leur réponse aux appels d&apos;offres.
                     Nous ne garantissons pas l&apos;obtention d&apos;un marché.
                     La décision finale appartient toujours à l&apos;organisme qui publie l&apos;appel d&apos;offres.
                   </p>
-                  <p className="mt-3 text-xs text-white/30">
+                  <p className="mt-3 text-xs text-gray-400">
                     Notre engagement : vous préparer le dossier le plus solide possible pour maximiser vos chances.
                   </p>
                 </div>
@@ -607,7 +607,7 @@ export default function MarchesPublicsPage() {
         {/* ════════════════════════════════════════════════════
             7. TÉMOIGNAGES
         ════════════════════════════════════════════════════ */}
-        <section className="bg-white py-12 sm:py-24">
+        <section className="bg-[#f8f9fa] py-12 sm:py-24">
           <div className="mx-auto max-w-5xl px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer} className="mb-12 text-center">
               <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
@@ -650,20 +650,20 @@ export default function MarchesPublicsPage() {
         {/* ════════════════════════════════════════════════════
             8. FORMULAIRE DEVIS
         ════════════════════════════════════════════════════ */}
-        <section id="devis" className="hero-dark py-12 sm:py-24">
+        <section id="devis" className="bg-white py-12 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div
               initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
               className="mb-10 text-center"
             >
-              <motion.span variants={fadeIn} className="badge badge-gold-dark mb-4 inline-flex">
+              <motion.span variants={fadeIn} className="badge badge-gold mb-4 inline-flex">
                 <FileText size={10} /> Demande d&apos;accompagnement
               </motion.span>
-              <h2 className="display-section text-white">
+              <h2 className="display-section text-[#09090b]">
                 Parlez-nous de{" "}
-                <span className="text-gold">votre projet</span>
+                <span className="text-[#c9a55a]">votre projet</span>
               </h2>
-              <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/40">
+              <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-gray-600">
                 Décrivez l&apos;appel d&apos;offres auquel vous souhaitez répondre.
                 Nous reviendrons vers vous sous 24h avec une proposition adaptée.
               </p>
@@ -676,7 +676,7 @@ export default function MarchesPublicsPage() {
         {/* ════════════════════════════════════════════════════
             8. FAQ
         ════════════════════════════════════════════════════ */}
-        <section className="bg-white py-12 sm:py-24">
+        <section className="bg-[#f8f9fa] py-12 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div
               initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}
@@ -707,7 +707,7 @@ export default function MarchesPublicsPage() {
         {/* ════════════════════════════════════════════════════
             9. CTA FINAL
         ════════════════════════════════════════════════════ */}
-        <section className="hero-dark relative overflow-hidden py-12 sm:py-24">
+        <section className="relative overflow-hidden bg-white py-12 sm:py-24">
           <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
             <div className="h-[400px] w-[600px] rounded-full bg-[rgba(249,168,38,0.06)] blur-[90px]" />
           </div>
@@ -718,14 +718,14 @@ export default function MarchesPublicsPage() {
             transition={{ duration: 0.65, ease }}
             className="relative z-10 mx-auto max-w-2xl px-6 text-center"
           >
-            <span className="badge badge-gold-dark mb-6 inline-flex">
+            <span className="badge badge-gold mb-6 inline-flex">
               <Sparkles size={10} /> Prêt à candidater&nbsp;?
             </span>
-            <h2 className="display-section text-white">
+            <h2 className="display-section text-[#09090b]">
               Un dossier solide,{" "}
-              <span className="text-gold">c&apos;est tout ce qu&apos;il faut.</span>
+              <span className="text-[#c9a55a]">c&apos;est tout ce qu&apos;il faut.</span>
             </h2>
-            <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-white/45">
+            <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-gray-600">
               Confiez-nous la préparation de votre réponse. Concentrez-vous sur votre métier.
             </p>
             <div className="mt-10 flex flex-wrap justify-center gap-3">
@@ -738,7 +738,7 @@ export default function MarchesPublicsPage() {
                 Voir tous les services
               </Link>
             </div>
-            <div className="mt-10 flex flex-wrap justify-center gap-6 text-xs text-white/25">
+            <div className="mt-10 flex flex-wrap justify-center gap-6 text-xs text-gray-500">
               <span>✓ Réponse sous 24h</span>
               <span>✓ Sur devis</span>
               <span>✓ Sans engagement</span>

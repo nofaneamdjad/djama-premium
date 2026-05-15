@@ -30,10 +30,10 @@ export default function ClientError({
           </div>
         </div>
 
-        <h2 className="mb-2 text-xl font-extrabold text-white">
+        <h2 className="mb-2 text-xl font-extrabold text-gray-900">
           Erreur de chargement
         </h2>
-        <p className="mb-7 text-sm text-white/40">
+        <p className="mb-7 text-sm text-gray-500">
           Ce module n&apos;a pas pu se charger. Réessayez ou retournez au tableau de bord.
         </p>
 
@@ -47,7 +47,7 @@ export default function ClientError({
           </button>
           <Link
             href="/client"
-            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-6 py-2.5 text-sm font-semibold text-white/50 transition hover:text-white"
+            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-6 py-2.5 text-sm font-semibold text-gray-500 transition hover:text-gray-900"
           >
             <LayoutDashboard size={13} />
             Tableau de bord

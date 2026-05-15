@@ -19,12 +19,10 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 const ease = [0.16, 1, 0.3, 1] as const;
 const siteData = getSiteData();
 
-/* ── Validation ───────────────────────────────── */
 function isEmailValid(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-/* ── Input premium dark ───────────────────────── */
 function PremiumInput({
   icon: Icon, type = "text", placeholder, value, onChange,
   required, validate,
@@ -40,21 +38,21 @@ function PremiumInput({
   const showErr  = touched && value && validate && !isValid;
 
   const borderColor = showErr  ? "rgba(248,113,113,0.5)"
-    : showOk   ? "rgba(52,211,153,0.45)"
-    : focused  ? "rgba(201,165,90,0.55)"
-    : "rgba(255,255,255,0.08)";
+    : showOk   ? "rgba(52,211,153,0.5)"
+    : focused  ? "rgba(99,102,241,0.55)"
+    : "rgba(0,0,0,0.12)";
   const shadowColor = showErr  ? "0 0 0 3px rgba(248,113,113,0.10)"
     : showOk   ? "0 0 0 3px rgba(52,211,153,0.10)"
-    : focused  ? "0 0 0 3px rgba(201,165,90,0.09)"
+    : focused  ? "0 0 0 3px rgba(99,102,241,0.08)"
     : "none";
 
   return (
     <div
-      className="flex items-center gap-3 rounded-2xl border bg-white/[0.035] px-4 py-3.5 transition-all duration-200"
+      className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3.5 transition-all duration-200"
       style={{ borderColor, boxShadow: shadowColor }}
     >
       <Icon size={15} className="shrink-0 transition-colors duration-200"
-        style={{ color: focused || value ? "#c9a55a" : "rgba(255,255,255,0.22)" }} />
+        style={{ color: focused || value ? "#6366f1" : "rgba(0,0,0,0.28)" }} />
       <input
         type={type}
         placeholder={placeholder}
@@ -63,7 +61,7 @@ function PremiumInput({
         onFocus={() => setFocused(true)}
         onBlur={() => { setFocused(false); setTouched(true); }}
         required={required}
-        className="flex-1 bg-transparent text-sm text-white placeholder-white/22 outline-none"
+        className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-300 outline-none"
       />
       <AnimatePresence>
         {showOk && (
@@ -81,21 +79,20 @@ function PremiumInput({
   );
 }
 
-/* ── Textarea premium dark ────────────────────── */
 function PremiumTextarea({
   placeholder, value, onChange, rows = 5,
 }: { placeholder: string; value: string; onChange: (v: string) => void; rows?: number }) {
   const [focused, setFocused] = useState(false);
-  const borderColor = value.length > 10 ? "rgba(52,211,153,0.38)" : focused ? "rgba(201,165,90,0.52)" : "rgba(255,255,255,0.08)";
-  const shadowColor = focused ? "0 0 0 3px rgba(201,165,90,0.08)" : "none";
+  const borderColor = value.length > 10 ? "rgba(52,211,153,0.45)" : focused ? "rgba(99,102,241,0.52)" : "rgba(0,0,0,0.12)";
+  const shadowColor = focused ? "0 0 0 3px rgba(99,102,241,0.08)" : "none";
   return (
     <div
-      className="rounded-2xl border bg-white/[0.035] transition-all duration-200"
+      className="rounded-2xl border bg-white transition-all duration-200"
       style={{ borderColor, boxShadow: shadowColor }}
     >
       <div className="flex items-start gap-3 px-4 pt-4">
         <FileText size={15} className="mt-0.5 shrink-0 transition-colors duration-200"
-          style={{ color: focused || value ? "#c9a55a" : "rgba(255,255,255,0.22)" }} />
+          style={{ color: focused || value ? "#6366f1" : "rgba(0,0,0,0.28)" }} />
         <textarea
           placeholder={placeholder}
           value={value}
@@ -104,17 +101,16 @@ function PremiumTextarea({
           onBlur={() => setFocused(false)}
           rows={rows}
           required
-          className="flex-1 resize-none bg-transparent pb-4 text-sm text-white placeholder-white/22 outline-none"
+          className="flex-1 resize-none bg-transparent pb-4 text-sm text-gray-900 placeholder-gray-300 outline-none"
         />
       </div>
-      <div className="border-t border-white/[0.05] px-4 py-2 text-right">
-        <span className="text-[0.6rem] text-white/18">{value.length} caractères</span>
+      <div className="border-t border-gray-100 px-4 py-2 text-right">
+        <span className="text-[0.6rem] text-gray-300">{value.length} caractères</span>
       </div>
     </div>
   );
 }
 
-/* ── Select premium dark ──────────────────────── */
 function PremiumSelect({
   icon: Icon, placeholder, value, onChange, options,
 }: {
@@ -123,28 +119,28 @@ function PremiumSelect({
   options: { value: string; label: string }[];
 }) {
   const [focused, setFocused] = useState(false);
-  const borderColor = value ? "rgba(52,211,153,0.38)" : focused ? "rgba(201,165,90,0.52)" : "rgba(255,255,255,0.08)";
+  const borderColor = value ? "rgba(52,211,153,0.45)" : focused ? "rgba(99,102,241,0.52)" : "rgba(0,0,0,0.12)";
   return (
     <div
-      className="relative flex items-center gap-3 rounded-2xl border bg-white/[0.035] px-4 py-3.5 transition-all duration-200"
+      className="relative flex items-center gap-3 rounded-2xl border bg-white px-4 py-3.5 transition-all duration-200"
       style={{ borderColor }}
     >
       <Icon size={15} className="shrink-0 transition-colors duration-200"
-        style={{ color: value || focused ? "#c9a55a" : "rgba(255,255,255,0.22)" }} />
+        style={{ color: value || focused ? "#6366f1" : "rgba(0,0,0,0.28)" }} />
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        className="flex-1 appearance-none bg-transparent text-sm outline-none [&>option]:bg-[#111113] [&>option]:text-white"
-        style={{ color: value ? "white" : "rgba(255,255,255,0.28)" }}
+        className="flex-1 appearance-none bg-transparent text-sm outline-none [&>option]:bg-white [&>option]:text-gray-900"
+        style={{ color: value ? "#111827" : "#9ca3af" }}
       >
         <option value="" disabled>{placeholder}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
-      <ChevronDown size={13} className="pointer-events-none shrink-0 text-white/22" />
+      <ChevronDown size={13} className="pointer-events-none shrink-0 text-gray-300" />
       {value && (
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.18 }}>
           <CheckCircle2 size={13} className="shrink-0 text-[#34d399]" />
@@ -154,9 +150,6 @@ function PremiumSelect({
   );
 }
 
-/* ════════════════════════════════════════════════
-   PAGE
-════════════════════════════════════════════════ */
 export default function ContactPage() {
   return (
     <Suspense>
@@ -202,25 +195,16 @@ function ContactPageContent() {
     if (!isEmailValid(email)) return;
     setSending(true);
     setSendError(null);
-
     try {
       const res = await fetch("/api/contact", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          name:    name.trim(),
-          email:   email.trim(),
-          subject: subject.trim() || null,
-          budget:  budget || null,
-          message: message.trim(),
-        }),
+        body:    JSON.stringify({ name: name.trim(), email: email.trim(), subject: subject.trim() || null, budget: budget || null, message: message.trim() }),
       });
-
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error((data as { error?: string }).error ?? "Erreur serveur");
       }
-
       setSent(true);
     } catch (err) {
       console.error("Contact submit error:", err);
@@ -244,114 +228,60 @@ function ContactPageContent() {
 
   const PROCESS_ICONS  = [Send, Search, MessagesSquare, Rocket] as const;
   const PROCESS_COLORS = [
-    { color: "#c9a55a", rgb: "201,165,90"  },
+    { color: "#6366f1", rgb: "99,102,241"  },
     { color: "#60a5fa", rgb: "96,165,250"  },
     { color: "#4ade80", rgb: "74,222,128"  },
     { color: "#a78bfa", rgb: "167,139,250" },
   ] as const;
 
-  /* ─── Canaux de contact (données) ─── */
   const CHANNELS = [
-    {
-      href:       `mailto:${contactEmail}`,
-      label:      c.contactBlock.emailLabel,
-      value:      contactEmail,
-      icon:       Mail,
-      color:      "#c9a55a",
-      rgb:        "201,165,90",
-      badge:      null,
-      external:   false,
-    },
-    {
-      href:       `https://wa.me/${contactWhatsapp.replace(/\D/g, "")}`,
-      label:      c.contactBlock.whatsappLabel,
-      value:      contactWhatsapp,
-      icon:       MessageCircle,
-      color:      "#25d366",
-      rgb:        "37,211,102",
-      badge:      "En ligne",
-      external:   true,
-    },
-    {
-      href:       `tel:${contactPhone.replace(/\s/g, "")}`,
-      label:      c.contactBlock.phoneLabel,
-      value:      contactPhone,
-      icon:       Phone,
-      color:      "#60a5fa",
-      rgb:        "96,165,250",
-      badge:      null,
-      external:   false,
-    },
+    { href: `mailto:${contactEmail}`, label: c.contactBlock.emailLabel, value: contactEmail, icon: Mail, color: "#c9a55a", rgb: "201,165,90", badge: null, external: false },
+    { href: `https://wa.me/${contactWhatsapp.replace(/\D/g, "")}`, label: c.contactBlock.whatsappLabel, value: contactWhatsapp, icon: MessageCircle, color: "#25d366", rgb: "37,211,102", badge: "En ligne", external: true },
+    { href: `tel:${contactPhone.replace(/\s/g, "")}`, label: c.contactBlock.phoneLabel, value: contactPhone, icon: Phone, color: "#60a5fa", rgb: "96,165,250", badge: null, external: false },
   ] as const;
 
   return (
-    <div className="bg-[#09090b]">
+    <div className="bg-white">
 
-      {/* ══════════════════════════════════════════
-          HERO
-      ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pb-12 pt-24 sm:pb-20 sm:pt-40">
-        <div className="hero-grid absolute inset-0 opacity-40" />
-
-        {/* Animated orbs */}
-        <motion.div
-          className="pointer-events-none absolute inset-x-0 top-0 flex justify-center"
-          animate={{ y: [0, -20, 0], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <div className="h-[400px] w-[640px] rounded-full bg-[rgba(201,165,90,0.07)] blur-[90px]" />
-        </motion.div>
-        <motion.div
-          className="pointer-events-none absolute right-[8%] top-[30%] h-[260px] w-[260px] rounded-full bg-[rgba(167,139,250,0.04)] blur-[65px]"
-          animate={{ x: [0, 14, 0], y: [0, -8, 0] }}
-          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-        />
-        <motion.div
-          className="pointer-events-none absolute left-[6%] bottom-[10%] h-[200px] w-[200px] rounded-full bg-[rgba(96,165,250,0.035)] blur-[55px]"
-          animate={{ x: [0, -10, 0], y: [0, 10, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        />
+      {/* HERO */}
+      <section className="relative overflow-hidden pb-12 pt-[108px] sm:pb-20 sm:pt-[140px]">
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[350px] w-[600px] -translate-x-1/2 rounded-full bg-[rgba(99,102,241,.05)] blur-[90px]" />
 
         <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
-
-          {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease }}
-            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]"
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(99,102,241,.25)] bg-[rgba(99,102,241,.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em]"
+            style={{ color: "#6366f1" }}
           >
-            <span className="animate-pulse-ring relative flex h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
             <Sparkles size={11} /> {c.hero.badge}
           </motion.div>
 
-          <h1 className="display-hero text-white">
+          <h1 className="text-[2.8rem] font-extrabold leading-tight tracking-tight text-gray-900 sm:text-[3.5rem]">
             <MultiLineReveal
               lines={contactTitleLines}
               highlight={1}
               stagger={0.18}
               wordStagger={0.07}
               delay={0.1}
-              lineClassName="justify-center"
+              lineClassName="justify-center text-gray-900"
             />
           </h1>
 
-          <div className="pointer-events-none absolute left-1/2 top-[55%] -translate-x-1/2 -translate-y-1/2 h-20 w-60 rounded-full bg-[rgba(201,165,90,0.14)] blur-[40px]" />
-
-          <FadeReveal delay={0.65} as="p" className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/45">
+          <FadeReveal delay={0.55} as="p" className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-gray-500">
             {contactSubtitle}
           </FadeReveal>
 
-          {/* Hero badges */}
-          <FadeReveal delay={0.82} className="mt-8 flex flex-wrap justify-center gap-2.5">
+          <FadeReveal delay={0.72} className="mt-8 flex flex-wrap justify-center gap-2.5">
             {c.hero.badges.map(({ text, color, rgb }, i) => (
               <motion.div
                 key={text}
                 initial={{ opacity: 0, scale: 0.88 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.45, ease, delay: 0.85 + i * 0.1 }}
+                transition={{ duration: 0.45, ease, delay: 0.75 + i * 0.1 }}
                 className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[0.72rem] font-bold"
-                style={{ background: `rgba(${rgb}, 0.08)`, borderColor: `rgba(${rgb}, 0.22)`, color }}
+                style={{ background: `rgba(${rgb}, 0.07)`, borderColor: `rgba(${rgb}, 0.2)`, color }}
               >
                 {i === 0 && <Clock size={12} />}
                 {i === 1 && <Users2 size={12} />}
@@ -361,18 +291,13 @@ function ContactPageContent() {
             ))}
           </FadeReveal>
         </div>
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#09090b] to-transparent" />
       </section>
 
-      {/* ══════════════════════════════════════════
-          QUICK-CONTACT STRIP — canaux directs
-      ══════════════════════════════════════════ */}
+      {/* CANAUX DE CONTACT */}
       <section className="px-6 pb-4 pt-2 sm:pb-8">
         <div className="mx-auto max-w-3xl">
           <motion.div
-            initial="hidden"
-            whileInView="visible"
+            initial="hidden" whileInView="visible"
             viewport={{ once: true, margin: "-40px" }}
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } } }}
             className="grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -384,186 +309,104 @@ function ContactPageContent() {
                 target={external ? "_blank" : undefined}
                 rel={external ? "noopener noreferrer" : undefined}
                 variants={blurReveal}
-                className="group relative flex items-center gap-4 overflow-hidden rounded-[1.5rem] border border-white/[.08] bg-[#111113] p-4 transition-all duration-300 hover:-translate-y-1 sm:flex-col sm:items-center sm:p-5 sm:text-center"
-                style={{
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
-                }}
-                whileHover={{
-                  borderColor: `rgba(${rgb}, 0.35)`,
-                  boxShadow: `0 12px 36px rgba(${rgb}, 0.15), 0 2px 12px rgba(0,0,0,0.5)`,
-                }}
+                className="group relative flex items-center gap-4 overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white p-4 shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,.1)] sm:flex-col sm:items-center sm:p-5 sm:text-center"
+                whileHover={{ borderColor: `rgba(${rgb}, 0.35)` }}
                 transition={{ duration: 0.28, ease }}
               >
-                {/* Top highlight on hover */}
                 <div
                   className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                  style={{ background: `linear-gradient(90deg, transparent, rgba(${rgb}, 0.8), transparent)` }}
+                  style={{ background: `linear-gradient(90deg, transparent, rgba(${rgb}, 0.6), transparent)` }}
                 />
-
                 <div
                   className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border transition-all duration-300 group-hover:scale-110 sm:h-12 sm:w-12"
-                  style={{
-                    background: `rgba(${rgb}, 0.12)`,
-                    borderColor: `rgba(${rgb}, 0.28)`,
-                    boxShadow: `0 0 18px rgba(${rgb}, 0.22)`,
-                  }}
+                  style={{ background: `rgba(${rgb}, 0.1)`, borderColor: `rgba(${rgb}, 0.22)` }}
                 >
                   <Icon size={20} style={{ color }} />
                 </div>
-
                 <div className="min-w-0 flex-1 sm:flex-none">
-                  <p className="text-[0.58rem] font-black uppercase tracking-[0.14em] text-white/28">{label}</p>
-                  <p className="mt-0.5 truncate text-sm font-semibold text-white/78 sm:max-w-[160px]">{value}</p>
+                  <p className="text-[0.58rem] font-black uppercase tracking-[0.14em] text-gray-400">{label}</p>
+                  <p className="mt-0.5 truncate text-sm font-semibold text-gray-700 sm:max-w-[160px]">{value}</p>
                 </div>
-
                 {badge ? (
-                  <span
-                    className="shrink-0 rounded-full px-2 py-0.5 text-[0.55rem] font-black"
-                    style={{ background: `rgba(${rgb}, 0.15)`, color }}
-                  >
+                  <span className="shrink-0 rounded-full px-2 py-0.5 text-[0.55rem] font-black" style={{ background: `rgba(${rgb}, 0.12)`, color }}>
                     {badge}
                   </span>
                 ) : (
-                  <ArrowRight
-                    size={14}
-                    className="shrink-0 text-white/20 transition-all duration-200 group-hover:translate-x-0.5 sm:hidden"
-                    style={{ color: `rgba(${rgb}, 0.5)` }}
-                  />
+                  <ArrowRight size={14} className="shrink-0 text-gray-300 transition-all duration-200 group-hover:translate-x-0.5 sm:hidden" style={{ color: `rgba(${rgb}, 0.5)` }} />
                 )}
               </motion.a>
             ))}
           </motion.div>
 
-          {/* Séparateur */}
           <div className="mt-8 flex items-center gap-5">
-            <div className="h-px flex-1 bg-white/[.05]" />
-            <p className="shrink-0 text-[0.68rem] font-semibold text-white/22">ou remplissez le formulaire</p>
-            <div className="h-px flex-1 bg-white/[.05]" />
+            <div className="h-px flex-1 bg-gray-100" />
+            <p className="shrink-0 text-[0.68rem] font-semibold text-gray-300">ou remplissez le formulaire</p>
+            <div className="h-px flex-1 bg-gray-100" />
           </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════
-          FORMULAIRE + INFOS
-      ══════════════════════════════════════════ */}
+      {/* FORMULAIRE + INFOS */}
       <section className="px-6 pb-10 pt-6 sm:py-16">
         <div className="mx-auto max-w-5xl">
           <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
 
-            {/* ─── Formulaire ─── */}
+            {/* Formulaire */}
             <motion.div
               initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.65, ease }}
-              className="overflow-hidden rounded-[2rem] border border-white/[.08]"
-              style={{
-                background: "linear-gradient(160deg, #141417 0%, #111113 60%)",
-                boxShadow: "0 4px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)",
-              }}
+              className="overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow-[0_4px_24px_rgba(0,0,0,.08)]"
             >
               <AnimatePresence mode="wait">
                 {!sent ? (
                   <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
 
-                    {/* Header */}
-                    <div className="relative border-b border-white/[.06] px-7 py-6 sm:px-8 sm:py-7">
-                      {/* Gold top highlight */}
-                      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(201,165,90,0.5)] to-transparent" />
+                    <div className="relative border-b border-gray-100 px-7 py-6 sm:px-8 sm:py-7">
+                      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#6366f1] to-transparent opacity-60" />
                       <div className="flex items-center gap-4">
-                        <motion.div
-                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.12)]"
-                          animate={{ boxShadow: ["0 0 12px rgba(201,165,90,0.2)", "0 0 28px rgba(201,165,90,0.42)", "0 0 12px rgba(201,165,90,0.2)"] }}
-                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                          <Send size={17} className="text-[#c9a55a]" />
-                        </motion.div>
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[rgba(99,102,241,.25)] bg-[rgba(99,102,241,.08)]">
+                          <Send size={17} style={{ color: "#6366f1" }} />
+                        </div>
                         <div>
-                          <p className="text-[0.62rem] font-black uppercase tracking-[0.16em] text-[#c9a55a]">
+                          <p className="text-[0.62rem] font-black uppercase tracking-[0.16em] text-[#6366f1]">
                             {c.form.subtitle}
                           </p>
-                          <p className="mt-0.5 text-[1.05rem] font-extrabold text-white">
+                          <p className="mt-0.5 text-[1.05rem] font-extrabold text-gray-900">
                             {c.form.title}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Fields */}
                     <form onSubmit={handleSubmit} className="space-y-5 p-7 sm:p-8">
-
-                      {/* Nom + Email */}
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="flex flex-col gap-2">
-                          <label className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-white/32">
-                            Votre nom *
-                          </label>
-                          <PremiumInput
-                            icon={User}
-                            placeholder={c.form.namePlaceholder}
-                            value={name}
-                            onChange={setName}
-                            required
-                          />
+                          <label className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-gray-400">Votre nom *</label>
+                          <PremiumInput icon={User} placeholder={c.form.namePlaceholder} value={name} onChange={setName} required />
                         </div>
                         <div className="flex flex-col gap-2">
-                          <label className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-white/32">
-                            Adresse e-mail *
-                          </label>
-                          <PremiumInput
-                            icon={Mail}
-                            type="email"
-                            placeholder={c.form.emailPlaceholder}
-                            value={email}
-                            onChange={setEmail}
-                            required
-                            validate={isEmailValid}
-                          />
+                          <label className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-gray-400">Adresse e-mail *</label>
+                          <PremiumInput icon={Mail} type="email" placeholder={c.form.emailPlaceholder} value={email} onChange={setEmail} required validate={isEmailValid} />
                         </div>
                       </div>
 
-                      {/* Sujet */}
                       <div className="flex flex-col gap-2">
-                        <label className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-white/32">
-                          Sujet de votre demande *
-                        </label>
-                        <PremiumSelect
-                          icon={Search}
-                          placeholder={c.form.subjectPlaceholder}
-                          value={subject}
-                          onChange={setSubject}
-                          options={SUBJECTS}
-                        />
+                        <label className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-gray-400">Sujet de votre demande *</label>
+                        <PremiumSelect icon={Search} placeholder={c.form.subjectPlaceholder} value={subject} onChange={setSubject} options={SUBJECTS} />
                       </div>
 
-                      {/* Budget */}
                       <div className="flex flex-col gap-2">
-                        <label className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-white/32">
-                          Budget estimé
-                        </label>
-                        <PremiumSelect
-                          icon={Wallet}
-                          placeholder={c.form.budgetPlaceholder}
-                          value={budget}
-                          onChange={setBudget}
-                          options={BUDGETS}
-                        />
+                        <label className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-gray-400">Budget estimé</label>
+                        <PremiumSelect icon={Wallet} placeholder={c.form.budgetPlaceholder} value={budget} onChange={setBudget} options={BUDGETS} />
                       </div>
 
-                      {/* Message */}
                       <div className="flex flex-col gap-2">
-                        <label className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-white/32">
-                          Décrivez votre projet *
-                        </label>
-                        <PremiumTextarea
-                          placeholder={c.form.messagePlaceholder}
-                          value={message}
-                          onChange={setMessage}
-                          rows={5}
-                        />
+                        <label className="text-[0.62rem] font-black uppercase tracking-[0.14em] text-gray-400">Décrivez votre projet *</label>
+                        <PremiumTextarea placeholder={c.form.messagePlaceholder} value={message} onChange={setMessage} rows={5} />
                       </div>
 
-                      {/* Submit */}
                       <motion.button
                         type="submit"
                         disabled={sending || !canSubmit}
@@ -571,202 +414,109 @@ function ContactPageContent() {
                         whileTap={canSubmit ? { scale: 0.98 } : {}}
                         className="group relative w-full overflow-hidden rounded-2xl py-4 text-sm font-extrabold transition-all duration-300 disabled:opacity-40"
                         style={{
-                          background: canSubmit
-                            ? "linear-gradient(135deg, #c9a55a 0%, #b08d57 100%)"
-                            : "rgba(255,255,255,0.05)",
-                          color: canSubmit ? "#09090b" : "rgba(255,255,255,0.28)",
-                          boxShadow: canSubmit ? "0 8px 32px rgba(201,165,90,0.28), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
+                          background: canSubmit ? "linear-gradient(135deg,#6366f1 0%,#4f46e5 100%)" : "rgba(0,0,0,0.05)",
+                          color: canSubmit ? "#ffffff" : "rgba(0,0,0,0.28)",
+                          boxShadow: canSubmit ? "0 8px 24px rgba(99,102,241,0.3)" : "none",
                         }}
                       >
-                        {/* Shimmer */}
-                        <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                        <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                         <span className="relative flex items-center justify-center gap-2">
                           {sending ? (
                             <>
-                              <motion.span
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                                className="inline-block h-4 w-4 rounded-full border-2 border-[#09090b]/30 border-t-[#09090b]"
-                              />
+                              <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block h-4 w-4 rounded-full border-2 border-white/30 border-t-white" />
                               {c.form.sending}
                             </>
                           ) : (
-                            <>
-                              {c.form.submit}
-                              <Send size={15} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                            </>
+                            <>{c.form.submit}<Send size={15} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></>
                           )}
                         </span>
                       </motion.button>
 
-                      {/* Error */}
                       {sendError && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex items-start gap-3 rounded-2xl border border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.07)] px-4 py-3.5"
-                        >
+                        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                          className="flex items-start gap-3 rounded-2xl border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.06)] px-4 py-3.5">
                           <span className="mt-0.5 shrink-0 text-[#f87171]">!</span>
                           <p className="text-[0.81rem] leading-relaxed text-[#f87171]">{sendError}</p>
                         </motion.div>
                       )}
 
-                      <p className="text-center text-[0.66rem] text-white/18">{c.form.disclaimer}</p>
+                      <p className="text-center text-[0.66rem] text-gray-300">{c.form.disclaimer}</p>
                     </form>
                   </motion.div>
                 ) : (
-                  /* ─── Succès ─── */
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, ease }}
-                    className="flex flex-col items-center justify-center px-8 py-16 sm:py-24 text-center"
-                  >
-                    <motion.div
-                      initial={{ scale: 0, rotate: -20 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ duration: 0.5, delay: 0.1, ease: [0.34, 1.56, 0.64, 1] }}
-                      className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.08)]"
-                      style={{ boxShadow: "0 0 40px rgba(52,211,153,0.18)" }}
-                    >
+                  <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease }}
+                    className="flex flex-col items-center justify-center px-8 py-16 sm:py-24 text-center">
+                    <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.5, delay: 0.1, ease: [0.34, 1.56, 0.64, 1] }}
+                      className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.08)]">
                       <CheckCircle2 size={38} className="text-[#34d399]" />
                     </motion.div>
-                    <motion.h3
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="text-2xl font-extrabold text-white"
-                    >
-                      {c.form.successTitle}
-                    </motion.h3>
-                    <motion.p
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 }}
-                      className="mt-3 max-w-xs text-sm leading-relaxed text-white/45"
-                    >
-                      {c.form.successText}
-                    </motion.p>
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5 }}
-                      className="mt-6 flex items-center gap-2 rounded-full border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.06)] px-4 py-2"
-                    >
+                    <motion.h3 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-2xl font-extrabold text-gray-900">{c.form.successTitle}</motion.h3>
+                    <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mt-3 max-w-xs text-sm leading-relaxed text-gray-500">{c.form.successText}</motion.p>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+                      className="mt-6 flex items-center gap-2 rounded-full border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.07)] px-4 py-2">
                       <Clock size={12} className="text-[#34d399]" />
                       <span className="text-xs font-bold text-[#34d399]">{c.form.successBadge}</span>
                     </motion.div>
-                    <button
-                      onClick={() => { setSent(false); setName(""); setEmail(""); setSubject(""); setBudget(""); setMessage(""); }}
-                      className="mt-8 text-sm font-bold text-white/28 transition hover:text-white/60"
-                    >
-                      {c.form.newMessage}
-                    </button>
+                    <button onClick={() => { setSent(false); setName(""); setEmail(""); setSubject(""); setBudget(""); setMessage(""); }}
+                      className="mt-8 text-sm font-bold text-gray-400 transition hover:text-gray-700">{c.form.newMessage}</button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>
 
-            {/* ─── Colonne droite ─── */}
+            {/* Colonne droite */}
             <div className="flex flex-col gap-4">
-
-              {/* Carte principale infos contact */}
               <motion.div
-                initial={{ opacity: 0, x: 18 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+                initial={{ opacity: 0, x: 18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
                 transition={{ duration: 0.6, ease, delay: 0.1 }}
-                className="relative overflow-hidden rounded-[2rem] border border-white/[.08]"
-                style={{
-                  background: "linear-gradient(160deg, #141417 0%, #111113 70%)",
-                  boxShadow: "0 4px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)",
-                }}
+                className="relative overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow-[0_4px_24px_rgba(0,0,0,.08)]"
               >
-                {/* Glow orb top-right */}
-                <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-full bg-[rgba(201,165,90,0.07)] blur-[65px]" />
-
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent opacity-60" />
                 <div className="relative p-6 sm:p-7">
-                  {/* Status header */}
                   <div className="mb-5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <motion.span
-                        className="h-2 w-2 rounded-full bg-emerald-400"
-                        animate={{ opacity: [1, 0.4, 1] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      />
-                      <p className="text-[0.62rem] font-black uppercase tracking-[0.15em] text-white/35">
-                        {c.contactBlock.title}
-                      </p>
+                      <motion.span className="h-2 w-2 rounded-full bg-emerald-400" animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
+                      <p className="text-[0.62rem] font-black uppercase tracking-[0.15em] text-gray-400">{c.contactBlock.title}</p>
                     </div>
-                    <span className="rounded-full border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.08)] px-2.5 py-1 text-[0.55rem] font-black uppercase tracking-widest text-[#34d399]">
-                      Disponible
-                    </span>
+                    <span className="rounded-full border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.07)] px-2.5 py-1 text-[0.55rem] font-black uppercase tracking-widest text-[#34d399]">Disponible</span>
                   </div>
 
-                  <h3 className="text-[1.05rem] font-extrabold text-white">{c.contactBlock.title}</h3>
-                  <p className="mt-1 text-sm text-white/35">{c.contactBlock.subtitle}</p>
+                  <h3 className="text-[1.05rem] font-extrabold text-gray-900">{c.contactBlock.title}</h3>
+                  <p className="mt-1 text-sm text-gray-400">{c.contactBlock.subtitle}</p>
 
-                  {/* Canaux */}
                   <div className="mt-5 space-y-2.5">
                     {CHANNELS.map(({ href, label, value, icon: Icon, color, rgb, badge, external }) => (
-                      <a
-                        key={href}
-                        href={href}
-                        target={external ? "_blank" : undefined}
-                        rel={external ? "noopener noreferrer" : undefined}
-                        className="group flex items-center gap-3 rounded-xl border border-white/[.06] bg-white/[.025] p-3.5 transition-all duration-250 hover:-translate-y-0.5"
-                        style={{
-                          ["--hover-border" as string]: `rgba(${rgb}, 0.28)`,
-                          ["--hover-bg" as string]: `rgba(${rgb}, 0.05)`,
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLElement).style.borderColor = `rgba(${rgb}, 0.28)`;
-                          (e.currentTarget as HTMLElement).style.background = `rgba(${rgb}, 0.05)`;
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)";
-                          (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.025)";
-                        }}
-                      >
-                        <div
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all duration-250 group-hover:scale-110"
-                          style={{ background: `rgba(${rgb}, 0.12)`, borderColor: `rgba(${rgb}, 0.26)`, boxShadow: `0 0 12px rgba(${rgb}, 0.18)` }}
-                        >
+                      <a key={href} href={href} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}
+                        className="group flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3.5 transition-all duration-250 hover:-translate-y-0.5 hover:border-gray-300 hover:bg-white hover:shadow-[0_2px_10px_rgba(0,0,0,.06)]">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all duration-250 group-hover:scale-110" style={{ background: `rgba(${rgb}, 0.1)`, borderColor: `rgba(${rgb}, 0.22)` }}>
                           <Icon size={17} style={{ color }} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[0.58rem] font-black uppercase tracking-widest text-white/28">{label}</p>
-                          <p className="mt-0.5 truncate text-[0.82rem] font-semibold text-white/72">{value}</p>
+                          <p className="text-[0.58rem] font-black uppercase tracking-widest text-gray-400">{label}</p>
+                          <p className="mt-0.5 truncate text-[0.82rem] font-semibold text-gray-700">{value}</p>
                         </div>
                         {badge ? (
-                          <span className="shrink-0 rounded-full px-2 py-0.5 text-[0.55rem] font-black" style={{ background: `rgba(${rgb}, 0.15)`, color }}>
-                            {badge}
-                          </span>
+                          <span className="shrink-0 rounded-full px-2 py-0.5 text-[0.55rem] font-black" style={{ background: `rgba(${rgb}, 0.12)`, color }}>{badge}</span>
                         ) : (
-                          <ArrowRight size={12} className="shrink-0 text-white/18 transition-transform duration-200 group-hover:translate-x-0.5" style={{ color: `rgba(${rgb}, 0.45)` }} />
+                          <ArrowRight size={12} className="shrink-0 text-gray-300 transition-transform duration-200 group-hover:translate-x-0.5" style={{ color: `rgba(${rgb}, 0.45)` }} />
                         )}
                       </a>
                     ))}
 
-                    {/* Délai */}
-                    <div className="flex items-center gap-3 rounded-xl border border-white/[.06] bg-white/[.025] p-3.5">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(52,211,153,0.26)] bg-[rgba(52,211,153,0.12)]" style={{ boxShadow: "0 0 12px rgba(52,211,153,0.16)" }}>
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3.5">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.08)]">
                         <Clock size={17} className="text-[#34d399]" />
                       </div>
                       <div>
-                        <p className="text-[0.58rem] font-black uppercase tracking-widest text-white/28">{c.contactBlock.delayLabel}</p>
-                        <p className="mt-0.5 text-[0.82rem] font-semibold text-white/72">{c.contactBlock.delayValue}</p>
+                        <p className="text-[0.58rem] font-black uppercase tracking-widest text-gray-400">{c.contactBlock.delayLabel}</p>
+                        <p className="mt-0.5 text-[0.82rem] font-semibold text-gray-700">{c.contactBlock.delayValue}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Réserver un appel */}
-                  <Link
-                    href="/reserver-appel"
-                    className="group mt-5 flex w-full items-center justify-center gap-2.5 rounded-xl border border-[rgba(201,165,90,0.28)] bg-[rgba(201,165,90,0.08)] py-3.5 text-sm font-bold text-[#c9a55a] transition-all duration-250 hover:border-[rgba(201,165,90,0.45)] hover:bg-[rgba(201,165,90,0.14)]"
-                    style={{ boxShadow: "0 0 20px rgba(201,165,90,0.08)" }}
-                  >
+                  <Link href="/reserver-appel"
+                    className="group mt-5 flex w-full items-center justify-center gap-2.5 rounded-xl border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] py-3.5 text-sm font-bold transition-all duration-250 hover:border-[rgba(201,165,90,.45)] hover:bg-[rgba(201,165,90,.14)]"
+                    style={{ color: "#b08d57" }}>
                     <Calendar size={14} />
                     {c.contactBlock.bookBtn}
                     <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
@@ -774,35 +524,23 @@ function ContactPageContent() {
                 </div>
               </motion.div>
 
-              {/* Liens rapides */}
               {[
                 { href: "/services",     label: "Voir nos services",  sub: "Sites, apps, administratif…", icon: Layers },
                 { href: "/realisations", label: "Nos réalisations",   sub: "WEWE, Mondouka, Clamac…",     icon: Star   },
               ].map(({ href, label, sub, icon: Icon }, i) => (
-                <motion.div
-                  key={href}
-                  initial={{ opacity: 0, x: 18 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.55, ease, delay: 0.2 + i * 0.08 }}
-                >
-                  <Link
-                    href={href}
-                    className="group flex items-center justify-between rounded-[1.5rem] border border-white/[.07] bg-[#111113] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(201,165,90,0.22)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.35)]"
-                  >
+                <motion.div key={href} initial={{ opacity: 0, x: 18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.55, ease, delay: 0.2 + i * 0.08 }}>
+                  <Link href={href}
+                    className="group flex items-center justify-between rounded-[1.5rem] border border-gray-200 bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-[0_6px_20px_rgba(0,0,0,.09)]">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.24)] bg-[rgba(201,165,90,0.10)] transition-all duration-250 group-hover:scale-110"
-                        style={{ boxShadow: "0 0 12px rgba(201,165,90,0.14)" }}
-                      >
-                        <Icon size={16} className="text-[#c9a55a]" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(201,165,90,.25)] bg-[rgba(201,165,90,.09)] transition-all duration-250 group-hover:scale-110">
+                        <Icon size={16} style={{ color: "#c9a55a" }} />
                       </div>
                       <div>
-                        <p className="text-[0.88rem] font-extrabold text-white/72 transition-colors duration-200 group-hover:text-white">{label}</p>
-                        <p className="text-xs text-white/28">{sub}</p>
+                        <p className="text-[0.88rem] font-extrabold text-gray-700 transition-colors duration-200 group-hover:text-gray-900">{label}</p>
+                        <p className="text-xs text-gray-400">{sub}</p>
                       </div>
                     </div>
-                    <ArrowRight size={14} className="shrink-0 text-white/18 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[#c9a55a]" />
+                    <ArrowRight size={14} className="shrink-0 text-gray-300 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[#c9a55a]" />
                   </Link>
                 </motion.div>
               ))}
@@ -811,120 +549,34 @@ function ContactPageContent() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════
-          COMMENT ÇA SE PASSE
-      ══════════════════════════════════════════ */}
-      <section className="relative border-t border-white/[.05] px-6 py-24 overflow-hidden">
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[280px] w-[500px] rounded-full bg-[rgba(201,165,90,0.03)] blur-[100px]" />
-        </div>
+      {/* PROCESSUS */}
+      <section className="relative border-t border-gray-100 bg-[#f8f9fa] px-6 py-24 overflow-hidden">
         <div className="relative mx-auto max-w-5xl">
-          <motion.div
-            initial="hidden" whileInView="visible" viewport={viewport}
-            variants={staggerContainer}
-          >
-            <div className="mb-14 text-center">
-              <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
-                <Zap size={10} /> {c.process.badge}
-              </motion.span>
-              <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">{c.process.title}</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-base text-white/35">{c.process.subtitle}</motion.p>
-            </div>
-
-            <motion.div variants={staggerContainerFast} className="relative">
-              {/* Connector line — desktop only */}
-              <div className="pointer-events-none absolute left-[calc(12.5%+22px)] right-[calc(12.5%+22px)] top-[2.75rem] hidden h-px lg:block"
-                style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 20%, rgba(255,255,255,0.07) 80%, transparent)" }}
-              />
-
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                {c.process.steps.map(({ step, title, desc }, i) => {
-                  const Icon = PROCESS_ICONS[i];
-                  const { color, rgb } = PROCESS_COLORS[i];
-                  return (
-                    <motion.div
-                      key={step}
-                      variants={cardRevealBlur}
-                      className="group relative flex flex-col gap-4 overflow-hidden rounded-[1.75rem] border border-white/[.07] bg-[#111113] p-6 transition-all duration-350 hover:border-white/[.13] hover:-translate-y-1.5"
-                    >
-                      {/* Number watermark */}
-                      <span className="pointer-events-none absolute -right-1 -top-5 select-none text-[6rem] font-black leading-none text-white/[.022]" aria-hidden="true">
-                        {step}
-                      </span>
-
-                      {/* Hover radial */}
-                      <div
-                        className="pointer-events-none absolute inset-0 rounded-[1.75rem] opacity-0 transition-opacity duration-350 group-hover:opacity-100"
-                        style={{ background: `radial-gradient(ellipse at 20% 0%, rgba(${rgb}, 0.10) 0%, transparent 60%)` }}
-                      />
-
-                      {/* Icon */}
-                      <motion.div
-                        className="relative inline-flex h-[52px] w-[52px] items-center justify-center rounded-2xl border"
-                        style={{ background: `rgba(${rgb}, 0.12)`, borderColor: `rgba(${rgb}, 0.28)`, boxShadow: `0 0 18px rgba(${rgb}, 0.2)` }}
-                        whileHover={{ scale: 1.1, boxShadow: `0 0 32px rgba(${rgb}, 0.48)` }}
-                        transition={{ duration: 0.22 }}
-                      >
-                        <Icon size={23} style={{ color }} />
-                      </motion.div>
-
-                      <div>
-                        <span className="text-[0.58rem] font-black uppercase tracking-[0.18em]" style={{ color }}>
-                          Étape {step}
-                        </span>
-                        <h3 className="mt-1 text-[0.92rem] font-extrabold text-white/85">{title}</h3>
-                      </div>
-
-                      <p className="text-xs leading-relaxed text-white/38">{desc}</p>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          SECTION CONFIANCE
-      ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[.05] bg-[#0c0c10] px-6 py-20 sm:py-24">
-        <div className="mx-auto max-w-5xl">
           <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}>
-            <div className="mb-12 text-center">
-              <motion.span variants={fadeIn} className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]">
-                <Shield size={10} /> {c.trust.badge}
-              </motion.span>
-              <motion.h2 variants={fadeIn} className="display-section mt-4 text-white">{c.trust.title}</motion.h2>
+            <div className="mb-14 text-center">
+              <motion.div variants={fadeIn} className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(99,102,241,.25)] bg-[rgba(99,102,241,.07)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em]" style={{ color: "#6366f1" }}>
+                <Zap size={10} /> {c.process.badge}
+              </motion.div>
+              <motion.h2 variants={fadeIn} className="text-[1.9rem] font-extrabold text-gray-900 sm:text-[2.4rem]">{c.process.title}</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-base text-gray-500">{c.process.subtitle}</motion.p>
             </div>
 
-            <motion.div variants={staggerContainerFast} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {c.trust.items.map(({ title, desc }, i) => {
-                const Icon = TRUST_ICONS[i];
-                const { color, rgb } = TRUST_COLORS[i];
+            <motion.div variants={staggerContainerFast} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {c.process.steps.map(({ step, title, desc }, i) => {
+                const Icon = PROCESS_ICONS[i];
+                const { color, rgb } = PROCESS_COLORS[i];
                 return (
-                  <motion.div
-                    key={title}
-                    variants={cardRevealBlur}
-                    className="group relative overflow-hidden rounded-[1.5rem] border border-white/[.07] bg-[#111113] p-6 transition-all duration-300 hover:border-white/[.13] hover:-translate-y-1"
-                  >
-                    <span className="pointer-events-none absolute -right-1 -top-5 select-none text-[6rem] font-black leading-none text-white/[.02]" aria-hidden="true">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <div
-                      className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                      style={{ background: `radial-gradient(ellipse at 15% 0%, rgba(${rgb}, 0.11) 0%, transparent 60%)` }}
-                    />
-                    <motion.div
-                      className="relative mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl border"
-                      style={{ background: `rgba(${rgb}, 0.12)`, borderColor: `rgba(${rgb}, 0.26)`, boxShadow: `0 0 14px rgba(${rgb}, 0.18)` }}
-                      whileHover={{ scale: 1.1, boxShadow: `0 0 28px rgba(${rgb}, 0.45)` }}
-                      transition={{ duration: 0.22 }}
-                    >
-                      <Icon size={21} style={{ color }} />
-                    </motion.div>
-                    <h3 className="relative text-[0.9rem] font-extrabold text-white/85">{title}</h3>
-                    <p className="relative mt-2 text-[0.82rem] leading-relaxed text-white/38">{desc}</p>
+                  <motion.div key={step} variants={cardRevealBlur}
+                    className="group relative flex flex-col gap-4 overflow-hidden rounded-[1.75rem] border border-gray-200 bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,.05)] transition-all duration-350 hover:border-gray-300 hover:-translate-y-1.5 hover:shadow-[0_8px_28px_rgba(0,0,0,.1)]">
+                    <span className="pointer-events-none absolute -right-1 -top-5 select-none text-[6rem] font-black leading-none text-black/[.04]" aria-hidden="true">{step}</span>
+                    <div className="relative inline-flex h-[52px] w-[52px] items-center justify-center rounded-2xl border" style={{ background: `rgba(${rgb}, 0.1)`, borderColor: `rgba(${rgb}, 0.22)` }}>
+                      <Icon size={23} style={{ color }} />
+                    </div>
+                    <div>
+                      <span className="text-[0.58rem] font-black uppercase tracking-[0.18em]" style={{ color }}>Étape {step}</span>
+                      <h3 className="mt-1 text-[0.92rem] font-extrabold text-gray-900">{title}</h3>
+                    </div>
+                    <p className="text-xs leading-relaxed text-gray-500">{desc}</p>
                   </motion.div>
                 );
               })}
@@ -933,58 +585,59 @@ function ContactPageContent() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════
-          CTA FINAL
-      ══════════════════════════════════════════ */}
-      <section className="border-t border-white/[.05] px-6 py-12 sm:py-20">
+      {/* SECTION CONFIANCE */}
+      <section className="border-t border-gray-100 bg-white px-6 py-20 sm:py-24">
+        <div className="mx-auto max-w-5xl">
+          <motion.div initial="hidden" whileInView="visible" viewport={viewport} variants={staggerContainer}>
+            <div className="mb-12 text-center">
+              <motion.div variants={fadeIn} className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.07)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em]" style={{ color: "#b08d57" }}>
+                <Shield size={10} /> {c.trust.badge}
+              </motion.div>
+              <motion.h2 variants={fadeIn} className="text-[1.9rem] font-extrabold text-gray-900 sm:text-[2.4rem]">{c.trust.title}</motion.h2>
+            </div>
+
+            <motion.div variants={staggerContainerFast} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {c.trust.items.map(({ title, desc }, i) => {
+                const Icon = TRUST_ICONS[i];
+                const { color, rgb } = TRUST_COLORS[i];
+                return (
+                  <motion.div key={title} variants={cardRevealBlur}
+                    className="group relative overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,.05)] transition-all duration-300 hover:border-gray-300 hover:-translate-y-1 hover:shadow-[0_6px_24px_rgba(0,0,0,.09)]">
+                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl border" style={{ background: `rgba(${rgb}, 0.1)`, borderColor: `rgba(${rgb}, 0.22)` }}>
+                      <Icon size={21} style={{ color }} />
+                    </div>
+                    <h3 className="text-[0.9rem] font-extrabold text-gray-900">{title}</h3>
+                    <p className="mt-2 text-[0.82rem] leading-relaxed text-gray-500">{desc}</p>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* CTA FINAL */}
+      <section className="border-t border-gray-100 px-6 py-12 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <motion.div
-            initial={{ opacity: 0, y: 28 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
+            initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport}
             transition={{ duration: 0.75, ease }}
-            className="relative overflow-hidden rounded-[2.5rem] border border-[rgba(201,165,90,0.18)] p-10 sm:p-14"
-            style={{
-              background: "linear-gradient(150deg, rgba(201,165,90,0.07) 0%, rgba(9,9,11,0.95) 40%, rgba(96,165,250,0.04) 100%)",
-              boxShadow: "0 0 80px rgba(201,165,90,0.06), inset 0 1px 0 rgba(255,255,255,0.05)",
-            }}
+            className="relative overflow-hidden rounded-[2.5rem] px-10 py-14 sm:px-14 text-white"
+            style={{ background: "linear-gradient(135deg,#6366f1 0%,#4f46e5 50%,#7c3aed 100%)" }}
           >
-            {/* Glow orb */}
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <motion.div
-                className="h-56 w-80 rounded-full blur-[80px]"
-                style={{ background: "rgba(201,165,90,0.07)" }}
-                animate={{ scale: [1, 1.18, 1], opacity: [0.6, 1, 0.6] }}
-                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </div>
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(201,165,90,0.5)] to-transparent" />
-
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[200px] bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(255,255,255,.18),transparent)]" />
             <div className="relative">
-              <p className="text-[0.7rem] font-black uppercase tracking-[0.18em] text-[#c9a55a]">{c.finalCta.label}</p>
-              <h2 className="display-section mt-3 text-white">{c.finalCta.title}</h2>
-              <p className="mx-auto mt-4 max-w-md text-base text-white/35">
-                Envoyez votre demande maintenant — nous vous répondons sous 24h avec une proposition adaptée.
-              </p>
+              <p className="text-[0.7rem] font-black uppercase tracking-[0.18em] text-white/70">{c.finalCta.label}</p>
+              <h2 className="mt-3 text-[1.9rem] font-extrabold leading-tight sm:text-[2.4rem]">{c.finalCta.title}</h2>
+              <p className="mx-auto mt-4 max-w-md text-base text-white/70">Envoyez votre demande maintenant — nous vous répondons sous 24h avec une proposition adaptée.</p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <motion.a
-                  href="#"
-                  onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  className="btn-primary px-8 py-4"
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ duration: 0.2 }}
-                >
+                <motion.a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  className="btn-primary px-8 py-4" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
                   {c.finalCta.btn1} <ArrowRight size={16} />
                 </motion.a>
-                <motion.a
-                  href={`https://wa.me/${contactWhatsapp.replace(/\D/g, "")}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-[1.25rem] border border-[rgba(37,211,102,0.25)] bg-[rgba(37,211,102,0.07)] px-8 py-4 text-sm font-bold text-[#25d366] transition-all hover:border-[rgba(37,211,102,0.4)] hover:bg-[rgba(37,211,102,0.12)]"
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ duration: 0.2 }}
-                >
+                <motion.a href={`https://wa.me/${contactWhatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/30 bg-white/15 px-8 py-4 text-sm font-bold text-white transition-all hover:bg-white/25"
+                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
                   <MessageCircle size={16} /> {c.finalCta.btn2}
                 </motion.a>
               </div>

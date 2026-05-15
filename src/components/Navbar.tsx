@@ -69,10 +69,10 @@ export default function Navbar() {
         transition={{ duration: 0.4, ease }}
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-[rgba(9,9,11,0.92)] backdrop-blur-2xl border-b border-white/[0.07] shadow-[0_1px_0_rgba(255,255,255,0.05),0_8px_32px_rgba(0,0,0,0.4)]"
+            ? "bg-white/96 backdrop-blur-2xl border-b border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
             : lightNav
               ? "bg-white border-b border-gray-100"
-              : "bg-transparent"
+              : "bg-white/90 backdrop-blur-xl border-b border-gray-200"
         }`}
       >
         <div className="mx-auto flex h-[88px] max-w-6xl items-center justify-between px-6">
@@ -94,7 +94,7 @@ export default function Navbar() {
                   alt="Logo DJAMA"
                   width={400} height={90} priority
                   className="h-[52px] md:h-[72px] w-auto object-contain transition-all duration-300"
-                  style={lightNav ? { filter: "brightness(0)" } : {}}
+                  style={{ filter: "brightness(0)" }}
                 />
               </motion.div>
             </motion.div>
@@ -116,10 +116,10 @@ export default function Navbar() {
                     className={`group relative px-3.5 py-2 text-sm font-medium transition-colors duration-200 ${
                       lightNav
                         ? active ? "text-gray-900" : "text-gray-500 hover:text-gray-900"
-                        : active ? "text-white"    : "text-white/55 hover:text-white/90"
+                        : active ? "text-gray-900" : "text-gray-500 hover:text-gray-900"
                     }`}
                   >
-                    <ShimmerText variant="white" className="font-medium">{label}</ShimmerText>
+                    <ShimmerText variant="gold" className="font-medium">{label}</ShimmerText>
                     <span className={`absolute inset-x-3.5 -bottom-px h-px rounded-full bg-gradient-to-r from-[#c9a55a] to-[#e8cc94] transition-all duration-300 ${
                       active ? "opacity-100 scale-x-100" : "opacity-0 scale-x-0 group-hover:opacity-70 group-hover:scale-x-100"
                     }`} />
@@ -136,13 +136,13 @@ export default function Navbar() {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
             className="hidden md:flex items-center gap-3"
           >
-            <div className={`flex items-center gap-1 rounded-full border p-1 ${lightNav ? "border-gray-200 bg-gray-100" : "border-white/[0.09] bg-white/[0.04]"}`}>
+            <div className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 p-1">
               {(["fr", "en"] as const).map((l) => (
                 <button key={l} onClick={() => setLang(l)}
                   className={`rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-widest transition-all duration-200 ${
                     lang === l
-                      ? "bg-[#c9a55a] text-[#09090b] shadow-[0_1px_4px_rgba(201,165,90,0.4)]"
-                      : lightNav ? "text-gray-400 hover:text-gray-700" : "text-white/35 hover:text-white/65"
+                      ? "bg-[#c9a55a] text-white shadow-[0_1px_4px_rgba(201,165,90,0.4)]"
+                      : "text-gray-400 hover:text-gray-700"
                   }`}>{l}</button>
               ))}
             </div>
@@ -164,19 +164,19 @@ export default function Navbar() {
               <motion.span
                 animate={menuOpen ? { rotate: 45, y: 9, width: "28px" } : { rotate: 0, y: 0, width: "28px" }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className={`absolute block rounded-full ${lightNav ? "bg-gray-800" : "bg-white"}`}
+                className="absolute block rounded-full bg-gray-800"
                 style={{ height: "3px", top: "3px", originX: "50%", originY: "50%" }}
               />
               <motion.span
                 animate={menuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
                 transition={{ duration: 0.2 }}
-                className={`absolute block rounded-full ${lightNav ? "bg-gray-800" : "bg-white"}`}
+                className="absolute block rounded-full bg-gray-800"
                 style={{ height: "3px", width: "20px", top: "50%", marginTop: "-1.5px" }}
               />
               <motion.span
                 animate={menuOpen ? { rotate: -45, y: -9, width: "28px" } : { rotate: 0, y: 0, width: "28px" }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className={`absolute block rounded-full ${lightNav ? "bg-gray-800" : "bg-white"}`}
+                className="absolute block rounded-full bg-gray-800"
                 style={{ height: "3px", bottom: "3px", originX: "50%", originY: "50%" }}
               />
             </span>
@@ -190,7 +190,7 @@ export default function Navbar() {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.22 }}
-            className="fixed inset-0 z-40 bg-[rgba(9,9,11,0.97)] backdrop-blur-2xl md:hidden"
+            className="fixed inset-0 z-40 bg-white md:hidden"
           >
             <div className="h-[68px]" />
             <motion.nav
@@ -207,8 +207,8 @@ export default function Navbar() {
                       onClick={() => setMenuOpen(false)}
                       className={`flex items-center justify-between rounded-2xl px-5 py-3.5 text-xl font-extrabold transition-all duration-200 ${
                         active
-                          ? "bg-[rgba(201,165,90,0.08)] text-white border border-[rgba(201,165,90,0.2)]"
-                          : "text-white/65 hover:bg-white/[0.04] hover:text-white/90"
+                          ? "bg-[rgba(201,165,90,0.08)] text-gray-900 border border-[rgba(201,165,90,0.2)]"
+                          : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                       }`}
                     >
                       <span>{label}</span>
@@ -220,12 +220,12 @@ export default function Navbar() {
 
               {/* Lang toggle mobile */}
               <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease } } }} className="mt-2 px-5">
-                <p className="mb-2.5 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-white/25">{dict.nav.language}</p>
-                <div className="inline-flex items-center gap-1 rounded-full border border-white/[0.09] bg-white/[0.04] p-1">
+                <p className="mb-2.5 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-gray-400">{dict.nav.language}</p>
+                <div className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 p-1">
                   {(["fr", "en"] as const).map((l) => (
                     <button key={l} onClick={() => setLang(l)}
                       className={`rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-widest transition-all duration-200 ${
-                        lang === l ? "bg-[#c9a55a] text-[#09090b]" : "text-white/40 hover:text-white/70"
+                        lang === l ? "bg-[#c9a55a] text-white" : "text-gray-500 hover:text-gray-700"
                       }`}>{l === "fr" ? "🇫🇷 FR" : "🇬🇧 EN"}</button>
                   ))}
                 </div>
@@ -233,18 +233,18 @@ export default function Navbar() {
 
               {/* Contacts rapides */}
               <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease } } }} className="mt-4 px-5">
-                <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-white/25">Contact</p>
+                <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-gray-400">Contact</p>
                 <div className="flex flex-col gap-2">
                   <a href={`mailto:${data.contact.email}`}
-                    className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/55 transition hover:border-[rgba(201,165,90,0.25)] hover:text-white/90">
+                    className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:border-[rgba(201,165,90,0.3)] hover:text-gray-900">
                     <Mail size={14} className="text-[#c9a55a] shrink-0" />{data.contact.email}
                   </a>
                   <a href={`https://wa.me/${data.contact.whatsapp.replace(/[^0-9]/g,"")}`} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/55 transition hover:border-[rgba(37,211,102,0.25)] hover:text-white/90">
+                    className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:border-[rgba(37,211,102,0.3)] hover:text-gray-900">
                     <MessageCircle size={14} className="text-[#25d366] shrink-0" />WhatsApp — {data.contact.whatsapp}
                   </a>
                   <a href={`tel:${data.contact.phone.replace(/\s/g,"")}`}
-                    className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/55 transition hover:border-[rgba(96,165,250,0.25)] hover:text-white/90">
+                    className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:border-[rgba(96,165,250,0.3)] hover:text-gray-900">
                     <Phone size={14} className="text-[#60a5fa] shrink-0" />{data.contact.phone}
                   </a>
                 </div>

@@ -205,7 +205,7 @@ export default function CoachingIAPage() {
               </Link>
               <a
                 href="#programme"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-bold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-7 py-3.5 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
               >
                 Voir les 10 modules <ChevronDown size={15} />
               </a>

@@ -231,21 +231,21 @@ export default function SolutionsDigitalesPage() {
       <main>
 
         {/* ══ HERO ══════════════════════════════════════════ */}
-        <section className="relative overflow-hidden"
-          style={{ background: "radial-gradient(ellipse at 30% 50%, #0d0d26 0%, #080814 40%, #050510 70%, #030308 100%)", minHeight: "min(80vh, 720px)" }}>
+        <section className="relative overflow-hidden bg-white"
+          style={{ minHeight: "min(80vh, 720px)" }}>
           <div className="pointer-events-none absolute inset-0"
-            style={{ backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(129,140,248,0.05) 1.5px, transparent 0)", backgroundSize: "32px 32px" }} />
+            style={{ backgroundImage: "radial-gradient(circle at 1.5px 1.5px, rgba(129,140,248,0.06) 1.5px, transparent 0)", backgroundSize: "32px 32px" }} />
           <div className="pointer-events-none absolute left-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full blur-[100px]"
-            style={{ background: "radial-gradient(circle, rgba(129,140,248,0.12) 0%, transparent 70%)" }} />
+            style={{ background: "radial-gradient(circle, rgba(129,140,248,0.07) 0%, transparent 70%)" }} />
           <div className="pointer-events-none absolute right-0 top-1/4 h-[400px] w-[400px] rounded-full blur-[80px]"
-            style={{ background: "radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%)" }} />
+            style={{ background: "radial-gradient(circle, rgba(56,189,248,0.05) 0%, transparent 70%)" }} />
 
           <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-12 px-6 pb-16 pt-28 lg:flex-row lg:gap-16 lg:pb-0 lg:pt-0" style={{ minHeight: "min(80vh, 720px)" }}>
 
             {/* GAUCHE */}
             <div className="flex flex-1 flex-col items-start lg:py-16">
               <motion.div {...fadeIn} className="mb-7">
-                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/50 transition-colors hover:text-white">
+                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-xs text-gray-500 transition-colors hover:text-gray-900">
                   <ArrowLeft size={13} /> Tous les services
                 </Link>
               </motion.div>
@@ -254,25 +254,25 @@ export default function SolutionsDigitalesPage() {
                 style={{ borderColor: `rgba(${ACCENT_RGB},0.3)`, background: `rgba(${ACCENT_RGB},0.07)`, color: ACCENT }}>
                 <Zap size={12} /> Digital · IA · Plateformes
               </motion.div>
-              <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.25rem]">
+              <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl lg:text-[3.25rem]">
                 <MultiLineReveal lines={["Automatisation, IA", "et plateformes web"]}
                   highlight={1} stagger={0.12} wordStagger={0.055} delay={0.08} lineClassName="justify-start" />
               </h1>
               <FadeReveal delay={0.2}>
-                <p className="mb-8 max-w-lg text-base leading-relaxed text-white/55 sm:text-lg">
+                <p className="mb-8 max-w-lg text-base leading-relaxed text-gray-600 sm:text-lg">
                   Nous concevons des outils métiers, plateformes SaaS et automatisations intelligentes pour digitaliser et optimiser votre activité.
                 </p>
               </FadeReveal>
               <FadeReveal delay={0.3}>
                 <div className="mb-8 flex flex-wrap gap-3">
                   <Link href="#devis" className="btn-primary px-7 py-3.5 text-sm">Parler de mon projet <ArrowRight size={15} /></Link>
-                  <Link href="#exemples" className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/[0.1] bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white/65 transition-all hover:border-white/20 hover:bg-white/[0.07] hover:text-white">Voir des exemples</Link>
+                  <Link href="#exemples" className="inline-flex items-center gap-2 rounded-[1.25rem] border border-gray-200 bg-gray-50 px-7 py-3.5 text-sm font-semibold text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900">Voir des exemples</Link>
                 </div>
               </FadeReveal>
               <FadeReveal delay={0.42}>
                 <div className="flex flex-wrap gap-2.5">
                   {["Automatisation intelligente", "Gain de temps", "Intégration avec vos outils"].map((label) => (
-                    <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.09] bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/60">{label}</span>
+                    <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3.5 py-1.5 text-xs font-medium text-gray-600">{label}</span>
                   ))}
                 </div>
               </FadeReveal>
@@ -396,22 +396,22 @@ export default function SolutionsDigitalesPage() {
         </section>
 
         {/* ══ CE QUE NOUS AUTOMATISONS ══════════════════════ */}
-        <section className="bg-[#0d0d1a] py-14 sm:py-24">
+        <section className="bg-[#f8f9fa] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Automatisation IA</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que nous pouvons automatiser</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-xl text-sm text-white/45">Des solutions concrètes pour chaque type de tâche répétitive dans votre activité.</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Ce que nous pouvons automatiser</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-xl text-sm text-gray-500">Des solutions concrètes pour chaque type de tâche répétitive dans votre activité.</motion.p>
             </motion.div>
             <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {AUTOMATISATIONS.map(({ icon: Icon, color, rgb, title, desc }) => (
                 <motion.div key={title} variants={cardReveal}
-                  className="group rounded-3xl border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.14] hover:bg-white/[0.06]">
+                  className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:border-gray-300 hover:shadow-md">
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `rgba(${rgb},0.1)` }}>
                     <Icon size={20} style={{ color }} />
                   </div>
-                  <h3 className="mb-2 text-sm font-bold text-white">{title}</h3>
-                  <p className="text-xs leading-relaxed text-white/50">{desc}</p>
+                  <h3 className="mb-2 text-sm font-bold text-gray-900">{title}</h3>
+                  <p className="text-xs leading-relaxed text-gray-500">{desc}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -419,18 +419,18 @@ export default function SolutionsDigitalesPage() {
         </section>
 
         {/* ══ TYPES DE PLATEFORMES ══════════════════════════ */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
+        <section className="bg-white py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT2 }}>Plateformes web</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Types de plateformes que nous créons</motion.h2>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Types de plateformes que nous créons</motion.h2>
             </motion.div>
             <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid gap-6 sm:grid-cols-3">
               {TYPES_PLATEFORMES.map(({ icon: Icon, color, rgb, title, desc, tags }) => (
                 <motion.div key={title} variants={cardReveal}
-                  className="overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.03] transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.06]">
-                  {/* Mini dashboard mockup */}
-                  <div className="border-b border-white/[0.07] p-4" style={{ background: "#111118" }}>
+                  className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:border-gray-300 hover:shadow-md">
+                  {/* Mini dashboard mockup — kept dark for visual authenticity */}
+                  <div className="border-b border-gray-200 p-4" style={{ background: "#111118" }}>
                     <div className="flex items-center gap-2 border-b border-white/[0.06] pb-2 mb-3">
                       <div className="flex gap-1">
                         <div className="h-2 w-2 rounded-full bg-white/10" />
@@ -463,9 +463,9 @@ export default function SolutionsDigitalesPage() {
                         style={{ background: `rgba(${rgb},0.12)` }}>
                         <Icon size={18} style={{ color }} />
                       </div>
-                      <h3 className="text-sm font-bold text-white">{title}</h3>
+                      <h3 className="text-sm font-bold text-gray-900">{title}</h3>
                     </div>
-                    <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
+                    <p className="mb-4 text-xs leading-relaxed text-gray-500">{desc}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {tags.map(t => (
                         <span key={t} className="rounded-full px-2.5 py-1 text-[0.6rem] font-medium"
@@ -482,12 +482,12 @@ export default function SolutionsDigitalesPage() {
         </section>
 
         {/* ══ SCHÉMA VISUEL — FLUX ══════════════════════════ */}
-        <section className="bg-[#0d0d1a] py-14 sm:py-24">
+        <section className="bg-[#f8f9fa] py-14 sm:py-24">
           <div className="mx-auto max-w-4xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-14 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Comment ça fonctionne</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Votre activité, optimisée</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-sm text-white/45">De l'utilisateur final aux résultats — une chaîne digitale fluide et automatisée.</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Votre activité, optimisée</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-sm text-gray-500">De l'utilisateur final aux résultats — une chaîne digitale fluide et automatisée.</motion.p>
             </motion.div>
 
             {/* Schéma desktop horizontal */}
@@ -502,11 +502,11 @@ export default function SolutionsDigitalesPage() {
                       animate={{ y: [0, -4, 0] }}
                       transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.5, ease: "easeInOut" }}
                       className="relative z-10 mb-4 flex h-14 w-14 items-center justify-center rounded-full border-2"
-                      style={{ background: `rgba(${rgb},0.14)`, borderColor: `rgba(${rgb},0.5)`, boxShadow: `0 0 24px rgba(${rgb},0.2)` }}>
+                      style={{ background: `rgba(${rgb},0.14)`, borderColor: `rgba(${rgb},0.5)`, boxShadow: `0 0 24px rgba(${rgb},0.1)` }}>
                       <Icon size={20} style={{ color }} />
                     </motion.div>
-                    <p className="mb-1 text-sm font-bold text-white">{label}</p>
-                    <p className="text-[0.7rem] text-white/40">{desc}</p>
+                    <p className="mb-1 text-sm font-bold text-gray-900">{label}</p>
+                    <p className="text-[0.7rem] text-gray-500">{desc}</p>
                   </motion.div>
                 ))}
               </motion.div>
@@ -525,8 +525,8 @@ export default function SolutionsDigitalesPage() {
                       <Icon size={15} style={{ color }} />
                     </div>
                     <div className="flex-1 pb-6 pt-1">
-                      <p className="mb-0.5 text-sm font-bold text-white">{label}</p>
-                      <p className="text-xs text-white/40">{desc}</p>
+                      <p className="mb-0.5 text-sm font-bold text-gray-900">{label}</p>
+                      <p className="text-xs text-gray-500">{desc}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -536,30 +536,30 @@ export default function SolutionsDigitalesPage() {
         </section>
 
         {/* ══ TABLEAU FONCTIONNALITÉS ═══════════════════════ */}
-        <section className="bg-[#09090b] py-14 sm:py-24">
+        <section className="bg-white py-14 sm:py-24">
           <div className="mx-auto max-w-3xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Inclus dans votre projet</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que vous obtenez</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-md text-sm text-white/45">Tout ce qui est compris dans chaque solution digitale livrée par DJAMA.</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Ce que vous obtenez</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-md text-sm text-gray-500">Tout ce qui est compris dans chaque solution digitale livrée par DJAMA.</motion.p>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport} transition={{ duration: 0.5, ease }}
-              className="overflow-hidden rounded-3xl border border-white/[0.10]">
-              <div className="grid grid-cols-[1fr_80px] items-center border-b border-white/[0.10] px-5 py-3.5"
-                style={{ background: "rgba(129,140,248,0.05)" }}>
-                <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/35">Fonctionnalité</p>
-                <p className="text-center text-[0.65rem] font-black uppercase tracking-widest text-white/35">Inclus</p>
+              className="overflow-hidden rounded-3xl border border-gray-200 shadow-sm">
+              <div className="grid grid-cols-[1fr_80px] items-center border-b border-gray-100 px-5 py-3.5"
+                style={{ background: "rgba(129,140,248,0.04)" }}>
+                <p className="text-[0.65rem] font-black uppercase tracking-widest text-gray-500">Fonctionnalité</p>
+                <p className="text-center text-[0.65rem] font-black uppercase tracking-widest text-gray-500">Inclus</p>
               </div>
               {TABLE_INCLUS.map(({ label, icon: Icon, color }, i) => (
                 <motion.div key={label}
                   initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={viewport}
                   transition={{ duration: 0.35, delay: i * 0.06, ease }}
-                  className={`grid grid-cols-[1fr_80px] items-center px-5 py-4 transition-all hover:bg-white/[0.03] ${i > 0 ? "border-t border-white/[0.06]" : ""}`}>
+                  className={`grid grid-cols-[1fr_80px] items-center px-5 py-4 transition-all hover:bg-gray-50 ${i > 0 ? "border-t border-gray-100" : ""}`}>
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${color},0.1)` }}>
                       <Icon size={14} style={{ color: `rgb(${color})` }} />
                     </div>
-                    <p className="text-sm text-white/80">{label}</p>
+                    <p className="text-sm text-gray-700">{label}</p>
                   </div>
                   <div className="flex items-center justify-center">
                     <div className="flex h-7 w-7 items-center justify-center rounded-full"
@@ -574,23 +574,23 @@ export default function SolutionsDigitalesPage() {
         </section>
 
         {/* ══ TECHNOLOGIES ══════════════════════════════════ */}
-        <section className="bg-[#0d0d1a] py-14 sm:py-24">
+        <section className="bg-[#f8f9fa] py-14 sm:py-24">
           <div className="mx-auto max-w-4xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Notre stack</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Technologies utilisées</motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-md text-sm text-white/45">Des outils modernes, éprouvés et adaptés à chaque type de projet.</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Technologies utilisées</motion.h2>
+              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-md text-sm text-gray-500">Des outils modernes, éprouvés et adaptés à chaque type de projet.</motion.p>
             </motion.div>
             <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {TECHNOLOGIES.map(({ label, color, rgb, icon: Icon }) => (
                 <motion.div key={label} variants={cardReveal}
-                  className="group flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 transition-all duration-300 hover:border-white/[0.16] hover:bg-white/[0.06]"
+                  className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm transition-all duration-300 hover:border-gray-300 hover:shadow-md"
                   whileHover={{ y: -3 }} transition={{ duration: 0.2 }}>
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                     style={{ background: `rgba(${rgb},0.12)`, border: `1px solid rgba(${rgb},0.2)` }}>
                     <Icon size={18} style={{ color }} />
                   </div>
-                  <p className="text-sm font-semibold text-white/80">{label}</p>
+                  <p className="text-sm font-semibold text-gray-700">{label}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -598,18 +598,18 @@ export default function SolutionsDigitalesPage() {
         </section>
 
         {/* ══ CAS D'USAGE ══════════════════════════════════ */}
-        <section id="exemples" className="bg-[#09090b] py-14 sm:py-24">
+        <section id="exemples" className="bg-white py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Cas d'usage</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Exemples de projets réalisés</motion.h2>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Exemples de projets réalisés</motion.h2>
             </motion.div>
             <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid items-start gap-6 sm:grid-cols-3">
               {CAS_USAGE.map(({ icon: Icon, color, rgb, titre, desc, resultat }) => (
                 <motion.div key={titre} variants={cardReveal}
-                  className="overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.03] transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.06]">
-                  {/* Mini dashboard mockup */}
-                  <div className="p-4 border-b border-white/[0.07]" style={{ background: "#111118" }}>
+                  className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:border-gray-300 hover:shadow-md">
+                  {/* Mini dashboard mockup — dark for visual contrast */}
+                  <div className="p-4 border-b border-gray-200" style={{ background: "#111118" }}>
                     <div className="mb-2 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <div className="h-2 w-2 rounded-full" style={{ background: color }} />
@@ -640,9 +640,9 @@ export default function SolutionsDigitalesPage() {
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${rgb},0.12)` }}>
                         <Icon size={16} style={{ color }} />
                       </div>
-                      <h3 className="text-sm font-bold text-white">{titre}</h3>
+                      <h3 className="text-sm font-bold text-gray-900">{titre}</h3>
                     </div>
-                    <p className="mb-4 text-xs leading-relaxed text-white/50">{desc}</p>
+                    <p className="mb-4 text-xs leading-relaxed text-gray-500">{desc}</p>
                     <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `rgba(${rgb},0.25)`, background: `rgba(${rgb},0.06)` }}>
                       <TrendingUp size={11} style={{ color }} />
                       <p className="text-[0.65rem] font-semibold" style={{ color }}>{resultat}</p>
@@ -655,29 +655,29 @@ export default function SolutionsDigitalesPage() {
         </section>
 
         {/* ══ TÉMOIGNAGES ══════════════════════════════════ */}
-        <section className="bg-[#0d0d1a] py-14 sm:py-24">
+        <section className="bg-[#f8f9fa] py-14 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-12 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Avis clients</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Ce que disent nos clients</motion.h2>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Ce que disent nos clients</motion.h2>
             </motion.div>
             <motion.div variants={staggerContainerFast} initial="hidden" whileInView="show" viewport={viewport} className="grid items-start gap-5 sm:grid-cols-3">
               {TEMOIGNAGES.map(({ name, activite, note, avis }) => (
                 <motion.div key={name} variants={cardReveal}
-                  className="flex flex-col rounded-3xl border border-white/[0.10] bg-white/[0.04] p-6 transition-all duration-300 hover:border-white/[0.17] hover:bg-white/[0.07]">
+                  className="flex flex-col rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:border-gray-300 hover:shadow-md">
                   <div className="mb-4 flex gap-1">
                     {Array.from({ length: note }).map((_, i) => <Star key={i} size={13} fill="#f9a826" style={{ color: "#f9a826" }} />)}
                   </div>
                   <Quote size={20} className="mb-3 opacity-20" style={{ color: ACCENT }} />
-                  <p className="mb-5 flex-1 text-sm leading-relaxed text-white/65">{avis}</p>
-                  <div className="flex items-center gap-3 border-t border-white/[0.07] pt-4">
+                  <p className="mb-5 flex-1 text-sm leading-relaxed text-gray-600">{avis}</p>
+                  <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full text-[0.65rem] font-black"
                       style={{ background: `rgba(${ACCENT_RGB},0.15)`, color: ACCENT }}>
                       {name.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white">{name}</p>
-                      <p className="text-[0.65rem] text-white/35">{activite}</p>
+                      <p className="text-sm font-bold text-gray-900">{name}</p>
+                      <p className="text-[0.65rem] text-gray-500">{activite}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -687,25 +687,25 @@ export default function SolutionsDigitalesPage() {
         </section>
 
         {/* ══ FORMULAIRE ═══════════════════════════════════ */}
-        <section id="devis" className="bg-[#09090b] py-14 sm:py-24">
+        <section id="devis" className="bg-white py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Passez à l'action</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Parlons de votre projet</motion.h2>
-              <motion.p variants={fadeIn} className="mt-4 text-sm text-white/45">Décrivez votre besoin — on analyse et on revient vers vous sous 24h avec une proposition concrète.</motion.p>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Parlons de votre projet</motion.h2>
+              <motion.p variants={fadeIn} className="mt-4 text-sm text-gray-500">Décrivez votre besoin — on analyse et on revient vers vous sous 24h avec une proposition concrète.</motion.p>
             </motion.div>
-            <div className="rounded-3xl border border-white/[0.10] bg-white/[0.04] p-5 sm:p-8 shadow-2xl">
+            <div className="rounded-3xl border border-gray-200 bg-white p-5 sm:p-8 shadow-md">
               <DevisForm />
             </div>
           </div>
         </section>
 
         {/* ══ FAQ ══════════════════════════════════════════ */}
-        <section className="bg-[#0d0d1a] py-14 sm:py-24">
+        <section className="bg-[#f8f9fa] py-14 sm:py-24">
           <div className="mx-auto max-w-2xl px-6">
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={viewport} className="mb-10 text-center">
               <motion.p variants={fadeIn} className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: ACCENT }}>Questions fréquentes</motion.p>
-              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-white sm:text-4xl">Vous avez des questions ?</motion.h2>
+              <motion.h2 variants={fadeIn} className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Vous avez des questions ?</motion.h2>
             </motion.div>
             <div className="space-y-3">
               {FAQ_ITEMS.map(({ q, a }, i) => <FaqItem key={i} q={q} a={a} open={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />)}
@@ -714,21 +714,21 @@ export default function SolutionsDigitalesPage() {
         </section>
 
         {/* ══ CTA FINAL ════════════════════════════════════ */}
-        <section className="relative overflow-hidden bg-[#09090b] pb-14 pt-14 sm:pb-24 sm:pt-20">
+        <section className="relative overflow-hidden bg-white pb-14 pt-14 sm:pb-24 sm:pt-20">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-1/2 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-15"
-              style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.4) 0%, transparent 70%)` }} />
+            <div className="absolute left-1/2 top-1/2 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-10"
+              style={{ background: `radial-gradient(ellipse, rgba(${ACCENT_RGB},0.3) 0%, transparent 70%)` }} />
           </div>
           <div className="relative mx-auto max-w-2xl px-6 text-center">
             <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={viewport} transition={{ duration: 0.6, ease }}>
               <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: `rgba(${ACCENT_RGB},0.12)` }}>
                 <Sparkles size={26} style={{ color: ACCENT }} />
               </div>
-              <h2 className="mb-4 text-3xl font-extrabold text-white sm:text-4xl">Automatisez et digitalisez votre activité</h2>
-              <p className="mb-8 text-sm leading-relaxed text-white/50 max-w-md mx-auto">Dites-nous ce que vous voulez optimiser — on construit la solution qui vous libère du temps et accélère votre croissance.</p>
+              <h2 className="mb-4 text-3xl font-extrabold text-gray-900 sm:text-4xl">Automatisez et digitalisez votre activité</h2>
+              <p className="mb-8 text-sm leading-relaxed text-gray-500 max-w-md mx-auto">Dites-nous ce que vous voulez optimiser — on construit la solution qui vous libère du temps et accélère votre croissance.</p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link href="#devis" className="btn-primary px-8 py-4 text-base">Discuter de mon projet <ArrowRight size={16} /></Link>
-                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-semibold text-white/70 transition-all hover:bg-white/[0.07] hover:text-white">Voir tous nos services</Link>
+                <Link href="/services" className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-6 py-4 text-sm font-semibold text-gray-600 transition-all hover:bg-gray-100 hover:text-gray-900">Voir tous nos services</Link>
               </div>
             </motion.div>
           </div>

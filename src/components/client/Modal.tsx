@@ -82,7 +82,7 @@ export default function Modal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-sm p-0 sm:p-4"
           onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
           role="dialog"
           aria-modal="true"
@@ -97,9 +97,9 @@ export default function Modal({
             className={`
               w-full ${MAX_W[maxWidth]}
               rounded-t-[1.75rem] sm:rounded-[1.75rem]
-              border border-white/[0.08]
-              bg-[#0f1117]
-              shadow-[0_32px_80px_rgba(0,0,0,0.6)]
+              border border-gray-200
+              bg-white
+              shadow-[0_8px_40px_rgba(0,0,0,0.1)]
               flex flex-col
               max-h-[92dvh] sm:max-h-[88dvh]
               overflow-hidden
@@ -108,17 +108,17 @@ export default function Modal({
                         {!hideHeader && (
               <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-0 shrink-0">
                 <div>
-                  <h2 id={titleId} className="text-base font-extrabold text-white leading-tight">
+                  <h2 id={titleId} className="text-base font-extrabold text-gray-900 leading-tight">
                     {title}
                   </h2>
                   {subtitle && (
-                    <p className="mt-0.5 text-xs text-white/35">{subtitle}</p>
+                    <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>
                   )}
                 </div>
                 <button
                   onClick={onClose}
                   aria-label="Fermer"
-                  className="shrink-0 mt-0.5 rounded-lg p-1.5 text-white/30 hover:text-white/60 hover:bg-white/[0.05] transition"
+                  className="shrink-0 mt-0.5 rounded-lg p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
                 >
                   <X size={16} />
                 </button>
@@ -130,7 +130,7 @@ export default function Modal({
             </div>
 
                         {footer && (
-              <div className="shrink-0 px-5 pb-5 pt-3 border-t border-white/[0.06]">
+              <div className="shrink-0 px-5 pb-5 pt-3 border-t border-gray-100">
                 {footer}
               </div>
             )}

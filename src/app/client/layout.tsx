@@ -15,10 +15,8 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useRequireSubscription } from "@/lib/use-require-subscription";
 
-const GOLD = "#c9a55a";
-const NAVY = "#0a0f1e";
-const SIDEBAR_BG = "#070c18";
-const BORDER = "rgba(255,255,255,0.06)";
+const GOLD   = "#c9a55a";
+const BORDER = "rgba(17,24,39,0.08)";
 
 type NavEntry = { href: string; label: string; icon: React.ElementType; exact?: boolean };
 
@@ -130,12 +128,12 @@ function NotifBell({ ready }: { ready: boolean }) {
       <button
         onClick={() => setOpen(v => !v)}
         aria-label={`Notifications${badge > 0 ? ` — ${badge} aujourd'hui` : ""}`}
-        className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200"
+        className="relative flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
       >
         <Bell size={15} />
         {badge > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[0.52rem] font-black"
-            style={{ background: GOLD, color: "#07090f" }}>
+            style={{ background: GOLD, color: "#ffffff" }}>
             {badge > 9 ? "9+" : badge}
           </span>
         )}
@@ -148,12 +146,11 @@ function NotifBell({ ready }: { ready: boolean }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 top-10 z-50 w-76 overflow-hidden rounded-xl border shadow-2xl"
-            style={{ background: "#0d1220", borderColor: BORDER }}
+            className="absolute right-0 top-10 z-50 w-76 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.1)]"
           >
-            <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: BORDER }}>
-              <span className="text-xs font-semibold text-slate-300">Événements à venir</span>
-              <button onClick={() => setOpen(false)} aria-label="Fermer" className="text-slate-500 hover:text-slate-300 transition">
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+              <span className="text-xs font-semibold text-gray-700">Événements à venir</span>
+              <button onClick={() => setOpen(false)} aria-label="Fermer" className="text-gray-400 hover:text-gray-600 transition">
                 <X size={13} />
               </button>
             </div>
@@ -161,8 +158,8 @@ function NotifBell({ ready }: { ready: boolean }) {
             <div className="max-h-[320px] overflow-y-auto">
               {events.length === 0 ? (
                 <div className="px-4 py-8 text-center">
-                  <Calendar size={20} className="mx-auto mb-2 text-slate-600" />
-                  <p className="text-xs text-slate-500">Aucun événement cette semaine</p>
+                  <Calendar size={20} className="mx-auto mb-2 text-gray-300" />
+                  <p className="text-xs text-gray-400">Aucun événement cette semaine</p>
                   <Link href="/client/planning" onClick={() => setOpen(false)}
                     className="mt-2 inline-block text-xs font-medium transition hover:opacity-80"
                     style={{ color: GOLD }}>
@@ -177,14 +174,14 @@ function NotifBell({ ready }: { ready: boolean }) {
                     { label: "Cette semaine", evts: laterEvts,    showDate: true  },
                   ].map(({ label, evts, showDate }) => evts.length === 0 ? null : (
                     <div key={label}>
-                      <p className="px-4 pb-1 pt-3 text-[0.6rem] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+                      <p className="px-4 pb-1 pt-3 text-[0.6rem] font-bold uppercase tracking-wider text-gray-400">{label}</p>
                       {evts.map(ev => (
                         <Link href="/client/planning" key={ev.id} onClick={() => setOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2 transition hover:bg-white/[0.03]">
+                          className="flex items-center gap-3 px-4 py-2 transition hover:bg-gray-50">
                           <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: GOLD }} />
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-medium text-slate-200">{ev.title}</p>
-                            <p className="text-[0.65rem] text-slate-500">
+                            <p className="truncate text-xs font-medium text-gray-700">{ev.title}</p>
+                            <p className="text-[0.65rem] text-gray-400">
                               {showDate ? `${fmtEvtDate(ev.event_date)} · ` : ""}{ev.event_time ?? "Sans heure"}
                             </p>
                           </div>
@@ -196,7 +193,7 @@ function NotifBell({ ready }: { ready: boolean }) {
               )}
             </div>
 
-            <div className="border-t px-4 py-2.5" style={{ borderColor: BORDER }}>
+            <div className="border-t border-gray-100 px-4 py-2.5">
               <Link href="/client/planning" onClick={() => setOpen(false)}
                 className="flex items-center justify-center gap-1.5 text-xs font-medium transition hover:opacity-75"
                 style={{ color: GOLD }}>
@@ -215,17 +212,17 @@ function NotifBell({ ready }: { ready: boolean }) {
 ───────────────────────────────────────────────── */
 function PendingScreen() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-0 px-6" style={{ background: NAVY }}>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-0 bg-white px-6">
       <div className="w-full max-w-md text-center">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border"
           style={{ background: "rgba(201,165,90,0.08)", borderColor: "rgba(201,165,90,0.2)" }}>
           <Clock size={28} style={{ color: GOLD }} />
         </div>
-        <h1 className="mb-3 text-xl font-bold text-white">Votre accès sera activé prochainement</h1>
-        <p className="mb-8 text-sm leading-relaxed text-slate-400">
+        <h1 className="mb-3 text-xl font-bold text-gray-900">Votre accès sera activé prochainement</h1>
+        <p className="mb-8 text-sm leading-relaxed text-gray-500">
           Votre paiement a bien été reçu. Notre équipe activera votre espace sous 24h.
         </p>
-        <div className="mb-6 space-y-2.5 rounded-xl border p-4 text-left" style={{ borderColor: BORDER, background: "#0d1220" }}>
+        <div className="mb-6 space-y-2.5 rounded-xl border border-gray-200 bg-gray-50 p-4 text-left">
           {[
             { icon: CheckCircle2,  color: "#4ade80", label: "Paiement reçu et validé",           badge: "Fait",     badgeColor: "#4ade80" },
             { icon: Clock,         color: GOLD,      label: "Activation de votre accès par DJAMA", badge: "En cours", badgeColor: GOLD },
@@ -233,7 +230,7 @@ function PendingScreen() {
           ].map(({ icon: Icon, color, label, badge, badgeColor }, i) => (
             <div key={i} className="flex items-center gap-3">
               <Icon size={14} style={{ color }} />
-              <p className="flex-1 text-sm text-slate-300">{label}</p>
+              <p className="flex-1 text-sm text-gray-600">{label}</p>
               {badge && (
                 <span className="rounded-md px-2 py-0.5 text-[0.65rem] font-semibold"
                   style={{ background: `${badgeColor}1a`, color: badgeColor }}>
@@ -250,8 +247,7 @@ function PendingScreen() {
             <MessageCircle size={15} /> Contacter DJAMA
           </a>
           <Link href="/"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-slate-200"
-            style={{ borderColor: BORDER }}>
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-500 transition hover:text-gray-700">
             Retour au site
           </Link>
         </div>
@@ -276,8 +272,8 @@ function NavItem({
       onClick={onClick}
       className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.8rem] font-medium transition-colors duration-100 ${
         active
-          ? "text-white"
-          : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
+          ? "text-gray-900"
+          : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
       }`}
       style={active ? { background: `${GOLD}14` } : {}}
     >
@@ -289,7 +285,7 @@ function NavItem({
       <Icon
         size={14}
         style={{ color: active ? GOLD : undefined }}
-        className={active ? "" : "text-slate-500 group-hover:text-slate-300"}
+        className={active ? "" : "text-gray-400 group-hover:text-gray-600"}
       />
       <span className="flex-1 truncate">{label}</span>
     </Link>
@@ -330,9 +326,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4" style={{ background: NAVY }}>
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
-        <p className="text-xs text-slate-500 flex items-center gap-1.5">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white">
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-gray-100 border-t-[#c9a55a]" />
+        <p className="text-xs text-gray-400 flex items-center gap-1.5">
           <Lock size={10} /> Vérification de l&apos;accès…
         </p>
       </div>
@@ -340,7 +336,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: NAVY }}>
+    <div className="flex h-screen overflow-hidden bg-[#f8f9fa]">
 
       {/* Mobile overlay */}
       <AnimatePresence>
@@ -348,7 +344,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+            className="fixed inset-0 z-30 bg-black/25 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
@@ -357,15 +353,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* ── SIDEBAR ── */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-40 flex w-56 flex-col
-          border-r transition-transform duration-250 ease-out
+          fixed inset-y-0 left-0 z-40 flex w-56 flex-col bg-white
+          border-r border-gray-200 transition-transform duration-250 ease-out
           lg:static lg:z-auto lg:translate-x-0
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
-        style={{ background: SIDEBAR_BG, borderColor: BORDER }}
       >
         {/* Logo */}
-        <div className="flex h-13 shrink-0 items-center justify-between border-b px-4 py-3.5" style={{ borderColor: BORDER }}>
+        <div className="flex h-13 shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3.5">
           <Link href="/client" className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
               style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}28` }}>
@@ -373,13 +368,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             </div>
             <div className="leading-none">
               <p className="text-[0.88rem] font-bold tracking-wide" style={{ color: GOLD }}>DJAMA</p>
-              <p className="text-[0.55rem] uppercase tracking-widest text-slate-600 mt-0.5">Pro</p>
+              <p className="text-[0.55rem] uppercase tracking-widest text-gray-400 mt-0.5">Pro</p>
             </div>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
             aria-label="Fermer le menu"
-            className="text-slate-500 hover:text-slate-300 transition lg:hidden">
+            className="text-gray-400 hover:text-gray-600 transition lg:hidden">
             <X size={14} />
           </button>
         </div>
@@ -389,7 +384,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           {NAV_GROUPS.map((group, gi) => (
             <div key={gi} className={gi > 0 ? "mt-3" : ""}>
               {group.label && (
-                <p className="mb-1 px-2.5 text-[0.6rem] font-semibold uppercase tracking-wider text-slate-600">
+                <p className="mb-1 px-2.5 text-[0.6rem] font-semibold uppercase tracking-wider text-gray-400">
                   {group.label}
                 </p>
               )}
@@ -411,21 +406,21 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </nav>
 
         {/* User footer */}
-        <div className="shrink-0 border-t p-2" style={{ borderColor: BORDER }}>
+        <div className="shrink-0 border-t border-gray-200 p-2">
           <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.65rem] font-bold"
               style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}25`, color: GOLD }}>
               {userInitial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[0.72rem] font-medium text-slate-300">{userEmail || "Mon compte"}</p>
-              <p className="text-[0.58rem] text-slate-600">DJAMA PRO</p>
+              <p className="truncate text-[0.72rem] font-medium text-gray-700">{userEmail || "Mon compte"}</p>
+              <p className="text-[0.58rem] text-gray-400">DJAMA PRO</p>
             </div>
             <button
               onClick={handleLogout}
               aria-label="Se déconnecter"
               title="Se déconnecter"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-600 transition hover:bg-white/[0.05] hover:text-slate-400">
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-600">
               <LogOut size={12} />
             </button>
           </div>
@@ -437,18 +432,18 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
         {/* Top bar */}
         <header
-          className="flex h-13 shrink-0 items-center gap-3 border-b px-4"
-          style={{ borderColor: BORDER, background: `${SIDEBAR_BG}f0`, backdropFilter: "blur(12px)" }}
+          className="flex h-13 shrink-0 items-center gap-3 border-b border-gray-200 bg-white/96 px-4 shadow-[0_1px_4px_rgba(0,0,0,.04)]"
+          style={{ backdropFilter: "blur(12px)" }}
         >
           <button
             onClick={() => setSidebarOpen(true)}
             aria-label="Ouvrir le menu"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200 lg:hidden">
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 lg:hidden">
             <Menu size={16} />
           </button>
 
           {/* Breadcrumb mobile */}
-          <p className="flex-1 text-sm font-semibold text-slate-200 lg:hidden">{currentLabel}</p>
+          <p className="flex-1 text-sm font-semibold text-gray-700 lg:hidden">{currentLabel}</p>
 
           <div className="hidden flex-1 lg:block" />
 

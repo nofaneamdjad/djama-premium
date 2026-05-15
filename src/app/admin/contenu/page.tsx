@@ -258,7 +258,7 @@ export default function AdminContenu() {
   // -------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-[#09090b] space-y-6 p-0">
+    <div className="min-h-screen bg-white space-y-6 p-0">
 
       {/* ------------------------------------------------------------------ */}
       {/* Toast stack                                                          */}
@@ -267,10 +267,10 @@ export default function AdminContenu() {
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`pointer-events-auto flex items-center gap-2.5 rounded-2xl px-5 py-3 text-[0.84rem] font-semibold shadow-2xl ${
+            className={`pointer-events-auto flex items-center gap-2.5 rounded-2xl px-5 py-3 text-[0.84rem] font-semibold shadow-lg border ${
               t.ok
-                ? "bg-[rgba(74,222,128,0.15)] text-[#4ade80] border border-[rgba(74,222,128,0.2)]"
-                : "bg-[rgba(248,113,113,0.12)] text-[#f87171] border border-[rgba(248,113,113,0.18)]"
+                ? "bg-white text-emerald-600 border-emerald-200"
+                : "bg-white text-red-500 border-red-200"
             }`}
           >
             {t.ok ? <Check size={14} /> : <X size={14} />}
@@ -284,8 +284,8 @@ export default function AdminContenu() {
       {/* ------------------------------------------------------------------ */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[1.3rem] font-black text-white">Contenu du site</h1>
-          <p className="mt-1 text-[0.8rem] text-white/35">Textes visibles sur le site public</p>
+          <h1 className="text-[1.3rem] font-black text-gray-900">Contenu du site</h1>
+          <p className="mt-1 text-[0.8rem] text-gray-400">Textes visibles sur le site public</p>
         </div>
         <button
           onClick={() => {
@@ -311,7 +311,7 @@ export default function AdminContenu() {
               });
           }}
           disabled={loading}
-          className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#18181c] px-3.5 py-2.5 text-[0.8rem] text-white/40 hover:text-white/70 disabled:opacity-40 transition-colors"
+          className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-[0.8rem] text-gray-500 hover:text-gray-700 disabled:opacity-40 transition-colors"
         >
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           Actualiser
@@ -322,7 +322,7 @@ export default function AdminContenu() {
       {/* Error banner                                                         */}
       {/* ------------------------------------------------------------------ */}
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-5 py-4 text-[0.84rem] text-[#f87171]">
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-[0.84rem] text-red-500">
           <X size={15} />
           {error}
         </div>
@@ -347,7 +347,7 @@ export default function AdminContenu() {
             return (
               <div
                 key={section.id}
-                className="rounded-2xl border border-white/[0.06] bg-[#18181c] p-6"
+                className="rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_1px_4px_rgba(0,0,0,.04)]"
               >
                 {/* Card header */}
                 <div className="mb-5 flex items-center gap-3">
@@ -359,17 +359,18 @@ export default function AdminContenu() {
                       <Icon
                         size={15}
                         className="shrink-0"
+                        style={{ color: section.color }}
                       />
                     )}
                   </div>
-                  <h2 className="text-[0.9rem] font-bold text-white">{section.title}</h2>
+                  <h2 className="text-[0.9rem] font-bold text-gray-800">{section.title}</h2>
                 </div>
 
                 {/* Fields */}
                 <div className="space-y-4">
                   {section.fields.map(field => (
                     <div key={field.key}>
-                      <label className="mb-1.5 block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-white/30">
+                      <label className="mb-1.5 block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-gray-400">
                         {field.label}
                       </label>
                       {field.textarea ? (
@@ -378,7 +379,7 @@ export default function AdminContenu() {
                           value={values[field.key] ?? ""}
                           placeholder={field.placeholder}
                           onChange={e => updateValue(field.key, e.target.value)}
-                          className="w-full resize-none rounded-xl border border-white/[0.07] bg-[#0f0f12] px-4 py-3 text-[0.84rem] text-white/80 placeholder:text-white/20 outline-none transition-colors focus:border-[rgba(201,165,90,0.4)] focus:ring-0"
+                          className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 placeholder:text-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white focus:ring-0"
                         />
                       ) : (
                         <input
@@ -386,7 +387,7 @@ export default function AdminContenu() {
                           value={values[field.key] ?? ""}
                           placeholder={field.placeholder}
                           onChange={e => updateValue(field.key, e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.07] bg-[#0f0f12] px-4 py-3 text-[0.84rem] text-white/80 placeholder:text-white/20 outline-none transition-colors focus:border-[rgba(201,165,90,0.4)] focus:ring-0"
+                          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 placeholder:text-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white focus:ring-0"
                         />
                       )}
                     </div>
@@ -398,7 +399,7 @@ export default function AdminContenu() {
                   <button
                     onClick={() => saveSection(section.id)}
                     disabled={isSaving}
-                    className="flex items-center gap-2 rounded-xl bg-[rgba(201,165,90,0.12)] px-5 py-2.5 text-[0.82rem] font-bold text-[#c9a55a] transition-all hover:bg-[rgba(201,165,90,0.2)] disabled:opacity-60"
+                    className="flex items-center gap-2 rounded-xl bg-[rgba(201,165,90,0.1)] px-5 py-2.5 text-[0.82rem] font-bold text-[#c9a55a] transition-all hover:bg-[rgba(201,165,90,0.18)] disabled:opacity-60"
                   >
                     {isSaving ? (
                       <>

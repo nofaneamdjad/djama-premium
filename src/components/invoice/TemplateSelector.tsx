@@ -88,7 +88,7 @@ function LazyThumbnail({ type, data }: { type: TemplateType; data: PreviewData }
         /* Skeleton coloré : simule la couleur du header du template */
         <div
           className="w-full h-full rounded-lg"
-          style={{ background: `linear-gradient(160deg, ${headerColor} 0%, ${headerColor}99 35%, #1a1a22 100%)` }}
+          style={{ background: `linear-gradient(160deg, ${headerColor} 0%, ${headerColor}40 35%, #f3f4f6 100%)` }}
         />
       )}
     </div>
@@ -134,7 +134,7 @@ function PreviewModal({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
       className="fixed inset-0 z-[80] flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.84)", backdropFilter: "blur(10px)" }}
+      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
@@ -142,13 +142,13 @@ function PreviewModal({
         animate={{ scale: 1,    opacity: 1, y: 0  }}
         exit={{    scale: 0.94, opacity: 0, y: 16 }}
         transition={{ type: "spring", stiffness: 380, damping: 32 }}
-        className="relative flex max-h-[92vh] w-full max-w-lg flex-col rounded-3xl border border-white/[0.1] bg-[#0c0c10] shadow-[0_32px_80px_rgba(0,0,0,0.8)] overflow-hidden"
+        className="relative flex max-h-[92vh] w-full max-w-lg flex-col rounded-3xl border border-gray-200 bg-white shadow-[0_32px_80px_rgba(0,0,0,0.15)] overflow-hidden"
       >
         {/* ─── Header ─── */}
-        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-[0.9rem] font-black text-white">{info.label}</p>
+              <p className="text-[0.9rem] font-black text-gray-900">{info.label}</p>
               <span
                 className="shrink-0 rounded-full px-2 py-0.5 text-[0.59rem] font-bold"
                 style={{ color: info.badge.textColor, background: info.badge.bgColor }}
@@ -156,18 +156,18 @@ function PreviewModal({
                 {info.badge.label}
               </span>
             </div>
-            <p className="mt-0.5 truncate text-[0.67rem] text-white/35">{info.description}</p>
+            <p className="mt-0.5 truncate text-[0.67rem] text-gray-400">{info.description}</p>
           </div>
           <button
             onClick={onClose}
-            className="ml-4 shrink-0 rounded-xl border border-white/[0.07] p-2 text-white/30 transition-colors hover:border-white/[0.18] hover:text-white/70"
+            className="ml-4 shrink-0 rounded-xl border border-gray-200 p-2 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-600"
           >
             <X size={14} />
           </button>
         </div>
 
         {/* ─── Tabs ─── */}
-        <div className="flex shrink-0 gap-1 border-b border-white/[0.07] px-4 py-2.5 overflow-x-auto">
+        <div className="flex shrink-0 gap-1 border-b border-gray-100 px-4 py-2.5 overflow-x-auto">
           {TEMPLATE_INFO.map(t => (
             <button
               key={t.id}
@@ -175,8 +175,8 @@ function PreviewModal({
               className={[
                 "shrink-0 rounded-full px-3 py-1 text-[0.65rem] font-bold transition-all duration-150",
                 active === t.id
-                  ? "bg-[#c9a55a] text-[#0f0f12]"
-                  : "text-white/40 hover:text-white/70 hover:bg-white/[0.05]",
+                  ? "bg-[#c9a55a] text-white"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100",
               ].join(" ")}
             >
               {t.label}
@@ -185,7 +185,7 @@ function PreviewModal({
         </div>
 
         {/* ─── Preview scrollable ─── */}
-        <div className="relative flex-1 overflow-y-auto p-5">
+        <div className="relative flex-1 overflow-y-auto p-5 bg-[#f8f9fa]">
           <AnimatePresence mode="wait">
             <motion.div
               key={active}
@@ -193,7 +193,7 @@ function PreviewModal({
               animate={{ opacity: 1, x: 0  }}
               exit={{    opacity: 0, x: -14 }}
               transition={{ duration: 0.16 }}
-              className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-white/[0.07] shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
+              className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-gray-200 shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
             >
               <ScaledA4>
                 <InvoiceTemplate type={active} data={data} />
@@ -204,20 +204,20 @@ function PreviewModal({
           {/* Flèches de navigation */}
           <button
             onClick={prev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.1] bg-black/60 text-white/50 backdrop-blur-sm transition-all hover:bg-black/80 hover:text-white active:scale-95"
+            className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-500 backdrop-blur-sm transition-all hover:bg-white hover:text-gray-700 active:scale-95 shadow-sm"
           >
             <ChevronLeft size={14} />
           </button>
           <button
             onClick={next}
-            className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.1] bg-black/60 text-white/50 backdrop-blur-sm transition-all hover:bg-black/80 hover:text-white active:scale-95"
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-500 backdrop-blur-sm transition-all hover:bg-white hover:text-gray-700 active:scale-95 shadow-sm"
           >
             <ChevronRight size={14} />
           </button>
         </div>
 
         {/* ─── Footer ─── */}
-        <div className="flex shrink-0 items-center justify-between border-t border-white/[0.07] px-5 py-3.5">
+        <div className="flex shrink-0 items-center justify-between border-t border-gray-100 px-5 py-3.5">
           {/* Dots */}
           <div className="flex items-center gap-1.5">
             {TEMPLATE_INFO.map(t => (
@@ -226,7 +226,7 @@ function PreviewModal({
                 onClick={() => setActive(t.id)}
                 className={[
                   "rounded-full transition-all duration-200",
-                  active === t.id ? "w-5 h-1.5 bg-[#c9a55a]" : "w-1.5 h-1.5 bg-white/20 hover:bg-white/40",
+                  active === t.id ? "w-5 h-1.5 bg-[#c9a55a]" : "w-1.5 h-1.5 bg-gray-200 hover:bg-gray-300",
                 ].join(" ")}
               />
             ))}
@@ -240,7 +240,7 @@ function PreviewModal({
               "flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.73rem] font-bold transition-all duration-150",
               isSelected
                 ? "bg-[#c9a55a]/15 text-[#c9a55a] cursor-default"
-                : "bg-[#c9a55a] text-[#0f0f12] hover:bg-[#d4af6a] shadow-[0_4px_16px_rgba(201,165,90,0.3)]",
+                : "bg-[#c9a55a] text-white hover:bg-[#d4af6a] shadow-[0_4px_16px_rgba(201,165,90,0.3)]",
             ].join(" ")}
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -280,10 +280,10 @@ function PreviewCard({ info, selected, data, onSelect, onPreview }: PreviewCardP
       transition={{ type: "spring", stiffness: 420, damping: 28 }}
       onClick={onSelect}
       className={[
-        "group relative cursor-pointer rounded-2xl border-2 bg-[#0f0f12] transition-colors duration-200",
+        "group relative cursor-pointer rounded-2xl border-2 bg-white transition-colors duration-200",
         selected
           ? "border-[#c9a55a] shadow-[0_0_0_1px_rgba(201,165,90,0.2),0_8px_28px_rgba(201,165,90,0.1)]"
-          : "border-white/[0.07] hover:border-white/[0.2] shadow-[0_2px_10px_rgba(0,0,0,0.45)]",
+          : "border-gray-200 hover:border-gray-300 shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
       ].join(" ")}
     >
       {/* Badge top-left */}
@@ -310,7 +310,7 @@ function PreviewCard({ info, selected, data, onSelect, onPreview }: PreviewCardP
             transition={{ type: "spring", stiffness: 500, damping: 26 }}
             className="absolute -top-2 -right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[#c9a55a] shadow-[0_2px_8px_rgba(201,165,90,0.55)]"
           >
-            <Check size={9} className="text-[#0f0f12]" strokeWidth={3.5} />
+            <Check size={9} className="text-white" strokeWidth={3.5} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -320,7 +320,7 @@ function PreviewCard({ info, selected, data, onSelect, onPreview }: PreviewCardP
         <div
           className={[
             "overflow-hidden rounded-xl border transition-colors duration-200",
-            selected ? "border-[#c9a55a]/20" : "border-white/[0.06]",
+            selected ? "border-[#c9a55a]/20" : "border-gray-100",
           ].join(" ")}
         >
           <LazyThumbnail type={info.id} data={data} />
@@ -332,7 +332,7 @@ function PreviewCard({ info, selected, data, onSelect, onPreview }: PreviewCardP
         <p
           className={[
             "text-[0.62rem] font-bold truncate transition-colors duration-150",
-            selected ? "text-[#c9a55a]" : "text-white/50 group-hover:text-white/80",
+            selected ? "text-[#c9a55a]" : "text-gray-500 group-hover:text-gray-700",
           ].join(" ")}
         >
           {info.label}
@@ -340,7 +340,7 @@ function PreviewCard({ info, selected, data, onSelect, onPreview }: PreviewCardP
         <button
           type="button"
           onClick={e => { e.stopPropagation(); onPreview(); }}
-          className="flex items-center gap-0.5 rounded-full border border-white/[0.09] bg-white/[0.04] px-1.5 py-0.5 text-[0.5rem] font-bold text-white/35 transition-all hover:bg-white/[0.1] hover:text-white/70"
+          className="flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[0.5rem] font-bold text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600"
         >
           <Eye size={7} /> Aperçu
         </button>
@@ -361,7 +361,7 @@ export function TemplateSelector({ value, onChange, data }: TemplateSelectorProp
       <div className="space-y-3">
         {/* Label + badge actif */}
         <div className="flex items-center justify-between">
-          <label className="text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">
+          <label className="text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">
             Modèle de document
           </label>
           <AnimatePresence mode="wait">
@@ -408,7 +408,7 @@ export function TemplateSelector({ value, onChange, data }: TemplateSelectorProp
             animate={{ opacity: 1, y: 0  }}
             exit={{    opacity: 0, y: -5 }}
             transition={{ duration: 0.17 }}
-            className="text-[0.67rem] italic text-white/22"
+            className="text-[0.67rem] italic text-gray-400"
           >
             {currentInfo?.description}
           </motion.p>

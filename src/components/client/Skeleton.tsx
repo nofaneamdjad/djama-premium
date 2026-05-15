@@ -3,14 +3,14 @@
 export function Skeleton({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-xl bg-white/[0.05] ${className}`}
+      className={`animate-pulse rounded-xl bg-gray-100 ${className}`}
     />
   );
 }
 
 export function CardSkeleton() {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
       <div className="flex items-center gap-3">
         <Skeleton className="h-9 w-9 shrink-0" />
         <div className="flex-1 space-y-1.5">
@@ -28,7 +28,7 @@ export function CardSkeleton() {
 export function RowSkeleton({ cols = 4 }: { cols?: number }) {
   const widths = ["w-2/5", "w-1/4", "w-1/5", "w-1/6", "w-1/8"];
   return (
-    <div className="flex items-center gap-4 px-4 py-3 border-b border-white/[0.04]">
+    <div className="flex items-center gap-4 px-4 py-3 border-b border-gray-100">
       {Array.from({ length: cols }).map((_, i) => (
         <Skeleton key={i} className={`h-3 ${widths[i % widths.length]}`} />
       ))}
@@ -38,7 +38,7 @@ export function RowSkeleton({ cols = 4 }: { cols?: number }) {
 
 export function StatSkeleton() {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-2">
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-2">
       <div className="flex items-center justify-between">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-7 w-7" />

@@ -51,7 +51,7 @@
   --accent-bg:     rgba(201,165,90,.10);     /* fond accent subtil */
   --accent-border: rgba(201,165,90,.25);     /* bordure accent */
   --accent-glow:   rgba(201,165,90,.22);     /* halo accent */
-  --accent-on:     #09090b;                  /* texte sur fond accent */
+  --accent-on:     #ffffff;                  /* texte sur fond accent */
 
   /* ═══════════════════════════════════════
      RADIUS
@@ -62,79 +62,77 @@
   --radius-xl: 2.25rem;
 
   /* ═══════════════════════════════════════
-     FONDS — du plus sombre au plus clair
-     Hiérarchie : base → card → elevated
+     FONDS — thème clair
   ═══════════════════════════════════════ */
-  --bg-base:    #09090b;               /* page principale — charbon encre */
-  --bg-card:    #111113;               /* cartes de niveau 1 */
-  --bg-card-2:  #18181b;               /* surfaces niveau 2 */
-  --bg-card-3:  #1e1e22;               /* surfaces niveau 3 */
-  --bg-glass:   rgba(255,255,255,.04); /* glassmorphism léger */
-  --bg-overlay: rgba(255,255,255,.045);/* surbrillance douce */
-  --bg-input:   rgba(255,255,255,.055);/* fond champs de saisie */
-  --bg-hover:   rgba(255,255,255,.065);/* hover state universel */
-  --bg-alpha0:  rgba(9,9,11,0);        /* transparent pour dégradés */
+  --bg-base:    #ffffff;               /* page principale — blanc */
+  --bg-card:    #ffffff;               /* cartes de niveau 1 */
+  --bg-card-2:  #f8f9fa;               /* surfaces niveau 2 */
+  --bg-card-3:  #f0f2f5;               /* surfaces niveau 3 */
+  --bg-glass:   rgba(0,0,0,.02);       /* glassmorphism léger */
+  --bg-overlay: rgba(0,0,0,.025);      /* surbrillance douce */
+  --bg-input:   rgba(0,0,0,.03);       /* fond champs de saisie */
+  --bg-hover:   rgba(0,0,0,.04);       /* hover state universel */
+  --bg-alpha0:  rgba(255,255,255,0);   /* transparent pour dégradés */
 
   /* Alias surface (sémantique pour composants UI) */
-  --surface:        #0f0f12;               /* surface principale */
-  --surface-muted:  #080a0f;               /* surface profonde */
-  --surface-input:  rgba(255,255,255,.06); /* surface inputs */
+  --surface:        #f8f9fa;               /* surface principale */
+  --surface-muted:  #f0f2f5;               /* surface profonde */
+  --surface-input:  rgba(0,0,0,.03);       /* surface inputs */
 
   /* ═══════════════════════════════════════
      TEXTE — hiérarchie optique précise
-     Contraste WCAG AA garanti sur --bg-base
+     Contraste WCAG AA garanti sur fond blanc
   ═══════════════════════════════════════ */
-  --text-primary:  rgba(255,255,255,.92); /* titres / corps principal — 12.6:1 */
-  --text-90:       rgba(255,255,255,.85); /* sous-titres — 11.6:1 */
-  --text-75:       rgba(255,255,255,.72); /* texte secondaire — 9.8:1 */
-  --text-55:       rgba(255,255,255,.58); /* labels / métadonnées — 7.9:1 */
-  --text-38:       rgba(255,255,255,.40); /* helpers / placeholders — 5.4:1 */
-  --text-22:       rgba(255,255,255,.24); /* décoratif discret — 3.2:1 */
+  --text-primary:  rgba(17,24,39,.92);  /* titres / corps principal */
+  --text-90:       rgba(17,24,39,.85);  /* sous-titres */
+  --text-75:       rgba(17,24,39,.70);  /* texte secondaire */
+  --text-55:       rgba(17,24,39,.55);  /* labels / métadonnées */
+  --text-38:       rgba(17,24,39,.38);  /* helpers / placeholders */
+  --text-22:       rgba(17,24,39,.22);  /* décoratif discret */
 
   /* Alias ink (sémantique) */
-  --ink:           rgba(255,255,255,.92);
-  --ink-secondary: rgba(255,255,255,.60);
-  --ink-muted:     rgba(255,255,255,.38);
-  --ink-faint:     rgba(255,255,255,.18);
+  --ink:           rgba(17,24,39,.92);
+  --ink-secondary: rgba(17,24,39,.58);
+  --ink-muted:     rgba(17,24,39,.38);
+  --ink-faint:     rgba(17,24,39,.16);
 
   /* ═══════════════════════════════════════
      BORDURES
   ═══════════════════════════════════════ */
-  --border-strong: rgba(255,255,255,.12);
-  --border-base:   rgba(255,255,255,.08);
-  --border-soft:   rgba(255,255,255,.045);
+  --border-strong: rgba(17,24,39,.12);
+  --border-base:   rgba(17,24,39,.08);
+  --border-soft:   rgba(17,24,39,.05);
 
   /* ═══════════════════════════════════════
      NAVIGATION
   ═══════════════════════════════════════ */
-  --nav-bg:     rgba(9,9,11,.92);   /* barre scrollée — blur derrière */
-  --nav-mobile: rgba(9,9,11,.98);   /* menu mobile — quasi-opaque */
+  --nav-bg:     rgba(255,255,255,.96); /* barre scrollée */
+  --nav-mobile: rgba(255,255,255,.99); /* menu mobile */
 
   /* ═══════════════════════════════════════
-     GLOWS — luminosité maîtrisée
-     Jamais envahissants, toujours subtils
+     GLOWS — luminosité maîtrisée (thème clair)
   ═══════════════════════════════════════ */
-  --glow-gold:    rgba(176,141,87,.18); /* halo or doux */
-  --glow-gold-hi: rgba(176,141,87,.26); /* halo or prononcé */
-  --glow-soft:    rgba(176,141,87,.10); /* halo or très discret */
-  --glow-blue:    rgba(96,165,250,.20);
-  --glow-green:   rgba(37,211,102,.20);
-  --glow-purple:  rgba(167,139,250,.18);
+  --glow-gold:    rgba(176,141,87,.12); /* halo or doux */
+  --glow-gold-hi: rgba(176,141,87,.16); /* halo or prononcé */
+  --glow-soft:    rgba(176,141,87,.07); /* halo or très discret */
+  --glow-blue:    rgba(96,165,250,.12);
+  --glow-green:   rgba(37,211,102,.12);
+  --glow-purple:  rgba(167,139,250,.12);
 
   /* ═══════════════════════════════════════
-     OMBRES
+     OMBRES (thème clair)
   ═══════════════════════════════════════ */
-  --shadow-sm:   0 1px 4px rgba(0,0,0,.22);
-  --shadow-card: 0 4px 20px rgba(0,0,0,.28), 0 1px 4px rgba(0,0,0,.14);
-  --shadow-lg:   0 16px 56px rgba(0,0,0,.42), 0 6px 20px rgba(0,0,0,.18);
-  --shadow-gold: 0 0 40px rgba(176,141,87,.26), 0 8px 24px rgba(176,141,87,.12);
+  --shadow-sm:   0 1px 4px rgba(0,0,0,.06);
+  --shadow-card: 0 4px 20px rgba(0,0,0,.08), 0 1px 4px rgba(0,0,0,.04);
+  --shadow-lg:   0 16px 56px rgba(0,0,0,.12), 0 6px 20px rgba(0,0,0,.06);
+  --shadow-gold: 0 0 40px rgba(176,141,87,.18), 0 8px 24px rgba(176,141,87,.10);
 
   /* ═══════════════════════════════════════
-     DÉCORATIONS
+     DÉCORATIONS (thème clair)
   ═══════════════════════════════════════ */
-  --grid-line:     rgba(255,255,255,.028);
-  --dot-color:     rgba(255,255,255,.052);
-  --divider-color: rgba(255,255,255,.068);
+  --grid-line:     rgba(17,24,39,.06);
+  --dot-color:     rgba(17,24,39,.07);
+  --divider-color: rgba(17,24,39,.10);
 }
 
 /* ── BASE ──────────────────────────────────── */
@@ -289,12 +287,12 @@ a:focus:not(:focus-visible)      { outline: none; }
 .delay-450  { animation-delay: 450ms; }
 .delay-600  { animation-delay: 600ms; }
 
-/* ── HERO DARK ─────────────────────────────── */
+/* ── HERO DARK → now light ─────────────────── */
 .hero-dark {
   background-color: var(--bg-base);
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, var(--glow-gold-hi) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 40% at 80% 60%,  var(--glow-soft)   0%, transparent 60%);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,165,90,0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 80% 60%,  rgba(201,165,90,0.03) 0%, transparent 60%);
 }
 
 .hero-grid {
@@ -391,26 +389,26 @@ a:focus:not(:focus-visible)      { outline: none; }
   padding: 0.875rem 1.75rem;
   font-weight: 700;
   font-size: 0.9375rem;
-  background: var(--bg-overlay);
-  color: var(--text-primary);
-  border: 1px solid var(--border-strong);
-  backdrop-filter: blur(8px);
-  transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+  background: rgba(0,0,0,.03);
+  color: #374151;
+  border: 1px solid rgba(17,24,39,.12);
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 .btn-ghost::before {
   content: "";
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, var(--bg-hover) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(0,0,0,.04) 0%, transparent 60%);
   opacity: 0;
   transition: opacity 0.3s;
 }
 .btn-ghost:hover::before { opacity: 1; }
 .btn-ghost:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-strong);
+  background: rgba(0,0,0,.05);
+  border-color: rgba(17,24,39,.18);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.07);
 }
 .btn-ghost:active { transform: translateY(0); }
 
@@ -422,9 +420,9 @@ a:focus:not(:focus-visible)      { outline: none; }
   padding: 0.875rem 1.75rem;
   font-weight: 700;
   font-size: 0.9375rem;
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1.5px solid var(--border-strong);
+  background: #ffffff;
+  color: #374151;
+  border: 1.5px solid rgba(17,24,39,.12);
   transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
 }
 .btn-light:hover {
@@ -497,9 +495,9 @@ a:focus:not(:focus-visible)      { outline: none; }
 
 .badge-gold-dark,
 .badge-gold-light {
-  background: rgba(176,141,87,0.11);
-  border: 1px solid rgba(176,141,87,0.24);
-  color: var(--gold-text);
+  background: rgba(201,165,90,0.10);
+  border: 1px solid rgba(201,165,90,0.28);
+  color: #c9a55a;
 }
 
 /* ── DIVIDER ───────────────────────────────── */
@@ -546,8 +544,8 @@ a:focus:not(:focus-visible)      { outline: none; }
 
 /* ── SELECTION ─────────────────────────────── */
 ::selection {
-  background: rgba(176,141,87,0.22);
-  color: rgba(255,255,255,0.95);
+  background: rgba(201,165,90,0.22);
+  color: rgba(17,24,39,0.95);
 }
 
 /* ── FOCUS RING ────────────────────────────── */
@@ -846,12 +844,12 @@ a:focus:not(:focus-visible)      { outline: none; }
   /* Fond solide opaque = fallback visuel sur WebViews sans blur support */
   .glass-card,
   .glass-card-light {
-    background: rgba(15, 15, 18, 0.97);
+    background: rgba(255, 255, 255, 0.98);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
   .btn-ghost {
-    background: rgba(22, 22, 28, 0.97);
+    background: rgba(248, 249, 250, 0.98);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }

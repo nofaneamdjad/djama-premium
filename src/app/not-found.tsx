@@ -15,14 +15,9 @@ const LINKS = [
 
 export default function NotFound() {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#09090b] px-6 text-center">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white px-6 text-center">
 
-      {/* Grid */}
-      <div className="hero-grid absolute inset-0 opacity-30" />
-
-      {/* Orbs */}
-      <div className="pointer-events-none absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(201,165,90,.06)] blur-[130px]" />
-      <div className="pointer-events-none absolute right-0 top-1/2 h-[300px] w-[300px] rounded-full bg-[rgba(96,165,250,.04)] blur-[100px]" />
+      <div className="pointer-events-none absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(99,102,241,.05)] blur-[130px]" />
 
       <motion.div
         initial={{ opacity: 0, y: 32 }}
@@ -30,14 +25,13 @@ export default function NotFound() {
         transition={{ duration: 0.8, ease }}
         className="relative z-10 max-w-xl"
       >
-        {/* 404 */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, ease, delay: 0.1 }}
           className="mb-6 select-none text-[8rem] font-black leading-none tracking-tighter"
           style={{
-            background: "linear-gradient(135deg, #c9a55a 0%, #e8cc94 40%, #c9a55a 100%)",
+            background: "linear-gradient(135deg, #6366f1 0%, #a78bfa 50%, #c9a55a 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
           }}
@@ -45,13 +39,12 @@ export default function NotFound() {
           404
         </motion.div>
 
-        {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease, delay: 0.25 }}
-          className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]"
-          style={{ color: "#c9a55a" }}
+          className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(99,102,241,.25)] bg-[rgba(99,102,241,.07)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]"
+          style={{ color: "#6366f1" }}
         >
           Page introuvable
         </motion.div>
@@ -60,7 +53,7 @@ export default function NotFound() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease, delay: 0.35 }}
-          className="mb-4 text-3xl font-extrabold text-white sm:text-4xl"
+          className="mb-4 text-3xl font-extrabold text-gray-900 sm:text-4xl"
         >
           Cette page n&apos;existe pas.
         </motion.h1>
@@ -69,13 +62,12 @@ export default function NotFound() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, ease, delay: 0.5 }}
-          className="mb-10 text-base leading-relaxed text-white/45"
+          className="mb-10 text-base leading-relaxed text-gray-500"
         >
           La page que vous cherchez a peut-être été déplacée ou supprimée.
           Voici quelques liens utiles pour continuer.
         </motion.p>
 
-        {/* Liens rapides */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -86,15 +78,14 @@ export default function NotFound() {
             <Link
               key={href}
               href={href}
-              className="group flex flex-col items-center gap-2 rounded-2xl border border-white/[.07] bg-white/[.03] px-4 py-4 text-sm font-semibold text-white/50 transition-all duration-200 hover:border-[rgba(201,165,90,.3)] hover:bg-[rgba(201,165,90,.06)] hover:text-white/85"
+              className="group flex flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm font-semibold text-gray-500 transition-all duration-200 hover:border-[rgba(99,102,241,.3)] hover:bg-[rgba(99,102,241,.05)] hover:text-gray-800 hover:shadow-[0_4px_14px_rgba(0,0,0,.08)]"
             >
-              <Icon size={18} className="transition-colors group-hover:text-[#c9a55a]" />
+              <Icon size={18} className="transition-colors group-hover:text-[#6366f1]" />
               {label}
             </Link>
           ))}
         </motion.div>
 
-        {/* CTA principal */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

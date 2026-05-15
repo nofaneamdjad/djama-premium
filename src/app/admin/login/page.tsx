@@ -36,24 +36,24 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#09090b] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#f8f9fa] px-4">
       {/* Background glow */}
-      <div className="pointer-events-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full bg-[rgba(201,165,90,0.04)] blur-[120px]" />
+      <div className="pointer-events-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[120px]" />
 
       <div className="relative w-full max-w-sm">
         <div className="mb-8 text-center">
-          <p className="text-[1.6rem] font-black tracking-tight text-white">DJAMA</p>
+          <p className="text-[1.6rem] font-black tracking-tight text-gray-900">DJAMA</p>
           <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]">Espace Admin</p>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f0f12] p-7 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-7 shadow-[0_8px_40px_rgba(0,0,0,0.08)]">
           <div className="mb-6 flex justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(201,165,90,0.12)] border border-[rgba(201,165,90,0.15)]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(201,165,90,0.1)] border border-[rgba(201,165,90,0.2)]">
               <Lock size={19} className="text-[#c9a55a]" />
             </div>
           </div>
-          <h1 className="mb-1 text-center text-[1rem] font-bold text-white">Connexion administrateur</h1>
-          <p className="mb-7 text-center text-[0.77rem] text-white/30">Accès réservé aux administrateurs DJAMA</p>
+          <h1 className="mb-1 text-center text-[1rem] font-bold text-gray-900">Connexion administrateur</h1>
+          <p className="mb-7 text-center text-[0.77rem] text-gray-400">Accès réservé aux administrateurs DJAMA</p>
 
           <form onSubmit={submit} className="space-y-3">
             <div className="relative">
@@ -63,27 +63,27 @@ export default function AdminLogin() {
                 onChange={e => { setPassword(e.target.value); setError(false); }}
                 placeholder="Mot de passe"
                 autoFocus
-                className={`w-full rounded-xl border bg-white/[0.03] px-4 py-3 pr-11 text-[0.85rem] text-white placeholder-white/18 outline-none transition-colors focus:border-[rgba(201,165,90,0.40)] ${
-                  error ? "border-[rgba(248,113,113,0.50)]" : "border-white/[0.07]"
+                className={`w-full rounded-xl border bg-gray-50 px-4 py-3 pr-11 text-[0.85rem] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white ${
+                  error ? "border-red-300" : "border-gray-200"
                 }`}
               />
               <button
                 type="button"
                 onClick={() => setShow(!show)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/22 hover:text-white/50 transition-colors"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 {show ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
 
             {error && (
-              <p className="text-center text-[0.77rem] text-[#f87171]">Mot de passe incorrect.</p>
+              <p className="text-center text-[0.77rem] text-red-500">Mot de passe incorrect.</p>
             )}
 
             <button
               type="submit"
               disabled={loading || !password}
-              className="w-full rounded-xl bg-[#c9a55a] py-3 text-[0.88rem] font-bold text-[#1a1308] transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="w-full rounded-xl bg-[#c9a55a] py-3 text-[0.88rem] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {loading ? "Connexion…" : "Accéder à l'administration"}
             </button>

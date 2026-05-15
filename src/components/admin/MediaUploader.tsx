@@ -383,13 +383,13 @@ export function MediaUploader({
 
       {/* Label */}
       {label && (
-        <label className="block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">
+        <label className="block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">
           {label}
         </label>
       )}
 
       {/* ── Tabs ─────────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.03] p-1">
+      <div className="flex gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1">
         {(["upload", "url"] as const).map(t => (
           <button
             key={t}
@@ -398,7 +398,7 @@ export function MediaUploader({
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[0.74rem] font-bold transition-all ${
               tab === t
                 ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a]"
-                : "text-white/30 hover:text-white/55"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             {t === "upload"
@@ -425,22 +425,22 @@ export function MediaUploader({
               "relative flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2.5",
               "rounded-2xl border-2 border-dashed transition-all duration-200 select-none",
               uploading
-                ? "pointer-events-none border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.05)]"
+                ? "pointer-events-none border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.04)]"
                 : dragOver
-                  ? "border-[rgba(201,165,90,0.6)] bg-[rgba(201,165,90,0.08)] scale-[1.01]"
+                  ? "border-[rgba(201,165,90,0.6)] bg-[rgba(201,165,90,0.06)] scale-[1.01]"
                   : success
-                    ? "border-[rgba(74,222,128,0.35)] bg-[rgba(74,222,128,0.05)]"
-                    : "border-white/[0.09] bg-white/[0.02] hover:border-white/[0.2] hover:bg-white/[0.04]",
+                    ? "border-emerald-200 bg-emerald-50"
+                    : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100",
             ].join(" ")}
           >
             {/* Upload en cours */}
             {uploading && (
               <>
                 <Loader2 size={22} className="animate-spin text-[#c9a55a]" />
-                <p className="text-[0.74rem] font-semibold text-white/40">
+                <p className="text-[0.74rem] font-semibold text-gray-500">
                   {isImage ? "Traitement et upload…" : "Upload en cours…"}
                 </p>
-                <div className="absolute bottom-3 left-5 right-5 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
+                <div className="absolute bottom-3 left-5 right-5 h-[3px] overflow-hidden rounded-full bg-gray-200">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-[#c9a55a] to-[#e8cc94] transition-all duration-300"
                     style={{ width: `${progress}%` }}
@@ -461,19 +461,19 @@ export function MediaUploader({
             {/* Idle */}
             {!uploading && !success && (
               <>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100">
                   {isImage
-                    ? <Upload size={18} className="text-white/30" />
-                    : <Film   size={18} className="text-white/30" />
+                    ? <Upload size={18} className="text-gray-400" />
+                    : <Film   size={18} className="text-gray-400" />
                   }
                 </div>
                 <div className="px-4 text-center">
-                  <p className="text-[0.82rem] font-semibold text-white/50">
+                  <p className="text-[0.82rem] font-semibold text-gray-600">
                     {isImage ? "Glisser une image ici" : "Glisser une vidéo ici"}
                   </p>
-                  <p className="mt-0.5 text-[0.67rem] text-white/25">
+                  <p className="mt-0.5 text-[0.67rem] text-gray-400">
                     ou{" "}
-                    <span className="text-white/40 underline underline-offset-2">
+                    <span className="text-gray-600 underline underline-offset-2">
                       appuyer pour sélectionner
                     </span>
                     {" · "}
@@ -528,32 +528,32 @@ export function MediaUploader({
               ? "https://… (jpg, png, webp, svg)"
               : "https://youtube.com/… · https://vimeo.com/… · ou lien direct .mp4"
           }
-          className="w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-[0.84rem] text-white/80 placeholder:text-white/20 outline-none transition-colors focus:border-[rgba(201,165,90,0.4)]"
+          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 placeholder:text-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white"
         />
       )}
 
       {/* ── Aperçu ───────────────────────────────────────────────────────── */}
       {hasUrl && (
-        <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2.5">
+        <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5">
           {isImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={currentUrl}
               alt="aperçu"
-              className="h-10 w-14 shrink-0 rounded-lg object-contain bg-white/[0.04]"
+              className="h-10 w-14 shrink-0 rounded-lg object-contain bg-gray-100"
               onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             />
           ) : (
-            <Film size={18} className="shrink-0 text-white/25" />
+            <Film size={18} className="shrink-0 text-gray-400" />
           )}
-          <p className="min-w-0 flex-1 truncate text-[0.7rem] text-white/40" title={currentUrl}>
+          <p className="min-w-0 flex-1 truncate text-[0.7rem] text-gray-500" title={currentUrl}>
             {currentUrl}
           </p>
           <button
             type="button"
             onClick={clearUrl}
             title={`Supprimer l'${typeLabel}`}
-            className="shrink-0 rounded-lg p-1 text-white/20 transition-colors hover:bg-[rgba(248,113,113,0.1)] hover:text-[#f87171]"
+            className="shrink-0 rounded-lg p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
           >
             <X size={13} />
           </button>

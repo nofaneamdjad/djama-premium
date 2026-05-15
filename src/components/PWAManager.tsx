@@ -152,32 +152,32 @@ export default function PWAManager() {
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             className="fixed bottom-0 left-0 right-0 z-[200] p-4"
           >
-            <div className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-[rgba(201,165,90,0.22)] bg-[#0f1117]/95 shadow-[0_-4px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+            <div className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_-4px_40px_rgba(0,0,0,0.12)]">
               <div className="h-[2px] bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
               <div className="flex items-center gap-4 px-5 py-4">
-                <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-[rgba(201,165,90,0.25)] bg-[#09090b]">
+                <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-gray-200 bg-gray-50">
                   <Image src="/icons/icon-192.png" alt="DJAMA" fill className="object-contain p-1.5" sizes="52px" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-extrabold text-white">Installer l&apos;app DJAMA</p>
+                  <p className="text-sm font-extrabold text-gray-800">Installer l&apos;app DJAMA</p>
                   {isIOS ? (
-                    <p className="mt-0.5 text-[0.68rem] leading-snug text-white/45">
-                      Appuyez sur <span className="inline-flex items-center gap-0.5 font-bold text-white/70"><Share size={10} /> Partager</span>{" "}
-                      puis <span className="font-bold text-white/70">Sur l&apos;écran d&apos;accueil</span>
+                    <p className="mt-0.5 text-[0.68rem] leading-snug text-gray-500">
+                      Appuyez sur <span className="inline-flex items-center gap-0.5 font-bold text-gray-700"><Share size={10} /> Partager</span>{" "}
+                      puis <span className="font-bold text-gray-700">Sur l&apos;écran d&apos;accueil</span>
                     </p>
                   ) : (
-                    <p className="mt-0.5 text-[0.68rem] text-white/45">Accès rapide · Fonctionne hors ligne</p>
+                    <p className="mt-0.5 text-[0.68rem] text-gray-500">Accès rapide · Fonctionne hors ligne</p>
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {!isIOS && (
                     <button onClick={handleInstall}
-                      className="flex items-center gap-1.5 rounded-xl bg-[#c9a55a] px-3.5 py-2 text-[0.72rem] font-bold text-[#09090b] transition hover:brightness-110 active:scale-95">
+                      className="flex items-center gap-1.5 rounded-xl bg-[#c9a55a] px-3.5 py-2 text-[0.72rem] font-bold text-white transition hover:brightness-110 active:scale-95">
                       <Download size={12} /> Installer
                     </button>
                   )}
                   <button onClick={dismissInstall}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/[0.06] hover:text-white/60">
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600">
                     <X size={14} />
                   </button>
                 </div>
@@ -197,25 +197,25 @@ export default function PWAManager() {
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="fixed left-0 right-0 top-0 z-[200] p-3"
           >
-            <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[#0f1117]/96 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+            <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.10)]">
               <div className="h-[2px] bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
               <div className="flex items-center gap-4 px-5 py-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.1)]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)]">
                   <Bell size={16} style={{ color: "#c9a55a" }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-extrabold text-white">Activer les notifications</p>
-                  <p className="mt-0.5 text-[0.68rem] text-white/45">
+                  <p className="text-sm font-extrabold text-gray-800">Activer les notifications</p>
+                  <p className="mt-0.5 text-[0.68rem] text-gray-500">
                     Recevez un rappel 30 min avant chaque événement planifié
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <button onClick={handleEnableNotifs}
-                    className="flex items-center gap-1.5 rounded-xl bg-[#c9a55a] px-3.5 py-2 text-[0.72rem] font-bold text-[#09090b] transition hover:brightness-110 active:scale-95">
+                    className="flex items-center gap-1.5 rounded-xl bg-[#c9a55a] px-3.5 py-2 text-[0.72rem] font-bold text-white transition hover:brightness-110 active:scale-95">
                     <Bell size={12} /> Activer
                   </button>
                   <button onClick={() => { setShowNotifAsk(false); sessionStorage.setItem("djama_notif_asked", "1"); }}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/[0.06] hover:text-white/60">
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600">
                     <X size={14} />
                   </button>
                 </div>

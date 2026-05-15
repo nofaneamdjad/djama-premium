@@ -40,10 +40,10 @@ export default function SplashScreen() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-          className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-[#09090b] select-none"
+          className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-white select-none"
         >
-          {/* Radial gold glow */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_50%_50%,rgba(201,165,90,0.09),transparent_72%)]" />
+          {/* Subtle radial glow */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_50%_50%,rgba(99,102,241,0.05),transparent_72%)]" />
 
           {/* Logo */}
           <motion.div
@@ -55,8 +55,8 @@ export default function SplashScreen() {
               animate={{
                 filter: [
                   "drop-shadow(0 0 0px rgba(201,165,90,0))",
-                  "drop-shadow(0 0 28px rgba(201,165,90,0.7))",
-                  "drop-shadow(0 0 6px rgba(201,165,90,0.15))",
+                  "drop-shadow(0 0 20px rgba(201,165,90,0.35))",
+                  "drop-shadow(0 0 4px rgba(201,165,90,0.08))",
                 ],
               }}
               transition={{ duration: 1.5, delay: 0.75, ease: "easeOut", times: [0, 0.45, 1] }}
@@ -68,6 +68,7 @@ export default function SplashScreen() {
                 height={97}
                 priority
                 className="w-44 sm:w-52 h-auto object-contain"
+                style={{ filter: "brightness(0)" }}
               />
             </motion.div>
           </motion.div>
@@ -77,7 +78,7 @@ export default function SplashScreen() {
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
             transition={{ duration: 0.55, delay: 0.85, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-6 h-px w-10 origin-center rounded-full bg-gradient-to-r from-transparent via-[#c9a55a]/60 to-transparent"
+            className="mt-6 h-px w-10 origin-center rounded-full bg-gradient-to-r from-transparent via-[#c9a55a]/50 to-transparent"
           />
 
           {/* Tagline */}
@@ -85,7 +86,7 @@ export default function SplashScreen() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 1.0 }}
-            className="mt-4 text-[0.65rem] font-semibold uppercase tracking-[0.26em] text-white/35"
+            className="mt-4 text-[0.65rem] font-semibold uppercase tracking-[0.26em] text-gray-400"
           >
             Bienvenue sur DJAMA
           </motion.p>
@@ -104,37 +105,37 @@ export default function SplashScreen() {
                 <button
                   onClick={() => handleChoice("/")}
                   className="group flex items-center gap-4 px-6 py-4 rounded-2xl
-                    border border-white/8 bg-white/[0.04]
-                    hover:bg-white/[0.08] hover:border-white/15
+                    border border-gray-200 bg-gray-50
+                    hover:bg-white hover:border-gray-300 hover:shadow-[0_4px_16px_rgba(0,0,0,.08)]
                     transition-all duration-200 w-full sm:w-[220px] text-left"
                 >
-                  <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-white/6 border border-white/8 flex items-center justify-center">
-                    <Globe className="w-4 h-4 text-white/60" />
+                  <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,.06)]">
+                    <Globe className="w-4 h-4 text-gray-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white leading-none mb-1">Site général</p>
-                    <p className="text-[11px] text-white/35 leading-none">Découvrir DJAMA</p>
+                    <p className="text-sm font-semibold text-gray-800 leading-none mb-1">Site général</p>
+                    <p className="text-[11px] text-gray-400 leading-none">Découvrir DJAMA</p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-white/20 group-hover:text-white/50 flex-shrink-0 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 flex-shrink-0 transition-colors" />
                 </button>
 
                 {/* Espace client — mis en valeur */}
                 <button
                   onClick={() => handleChoice("/espace-client")}
                   className="group flex items-center gap-4 px-6 py-4 rounded-2xl
-                    border border-[#c9a55a]/25 bg-[#c9a55a]/[0.07]
-                    hover:bg-[#c9a55a]/[0.13] hover:border-[#c9a55a]/45
-                    transition-all duration-200 w-full sm:w-[220px] text-left
-                    shadow-[0_0_24px_rgba(201,165,90,0.08)]"
+                    border border-[rgba(201,165,90,0.35)] bg-[rgba(201,165,90,0.06)]
+                    hover:bg-[rgba(201,165,90,0.10)] hover:border-[rgba(201,165,90,0.55)]
+                    hover:shadow-[0_4px_20px_rgba(201,165,90,0.15)]
+                    transition-all duration-200 w-full sm:w-[220px] text-left"
                 >
-                  <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-[#c9a55a]/12 border border-[#c9a55a]/20 flex items-center justify-center">
+                  <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-[rgba(201,165,90,0.10)] border border-[rgba(201,165,90,0.25)] flex items-center justify-center">
                     <LayoutDashboard className="w-4 h-4 text-[#c9a55a]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white leading-none mb-1">Espace client</p>
-                    <p className="text-[11px] text-[#c9a55a]/55 leading-none">Accès à votre tableau de bord</p>
+                    <p className="text-sm font-semibold text-gray-800 leading-none mb-1">Espace client</p>
+                    <p className="text-[11px] text-[#c9a55a]/70 leading-none">Accès à votre tableau de bord</p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-[#c9a55a]/30 group-hover:text-[#c9a55a]/70 flex-shrink-0 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-[#c9a55a]/40 group-hover:text-[#c9a55a] flex-shrink-0 transition-colors" />
                 </button>
               </motion.div>
             )}

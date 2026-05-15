@@ -27,10 +27,10 @@ function AccessBanner() {
       initial={{ opacity: 0, y: -14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease }}
-      className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 border-b border-[rgba(201,165,90,0.22)] bg-[rgba(9,9,11,0.97)] px-4 py-3.5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-xl"
+      className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 border-b border-[rgba(201,165,90,0.22)] bg-white px-4 py-3.5 shadow-[0_4px_24px_rgba(0,0,0,0.1)]"
     >
       <AlertTriangle size={14} className="shrink-0 text-[#c9a55a]" />
-      <p className="text-sm font-semibold text-white">
+      <p className="text-sm font-semibold text-gray-900">
         Cet outil est réservé aux abonnés.{" "}
         <span className="text-[#c9a55a]">Abonnez-vous ci-dessous.</span>
       </p>
@@ -106,7 +106,7 @@ const STEPS = [
 ───────────────────────────────────────────────────────── */
 export default function EspaceClientPage() {
   return (
-    <div className="overflow-x-hidden bg-[#09090b] text-white">
+    <div className="overflow-x-hidden bg-white text-gray-900">
       <Suspense>
         <AlreadySubscribedRedirect />
         <AccessBanner />
@@ -115,18 +115,9 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           HERO
       ══════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pt-28 pb-24 sm:pt-40 sm:pb-36">
-        {/* Fond grille subtile */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
-          }}
-        />
-        {/* Glows */}
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,0.07)] blur-[130px]" />
+      <section className="relative overflow-hidden pt-[108px] pb-24 sm:pt-[128px] sm:pb-36 bg-white">
+        {/* Glows — subtler on white */}
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,0.06)] blur-[130px]" />
         <div className="pointer-events-none absolute left-0 top-1/2 h-[400px] w-[300px] rounded-full bg-[rgba(96,165,250,0.04)] blur-[100px]" />
         <div className="pointer-events-none absolute right-0 top-1/3 h-[350px] w-[300px] rounded-full bg-[rgba(167,139,250,0.04)] blur-[100px]" />
 
@@ -147,7 +138,7 @@ export default function EspaceClientPage() {
             initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease, delay: 0.1 }}
-            className="text-[2.6rem] font-black leading-[1.1] tracking-tight text-white sm:text-[4rem] lg:text-[5rem]"
+            className="text-[2.6rem] font-black leading-[1.1] tracking-tight text-gray-900 sm:text-[4rem] lg:text-[5rem]"
           >
             Gérez votre activité.{" "}
             <br className="hidden sm:block" />
@@ -163,7 +154,7 @@ export default function EspaceClientPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease, delay: 0.35 }}
-            className="mx-auto mt-6 max-w-xl text-base leading-[1.85] text-white/45 sm:text-lg"
+            className="mx-auto mt-6 max-w-xl text-base leading-[1.85] text-gray-500 sm:text-lg"
           >
             11 outils professionnels réunis en un seul abonnement — factures, CRM, trésorerie,
             Coach IA, contrats et bien plus encore.
@@ -178,7 +169,7 @@ export default function EspaceClientPage() {
           >
             <Link
               href="#abonnement"
-              className="group flex items-center gap-2.5 rounded-2xl bg-[#c9a55a] px-9 py-4 text-sm font-bold text-[#09090b] shadow-[0_8px_32px_rgba(201,165,90,0.35)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_40px_rgba(201,165,90,0.5)]"
+              className="group flex items-center gap-2.5 rounded-2xl bg-[#c9a55a] px-9 py-4 text-sm font-bold text-white shadow-[0_8px_32px_rgba(201,165,90,0.35)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_40px_rgba(201,165,90,0.5)]"
             >
               <Wallet size={16} />
               S&apos;abonner — 11,90€/mois
@@ -186,7 +177,7 @@ export default function EspaceClientPage() {
             </Link>
             <Link
               href="#outils"
-              className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-9 py-4 text-sm font-semibold text-white/70 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+              className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-9 py-4 text-sm font-semibold text-gray-600 transition-all duration-200 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900"
             >
               Découvrir les outils
               <ArrowRight size={14} />
@@ -206,21 +197,19 @@ export default function EspaceClientPage() {
               { icon: BadgeCheck,   text: "Sans engagement" },
               { icon: Users,        text: "+50 abonnés" },
             ].map(({ icon: Icon, text }) => (
-              <span key={text} className="flex items-center gap-1.5 text-[0.72rem] text-white/28">
+              <span key={text} className="flex items-center gap-1.5 text-[0.72rem] text-gray-400">
                 <Icon size={10} className="text-[#c9a55a]" />
                 {text}
               </span>
             ))}
           </motion.div>
         </div>
-
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#09090b] to-transparent" />
       </section>
 
       {/* ══════════════════════════════════════════════
           DÉJÀ ABONNÉ — carte login immédiate
       ══════════════════════════════════════════════ */}
-      <section className="px-6 pb-16">
+      <section className="px-6 pb-16 bg-white">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -229,13 +218,10 @@ export default function EspaceClientPage() {
           className="mx-auto max-w-2xl"
         >
           <div
-            className="relative overflow-hidden rounded-[1.6rem] border border-[rgba(201,165,90,0.25)]"
-            style={{ background: "linear-gradient(135deg, #111113 0%, #16141a 100%)", boxShadow: "0 0 0 1px rgba(255,255,255,0.03) inset, 0 24px 64px rgba(0,0,0,0.4)" }}
+            className="relative overflow-hidden rounded-[1.6rem] border border-[rgba(201,165,90,0.25)] bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)]"
           >
             {/* Accent top */}
             <div className="h-px w-full bg-gradient-to-r from-transparent via-[#c9a55a]/60 to-transparent" />
-            {/* Glow intérieur */}
-            <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(ellipse_at_top_right,rgba(201,165,90,0.07),transparent_70%)]" />
 
             <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
               <div className="flex items-center gap-4">
@@ -246,10 +232,10 @@ export default function EspaceClientPage() {
                   <LogIn size={19} className="text-[#c9a55a]" />
                 </div>
                 <div>
-                  <p className="text-[0.95rem] font-extrabold text-white">
+                  <p className="text-[0.95rem] font-extrabold text-gray-900">
                     Vous avez déjà un compte ?
                   </p>
-                  <p className="mt-0.5 text-[0.78rem] text-white/38">
+                  <p className="mt-0.5 text-[0.78rem] text-gray-400">
                     Connectez-vous pour accéder à votre tableau de bord.
                   </p>
                 </div>
@@ -270,7 +256,7 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           COMMENT ÇA MARCHE
       ══════════════════════════════════════════════ */}
-      <section className="border-y border-white/[0.05] bg-[#0c0c0f] py-16 sm:py-20">
+      <section className="border-y border-gray-200 bg-[#f8f9fa] py-16 sm:py-20">
         <div className="mx-auto max-w-4xl px-6">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -282,7 +268,7 @@ export default function EspaceClientPage() {
             <p className="text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
               3 étapes
             </p>
-            <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+            <h2 className="mt-2 text-2xl font-black text-gray-900 sm:text-3xl">
               Prêt en moins de 2 minutes.
             </h2>
           </motion.div>
@@ -293,22 +279,22 @@ export default function EspaceClientPage() {
             viewport={viewport}
             variants={staggerContainerFast}
             className="grid gap-px sm:grid-cols-3"
-            style={{ background: "rgba(255,255,255,0.05)", borderRadius: "1.5rem", overflow: "hidden" }}
+            style={{ background: "rgba(0,0,0,0.06)", borderRadius: "1.5rem", overflow: "hidden" }}
           >
             {STEPS.map(({ n, title, desc }, i) => (
               <motion.div
                 key={n}
                 variants={cardReveal}
-                className="flex flex-col gap-3 bg-[#0c0c0f] px-8 py-8"
+                className="flex flex-col gap-3 bg-[#f8f9fa] px-8 py-8"
               >
                 <span
                   className="text-[2.2rem] font-black leading-none"
-                  style={{ color: i === 0 ? "#c9a55a" : "rgba(255,255,255,0.10)" }}
+                  style={{ color: i === 0 ? "#c9a55a" : "rgba(0,0,0,0.10)" }}
                 >
                   {n}
                 </span>
-                <h3 className="text-[0.92rem] font-extrabold text-white">{title}</h3>
-                <p className="text-[0.78rem] leading-relaxed text-white/38">{desc}</p>
+                <h3 className="text-[0.92rem] font-extrabold text-gray-900">{title}</h3>
+                <p className="text-[0.78rem] leading-relaxed text-gray-400">{desc}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -318,7 +304,7 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           OUTILS
       ══════════════════════════════════════════════ */}
-      <section id="outils" className="py-16 sm:py-28">
+      <section id="outils" className="py-16 sm:py-28 bg-white">
         <div className="mx-auto max-w-6xl px-6">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -330,11 +316,11 @@ export default function EspaceClientPage() {
             <p className="mb-3 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
               Ce qui est inclus
             </p>
-            <h2 className="text-2xl font-black text-white sm:text-4xl">
+            <h2 className="text-2xl font-black text-gray-900 sm:text-4xl">
               10 outils,{" "}
               <span className="text-[#c9a55a]">un seul abonnement.</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-md text-sm text-white/40">
+            <p className="mx-auto mt-4 max-w-md text-sm text-gray-500">
               Conçus pour les indépendants et entrepreneurs qui veulent aller vite
               sans sacrifier la qualité.
             </p>
@@ -353,7 +339,7 @@ export default function EspaceClientPage() {
                 <motion.div
                   key={tool.title}
                   variants={cardReveal}
-                  className="group flex flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0f0f13] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.12]"
+                  className="group flex flex-col gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:-translate-y-0.5 hover:border-gray-300"
                   whileHover={{ boxShadow: `0 12px 40px rgba(${tool.rgb}, 0.12)` }}
                   transition={{ duration: 0.3, ease }}
                 >
@@ -368,8 +354,8 @@ export default function EspaceClientPage() {
                     <Icon size={18} style={{ color: tool.color }} />
                   </div>
                   <div>
-                    <p className="text-[0.82rem] font-extrabold text-white">{tool.title}</p>
-                    <p className="mt-1 text-[0.72rem] leading-relaxed text-white/38">{tool.desc}</p>
+                    <p className="text-[0.82rem] font-extrabold text-gray-900">{tool.title}</p>
+                    <p className="mt-1 text-[0.72rem] leading-relaxed text-gray-400">{tool.desc}</p>
                   </div>
                   {/* Accent bas */}
                   <div
@@ -390,7 +376,7 @@ export default function EspaceClientPage() {
           >
             <Link
               href="#abonnement"
-              className="group inline-flex items-center gap-2 rounded-2xl bg-[#c9a55a] px-8 py-3.5 text-sm font-bold text-[#09090b] shadow-[0_8px_28px_rgba(201,165,90,0.30)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_36px_rgba(201,165,90,0.45)]"
+              className="group inline-flex items-center gap-2 rounded-2xl bg-[#c9a55a] px-8 py-3.5 text-sm font-bold text-white shadow-[0_8px_28px_rgba(201,165,90,0.30)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_36px_rgba(201,165,90,0.45)]"
             >
               <Wallet size={15} />
               Accéder à tous les outils — 11,90€/mois
@@ -403,7 +389,7 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           PRICING
       ══════════════════════════════════════════════ */}
-      <section id="abonnement" className="bg-[#0c0c0f] py-16 sm:py-28">
+      <section id="abonnement" className="bg-[#f8f9fa] py-16 sm:py-28">
         <div className="mx-auto max-w-5xl px-6">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -415,7 +401,7 @@ export default function EspaceClientPage() {
             <p className="mb-3 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
               Tarif unique
             </p>
-            <h2 className="text-2xl font-black text-white sm:text-4xl">
+            <h2 className="text-2xl font-black text-gray-900 sm:text-4xl">
               Tout inclus.{" "}
               <span className="text-[#c9a55a]">Aucune surprise.</span>
             </h2>
@@ -428,28 +414,28 @@ export default function EspaceClientPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={viewport}
               transition={{ duration: 0.6, ease }}
-              className="flex flex-col justify-center gap-3 rounded-[1.75rem] border border-white/[0.06] bg-[#0f0f13] p-8"
+              className="flex flex-col justify-center gap-3 rounded-[1.75rem] border border-gray-200 bg-white p-8 shadow-[0_2px_10px_rgba(0,0,0,.06)]"
             >
-              <p className="mb-2 text-[0.7rem] font-bold uppercase tracking-widest text-white/30">
+              <p className="mb-2 text-[0.7rem] font-bold uppercase tracking-widest text-gray-400">
                 Ce que vous obtenez
               </p>
               <div className="grid gap-2.5 sm:grid-cols-2">
                 {INCLUS.map((item) => (
                   <div key={item} className="flex items-start gap-2.5">
                     <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-[#c9a55a]" />
-                    <span className="text-[0.8rem] leading-snug text-white/65">{item}</span>
+                    <span className="text-[0.8rem] leading-snug text-gray-600">{item}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-4 border-t border-white/[0.06] pt-6">
+              <div className="mt-4 flex flex-wrap gap-4 border-t border-gray-200 pt-6">
                 {[
                   { icon: Zap,     text: "Accès immédiat" },
                   { icon: Lock,    text: "Stripe SSL" },
                   { icon: Shield,  text: "RGPD" },
                   { icon: MessageCircle, text: "Support 24h" },
                 ].map(({ icon: Icon, text }) => (
-                  <span key={text} className="flex items-center gap-1.5 text-[0.72rem] text-white/32">
+                  <span key={text} className="flex items-center gap-1.5 text-[0.72rem] text-gray-400">
                     <Icon size={11} className="text-[#c9a55a]/70" />
                     {text}
                   </span>
@@ -463,13 +449,10 @@ export default function EspaceClientPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={viewport}
               transition={{ duration: 0.6, ease, delay: 0.1 }}
-              className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.30)]"
-              style={{ background: "linear-gradient(160deg, #14120e 0%, #111113 100%)", boxShadow: "0 0 60px rgba(201,165,90,0.08), 0 30px 80px rgba(0,0,0,0.5)" }}
+              className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.30)] bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)]"
             >
               {/* Top bar */}
               <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
-              {/* Glow */}
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(201,165,90,0.10),transparent_70%)]" />
 
               <div className="relative flex flex-col gap-0 p-8">
                 {/* Badge */}
@@ -480,18 +463,18 @@ export default function EspaceClientPage() {
                 {/* Prix */}
                 <div className="flex items-start gap-1">
                   <span className="mt-3 text-lg font-bold text-[#c9a55a]">€</span>
-                  <span className="text-[5.5rem] font-black leading-none tracking-tighter text-white">
+                  <span className="text-[5.5rem] font-black leading-none tracking-tighter text-gray-900">
                     11,90
                   </span>
                 </div>
-                <p className="mt-1 text-[0.75rem] text-white/35">par mois · tout compris</p>
+                <p className="mt-1 text-[0.75rem] text-gray-400">par mois · tout compris</p>
 
                 <div className="my-6 h-px w-full bg-gradient-to-r from-[#c9a55a]/20 to-transparent" />
 
                 {/* Quick list */}
                 <ul className="mb-7 space-y-2">
                   {["11 outils inclus", "Coach Business IA", "Mises à jour continues", "Sans engagement"].map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-[0.78rem] text-white/60">
+                    <li key={f} className="flex items-center gap-2 text-[0.78rem] text-gray-600">
                       <CheckCircle2 size={12} className="text-[#c9a55a]" />
                       {f}
                     </li>
@@ -501,17 +484,17 @@ export default function EspaceClientPage() {
                 {/* CTA */}
                 <StripeButton label="Commencer maintenant →" />
 
-                <p className="mt-4 text-center text-[0.65rem] text-white/22">
+                <p className="mt-4 text-center text-[0.65rem] text-gray-400">
                   Paiement sécurisé • Accès immédiat • Résiliable à tout moment
                 </p>
 
                 {/* Login séparateur */}
                 <div className="mt-5 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-white/[0.06]" />
+                  <div className="h-px flex-1 bg-gray-200" />
                   <Link href="/login" className="text-[0.7rem] font-semibold text-[#c9a55a]/70 transition hover:text-[#c9a55a]">
                     Déjà abonné ? Se connecter →
                   </Link>
-                  <div className="h-px flex-1 bg-white/[0.06]" />
+                  <div className="h-px flex-1 bg-gray-200" />
                 </div>
               </div>
             </motion.div>
@@ -522,9 +505,11 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           CTA FINAL
       ══════════════════════════════════════════════ */}
-      <section className="border-t border-white/[0.05] bg-[#0c0c0f] py-16 sm:py-24">
+      <section
+        className="border-t border-gray-200 py-16 sm:py-24"
+        style={{ background: "linear-gradient(135deg,#6366f1 0%,#4f46e5 50%,#7c3aed 100%)" }}
+      >
         <div className="relative mx-auto max-w-2xl px-6 text-center">
-          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[300px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(201,165,90,0.06)] blur-[90px]" />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -532,27 +517,27 @@ export default function EspaceClientPage() {
             transition={{ duration: 0.6, ease }}
             className="relative"
           >
-            <p className="mb-4 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
+            <p className="mb-4 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-white/70">
               Commencer maintenant
             </p>
             <h2 className="text-2xl font-black text-white sm:text-4xl">
               Prêt à simplifier{" "}
               <span className="text-[#c9a55a]">votre gestion ?</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-sm text-sm text-white/38">
+            <p className="mx-auto mt-4 max-w-sm text-sm text-white/70">
               Rejoignez les entrepreneurs qui pilotent leur activité avec DJAMA.
             </p>
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
                 href="#abonnement"
-                className="group flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#c9a55a] px-9 py-4 text-sm font-bold text-[#09090b] shadow-[0_8px_32px_rgba(201,165,90,0.32)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_40px_rgba(201,165,90,0.48)] sm:w-auto"
+                className="group flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#c9a55a] px-9 py-4 text-sm font-bold text-white shadow-[0_8px_32px_rgba(201,165,90,0.32)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_40px_rgba(201,165,90,0.48)] sm:w-auto"
               >
                 <Wallet size={16} />
                 S&apos;abonner — 11,90€/mois
               </Link>
               <Link
                 href="/login"
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-9 py-4 text-sm font-semibold text-white/60 transition-all duration-200 hover:border-white/20 hover:text-white sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/30 bg-white/10 px-9 py-4 text-sm font-bold text-white transition hover:bg-white/20 sm:w-auto"
               >
                 <LogIn size={15} />
                 Déjà abonné
@@ -565,13 +550,13 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           FOOTER
       ══════════════════════════════════════════════ */}
-      <footer className="border-t border-white/[0.05] py-7">
+      <footer className="border-t border-gray-200 bg-white py-7">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 sm:flex-row">
-          <p className="text-[0.7rem] text-white/18">© 2025 DJAMA · Tous droits réservés</p>
-          <div className="flex items-center gap-5 text-[0.7rem] text-white/25">
+          <p className="text-[0.7rem] text-gray-300">© 2025 DJAMA · Tous droits réservés</p>
+          <div className="flex items-center gap-5 text-[0.7rem] text-gray-400">
             <a href="mailto:contact@djama.space" className="transition hover:text-[#c9a55a]">contact@djama.space</a>
             <Link href="/login" className="transition hover:text-[#c9a55a]">Se connecter</Link>
-            <Link href="/" className="transition hover:text-white/45">Accueil</Link>
+            <Link href="/" className="transition hover:text-gray-600">Accueil</Link>
           </div>
         </div>
       </footer>

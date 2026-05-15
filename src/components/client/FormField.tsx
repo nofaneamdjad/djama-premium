@@ -3,10 +3,10 @@
 import { useId, forwardRef } from "react";
 
 const BASE_INPUT = [
-  "w-full rounded-xl border border-white/[0.08] bg-white/[0.04]",
-  "px-3.5 py-2.5 text-sm text-white placeholder:text-white/25",
+  "w-full rounded-xl border border-gray-200 bg-gray-50",
+  "px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400",
   "outline-none transition",
-  "focus:border-sky-500/40 focus:bg-white/[0.06]",
+  "focus:border-[rgba(201,165,90,0.5)] focus:bg-white",
   "disabled:opacity-40 disabled:cursor-not-allowed",
 ].join(" ");
 
@@ -20,16 +20,16 @@ export function FieldLabel({
   required?: boolean;
 }) {
   return (
-    <label htmlFor={htmlFor} className="block text-xs font-semibold text-white/50 mb-1.5">
+    <label htmlFor={htmlFor} className="block text-xs font-semibold text-gray-500 mb-1.5">
       {children}
-      {required && <span className="ml-0.5 text-red-400">*</span>}
+      {required && <span className="ml-0.5 text-red-500">*</span>}
     </label>
   );
 }
 
 function ErrorMsg({ id, msg }: { id: string; msg: string }) {
   return (
-    <p id={id} role="alert" className="mt-1 text-xs text-red-400">
+    <p id={id} role="alert" className="mt-1 text-xs text-red-500">
       {msg}
     </p>
   );
@@ -57,12 +57,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       <input
         ref={ref}
         id={uid}
-        className={`${BASE_INPUT} ${error ? "border-red-500/40 focus:border-red-500/60" : ""} ${className}`}
+        className={`${BASE_INPUT} ${error ? "border-red-300 focus:border-red-400" : ""} ${className}`}
         aria-invalid={!!error}
         aria-describedby={described}
         {...props}
       />
-      {hint  && !error && <p id={hintId} className="mt-1 text-xs text-white/30">{hint}</p>}
+      {hint  && !error && <p id={hintId} className="mt-1 text-xs text-gray-400">{hint}</p>}
       {error && <ErrorMsg id={errId} msg={error} />}
     </div>
   );
@@ -89,12 +89,12 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       <textarea
         ref={ref}
         id={uid}
-        className={`${BASE_INPUT} resize-none ${error ? "border-red-500/40 focus:border-red-500/60" : ""} ${className}`}
+        className={`${BASE_INPUT} resize-none ${error ? "border-red-300 focus:border-red-400" : ""} ${className}`}
         aria-invalid={!!error}
         aria-describedby={described}
         {...props}
       />
-      {hint  && !error && <p className="mt-1 text-xs text-white/30">{hint}</p>}
+      {hint  && !error && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
       {error && <ErrorMsg id={errId} msg={error} />}
     </div>
   );
@@ -121,15 +121,15 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       <select
         ref={ref}
         id={uid}
-        className={`${BASE_INPUT} ${error ? "border-red-500/40" : ""} ${className}`}
-        style={{ colorScheme: "dark" }}
+        className={`${BASE_INPUT} ${error ? "border-red-300" : ""} ${className}`}
+        style={{ colorScheme: "light" }}
         aria-invalid={!!error}
         aria-describedby={described}
         {...props}
       >
         {children}
       </select>
-      {hint  && !error && <p className="mt-1 text-xs text-white/30">{hint}</p>}
+      {hint  && !error && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
       {error && <ErrorMsg id={errId} msg={error} />}
     </div>
   );

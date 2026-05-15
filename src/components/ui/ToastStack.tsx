@@ -60,10 +60,10 @@ export function ToastStack({
             animate={{ opacity: 1, y: 0,  scale: 1    }}
             exit={  { opacity: 0, y: 8,   scale: 0.95 }}
             transition={{ duration: 0.35, ease }}
-            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium shadow-xl backdrop-blur-sm
-              ${t.type === "success" ? "bg-emerald-500/15 border-emerald-500/25 text-emerald-300" : ""}
-              ${t.type === "error"   ? "bg-red-500/15     border-red-500/25     text-red-300"     : ""}
-              ${t.type === "info"    ? "bg-white/10       border-white/15       text-white/80"    : ""}
+            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium shadow-[0_4px_16px_rgba(0,0,0,0.08)]
+              ${t.type === "success" ? "bg-white border-emerald-200 text-emerald-700" : ""}
+              ${t.type === "error"   ? "bg-white border-red-200     text-red-600"     : ""}
+              ${t.type === "info"    ? "bg-white border-gray-200    text-gray-700"    : ""}
             `}
             role="alert"
             aria-live="polite"
@@ -72,7 +72,7 @@ export function ToastStack({
             <button
               onClick={() => remove(t.id)}
               aria-label="Fermer"
-              className="ml-2 opacity-60 hover:opacity-100 transition-opacity"
+              className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X size={14} />
             </button>

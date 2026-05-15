@@ -258,8 +258,8 @@ function DInput({ label, value, onChange, placeholder, type="text", small }:
   { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; type?:string; small?:boolean }) {
   const [focused, setFocused] = useState(false);
   const cls = small
-    ? "w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder:text-white/20 outline-none transition hover:border-white/20"
-    : "w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20";
+    ? "w-full rounded-lg border border-gray-200bg-gray-100 px-2.5 py-1.5 text-xs text-white placeholder:text-white/20 outline-none transition hover:border-white/20"
+    : "w-full rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20";
   return (
     <div>
       {label && <label className="mb-1 block text-[0.65rem] font-medium text-white/35">{label}</label>}
@@ -281,7 +281,7 @@ function DTextarea({ label, value, onChange, placeholder, rows=3 }:
     <div>
       {label && <label className="mb-1 block text-[0.65rem] font-medium text-white/35">{label}</label>}
       <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-        className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
+        className="w-full resize-none rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
     </div>
   );
 }
@@ -336,20 +336,20 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
       <div className="flex items-center gap-3">
         {value ? (
           <div className="relative group">
-                        <img src={value} alt="Logo" className="h-12 w-auto max-w-[120px] rounded-lg border border-white/10 bg-white/5 object-contain p-1"/>
+                        <img src={value} alt="Logo" className="h-12 w-auto max-w-[120px] rounded-lg border border-gray-200bg-gray-100 object-contain p-1"/>
             <button onClick={() => onChange("")}
-              className="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full border border-red-500/30 bg-white/[0.025] text-red-400 transition group-hover:flex">
+              className="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full border border-red-500/30 bg-white text-red-400 transition group-hover:flex">
               <X size={10}/>
             </button>
           </div>
         ) : (
           <div onClick={() => ref.current?.click()}
-            className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/3 text-white/25 transition hover:border-white/30 hover:text-white/40">
+            className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white/3 text-white/25 transition hover:border-white/30 hover:text-gray-500">
             <ImagePlus size={18}/>
           </div>
         )}
         <button onClick={() => ref.current?.click()}
-          className="text-[0.7rem] font-semibold text-white/35 underline-offset-2 transition hover:text-white/60 hover:underline">
+          className="text-[0.7rem] font-semibold text-white/35 underline-offset-2 transition hover:text-gray-600 hover:underline">
           {value ? "Remplacer" : "Importer le logo"}
         </button>
         <input ref={ref} type="file" accept="image/*" onChange={handleFile} className="hidden"/>
@@ -751,11 +751,11 @@ export default function FacturesPage() {
     return (
     <div className="flex flex-col bg-[#0a0f1e]">
 
-            <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+            <div className="border-b border-gray-200 bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
+              <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 bg-white/[0.04]">
                 <ReceiptText size={16} style={{ color: "#c9a55a" }} />
               </div>
             </div>
@@ -766,7 +766,7 @@ export default function FacturesPage() {
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => newDoc("devis")}
-              className="hidden items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08] sm:flex">
+              className="hidden items-center gap-1.5 rounded-xl border border-gray-200 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-gray-600 transition hover:bg-white/[0.08] sm:flex">
               <Plus size={12}/> Devis
             </button>
             <button onClick={() => newDoc("facture")}
@@ -780,18 +780,18 @@ export default function FacturesPage() {
 
             <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 px-5 py-5 sm:px-5">
 
-                <aside className={`flex w-full flex-col border-r border-white/[0.06] bg-white/[0.025] sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-white/[0.07] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}>
-          <div className="space-y-2.5 border-b border-white/6 p-4">
+                <aside className={`flex w-full flex-col border-r border-gray-200 bg-white sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-gray-200 ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}>
+          <div className="space-y-2.5 border-b border-gray-200 p-4">
             <div className="relative">
               <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25"/>
               <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Numéro, client…"
-                className="w-full rounded-xl border border-white/8 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-white/15 focus:border-[rgba(201,165,90,0.4)]"/>
-              {query && <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"><X size={12}/></button>}
+                className="w-full rounded-xl border border-gray-200 bg-gray-100 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-gray-200 focus:border-[rgba(201,165,90,0.4)]"/>
+              {query && <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-gray-600"><X size={12}/></button>}
             </div>
             <div className="flex gap-1.5">
               {(["tous", "facture", "devis"] as const).map(t => (
                 <button key={t} onClick={() => setFilterType(t)}
-                  className={`rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition ${filterType === t ? "bg-white/12 text-white" : "text-white/30 hover:text-white/60"}`}>
+                  className={`rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition ${filterType === t ? "bg-gray-200 text-white" : "text-white/30 hover:text-gray-600"}`}>
                   {t === "tous" ? "Tous" : t === "facture" ? "Factures" : "Devis"}
                 </button>
               ))}
@@ -819,7 +819,7 @@ export default function FacturesPage() {
                     initial={{ opacity:0, x:-12 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-12 }}
                     transition={{ duration:0.22, ease }}
                     onClick={() => openDoc(doc)}
-                    className={`group w-full border-b border-white/5 px-4 py-3.5 text-left transition hover:bg-white/4 ${selected?.id === doc.id ? "bg-white/6" : ""}`}>
+                    className={`group w-full border-b border-gray-200px-4 py-3.5 text-left transition hover:bg-gray-100 ${selected?.id === doc.id ? "bg-white/6" : ""}`}>
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-[0.58rem] font-extrabold uppercase tracking-widest ${
                         doc.type === "facture" ? "bg-[rgba(201,165,90,0.12)] text-[#c9a55a]" : "bg-[rgba(59,130,246,0.12)] text-blue-400"}`}>
@@ -827,9 +827,9 @@ export default function FacturesPage() {
                       </span>
                       <StatutBadge statut={doc.statut}/>
                     </div>
-                    <p className="text-sm font-bold text-white/90">{doc.numero || "(sans numéro)"}</p>
-                    {doc.sujet && <p className="text-xs text-white/50 truncate">{doc.sujet}</p>}
-                    <p className="text-xs text-white/40 truncate">{doc.client_nom || "(client)"}</p>
+                    <p className="text-sm font-bold text-gray-800">{doc.numero || "(sans numéro)"}</p>
+                    {doc.sujet && <p className="text-xs text-gray-500 truncate">{doc.sujet}</p>}
+                    <p className="text-xs text-gray-500 truncate">{doc.client_nom || "(client)"}</p>
                     <div className="mt-1.5 flex items-center justify-between">
                       <span className="text-[0.65rem] text-white/25">{fmtDate(doc.date_document)}</span>
                       <span className="text-xs font-bold" style={{ color: doc.couleur || "#c9a55a" }}>{fmtEur(doc.total_ttc)}</span>
@@ -844,7 +844,7 @@ export default function FacturesPage() {
                 <main className={`flex flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
           {!draft ? (
             <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-              className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.025] p-8 text-center">
+              className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-gray-200 bg-white p-8 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)]">
                 <ReceiptText size={28} style={{ color: "#c9a55a" }}/>
               </div>
@@ -854,7 +854,7 @@ export default function FacturesPage() {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => newDoc("devis")}
-                  className="flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-400/8 px-4 py-2 text-sm font-semibold text-blue-400 transition hover:bg-blue-400/15">
+                  className="flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-400 transition hover:bg-blue-400/15">
                   <Plus size={14}/> Nouveau devis
                 </button>
                 <button onClick={() => newDoc("facture")}
@@ -866,16 +866,16 @@ export default function FacturesPage() {
           ) : (
             <motion.div key={selected?.id ?? "new"} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
               transition={{ duration:0.3, ease }}
-              className="flex h-full flex-col overflow-hidden rounded-none bg-white/[0.025] sm:rounded-xl sm:border sm:border-white/[0.07]">
+              className="flex h-full flex-col overflow-hidden rounded-none bg-white sm:rounded-xl sm:border sm:border-gray-200">
 
-                            <div className="flex flex-wrap items-center gap-2 border-b border-white/6 px-5 py-3">
-                <button onClick={() => setMobileView("list")} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition sm:hidden">
+                            <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 px-5 py-3">
+                <button onClick={() => setMobileView("list")} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-600 transition sm:hidden">
                   <ArrowLeft size={13}/>
                 </button>
-                                <div className="flex rounded-xl border border-white/10 bg-white/5 p-0.5">
+                                <div className="flex rounded-xl border border-gray-200bg-gray-100 p-0.5">
                   {(["facture", "devis"] as DocType[]).map(t => (
                     <button key={t} onClick={() => { updDraft("type", t); if (!selected) setDraft(d => d ? { ...d, numero: newNumero(t, documents) } : d); }}
-                      className={`rounded-lg px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition ${draft.type === t ? "bg-gradient-to-r from-[#c9a55a] to-[#b08d45] text-[#0a0a0a]" : "text-white/40 hover:text-white/70"}`}>
+                      className={`rounded-lg px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition ${draft.type === t ? "bg-gradient-to-r from-[#c9a55a] to-[#b08d45] text-[#0a0a0a]" : "text-gray-500 hover:text-gray-600"}`}>
                       {t}
                     </button>
                   ))}
@@ -904,12 +904,12 @@ export default function FacturesPage() {
                     </button>
                   )}
                                     <button onClick={() => setShowPreview(true)}
-                    className="hidden items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/50 transition hover:border-white/20 hover:text-white/80 sm:flex"
+                    className="hidden items-center gap-1.5 rounded-xl border border-gray-200px-3 py-2 text-xs font-semibold text-gray-500 transition hover:border-white/20 hover:text-gray-700 sm:flex"
                     title="Aperçu du document">
                     <Eye size={13}/> Aperçu
                   </button>
                                     <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
-                    className="hidden items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/50 transition hover:border-white/20 hover:text-white/80 sm:flex"
+                    className="hidden items-center gap-1.5 rounded-xl border border-gray-200px-3 py-2 text-xs font-semibold text-gray-500 transition hover:border-white/20 hover:text-gray-700 sm:flex"
                     title="Exporter en PDF">
                     <FileDown size={13}/> PDF
                   </button>
@@ -956,21 +956,21 @@ export default function FacturesPage() {
                             <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-7 sm:py-7">
                 <div className="mx-auto max-w-3xl space-y-7">
 
-                                    <div className="overflow-hidden rounded-xl border border-white/8">
+                                    <div className="overflow-hidden rounded-xl border border-gray-200">
                     <div className="flex items-center gap-4 px-5 py-4"
                       style={{ background:"linear-gradient(135deg,#080a0f 0%,rgba(8,10,15,0.92) 100%)", borderBottom:`2px solid ${activeColor}` }}>
                       {draft.emetteur_logo ? (
 
                         <img src={draft.emetteur_logo} alt="Logo" className="h-10 w-auto max-w-[80px] rounded object-contain"/>
                       ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200bg-gray-100">
                           <Building2 size={16} style={{ color: activeColor }}/>
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: activeColor }}>{draft.type}</p>
                         <p className="text-sm font-extrabold text-white truncate">{draft.numero || "(numéro)"}</p>
-                        {draft.sujet && <p className="text-[0.65rem] text-white/40 truncate">{draft.sujet}</p>}
+                        {draft.sujet && <p className="text-[0.65rem] text-gray-500 truncate">{draft.sujet}</p>}
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-[0.6rem] text-white/30">{fmtDate(draft.date_document)}</p>
@@ -989,7 +989,7 @@ export default function FacturesPage() {
 
                                     <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
 
-                                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                                    <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <TemplateSelector
                       value={draft.template ?? "modern"}
                       onChange={v => { setDraft(d => d ? { ...d, template: v } : d); setDirty(true); }}
@@ -998,16 +998,16 @@ export default function FacturesPage() {
                   </div>
 
                                     <div className="grid gap-5 sm:grid-cols-2">
-                                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                                        <div className="rounded-xl border border-gray-200 bg-white p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <Building2 size={13} style={{ color: activeColor }}/>
-                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Votre entreprise</span>
+                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-500">Votre entreprise</span>
                       </div>
                       <div className="space-y-2.5">
                         <LogoUploader value={draft.emetteur_logo} onChange={v => updDraft("emetteur_logo", v)}/>
 
                                                 {draft.emetteur_logo && (
-                          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 space-y-3">
+                          <div className="rounded-xl border border-gray-200 bg-white/[0.03] p-3 space-y-3">
                                                         <div>
                               <p className="mb-1.5 text-[0.65rem] font-medium text-white/35">Taille du logo</p>
                               <div className="flex gap-1.5">
@@ -1024,7 +1024,7 @@ export default function FacturesPage() {
                                     className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all ${
                                       logoSize === val
                                         ? "text-[#0a0b10] shadow"
-                                        : "border border-white/10 bg-transparent text-white/40 hover:text-white/70"
+                                        : "border border-gray-200bg-transparent text-gray-500 hover:text-gray-600"
                                     }`}
                                     style={logoSize === val ? { backgroundColor: activeColor } : {}}
                                   >
@@ -1042,7 +1042,7 @@ export default function FacturesPage() {
                               }}
                               className="flex w-full items-center justify-between gap-2 text-left"
                             >
-                              <span className="text-[0.7rem] text-white/50">Logo seul (sans nom)</span>
+                              <span className="text-[0.7rem] text-gray-500">Logo seul (sans nom)</span>
                               <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${logoHideName ? "bg-[var(--c)]" : "bg-white/10"}`}
                                 style={{ "--c": activeColor } as React.CSSProperties}>
                                 <span className={`inline-block h-3.5 w-3.5 translate-x-0.5 rounded-full bg-white shadow transition-transform ${logoHideName ? "translate-x-[1.15rem]" : ""}`}/>
@@ -1057,10 +1057,10 @@ export default function FacturesPage() {
                         <DInput value={draft.emetteur_siret}   onChange={v => updDraft("emetteur_siret", v)}   placeholder="SIRET"/>
                       </div>
                     </div>
-                                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                                        <div className="rounded-xl border border-gray-200 bg-white p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <User size={13} className="text-blue-400"/>
-                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Client</span>
+                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-500">Client</span>
                       </div>
                       <div className="space-y-2.5">
                         <DInput value={draft.client_nom}       onChange={v => updDraft("client_nom", v)}       placeholder="Prénom Nom du contact"/>
@@ -1072,10 +1072,10 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                                    <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <div className="mb-3 flex items-center gap-2">
                       <Landmark size={13} style={{ color: activeColor }}/>
-                      <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Coordonnées bancaires</span>
+                      <span className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-500">Coordonnées bancaires</span>
                       <span className="ml-auto text-[0.58rem] text-white/20">optionnel — apparaît dans le PDF</span>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -1090,7 +1090,7 @@ export default function FacturesPage() {
 
                                     <div>
                     <div className="mb-3 flex items-center justify-between">
-                      <span className="text-xs font-extrabold uppercase tracking-widest text-white/40">Prestations</span>
+                      <span className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Prestations</span>
                       <button onClick={addItem}
                         className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
                         style={{ color:activeColor, borderColor:`${activeColor}44`, background:`${activeColor}11` }}>
@@ -1109,12 +1109,12 @@ export default function FacturesPage() {
                           return (
                             <motion.div key={idx} layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
                               transition={{ duration:0.2, ease }}
-                              className="group grid grid-cols-1 gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 sm:grid-cols-[1fr_60px_80px_70px_80px_32px] sm:items-center">
+                              className="group grid grid-cols-1 gap-2 rounded-xl border border-gray-200 bg-white p-3 sm:grid-cols-[1fr_60px_80px_70px_80px_32px] sm:items-center">
                               <DInput small value={it.description} onChange={v => updItem(idx, "description", v)} placeholder="Description de la prestation"/>
                               <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx, "quantity",   parseFloat(v) || 0)} placeholder="1"/>
                               <DInput small type="number" value={String(it.unit_price)} onChange={v => updItem(idx, "unit_price", parseFloat(v) || 0)} placeholder="0.00"/>
                               <select value={it.vat_rate} onChange={e => updItem(idx, "vat_rate", parseFloat(e.target.value))}
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white outline-none transition hover:border-white/20">
+                                className="w-full rounded-lg border border-gray-200bg-gray-100 px-2.5 py-1.5 text-xs text-white outline-none transition hover:border-white/20">
                                 {VAT_RATES.map(r => <option key={r} value={r} style={{ background:"#0f1117" }}>{r}%</option>)}
                               </select>
                               <div className="flex items-center justify-end">
@@ -1132,67 +1132,67 @@ export default function FacturesPage() {
                   </div>
 
                                     <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                    <div className="rounded-xl border border-gray-200 bg-white p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <Percent size={12} style={{ color: activeColor }}/>
-                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Remise globale</span>
+                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-500">Remise globale</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <input type="number" min="0" max="100" step="0.5"
                           value={draft.remise_pct || ""}
                           onChange={e => updDraft("remise_pct", parseFloat(e.target.value) || 0)}
                           placeholder="0"
-                          className="w-20 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
-                        <span className="text-sm text-white/40">%</span>
+                          className="w-20 rounded-xl border border-gray-200bg-gray-100 px-3 py-2 text-sm text-white outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
+                        <span className="text-sm text-gray-500">%</span>
                         {totals.remise > 0 && (
                           <span className="text-sm font-bold text-red-400/80">− {fmtEur(totals.remise)}</span>
                         )}
                       </div>
                     </div>
-                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                    <div className="rounded-xl border border-gray-200 bg-white p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <BadgeCheck size={12} className="text-green-400"/>
-                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Acompte versé</span>
+                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-500">Acompte versé</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <input type="number" min="0" step="0.01"
                           value={draft.acompte || ""}
                           onChange={e => updDraft("acompte", parseFloat(e.target.value) || 0)}
                           placeholder="0.00"
-                          className="w-28 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
-                        <span className="text-sm text-white/40">€</span>
+                          className="w-28 rounded-xl border border-gray-200bg-gray-100 px-3 py-2 text-sm text-white outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
+                        <span className="text-sm text-gray-500">€</span>
                       </div>
                     </div>
                   </div>
 
                                     <div className="flex justify-end">
-                    <div className="w-full max-w-xs rounded-xl border border-white/[0.07] bg-white/[0.025] p-5 space-y-2">
+                    <div className="w-full max-w-xs rounded-xl border border-gray-200 bg-white p-5 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-white/50">Sous-total HT</span>
-                        <span className="text-sm font-semibold text-white/80">{fmtEur(totals.subtotal_ht)}</span>
+                        <span className="text-sm text-gray-500">Sous-total HT</span>
+                        <span className="text-sm font-semibold text-gray-700">{fmtEur(totals.subtotal_ht)}</span>
                       </div>
                       {totals.remise > 0 && (
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-white/50">Remise ({draft.remise_pct}%)</span>
+                          <span className="text-sm text-gray-500">Remise ({draft.remise_pct}%)</span>
                           <span className="text-sm font-semibold text-red-400">− {fmtEur(totals.remise)}</span>
                         </div>
                       )}
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-white/50">TVA</span>
-                        <span className="text-sm font-semibold text-white/80">{fmtEur(totals.tva)}</span>
+                        <span className="text-sm text-gray-500">TVA</span>
+                        <span className="text-sm font-semibold text-gray-700">{fmtEur(totals.tva)}</span>
                       </div>
-                      <div className="border-t border-white/8 pt-2 flex items-center justify-between">
+                      <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
                         <span className="text-base font-extrabold text-white">Total TTC</span>
                         <span className="text-xl font-bold" style={{ color: activeColor }}>{fmtEur(totals.ttc)}</span>
                       </div>
                       {totals.acompte > 0 && (
                         <>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-white/50">Acompte versé</span>
+                            <span className="text-sm text-gray-500">Acompte versé</span>
                             <span className="text-sm font-semibold text-green-400">− {fmtEur(totals.acompte)}</span>
                           </div>
-                          <div className="border-t border-white/8 pt-2 flex items-center justify-between">
-                            <span className="text-sm font-bold text-white/70">Net à payer</span>
+                          <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
+                            <span className="text-sm font-bold text-gray-600">Net à payer</span>
                             <span className="text-base font-bold" style={{ color: activeColor }}>{fmtEur(totals.ttc - totals.acompte)}</span>
                           </div>
                         </>
@@ -1208,16 +1208,16 @@ export default function FacturesPage() {
                                     <div className="flex flex-wrap gap-3 sm:hidden">
                     {selected?.type === "devis" && (
                       <button onClick={handleConvert} disabled={converting}
-                        className="flex items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400 transition hover:bg-blue-400/8 disabled:opacity-40">
+                        className="flex items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400 transition hover:bg-blue-50 disabled:opacity-40">
                         {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
                       </button>
                     )}
                     <button onClick={() => setShowPreview(true)}
-                      className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/60 transition hover:border-white/20">
+                      className="flex items-center gap-1.5 rounded-xl border border-gray-200px-3 py-2 text-xs font-semibold text-gray-600 transition hover:border-white/20">
                       <Eye size={13}/> Aperçu
                     </button>
                     <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
-                      className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/60 transition hover:border-white/20">
+                      className="flex items-center gap-1.5 rounded-xl border border-gray-200px-3 py-2 text-xs font-semibold text-gray-600 transition hover:border-white/20">
                       <FileDown size={13}/> Exporter PDF
                     </button>
                   </div>
@@ -1233,13 +1233,13 @@ export default function FacturesPage() {
         {showPreview && draft && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm">
-                        <div className="flex items-center justify-between border-b border-white/[0.07] bg-[rgba(10,11,16,0.97)] px-6 py-3">
+                        <div className="flex items-center justify-between border-b border-gray-200 bg-[rgba(10,11,16,0.97)] px-6 py-3">
               <div className="flex items-center gap-3">
                 <Eye size={15} style={{ color: activeColor }}/>
                 <span className="text-sm font-bold text-white">
                   Aperçu — {draft.numero || (draft.type === "facture" ? "Facture" : "Devis")}
                 </span>
-                {draft.sujet && <span className="text-xs text-white/40">{draft.sujet}</span>}
+                {draft.sujet && <span className="text-xs text-gray-500">{draft.sujet}</span>}
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => { exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName); }}
@@ -1247,7 +1247,7 @@ export default function FacturesPage() {
                   <FileDown size={13}/> Télécharger PDF
                 </button>
                 <button onClick={() => setShowPreview(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 text-white/40 transition hover:border-white/20 hover:text-white/80">
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200text-gray-500 transition hover:border-white/20 hover:text-gray-700">
                   <X size={15}/>
                 </button>
               </div>
@@ -1272,15 +1272,15 @@ export default function FacturesPage() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-sm rounded-2xl border border-gray-200bg-white p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10">
                 <Trash2 size={18} className="text-red-400"/>
               </div>
               <h3 className="text-base font-extrabold text-white">Supprimer ce document ?</h3>
-              <p className="mt-1.5 text-sm text-white/40">Cette action est irréversible.</p>
+              <p className="mt-1.5 text-sm text-gray-500">Cette action est irréversible.</p>
               <div className="mt-5 flex gap-3">
                 <button onClick={() => setConfirmDel(false)}
-                  className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/60 transition hover:border-white/20">Annuler</button>
+                  className="flex-1 rounded-xl border border-gray-200py-2.5 text-sm font-semibold text-gray-600 transition hover:border-white/20">Annuler</button>
                 <button onClick={handleDelete} disabled={deleting}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-red-500 disabled:opacity-50">
                   {deleting && <Loader2 size={13} className="animate-spin"/>}Supprimer
@@ -1297,7 +1297,7 @@ export default function FacturesPage() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-md rounded-2xl border border-gray-200bg-white p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-sky-400/25 bg-sky-400/8">
@@ -1308,29 +1308,29 @@ export default function FacturesPage() {
                     <p className="text-[0.65rem] text-white/30">{draft?.numero}</p>
                   </div>
                 </div>
-                <button onClick={() => setEmailModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+                <button onClick={() => setEmailModal(false)} className="text-white/25 hover:text-gray-600"><X size={15}/></button>
               </div>
               <div className="space-y-3">
                 <div>
                   <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Destinataire</label>
                   <input value={emailTo} onChange={e => setEmailTo(e.target.value)}
                     placeholder="email@client.com"
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
+                    className="w-full rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
                 </div>
                 <div>
                   <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Objet</label>
                   <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
+                    className="w-full rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
                 </div>
                 <div>
                   <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Message</label>
                   <textarea value={emailMsg} onChange={e => setEmailMsg(e.target.value)} rows={4}
-                    className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
+                    className="w-full resize-none rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
                 </div>
               </div>
               <div className="mt-5 flex gap-3">
                 <button onClick={() => setEmailModal(false)}
-                  className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/60 transition hover:border-white/20">Annuler</button>
+                  className="flex-1 rounded-xl border border-gray-200py-2.5 text-sm font-semibold text-gray-600 transition hover:border-white/20">Annuler</button>
                 <button onClick={handleSendEmail} disabled={sendingEmail || !emailTo}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-sky-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-sky-500 disabled:opacity-50">
                   {sendingEmail ? <Loader2 size={13} className="animate-spin"/> : <Send size={13}/>}
@@ -1348,7 +1348,7 @@ export default function FacturesPage() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-sm rounded-2xl border border-gray-200bg-white p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)]">
@@ -1356,20 +1356,20 @@ export default function FacturesPage() {
                   </div>
                   <h3 className="text-sm font-extrabold text-white">Lien de paiement</h3>
                 </div>
-                <button onClick={() => setPayLinkModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+                <button onClick={() => setPayLinkModal(false)} className="text-white/25 hover:text-gray-600"><X size={15}/></button>
               </div>
               {payLinkLoading ? (
                 <div className="flex flex-col items-center gap-3 py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#a78bfa]"/>
-                  <p className="text-sm text-white/40">Génération du lien Stripe…</p>
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200border-t-[#a78bfa]"/>
+                  <p className="text-sm text-gray-500">Génération du lien Stripe…</p>
                 </div>
               ) : payLinkUrl ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-white/55">Lien de paiement créé pour <strong className="text-white">{fmtEur(totals.ttc)}</strong></p>
-                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5">
-                    <span className="flex-1 truncate text-xs text-white/60">{payLinkUrl}</span>
+                  <p className="text-sm text-gray-600">Lien de paiement créé pour <strong className="text-white">{fmtEur(totals.ttc)}</strong></p>
+                  <div className="flex items-center gap-2 rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5">
+                    <span className="flex-1 truncate text-xs text-gray-600">{payLinkUrl}</span>
                     <button onClick={handleCopyLink}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 text-white/40 transition hover:text-white/80">
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-200text-gray-500 transition hover:text-gray-700">
                       {copied ? <Check size={13} className="text-emerald-400"/> : <Copy size={13}/>}
                     </button>
                   </div>
@@ -1397,7 +1397,7 @@ export default function FacturesPage() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-sm rounded-2xl border border-gray-200bg-white p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(34,211,238,0.25)] bg-[rgba(34,211,238,0.08)]">
@@ -1408,23 +1408,23 @@ export default function FacturesPage() {
                     <p className="text-[0.62rem] text-white/35">{draft?.client_nom}</p>
                   </div>
                 </div>
-                <button onClick={() => setPortalModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+                <button onClick={() => setPortalModal(false)} className="text-white/25 hover:text-gray-600"><X size={15}/></button>
               </div>
               {portalLoading ? (
                 <div className="flex flex-col items-center gap-3 py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#22d3ee]"/>
-                  <p className="text-sm text-white/40">Génération du lien…</p>
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200border-t-[#22d3ee]"/>
+                  <p className="text-sm text-gray-500">Génération du lien…</p>
                 </div>
               ) : portalUrl ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-white/55">
+                  <p className="text-sm text-gray-600">
                     Partagez ce lien sécurisé avec <strong className="text-white">{draft?.client_nom}</strong>.
                     <br/><span className="text-xs text-white/30">Valide 30 jours.</span>
                   </p>
-                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5">
-                    <span className="flex-1 truncate text-xs text-white/55">{portalUrl}</span>
+                  <div className="flex items-center gap-2 rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5">
+                    <span className="flex-1 truncate text-xs text-gray-600">{portalUrl}</span>
                     <button onClick={handleCopyPortal}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 text-white/40 transition hover:text-white/80">
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-200text-gray-500 transition hover:text-gray-700">
                       {portalCopied ? <Check size={13} className="text-emerald-400"/> : <Copy size={13}/>}
                     </button>
                   </div>
