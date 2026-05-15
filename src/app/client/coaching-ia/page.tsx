@@ -15,7 +15,6 @@ import Link from "next/link";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-/* ── Cours ─────────────────────────────────────────────── */
 const COURS = [
   { num: "01", title: "Introduction à l'IA",               icon: Brain,         done: true,  unlocked: true  },
   { num: "02", title: "Comprendre les modèles",            icon: BarChart2,     done: true,  unlocked: true  },
@@ -39,7 +38,6 @@ const COURS = [
   { num: "20", title: "Projet final",                      icon: Star,          done: false, unlocked: false },
 ];
 
-/* ── Activités ─────────────────────────────────────────── */
 const ACTIVITES = [
   { Icon: Flame,        color: "#f59e0b", title: "Défi quotidien",        desc: "Un défi court sur un vrai outil IA. 5 à 15 min par jour pour progresser sans pression.", badge: "5–15 min" },
   { Icon: Dumbbell,     color: "#a78bfa", title: "Atelier guidé",         desc: "Exercices étape par étape avec accompagnement. Vous apprenez en faisant sur vos vraies situations.", badge: "Avec coach" },
@@ -52,17 +50,13 @@ const ACTIVITES = [
 const doneCours = COURS.filter(c => c.done).length;
 const progressPct = Math.round((doneCours / COURS.length) * 100);
 
-/* ═══════════════════════════════════════════════════════════
-   PAGE
-═══════════════════════════════════════════════════════════ */
 export default function CoachingIAPage() {
   const [tab, setTab] = useState<"cours" | "activites" | "jeux">("cours");
 
   return (
     <div className="min-h-screen bg-[#0a0f1e]">
 
-      {/* Sub-header */}
-      <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
+            <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <div className="relative">
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border" style={{ backgroundColor: "#d946ef14", borderColor: "#d946ef30" }}>
@@ -78,8 +72,7 @@ export default function CoachingIAPage() {
 
       <div className="relative z-10 mx-auto max-w-4xl space-y-6 px-5 py-6 sm:px-8">
 
-        {/* Progress overview */}
-        <motion.div
+                <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease }}
@@ -122,8 +115,7 @@ export default function CoachingIAPage() {
           </div>
         </motion.div>
 
-        {/* Tab navigation */}
-        <motion.div
+                <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease, delay: 0.1 }}
@@ -157,11 +149,9 @@ export default function CoachingIAPage() {
           ))}
         </motion.div>
 
-        {/* Tab content */}
-        <AnimatePresence mode="wait">
+                <AnimatePresence mode="wait">
 
-          {/* ════ COURS ════ */}
-          {tab === "cours" && (
+                    {tab === "cours" && (
             <motion.div
               key="cours"
               initial={{ opacity: 0, y: 12 }}
@@ -189,8 +179,7 @@ export default function CoachingIAPage() {
                         : "border-white/6 bg-white/[0.025]"
                     } ${isUnlocked ? "cursor-pointer" : "cursor-default opacity-60"}`}
                   >
-                    {/* Status icon */}
-                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
+                                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
                       c.done ? "bg-[rgba(74,222,128,0.15)]" : isActive ? "bg-[rgba(217,70,239,0.15)]" : "bg-white/5"
                     }`}>
                       {c.done
@@ -235,8 +224,7 @@ export default function CoachingIAPage() {
             </motion.div>
           )}
 
-          {/* ════ ACTIVITÉS ════ */}
-          {tab === "activites" && (
+                    {tab === "activites" && (
             <motion.div
               key="activites"
               initial={{ opacity: 0, y: 12 }}
@@ -275,8 +263,7 @@ export default function CoachingIAPage() {
             </motion.div>
           )}
 
-          {/* ════ JEUX ════ */}
-          {tab === "jeux" && (
+                    {tab === "jeux" && (
             <motion.div
               key="jeux"
               initial={{ opacity: 0, y: 12 }}
@@ -285,8 +272,7 @@ export default function CoachingIAPage() {
               transition={{ duration: 0.3, ease }}
               className="space-y-5"
             >
-              {/* Banner vers page jeux */}
-              <Link href="/client/coaching-ia/jeux">
+                            <Link href="/client/coaching-ia/jeux">
                 <motion.div
                   whileHover={{ scale: 1.01 }}
                   className="relative overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.3)] bg-white/[0.025] p-6 cursor-pointer"

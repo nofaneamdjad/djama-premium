@@ -58,10 +58,6 @@ const DEFAULT_SETTINGS: SiteSettingsMap = {
   "contact.page.subtitle": "Notre équipe répond sous 24h.",
 };
 
-/**
- * Hook client — charge les settings Supabase une fois au montage.
- * Retourne les valeurs locales en fallback si Supabase échoue.
- */
 export function useSiteSettings() {
   const [settings, setSettings] = useState<SiteSettingsMap>(DEFAULT_SETTINGS);
   const [socials,  setSocials]  = useState<SocialLinkRow[]>(DEFAULT_SOCIALS);
@@ -92,7 +88,7 @@ export function useSiteSettings() {
           }
         }
       } catch {
-        // silencieux — valeurs par défaut utilisées
+
       } finally {
         if (!cancelled) setReady(true);
       }
@@ -101,8 +97,7 @@ export function useSiteSettings() {
     return () => { cancelled = true; };
   }, []);
 
-  /** Raccourci pour lire une clé avec fallback */
-  function get(key: string, fallback = ""): string {
+    function get(key: string, fallback = ""): string {
     return settings[key] ?? DEFAULT_SETTINGS[key] ?? fallback;
   }
 

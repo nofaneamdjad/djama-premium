@@ -1,9 +1,5 @@
 "use client";
 
-/**
- * Pagination — navigation de pages cohérente pour toutes les listes.
- */
-
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps {
@@ -28,7 +24,7 @@ export default function Pagination({
   const from = (page - 1) * pageSize + 1;
   const to   = Math.min(page * pageSize, totalItems);
 
-  // Génère les numéros de page à afficher (avec ellipsis)
+
   function pages(): (number | "...")[] {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
     const result: (number | "...")[] = [1];
@@ -45,13 +41,11 @@ export default function Pagination({
 
   return (
     <div className={`flex items-center justify-between gap-4 pt-3 ${className}`}>
-      {/* Résumé */}
-      <p className="text-xs text-white/30 shrink-0">
+            <p className="text-xs text-white/30 shrink-0">
         {from}–{to} sur <span className="font-semibold text-white/50">{totalItems}</span>
       </p>
 
-      {/* Navigation */}
-      <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}

@@ -1,9 +1,5 @@
 "use client";
 
-/**
- * EmptyState — état vide cohérent pour toutes les listes et tableaux.
- */
-
 import type { LucideIcon } from "lucide-react";
 
 interface EmptyStateProps {
@@ -11,8 +7,7 @@ interface EmptyStateProps {
   title:        string;
   description?: string;
   action?:      { label: string; onClick: () => void };
-  /** Couleur hex de l'icône */
-  color?:       string;
+    color?:       string;
   className?:   string;
 }
 

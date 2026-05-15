@@ -11,7 +11,6 @@ import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
-// ── Constants ──────────────────────────────────────────────────────────────────
 const CYAN   = "#22d3ee";
 const VIOLET = "#8b5cf6";
 
@@ -35,7 +34,6 @@ const SUGGESTIONS = [
   "Combien de tâches j'ai en retard ?",
 ];
 
-// ── Types ──────────────────────────────────────────────────────────────────────
 interface Msg {
   id: string;
   role: "user" | "assistant";
@@ -60,7 +58,6 @@ interface LiveInsights {
   todayEvents:   number;
 }
 
-// ── Context builder ────────────────────────────────────────────────────────────
 async function buildContext(prompt: string): Promise<{ ctx: string; modules: string[] }> {
   const q = prompt.toLowerCase();
   const parts: string[] = [];
@@ -199,7 +196,6 @@ async function buildContext(prompt: string): Promise<{ ctx: string; modules: str
   return { ctx, modules: used };
 }
 
-// ── Markdown renderer ──────────────────────────────────────────────────────────
 function MsgContent({ text }: { text: string }) {
   const lines = text.split("\n");
   const out: React.ReactNode[] = [];
@@ -252,7 +248,6 @@ function bold(text: string): React.ReactNode {
   );
 }
 
-// ── Live Insights Panel ────────────────────────────────────────────────────────
 function InsightsPanel({ insights, loading }: { insights: LiveInsights | null; loading: boolean }) {
   const items: { icon: LucideIcon; label: string; value: number | string; color: string; warn: boolean }[] = insights ? [
     { icon: Zap,        label: "Tâches urgentes",  value: insights.urgentTasks,                  color: "#ef4444", warn: insights.urgentTasks > 0 },
@@ -287,7 +282,6 @@ function InsightsPanel({ insights, loading }: { insights: LiveInsights | null; l
   );
 }
 
-// ── Sidebar inner content ──────────────────────────────────────────────────────
 function SidebarInner({
   convs, activeConv, onNew, onSend, onSelect, onClose,
 }: {
@@ -300,8 +294,7 @@ function SidebarInner({
 }) {
   return (
     <>
-      {/* Header */}
-      <div className="px-4 py-4 border-b border-white/[0.06] shrink-0">
+            <div className="px-4 py-4 border-b border-white/[0.06] shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-lg flex items-center justify-center"
@@ -326,8 +319,7 @@ function SidebarInner({
         </button>
       </div>
 
-      {/* Quick actions */}
-      <div className="px-3 py-3 border-b border-white/[0.06] shrink-0">
+            <div className="px-3 py-3 border-b border-white/[0.06] shrink-0">
         <p className="text-[0.65rem] font-medium text-white/35 mb-2 px-1">Actions rapides</p>
         <div className="grid grid-cols-2 gap-1.5">
           {ACTIONS.map(a => (
@@ -341,8 +333,7 @@ function SidebarInner({
         </div>
       </div>
 
-      {/* History */}
-      <div className="flex-1 overflow-y-auto px-2 py-2">
+            <div className="flex-1 overflow-y-auto px-2 py-2">
         <p className="text-[0.65rem] font-medium text-white/35 mb-2 px-2">Historique</p>
         {convs.length === 0 && (
           <p className="text-center text-[0.68rem] text-white/20 py-4">Aucune conversation</p>
@@ -363,7 +354,6 @@ function SidebarInner({
   );
 }
 
-// ── Insights drawer inner content ──────────────────────────────────────────────
 function InsightsInner({
   insights, insLoading, onRefresh, onClose,
 }: {
@@ -417,7 +407,6 @@ function InsightsInner({
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────────
 export default function AssistantPage() {
   const [convs,        setConvs]        = useState<Conv[]>([]);
   const [activeConv,   setActiveConv]   = useState<string | null>(null);
@@ -447,7 +436,7 @@ export default function AssistantPage() {
       .order("updated_at", { ascending: false })
       .limit(30);
     setConvs((data ?? []) as Conv[]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   const loadMsgs = useCallback(async (convId: string) => {
@@ -495,9 +484,9 @@ export default function AssistantPage() {
         unpaidTotal: unpaid.reduce((s, i) => s + Number(i.montant_ttc ?? 0), 0),
         lowStock: low, pendingLeaves: pLeaves, todayEvents: todayEv,
       });
-    } catch { /* silently */ }
+    } catch {  }
     setInsLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   useEffect(() => { loadConvs(); loadInsights(); }, [loadConvs, loadInsights]);
@@ -587,7 +576,7 @@ export default function AssistantPage() {
     setConsulting([]);
     setSending(false);
     inputRef.current?.focus();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [activeConv, sending, msgs.length, newConv]);
 
   const selectConv = async (id: string) => {
@@ -611,12 +600,11 @@ export default function AssistantPage() {
     setShowSidebar(false);
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+
   return (
     <div className="flex h-[calc(100dvh-56px)] bg-[#0a0f1e] text-white overflow-hidden">
 
-      {/* ── MOBILE SIDEBAR DRAWER ─────────────────────────────────────────── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showSidebar && (
           <>
             <motion.div
@@ -642,8 +630,7 @@ export default function AssistantPage() {
         )}
       </AnimatePresence>
 
-      {/* ── DESKTOP SIDEBAR ───────────────────────────────────────────────── */}
-      <div className="hidden lg:flex w-[260px] shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.025]">
+            <div className="hidden lg:flex w-[260px] shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.025]">
         <SidebarInner
           convs={convs}
           activeConv={activeConv}
@@ -653,14 +640,11 @@ export default function AssistantPage() {
         />
       </div>
 
-      {/* ── MAIN CHAT ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0">
 
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b border-white/[0.06] shrink-0 gap-2">
+                <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b border-white/[0.06] shrink-0 gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            {/* Mobile hamburger */}
-            <button
+                        <button
               onClick={() => setShowSidebar(true)}
               className="lg:hidden shrink-0 h-9 w-9 flex items-center justify-center rounded-xl text-white/40 hover:text-white/70 hover:bg-white/[0.05] transition">
               <Menu size={19} />
@@ -676,8 +660,7 @@ export default function AssistantPage() {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* Consulting indicator */}
-            {consulting.length > 0 && (
+                        {consulting.length > 0 && (
               <div className="flex items-center gap-1.5">
                 <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-2.5 py-1">
                   <Loader2 size={11} className="animate-spin text-cyan-400" />
@@ -688,8 +671,7 @@ export default function AssistantPage() {
                 <Loader2 size={14} className="animate-spin text-cyan-400 sm:hidden" />
               </div>
             )}
-            {/* Live insights toggle */}
-            <button
+                        <button
               onClick={() => setShowInsights(s => !s)}
               className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs transition ${showInsights
                 ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-300"
@@ -700,17 +682,14 @@ export default function AssistantPage() {
           </div>
         </div>
 
-        {/* Messages area */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-5 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
+                <div className="flex-1 overflow-y-auto px-3 sm:px-5 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
 
-          {/* Welcome / empty state */}
-          <AnimatePresence>
+                    <AnimatePresence>
             {showActions && msgs.length === 0 && (
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }} className="space-y-5 md:space-y-7">
 
-                {/* Hero */}
-                <div className="text-center pt-4 pb-2">
+                                <div className="text-center pt-4 pb-2">
                   <div className="mx-auto mb-4 h-14 w-14 rounded-2xl flex items-center justify-center"
                     style={{ background: `linear-gradient(135deg, ${CYAN}20, ${VIOLET}20)`, border: `1px solid ${CYAN}30` }}>
                     <Sparkles size={24} style={{ color: CYAN }} />
@@ -721,8 +700,7 @@ export default function AssistantPage() {
                   </p>
                 </div>
 
-                {/* Quick actions */}
-                <div>
+                                <div>
                   <p className="text-[0.65rem] font-medium text-white/35 mb-3 text-center">Actions rapides</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {ACTIONS.map(a => (
@@ -735,8 +713,7 @@ export default function AssistantPage() {
                   </div>
                 </div>
 
-                {/* Suggestions */}
-                <div>
+                                <div>
                   <p className="text-[0.65rem] font-medium text-white/35 mb-3 text-center">Essayez de demander…</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {SUGGESTIONS.map(s => (
@@ -751,23 +728,20 @@ export default function AssistantPage() {
             )}
           </AnimatePresence>
 
-          {/* Messages */}
-          <AnimatePresence initial={false}>
+                    <AnimatePresence initial={false}>
             {msgs.map(m => (
               <motion.div key={m.id}
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className={`flex gap-2 md:gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
 
-                {/* Avatar */}
-                <div className={`shrink-0 h-8 w-8 rounded-xl flex items-center justify-center text-sm font-bold ${m.role === "user"
+                                <div className={`shrink-0 h-8 w-8 rounded-xl flex items-center justify-center text-sm font-bold ${m.role === "user"
                   ? "bg-violet-500/20 text-violet-300 border border-violet-500/30"
                   : "text-cyan-300 border border-cyan-500/30"}`}
                   style={m.role === "assistant" ? { background: CYAN + "15" } : {}}>
                   {m.role === "user" ? "U" : <Sparkles size={13} style={{ color: CYAN }} />}
                 </div>
 
-                {/* Bubble */}
-                <div className={`max-w-[84%] md:max-w-[76%] space-y-2 ${m.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
+                                <div className={`max-w-[84%] md:max-w-[76%] space-y-2 ${m.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
                   <div className={`rounded-2xl px-3.5 md:px-4 py-3 ${m.role === "user"
                     ? "rounded-tr-sm bg-violet-600/25 border border-violet-500/20"
                     : "rounded-tl-sm bg-white/[0.025] border border-white/[0.07]"}`}
@@ -789,8 +763,7 @@ export default function AssistantPage() {
                     )}
                   </div>
 
-                  {/* Module tags + copy */}
-                  {m.role === "assistant" && !m.loading && (
+                                    {m.role === "assistant" && !m.loading && (
                     <div className="flex items-center gap-1.5 flex-wrap px-1">
                       {m.modules?.map(mod => (
                         <span key={mod} className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[0.58rem] text-cyan-300/70">
@@ -811,8 +784,7 @@ export default function AssistantPage() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Input bar */}
-        <div className="shrink-0 border-t border-white/[0.06] px-3 sm:px-5 md:px-6 py-3 md:py-4">
+                <div className="shrink-0 border-t border-white/[0.06] px-3 sm:px-5 md:px-6 py-3 md:py-4">
           <div className="flex items-end gap-2 md:gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.025] px-3 md:px-4 py-2.5 md:py-3 focus-within:border-cyan-500/40 transition">
             <textarea
               ref={inputRef}
@@ -843,8 +815,7 @@ export default function AssistantPage() {
         </div>
       </div>
 
-      {/* ── MOBILE INSIGHTS DRAWER ────────────────────────────────────────── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showInsights && (
           <>
             <motion.div
@@ -868,8 +839,7 @@ export default function AssistantPage() {
         )}
       </AnimatePresence>
 
-      {/* ── DESKTOP INSIGHTS PANEL ────────────────────────────────────────── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showInsights && (
           <motion.div
             initial={{ width: 0, opacity: 0 }} animate={{ width: 260, opacity: 1 }}
@@ -886,8 +856,7 @@ export default function AssistantPage() {
         )}
       </AnimatePresence>
 
-      {/* Toast */}
-      <AnimatePresence>
+            <AnimatePresence>
         {toastData && <Toast toast={toastData} onClose={() => setToastData(null)} />}
       </AnimatePresence>
     </div>

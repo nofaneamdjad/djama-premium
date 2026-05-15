@@ -20,9 +20,6 @@ import { GridSkeleton } from "@/components/client/Skeleton";
 import EmptyState from "@/components/client/EmptyState";
 import { validate, ContactSchema } from "@/lib/schemas/client";
 
-/* ════════════════════════════════════════════════════════════
-   TYPES
-════════════════════════════════════════════════════════════ */
 type ContactType    = "prospect" | "client" | "partenaire" | "fournisseur";
 type ContactStatus  = "prospect" | "actif" | "inactif" | "perdu";
 type Priority       = "low" | "normal" | "high" | "urgent";
@@ -36,8 +33,7 @@ interface Contact {
   id: string; user_id: string;
   name: string; email: string; phone: string; company: string;
   status: ContactStatus; notes: string;
-  /* New fields */
-  address?: string; city?: string; country?: string;
+    address?: string; city?: string; country?: string;
   sector?: string; company_size?: string; source?: string;
   priority?: Priority; type?: ContactType;
   website?: string; linkedin?: string;
@@ -78,9 +74,6 @@ interface SupportTicket {
   contact?: Pick<Contact, "name" | "company">;
 }
 
-/* ════════════════════════════════════════════════════════════
-   CONSTANTES
-════════════════════════════════════════════════════════════ */
 const CONTACT_TYPES: Record<ContactType, { label: string; color: string }> = {
   prospect:    { label: "Prospect",    color: "#60a5fa" },
   client:      { label: "Client",      color: "#34d399" },
@@ -151,9 +144,6 @@ const fmtEur = (n: number) =>
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-/* ════════════════════════════════════════════════════════════
-   MINI-COMPOSANTS PARTAGÉS
-════════════════════════════════════════════════════════════ */
 function Badge({ label, color, bg }: { label: string; color: string; bg?: string }) {
   return (
     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
@@ -205,9 +195,6 @@ function Select({ label, children, ...props }: React.SelectHTMLAttributes<HTMLSe
   );
 }
 
-/* ════════════════════════════════════════════════════════════
-   PIPELINE VIEW
-════════════════════════════════════════════════════════════ */
 function PipelineView({
   opportunities, contacts, onUpdate, onDelete, onAdd, loading,
 }: {
@@ -256,8 +243,7 @@ function PipelineView({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Résumé pipeline */}
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
         {stageKeys.filter(s => s !== "perdu").map(stage => {
           const total = totalByStage(stage);
           const count = byStage[stage].length;
@@ -272,12 +258,10 @@ function PipelineView({
         })}
       </div>
 
-      {/* Kanban */}
-      <div className="flex gap-3 overflow-x-auto pb-3">
+            <div className="flex gap-3 overflow-x-auto pb-3">
         {stageKeys.map(stage => (
           <div key={stage} className="shrink-0 w-64 rounded-2xl border border-white/[0.06] bg-[#0a0b10] flex flex-col">
-            {/* Header colonne */}
-            <div className="flex items-center justify-between p-3 border-b border-white/[0.05]">
+                        <div className="flex items-center justify-between p-3 border-b border-white/[0.05]">
               <div>
                 <span className="text-[0.65rem] font-black uppercase tracking-widest"
                   style={{ color: STAGES[stage].color }}>{STAGES[stage].label}</span>
@@ -290,8 +274,7 @@ function PipelineView({
                 </button>
               )}
             </div>
-            {/* Cards */}
-            <div className="flex flex-col gap-2 p-2 flex-1 min-h-[100px]">
+                        <div className="flex flex-col gap-2 p-2 flex-1 min-h-[100px]">
               {byStage[stage].map(opp => (
                 <motion.div key={opp.id} layout
                   className="rounded-xl border border-white/[0.06] bg-[#0f1117] p-3 cursor-pointer hover:border-white/10 transition-all group"
@@ -333,8 +316,7 @@ function PipelineView({
         ))}
       </div>
 
-      {/* Modal add/edit opportunité */}
-      <AnimatePresence>
+            <AnimatePresence>
         {(addModal || editOpp) && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
@@ -382,9 +364,6 @@ function PipelineView({
   );
 }
 
-/* ════════════════════════════════════════════════════════════
-   TÂCHES VIEW
-════════════════════════════════════════════════════════════ */
 function TachesView({
   tasks, contacts, onToggle, onDelete, onAdd, onUpdate,
 }: {
@@ -427,8 +406,7 @@ function TachesView({
 
   return (
     <div className="space-y-4">
-      {/* Filtres + bouton */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-1.5 flex-wrap">
           {(["all","today","late","done"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
@@ -445,8 +423,7 @@ function TachesView({
         </button>
       </div>
 
-      {/* Liste */}
-      {filtered.length === 0 ? (
+            {filtered.length === 0 ? (
         <div className="text-center py-12 text-white/20 text-sm">
           {filter === "done" ? "Aucune tâche terminée" : "Aucune tâche en cours 🎉"}
         </div>
@@ -500,8 +477,7 @@ function TachesView({
         </div>
       )}
 
-      {/* Modal add task */}
-      <AnimatePresence>
+            <AnimatePresence>
         {addModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
@@ -546,9 +522,6 @@ function TachesView({
   );
 }
 
-/* ════════════════════════════════════════════════════════════
-   RAPPORT VIEW
-════════════════════════════════════════════════════════════ */
 function RapportView({
   contacts, opportunities, tasks, tickets,
 }: {
@@ -601,8 +574,7 @@ function RapportView({
 
   return (
     <div className="space-y-6">
-      {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {kpis.map(k => (
           <div key={k.label} className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-4">
             <div className="flex items-center justify-between mb-2">
@@ -615,8 +587,7 @@ function RapportView({
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
-        {/* Pipeline par étape */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-5">
+                <div className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-5">
           <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-white/40 mb-4">Pipeline commercial</h3>
           <div className="space-y-2.5">
             {(Object.keys(STAGES) as OppStage[]).map(stage => {
@@ -639,8 +610,7 @@ function RapportView({
           </div>
         </div>
 
-        {/* Répartition par type */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-5">
+                <div className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-5">
           <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-white/40 mb-4">Répartition contacts</h3>
           <div className="space-y-3">
             {(Object.keys(CONTACT_TYPES) as ContactType[]).map(type => {
@@ -677,9 +647,6 @@ function RapportView({
   );
 }
 
-/* ════════════════════════════════════════════════════════════
-   CONTACT DETAIL PANEL
-════════════════════════════════════════════════════════════ */
 function ContactDetail({
   contact, activities, opportunities, tasks, tickets,
   onClose, onUpdate, onDeleteContact,
@@ -738,8 +705,7 @@ function ContactDetail({
       transition={{ type: "spring", stiffness: 280, damping: 30 }}
       className="fixed inset-y-0 right-0 z-40 flex flex-col w-full sm:w-[520px] border-l border-white/[0.06] bg-[#0a0b10] shadow-2xl overflow-hidden">
 
-      {/* Header contact */}
-      <div className="shrink-0 p-5 border-b border-white/[0.06]">
+            <div className="shrink-0 p-5 border-b border-white/[0.06]">
         <div className="flex items-start gap-3">
           <Avatar name={contact.name} color={typeColor} size={44}/>
           <div className="flex-1 min-w-0">
@@ -768,8 +734,7 @@ function ContactDetail({
           </div>
         </div>
 
-        {/* Quick stats */}
-        <div className="grid grid-cols-3 gap-2 mt-4">
+                <div className="grid grid-cols-3 gap-2 mt-4">
           {[
             { label: "Opportunités", value: opportunities.length, color: "#a78bfa" },
             { label: "Tâches",       value: tasks.filter(t => !t.done).length, color: "#f59e0b" },
@@ -783,8 +748,7 @@ function ContactDetail({
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="shrink-0 flex border-b border-white/[0.06] overflow-x-auto">
+            <div className="shrink-0 flex border-b border-white/[0.06] overflow-x-auto">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-4 py-3 text-[0.65rem] font-bold uppercase tracking-wider whitespace-nowrap transition-colors border-b-2 ${
@@ -794,11 +758,9 @@ function ContactDetail({
         ))}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
 
-        {/* ── INFOS ── */}
-        {tab === "infos" && (
+                {tab === "infos" && (
           <div className="space-y-4">
             {editing ? (
               <div className="space-y-3">
@@ -865,8 +827,7 @@ function ContactDetail({
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Infos clés */}
-                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-3">
                   {[
                     { icon: MapPin,     label: "Adresse",  value: [contact.address, contact.city, contact.country].filter(Boolean).join(", ") },
                     { icon: Briefcase,  label: "Secteur",  value: contact.sector },
@@ -885,8 +846,7 @@ function ContactDetail({
                   ))}
                 </div>
 
-                {/* Budget / Intérêt / Priorité */}
-                <div className="flex gap-3 flex-wrap">
+                                <div className="flex gap-3 flex-wrap">
                   {contact.budget && contact.budget > 0 && (
                     <div className="rounded-xl bg-white/[0.04] px-3 py-2">
                       <p className="text-[0.58rem] text-white/25 mb-0.5">Budget</p>
@@ -921,8 +881,7 @@ function ContactDetail({
                   </div>
                 )}
 
-                {/* Tags */}
-                {contact.tags && contact.tags.length > 0 && (
+                                {contact.tags && contact.tags.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap">
                     {contact.tags.map(tag => (
                       <span key={tag} className="flex items-center gap-1 rounded-full bg-white/[0.05] px-2.5 py-1 text-[0.62rem] text-white/40">
@@ -932,8 +891,7 @@ function ContactDetail({
                   </div>
                 )}
 
-                {/* Danger zone */}
-                <div className="pt-2 border-t border-white/[0.04]">
+                                <div className="pt-2 border-t border-white/[0.04]">
                   {!confirmDel ? (
                     <button onClick={() => setConfirmDel(true)}
                       className="text-[0.65rem] text-red-400/50 hover:text-red-400 transition-colors flex items-center gap-1">
@@ -952,8 +910,7 @@ function ContactDetail({
           </div>
         )}
 
-        {/* ── ACTIVITÉS ── */}
-        {tab === "activites" && (
+                {tab === "activites" && (
           <div className="space-y-4">
             <button onClick={() => setNewAct({ type: "note", activity_date: new Date().toISOString().split("T")[0] })}
               className="flex items-center gap-2 text-[0.72rem] font-bold text-white/40 hover:text-white transition-colors">
@@ -989,8 +946,7 @@ function ContactDetail({
               <p className="text-center text-white/20 text-sm py-6">Aucune activité enregistrée</p>
             )}
 
-            {/* Timeline */}
-            <div className="relative space-y-0">
+                        <div className="relative space-y-0">
               <div className="absolute left-[14px] top-0 bottom-0 w-px bg-white/[0.05]"/>
               {activities.sort((a, b) => b.activity_date.localeCompare(a.activity_date)).map(act => {
                 const Icon = ACTIVITY_ICONS[act.type];
@@ -1020,8 +976,7 @@ function ContactDetail({
           </div>
         )}
 
-        {/* ── OPPORTUNITÉS ── */}
-        {tab === "opps" && (
+                {tab === "opps" && (
           <div className="space-y-3">
             {opportunities.length === 0 && (
               <p className="text-center text-white/20 text-sm py-6">Aucune opportunité</p>
@@ -1045,8 +1000,7 @@ function ContactDetail({
           </div>
         )}
 
-        {/* ── TÂCHES ── */}
-        {tab === "taches" && (
+                {tab === "taches" && (
           <div className="space-y-3">
             <button onClick={() => setNewTask({ type: "action", priority: "normal", contact_id: contact.id })}
               className="flex items-center gap-2 text-[0.72rem] font-bold text-white/40 hover:text-white transition-colors">
@@ -1095,8 +1049,7 @@ function ContactDetail({
           </div>
         )}
 
-        {/* ── TICKETS ── */}
-        {tab === "tickets" && (
+                {tab === "tickets" && (
           <div className="space-y-3">
             <button onClick={() => setNewTicket({ status: "ouvert", priority: "normale", contact_id: contact.id })}
               className="flex items-center gap-2 text-[0.72rem] font-bold text-white/40 hover:text-white transition-colors">
@@ -1153,12 +1106,8 @@ function ContactDetail({
   );
 }
 
-/* ════════════════════════════════════════════════════════════
-   COMPOSANT PRINCIPAL
-════════════════════════════════════════════════════════════ */
 export default function CRMPage() {
-  /* ── State ── */
-  const [contacts,      setContacts]      = useState<Contact[]>([]);
+    const [contacts,      setContacts]      = useState<Contact[]>([]);
   const [activities,    setActivities]    = useState<Activity[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [tasks,         setTasks]         = useState<CrmTask[]>([]);
@@ -1179,13 +1128,11 @@ export default function CRMPage() {
   const [userId,        setUserId]        = useState<string | null>(null);
   const { toasts, add: toast, remove: removeToast } = useToastStack();
 
-  /* ── Auth ── */
-  useEffect(() => {
+    useEffect(() => {
     supabase.auth.getUser().then(({ data }) => { if (data.user) setUserId(data.user.id); });
   }, []);
 
-  /* ── Load all data ── */
-  const loadAll = useCallback(async () => {
+    const loadAll = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
     const [ctRes, acRes, opRes, tkRes, tiRes] = await Promise.all([
@@ -1216,8 +1163,7 @@ export default function CRMPage() {
 
   useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
 
-  /* ── Contacts CRUD ── */
-  async function saveContact() {
+    async function saveContact() {
     if (!userId) return;
     const errors = validate(ContactSchema, form);
     if (errors !== null) { setFormErrors(errors); return; }
@@ -1252,8 +1198,7 @@ export default function CRMPage() {
     toast("Enregistré", "success");
   }
 
-  /* ── Activities ── */
-  async function addActivity(contactId: string, data: Partial<Activity>) {
+    async function addActivity(contactId: string, data: Partial<Activity>) {
     if (!userId || !data.title) return;
     const { data: d, error } = await supabase.from("contact_activities").insert({
       ...data, user_id: userId, contact_id: contactId,
@@ -1267,8 +1212,7 @@ export default function CRMPage() {
     setActivities(a => a.filter(x => x.id !== id));
   }
 
-  /* ── Opportunities ── */
-  async function addOpportunity(data: Partial<Opportunity>) {
+    async function addOpportunity(data: Partial<Opportunity>) {
     if (!userId || !data.title) return;
     const { data: d, error } = await supabase.from("opportunities").insert({ ...data, user_id: userId }).select().single();
     if (error) { toast("Erreur lors de la création de l'opportunité", "error"); return; }
@@ -1295,8 +1239,7 @@ export default function CRMPage() {
     setOpportunities(o => o.filter(op => op.id !== id));
   }
 
-  /* ── Tasks ── */
-  async function addTask(data: Partial<CrmTask>) {
+    async function addTask(data: Partial<CrmTask>) {
     if (!userId || !data.title) return;
     const { data: d, error } = await supabase.from("crm_tasks").insert({ ...data, user_id: userId }).select().single();
     if (error) { toast("Erreur lors de la création de la tâche", "error"); return; }
@@ -1321,8 +1264,7 @@ export default function CRMPage() {
     setTasks(t => t.filter(task => task.id !== id));
   }
 
-  /* ── Tickets ── */
-  async function addTicket(data: Partial<SupportTicket>) {
+    async function addTicket(data: Partial<SupportTicket>) {
     if (!userId || !data.title) return;
     const { data: d, error } = await supabase.from("tickets").insert({ ...data, user_id: userId }).select().single();
     if (error) { toast("Erreur lors de la création du ticket", "error"); return; }
@@ -1348,8 +1290,7 @@ export default function CRMPage() {
     setTickets(t => t.filter(tk => tk.id !== id));
   }
 
-  /* ── Export CSV ── */
-  function exportCSV() {
+    function exportCSV() {
     const rows = filtered.map(c => [
       c.name, c.company ?? "", c.email ?? "", c.phone ?? "",
       c.status, c.type ?? "prospect", c.sector ?? "", c.source ?? "",
@@ -1362,8 +1303,7 @@ export default function CRMPage() {
     a.click();
   }
 
-  /* ── Filtered contacts ── */
-  const filtered = useMemo(() => contacts.filter(c => {
+    const filtered = useMemo(() => contacts.filter(c => {
     const q = query.toLowerCase();
     const matchQ = !q || c.name.toLowerCase().includes(q) ||
       (c.company ?? "").toLowerCase().includes(q) ||
@@ -1374,8 +1314,7 @@ export default function CRMPage() {
     return matchQ && matchStatus && matchType;
   }), [contacts, query, filterStatus, filterType]);
 
-  /* ── Contact detail data ── */
-  const selectedActivities    = useMemo(() => activities.filter(a => a.contact_id === selected?.id), [activities, selected]);
+    const selectedActivities    = useMemo(() => activities.filter(a => a.contact_id === selected?.id), [activities, selected]);
   const selectedOpportunities = useMemo(() => opportunities.filter(o => o.contact_id === selected?.id), [opportunities, selected]);
   const selectedTasks         = useMemo(() => tasks.filter(t => t.contact_id === selected?.id), [tasks, selected]);
   const selectedTickets       = useMemo(() => tickets.filter(t => t.contact_id === selected?.id), [tickets, selected]);
@@ -1387,13 +1326,11 @@ export default function CRMPage() {
     { id: "rapport",  label: "Rapport",      icon: BarChart2,  badge: 0 },
   ] as const;
 
-  /* ── Render ── */
-  return (
+    return (
     <div className="relative flex h-full flex-col gap-0">
       <ToastStack toasts={toasts} remove={removeToast} />
 
-      {/* Header */}
-      <div className="shrink-0 flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-white/[0.05]">
+            <div className="shrink-0 flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-white/[0.05]">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight">CRM</h1>
           <p className="text-[0.65rem] text-white/30 mt-0.5">
@@ -1413,8 +1350,7 @@ export default function CRMPage() {
         </div>
       </div>
 
-      {/* Tabs navigation */}
-      <div className="shrink-0 flex border-b border-white/[0.05] px-4 sm:px-6 overflow-x-auto">
+            <div className="shrink-0 flex border-b border-white/[0.05] px-4 sm:px-6 overflow-x-auto">
         {MAIN_TABS.map(t => (
           <button key={t.id} onClick={() => setMainTab(t.id)}
             className={`flex items-center gap-1.5 px-3 py-3.5 text-[0.67rem] font-bold uppercase tracking-wider whitespace-nowrap transition-colors border-b-2 ${
@@ -1429,8 +1365,7 @@ export default function CRMPage() {
         ))}
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden">
         <div className={`flex-1 overflow-y-auto p-4 sm:p-6 ${selected ? "hidden sm:block" : ""}`}>
 
           {loading ? (
@@ -1440,11 +1375,9 @@ export default function CRMPage() {
           ) : (
 
             <>
-              {/* ── CONTACTS VIEW ── */}
-              {mainTab === "contacts" && (
+                            {mainTab === "contacts" && (
                 <div className="space-y-4">
-                  {/* Filtres */}
-                  <div className="flex flex-col sm:flex-row gap-3">
+                                    <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
                       <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25"/>
                       <input value={query} onChange={e => setQuery(e.target.value)}
@@ -1465,8 +1398,7 @@ export default function CRMPage() {
                     </div>
                   </div>
 
-                  {/* Count */}
-                  <div className="flex items-center gap-3 flex-wrap">
+                                    <div className="flex items-center gap-3 flex-wrap">
                     {(Object.keys(STATUSES) as ContactStatus[]).map(s => {
                       const count = contacts.filter(c => c.status === s).length;
                       return count > 0 ? (
@@ -1483,8 +1415,7 @@ export default function CRMPage() {
                     )}
                   </div>
 
-                  {/* Contact list */}
-                  {filtered.length === 0 ? (
+                                    {filtered.length === 0 ? (
                     <div className="text-center py-16 text-white/20">
                       <Users size={36} className="mx-auto mb-4 opacity-20"/>
                       <p className="text-sm">{contacts.length === 0 ? "Aucun contact — ajoutez votre premier !" : "Aucun résultat"}</p>
@@ -1550,8 +1481,7 @@ export default function CRMPage() {
                 </div>
               )}
 
-              {/* ── PIPELINE VIEW ── */}
-              {mainTab === "pipeline" && (
+                            {mainTab === "pipeline" && (
                 <PipelineView
                   opportunities={opportunities}
                   contacts={contacts}
@@ -1562,8 +1492,7 @@ export default function CRMPage() {
                 />
               )}
 
-              {/* ── TÂCHES VIEW ── */}
-              {mainTab === "taches" && (
+                            {mainTab === "taches" && (
                 <TachesView
                   tasks={tasks}
                   contacts={contacts}
@@ -1574,20 +1503,17 @@ export default function CRMPage() {
                 />
               )}
 
-              {/* ── RAPPORT VIEW ── */}
-              {mainTab === "rapport" && (
+                            {mainTab === "rapport" && (
                 <RapportView contacts={contacts} opportunities={opportunities} tasks={tasks} tickets={tickets}/>
               )}
             </>
           )}
         </div>
 
-        {/* ── CONTACT DETAIL PANEL ── */}
-        <AnimatePresence>
+                <AnimatePresence>
           {selected && (
             <>
-              {/* Overlay mobile */}
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="fixed inset-0 z-30 bg-black/40 sm:hidden"
                 onClick={() => setSelected(null)}/>
               <ContactDetail
@@ -1614,8 +1540,7 @@ export default function CRMPage() {
         </AnimatePresence>
       </div>
 
-      {/* ── MODAL ADD / EDIT CONTACT ── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {addModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"

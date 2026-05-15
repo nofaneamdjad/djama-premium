@@ -1,17 +1,5 @@
 "use client";
 
-/**
- * Skeleton — composants de chargement animés.
- *
- * Exports :
- *  - Skeleton        : bloc générique
- *  - CardSkeleton    : carte (contact, produit, etc.)
- *  - RowSkeleton     : ligne de tableau
- *  - StatSkeleton    : carte KPI
- *  - ListSkeleton    : N lignes empilées
- */
-
-// ── Base ─────────────────────────────────────────────────────────────────────
 export function Skeleton({ className = "" }: { className?: string }) {
   return (
     <div
@@ -20,7 +8,6 @@ export function Skeleton({ className = "" }: { className?: string }) {
   );
 }
 
-// ── Card ─────────────────────────────────────────────────────────────────────
 export function CardSkeleton() {
   return (
     <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
@@ -38,7 +25,6 @@ export function CardSkeleton() {
   );
 }
 
-// ── Row ───────────────────────────────────────────────────────────────────────
 export function RowSkeleton({ cols = 4 }: { cols?: number }) {
   const widths = ["w-2/5", "w-1/4", "w-1/5", "w-1/6", "w-1/8"];
   return (
@@ -50,7 +36,6 @@ export function RowSkeleton({ cols = 4 }: { cols?: number }) {
   );
 }
 
-// ── Stat (KPI card) ────────────────────────────────────────────────────────────
 export function StatSkeleton() {
   return (
     <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-2">
@@ -64,7 +49,6 @@ export function StatSkeleton() {
   );
 }
 
-// ── List (N lignes) ────────────────────────────────────────────────────────────
 export function ListSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
   return (
     <div>
@@ -75,7 +59,6 @@ export function ListSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: num
   );
 }
 
-// ── Grid (N cartes) ────────────────────────────────────────────────────────────
 export function GridSkeleton({ cards = 6 }: { cards?: number }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

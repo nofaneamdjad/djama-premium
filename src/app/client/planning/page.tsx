@@ -1,8 +1,4 @@
 "use client";
-/**
- * Planning — Calendrier IA · Tâches · Objectifs · Réunions
- * Vues : mois / semaine / agenda
- */
 
 import React, {
   useState, useEffect, useCallback, useMemo,
@@ -19,9 +15,6 @@ import type { LucideIcon } from "lucide-react";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import { validate, EventSchema } from "@/lib/schemas/client";
 
-/* ══════════════════════════════════════════════════════════
-   Types
-══════════════════════════════════════════════════════════ */
 type EventType    = "event" | "meeting" | "task" | "reminder";
 type TaskStatus   = "todo" | "in_progress" | "done" | "late";
 type TaskPriority = "low" | "normal" | "high" | "urgent";
@@ -48,9 +41,6 @@ interface PlanGoal {
   target_date: string | null; progress: number; status: string;
 }
 
-/* ══════════════════════════════════════════════════════════
-   Constants
-══════════════════════════════════════════════════════════ */
 const INDIGO = "#6366f1";
 
 const EV_COLORS = [
@@ -75,12 +65,9 @@ const MONTHS_FR = [
   "Juillet","Août","Septembre","Octobre","Novembre","Décembre",
 ];
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 7);
-const CELL_H = 60; // px per hour
+const CELL_H = 60;
 const START_H = 7;
 
-/* ══════════════════════════════════════════════════════════
-   Date helpers
-══════════════════════════════════════════════════════════ */
 const fmtDate = (d: Date) => d.toISOString().split("T")[0];
 
 const addDays = (d: Date, n: number) => {
@@ -155,9 +142,6 @@ function parseTask(r: Record<string, unknown>): PlanTask {
   };
 }
 
-/* ══════════════════════════════════════════════════════════
-   Empty form factories
-══════════════════════════════════════════════════════════ */
 function newEventForm(date?: Date, hour?: number): Partial<PlanEvent> {
   const s = date ? new Date(date) : roundUp30();
   if (hour !== undefined) { s.setHours(hour, 0, 0, 0); }
@@ -171,9 +155,6 @@ function newEventForm(date?: Date, hour?: number): Partial<PlanEvent> {
   };
 }
 
-/* ══════════════════════════════════════════════════════════
-   Sub-components
-══════════════════════════════════════════════════════════ */
 function EventChip({ ev, onClick, small = false }: {
   ev: PlanEvent; onClick: () => void; small?: boolean
 }) {
@@ -215,12 +196,8 @@ function TaskRow({ task, onToggle, onDelete }: {
   );
 }
 
-/* ══════════════════════════════════════════════════════════
-   Main Page
-══════════════════════════════════════════════════════════ */
 export default function PlanningPage() {
-  /* ── State ── */
-  const [view,          setView]          = useState<CalView>("week");
+    const [view,          setView]          = useState<CalView>("week");
   const [current,       setCurrent]       = useState(new Date());
   const [events,        setEvents]        = useState<PlanEvent[]>([]);
   const [tasks,         setTasks]         = useState<PlanTask[]>([]);
@@ -230,29 +207,24 @@ export default function PlanningPage() {
 
   const { toasts, add: addToast, remove: removeToast } = useToastStack();
 
-  /* modal */
-  const [showModal,   setShowModal]   = useState(false);
+    const [showModal,   setShowModal]   = useState(false);
   const [editEvent,   setEditEvent]   = useState<PlanEvent | null>(null);
   const [form,        setForm]        = useState<Partial<PlanEvent>>(newEventForm());
   const [formErrors,  setFormErrors]  = useState<Record<string, string>>({});
   const [saving,      setSaving]      = useState(false);
   const [showColPal,  setShowColPal]  = useState(false);
 
-  /* task quick-add */
-  const [newTask,    setNewTask]    = useState("");
+    const [newTask,    setNewTask]    = useState("");
   const [addingTask, setAddingTask] = useState(false);
 
-  /* goal quick-add */
-  const [newGoal,    setNewGoal]    = useState("");
+    const [newGoal,    setNewGoal]    = useState("");
   const [addingGoal, setAddingGoal] = useState(false);
 
-  /* AI */
-  const [aiLoading,  setAiLoading]  = useState(false);
+    const [aiLoading,  setAiLoading]  = useState(false);
   const [aiResult,   setAiResult]   = useState("");
   const [showAI,     setShowAI]     = useState(false);
 
-  /* ── Load ── */
-  const load = useCallback(async () => {
+    const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
     const [evR, tkR, goR] = await Promise.all([
@@ -268,8 +240,7 @@ export default function PlanningPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  /* ── Navigation ── */
-  function navigate(dir: -1 | 1) {
+    function navigate(dir: -1 | 1) {
     setCurrent(prev => {
       const d = new Date(prev);
       if (view === "month") { d.setMonth(d.getMonth() + dir); d.setDate(1); }
@@ -291,8 +262,7 @@ export default function PlanningPage() {
     return `Agenda — ${MONTHS_FR[current.getMonth()]} ${current.getFullYear()}`;
   }, [view, current]);
 
-  /* ── Events helpers ── */
-  const eventsOnDate = useCallback((date: Date) => {
+    const eventsOnDate = useCallback((date: Date) => {
     const ds = fmtDate(date);
     return events.filter(ev => {
       const s = fmtDate(new Date(ev.start_at));
@@ -301,8 +271,7 @@ export default function PlanningPage() {
     });
   }, [events]);
 
-  /* ── CRUD events ── */
-  function openCreate(date?: Date, hour?: number) {
+    function openCreate(date?: Date, hour?: number) {
     setEditEvent(null);
     setForm(newEventForm(date, hour));
     setShowColPal(false);
@@ -360,8 +329,7 @@ export default function PlanningPage() {
     addToast("Supprimé", "success");
   }
 
-  /* ── CRUD tasks ── */
-  async function createTask() {
+    async function createTask() {
     if (!newTask.trim()) return;
     setAddingTask(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -386,8 +354,7 @@ export default function PlanningPage() {
     setTasks(p => p.filter(t => t.id !== id));
   }
 
-  /* ── CRUD goals ── */
-  async function createGoal() {
+    async function createGoal() {
     if (!newGoal.trim()) return;
     setAddingGoal(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -409,8 +376,7 @@ export default function PlanningPage() {
     setGoals(p => p.filter(g => g.id !== id));
   }
 
-  /* ── AI ── */
-  async function runAI(prompt: string) {
+    async function runAI(prompt: string) {
     setAiLoading(true); setAiResult("");
     const today     = fmtDate(new Date());
     const todayEvs  = events.filter(e => fmtDate(new Date(e.start_at)) === today);
@@ -432,30 +398,23 @@ export default function PlanningPage() {
     finally { setAiLoading(false); }
   }
 
-  /* ── Today's stats ── */
-  const today = fmtDate(new Date());
+    const today = fmtDate(new Date());
   const todayTasks = tasks.filter(t => t.due_date === today);
   const doneTasks  = todayTasks.filter(t => t.status === "done");
 
-  /* ══════════════════════════════════════════════════════
-     VIEWS
-  ══════════════════════════════════════════════════════ */
 
-  /* Month view */
-  function renderMonth() {
+    function renderMonth() {
     const grid = getMonthGrid(current.getFullYear(), current.getMonth());
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Day headers */}
-        <div className="grid grid-cols-7 border-b border-white/[0.06]">
+                <div className="grid grid-cols-7 border-b border-white/[0.06]">
           {DAYS_FR.map(d => (
             <div key={d} className="py-2 text-center text-[11px] font-semibold text-white/30 uppercase tracking-wide">
               {d}
             </div>
           ))}
         </div>
-        {/* Weeks */}
-        <div className="flex-1 grid" style={{ gridTemplateRows: `repeat(${grid.length}, 1fr)` }}>
+                <div className="flex-1 grid" style={{ gridTemplateRows: `repeat(${grid.length}, 1fr)` }}>
           {grid.map((week, wi) => (
             <div key={wi} className="grid grid-cols-7 border-b border-white/[0.04]">
               {week.map((day, di) => {
@@ -491,15 +450,13 @@ export default function PlanningPage() {
     );
   }
 
-  /* Week view */
-  function renderWeek() {
+    function renderWeek() {
     const ws   = startOfWeek(current);
     const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
 
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Day headers */}
-        <div className="grid border-b border-white/[0.06]" style={{ gridTemplateColumns:"50px repeat(7,1fr)" }}>
+                <div className="grid border-b border-white/[0.06]" style={{ gridTemplateColumns:"50px repeat(7,1fr)" }}>
           <div />
           {days.map(d => (
             <div key={d.toString()} className="py-2 text-center border-l border-white/[0.04]">
@@ -512,10 +469,8 @@ export default function PlanningPage() {
           ))}
         </div>
 
-        {/* Time grid */}
-        <div className="flex flex-1 overflow-y-auto">
-          {/* Hour labels */}
-          <div className="w-[50px] shrink-0 relative" style={{ height: HOURS.length * CELL_H }}>
+                <div className="flex flex-1 overflow-y-auto">
+                    <div className="w-[50px] shrink-0 relative" style={{ height: HOURS.length * CELL_H }}>
             {HOURS.map(h => (
               <div key={h} className="absolute w-full flex items-start justify-end pr-2 text-[9px] text-white/20"
                 style={{ top: (h - START_H) * CELL_H - 7, height: CELL_H }}>
@@ -524,27 +479,23 @@ export default function PlanningPage() {
             ))}
           </div>
 
-          {/* Day columns */}
-          <div className="flex-1 grid" style={{ gridTemplateColumns:"repeat(7,1fr)", height: HOURS.length * CELL_H }}>
+                    <div className="flex-1 grid" style={{ gridTemplateColumns:"repeat(7,1fr)", height: HOURS.length * CELL_H }}>
             {days.map(d => {
               const dayEvs = eventsOnDate(d).filter(e => !e.is_all_day);
               return (
                 <div key={d.toString()} className="relative border-l border-white/[0.04]">
-                  {/* Hour lines */}
-                  {HOURS.map(h => (
+                                    {HOURS.map(h => (
                     <div key={h}
                       style={{ top: (h - START_H) * CELL_H, height: CELL_H }}
                       className="absolute inset-x-0 border-b border-white/[0.04] cursor-pointer hover:bg-white/[0.015] transition-colors"
                       onClick={() => openCreate(d, h)}
                     />
                   ))}
-                  {/* Today highlight */}
-                  {isToday(d) && (
+                                    {isToday(d) && (
                     <div className="absolute inset-0 pointer-events-none"
                       style={{ background:`${INDIGO}06` }} />
                   )}
-                  {/* Events */}
-                  {dayEvs.map(ev => {
+                                    {dayEvs.map(ev => {
                     const s  = new Date(ev.start_at);
                     const e  = new Date(ev.end_at);
                     const sh = s.getHours() + s.getMinutes() / 60;
@@ -575,8 +526,7 @@ export default function PlanningPage() {
     );
   }
 
-  /* Agenda view */
-  function renderAgenda() {
+    function renderAgenda() {
     const days: Date[] = Array.from({ length: 30 }, (_, i) => addDays(current, i));
     const withEvents  = days.filter(d => eventsOnDate(d).length > 0);
     if (withEvents.length === 0) {
@@ -651,18 +601,13 @@ export default function PlanningPage() {
     );
   }
 
-  /* ══════════════════════════════════════════════════════
-     RENDER
-  ══════════════════════════════════════════════════════ */
-  return (
+    return (
     <div className="flex h-[calc(100vh-56px)] bg-[#080a0f] overflow-hidden text-white">
       <ToastStack toasts={toasts} remove={removeToast} />
 
-      {/* ═══════════════ LEFT SIDEBAR ═══════════════ */}
-      <div className="hidden lg:flex w-64 xl:w-72 flex-col shrink-0 border-r border-white/[0.06] bg-[#0b0d14] overflow-y-auto">
+            <div className="hidden lg:flex w-64 xl:w-72 flex-col shrink-0 border-r border-white/[0.06] bg-[#0b0d14] overflow-y-auto">
 
-        {/* Mini calendar */}
-        <div className="p-4 border-b border-white/[0.06]">
+                <div className="p-4 border-b border-white/[0.06]">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-bold text-white/60">
               {MONTHS_FR[current.getMonth()].slice(0,3)} {current.getFullYear()}
@@ -676,14 +621,12 @@ export default function PlanningPage() {
               </button>
             </div>
           </div>
-          {/* Day headers */}
-          <div className="grid grid-cols-7 mb-1">
+                    <div className="grid grid-cols-7 mb-1">
             {DAYS_FR.map(d => (
               <div key={d} className="text-center text-[9px] text-white/25 font-semibold">{d[0]}</div>
             ))}
           </div>
-          {/* Days */}
-          {getMonthGrid(current.getFullYear(), current.getMonth()).map((week, wi) => (
+                    {getMonthGrid(current.getFullYear(), current.getMonth()).map((week, wi) => (
             <div key={wi} className="grid grid-cols-7">
               {week.map((day, di) => {
                 const hasEv = eventsOnDate(day).length > 0;
@@ -708,8 +651,7 @@ export default function PlanningPage() {
           ))}
         </div>
 
-        {/* Today's tasks */}
-        <div className="p-4 border-b border-white/[0.06]">
+                <div className="p-4 border-b border-white/[0.06]">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-bold text-white/50 flex items-center gap-1.5">
               <CheckCircle2 size={12}/>Tâches du jour
@@ -718,8 +660,7 @@ export default function PlanningPage() {
               </span>
             </p>
           </div>
-          {/* Progress bar */}
-          {todayTasks.length > 0 && (
+                    {todayTasks.length > 0 && (
             <div className="h-1 bg-white/8 rounded-full mb-3 overflow-hidden">
               <div className="h-full rounded-full transition-all"
                 style={{ width:`${todayTasks.length ? Math.round(doneTasks.length/todayTasks.length*100) : 0}%`, background:INDIGO }} />
@@ -733,8 +674,7 @@ export default function PlanningPage() {
               <p className="text-[10px] text-white/20 py-1">Aucune tâche pour aujourd&apos;hui</p>
             )}
           </div>
-          {/* Quick add task */}
-          <div className="flex items-center gap-1.5 mt-2">
+                    <div className="flex items-center gap-1.5 mt-2">
             <input value={newTask} onChange={e => setNewTask(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") createTask(); }}
               placeholder="+ Ajouter une tâche…"
@@ -749,8 +689,7 @@ export default function PlanningPage() {
           </div>
         </div>
 
-        {/* Goals */}
-        <div className="p-4 flex-1">
+                <div className="p-4 flex-1">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-bold text-white/50 flex items-center gap-1.5">
               <Target size={12}/>Objectifs semaine
@@ -786,8 +725,7 @@ export default function PlanningPage() {
               <p className="text-[10px] text-white/20">Aucun objectif cette semaine</p>
             )}
           </div>
-          {/* Quick add goal */}
-          <div className="flex items-center gap-1.5 mt-3">
+                    <div className="flex items-center gap-1.5 mt-3">
             <input value={newGoal} onChange={e => setNewGoal(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") createGoal(); }}
               placeholder="+ Ajouter un objectif…"
@@ -802,13 +740,10 @@ export default function PlanningPage() {
         </div>
       </div>
 
-      {/* ═══════════════ MAIN AREA ═══════════════ */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+            <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
-        {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] shrink-0 flex-wrap gap-y-2">
-          {/* Navigation */}
-          <div className="flex items-center gap-1">
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] shrink-0 flex-wrap gap-y-2">
+                    <div className="flex items-center gap-1">
             <button onClick={() => navigate(-1)}
               className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all">
               <ChevronLeft size={16}/>
@@ -825,8 +760,7 @@ export default function PlanningPage() {
 
           <h2 className="text-sm font-bold text-white/80 mr-auto">{headerLabel}</h2>
 
-          {/* View switcher */}
-          <div className="flex rounded-xl border border-white/8 overflow-hidden">
+                    <div className="flex rounded-xl border border-white/8 overflow-hidden">
             {(["month","week","agenda"] as CalView[]).map(v => (
               <button key={v} onClick={() => setView(v)}
                 className="px-3 py-1.5 text-xs font-medium transition-all"
@@ -840,8 +774,7 @@ export default function PlanningPage() {
             ))}
           </div>
 
-          {/* AI button */}
-          <button onClick={() => setShowAI(p => !p)}
+                    <button onClick={() => setShowAI(p => !p)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
             style={{
               background: showAI ? `${INDIGO}25` : "rgba(255,255,255,.05)",
@@ -851,16 +784,14 @@ export default function PlanningPage() {
             <Sparkles size={13}/> IA Planning
           </button>
 
-          {/* New event */}
-          <button onClick={() => openCreate()}
+                    <button onClick={() => openCreate()}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:opacity-90"
             style={{ background:INDIGO, color:"#fff" }}>
             <Plus size={14}/>Événement
           </button>
         </div>
 
-        {/* AI Panel */}
-        <AnimatePresence>
+                <AnimatePresence>
           {showAI && (
             <motion.div
               initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }} exit={{ height:0, opacity:0 }}
@@ -904,8 +835,7 @@ export default function PlanningPage() {
           )}
         </AnimatePresence>
 
-        {/* Calendar view */}
-        {loading ? (
+                {loading ? (
           <div className="flex items-center justify-center flex-1">
             <Loader2 size={24} className="animate-spin text-white/20"/>
           </div>
@@ -918,8 +848,7 @@ export default function PlanningPage() {
         )}
       </div>
 
-      {/* ═══════════════ EVENT MODAL ═══════════════ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showModal && (
           <>
             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
@@ -933,10 +862,8 @@ export default function PlanningPage() {
               className="fixed inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-50 rounded-3xl border border-white/[0.08] bg-[#0e1018] shadow-2xl flex flex-col overflow-hidden"
               onClick={e => e.stopPropagation()}>
 
-              {/* Modal header */}
-              <div className="flex items-center gap-3 px-5 pt-5 pb-3 shrink-0">
-                {/* Color swatch + picker */}
-                <div className="relative">
+                            <div className="flex items-center gap-3 px-5 pt-5 pb-3 shrink-0">
+                                <div className="relative">
                   <button onClick={() => setShowColPal(p => !p)}
                     className="w-8 h-8 rounded-xl border-2 border-white/10 transition-all hover:scale-110"
                     style={{ background: form.color ?? INDIGO }} />
@@ -955,8 +882,7 @@ export default function PlanningPage() {
                   </AnimatePresence>
                 </div>
 
-                {/* Type selector */}
-                <div className="flex gap-1 flex-wrap flex-1">
+                                <div className="flex gap-1 flex-wrap flex-1">
                   {EV_TYPES.map(t => {
                     const TIcon = t.icon;
                     return (
@@ -979,15 +905,12 @@ export default function PlanningPage() {
                 </button>
               </div>
 
-              {/* Scrollable body */}
-              <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-4">
-                {/* Title */}
-                <input value={form.title ?? ""} onChange={e => setForm(p => ({...p, title:e.target.value}))}
+                            <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-4">
+                                <input value={form.title ?? ""} onChange={e => setForm(p => ({...p, title:e.target.value}))}
                   placeholder="Titre de l'événement *"
                   className="w-full bg-transparent text-lg font-bold text-white placeholder:text-white/20 focus:outline-none border-b border-white/[0.06] pb-2" />
 
-                {/* All day */}
-                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2">
                   <button onClick={() => setForm(p => ({...p, is_all_day:!p.is_all_day}))}
                     className={`w-9 h-5 rounded-full transition-all ${form.is_all_day ? "" : "bg-white/10"}`}
                     style={form.is_all_day ? { background:form.color ?? INDIGO } : {}}>
@@ -996,8 +919,7 @@ export default function PlanningPage() {
                   <span className="text-xs text-white/45">Toute la journée</span>
                 </div>
 
-                {/* Date/time */}
-                {form.is_all_day ? (
+                                {form.is_all_day ? (
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { label:"Début", key:"start_at" as const },
@@ -1027,32 +949,28 @@ export default function PlanningPage() {
                   </div>
                 )}
 
-                {/* Location */}
-                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
                   <MapPin size={13} className="text-white/25 shrink-0"/>
                   <input value={form.location ?? ""} onChange={e => setForm(p => ({...p, location:e.target.value}))}
                     placeholder="Lieu (optionnel)"
                     className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none"/>
                 </div>
 
-                {/* Meet link */}
-                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
                   <Video size={13} className="text-white/25 shrink-0"/>
                   <input value={form.meet_link ?? ""} onChange={e => setForm(p => ({...p, meet_link:e.target.value}))}
                     placeholder="Lien visioconférence (optionnel)"
                     className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none"/>
                 </div>
 
-                {/* Description */}
-                <div className="flex items-start gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                                <div className="flex items-start gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
                   <AlignLeft size={13} className="text-white/25 shrink-0 mt-0.5"/>
                   <textarea value={form.description ?? ""} onChange={e => setForm(p => ({...p, description:e.target.value}))}
                     placeholder="Description (optionnel)" rows={3}
                     className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none resize-none leading-relaxed"/>
                 </div>
 
-                {/* Participants */}
-                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
                   <Tag size={13} className="text-white/25 shrink-0"/>
                   <input
                     value={(form.participants ?? []).join(", ")}
@@ -1061,8 +979,7 @@ export default function PlanningPage() {
                     className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none"/>
                 </div>
 
-                {/* Reminder */}
-                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2">
                   <Bell size={13} className="text-white/25"/>
                   <span className="text-xs text-white/35">Rappel</span>
                   <select value={form.reminder_minutes ?? 30}
@@ -1078,8 +995,7 @@ export default function PlanningPage() {
                 </div>
               </div>
 
-              {/* Modal footer */}
-              <div className="flex items-center gap-2 px-5 py-4 border-t border-white/[0.06] shrink-0">
+                            <div className="flex items-center gap-2 px-5 py-4 border-t border-white/[0.06] shrink-0">
                 {editEvent && (
                   <button onClick={() => deleteEvent(editEvent.id)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all">

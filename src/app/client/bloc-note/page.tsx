@@ -1,7 +1,3 @@
-/**
- * Bloc Note — capture rapide, personnel, instantané
- * Distinct de Notes IA (qui gère documents importants & collaboration)
- */
 "use client";
 
 import React, {
@@ -18,9 +14,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
-/* ══════════════════════════════════════════════════════════
-   Types
-══════════════════════════════════════════════════════════ */
 type NoteType  = "text" | "checklist" | "voice";
 type FilterKey = "all" | "pinned" | "checklist" | "voice" | "archived";
 
@@ -32,9 +25,6 @@ interface QNote {
   reminder_at: string | null; created_at: string; updated_at: string;
 }
 
-/* ══════════════════════════════════════════════════════════
-   Constants
-══════════════════════════════════════════════════════════ */
 const PAL = [
   { bg: "#1a1a2e", ac: "#a78bfa" },
   { bg: "#2d1515", ac: "#f87171" },
@@ -63,9 +53,6 @@ const AI_ACTIONS: { id: string; label: string; icon: LucideIcon }[] = [
   { id: "translate", label: "Traduire",   icon: Globe },
 ];
 
-/* ══════════════════════════════════════════════════════════
-   Helpers
-══════════════════════════════════════════════════════════ */
 const uid = () => Math.random().toString(36).slice(2, 9);
 const acOf = (color: string) => PAL.find(p => p.bg === color)?.ac ?? "#a78bfa";
 
@@ -99,9 +86,6 @@ function relTime(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
-/* ══════════════════════════════════════════════════════════
-   NoteCard
-══════════════════════════════════════════════════════════ */
 function ActionBtn({
   children, onClick, title, danger = false,
 }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean }) {
@@ -225,11 +209,8 @@ function NoteCard({
   );
 }
 
-/* ══════════════════════════════════════════════════════════
-   Page
-══════════════════════════════════════════════════════════ */
 export default function BlocNotePage() {
-  
+
 
   const [notes,   setNotes]   = useState<QNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,8 +218,7 @@ export default function BlocNotePage() {
   const [filter,  setFilter]  = useState<FilterKey>("all");
   const [toastData, setToastData] = useState<ToastData | null>(null);
 
-  /* quick create */
-  const [creating, setCreating] = useState(false);
+    const [creating, setCreating] = useState(false);
   const [dType,    setDType]    = useState<NoteType>("text");
   const [dTitle,   setDTitle]   = useState("");
   const [dContent, setDContent] = useState("");
@@ -251,26 +231,22 @@ export default function BlocNotePage() {
   const cTextRef    = useRef<HTMLTextAreaElement>(null);
   const cItemRef    = useRef<HTMLInputElement>(null);
 
-  /* edit */
-  const [editNote, setEditNote] = useState<QNote | null>(null);
+    const [editNote, setEditNote] = useState<QNote | null>(null);
   const [eDraft,   setEDraft]   = useState<Partial<QNote>>({});
   const [saving,   setSaving]   = useState(false);
   const [showEPal, setShowEPal] = useState(false);
   const [eTagIn,   setETagIn]   = useState("");
 
-  /* AI */
-  const [aiLoading, setAiLoading] = useState(false);
+    const [aiLoading, setAiLoading] = useState(false);
   const [aiResult,  setAiResult]  = useState("");
   const [aiAction,  setAiAction]  = useState("");
 
-  /* voice */
-  const [recording,    setRecording]    = useState(false);
+    const [recording,    setRecording]    = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const mediaRef  = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  /* ── Load ── */
-  const load = useCallback(async () => {
+    const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
     const { data } = await supabase.from("quick_notes").select("*")
@@ -279,24 +255,22 @@ export default function BlocNotePage() {
       .order("updated_at",  { ascending: false });
     setNotes((data ?? []).map((r: Record<string, unknown>) => parseRow(r)));
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  /* click outside create → save */
-  useEffect(() => {
+    useEffect(() => {
     if (!creating) return;
     const fn = (e: MouseEvent) => {
       if (!createRef.current?.contains(e.target as Node)) commitCreate();
     };
     document.addEventListener("mousedown", fn);
     return () => document.removeEventListener("mousedown", fn);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [creating, dTitle, dContent, dItems, dColor, dTags]);
 
-  /* ── Filter ── */
-  const visible = useMemo(() => {
+    const visible = useMemo(() => {
     let l = notes;
     if      (filter === "archived")   l = l.filter(n =>  n.is_archived);
     else if (filter === "pinned")     l = l.filter(n =>  n.is_pinned && !n.is_archived);
@@ -317,8 +291,7 @@ export default function BlocNotePage() {
   const pinned = visible.filter(n =>  n.is_pinned);
   const others = visible.filter(n => !n.is_pinned);
 
-  /* ── Quick create ── */
-  function openCreate(type: NoteType = "text") {
+    function openCreate(type: NoteType = "text") {
     setDType(type); setDTitle(""); setDContent("");
     setDItems([{ id: uid(), text: "", done: false }]);
     setDColor(PAL[0].bg); setDTags([]); setDTagIn(""); setShowDPal(false);
@@ -350,14 +323,12 @@ export default function BlocNotePage() {
     setToastData({ type: "success", msg: "Note créée" });
   }
 
-  /* draft checklist */
-  const dAddItem  = () => setDItems(p => [...p, { id: uid(), text: "", done: false }]);
+    const dAddItem  = () => setDItems(p => [...p, { id: uid(), text: "", done: false }]);
   const dToggle   = (id: string) => setDItems(p => p.map(i => i.id === id ? { ...i, done: !i.done } : i));
   const dSetText  = (id: string, text: string) => setDItems(p => p.map(i => i.id === id ? { ...i, text } : i));
   const dRemove   = (id: string) => setDItems(p => p.filter(i => i.id !== id));
 
-  /* ── CRUD ── */
-  async function patchNote(id: string, changes: Partial<QNote>) {
+    async function patchNote(id: string, changes: Partial<QNote>) {
     const db: Record<string, unknown> = { ...changes };
     if (changes.items !== undefined) { db.content = JSON.stringify(changes.items); delete db.items; }
     delete db.id; delete db.created_at;
@@ -373,8 +344,7 @@ export default function BlocNotePage() {
     setToastData({ type: "success", msg: "Supprimée" });
   }
 
-  /* ── Voice ── */
-  async function startRec(forDraft = false) {
+    async function startRec(forDraft = false) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       chunksRef.current = [];
@@ -404,8 +374,7 @@ export default function BlocNotePage() {
     finally { setTranscribing(false); }
   }
 
-  /* ── AI ── */
-  async function callAI(action: string, content: string) {
+    async function callAI(action: string, content: string) {
     if (!content.trim()) { setToastData({ type: "error", msg: "Contenu vide" }); return; }
     setAiLoading(true); setAiAction(action); setAiResult("");
     try {
@@ -429,8 +398,7 @@ export default function BlocNotePage() {
     setAiResult(""); setAiAction("");
   }
 
-  /* ── Edit ── */
-  function openEdit(n: QNote) {
+    function openEdit(n: QNote) {
     setEditNote(n); setEDraft({ ...n });
     setAiResult(""); setAiAction(""); setShowEPal(false); setETagIn("");
   }
@@ -453,17 +421,13 @@ export default function BlocNotePage() {
   const editBg  =      eDraft.color  ?? editNote?.color  ?? PAL[0].bg;
   const eTags   =      eDraft.tags   ?? editNote?.tags   ?? [];
 
-  /* ══════════════════════════════════════════════════════
-     RENDER
-  ══════════════════════════════════════════════════════ */
-  return (
+    return (
     <div className="min-h-screen bg-[#0a0f1e] text-white pb-24">
       <AnimatePresence>
         {toastData && <Toast toast={toastData} onClose={() => setToastData(null)} />}
       </AnimatePresence>
 
-      {/* ── Header ── */}
-      <div className="sticky top-0 z-30 bg-[#0a0f1e]/95 backdrop-blur border-b border-white/5 px-4 py-3">
+            <div className="sticky top-0 z-30 bg-[#0a0f1e]/95 backdrop-blur border-b border-white/5 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 mr-auto">
             <FileText size={20} className="text-emerald-400"/>
@@ -492,8 +456,7 @@ export default function BlocNotePage() {
 
       <div className="max-w-5xl mx-auto px-4 py-5 space-y-5">
 
-        {/* ── Create trigger / expanded panel ── */}
-        <div ref={createRef}>
+                <div ref={createRef}>
           {!creating ? (
             <div className="flex gap-2 flex-wrap">
               {(["text","checklist","voice"] as NoteType[]).map(t => (
@@ -514,8 +477,7 @@ export default function BlocNotePage() {
               className="rounded-2xl border shadow-2xl overflow-hidden"
               style={{ background: dColor, borderColor: `${acOf(dColor)}40` }}>
 
-              {/* Type tabs */}
-              <div className="flex gap-1 px-4 pt-3">
+                            <div className="flex gap-1 px-4 pt-3">
                 {(["text","checklist","voice"] as NoteType[]).map(t => (
                   <button key={t} onClick={() => { setDType(t); if (t === "voice") startRec(true); }}
                     className="px-3 py-1 rounded-lg text-xs font-medium transition-all"
@@ -528,13 +490,11 @@ export default function BlocNotePage() {
                 ))}
               </div>
 
-              {/* Title */}
-              <input value={dTitle} onChange={e => setDTitle(e.target.value)}
+                            <input value={dTitle} onChange={e => setDTitle(e.target.value)}
                 placeholder="Titre (optionnel)"
                 className="w-full px-4 py-2 bg-transparent text-sm font-semibold text-white placeholder:text-white/20 focus:outline-none" />
 
-              {/* Body */}
-              {dType === "text" && (
+                            {dType === "text" && (
                 <textarea ref={cTextRef} value={dContent} onChange={e => setDContent(e.target.value)}
                   placeholder="Écris ta note ici…" rows={4}
                   className="w-full px-4 py-1 bg-transparent text-sm text-white/75 placeholder:text-white/20 focus:outline-none resize-none leading-relaxed" />
@@ -598,8 +558,7 @@ export default function BlocNotePage() {
                 </div>
               )}
 
-              {/* Footer: tags + palette + actions */}
-              <div className="flex items-center gap-2 px-4 pb-3 pt-2 flex-wrap border-t border-white/5 mt-2">
+                            <div className="flex items-center gap-2 px-4 pb-3 pt-2 flex-wrap border-t border-white/5 mt-2">
                 <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
                   {dTags.map(t => (
                     <span key={t} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
@@ -652,8 +611,7 @@ export default function BlocNotePage() {
           )}
         </div>
 
-        {/* ── Filter tabs ── */}
-        <div className="flex gap-1 overflow-x-auto pb-1">
+                <div className="flex gap-1 overflow-x-auto pb-1">
           {FILTERS.map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all flex-shrink-0"
@@ -667,15 +625,13 @@ export default function BlocNotePage() {
           ))}
         </div>
 
-        {/* ── Loading ── */}
-        {loading && (
+                {loading && (
           <div className="flex items-center justify-center py-20">
             <Loader2 size={24} className="animate-spin text-white/25" />
           </div>
         )}
 
-        {/* ── Notes ── */}
-        {!loading && (
+                {!loading && (
           <>
             {pinned.length > 0 && (
               <section>
@@ -742,10 +698,7 @@ export default function BlocNotePage() {
         )}
       </div>
 
-      {/* ══════════════════════════════════════════════════
-          Edit Modal
-      ══════════════════════════════════════════════════ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {editNote && (
           <>
             <motion.div
@@ -761,8 +714,7 @@ export default function BlocNotePage() {
               style={{ background: editBg, borderColor: `${editAc}45` }}
               onClick={e => e.stopPropagation()}>
 
-              {/* Modal header */}
-              <div className="flex items-center gap-2 px-5 pt-4 pb-1 flex-shrink-0">
+                            <div className="flex items-center gap-2 px-5 pt-4 pb-1 flex-shrink-0">
                 <span className="text-xs px-2 py-0.5 rounded-full border"
                   style={{ borderColor:`${editAc}40`, color:editAc, background:`${editAc}12` }}>
                   {(eDraft.type ?? editNote.type) === "text" ? "Texte"
@@ -799,14 +751,12 @@ export default function BlocNotePage() {
                 </button>
               </div>
 
-              {/* Title */}
-              <input value={eDraft.title ?? ""}
+                            <input value={eDraft.title ?? ""}
                 onChange={e => setEDraft(p => ({ ...p, title: e.target.value }))}
                 placeholder="Titre…"
                 className="px-5 py-1.5 bg-transparent font-bold text-base text-white placeholder:text-white/18 focus:outline-none flex-shrink-0" />
 
-              {/* Scrollable content */}
-              <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-3 min-h-0">
+                            <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-3 min-h-0">
 
                 {(eDraft.type ?? editNote.type) === "text" && (
                   <textarea value={eDraft.content ?? ""}
@@ -883,8 +833,7 @@ export default function BlocNotePage() {
                   </div>
                 )}
 
-                {/* AI row */}
-                <div className="border-t border-white/8 pt-3">
+                                <div className="border-t border-white/8 pt-3">
                   <div className="flex flex-wrap gap-1 mb-2">
                     {AI_ACTIONS.map(a => (
                       <button key={a.id}
@@ -929,8 +878,7 @@ export default function BlocNotePage() {
                   </AnimatePresence>
                 </div>
 
-                {/* Tags */}
-                <div className="border-t border-white/8 pt-3 flex flex-wrap gap-1.5 items-center">
+                                <div className="border-t border-white/8 pt-3 flex flex-wrap gap-1.5 items-center">
                   <Hash size={11} className="text-white/20" />
                   {eTags.map(t => (
                     <span key={t} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
@@ -953,8 +901,7 @@ export default function BlocNotePage() {
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="flex items-center gap-2 px-5 py-3 border-t border-white/8 flex-shrink-0">
+                            <div className="flex items-center gap-2 px-5 py-3 border-t border-white/8 flex-shrink-0">
                 <button onClick={() => delNote(editNote.id)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all">
                   <Trash2 size={12}/>Supprimer
@@ -975,8 +922,7 @@ export default function BlocNotePage() {
         )}
       </AnimatePresence>
 
-      {/* FAB mobile */}
-      {!creating && !editNote && (
+            {!creating && !editNote && (
         <motion.button initial={{ scale:0 }} animate={{ scale:1 }}
           onClick={() => openCreate()}
           className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center z-20 sm:hidden"
@@ -985,8 +931,7 @@ export default function BlocNotePage() {
         </motion.button>
       )}
 
-      {/* Recording indicator */}
-      <AnimatePresence>
+            <AnimatePresence>
         {recording && (
           <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:20 }}
             className="fixed bottom-24 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#1a0808] border border-red-500/40 shadow-2xl z-50">

@@ -11,9 +11,6 @@ import {
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-/* ═══════════════════════════════════════════════════════════
-   DONNÉES
-═══════════════════════════════════════════════════════════ */
 const QUIZ_QUESTIONS = [
   { q: "Que signifie 'prompt engineering' ?", opts: ["Programmer un robot", "Rédiger des instructions efficaces pour guider une IA", "Créer une app mobile", "Coder en Python"], correct: 1, expl: "Le prompt engineering consiste à formuler des instructions précises pour obtenir les meilleures réponses d'un LLM." },
   { q: "Quel modèle est derrière ChatGPT ?", opts: ["BERT", "LLaMA", "GPT-4", "Mistral"], correct: 2, expl: "ChatGPT est basé sur GPT-4o (Generative Pre-trained Transformer), développé par OpenAI." },
@@ -76,44 +73,35 @@ const DEFI = {
   exemple: "Rôle : Tu es un commercial expert en relation client B2B.\n\nContexte : Mon client Marc n'a pas répondu à notre devis de prestation de conseil depuis 7 jours.\n\nTâche : Rédige un email de relance professionnel et chaleureux.\n\nContraintes : Max 120 mots. Inclure objet accrocheur + rappel de valeur + proposition d'appel 15 min cette semaine.",
 };
 
-/* ═══════════════════════════════════════════════════════════
-   PAGE
-═══════════════════════════════════════════════════════════ */
 type GameId = "quiz" | "flash" | "speed" | "vraifaux" | "defi" | null;
 
 export default function JeuxPage() {
   const [activeGame, setActiveGame] = useState<GameId>(null);
 
-  /* ── Quiz state ── */
-  const [quizStarted, setQuizStarted] = useState(false);
+    const [quizStarted, setQuizStarted] = useState(false);
   const [qIndex, setQIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<number[]>([]);
   const [quizDone, setQuizDone] = useState(false);
 
-  /* ── Flash cards state ── */
-  const [cardIndex, setCardIndex] = useState(0);
+    const [cardIndex, setCardIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
-  /* ── Speed quiz state ── */
-  const [speedIndex, setSpeedIndex] = useState(0);
+    const [speedIndex, setSpeedIndex] = useState(0);
   const [speedScore, setSpeedScore] = useState(0);
   const [speedDone, setSpeedDone] = useState(false);
   const [speedSelected, setSpeedSelected] = useState<number | null>(null);
 
-  /* ── Vrai/Faux state ── */
-  const [vfIndex, setVfIndex] = useState(0);
+    const [vfIndex, setVfIndex] = useState(0);
   const [vfAnswer, setVfAnswer] = useState<boolean | null>(null);
   const [vfScore, setVfScore] = useState(0);
   const [vfDone, setVfDone] = useState(false);
 
-  /* ── Défi state ── */
-  const [prompt, setPrompt] = useState("");
+    const [prompt, setPrompt] = useState("");
   const [defiDone, setDefiDone] = useState(false);
   const [showExemple, setShowExemple] = useState(false);
 
-  /* ── Quiz helpers ── */
-  const quizScore = answers.filter((a, i) => a === QUIZ_QUESTIONS[i].correct).length;
+    const quizScore = answers.filter((a, i) => a === QUIZ_QUESTIONS[i].correct).length;
   function handleQuizAnswer(idx: number) {
     if (selected !== null) return;
     setSelected(idx);
@@ -126,12 +114,10 @@ export default function JeuxPage() {
   }
   function resetQuiz() { setQIndex(0); setSelected(null); setAnswers([]); setQuizDone(false); setQuizStarted(false); }
 
-  /* ── Flash helpers ── */
-  function nextCard() { setFlipped(false); setTimeout(() => setCardIndex(i => (i + 1) % FLASH_CARDS.length), 150); }
+    function nextCard() { setFlipped(false); setTimeout(() => setCardIndex(i => (i + 1) % FLASH_CARDS.length), 150); }
   function prevCard() { setFlipped(false); setTimeout(() => setCardIndex(i => (i - 1 + FLASH_CARDS.length) % FLASH_CARDS.length), 150); }
 
-  /* ── Speed helpers ── */
-  function handleSpeedAnswer(idx: number) {
+    function handleSpeedAnswer(idx: number) {
     if (speedSelected !== null) return;
     setSpeedSelected(idx);
     const correct = idx === SPEED_QUESTIONS[speedIndex].correct;
@@ -143,8 +129,7 @@ export default function JeuxPage() {
   }
   function resetSpeed() { setSpeedIndex(0); setSpeedScore(0); setSpeedDone(false); setSpeedSelected(null); }
 
-  /* ── Vrai/Faux helpers ── */
-  function handleVF(ans: boolean) {
+    function handleVF(ans: boolean) {
     if (vfAnswer !== null) return;
     setVfAnswer(ans);
     if (ans === VRAI_FAUX[vfIndex].ans) setVfScore(s => s + 1);
@@ -166,8 +151,7 @@ export default function JeuxPage() {
   return (
     <div className="min-h-screen bg-[#0a0f1e]">
 
-      {/* Sub-header */}
-      <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
+            <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <Link href="/client/coaching-ia" className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
             <ChevronLeft size={13} /> Coaching IA
@@ -184,8 +168,7 @@ export default function JeuxPage() {
 
       <div className="relative z-10 mx-auto max-w-4xl space-y-6 px-5 py-6 sm:px-8">
 
-        {/* Sélecteur de jeu */}
-        {!activeGame && (
+                {!activeGame && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}

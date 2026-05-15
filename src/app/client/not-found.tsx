@@ -13,8 +13,7 @@ export default function ClientNotFound() {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="max-w-sm"
       >
-        {/* 404 */}
-        <div
+                <div
           className="mb-6 select-none text-[5rem] font-black leading-none tracking-tighter"
           style={{
             background: "linear-gradient(135deg, #c9a55a 0%, #e8cc94 50%, #c9a55a 100%)",

@@ -1,23 +1,11 @@
 "use client";
 
-/**
- * Badge — composant unifié pour les statuts, types et labels colorés.
- *
- * Deux modes :
- *  - `variant` : couleur sémantique Tailwind (success, warning, error, info, neutral, purple)
- *  - `color` / `bg` : couleurs hex personnalisées (pour CRM, planning, etc.)
- */
-
 interface BadgeProps {
   label:    string;
-  /** Couleur de texte hex — mode personnalisé */
-  color?:   string;
-  /** Couleur de fond hex (ex: "#10b98120") — mode personnalisé */
-  bg?:      string;
-  /** Couleur de bordure hex — optionnel en mode personnalisé */
-  border?:  string;
-  /** Variant sémantique Tailwind */
-  variant?: "success" | "warning" | "error" | "info" | "neutral" | "purple";
+    color?:   string;
+    bg?:      string;
+    border?:  string;
+    variant?: "success" | "warning" | "error" | "info" | "neutral" | "purple";
   size?:    "xs" | "sm";
   className?: string;
   dot?: boolean;

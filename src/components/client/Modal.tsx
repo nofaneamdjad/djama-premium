@@ -1,15 +1,5 @@
 "use client";
 
-/**
- * Modal — composant de dialogue réutilisable et accessible.
- *
- * - role="dialog" + aria-modal + aria-labelledby
- * - Focus trap (Tab / Shift+Tab reste dans la modal)
- * - Fermeture par Escape ou clic sur le backdrop
- * - Animation spring cohérente avec le reste du projet
- * - Responsive : ancré en bas sur mobile, centré sur ≥ sm
- */
-
 import { useEffect, useRef, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -30,8 +20,7 @@ interface ModalProps {
   title:      string;
   subtitle?:  string;
   maxWidth?:  "sm" | "md" | "lg" | "xl" | "2xl";
-  /** Masquer l'en-tête (titre + bouton fermer) */
-  hideHeader?: boolean;
+    hideHeader?: boolean;
   children:   React.ReactNode;
   footer?:    React.ReactNode;
 }
@@ -49,7 +38,7 @@ export default function Modal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId   = useId();
 
-  // Focus trap + Escape
+
   useEffect(() => {
     if (!open) return;
 
@@ -69,7 +58,7 @@ export default function Modal({
     const first = focusable[0];
     const last  = focusable[focusable.length - 1];
 
-    // Auto-focus premier élément
+
     requestAnimationFrame(() => first?.focus());
 
     function onKey(e: KeyboardEvent) {
@@ -118,8 +107,7 @@ export default function Modal({
               overflow-hidden
             `}
           >
-            {/* Header */}
-            {!hideHeader && (
+                        {!hideHeader && (
               <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-0 shrink-0">
                 <div>
                   <h2 id={titleId} className="text-base font-extrabold text-white leading-tight">
@@ -139,13 +127,11 @@ export default function Modal({
               </div>
             )}
 
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+                        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
               {children}
             </div>
 
-            {/* Footer */}
-            {footer && (
+                        {footer && (
               <div className="shrink-0 px-5 pb-5 pt-3 border-t border-white/[0.06]">
                 {footer}
               </div>

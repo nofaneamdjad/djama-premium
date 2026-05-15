@@ -18,8 +18,6 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import { fmtDate, fmtEur } from "@/lib/format";
 
-// ─────────────────────────── TYPES ───────────────────────────
-
 type ContractType = "prestation" | "freelance" | "nda" | "partenariat" | "vente" | "saas" | "location" | "cdi" | "cdd" | "devis" | "autre";
 type ContractStatus = "brouillon" | "validation" | "envoyé" | "vu" | "signé" | "refusé" | "expiré" | "actif";
 type SignerStatus = "pending" | "sent" | "viewed" | "signed" | "refused";
@@ -105,8 +103,6 @@ type DraftForm = {
   selected_clauses: string[];
 };
 
-// ─────────────────────────── CONSTANTS ───────────────────────────
-
 const gold = "#c9a55a";
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -165,8 +161,6 @@ const EMPTY_FORM = (): DraftForm => ({
   specifics: "", selected_clauses: [],
 });
 
-// ─────────────────────────── AI ANALYSIS ───────────────────────────
-
 function analyzeContract(c: Contract): {
   score: number;
   summary: string;
@@ -216,8 +210,6 @@ function analyzeContract(c: Contract): {
   const score = Math.round((compliance.filter((x) => x.ok).length / compliance.length) * 100);
   return { score, summary, risks, suggestions, compliance };
 }
-
-// ─────────────────────────── TEMPLATE GENERATOR ───────────────────────────
 
 function buildContractText(f: DraftForm): string {
   const today = new Date().toLocaleDateString("fr-FR");
@@ -295,8 +287,6 @@ _______________________                _______________________`;
   return header;
 }
 
-// ─────────────────────────── SUB-COMPONENTS ───────────────────────────
-
 function StatusBadge({ status }: { status: ContractStatus }) {
   const s = STATUS_CFG[status] ?? STATUS_CFG.brouillon;
   return (
@@ -313,8 +303,6 @@ function inp(extra = "") {
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">{children}</label>;
 }
-
-// ─────────────────────────── SIGNATURE MODAL ───────────────────────────
 
 function SignModal({
   signer, contractTitle, onClose, onSign,
@@ -439,8 +427,6 @@ function SignModal({
   );
 }
 
-// ─────────────────────────── AI ANALYSIS MODAL ───────────────────────────
-
 function AIModal({ contract, onClose }: { contract: Contract; onClose: () => void }) {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<ReturnType<typeof analyzeContract> | null>(null);
@@ -479,8 +465,7 @@ function AIModal({ contract, onClose }: { contract: Contract; onClose: () => voi
             </div>
           ) : result ? (
             <>
-              {/* Score */}
-              <div className="flex items-center gap-4 bg-white/[0.03] rounded-2xl p-4 border border-white/[0.06]">
+                            <div className="flex items-center gap-4 bg-white/[0.03] rounded-2xl p-4 border border-white/[0.06]">
                 <div className="relative h-16 w-16 shrink-0">
                   <svg viewBox="0 0 36 36" className="h-16 w-16 -rotate-90">
                     <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3"/>
@@ -496,8 +481,7 @@ function AIModal({ contract, onClose }: { contract: Contract; onClose: () => voi
                 </div>
               </div>
 
-              {/* Risks */}
-              <div>
+                            <div>
                 <h4 className="text-xs font-bold text-white/60 uppercase tracking-wider mb-2 flex items-center gap-1.5"><AlertOctagon size={12} className="text-red-400"/> Risques détectés</h4>
                 <div className="space-y-1.5">
                   {result.risks.map((r, i) => (
@@ -509,8 +493,7 @@ function AIModal({ contract, onClose }: { contract: Contract; onClose: () => voi
                 </div>
               </div>
 
-              {/* Suggestions */}
-              <div>
+                            <div>
                 <h4 className="text-xs font-bold text-white/60 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Lightbulb size={12} style={{ color: gold }}/> Suggestions</h4>
                 <div className="space-y-1.5">
                   {result.suggestions.map((s, i) => (
@@ -522,8 +505,7 @@ function AIModal({ contract, onClose }: { contract: Contract; onClose: () => voi
                 </div>
               </div>
 
-              {/* Compliance */}
-              <div>
+                            <div>
                 <h4 className="text-xs font-bold text-white/60 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Shield size={12} className="text-emerald-400"/> Conformité</h4>
                 <div className="grid grid-cols-2 gap-1.5">
                   {result.compliance.map((item, i) => (
@@ -541,8 +523,6 @@ function AIModal({ contract, onClose }: { contract: Contract; onClose: () => voi
     </motion.div>
   );
 }
-
-// ─────────────────────────── CONTRACT CARD ───────────────────────────
 
 function ContractCard({ contract, isSelected, onSelect, onDelete }: {
   contract: Contract; isSelected: boolean; onSelect: () => void; onDelete: (id: string) => void;
@@ -587,8 +567,6 @@ function ContractCard({ contract, isSelected, onSelect, onDelete }: {
   );
 }
 
-// ─────────────────────────── DASHBOARD VIEW ───────────────────────────
-
 function DashboardView({ contracts, onNew, onSelect }: {
   contracts: Contract[]; onNew: () => void; onSelect: (c: Contract) => void;
 }) {
@@ -616,8 +594,7 @@ function DashboardView({ contracts, onNew, onSelect }: {
 
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-6">
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpis.map((k) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 flex flex-col gap-2">
@@ -634,8 +611,7 @@ function DashboardView({ contracts, onNew, onSelect }: {
         ))}
       </div>
 
-      {/* Pipeline */}
-      <div>
+            <div>
         <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3">Pipeline des contrats</h3>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {pipeline.map((stage) => {
@@ -664,8 +640,7 @@ function DashboardView({ contracts, onNew, onSelect }: {
         </div>
       </div>
 
-      {/* Upcoming deadlines */}
-      {contracts.filter((c) => c.expires_at && new Date(c.expires_at) <= in30 && c.status !== "expiré").length > 0 && (
+            {contracts.filter((c) => c.expires_at && new Date(c.expires_at) <= in30 && c.status !== "expiré").length > 0 && (
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5">
             <Calendar size={12} className="text-orange-400"/> Échéances dans 30 jours
@@ -700,8 +675,6 @@ function DashboardView({ contracts, onNew, onSelect }: {
     </div>
   );
 }
-
-// ─────────────────────────── DETAIL PANEL ───────────────────────────
 
 function DetailPanel({
   contract, signers, activities, comments,
@@ -743,8 +716,7 @@ function DetailPanel({
     <motion.div key="detail" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 24 }} transition={{ duration: 0.4, ease }}
       className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-start justify-between px-5 py-4 border-b border-white/[0.06] gap-4">
+            <div className="flex items-start justify-between px-5 py-4 border-b border-white/[0.06] gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <button onClick={onClose} className="md:hidden rounded-lg p-1 text-white/40 hover:text-white/70 transition-colors"><X size={15}/></button>
@@ -788,8 +760,7 @@ function DetailPanel({
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-white/[0.06] px-5 gap-1">
+            <div className="flex border-b border-white/[0.06] px-5 gap-1">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setTab(key)}
             className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold border-b-2 transition-all -mb-px ${tab === key ? "border-b-2 text-white/90" : "border-transparent text-white/35 hover:text-white/60"}`}
@@ -799,10 +770,8 @@ function DetailPanel({
         ))}
       </div>
 
-      {/* Tab Content */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        {/* CONTENT TAB */}
-        {tab === "content" && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+                {tab === "content" && (
           <>
             <div className="flex items-center gap-2 px-5 py-2 border-b border-white/[0.06] bg-white/[0.015] flex-wrap">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-white/20 mr-1">PDF</span>
@@ -823,8 +792,7 @@ function DetailPanel({
               </motion.button>
             </div>
             <div className="flex-1 overflow-auto p-5">
-              {/* Validation checkboxes */}
-              {(contract.validation_manager != null || contract.validation_legal != null) && (
+                            {(contract.validation_manager != null || contract.validation_legal != null) && (
                 <div className="flex gap-3 mb-4 flex-wrap">
                   {[
                     { label: "Manager", val: contract.validation_manager },
@@ -844,8 +812,7 @@ function DetailPanel({
           </>
         )}
 
-        {/* SIGNERS TAB */}
-        {tab === "signers" && (
+                {tab === "signers" && (
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
             {signers.length > 0 ? (
               <div className="space-y-2">
@@ -904,8 +871,7 @@ function DetailPanel({
           </div>
         )}
 
-        {/* AI TAB */}
-        {tab === "ai" && (
+                {tab === "ai" && (
           <div className="flex-1 overflow-y-auto p-5 flex flex-col items-center justify-center gap-4">
             <div className="h-14 w-14 flex items-center justify-center rounded-2xl" style={{ background: gold + "15", border: `1px solid ${gold}30` }}>
               <Brain size={24} style={{ color: gold }}/>

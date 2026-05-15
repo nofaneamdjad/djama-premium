@@ -20,9 +20,6 @@ const NAVY = "#0a0f1e";
 const SIDEBAR_BG = "#070c18";
 const BORDER = "rgba(255,255,255,0.06)";
 
-/* ─────────────────────────────────────────────────
-   NAVIGATION
-───────────────────────────────────────────────── */
 type NavEntry = { href: string; label: string; icon: React.ElementType; exact?: boolean };
 
 const NAV_GROUPS: { label: string | null; items: NavEntry[] }[] = [
@@ -77,9 +74,6 @@ const NAV_GROUPS: { label: string | null; items: NavEntry[] }[] = [
   },
 ];
 
-/* ─────────────────────────────────────────────────
-   TYPES — notifications
-───────────────────────────────────────────────── */
 type UpcomingEvent = {
   id: string; title: string;
   event_date: string; event_time: string | null; category: string;
@@ -92,9 +86,6 @@ function fmtEvtDate(iso: string) {
   return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 }
 
-/* ─────────────────────────────────────────────────
-   CLOCHE
-───────────────────────────────────────────────── */
 function NotifBell({ ready }: { ready: boolean }) {
   const [open,   setOpen]   = useState(false);
   const [events, setEvents] = useState<UpcomingEvent[]>([]);

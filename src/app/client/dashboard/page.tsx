@@ -14,7 +14,6 @@ import {
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt, fmtDuration } from "@/lib/format";
 
-/* ─── Constants ──────────────────────────────────────────────────────────── */
 const GOLD = "#c9a55a";
 const NAVY = "#0a0f1e";
 
@@ -32,7 +31,6 @@ const TOOLS = [
   { href: "/client/planification",label: "Planification",    desc: "Organisez l'agenda de l'équipe",     icon: CalendarRange,hue: "#0ea5e9" },
 ] as const;
 
-/* ─── Helpers ────────────────────────────────────────────────────────────── */
 function getGreeting(): string {
   const h = new Date().getHours();
   if (h >= 5 && h < 12) return "Bonjour";
@@ -57,7 +55,6 @@ function fmtFullDate(): string {
   }).format(new Date());
 }
 
-/* ─── Types ──────────────────────────────────────────────────────────────── */
 interface Stats {
   caThisMois: number;
   heuresSemaine: number;
@@ -81,7 +78,6 @@ type Rapport = {
 
 const SHORT_MONTHS = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 
-/* ─── Tool card ──────────────────────────────────────────────────────────── */
 function ToolCard({ item }: { item: typeof TOOLS[number] }) {
   const Icon = item.icon;
   return (
@@ -103,7 +99,6 @@ function ToolCard({ item }: { item: typeof TOOLS[number] }) {
   );
 }
 
-/* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function DashboardPage() {
   const [userName,      setUserName]      = useState("");
   const [stats,         setStats]         = useState<Stats | null>(null);
@@ -145,7 +140,7 @@ export default function DashboardPage() {
       });
       setStatsLoading(false);
 
-      // Revenue chart — 6 months
+
       const today = new Date();
       const monthData: MonthRevenue[] = [];
       for (let i = 5; i >= 0; i--) {
@@ -157,7 +152,7 @@ export default function DashboardPage() {
       }
       setRevenues(monthData);
 
-      // Top clients — 3 rolling months
+
       const threeAgo = new Date(today.getFullYear(), today.getMonth()-3, 1).toISOString().slice(0,10);
       const { data: paidDocs } = await supabase.from("documents").select("client_nom,total_ttc").eq("type","facture").eq("statut","payé").gte("date_document",threeAgo);
       const clientMap = new Map<string,number>();
@@ -167,7 +162,7 @@ export default function DashboardPage() {
       }
       setTopClients([...clientMap.entries()].sort((a,b) => b[1]-a[1]).slice(0,5).map(([name,amount]) => ({ name, amount })));
 
-      // Overdue
+
       const { data: overdueDocs } = await supabase.from("documents").select("id,numero,client_nom,total_ttc,date_echeance").eq("type","facture").eq("statut","en_retard").order("date_echeance",{ascending:true}).limit(5);
       setOverdue((overdueDocs ?? []) as OverdueInvoice[]);
       setChartsLoading(false);
@@ -200,8 +195,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-full pb-16" style={{ background: NAVY }}>
 
-      {/* ── Sub-header ───────────────────────────────────────── */}
-      <div className="border-b border-white/[0.06] bg-[rgba(7,12,24,0.9)] px-5 py-4 backdrop-blur-xl sm:px-8">
+            <div className="border-b border-white/[0.06] bg-[rgba(7,12,24,0.9)] px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">

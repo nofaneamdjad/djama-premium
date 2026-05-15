@@ -12,9 +12,6 @@ import { supabase } from "@/lib/supabase";
 import { fmtEur } from "@/lib/format";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
-/* ═══════════════════════════════════════════════════════════
-   TYPES
-═══════════════════════════════════════════════════════════ */
 type TimerMode = "classic" | "pomodoro" | "countdown" | "focus";
 type PomPhase = "work" | "break";
 type AppTab   = "timer" | "stats" | "projects" | "billing";
@@ -83,9 +80,6 @@ interface GoalDraft {
   daily_billable_minutes: string;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   CONSTANTS
-═══════════════════════════════════════════════════════════ */
 const violet = "#a78bfa";
 const ease   = [0.16, 1, 0.3, 1] as const;
 const POM_WORK  = 25 * 60;
@@ -121,9 +115,6 @@ const TABS: { value: AppTab; label: string; Icon: React.ElementType }[] = [
   { value: "billing",  label: "Facturable",Icon: FileText  },
 ];
 
-/* ═══════════════════════════════════════════════════════════
-   HELPERS
-═══════════════════════════════════════════════════════════ */
 const fmt = (s: number) => {
   const h   = Math.floor(s / 3600);
   const m   = Math.floor((s % 3600) / 60);
@@ -169,29 +160,22 @@ const emptyProject = (): ProjectDraft => ({
   name:"", client_name:"", color:"#a78bfa", hourly_rate:"", budget_hours:"",
 });
 
-/* ═══════════════════════════════════════════════════════════
-   PAGE
-═══════════════════════════════════════════════════════════ */
 export default function ChronoPage() {
 
-  /* ── Timer core ── */
-  const [mode,         setMode]         = useState<TimerMode>("classic");
+    const [mode,         setMode]         = useState<TimerMode>("classic");
   const [running,      setRunning]      = useState(false);
   const [paused,       setPaused]       = useState(false);
   const [elapsed,      setElapsed]      = useState(0);
   const [startMs,      setStartMs]      = useState<number|null>(null);
 
-  /* ── Pomodoro ── */
-  const [pomPhase,  setPomPhase]  = useState<PomPhase>("work");
+    const [pomPhase,  setPomPhase]  = useState<PomPhase>("work");
   const [pomCycle,  setPomCycle]  = useState(0);
 
-  /* ── Countdown ── */
-  const [cdH, setCdH] = useState("0");
+    const [cdH, setCdH] = useState("0");
   const [cdM, setCdM] = useState("25");
   const cdTarget = ((parseInt(cdH,10)||0)*3600) + ((parseInt(cdM,10)||25)*60);
 
-  /* ── Session form ── */
-  const [sTitle,    setSTitle]    = useState("");
+    const [sTitle,    setSTitle]    = useState("");
   const [sProject,  setSProject]  = useState("");
   const [sClient,   setSClient]   = useState("");
   const [sCat,      setSCat]      = useState("autre");
@@ -199,20 +183,17 @@ export default function ChronoPage() {
   const [sBillable, setSBillable] = useState(true);
   const [sNotes,    setSNotes]    = useState("");
 
-  /* ── Data ── */
-  const [entries,  setEntries]  = useState<TimeEntry[]>([]);
+    const [entries,  setEntries]  = useState<TimeEntry[]>([]);
   const [projects, setProjects] = useState<ChronoProject[]>([]);
   const [goal,     setGoal]     = useState<ChronoGoal|null>(null);
 
-  /* ── UI ── */
-  const [tab,       setTab]       = useState<AppTab>("timer");
+    const [tab,       setTab]       = useState<AppTab>("timer");
   const [loading,   setLoading]   = useState(true);
   const [saving,    setSaving]    = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [toast,     setToast]     = useState<ToastData|null>(null);
 
-  /* ── Modals ── */
-  const [manualOpen,    setManualOpen]    = useState(false);
+    const [manualOpen,    setManualOpen]    = useState(false);
   const [manualDraft,   setManualDraft]   = useState<ManualDraft>(emptyManual());
   const [manualSaving,  setManualSaving]  = useState(false);
   const [projOpen,      setProjOpen]      = useState(false);
@@ -224,16 +205,14 @@ export default function ChronoPage() {
   const [confirmDel,    setConfirmDel]    = useState<string|null>(null);
   const [deleting,      setDeleting]      = useState<string|null>(null);
 
-  /* ── Mutable refs (no stale closures in interval) ── */
-  const intervalRef    = useRef<ReturnType<typeof setInterval>|null>(null);
+    const intervalRef    = useRef<ReturnType<typeof setInterval>|null>(null);
   const modeRef        = useRef<TimerMode>("classic");
   const pomPhaseRef    = useRef<PomPhase>("work");
   const pomCycleRef    = useRef(0);
   const cdTargetRef    = useRef(25*60);
   const sessionRef     = useRef({ title:"", project:"", client:"", cat:"autre", rate:"", billable:true, notes:"" });
 
-  /* Sync refs */
-  useEffect(() => { modeRef.current     = mode     }, [mode]);
+    useEffect(() => { modeRef.current     = mode     }, [mode]);
   useEffect(() => { pomPhaseRef.current = pomPhase }, [pomPhase]);
   useEffect(() => { pomCycleRef.current = pomCycle }, [pomCycle]);
   useEffect(() => { cdTargetRef.current = cdTarget }, [cdTarget]);
@@ -241,15 +220,12 @@ export default function ChronoPage() {
     sessionRef.current = { title:sTitle, project:sProject, client:sClient, cat:sCat, rate:sRate, billable:sBillable, notes:sNotes };
   }, [sTitle,sProject,sClient,sCat,sRate,sBillable,sNotes]);
 
-  /* ── Cleanup ── */
-  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current) }, []);
+    useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current) }, []);
 
-  /* ── Toast helper ── */
-  const showToast = (type: "success"|"error"|"info", msg: string) =>
+    const showToast = (type: "success"|"error"|"info", msg: string) =>
     setToast({ type, msg } as ToastData);
 
-  /* ── Fetch ── */
-  const fetchAll = useCallback(async () => {
+    const fetchAll = useCallback(async () => {
     setLoading(true);
     const [eRes, pRes, gRes] = await Promise.all([
       supabase.from("time_entries").select("*").order("date",{ascending:false}).order("created_at",{ascending:false}).limit(1000),
@@ -264,10 +240,7 @@ export default function ChronoPage() {
 
   useEffect(() => { void fetchAll() }, [fetchAll]);
 
-  /* ═══════════════════════════════════════════════════════
-     TIMER — imperative control (avoids stale closures)
-  ═══════════════════════════════════════════════════════ */
-  function startTimerInterval(fromMs: number) {
+    function startTimerInterval(fromMs: number) {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       const newElapsed = Math.floor((Date.now() - fromMs) / 1000);
@@ -348,8 +321,7 @@ export default function ChronoPage() {
     showToast("success", `⏰ Terminé ! ${fmtMin(mins)} enregistrés.`);
   }
 
-  /* ── Save session ── */
-  async function saveSession(mins: number, timerMode: string, pomodoroNum?: number) {
+    async function saveSession(mins: number, timerMode: string, pomodoroNum?: number) {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
@@ -375,8 +347,7 @@ export default function ChronoPage() {
     else       { showToast("success", `Session enregistrée — ${fmtMin(mins)}`); void fetchAll(); }
   }
 
-  /* ── Manual entry ── */
-  async function handleManualSave() {
+    async function handleManualSave() {
     if (!manualDraft.project.trim()) { showToast("error","Projet requis."); return; }
     const mins = parseInt(manualDraft.duration_minutes,10);
     if (!mins||mins<=0) { showToast("error","Durée invalide."); return; }
@@ -397,8 +368,7 @@ export default function ChronoPage() {
     else { showToast("success","Entrée ajoutée."); setManualOpen(false); setManualDraft(emptyManual()); void fetchAll(); }
   }
 
-  /* ── Delete ── */
-  async function handleDelete(id: string) {
+    async function handleDelete(id: string) {
     setDeleting(id);
     const { error } = await supabase.from("time_entries").delete().eq("id",id);
     setDeleting(null); setConfirmDel(null);
@@ -406,8 +376,7 @@ export default function ChronoPage() {
     else { setEntries(p=>p.filter(e=>e.id!==id)); showToast("success","Supprimé."); }
   }
 
-  /* ── Save project ── */
-  async function handleSaveProject() {
+    async function handleSaveProject() {
     if (!projDraft.name.trim()) { showToast("error","Nom requis."); return; }
     setProjSaving(true);
     const { data:{user} } = await supabase.auth.getUser();
@@ -422,8 +391,7 @@ export default function ChronoPage() {
     else { showToast("success","Projet créé."); setProjOpen(false); setProjDraft(emptyProject()); void fetchAll(); }
   }
 
-  /* ── Save goal ── */
-  async function handleSaveGoal() {
+    async function handleSaveGoal() {
     setGoalSaving(true);
     const { data:{user} } = await supabase.auth.getUser();
     if (!user) { setGoalSaving(false); return; }
@@ -441,17 +409,13 @@ export default function ChronoPage() {
     else { showToast("success","Objectifs mis à jour."); setGoalOpen(false); void fetchAll(); }
   }
 
-  /* ── Mark billed ── */
-  async function handleMarkBilled(id: string) {
+    async function handleMarkBilled(id: string) {
     const { error } = await supabase.from("time_entries").update({is_billed:true}).eq("id",id);
     if (error) showToast("error",error.message);
     else { setEntries(p=>p.map(e=>e.id===id?{...e,is_billed:true}:e)); showToast("success","Marqué facturé."); }
   }
 
-  /* ═══════════════════════════════════════════════════════
-     COMPUTED VALUES
-  ═══════════════════════════════════════════════════════ */
-  const today      = todayISO();
+    const today      = todayISO();
   const weekStart  = startOfWeekISO();
   const monthStart = startOfMonthISO();
 
@@ -533,8 +497,7 @@ export default function ChronoPage() {
     return insights.slice(0,4);
   },[entries,todayStats,dailyData,catBreakdown,unbilledAmt,pomCycle]);
 
-  /* ── Timer display values ── */
-  let timerDisplay = fmt(elapsed);
+    let timerDisplay = fmt(elapsed);
   let timerColor   = paused ? "#f59e0b" : running ? violet : "rgba(255,255,255,0.5)";
   let timerGlow    = paused ? "rgba(245,158,11,0.3)" : running ? "rgba(167,139,250,0.35)" : "transparent";
 
@@ -555,8 +518,7 @@ export default function ChronoPage() {
   const cdPct   = (mode==="countdown"&&cdTarget>0) ? Math.min(1, elapsed/cdTarget) : 0;
   const circR   = 60; const circC = 2*Math.PI*circR;
 
-  /* ── Grouped entries ── */
-  const grouped = useMemo(()=>{
+    const grouped = useMemo(()=>{
     const map = new Map<string,TimeEntry[]>();
     for (const e of entries) {
       if (!map.has(e.date)) map.set(e.date,[]);
@@ -565,26 +527,18 @@ export default function ChronoPage() {
     return Array.from(map.entries()).sort((a,b)=>b[0].localeCompare(a[0]));
   },[entries]);
 
-  /* ── Project hours map ── */
-  const projHours = useMemo(()=>{
+    const projHours = useMemo(()=>{
     const m = new Map<string,number>();
     for (const e of entries) m.set(e.project,(m.get(e.project)??0)+e.duration_minutes);
     return m;
   },[entries]);
 
-  /* ═══════════════════════════════════════════════════════
-     FOCUS MODE OVERLAY
-  ═══════════════════════════════════════════════════════ */
-  const isFocusActive = focusMode && (running||paused);
+    const isFocusActive = focusMode && (running||paused);
 
-  /* ═══════════════════════════════════════════════════════
-     RENDER
-  ═══════════════════════════════════════════════════════ */
-  return (
+    return (
     <div className="min-h-screen bg-[#0a0f1e]">
 
-      {/* FOCUS MODE OVERLAY */}
-      <AnimatePresence>
+            <AnimatePresence>
         {isFocusActive && (
           <motion.div
             key="focus-overlay"
@@ -619,8 +573,7 @@ export default function ChronoPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Sub-header ── */}
-      <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
+            <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-3.5 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -647,8 +600,7 @@ export default function ChronoPage() {
         </div>
       </div>
 
-      {/* ── Tabs ── */}
-      <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(10,11,16,0.6)] px-5 sm:px-8">
+            <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(10,11,16,0.6)] px-5 sm:px-8">
         <div className="mx-auto flex max-w-5xl">
           {TABS.map(t=>(
             <button key={t.value} onClick={()=>setTab(t.value)}
@@ -668,17 +620,12 @@ export default function ChronoPage() {
         </div>
       </div>
 
-      {/* ── Body ── */}
-      <div className="relative z-10 mx-auto max-w-5xl px-5 py-5 sm:px-8">
+            <div className="relative z-10 mx-auto max-w-5xl px-5 py-5 sm:px-8">
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            TAB: TIMER
-        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {tab==="timer"&&(
+                {tab==="timer"&&(
           <div className="space-y-4">
 
-            {/* Quick KPIs */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
                 {label:"Aujourd'hui",value:fmtMin(todayStats.minutes),sub:`${todayStats.sessions} session${todayStats.sessions!==1?"s":""}`,color:"#a78bfa"},
                 {label:"Facturable",value:fmtMin(todayStats.billable),sub:"heures",color:"#34d399"},
@@ -693,8 +640,7 @@ export default function ChronoPage() {
               ))}
             </div>
 
-            {/* Goal progress bar */}
-            {dailyGoalPct!==null&&(
+                        {dailyGoalPct!==null&&(
               <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025] px-5 py-3">
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className="text-xs font-bold text-white/50">Objectif quotidien</span>
@@ -707,8 +653,7 @@ export default function ChronoPage() {
               </div>
             )}
 
-            {/* Mode selector */}
-            <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2 flex-wrap">
               {MODES.map(m=>(
                 <button key={m.value} onClick={()=>{if(!running&&!paused){setMode(m.value);modeRef.current=m.value;setElapsed(0);}}}
                   disabled={running||paused}
@@ -720,8 +665,7 @@ export default function ChronoPage() {
               ))}
             </div>
 
-            {/* Timer card */}
-            <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.4,ease}}
+                        <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.4,ease}}
               className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
 
               <AnimatePresence>
@@ -732,8 +676,7 @@ export default function ChronoPage() {
                 )}
               </AnimatePresence>
 
-              {/* Pomodoro phase indicator */}
-              {mode==="pomodoro"&&(
+                            {mode==="pomodoro"&&(
                 <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-3">
                   <div className="flex items-center gap-2">
                     {pomPhase==="work" ? <Flame size={14} style={{color:"#f87171"}}/> : <Coffee size={14} style={{color:"#34d399"}}/>}
@@ -752,8 +695,7 @@ export default function ChronoPage() {
 
               <div className="px-6 py-7 sm:px-8">
 
-                {/* Countdown target input */}
-                {mode==="countdown"&&!running&&!paused&&(
+                                {mode==="countdown"&&!running&&!paused&&(
                   <div className="mb-6 flex items-center gap-3">
                     <span className="text-xs font-bold text-white/40">Durée :</span>
                     <div className="flex items-center gap-2">
@@ -769,8 +711,7 @@ export default function ChronoPage() {
                   </div>
                 )}
 
-                {/* Session form */}
-                <div className="mb-6 grid gap-3 sm:grid-cols-4">
+                                <div className="mb-6 grid gap-3 sm:grid-cols-4">
                   <div className="sm:col-span-2">
                     <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Titre de la tâche</label>
                     <input value={sTitle} onChange={e=>setSTitle(e.target.value)} placeholder="Ex: Design landing page…"
@@ -811,11 +752,9 @@ export default function ChronoPage() {
                   </div>
                 </div>
 
-                {/* Timer display + controls */}
-                <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between">
 
-                  {/* SVG ring for pomodoro/countdown + timer number */}
-                  <div className="relative flex items-center justify-center">
+                                    <div className="relative flex items-center justify-center">
                     {(mode==="pomodoro"||mode==="countdown")&&(
                       <svg width={140} height={140} className="absolute -inset-[22px]" style={{transform:"rotate(-90deg)"}}>
                         <circle cx={70} cy={70} r={circR} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={3}/>
@@ -838,8 +777,7 @@ export default function ChronoPage() {
                     </div>
                   </div>
 
-                  {/* Controls */}
-                  <div className="flex flex-col items-center gap-3">
+                                    <div className="flex flex-col items-center gap-3">
                     {!running&&!paused ? (
                       <div className="flex flex-col items-center gap-2">
                         <button onClick={handleStart} disabled={saving}
@@ -883,16 +821,14 @@ export default function ChronoPage() {
                   </div>
                 </div>
 
-                {/* Notes */}
-                <div className="mt-5">
+                                <div className="mt-5">
                   <input value={sNotes} onChange={e=>setSNotes(e.target.value)} placeholder="Notes optionnelles pour cette session…"
                     className="w-full rounded-xl border border-white/[0.06] bg-transparent px-3.5 py-2 text-sm text-white/50 placeholder:text-white/18 outline-none focus:border-[rgba(167,139,250,0.25)]"/>
                 </div>
               </div>
             </motion.div>
 
-            {/* Historique */}
-            <div>
+                        <div>
               <div className="mb-3 flex items-center gap-2">
                 <span className="text-xs font-extrabold uppercase tracking-widest text-white/30">Historique</span>
                 {loading&&<Loader2 size={12} className="animate-spin text-white/20"/>}
@@ -948,14 +884,10 @@ export default function ChronoPage() {
           </div>
         )}
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            TAB: STATS
-        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {tab==="stats"&&(
+                {tab==="stats"&&(
           <div className="space-y-5">
 
-            {/* KPIs */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {label:"Aujourd'hui",value:fmtMin(todayStats.minutes),sub:fmtEur(todayStats.earnings),color:"#a78bfa"},
                 {label:"Cette semaine",value:fmtMin(weekStats.minutes),sub:fmtEur(weekStats.earnings),color:"#60a5fa"},
@@ -970,8 +902,7 @@ export default function ChronoPage() {
               ))}
             </div>
 
-            {/* Daily bars — last 7 days */}
-            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
               <p className="mb-4 text-xs font-bold uppercase tracking-widest text-white/40">7 Derniers jours</p>
               {(() => {
                 const maxMin = Math.max(...dailyData.map(d=>d.minutes),1);
@@ -989,8 +920,7 @@ export default function ChronoPage() {
               })()}
             </div>
 
-            {/* Project breakdown */}
-            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
               <p className="mb-4 text-xs font-bold uppercase tracking-widest text-white/40">Temps par projet</p>
               {projectStats.length===0?(
                 <p className="py-6 text-center text-sm text-white/25">Aucune donnée</p>
@@ -1020,8 +950,7 @@ export default function ChronoPage() {
               )}
             </div>
 
-            {/* Category breakdown */}
-            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
               <p className="mb-4 text-xs font-bold uppercase tracking-widest text-white/40">Catégories cette semaine</p>
               {catBreakdown.length===0?(
                 <p className="py-6 text-center text-sm text-white/25">Aucune donnée</p>
@@ -1045,8 +974,7 @@ export default function ChronoPage() {
               )}
             </div>
 
-            {/* AI Insights */}
-            {aiInsights.length>0&&(
+                        {aiInsights.length>0&&(
               <div className="rounded-xl border border-[rgba(167,139,250,0.15)] bg-[rgba(139,92,246,0.06)] p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <Brain size={16} style={{color:violet}}/>
@@ -1062,10 +990,7 @@ export default function ChronoPage() {
           </div>
         )}
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            TAB: PROJECTS
-        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {tab==="projects"&&(
+                {tab==="projects"&&(
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-extrabold uppercase tracking-widest text-white/30">{projects.length} Projet{projects.length!==1?"s":""}</p>
@@ -1142,8 +1067,7 @@ export default function ChronoPage() {
               </div>
             )}
 
-            {/* All-time project stats from entries (no chrono_project entry) */}
-            {projectStats.filter(ps=>!projects.find(p=>p.name===ps.name)).length>0&&(
+                        {projectStats.filter(ps=>!projects.find(p=>p.name===ps.name)).length>0&&(
               <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
                 <p className="mb-3 text-xs font-bold uppercase tracking-widest text-white/30">Autres projets (sans fiche)</p>
                 <div className="space-y-2">
@@ -1165,14 +1089,10 @@ export default function ChronoPage() {
           </div>
         )}
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            TAB: BILLING
-        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {tab==="billing"&&(
+                {tab==="billing"&&(
           <div className="space-y-4">
 
-            {/* Banner total */}
-            <div className="flex items-center justify-between rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] px-6 py-4">
+                        <div className="flex items-center justify-between rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] px-6 py-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-white/40">Total non facturé</p>
                 <p className="mt-1 text-3xl font-bold" style={{color:"#c9a55a"}}>{fmtEur(unbilledAmt)}</p>
@@ -1199,7 +1119,7 @@ export default function ChronoPage() {
               </div>
             ):(
               (() => {
-                // Group by project
+
                 const byProject = new Map<string,TimeEntry[]>();
                 for (const e of unbilled) {
                   if (!byProject.has(e.project)) byProject.set(e.project,[]);
@@ -1259,10 +1179,7 @@ export default function ChronoPage() {
         )}
       </div>
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          MODAL: AJOUT MANUEL
-      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {manualOpen&&(
           <>
             <motion.div key="mb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.2}}
@@ -1353,10 +1270,7 @@ export default function ChronoPage() {
         )}
       </AnimatePresence>
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          MODAL: NOUVEAU PROJET
-      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {projOpen&&(
           <>
             <motion.div key="pb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setProjOpen(false)}/>
@@ -1413,10 +1327,7 @@ export default function ChronoPage() {
         )}
       </AnimatePresence>
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          MODAL: OBJECTIFS
-      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {goalOpen&&(
           <>
             <motion.div key="gb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setGoalOpen(false)}/>
@@ -1453,8 +1364,7 @@ export default function ChronoPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Confirm delete ── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {confirmDel&&(
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{scale:0.93,y:16,opacity:0}} animate={{scale:1,y:0,opacity:1}} exit={{scale:0.95,y:8,opacity:0}} transition={{duration:0.3,ease}}
@@ -1474,8 +1384,7 @@ export default function ChronoPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Toast ── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {toast&&<Toast toast={toast} onClose={()=>setToast(null)}/>}
       </AnimatePresence>
     </div>

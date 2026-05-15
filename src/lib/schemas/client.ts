@@ -1,20 +1,12 @@
-/**
- * Schemas de validation Zod — Espace client DJAMA
- *
- * Centralise la validation de tous les formulaires critiques.
- * Compatible Zod v4.
- */
 
 import { z } from "zod";
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
 const optionalStr = z.string().optional().or(z.literal(""));
 const isoDate     = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format de date invalide (YYYY-MM-DD)");
 const isoDateTime = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/, "Format date/heure invalide");
 const hhmm        = z.string().regex(/^\d{2}:\d{2}$/, "Format HH:MM requis");
 const positiveNum = z.coerce.number().min(0, "Doit être positif");
 
-// ── CRM ────────────────────────────────────────────────────────────────────────
 export const ContactSchema = z.object({
   name:            z.string().min(2, "Le nom doit faire au moins 2 caractères"),
   email:           z.string().email("Email invalide").or(z.literal("")).optional(),
@@ -47,7 +39,6 @@ export const TaskCrmSchema = z.object({
   notes:    optionalStr,
 });
 
-// ── Planning ───────────────────────────────────────────────────────────────────
 export const EventSchema = z.object({
   title:      z.string().min(1, "Titre requis"),
   start_at:   isoDateTime,
@@ -61,7 +52,6 @@ export const EventSchema = z.object({
   { message: "La fin doit être après le début", path: ["end_at"] },
 );
 
-// ── Planification (shifts) ─────────────────────────────────────────────────────
 export const ShiftSchema = z.object({
   title:       z.string().min(1, "Titre requis"),
   date:        isoDate,
@@ -83,7 +73,6 @@ export const EmployeeSchema = z.object({
   phone:      optionalStr,
 });
 
-// ── Contrats ───────────────────────────────────────────────────────────────────
 export const ContractDraftSchema = z.object({
   title:        z.string().min(3, "Titre trop court (min 3 caractères)"),
   client_name:  z.string().min(2, "Nom client requis"),
@@ -94,7 +83,6 @@ export const ContractDraftSchema = z.object({
   type:         z.string().optional(),
 });
 
-// ── Factures ───────────────────────────────────────────────────────────────────
 export const InvoiceClientSchema = z.object({
   client_nom:    z.string().min(1, "Nom client requis"),
   client_email:  z.string().email("Email invalide").or(z.literal("")).optional(),
@@ -108,7 +96,6 @@ export const InvoiceItemSchema = z.object({
   vat_rate:    z.coerce.number().min(0).max(100),
 });
 
-// ── Stocks ─────────────────────────────────────────────────────────────────────
 export const ProductSchema = z.object({
   name:         z.string().min(1, "Nom requis"),
   sku:          optionalStr,
@@ -120,7 +107,6 @@ export const ProductSchema = z.object({
   unit:         optionalStr,
 });
 
-// ── Dépenses ───────────────────────────────────────────────────────────────────
 export const ExpenseSchema = z.object({
   libelle:      z.string().min(1, "Libellé requis"),
   montant:      z.coerce.number().min(0.01, "Montant invalide"),
@@ -130,7 +116,6 @@ export const ExpenseSchema = z.object({
   notes:        optionalStr,
 });
 
-// ── Équipe ─────────────────────────────────────────────────────────────────────
 export const TeamMemberSchema = z.object({
   name:       z.string().min(2, "Nom requis"),
   email:      z.string().email("Email invalide").or(z.literal("")).optional(),
@@ -140,12 +125,6 @@ export const TeamMemberSchema = z.object({
   phone:      optionalStr,
 });
 
-// ── Helpers de validation ──────────────────────────────────────────────────────
-/**
- * Valide un objet avec un schema Zod et retourne un Record d'erreurs.
- * Usage : const errors = validate(ContactSchema, formData)
- *         if (errors) { setErrors(errors); return; }
- */
 export function validate<T>(
   schema: z.ZodType<T>,
   data: unknown,

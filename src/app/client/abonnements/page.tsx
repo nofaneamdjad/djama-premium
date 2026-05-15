@@ -12,9 +12,6 @@ import {
 import { supabase } from "@/lib/supabase";
 import StripeButton from "@/components/ui/StripeButton";
 
-/* ═══════════════════════════════════════════════════════════
-   CONSTANTES
-═══════════════════════════════════════════════════════════ */
 const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD = "#c9a55a";
 
@@ -33,9 +30,6 @@ const FEATURES = [
   { Icon: CalendarRange,label: "Planification",            desc: "Planning équipe, emails auto"                 },
 ] as const;
 
-/* ═══════════════════════════════════════════════════════════
-   TYPES
-═══════════════════════════════════════════════════════════ */
 interface ClientRow {
   paid: boolean;
   statut: string;
@@ -44,9 +38,6 @@ interface ClientRow {
   stripe_subscription_id: string | null;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PAGE
-═══════════════════════════════════════════════════════════ */
 export default function AbonnementsPage() {
   const router = useRouter();
   const [client,  setClient]  = useState<ClientRow | null>(null);
@@ -72,21 +63,17 @@ export default function AbonnementsPage() {
 
   const isPaid = client?.paid === true || client?.statut === "actif";
 
-  // Redirect subscribed users — they don't need to see this page
+
   useEffect(() => {
     if (!loading && isPaid) {
       router.replace("/client/dashboard");
     }
   }, [loading, isPaid, router]);
 
-  /* ══════════════════════════════════════════════════════════
-     RENDER
-  ══════════════════════════════════════════════════════════ */
-  return (
+    return (
     <div className="min-h-screen bg-[#0a0f1e]">
 
-      {/* ── Sub-header ── */}
-      <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
+            <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <div className="relative">
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border" style={{ backgroundColor: GOLD + "14", borderColor: GOLD + "30" }}>
@@ -100,11 +87,9 @@ export default function AbonnementsPage() {
         </div>
       </div>
 
-      {/* ── Body ── */}
-      <div className="relative z-10 mx-auto max-w-4xl space-y-8 px-5 py-8 sm:px-8">
+            <div className="relative z-10 mx-auto max-w-4xl space-y-8 px-5 py-8 sm:px-8">
 
-        {/* ── Statut actuel ── */}
-        <AnimatePresence mode="wait">
+                <AnimatePresence mode="wait">
           {loading ? (
             <motion.div key="loading"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -118,8 +103,7 @@ export default function AbonnementsPage() {
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
               className="relative overflow-hidden rounded-2xl border border-[rgba(74,222,128,0.25)] bg-white/[0.025] p-6"
             >
-              {/* Glow */}
-              <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 60% at 0% 50%, rgba(74,222,128,0.07) 0%, transparent 70%)" }} />
+                            <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 60% at 0% 50%, rgba(74,222,128,0.07) 0%, transparent 70%)" }} />
               <div className="relative flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10">
@@ -171,24 +155,20 @@ export default function AbonnementsPage() {
           )}
         </AnimatePresence>
 
-        {/* ── Plan card ── */}
-        <motion.div
+                <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease, delay: 0.1 }}
           className="relative overflow-hidden rounded-2xl border bg-white/[0.025] shadow-[0_16px_60px_rgba(0,0,0,0.5)]"
           style={{ borderColor: GOLD + "28" }}
         >
-          {/* Top gradient bar */}
-          <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${GOLD}00, ${GOLD}, ${GOLD}00)` }} />
+                    <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${GOLD}00, ${GOLD}, ${GOLD}00)` }} />
 
-          {/* Inner glow */}
-          <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${GOLD}08 0%, transparent 60%)` }} />
+                    <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${GOLD}08 0%, transparent 60%)` }} />
 
           <div className="relative p-8 sm:p-10">
 
-            {/* Plan header */}
-            <div className="mb-8 flex items-start justify-between gap-4">
+                        <div className="mb-8 flex items-start justify-between gap-4">
               <div>
                 <div className="mb-3 flex items-center gap-2">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl border" style={{ backgroundColor: GOLD + "14", borderColor: GOLD + "30" }}>

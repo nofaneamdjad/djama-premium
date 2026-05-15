@@ -14,8 +14,6 @@ import { supabase } from "@/lib/supabase";
 import { fmtEur, fmtDate } from "@/lib/format";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
-/* ═══════════════════════════ TYPES ══════════════════════════════════════ */
-
 type TxType   = "income" | "expense";
 type TxStatus = "completed" | "pending" | "cancelled";
 type TxFreq   = "weekly" | "monthly" | "quarterly" | "yearly";
@@ -50,8 +48,6 @@ interface RawDoc {
   total_ttc: number; statut: string;
   date_document: string; date_echeance: string | null;
 }
-
-/* ═══════════════════════════ CONSTANTS ══════════════════════════════════ */
 
 const INCOME_CATS = [
   { v: "client",     l: "Paiement client",  c: "#10b981", I: Users      },
@@ -95,8 +91,6 @@ const FREQUENCIES = [
 
 const ACCOUNT_COLORS = ["#3b82f6","#10b981","#8b5cf6","#f59e0b","#ec4899","#06b6d4","#c9a55a"];
 
-/* ═══════════════════════════ HELPERS ════════════════════════════════════ */
-
 const fmtC  = (n: number, c = "EUR") =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: c, maximumFractionDigits: 0 }).format(n);
 
@@ -115,8 +109,6 @@ const recurringMonthly = (r: Recurring) => {
   const map: Record<TxFreq, number> = { weekly: 4.33, monthly: 1, quarterly: 1/3, yearly: 1/12 };
   return r.amount * (map[r.frequency] ?? 1);
 };
-
-/* ═══════════════════════════ MINI COMPONENTS ════════════════════════════ */
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -138,8 +130,6 @@ function TxBadge({ status }: { status: TxStatus }) {
     </span>
   );
 }
-
-/* ═══════════════════════════ TRANSACTION MODAL ══════════════════════════ */
 
 const BLANK_TX: Partial<Transaction> = {
   type: "expense", category: "autre", label: "", amount: 0,
@@ -191,8 +181,7 @@ function TransactionModal({
           <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X size={18} /></button>
         </div>
 
-        {/* Type toggle */}
-        <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2">
           {(["income", "expense"] as TxType[]).map(t => (
             <button key={t} type="button" onClick={() => { set("type", t); set("category", "autre"); }}
               className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.78rem] font-bold border transition-all"
@@ -207,8 +196,7 @@ function TransactionModal({
           ))}
         </div>
 
-        {/* Label + Amount + Currency */}
-        <Field label="Libellé">
+                <Field label="Libellé">
           <input className={inp} placeholder="Ex: Paiement facture FACT-042"
             value={form.label ?? ""} onChange={e => set("label", e.target.value)} />
         </Field>
@@ -226,8 +214,7 @@ function TransactionModal({
           </Field>
         </div>
 
-        {/* Category */}
-        <Field label="Catégorie">
+                <Field label="Catégorie">
           <div className="grid grid-cols-4 gap-1.5">
             {cats.map(({ v, l, c, I }) => (
               <button key={v} type="button" onClick={() => set("category", v)}
@@ -243,8 +230,7 @@ function TransactionModal({
           </div>
         </Field>
 
-        {/* Date + Status + Payment */}
-        <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-3">
           <Field label="Date">
             <input type="date" className={inp} value={form.date ?? ""} onChange={e => set("date", e.target.value)} />
           </Field>
@@ -260,8 +246,7 @@ function TransactionModal({
           </Field>
         </div>
 
-        {/* Client/Supplier + Invoice ref */}
-        <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
           <Field label={form.type === "income" ? "Client" : "Fournisseur"}>
             <input className={inp} placeholder="Nom" value={form.client_supplier ?? ""}
               onChange={e => set("client_supplier", e.target.value)} />
@@ -272,8 +257,7 @@ function TransactionModal({
           </Field>
         </div>
 
-        {/* Compte */}
-        {accounts.length > 0 && (
+                {accounts.length > 0 && (
           <Field label="Compte bancaire">
             <select className={inp} value={form.account_id ?? ""} onChange={e => set("account_id", e.target.value || null)}>
               <option value="">— Sans compte —</option>
@@ -282,8 +266,7 @@ function TransactionModal({
           </Field>
         )}
 
-        {/* Notes */}
-        <Field label="Notes">
+                <Field label="Notes">
           <textarea rows={2} className={`${inp} resize-none`} placeholder="Notes…"
             value={form.notes ?? ""} onChange={e => set("notes", e.target.value)} />
         </Field>
@@ -299,8 +282,6 @@ function TransactionModal({
     </motion.div>
   );
 }
-
-/* ═══════════════════════════ ACCOUNT MODAL ══════════════════════════════ */
 
 function AccountModal({
   account, userId, onSave, onClose,
@@ -376,8 +357,6 @@ function AccountModal({
     </motion.div>
   );
 }
-
-/* ═══════════════════════════ RECURRING MODAL ════════════════════════════ */
 
 function RecurringModal({
   item, userId, onSave, onClose,
@@ -477,8 +456,6 @@ function RecurringModal({
   );
 }
 
-/* ═══════════════════════════ DASHBOARD VIEW ══════════════════════════════ */
-
 function DashboardView({
   transactions, accounts, recurring, invoices,
 }: {
@@ -508,7 +485,7 @@ function DashboardView({
   const incomePct  = lastIncome  > 0 ? ((thisIncome  - lastIncome)  / lastIncome  * 100) : 0;
   const expensePct = lastExpense > 0 ? ((thisExpense - lastExpense) / lastExpense * 100) : 0;
 
-  // Cashflow chart — 6 months
+
   const months6 = Array.from({ length: 6 }, (_, i) => {
     const d   = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
     const key = monthKey(d);
@@ -518,7 +495,7 @@ function DashboardView({
   });
   const maxVal = Math.max(...months6.flatMap(m => [m.inc, m.exp]), 1);
 
-  // Alerts
+
   const overdue = invoices.filter(inv => {
     if (!inv.date_echeance || inv.statut === "payé") return false;
     return new Date(inv.date_echeance) < now;
@@ -538,8 +515,7 @@ function DashboardView({
 
   return (
     <div className="space-y-5">
-      {/* Alerts */}
-      {(overdue.length > 0 || (totalBalance > 0 && forecast30 < 0)) && (
+            {(overdue.length > 0 || (totalBalance > 0 && forecast30 < 0)) && (
         <div className="space-y-2">
           {forecast30 < 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
@@ -561,8 +537,7 @@ function DashboardView({
         </div>
       )}
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {KPI.map(({ l, v, c, sub, I, delta }) => (
           <div key={l} className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-2">
             <div className="flex items-center justify-between">
@@ -587,8 +562,7 @@ function DashboardView({
         ))}
       </div>
 
-      {/* Cashflow Chart */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Cashflow — 6 mois</h3>
           <div className="flex items-center gap-3 text-[0.62rem] text-white/30">
@@ -614,8 +588,7 @@ function DashboardView({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Upcoming recurring */}
-        {upcoming30.length > 0 && (
+                {upcoming30.length > 0 && (
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
             <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Prochains paiements</h3>
             <div className="space-y-2">
@@ -637,8 +610,7 @@ function DashboardView({
           </div>
         )}
 
-        {/* Recent transactions */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Dernières transactions</h3>
           {recent5.length === 0
             ? <p className="py-4 text-center text-[0.72rem] text-white/20">Aucune transaction</p>
@@ -670,8 +642,6 @@ function DashboardView({
     </div>
   );
 }
-
-/* ═══════════════════════════ TRANSACTIONS VIEW ═══════════════════════════ */
 
 function TransactionsView({
   transactions, accounts, userId, onAdd, onEdit, onDelete, onStatusChange,
@@ -705,8 +675,7 @@ function TransactionsView({
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2">
           <Search size={13} className="shrink-0 text-white/25" />
           <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
@@ -737,8 +706,7 @@ function TransactionsView({
         </button>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
           <p className="text-[0.65rem] font-medium text-white/35">Entrées (filtré)</p>
           <p className="mt-0.5 text-base font-bold text-green-400">{fmtC(totalIn)}</p>
@@ -753,8 +721,7 @@ function TransactionsView({
         </div>
       </div>
 
-      {/* List */}
-      {filtered.length === 0 ? (
+            {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <Receipt size={32} className="text-white/10" />
           <p className="text-[0.78rem] text-white/30">Aucune transaction trouvée</p>
@@ -822,8 +789,6 @@ function TransactionsView({
   );
 }
 
-/* ═══════════════════════════ PRÉVISIONS VIEW ════════════════════════════ */
-
 function PrevisionsView({
   transactions, accounts, recurring, invoices, userId,
   onRecurringAdd, onRecurringEdit, onRecurringDelete,
@@ -847,11 +812,11 @@ function PrevisionsView({
   const mrrExpense = recurring.filter(r => r.active && r.type === "expense").reduce((a, r) => a + recurringMonthly(r), 0);
   const months     = horizon / 30;
 
-  // Expected income from open invoices
+
   const openInvoices = invoices.filter(inv => inv.statut !== "payé").reduce((a, inv) => a + inv.total_ttc, 0);
   const forecast = totalBalance + (mrrIncome - mrrExpense) * months + (horizon <= 90 ? openInvoices : 0);
 
-  // Monthly forecast points for chart
+
   const forecastPoints = Array.from({ length: Math.min(Math.ceil(months), 12) }, (_, i) => ({
     label: new Date(new Date().getFullYear(), new Date().getMonth() + i + 1, 1).toLocaleDateString("fr-FR", { month: "short" }),
     value: totalBalance + (mrrIncome - mrrExpense) * (i + 1),
@@ -865,8 +830,7 @@ function PrevisionsView({
 
   return (
     <div className="space-y-5">
-      {/* Summary bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
           <p className="text-[0.65rem] font-medium text-white/35">Solde actuel</p>
           <p className="mt-0.5 text-lg font-bold text-white">{fmtC(totalBalance)}</p>
@@ -887,8 +851,7 @@ function PrevisionsView({
         </div>
       </div>
 
-      {/* Horizon selector + forecast */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-4">
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 className="text-[0.78rem] font-bold text-white">Projection trésorerie</h3>
@@ -918,8 +881,7 @@ function PrevisionsView({
           }
         </div>
 
-        {/* Mini forecast chart */}
-        {forecastPoints.length > 0 && (
+                {forecastPoints.length > 0 && (
           <div className="flex items-end gap-1.5" style={{ height: "60px" }}>
             {forecastPoints.map(({ label, value }) => (
               <div key={label} className="flex flex-1 flex-col items-center gap-1">
@@ -943,8 +905,7 @@ function PrevisionsView({
         )}
       </div>
 
-      {/* Recurring items */}
-      <div className="space-y-3">
+            <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-[0.78rem] font-bold text-white">Éléments récurrents</h3>
           <button onClick={() => { setEditItem(null); setShowModal(true); }}
@@ -1032,8 +993,6 @@ function PrevisionsView({
   );
 }
 
-/* ═══════════════════════════ COMPTES VIEW ════════════════════════════════ */
-
 function ComptesView({
   accounts, userId, transactions,
   onAccountAdd, onAccountEdit, onAccountDelete,
@@ -1058,7 +1017,7 @@ function ComptesView({
   function parseCSV(text: string): Partial<Transaction>[] {
     const lines = text.trim().split("\n").filter(Boolean);
     const result: Partial<Transaction>[] = [];
-    for (let i = 1; i < lines.length; i++) {  // skip header
+    for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(/[,;]/).map(c => c.trim().replace(/^"|"$/g, ""));
       const [date, label, amountStr, type, category] = cols;
       const amount = parseFloat(amountStr?.replace(",", ".") ?? "0");
@@ -1147,8 +1106,7 @@ function ComptesView({
         </div>
       )}
 
-      {/* CSV Import */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
         <div className="flex items-center gap-3">
           <Download size={15} className="text-white/30" />
           <div>
@@ -1217,8 +1175,6 @@ function ComptesView({
   );
 }
 
-/* ═══════════════════════════ RAPPORT VIEW ════════════════════════════════ */
-
 function RapportView({ transactions, recurring, accounts }: {
   transactions: Transaction[];
   recurring: Recurring[];
@@ -1227,7 +1183,7 @@ function RapportView({ transactions, recurring, accounts }: {
   const now   = new Date();
   const valid = transactions.filter(t => t.status === "completed");
 
-  // Last 3 months avg burn
+
   const last3Months = Array.from({ length: 3 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     return valid.filter(t => t.type === "expense" && t.date.startsWith(monthKey(d))).reduce((a, t) => a + t.amount, 0);
@@ -1244,7 +1200,7 @@ function RapportView({ transactions, recurring, accounts }: {
   const thisExpense = valid.filter(t => t.type === "expense" && t.date.startsWith(thisMonth)).reduce((a, t) => a + t.amount, 0);
   const margin = thisIncome > 0 ? ((thisIncome - thisExpense) / thisIncome * 100) : 0;
 
-  // Expense breakdown
+
   const byExpCat: Record<string, number> = {};
   valid.filter(t => t.type === "expense").forEach(t => {
     byExpCat[t.category] = (byExpCat[t.category] ?? 0) + t.amount;
@@ -1252,7 +1208,7 @@ function RapportView({ transactions, recurring, accounts }: {
   const expCatList = Object.entries(byExpCat).sort((a, b) => b[1] - a[1]);
   const maxExpCat  = expCatList[0]?.[1] ?? 1;
 
-  // Income breakdown
+
   const byIncCat: Record<string, number> = {};
   valid.filter(t => t.type === "income").forEach(t => {
     byIncCat[t.category] = (byIncCat[t.category] ?? 0) + t.amount;
@@ -1271,8 +1227,7 @@ function RapportView({ transactions, recurring, accounts }: {
 
   return (
     <div className="space-y-5">
-      {/* Advanced KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {advKPI.map(({ l, v, sub, c }) => (
           <div key={l} className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-1">
             <p className="text-[0.65rem] font-medium text-white/35">{l}</p>
@@ -1283,8 +1238,7 @@ function RapportView({ transactions, recurring, accounts }: {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Expense breakdown */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Répartition dépenses</h3>
           {expCatList.length === 0
             ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
@@ -1308,8 +1262,7 @@ function RapportView({ transactions, recurring, accounts }: {
           }
         </div>
 
-        {/* Income breakdown */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Répartition revenus</h3>
           {incCatList.length === 0
             ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucun revenu</p>
@@ -1336,8 +1289,6 @@ function RapportView({ transactions, recurring, accounts }: {
     </div>
   );
 }
-
-/* ═══════════════════════════ MAIN PAGE ══════════════════════════════════ */
 
 export default function TresoreriePage() {
   const [userId,       setUserId]       = useState<string | null>(null);
@@ -1375,8 +1326,7 @@ export default function TresoreriePage() {
 
   useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
 
-  /* ── Transaction CRUD ── */
-  async function deleteTx(id: string) {
+    async function deleteTx(id: string) {
     if (!confirm("Supprimer cette transaction ?")) return;
     const { error } = await supabase.from("treasury_transactions").delete().eq("id", id);
     if (error) return toast$("Erreur", "error");
@@ -1390,8 +1340,7 @@ export default function TresoreriePage() {
     setTransactions(ts => ts.map(t => t.id === id ? { ...t, status } : t));
   }
 
-  /* ── Account CRUD ── */
-  async function deleteAccount(id: string) {
+    async function deleteAccount(id: string) {
     if (!confirm("Supprimer ce compte ?")) return;
     const { error } = await supabase.from("treasury_accounts").delete().eq("id", id);
     if (error) return toast$("Erreur", "error");
@@ -1399,8 +1348,7 @@ export default function TresoreriePage() {
     toast$("Compte supprimé");
   }
 
-  /* ── Recurring CRUD ── */
-  async function deleteRecurring(id: string) {
+    async function deleteRecurring(id: string) {
     if (!confirm("Supprimer cet élément récurrent ?")) return;
     const { error } = await supabase.from("treasury_recurring").delete().eq("id", id);
     if (error) return toast$("Erreur", "error");
@@ -1408,8 +1356,7 @@ export default function TresoreriePage() {
     toast$("Élément supprimé");
   }
 
-  /* ── Export CSV ── */
-  function exportCSV() {
+    function exportCSV() {
     const h = ["Date","Libellé","Montant","Type","Catégorie","Statut","Client/Fournisseur","Réf. facture"];
     const rows = transactions.map(t => [
       t.date, `"${t.label}"`, t.amount, t.type === "income" ? "Entrée" : "Sortie",
@@ -1445,8 +1392,7 @@ export default function TresoreriePage() {
         {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       </AnimatePresence>
 
-      {/* ── Header ── */}
-      <div className="shrink-0 flex items-center justify-between gap-4 border-b border-white/[0.05] p-4 sm:p-6">
+            <div className="shrink-0 flex items-center justify-between gap-4 border-b border-white/[0.05] p-4 sm:p-6">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white">Trésorerie</h1>
           <p className="mt-0.5 text-[0.65rem] text-white/30">
@@ -1460,8 +1406,7 @@ export default function TresoreriePage() {
         </button>
       </div>
 
-      {/* ── Tabs ── */}
-      <div className="shrink-0 flex gap-0.5 overflow-x-auto border-b border-white/[0.05] px-3 py-2 sm:px-6 scrollbar-none">
+            <div className="shrink-0 flex gap-0.5 overflow-x-auto border-b border-white/[0.05] px-3 py-2 sm:px-6 scrollbar-none">
         {TABS.map(({ id, l, I, badge }) => (
           <button key={id} onClick={() => setTab(id as typeof tab)}
             className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-[0.72rem] font-semibold transition-all ${
@@ -1475,8 +1420,7 @@ export default function TresoreriePage() {
         ))}
       </div>
 
-      {/* ── Content ── */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <AnimatePresence mode="wait">
 
           {tab === "dashboard" && (

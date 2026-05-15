@@ -13,8 +13,6 @@ import {
 import { supabase as supabaseClient } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
-/* ═══════════════════════════ TYPES ═══════════════════════════════════════ */
-
 type ExpCat =
   | "transport" | "repas"   | "logiciel"  | "carburant" | "hotel"
   | "equipement"| "communication" | "formation" | "publicite"
@@ -50,8 +48,6 @@ interface ExpenseBudget {
   year: number; month: number | null;
   created_at: string;
 }
-
-/* ═══════════════════════════ CONSTANTS ══════════════════════════════════ */
 
 const CATS = [
   { v: "transport",     l: "Transport",     I: Car,        c: "#3b82f6" },
@@ -93,8 +89,6 @@ const BLANK: Partial<Expense> = {
   receipt_url: "", invoice_number: "", project: "", cost_center: "", notes: "",
 };
 
-/* ═══════════════════════════ HELPERS ════════════════════════════════════ */
-
 const fmtCur = (n: number, c = "EUR") =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: c, minimumFractionDigits: 2 }).format(n);
 
@@ -108,8 +102,6 @@ const fmtMonthYear = (ym: string) => {
 
 const getCat = (v: string) => CATS.find(c => c.v === v) ?? CATS[CATS.length - 1];
 const getSt  = (v: string) => STATUSES.find(s => s.v === v) ?? STATUSES[0];
-
-/* ═══════════════════════════ MINI COMPONENTS ════════════════════════════ */
 
 function CatBadge({ cat }: { cat: ExpCat }) {
   const { I, l, c } = getCat(cat);
@@ -141,8 +133,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inp = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all";
-
-/* ═══════════════════════════ EXPENSE MODAL ══════════════════════════════ */
 
 function ExpenseModal({
   expense, reports, userId, onSave, onClose,
@@ -210,8 +200,7 @@ function ExpenseModal({
           <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X size={18} /></button>
         </div>
 
-        {/* Date · Montant · Devise */}
-        <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-3">
           <Field label="Date">
             <input type="date" value={form.date ?? ""} onChange={e => set("date", e.target.value)} className={inp} />
           </Field>
@@ -226,14 +215,12 @@ function ExpenseModal({
           </Field>
         </div>
 
-        {/* Description */}
-        <Field label="Description / Motif">
+                <Field label="Description / Motif">
           <input type="text" placeholder="Ex: Déjeuner client Paris"
             value={form.description ?? ""} onChange={e => set("description", e.target.value)} className={inp} />
         </Field>
 
-        {/* Catégorie */}
-        <Field label="Catégorie">
+                <Field label="Catégorie">
           <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
             {CATS.map(({ v, l, I, c }) => (
               <button key={v} type="button" onClick={() => set("category", v)}
@@ -250,8 +237,7 @@ function ExpenseModal({
           </div>
         </Field>
 
-        {/* Paiement · Statut */}
-        <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
           <Field label="Moyen de paiement">
             <select value={form.payment_method ?? "carte_pro"} onChange={e => set("payment_method", e.target.value)} className={inp}>
               {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
@@ -264,8 +250,7 @@ function ExpenseModal({
           </Field>
         </div>
 
-        {/* TVA */}
-        <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
           <Field label="Montant TVA (€)">
             <input type="number" step="0.01" min="0" placeholder="0.00"
               value={form.vat_amount ?? ""} onChange={e => set("vat_amount", parseFloat(e.target.value) || 0)} className={inp} />
@@ -283,8 +268,7 @@ function ExpenseModal({
           </Field>
         </div>
 
-        {/* N° Facture · Projet · Centre de coût */}
-        <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-3">
           <Field label="N° Facture">
             <input type="text" placeholder="FACT-001"
               value={form.invoice_number ?? ""} onChange={e => set("invoice_number", e.target.value)} className={inp} />
@@ -299,8 +283,7 @@ function ExpenseModal({
           </Field>
         </div>
 
-        {/* Note de frais */}
-        {reports.length > 0 && (
+                {reports.length > 0 && (
           <Field label="Note de frais associée">
             <select value={form.expense_report_id ?? ""} onChange={e => set("expense_report_id", e.target.value || null)} className={inp}>
               <option value="">— Sans note de frais —</option>
@@ -309,15 +292,13 @@ function ExpenseModal({
           </Field>
         )}
 
-        {/* Notes */}
-        <Field label="Notes internes">
+                <Field label="Notes internes">
           <textarea rows={2} placeholder="Notes…"
             value={form.notes ?? ""} onChange={e => set("notes", e.target.value)}
             className={`${inp} resize-none`} />
         </Field>
 
-        {/* Justificatif */}
-        <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 space-y-2.5">
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-[0.65rem] font-medium text-white/35">Justificatif</span>
             <button type="button" onClick={() => setOcrHint(h => !h)}
@@ -336,8 +317,7 @@ function ExpenseModal({
                 {/\.(jpe?g|png|webp)$/i.test(form.receipt_url) ? (
                   <a href={form.receipt_url} target="_blank" rel="noreferrer"
                     className="block overflow-hidden rounded-xl border border-white/[0.08]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={form.receipt_url} alt="Justificatif" className="w-full max-h-36 object-cover" />
+                                        <img src={form.receipt_url} alt="Justificatif" className="w-full max-h-36 object-cover" />
                   </a>
                 ) : (
                   <a href={form.receipt_url} target="_blank" rel="noreferrer"
@@ -366,8 +346,7 @@ function ExpenseModal({
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2 pt-1">
+                <div className="flex gap-2 pt-1">
           <button type="button" onClick={onClose}
             className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40 hover:text-white/60 transition-colors">
             Annuler
@@ -381,8 +360,6 @@ function ExpenseModal({
     </motion.div>
   );
 }
-
-/* ═══════════════════════════ REPORT MODAL ═══════════════════════════════ */
 
 function ReportModal({
   report, onSave, onClose,
@@ -449,8 +426,6 @@ function ReportModal({
   );
 }
 
-/* ═══════════════════════════ BUDGET INPUT ═══════════════════════════════ */
-
 function BudgetInput({ value, onSave, color }: { value: number; onSave: (v: number) => void; color: string }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(value));
@@ -471,8 +446,6 @@ function BudgetInput({ value, onSave, color }: { value: number; onSave: (v: numb
       style={{ borderColor: color + "44" }} />
   );
 }
-
-/* ═══════════════════════════ BUDGET VIEW ════════════════════════════════ */
 
 function BudgetView({
   expenses, budgets, userId, onBudgetsChange,
@@ -572,8 +545,6 @@ function BudgetView({
   );
 }
 
-/* ═══════════════════════════ RAPPORT VIEW ═══════════════════════════════ */
-
 function RapportView({ expenses }: { expenses: Expense[] }) {
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -609,7 +580,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
       key,
       total: valid.filter(e => e.date.startsWith(key)).reduce((a, e) => a + e.amount, 0),
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }), [valid]);
 
   const maxTrend = Math.max(...trend.map(t => t.total), 1);
@@ -628,8 +599,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
 
   return (
     <div className="space-y-5">
-      {/* KPI */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {KPI.map(({ l, v, sub, c }) => (
           <div key={l} className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-1">
             <p className="text-[0.65rem] font-medium text-white/35">{l}</p>
@@ -640,8 +610,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Trend 6 mois */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Tendance 6 mois</h3>
           <div className="flex items-end gap-2" style={{ height: "100px" }}>
             {trend.map(({ label, key, total }) => (
@@ -662,8 +631,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
           </div>
         </div>
 
-        {/* Par catégorie */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Par catégorie</h3>
           {byCat.length === 0
             ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
@@ -692,8 +660,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Par moyen de paiement */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Par moyen de paiement</h3>
           {byPay.length === 0
             ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
@@ -725,8 +692,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
             )}
         </div>
 
-        {/* Top 5 dépenses */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
           <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Top dépenses</h3>
           {top5.length === 0
             ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
@@ -749,8 +715,6 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
     </div>
   );
 }
-
-/* ═══════════════════════════ MAIN PAGE ══════════════════════════════════ */
 
 export default function DepensesPage() {
   const supabase = supabaseClient;
@@ -778,7 +742,7 @@ export default function DepensesPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => { if (data.user) setUserId(data.user.id); });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   const loadAll = useCallback(async () => {
@@ -793,13 +757,12 @@ export default function DepensesPage() {
     if (rRes.data) setReports(rRes.data as ExpenseReport[]);
     if (bRes.data) setBudgets(bRes.data as ExpenseBudget[]);
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [userId]);
 
   useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
 
-  /* ── Filters ── */
-  const filtered = useMemo(() => expenses.filter(e => {
+    const filtered = useMemo(() => expenses.filter(e => {
     if (search && !e.description.toLowerCase().includes(search.toLowerCase()) &&
         !e.project.toLowerCase().includes(search.toLowerCase()) &&
         !e.invoice_number.toLowerCase().includes(search.toLowerCase())) return false;
@@ -815,8 +778,7 @@ export default function DepensesPage() {
   const filteredReimb = useMemo(() => filtered.filter(e => e.payment_method === "carte_perso" && e.status !== "reimbursed" && e.status !== "rejected").reduce((a, e) => a + e.amount, 0), [filtered]);
   const hasFilters    = !!(search || filterCat || filterSt || filterMonth || filterPay);
 
-  /* ── Expense CRUD ── */
-  async function deleteExpense(id: string) {
+    async function deleteExpense(id: string) {
     if (!confirm("Supprimer cette dépense ?")) return;
     const { error } = await supabase.from("expenses").delete().eq("id", id);
     if (error) return toast$("Erreur de suppression", "error");
@@ -831,8 +793,7 @@ export default function DepensesPage() {
     toast$("Statut mis à jour");
   }
 
-  /* ── Report CRUD ── */
-  async function saveReport(form: Partial<ExpenseReport>) {
+    async function saveReport(form: Partial<ExpenseReport>) {
     if (!form.title?.trim() || !userId) return;
     if (editReport) {
       const { data, error } = await supabase.from("expense_reports").update(form).eq("id", editReport.id).select().single();
@@ -858,8 +819,7 @@ export default function DepensesPage() {
     toast$("Note supprimée");
   }
 
-  /* ── Export CSV ── */
-  function exportCSV() {
+    function exportCSV() {
     const h = ["Date","Description","Catégorie","Montant","Devise","TVA","TVA récup.","Paiement","Statut","Projet","Centre coût","N° Facture"];
     const rows = filtered.map(e => [
       e.date, `"${e.description}"`, getCat(e.category).l,
@@ -895,8 +855,7 @@ export default function DepensesPage() {
         {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       </AnimatePresence>
 
-      {/* ── Header ── */}
-      <div className="shrink-0 flex items-center justify-between gap-4 border-b border-white/[0.05] p-4 sm:p-6">
+            <div className="shrink-0 flex items-center justify-between gap-4 border-b border-white/[0.05] p-4 sm:p-6">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white">Dépenses</h1>
           <p className="mt-0.5 text-[0.65rem] text-white/30">
@@ -915,8 +874,7 @@ export default function DepensesPage() {
         </div>
       </div>
 
-      {/* ── Tabs ── */}
-      <div className="shrink-0 flex gap-1 border-b border-white/[0.05] px-3 py-2 sm:px-6">
+            <div className="shrink-0 flex gap-1 border-b border-white/[0.05] px-3 py-2 sm:px-6">
         {TABS.map(({ id, l, I, badge }) => (
           <button key={id} onClick={() => setTab(id as typeof tab)}
             className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[0.72rem] font-semibold transition-all ${
@@ -930,17 +888,14 @@ export default function DepensesPage() {
         ))}
       </div>
 
-      {/* ── Content ── */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <AnimatePresence mode="wait">
 
-          {/* ════ DÉPENSES ════ */}
-          {tab === "depenses" && (
+                    {tab === "depenses" && (
             <motion.div key="dep" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="space-y-4">
 
-              {/* KPI cards */}
-              <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-3 gap-3">
                 {[
                   { l: "Total (filtré)",  v: fmtCur(filteredTotal), c: "#c9a55a" },
                   { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#10b981" },
@@ -953,8 +908,7 @@ export default function DepensesPage() {
                 ))}
               </div>
 
-              {/* Filters */}
-              <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2">
                 <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                   <Search size={13} className="shrink-0 text-white/25" />
                   <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
@@ -985,8 +939,7 @@ export default function DepensesPage() {
                 )}
               </div>
 
-              {/* List */}
-              {filtered.length === 0 ? (
+                            {filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
                   <Receipt size={32} className="text-white/10" />
                   <p className="text-[0.78rem] text-white/30">
@@ -1063,8 +1016,7 @@ export default function DepensesPage() {
                     })}
                   </AnimatePresence>
 
-                  {/* Totals footer */}
-                  <div className="flex flex-wrap items-center justify-end gap-4 rounded-xl border border-white/[0.04] bg-white/[0.01] px-4 py-2.5 text-[0.72rem]">
+                                    <div className="flex flex-wrap items-center justify-end gap-4 rounded-xl border border-white/[0.04] bg-white/[0.01] px-4 py-2.5 text-[0.72rem]">
                     <span className="text-white/30">{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</span>
                     <span className="text-white/50">TVA rép. : <span className="font-semibold text-green-400">{fmtCur(filteredVAT)}</span></span>
                     <span className="font-bold text-white">Total : {fmtCur(filteredTotal)}</span>
@@ -1074,8 +1026,7 @@ export default function DepensesPage() {
             </motion.div>
           )}
 
-          {/* ════ NOTES DE FRAIS ════ */}
-          {tab === "notes" && (
+                    {tab === "notes" && (
             <motion.div key="notes" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="space-y-4">
               <div className="flex justify-end">
@@ -1160,8 +1111,7 @@ export default function DepensesPage() {
             </motion.div>
           )}
 
-          {/* ════ BUDGETS ════ */}
-          {tab === "budgets" && (
+                    {tab === "budgets" && (
             <motion.div key="bud" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               {userId && (
                 <BudgetView
@@ -1172,8 +1122,7 @@ export default function DepensesPage() {
             </motion.div>
           )}
 
-          {/* ════ RAPPORT ════ */}
-          {tab === "rapport" && (
+                    {tab === "rapport" && (
             <motion.div key="rap" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               <RapportView expenses={expenses} />
             </motion.div>
@@ -1182,8 +1131,7 @@ export default function DepensesPage() {
         </AnimatePresence>
       </div>
 
-      {/* ── Modals ── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showModal && userId && (
           <ExpenseModal
             expense={editExpense} reports={reports} userId={userId}

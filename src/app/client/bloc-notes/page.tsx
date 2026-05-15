@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * Notes IA — v4
- * 8 types • dossiers • tags • archive • 9 actions IA
- * templates • versions • export PDF/TXT/MD
- */
-
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,9 +14,6 @@ import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
-/* ═══════════════════════════════════════════════════════════
-   TYPES
-═══════════════════════════════════════════════════════════ */
 type NoteType =
   | "texte" | "checklist" | "réunion" | "idée"
   | "compte-rendu" | "journal" | "code" | "vocal";
@@ -59,9 +50,6 @@ interface NoteFolder {
 
 type VoiceState = "idle" | "recording" | "paused" | "stopped";
 
-/* ═══════════════════════════════════════════════════════════
-   CONSTANTS
-═══════════════════════════════════════════════════════════ */
 const amber = "#f59e0b";
 const ease  = [0.16, 1, 0.3, 1] as const;
 const CHUNK_MS = 5 * 60 * 1000;
@@ -104,7 +92,6 @@ const TEMPLATES: { label: string; type: NoteType; icon: LucideIcon; content: str
 
 **Notes :**
 
-
 **Décisions prises :**
 -
 
@@ -119,7 +106,6 @@ const TEMPLATES: { label: string; type: NoteType; icon: LucideIcon; content: str
     content:`# Brainstorming
 
 **Idée principale :**
-
 
 **Pistes à explorer :**
 -
@@ -140,7 +126,6 @@ const TEMPLATES: { label: string; type: NoteType; icon: LucideIcon; content: str
 
 **Objectif :**
 
-
 **Étapes clés :**
 1.
 2.
@@ -151,9 +136,7 @@ const TEMPLATES: { label: string; type: NoteType; icon: LucideIcon; content: str
 
 **Budget estimé :**
 
-
 **Deadline :**
-
 
 **Risques :**
 - `,
@@ -164,7 +147,6 @@ const TEMPLATES: { label: string; type: NoteType; icon: LucideIcon; content: str
 
 **Aujourd'hui :**
 
-
 **Ce qui s'est bien passé :**
 -
 
@@ -172,7 +154,6 @@ const TEMPLATES: { label: string; type: NoteType; icon: LucideIcon; content: str
 -
 
 **Apprentissages :**
-
 
 **Demain :**
 - [ ] `,
@@ -191,7 +172,6 @@ Le problème que l'on résout :
 
 ## Solution
 
-
 ## Marché cible
 **Segment :**
 
@@ -199,9 +179,7 @@ Le problème que l'on résout :
 
 ## Modèle de revenus
 
-
 ## Concurrence
-
 
 ## Objectifs (6 mois)
 - [ ]
@@ -221,12 +199,10 @@ Le problème que l'on résout :
 
 ## Concepts importants
 
-
 ## Questions à creuser
 -
 
 ## Résumé
-
 
 ## Prochaines étapes
 - [ ] `,
@@ -235,12 +211,9 @@ Le problème que l'on résout :
 
 const FOLDER_COLORS = ["#a78bfa","#60a5fa","#4ade80","#f59e0b","#f472b6","#38bdf8","#fb923c"];
 
-/* ═══════════════════════════════════════════════════════════
-   HELPERS
-═══════════════════════════════════════════════════════════ */
 const getNoteType = (n: Note): NoteType => {
   if (n.note_type) return n.note_type;
-  // Fallback from old category
+
   const map: Record<string, NoteType> = { réunion:"réunion", idées:"idée", tâches:"checklist", personnel:"journal" };
   return map[n.category] ?? "texte";
 };
@@ -268,9 +241,6 @@ function getCheckProgress(content: string) {
   return { total, done };
 }
 
-/* ═══════════════════════════════════════════════════════════
-   CHECKLIST VIEW (tri-state)
-═══════════════════════════════════════════════════════════ */
 function ChecklistView({ content, onToggle }: { content: string; onToggle: (c: string) => void }) {
   const lines = content.split("\n");
   function cycle(i: number) {
@@ -312,26 +282,20 @@ function ChecklistView({ content, onToggle }: { content: string; onToggle: (c: s
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MAIN PAGE
-═══════════════════════════════════════════════════════════ */
 export default function BlocNotesPage() {
 
-  /* ── Data ── */
-  const [notes,   setNotes]   = useState<Note[]>([]);
+    const [notes,   setNotes]   = useState<Note[]>([]);
   const [folders, setFolders] = useState<NoteFolder[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* ── Selection / filters ── */
-  const [selected,      setSelected]      = useState<Note|null>(null);
+    const [selected,      setSelected]      = useState<Note|null>(null);
   const [filter,        setFilter]        = useState<"all"|"favorites"|"archived"|string>("all");
   const [typeFilter,    setTypeFilter]    = useState<NoteType|"all">("all");
   const [search,        setSearch]        = useState("");
   const [sortBy,        setSortBy]        = useState<SortBy>("date");
   const [favSet,        setFavSet]        = useState<Set<string>>(new Set());
 
-  /* ── Editor state ── */
-  const [dTitle,    setDTitle]    = useState("");
+    const [dTitle,    setDTitle]    = useState("");
   const [dContent,  setDContent]  = useState("");
   const [dType,     setDType]     = useState<NoteType>("texte");
   const [dFolderId, setDFolderId] = useState<string|null>(null);
@@ -341,10 +305,9 @@ export default function BlocNotesPage() {
   const [isDirty,   setIsDirty]   = useState(false);
   const [isSaving,  setIsSaving]  = useState(false);
   const [savedAgo,  setSavedAgo]  = useState("");
-  const [prevSnap,  setPrevSnap]  = useState<string|null>(null); // version before AI
+  const [prevSnap,  setPrevSnap]  = useState<string|null>(null);
 
-  /* ── UI ── */
-  const [view,          setView]          = useState<AppView>("list");
+    const [view,          setView]          = useState<AppView>("list");
   const [toast,         setToast]         = useState<ToastData|null>(null);
   const [aiPanel,       setAiPanel]       = useState(false);
   const [aiAction,      setAiAction]      = useState<AiAction>("improve");
@@ -359,14 +322,12 @@ export default function BlocNotesPage() {
   const [newFolderColor,setNewFolderColor]= useState("#a78bfa");
   const [exportMenu,    setExportMenu]    = useState(false);
 
-  /* ── Voice ── */
-  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+    const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [voiceSec,   setVoiceSec]   = useState(0);
   const [voiceTxt,   setVoiceTxt]   = useState("");
   const [voiceLoad,  setVoiceLoad]  = useState(false);
 
-  /* ── Refs ── */
-  const textareaRef  = useRef<HTMLTextAreaElement>(null);
+    const textareaRef  = useRef<HTMLTextAreaElement>(null);
   const saveRef      = useRef<(s?: boolean)=>Promise<void>>(async()=>{});
   const debRef       = useRef<ReturnType<typeof setTimeout>|null>(null);
   const timerRef     = useRef<ReturnType<typeof setInterval>|null>(null);
@@ -377,11 +338,9 @@ export default function BlocNotesPage() {
   const txRef        = useRef("");
   const voiceSecRef  = useRef(0);
 
-  /* ── Toast ── */
-  const showToast = (type: "success"|"error"|"info", msg: string) => setToast({type,msg} as ToastData);
+    const showToast = (type: "success"|"error"|"info", msg: string) => setToast({type,msg} as ToastData);
 
-  /* ── Fetch ── */
-  const fetchAll = useCallback(async () => {
+    const fetchAll = useCallback(async () => {
     setLoading(true);
     const [nRes, fRes] = await Promise.all([
       supabase.from("notes").select("*").order("updated_at",{ascending:false}).limit(500),
@@ -395,8 +354,7 @@ export default function BlocNotesPage() {
 
   useEffect(() => { void fetchAll() }, [fetchAll]);
 
-  /* ── Load note into editor ── */
-  const openNote = useCallback((n: Note) => {
+    const openNote = useCallback((n: Note) => {
     setSelected(n);
     setDTitle(n.title);
     setDContent(n.content);
@@ -412,8 +370,7 @@ export default function BlocNotesPage() {
     setView("editor");
   }, []);
 
-  /* ── New note ── */
-  const createNote = useCallback((type: NoteType = "texte", templateContent = "") => {
+    const createNote = useCallback((type: NoteType = "texte", templateContent = "") => {
     setSelected(null);
     setDTitle("");
     setDContent(templateContent);
@@ -429,8 +386,7 @@ export default function BlocNotesPage() {
     setView("editor");
   }, []);
 
-  /* ── Save ── */
-  const handleSave = useCallback(async (silent = false) => {
+    const handleSave = useCallback(async (silent = false) => {
     if (!dTitle.trim() && !dContent.trim()) return;
     setIsSaving(true);
     const { data:{user} } = await supabase.auth.getUser();
@@ -440,7 +396,7 @@ export default function BlocNotesPage() {
       title:         dTitle.trim() || "Sans titre",
       content:       dContent,
       note_type:     dType,
-      category:      dType, // keep for backward compat
+      category:      dType,
       folder_id:     dFolderId,
       tags:          dTags,
       linked_entity: dLinked.trim(),
@@ -470,16 +426,14 @@ export default function BlocNotesPage() {
 
   saveRef.current = handleSave;
 
-  /* ── Auto-save debounce ── */
-  useEffect(() => {
+    useEffect(() => {
     if (!isDirty) return;
     if (debRef.current) clearTimeout(debRef.current);
     debRef.current = setTimeout(() => { void saveRef.current(true) }, 2500);
     return () => { if (debRef.current) clearTimeout(debRef.current) };
   }, [isDirty, dTitle, dContent, dType]);
 
-  /* ── Delete ── */
-  async function handleDelete() {
+    async function handleDelete() {
     if (!selected?.id) return;
     const { error } = await supabase.from("notes").delete().eq("id",selected.id);
     if (error) { showToast("error",error.message); return; }
@@ -490,16 +444,14 @@ export default function BlocNotesPage() {
     showToast("success","Note supprimée.");
   }
 
-  /* ── Toggle favorite ── */
-  function toggleFav(id: string) {
+    function toggleFav(id: string) {
     const s = new Set(favSet);
     if (s.has(id)) s.delete(id); else s.add(id);
     setFavSet(s);
     try { localStorage.setItem(FAV_KEY, JSON.stringify([...s])) } catch {}
   }
 
-  /* ── Toggle archive ── */
-  async function toggleArchive() {
+    async function toggleArchive() {
     if (!selected?.id) return;
     const newVal = !(selected.is_archived ?? false);
     await supabase.from("notes").update({is_archived:newVal}).eq("id",selected.id);
@@ -509,8 +461,7 @@ export default function BlocNotesPage() {
     if (newVal) { setSelected(null); setView("list"); }
   }
 
-  /* ── Toolbar insert ── */
-  function insertFormat(before: string, after = "") {
+    function insertFormat(before: string, after = "") {
     const ta = textareaRef.current;
     if (!ta) return;
     const start = ta.selectionStart, end = ta.selectionEnd;
@@ -540,8 +491,7 @@ export default function BlocNotesPage() {
     setIsDirty(true);
   }
 
-  /* ── AI call ── */
-  async function callAI(action: AiAction, customPrompt?: string) {
+    async function callAI(action: AiAction, customPrompt?: string) {
     if (!dContent.trim() && !dTitle.trim()) { showToast("error","Note vide."); return; }
     setAiAction(action);
     setAiLoading(true);
@@ -575,8 +525,7 @@ export default function BlocNotesPage() {
     showToast("success","Résultat IA appliqué");
   }
 
-  /* ── Create folder ── */
-  async function handleCreateFolder() {
+    async function handleCreateFolder() {
     if (!newFolderName.trim()) return;
     const { data:{user} } = await supabase.auth.getUser();
     if (!user) return;
@@ -590,8 +539,7 @@ export default function BlocNotesPage() {
     showToast("success","Dossier créé.");
   }
 
-  /* ── Export ── */
-  function exportTXT() {
+    function exportTXT() {
     const blob = new Blob([`${dTitle}\n${"=".repeat(dTitle.length)}\n\n${dContent}`],{type:"text/plain;charset=utf-8"});
     const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${dTitle||"note"}.txt`; a.click();
     showToast("success","Export TXT");
@@ -620,8 +568,7 @@ export default function BlocNotesPage() {
     } catch { showToast("error","Erreur PDF — réessayez."); }
   }
 
-  /* ── Voice recording ── */
-  async function startVoice() {
+    async function startVoice() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({audio:true});
       const mime   = ["audio/webm","audio/ogg","audio/mp4"].find(m=>MediaRecorder.isTypeSupported(m));
@@ -669,8 +616,7 @@ export default function BlocNotesPage() {
   function useVoiceText()  { setDContent(c=>c?`${c}\n\n${voiceTxt}`:voiceTxt); setIsDirty(true); setVoiceState("idle"); setVoiceTxt(""); txRef.current=""; }
   function discardVoice() { setVoiceState("idle"); setVoiceTxt(""); txRef.current="" }
 
-  /* ── Filtered + sorted notes ── */
-  const displayNotes = useMemo(() => {
+    const displayNotes = useMemo(() => {
     let ns = notes.filter(n => {
       const archived = n.is_archived ?? false;
       if (filter === "all")      return !archived;
@@ -704,14 +650,10 @@ export default function BlocNotesPage() {
   const currentTypeInfo = getTypeInfo(dType);
   const wordCnt = countWords(dContent);
 
-  /* ══════════════════════════════════════════════════════════
-     RENDER
-  ══════════════════════════════════════════════════════════ */
-  return (
+    return (
     <div className="flex h-[calc(100vh-56px)] bg-[#0a0f1e] overflow-hidden">
 
-      {/* ── SIDEBAR ── */}
-      <div className="hidden w-56 shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.025] lg:flex">
+            <div className="hidden w-56 shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.025] lg:flex">
         <div className="p-4">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{background:`${amber}18`,border:`1px solid ${amber}30`}}>
@@ -720,8 +662,7 @@ export default function BlocNotesPage() {
             <span className="text-sm font-extrabold text-white">Notes IA</span>
           </div>
 
-          {/* Filters */}
-          <div className="space-y-0.5 mb-4">
+                    <div className="space-y-0.5 mb-4">
             {[
               { key:"all",       label:"Toutes",   count:counts.all,      icon:StickyNote },
               { key:"favorites", label:"Favoris",  count:counts.favs,     icon:Star },
@@ -736,8 +677,7 @@ export default function BlocNotesPage() {
             ))}
           </div>
 
-          {/* Folders */}
-          <div className="mb-2 flex items-center justify-between px-1">
+                    <div className="mb-2 flex items-center justify-between px-1">
             <span className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Dossiers</span>
             <button onClick={()=>setFolderModal(true)} className="text-white/25 transition hover:text-white/60"><FolderPlus size={13}/></button>
           </div>
@@ -760,11 +700,9 @@ export default function BlocNotesPage() {
         </div>
       </div>
 
-      {/* ── LIST PANEL ── */}
-      <div className={`flex flex-col border-r border-white/[0.06] bg-white/[0.025] ${view==="editor"&&selected?"hidden lg:flex":""} w-full lg:w-80 shrink-0`}>
+            <div className={`flex flex-col border-r border-white/[0.06] bg-white/[0.025] ${view==="editor"&&selected?"hidden lg:flex":""} w-full lg:w-80 shrink-0`}>
 
-        {/* Header */}
-        <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
+                <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl lg:hidden" style={{background:`${amber}18`,border:`1px solid ${amber}30`}}>
             <StickyNote size={14} style={{color:amber}}/>
           </div>
@@ -781,8 +719,7 @@ export default function BlocNotesPage() {
           </button>
         </div>
 
-        {/* Sort + type filter */}
-        <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-2">
+                <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-2">
           <select value={sortBy} onChange={e=>setSortBy(e.target.value as SortBy)}
             className="flex-1 cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.025] py-1 pl-2 pr-1 text-[0.65rem] text-white/55 outline-none appearance-none transition hover:border-white/20">
             <option value="date" className="bg-white/[0.025] text-white/70">📅 Récentes</option>
@@ -796,8 +733,7 @@ export default function BlocNotesPage() {
           </select>
         </div>
 
-        {/* Notes list */}
-        <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-16"><Loader2 size={20} className="animate-spin text-white/20"/></div>
           ) : displayNotes.length===0 ? (
@@ -849,11 +785,9 @@ export default function BlocNotesPage() {
         </div>
       </div>
 
-      {/* ── EDITOR PANEL ── */}
-      <div className={`flex flex-1 flex-col overflow-hidden ${view==="list"&&!selected?"hidden lg:flex":""}`}>
+            <div className={`flex flex-1 flex-col overflow-hidden ${view==="list"&&!selected?"hidden lg:flex":""}`}>
 
-        {/* Back button (mobile) */}
-        {view==="editor"&&(
+                {view==="editor"&&(
           <div className="flex items-center gap-3 border-b border-white/[0.06] bg-white/[0.025] px-4 py-2.5 lg:hidden">
             <button onClick={()=>{setView("list");setSelected(null)}} className="flex items-center gap-1.5 text-xs font-bold text-white/50 transition hover:text-white/80">
               <ArrowLeft size={14}/> Notes
@@ -862,8 +796,7 @@ export default function BlocNotesPage() {
         )}
 
         {(!selected && view==="list") ? (
-          /* Empty state */
-          <div className="flex flex-1 flex-col items-center justify-center gap-5 p-8 text-center">
+                    <div className="flex flex-1 flex-col items-center justify-center gap-5 p-8 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-[rgba(245,158,11,0.2)] bg-[rgba(245,158,11,0.07)]">
               <StickyNote size={36} style={{color:amber}}/>
             </div>
@@ -884,8 +817,7 @@ export default function BlocNotesPage() {
         ) : (
           <div className="flex flex-1 flex-col overflow-hidden bg-white/[0.025]">
 
-            {/* Editor top bar */}
-            <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] bg-white/[0.025] px-5 py-2.5">
+                        <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] bg-white/[0.025] px-5 py-2.5">
               <div className="flex items-center gap-2 flex-wrap">
                 {NOTE_TYPES.map(t=>(
                   <button key={t.value} onClick={()=>{setDType(t.value);setIsDirty(true)}}
@@ -938,13 +870,11 @@ export default function BlocNotesPage() {
               </div>
             </div>
 
-            {/* Title */}
-            <div className="border-b border-white/[0.04] px-5 py-3">
+                        <div className="border-b border-white/[0.04] px-5 py-3">
               <input value={dTitle} onChange={e=>{setDTitle(e.target.value);setIsDirty(true)}}
                 placeholder="Titre de la note…"
                 className="w-full bg-transparent text-xl font-extrabold text-white outline-none placeholder:text-white/15"/>
-              {/* Tags + folder row */}
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
                 {dTags.map(t=>(
                   <span key={t} onClick={()=>{setDTags(p=>p.filter(x=>x!==t));setIsDirty(true)}}
                     className="flex cursor-pointer items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-[0.65rem] text-white/50 transition hover:bg-red-500/15 hover:text-red-400">
@@ -971,8 +901,7 @@ export default function BlocNotesPage() {
               </div>
             </div>
 
-            {/* Toolbar */}
-            <div className="flex items-center gap-0.5 overflow-x-auto border-b border-white/[0.04] bg-white/[0.025] px-4 py-1.5 scrollbar-hide">
+                        <div className="flex items-center gap-0.5 overflow-x-auto border-b border-white/[0.04] bg-white/[0.025] px-4 py-1.5 scrollbar-hide">
               {[
                 { label:"H1",  fn:()=>insertLinePrefix("# ")      },
                 { label:"H2",  fn:()=>insertLinePrefix("## ")     },
@@ -995,11 +924,9 @@ export default function BlocNotesPage() {
               ))}
             </div>
 
-            {/* Content area */}
-            <div className="flex flex-1 overflow-hidden">
+                        <div className="flex flex-1 overflow-hidden">
 
-              {/* Left: Editor / Checklist view */}
-              <div className="flex flex-1 flex-col overflow-hidden">
+                            <div className="flex flex-1 flex-col overflow-hidden">
                 {dType==="checklist" ? (
                   <div className="flex-1 overflow-y-auto px-5 py-4">
                     {getCheckProgress(dContent).total > 0 ? (
@@ -1027,15 +954,13 @@ export default function BlocNotesPage() {
                     className={`flex-1 resize-none bg-transparent px-5 py-4 text-sm leading-relaxed text-white/80 outline-none placeholder:text-white/20 ${dType==="code"?"font-mono text-cyan-300/80":""}`}/>
                 )}
 
-                {/* Footer bar */}
-                <div className="flex items-center justify-between border-t border-white/[0.04] bg-white/[0.025] px-5 py-2">
+                                <div className="flex items-center justify-between border-t border-white/[0.04] bg-white/[0.025] px-5 py-2">
                   <div className="flex items-center gap-3">
                     <span className="text-[0.6rem] text-white/20">{wordCnt} mot{wordCnt!==1?"s":""}</span>
                     <span className="text-[0.6rem] text-white/20">{dContent.length} car.</span>
                     {isDirty&&<span className="text-[0.6rem] text-amber-400/60">● Non sauvegardé</span>}
                   </div>
-                  {/* Voice button */}
-                  <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2">
                     {voiceState==="idle" ? (
                       <button onClick={startVoice} className="flex items-center gap-1.5 rounded-xl border border-[rgba(251,146,60,0.25)] bg-[rgba(251,146,60,0.08)] px-3 py-1.5 text-[0.65rem] font-bold text-orange-400 transition hover:bg-[rgba(251,146,60,0.15)]">
                         <Mic size={11}/> Note vocale
@@ -1055,16 +980,14 @@ export default function BlocNotesPage() {
                   </div>
                 </div>
 
-                {/* Linked entity */}
-                <div className="border-t border-white/[0.04] px-5 py-2">
+                                <div className="border-t border-white/[0.04] px-5 py-2">
                   <input value={dLinked} onChange={e=>{setDLinked(e.target.value);setIsDirty(true)}}
                     placeholder="🔗 Lié à : client, projet, contrat… (ex: Client: Ali / Projet: DJAMA)"
                     className="w-full bg-transparent text-[0.65rem] text-white/30 outline-none placeholder:text-white/15"/>
                 </div>
               </div>
 
-              {/* Right: AI Panel */}
-              <AnimatePresence>
+                            <AnimatePresence>
                 {aiPanel&&(
                   <motion.div initial={{width:0,opacity:0}} animate={{width:320,opacity:1}} exit={{width:0,opacity:0}}
                     transition={{duration:0.3,ease}} className="overflow-hidden border-l border-white/[0.06] bg-white/[0.025]"
@@ -1075,8 +998,7 @@ export default function BlocNotesPage() {
                         <button onClick={()=>{setAiPanel(false);setAiResult("")}} className="text-white/30 hover:text-white/70"><X size={14}/></button>
                       </div>
 
-                      {/* Chat input for "chat" action */}
-                      {aiAction==="chat"&&(
+                                            {aiAction==="chat"&&(
                         <div className="mb-3">
                           <textarea value={chatPrompt} onChange={e=>setChatPrompt(e.target.value)}
                             placeholder="Instruction : résume, corrige, traduis, génère…"
@@ -1124,8 +1046,7 @@ export default function BlocNotesPage() {
               </AnimatePresence>
             </div>
 
-            {/* AI Actions row */}
-            <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.05] bg-white/[0.025] px-5 py-2.5 scrollbar-hide">
+                        <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.05] bg-white/[0.025] px-5 py-2.5 scrollbar-hide">
               {AI_ACTIONS.map(a=>(
                 <button key={a.action}
                   onClick={()=>{
@@ -1143,8 +1064,7 @@ export default function BlocNotesPage() {
         )}
       </div>
 
-      {/* ── MODAL: TEMPLATES ── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showTemplates&&(
           <>
             <motion.div key="tb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setShowTemplates(false)}/>
@@ -1172,8 +1092,7 @@ export default function BlocNotesPage() {
         )}
       </AnimatePresence>
 
-      {/* ── MODAL: NOUVEAU DOSSIER ── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {folderModal&&(
           <>
             <motion.div key="fb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={()=>setFolderModal(false)}/>
@@ -1204,8 +1123,7 @@ export default function BlocNotesPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Confirm delete ── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {confirmDel&&(
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{scale:0.93,y:16,opacity:0}} animate={{scale:1,y:0,opacity:1}} exit={{scale:0.95,opacity:0}} transition={{duration:0.3,ease}}
@@ -1222,8 +1140,7 @@ export default function BlocNotesPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Toast ── */}
-      <AnimatePresence>{toast&&<Toast toast={toast} onClose={()=>setToast(null)}/>}</AnimatePresence>
+            <AnimatePresence>{toast&&<Toast toast={toast} onClose={()=>setToast(null)}/>}</AnimatePresence>
     </div>
   );
 }

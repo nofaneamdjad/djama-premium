@@ -8,7 +8,6 @@ import {
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
-// ── Constants ──────────────────────────────────────────────────────────────────
 const VIOLET = "#8b5cf6";
 
 const PRIO = {
@@ -50,7 +49,6 @@ const RECURS = [
   { v: "monthly", l: "Chaque mois"       },
 ];
 
-// ── Types ──────────────────────────────────────────────────────────────────────
 interface Sub { id: string; title: string; done: boolean }
 interface Cmt { id: string; author_name: string; content: string; created_at: string }
 
@@ -74,7 +72,6 @@ const BLANK: Form = {
   timer_started_at: null, is_recurring: false, recurrence: "none", linked_module: "",
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
 function parseTask(r: Record<string, unknown>): Task {
   let subtasks: Sub[] = [];
   try {
@@ -138,7 +135,6 @@ const avCol = (n: string) => AV_COLS[(n.charCodeAt(0) || 0) % AV_COLS.length];
 
 const SEL = "rounded-lg border border-white/[0.08] bg-white/[0.025] py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition";
 
-// ── Micro-components ───────────────────────────────────────────────────────────
 function PBadge({ p }: { p: Priority }) {
   const c = PRIO[p];
   return (
@@ -174,7 +170,6 @@ function SubBar({ subs }: { subs: Sub[] }) {
   );
 }
 
-// ── TaskCard ───────────────────────────────────────────────────────────────────
 function TaskCard({ task, now, onEdit, onMove, onTimer }: {
   task: Task; now: number;
   onEdit: () => void;
@@ -200,33 +195,27 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
       style={{ borderLeft: `3px solid ${pc.color}` }}
       onClick={onEdit}>
 
-      {/* Running indicator */}
-      {running && (
+            {running && (
         <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-green-400 animate-pulse" />
       )}
 
-      {/* Title */}
-      <p className="text-[0.82rem] font-medium text-white/88 leading-snug line-clamp-2 pr-4 mb-2">
+            <p className="text-[0.82rem] font-medium text-white/88 leading-snug line-clamp-2 pr-4 mb-2">
         {task.title}
       </p>
 
-      {/* Category */}
-      {task.category && (
+            {task.category && (
         <span className="inline-block rounded-full bg-violet-500/10 px-2 py-0.5 text-[0.58rem] text-violet-300/80 mb-2">
           {task.category}
         </span>
       )}
 
-      {/* Priority badge */}
-      <div className="mb-2">
+            <div className="mb-2">
         <PBadge p={task.priority} />
       </div>
 
-      {/* Subtasks progress */}
-      <SubBar subs={task.subtasks} />
+            <SubBar subs={task.subtasks} />
 
-      {/* Footer */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.05]">
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.05]">
         <div className="flex items-center gap-2">
           {task.due_date && (
             <span className={`text-[0.62rem] font-medium ${late ? "text-red-400" : "text-white/35"}`}>
@@ -247,8 +236,7 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
         </div>
       </div>
 
-      {/* Hover actions */}
-      <AnimatePresence>
+            <AnimatePresence>
         {hov && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute bottom-2 right-2 flex gap-1"
@@ -272,7 +260,6 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
   );
 }
 
-// ── AI Panel ───────────────────────────────────────────────────────────────────
 function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
   const [msg, setMsg]       = useState("");
   const [resp, setResp]     = useState("");
@@ -352,7 +339,6 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────────
 export default function ProductivitePage() {
   const [tasks,      setTasks]      = useState<Task[]>([]);
   const [loading,    setLoading]    = useState(true);
@@ -377,7 +363,7 @@ export default function ProductivitePage() {
   const [newTag,     setNewTag]     = useState("");
   const [newAssignee,setNewAssignee]= useState("");
 
-  // Live timer tick every second
+
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(iv);
@@ -388,7 +374,7 @@ export default function ProductivitePage() {
     setTimeout(() => setToastData(null), 3500);
   }, []);
 
-  // ── Data ────────────────────────────────────────────────────────────────────
+
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -398,12 +384,12 @@ export default function ProductivitePage() {
     if (error) toast(error.message, "error");
     else setTasks((data ?? []).map((r: Record<string, unknown>) => parseTask(r)));
     setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  // ── Modal helpers ───────────────────────────────────────────────────────────
+
   const openNew = (defaultStatus?: Status) => {
     setForm({ ...BLANK, status: defaultStatus ?? "todo" });
     setEditId(null); setComments([]); setShowModal(true);
@@ -429,7 +415,7 @@ export default function ProductivitePage() {
     setComments((data ?? []) as Cmt[]);
   };
 
-  // ── Save / Delete ───────────────────────────────────────────────────────────
+
   const save = async () => {
     if (!form.title.trim()) { toast("Le titre est requis", "error"); return; }
     setSaving(true);
@@ -463,7 +449,7 @@ export default function ProductivitePage() {
     else { toast("Tâche supprimée", "info"); setShowModal(false); await load(); }
   };
 
-  // ── Status / Timer ──────────────────────────────────────────────────────────
+
   const changeStatus = async (id: string, status: Status) => {
     setTasks(ts => ts.map(t => t.id === id ? { ...t, status } : t));
     await supabase.from("productivity_tasks").update({ status }).eq("id", id);
@@ -479,7 +465,7 @@ export default function ProductivitePage() {
     await supabase.from("productivity_tasks").update(update).eq("id", id);
   };
 
-  // ── Quick Add ───────────────────────────────────────────────────────────────
+
   const quickAddTask = async (status: Status) => {
     const title = (quickAdd[status] ?? "").trim();
     if (!title) return;
@@ -492,7 +478,7 @@ export default function ProductivitePage() {
     setQuickAdd(q => ({ ...q, [status]: "" }));
   };
 
-  // ── Comments ────────────────────────────────────────────────────────────────
+
   const addComment = async () => {
     if (!cmt.trim() || !editId) return;
     const { data, error } = await supabase
@@ -503,7 +489,7 @@ export default function ProductivitePage() {
     else if (data) { setComments(cs => [...cs, data as Cmt]); setCmt(""); }
   };
 
-  // ── Form helpers ────────────────────────────────────────────────────────────
+
   const addSub = () => {
     if (!newSub.trim()) return;
     setForm(f => ({ ...f, subtasks: [...f.subtasks, { id: crypto.randomUUID(), title: newSub.trim(), done: false }] }));
@@ -525,7 +511,7 @@ export default function ProductivitePage() {
     setNewAssignee("");
   };
 
-  // ── Filtered tasks ──────────────────────────────────────────────────────────
+
   const filtered = tasks.filter(t => {
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (fprio  && t.priority !== fprio) return false;
@@ -544,7 +530,7 @@ export default function ProductivitePage() {
     done:  filtered.filter(t => t.status === "done"),
   };
 
-  // ── KPIs ────────────────────────────────────────────────────────────────────
+
   const kpis = [
     { l: "Total",      v: tasks.length,                                          col: "#6b7280" },
     { l: "En cours",   v: tasks.filter(t => t.status === "in_progress").length,  col: "#3b82f6" },
@@ -557,13 +543,12 @@ export default function ProductivitePage() {
     ? Math.round((tasks.filter(t => t.status === "done").length / tasks.length) * 100)
     : 0;
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-white">
       <div className="mx-auto max-w-[1600px] px-6 py-8 space-y-6">
 
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white/90 flex items-center gap-2">
               <Zap size={20} style={{ color: VIOLET }} /> Productivité
@@ -587,8 +572,7 @@ export default function ProductivitePage() {
           </div>
         </div>
 
-        {/* ── KPI bar ─────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-5 gap-3">
+                <div className="grid grid-cols-5 gap-3">
           {kpis.map(k => (
             <div key={k.l} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
               <p className="text-[0.7rem] text-white/40 mb-1">{k.l}</p>
@@ -597,8 +581,7 @@ export default function ProductivitePage() {
           ))}
         </div>
 
-        {/* Completion bar */}
-        <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
           <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
             <motion.div className="h-full rounded-full" style={{ background: VIOLET }}
               initial={{ width: 0 }} animate={{ width: `${completionRate}%` }} transition={{ duration: 0.8 }} />
@@ -606,8 +589,7 @@ export default function ProductivitePage() {
           <span className="text-xs text-white/35 shrink-0">{completionRate}% terminé</span>
         </div>
 
-        {/* ── Filters + view toggle ────────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="🔍 Rechercher une tâche…"
             className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-sm text-white/70 outline-none placeholder:text-white/25 w-52 hover:border-white/15 focus:border-violet-500/40" />
@@ -649,8 +631,7 @@ export default function ProductivitePage() {
           </div>
         </div>
 
-        {/* ── KANBAN VIEW ─────────────────────────────────────────────────── */}
-        {view === "kanban" && (
+                {view === "kanban" && (
           <div className="grid grid-cols-4 gap-4" style={{ minHeight: "60vh" }}>
             {KANBAN_COLS.map(col => {
               const colTasks = filtered.filter(t => t.status === col.key);
@@ -658,8 +639,7 @@ export default function ProductivitePage() {
                 <div key={col.key}
                   className="flex flex-col rounded-2xl border border-white/[0.06] bg-white/[0.025] overflow-hidden">
 
-                  {/* Column header */}
-                  <div className="px-4 py-3 border-b border-white/[0.06]"
+                                    <div className="px-4 py-3 border-b border-white/[0.06]"
                     style={{ borderTop: `3px solid ${col.col}` }}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -678,8 +658,7 @@ export default function ProductivitePage() {
                     </div>
                   </div>
 
-                  {/* Cards */}
-                  <div className="flex-1 overflow-y-auto p-3 space-y-2.5"
+                                    <div className="flex-1 overflow-y-auto p-3 space-y-2.5"
                     style={{ maxHeight: "calc(100vh - 360px)" }}>
                     {loading && colTasks.length === 0 ? (
                       <div className="flex flex-col items-center py-8 gap-2">
@@ -703,8 +682,7 @@ export default function ProductivitePage() {
                     )}
                   </div>
 
-                  {/* Quick add */}
-                  <div className="border-t border-white/[0.05] p-2.5">
+                                    <div className="border-t border-white/[0.05] p-2.5">
                     <div className="flex gap-1">
                       <input
                         value={quickAdd[col.key] ?? ""}
@@ -724,11 +702,9 @@ export default function ProductivitePage() {
           </div>
         )}
 
-        {/* ── LIST VIEW ───────────────────────────────────────────────────── */}
-        {view === "list" && (
+                {view === "list" && (
           <div className="space-y-4">
-            {/* Tabs */}
-            <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.025] p-1 w-fit">
+                        <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.025] p-1 w-fit">
               {([
                 { k: "today", l: "Aujourd'hui", n: listTasks.today.length },
                 { k: "week",  l: "Cette semaine", n: listTasks.week.length },
@@ -748,8 +724,7 @@ export default function ProductivitePage() {
               ))}
             </div>
 
-            {/* Rows */}
-            <div className="space-y-2">
+                        <div className="space-y-2">
               <AnimatePresence>
                 {listTasks[listTab].map(t => (
                   <motion.div key={t.id}
@@ -807,8 +782,7 @@ export default function ProductivitePage() {
         )}
       </div>
 
-      {/* ── TASK MODAL ──────────────────────────────────────────────────────── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center pt-6 pb-6 px-4 overflow-y-auto"
@@ -818,8 +792,7 @@ export default function ProductivitePage() {
               className="relative w-full max-w-3xl rounded-2xl border border-white/[0.09] bg-white/[0.025] shadow-2xl"
               onClick={e => e.stopPropagation()}>
 
-              {/* Modal header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07]">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07]">
                 <h2 className="text-base font-semibold text-white/88">
                   {editId ? "Modifier la tâche" : "Nouvelle tâche"}
                 </h2>
@@ -837,18 +810,15 @@ export default function ProductivitePage() {
 
               <div className="p-6 space-y-5">
 
-                {/* Title */}
-                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="Titre de la tâche *"
                   className="w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-base font-medium text-white/90 outline-none placeholder:text-white/25 focus:border-violet-500/50 transition" />
 
-                {/* Description */}
-                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="Description (optionnel)…" rows={3}
                   className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-sm text-white/75 outline-none placeholder:text-white/25 focus:border-white/15 transition" />
 
-                {/* Priority + Status + Category */}
-                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="text-[0.68rem] text-white/40 mb-1.5 block">Priorité</label>
                     <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))}
@@ -877,8 +847,7 @@ export default function ProductivitePage() {
                   </div>
                 </div>
 
-                {/* Due date + time + estimated */}
-                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="text-[0.68rem] text-white/40 mb-1.5 block">Date limite</label>
                     <input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
@@ -897,16 +866,14 @@ export default function ProductivitePage() {
                   </div>
                 </div>
 
-                {/* Responsible */}
-                <div>
+                                <div>
                   <label className="text-[0.68rem] text-white/40 mb-1.5 block">Responsable</label>
                   <input value={form.responsible} onChange={e => setForm(f => ({ ...f, responsible: e.target.value }))}
                     placeholder="Nom du responsable"
                     className="w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-sm text-white/75 outline-none focus:border-white/15 transition" />
                 </div>
 
-                {/* Assignees */}
-                <div>
+                                <div>
                   <label className="text-[0.68rem] text-white/40 mb-1.5 block">Collaborateurs</label>
                   {form.assignees.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-2">
@@ -930,8 +897,7 @@ export default function ProductivitePage() {
                   </div>
                 </div>
 
-                {/* Subtasks */}
-                <div>
+                                <div>
                   <label className="text-[0.68rem] text-white/40 mb-1.5 block">
                     Sous-tâches ({form.subtasks.filter(s => s.done).length}/{form.subtasks.length})
                   </label>
@@ -948,8 +914,7 @@ export default function ProductivitePage() {
                             className="opacity-0 group-hover/sub:opacity-100 text-[0.65rem] text-white/30 hover:text-red-400 transition">×</button>
                         </div>
                       ))}
-                      {/* Progress */}
-                      {form.subtasks.length > 0 && (
+                                            {form.subtasks.length > 0 && (
                         <div className="flex items-center gap-2 pt-1 mt-1 border-t border-white/[0.05]">
                           <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
                             <div className="h-full rounded-full transition-all duration-300"
@@ -972,8 +937,7 @@ export default function ProductivitePage() {
                   </div>
                 </div>
 
-                {/* Tags + Recurrence */}
-                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-[0.68rem] text-white/40 mb-1.5 block">Tags</label>
                     <div className="flex flex-wrap gap-1 mb-1.5">
@@ -1007,8 +971,7 @@ export default function ProductivitePage() {
                   </div>
                 </div>
 
-                {/* Comments (edit mode only) */}
-                {editId && (
+                                {editId && (
                   <div className="border-t border-white/[0.07] pt-5">
                     <label className="text-[0.68rem] text-white/40 mb-3 block">
                       💬 Commentaires ({comments.length})
@@ -1047,8 +1010,7 @@ export default function ProductivitePage() {
                 )}
               </div>
 
-              {/* Modal footer */}
-              <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.07]">
+                            <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.07]">
                 <div className="text-xs text-white/30">
                   {form.time_spent > 0 && `Temps passé : ${fmtSec(form.time_spent)}`}
                   {form.estimated_minutes > 0 && (
@@ -1072,13 +1034,11 @@ export default function ProductivitePage() {
         )}
       </AnimatePresence>
 
-      {/* AI Panel */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showAI && <AiPanel tasks={tasks} onClose={() => setShowAI(false)} />}
       </AnimatePresence>
 
-      {/* Toast */}
-      <AnimatePresence>
+            <AnimatePresence>
         {toastData && <Toast toast={toastData} onClose={() => setToastData(null)} />}
       </AnimatePresence>
     </div>

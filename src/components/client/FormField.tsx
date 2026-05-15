@@ -1,17 +1,5 @@
 "use client";
 
-/**
- * FormField — composants de formulaire unifiés et accessibles.
- *
- * Exports : Input, Textarea, Select, FieldLabel
- *
- * - Chaque composant génère un id unique via useId()
- * - Prop `error` affiche un message en rouge sous le champ
- * - Prop `hint` affiche un texte gris d'aide
- * - aria-invalid + aria-describedby pour l'accessibilité
- * - Compatible avec la validation Zod (prop error = z.issue.message)
- */
-
 import { useId, forwardRef } from "react";
 
 const BASE_INPUT = [
@@ -22,7 +10,6 @@ const BASE_INPUT = [
   "disabled:opacity-40 disabled:cursor-not-allowed",
 ].join(" ");
 
-// ── FieldLabel ────────────────────────────────────────────────────────────────
 export function FieldLabel({
   htmlFor,
   children,
@@ -40,7 +27,6 @@ export function FieldLabel({
   );
 }
 
-// ── ErrorMsg ─────────────────────────────────────────────────────────────────
 function ErrorMsg({ id, msg }: { id: string; msg: string }) {
   return (
     <p id={id} role="alert" className="mt-1 text-xs text-red-400">
@@ -49,7 +35,6 @@ function ErrorMsg({ id, msg }: { id: string; msg: string }) {
   );
 }
 
-// ── Input ─────────────────────────────────────────────────────────────────────
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?:    string;
   error?:    string;
@@ -83,7 +68,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   );
 });
 
-// ── Textarea ──────────────────────────────────────────────────────────────────
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?:    string;
   error?:    string;
@@ -116,7 +100,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   );
 });
 
-// ── Select ────────────────────────────────────────────────────────────────────
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?:    string;
   error?:    string;

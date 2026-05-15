@@ -14,8 +14,6 @@ import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { fmtDate, fmtEur } from "@/lib/format";
 
-// ─────────────────────────── TYPES ───────────────────────────
-
 type MovementType = "entree" | "sortie" | "retour" | "perte" | "casse" | "transfert" | "ajustement";
 type OrderStatus  = "draft" | "sent" | "confirmed" | "received" | "cancelled";
 
@@ -49,8 +47,6 @@ interface SupplierOrder {
   status: OrderStatus; order_date: string; expected_date: string | null;
   total_amount: number; notes: string; created_at: string;
 }
-
-// ─────────────────────────── CONSTANTS ───────────────────────────
 
 const gold = "#c9a55a";
 const green = "#10b981";
@@ -91,8 +87,6 @@ function inp(extra = "") {
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">{children}</label>;
 }
-
-// ─────────────────────────── PRODUCT MODAL ───────────────────────────
 
 function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
   product: Partial<Product>; suppliers: Supplier[]; warehouses: Warehouse[];

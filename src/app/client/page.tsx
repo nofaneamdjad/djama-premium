@@ -12,20 +12,14 @@ import {
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
 
-/* ══════════════════════════════════════════════════════════════════════════
-   DESIGN TOKENS
-══════════════════════════════════════════════════════════════════════════ */
 const ease = [0.22, 1, 0.36, 1] as const;
 
-/* ══════════════════════════════════════════════════════════════════════════
-   MODULE CATALOGUE
-══════════════════════════════════════════════════════════════════════════ */
 type Module = {
   href: string;
   label: string;
   icon: React.ElementType;
-  color: string;   // icon color
-  bg: string;      // icon container bg
+  color: string;
+  bg: string;
 };
 
 const MODULES: Module[] = [
@@ -49,9 +43,6 @@ const MODULES: Module[] = [
   { href: "/client/dashboard",     label: "Dashboard",      icon: BarChart2,     color: "#3730a3", bg: "#e0e7ff" },
 ];
 
-/* ══════════════════════════════════════════════════════════════════════════
-   HELPERS
-══════════════════════════════════════════════════════════════════════════ */
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Bonjour";
@@ -65,11 +56,6 @@ function getDay() {
   });
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   COMPONENTS
-══════════════════════════════════════════════════════════════════════════ */
-
-/** Carte module — icône colorée + label */
 function ModuleCard({ mod, index }: { mod: Module; index: number }) {
   const Icon = mod.icon;
   return (
@@ -85,15 +71,13 @@ function ModuleCard({ mod, index }: { mod: Module; index: number }) {
           transition={{ type: "spring", stiffness: 400, damping: 22 }}
           className="flex flex-col items-center gap-2 rounded-2xl bg-white px-2 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.07)] cursor-pointer select-none"
         >
-          {/* Icon container */}
-          <div
+                    <div
             className="flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105"
             style={{ background: mod.bg }}
           >
             <Icon size={22} style={{ color: mod.color }} strokeWidth={1.8} />
           </div>
-          {/* Label */}
-          <span
+                    <span
             className="text-center text-[10.5px] font-semibold leading-tight"
             style={{ color: "#374151" }}
           >
@@ -105,7 +89,6 @@ function ModuleCard({ mod, index }: { mod: Module; index: number }) {
   );
 }
 
-/** KPI chip — scroll horizontal */
 function KpiChip({
   label, value, sub, color, loading,
 }: {
@@ -127,7 +110,6 @@ function KpiChip({
   );
 }
 
-/** Badge notification */
 function NotifBadge({ count }: { count: number }) {
   if (count === 0) return null;
   return (
@@ -137,9 +119,6 @@ function NotifBadge({ count }: { count: number }) {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   PAGE
-══════════════════════════════════════════════════════════════════════════ */
 export default function CockpitPage() {
   const [firstName,   setFirstName]   = useState("");
   const [initial,     setInitial]     = useState("?");
@@ -151,8 +130,7 @@ export default function CockpitPage() {
   const [menuOpen,    setMenuOpen]    = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  /* Load user + KPIs */
-  useEffect(() => {
+    useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -189,8 +167,7 @@ export default function CockpitPage() {
     })();
   }, []);
 
-  /* Close menu on outside click */
-  useEffect(() => {
+    useEffect(() => {
     function handle(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
@@ -204,24 +181,20 @@ export default function CockpitPage() {
     ? `${caEvo >= 0 ? "+" : ""}${caEvo}% vs mois dernier`
     : "ce mois";
 
-  /* ── Render ── */
-  return (
-    /* Light container — overrides the dark body background for this page */
-    <div className="min-h-full" style={{ background: "#f0f2f5" }}>
+    return (
+        <div className="min-h-full" style={{ background: "#f0f2f5" }}>
       <div
         className="mx-auto max-w-lg px-4 pb-16 pt-5"
         style={{ color: "#111827" }}
       >
 
-        {/* ════════════════ HEADER ════════════════ */}
-        <motion.div
+                <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease }}
           className="mb-5 flex items-center justify-between"
         >
-          {/* Left — greeting */}
-          <div>
+                    <div>
             <p className="text-[11px] font-semibold" style={{ color: "#9ca3af" }}>
               {getDay()}
             </p>
@@ -230,10 +203,8 @@ export default function CockpitPage() {
             </h1>
           </div>
 
-          {/* Right — actions */}
-          <div className="flex items-center gap-2">
-            {/* Notification bell */}
-            <Link href="/client/dashboard" className="relative">
+                    <div className="flex items-center gap-2">
+                        <Link href="/client/dashboard" className="relative">
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-transform active:scale-90"
                 style={{ color: "#6b7280" }}
@@ -243,8 +214,7 @@ export default function CockpitPage() {
               {nbFactures > 0 && <NotifBadge count={nbFactures} />}
             </Link>
 
-            {/* Avatar + menu */}
-            <div className="relative" ref={menuRef}>
+                        <div className="relative" ref={menuRef}>
               <motion.button
                 whileTap={{ scale: 0.92 }}
                 onClick={() => setMenuOpen(o => !o)}
@@ -254,8 +224,7 @@ export default function CockpitPage() {
                 {initial}
               </motion.button>
 
-              {/* Dropdown menu */}
-              <AnimatePresence>
+                            <AnimatePresence>
                 {menuOpen && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.92, y: -8 }}
@@ -305,8 +274,7 @@ export default function CockpitPage() {
           </div>
         </motion.div>
 
-        {/* ════════════════ PRIMARY CTA ════════════════ */}
-        <motion.div
+                <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.06, ease }}
@@ -329,8 +297,7 @@ export default function CockpitPage() {
           </Link>
         </motion.div>
 
-        {/* ════════════════ KPI STRIP ════════════════ */}
-        <motion.div
+                <motion.div
           initial={{ opacity: 0, x: -12 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35, delay: 0.1, ease }}
@@ -366,8 +333,7 @@ export default function CockpitPage() {
           />
         </motion.div>
 
-        {/* ════════════════ SECTION TITLE ════════════════ */}
-        <motion.div
+                <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.12 }}
@@ -381,15 +347,13 @@ export default function CockpitPage() {
           </p>
         </motion.div>
 
-        {/* ════════════════ MODULE GRID ════════════════ */}
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {MODULES.map((mod, i) => (
             <ModuleCard key={mod.href} mod={mod} index={i} />
           ))}
         </div>
 
-        {/* ════════════════ QUICK LINKS ════════════════ */}
-        <motion.div
+                <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.55, ease }}
@@ -433,8 +397,7 @@ export default function CockpitPage() {
           })}
         </motion.div>
 
-        {/* ════════════════ FOOTER ════════════════ */}
-        <motion.p
+                <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}

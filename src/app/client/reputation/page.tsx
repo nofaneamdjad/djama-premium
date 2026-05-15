@@ -10,9 +10,6 @@ import { supabase } from "@/lib/supabase";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 
-/* ═══════════════════════════════════════════════════
-   TYPES
-═══════════════════════════════════════════════════ */
 type ReviewSource = "google" | "linkedin" | "direct" | "autre";
 
 interface Review {
@@ -34,9 +31,6 @@ type DraftReview = {
   project: string;
 };
 
-/* ═══════════════════════════════════════════════════
-   CONSTANTES
-═══════════════════════════════════════════════════ */
 const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD = "#f59e0b";
 
@@ -51,9 +45,6 @@ const EMPTY_FORM = (): DraftReview => ({
   client_name: "", rating: 0, message: "", source: "direct", project: "",
 });
 
-/* ═══════════════════════════════════════════════════
-   STAR RATING — interactif
-═══════════════════════════════════════════════════ */
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hover, setHover] = useState(0);
   return (
@@ -73,9 +64,6 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   STAR DISPLAY — lecture seule
-═══════════════════════════════════════════════════ */
 function StarDisplay({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
   return (
     <div className="flex gap-0.5">
@@ -86,9 +74,6 @@ function StarDisplay({ rating, size = "sm" }: { rating: number; size?: "sm" | "m
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   GRAPHIQUE TENDANCE — 6 derniers mois
-═══════════════════════════════════════════════════ */
 function TrendChart({ data }: { data: { label: string; avg: number; count: number }[] }) {
   const H = 60;
   const barW = 30;
@@ -104,28 +89,23 @@ function TrendChart({ data }: { data: { label: string; avg: number; count: numbe
         const col = avg >= 4 ? "#4ade80" : avg >= 3 ? "#fbbf24" : avg > 0 ? "#f87171" : "rgba(255,255,255,0.07)";
         return (
           <g key={i}>
-            {/* Bar background */}
-            <rect x={x} y={0} width={barW} height={H} rx={5} fill="rgba(255,255,255,0.03)" />
-            {/* Bar value */}
-            <motion.rect
+                        <rect x={x} y={0} width={barW} height={H} rx={5} fill="rgba(255,255,255,0.03)" />
+                        <motion.rect
               x={x} width={barW} rx={5}
               fill={col} fillOpacity={avg > 0 ? 0.82 : 1}
               initial={{ y: H, height: 0 }}
               animate={{ y, height: bh }}
               transition={{ duration: 0.6, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
             />
-            {/* Avg value */}
-            {avg > 0 && (
+                        {avg > 0 && (
               <text x={x + barW / 2} y={y - 5} textAnchor="middle" fontSize="9" fill={col} fontWeight="700">
                 {avg.toFixed(1)}
               </text>
             )}
-            {/* Month label */}
-            <text x={x + barW / 2} y={H + 14} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.38)" style={{ textTransform: "capitalize" }}>
+                        <text x={x + barW / 2} y={H + 14} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.38)" style={{ textTransform: "capitalize" }}>
               {label}
             </text>
-            {/* Count */}
-            <text x={x + barW / 2} y={H + 26} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.2)">
+                        <text x={x + barW / 2} y={H + 26} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.2)">
               {count > 0 ? `${count} avis` : "—"}
             </text>
           </g>
@@ -135,9 +115,6 @@ function TrendChart({ data }: { data: { label: string; avg: number; count: numbe
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   EXPORT CSV
-═══════════════════════════════════════════════════ */
 function exportReviewsCSV(reviews: Review[]) {
   const rows: string[][] = [
     ["Date", "Client", "Note", "Source", "Projet", "Message"],

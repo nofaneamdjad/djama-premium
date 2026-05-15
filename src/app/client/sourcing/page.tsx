@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * /client/sourcing — DJAMA PRO · Sourcing IA & Marchés
- * Réponses longues, structurées, avec raisonnement stratégique.
- */
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence }                   from "framer-motion";
 import {
@@ -15,9 +10,6 @@ import {
 } from "lucide-react";
 import type { GuideMessage, GuideSection, GuideItem } from "@/lib/sourcing/generateGuide";
 
-/* ════════════════════════════════════════════
-   TYPES
-════════════════════════════════════════════ */
 interface SourcingItem extends GuideItem {
   name?:        string;
   country?:     string;
@@ -62,13 +54,9 @@ interface ChatMsg {
   retryText?:   string;
 }
 
-/* ════════════════════════════════════════════
-   HELPERS
-════════════════════════════════════════════ */
 const ease = [0.16, 1, 0.3, 1] as const;
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
-/** Rendu du texte avec gras **bold** et sauts de ligne */
 function RichText({ text, className }: { text: string; className?: string }) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   const nodes = parts.map((p, i) => {
@@ -85,9 +73,6 @@ function RichText({ text, className }: { text: string; className?: string }) {
   return <span className={className}>{nodes}</span>;
 }
 
-/* ════════════════════════════════════════════
-   QUICK-START CARDS
-════════════════════════════════════════════ */
 const QUICKSTART = [
   {
     icon: Factory,
@@ -127,9 +112,6 @@ const QUICKSTART = [
   },
 ];
 
-/* ════════════════════════════════════════════
-   STYLES ACTIONS
-════════════════════════════════════════════ */
 const ACTION_STYLE: Record<string, string> = {
   primary:   "bg-blue-500/12 border-blue-500/25 text-blue-400 hover:bg-blue-500/22",
   warning:   "bg-amber-500/12 border-amber-500/25 text-amber-400 hover:bg-amber-500/22",
@@ -137,9 +119,6 @@ const ACTION_STYLE: Record<string, string> = {
   ghost:     "border-transparent text-white/30 hover:text-white/55",
 };
 
-/* ════════════════════════════════════════════
-   BLOC RAISONNEMENT STRATÉGIQUE
-════════════════════════════════════════════ */
 function ReasoningBlock({ text }: { text: string }) {
   const [open, setOpen] = useState(true);
   return (
@@ -186,9 +165,6 @@ function ReasoningBlock({ text }: { text: string }) {
   );
 }
 
-/* ════════════════════════════════════════════
-   SECTION RENDERERS
-════════════════════════════════════════════ */
 function SupplierCard({ item }: { item: SourcingItem }) {
   return (
     <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 space-y-2">
@@ -289,8 +265,7 @@ function SectionBlock({ section }: { section: SourcingSection }) {
 
   return (
     <div className="mt-5">
-      {/* Section header */}
-      <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-xl border ${col.bg} ${col.border}`}>
+            <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-xl border ${col.bg} ${col.border}`}>
         <Icon size={13} className={col.text} />
         <p className={`text-[11px] font-semibold ${col.text}`}>
           {section.title}
@@ -317,9 +292,6 @@ function SectionBlock({ section }: { section: SourcingSection }) {
   );
 }
 
-/* ════════════════════════════════════════════
-   ACTION BUTTON
-════════════════════════════════════════════ */
 function ActionBtn({ action, onPdf }: { action: SourcingAction; onPdf: () => void }) {
   const style = ACTION_STYLE[action.variant] ?? ACTION_STYLE.secondary;
   const cls   = `inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-[12px] font-bold transition-all ${style}`;
@@ -343,9 +315,6 @@ function ActionBtn({ action, onPdf }: { action: SourcingAction; onPdf: () => voi
   return <button className={cls}><ChevronRight size={13} />{action.label}</button>;
 }
 
-/* ════════════════════════════════════════════
-   BULLE DE MESSAGE
-════════════════════════════════════════════ */
 function MessageBubble({
   msg,
   onSuggestion,
@@ -379,8 +348,7 @@ function MessageBubble({
       transition={{ duration: 0.25, ease }}
       className="flex gap-3"
     >
-      {/* Avatar IA */}
-      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border ${
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border ${
         msg.isError
           ? "bg-red-500/10 border-red-500/20"
           : "bg-blue-500/12 border-blue-500/20"
@@ -393,8 +361,7 @@ function MessageBubble({
 
       <div className="flex-1 min-w-0">
 
-        {/* ── Chargement ── */}
-        {msg.loading && (
+                {msg.loading && (
           <div className="rounded-3xl rounded-tl-lg bg-white/[0.03] border border-white/[0.07] px-5 py-5 mb-2.5">
             <div className="flex items-center gap-2 mb-2">
               {[0, 1, 2].map(i => (
@@ -409,8 +376,7 @@ function MessageBubble({
           </div>
         )}
 
-        {/* ── Erreur ── */}
-        {!msg.loading && msg.isError && (
+                {!msg.loading && msg.isError && (
           <div className="rounded-3xl rounded-tl-lg bg-red-500/[0.06] border border-red-500/20 px-4 py-3.5 mb-2.5">
             <div className="flex items-start gap-2.5">
               <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
@@ -435,13 +401,11 @@ function MessageBubble({
           </div>
         )}
 
-        {/* ── Réponse complète ── */}
-        {!msg.loading && !msg.isError && (
+                {!msg.loading && !msg.isError && (
           <>
             <div className="rounded-3xl rounded-tl-lg bg-white/[0.025] border border-white/[0.07] px-5 py-5 mb-3">
 
-              {/* Intro text */}
-              {msg.content && (
+                            {msg.content && (
                 <div className="mb-1">
                   <RichText
                     text={msg.content}
@@ -450,18 +414,15 @@ function MessageBubble({
                 </div>
               )}
 
-              {/* Raisonnement stratégique */}
-              {msg.reasoning && msg.reasoning.trim() && (
+                            {msg.reasoning && msg.reasoning.trim() && (
                 <ReasoningBlock text={msg.reasoning} />
               )}
 
-              {/* Sections */}
-              {(msg.sections ?? []).map((section, i) => (
+                            {(msg.sections ?? []).map((section, i) => (
                 <SectionBlock key={i} section={section} />
               ))}
 
-              {/* Footer stats */}
-              {(msg.sections ?? []).length > 0 && (
+                            {(msg.sections ?? []).length > 0 && (
                 <div className="mt-5 pt-4 border-t border-white/[0.05] flex items-center gap-3 flex-wrap">
                   <span className="flex items-center gap-1 text-[10px] text-white/20">
                     <Sparkles size={9} />
@@ -480,8 +441,7 @@ function MessageBubble({
               )}
             </div>
 
-            {/* Actions */}
-            {(msg.actions ?? []).length > 0 && (
+                        {(msg.actions ?? []).length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {(msg.actions ?? []).map((a, i) => (
                   <ActionBtn key={i} action={a} onPdf={onPdf} />
@@ -489,8 +449,7 @@ function MessageBubble({
               </div>
             )}
 
-            {/* Suggestions */}
-            {(msg.suggestions ?? []).length > 0 && (
+                        {(msg.suggestions ?? []).length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {(msg.suggestions ?? []).map((s, i) => (
                   <button
@@ -511,9 +470,6 @@ function MessageBubble({
   );
 }
 
-/* ════════════════════════════════════════════
-   PAGE PRINCIPALE
-════════════════════════════════════════════ */
 export default function SourcingPage() {
   const [messages,    setMessages]    = useState<ChatMsg[]>([]);
   const [input,       setInput]       = useState("");
@@ -527,8 +483,7 @@ export default function SourcingPage() {
   useEffect(() => { msgHistory.current = messages; }, [messages]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  /* ── Envoi API ── */
-  const sendToAPI = useCallback(async (
+    const sendToAPI = useCallback(async (
     text:    string,
     history: Array<{ role: "user" | "assistant"; content: string }>,
     aiId:    string,
@@ -547,8 +502,7 @@ export default function SourcingPage() {
 
       const rawData = await res.json() as SourcingApiResponse;
 
-      /* Safety: re-parser si text est du JSON brut */
-      let resolved = rawData;
+            let resolved = rawData;
       if (typeof rawData.text === "string") {
         const t = rawData.text.trim();
         if (t.startsWith("{")) {
@@ -563,12 +517,11 @@ export default function SourcingPage() {
                 suggestions: inner.suggestions ?? rawData.suggestions ?? [],
               };
             }
-          } catch { /* pas du JSON */ }
+          } catch {  }
         }
       }
 
-      /* Normaliser les types de section */
-      const VALID = ["supplier_list", "steps", "checklist", "tips", "text"] as const;
+            const VALID = ["supplier_list", "steps", "checklist", "tips", "text"] as const;
       type ValidType = typeof VALID[number];
       const normSections: SourcingSection[] = (resolved.sections ?? []).map(s => ({
         ...s,
@@ -602,8 +555,7 @@ export default function SourcingPage() {
     }
   }, []);
 
-  /* ── Envoyer message ── */
-  const handleSend = useCallback(async (text?: string) => {
+    const handleSend = useCallback(async (text?: string) => {
     const msg = (text ?? input).trim();
     if (!msg || sending) return;
 
@@ -627,8 +579,7 @@ export default function SourcingPage() {
     await sendToAPI(msg, history, aiId);
   }, [input, sending, sendToAPI]);
 
-  /* ── Keyboard ── */
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   }
 
@@ -645,8 +596,7 @@ export default function SourcingPage() {
     if (inputRef.current) inputRef.current.style.height = "auto";
   }
 
-  /* ── PDF ── */
-  const handleGeneratePdf = useCallback(async () => {
+    const handleGeneratePdf = useCallback(async () => {
     if (pdfLoading) return;
     setPdfLoading(true);
     try {
@@ -668,14 +618,10 @@ export default function SourcingPage() {
   const hasMessages = messages.length > 0;
   const hasAiMsg    = messages.some(m => m.role === "assistant" && !m.loading);
 
-  /* ════════════════════════════════════════
-     RENDU
-  ════════════════════════════════════════ */
-  return (
+    return (
     <div className="min-h-screen bg-[#0a0f1e] text-white pb-40">
 
-      {/* ── Sub-header ── */}
-      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+            <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -717,11 +663,9 @@ export default function SourcingPage() {
         </div>
       </div>
 
-      {/* ── CONTENU PRINCIPAL ── */}
-      <div className="max-w-2xl mx-auto px-4 pt-5">
+            <div className="max-w-2xl mx-auto px-4 pt-5">
 
-        {/* ══ ÉTAT INITIAL ══ */}
-        <AnimatePresence>
+                <AnimatePresence>
           {!hasMessages && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -729,8 +673,7 @@ export default function SourcingPage() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3, ease }}
             >
-              {/* Welcome */}
-              <div className="text-center mb-8 pt-4">
+                            <div className="text-center mb-8 pt-4">
                 <div className="relative inline-flex mb-4">
                   <div className="relative w-14 h-14 rounded-2xl bg-blue-500/12 border border-blue-500/20 flex items-center justify-center">
                     <Sparkles size={24} className="text-blue-400" />
@@ -758,8 +701,7 @@ export default function SourcingPage() {
                 </div>
               </div>
 
-              {/* Cards quick-start */}
-              <div className="grid grid-cols-2 gap-3 mb-8">
+                            <div className="grid grid-cols-2 gap-3 mb-8">
                 {QUICKSTART.map((card, i) => (
                   <motion.button
                     key={i}
@@ -794,8 +736,7 @@ export default function SourcingPage() {
           )}
         </AnimatePresence>
 
-        {/* ══ CONVERSATION ══ */}
-        {hasMessages && (
+                {hasMessages && (
           <div className="space-y-6 pb-4">
             <AnimatePresence initial={false}>
               {messages.map(msg => (
@@ -814,8 +755,7 @@ export default function SourcingPage() {
         {!hasMessages && <div ref={bottomRef} />}
       </div>
 
-      {/* ══ INPUT STICKY ══ */}
-      <div className="fixed bottom-0 inset-x-0 z-30 bg-[rgba(10,11,16,0.96)] backdrop-blur-xl border-t border-white/[0.06]">
+            <div className="fixed bottom-0 inset-x-0 z-30 bg-[rgba(10,11,16,0.96)] backdrop-blur-xl border-t border-white/[0.06]">
         <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-end gap-2.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 transition-colors focus-within:border-[rgba(129,140,248,0.3)]">
             <textarea

@@ -1,8 +1,4 @@
 "use client";
-/**
- * Planification SaaS — Grille Employés × Jours
- * Shifts: draft → publish → email par employé
- */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,9 +13,6 @@ import EmptyState from "@/components/client/EmptyState";
 import { ListSkeleton } from "@/components/client/Skeleton";
 import { validate, ShiftSchema } from "@/lib/schemas/client";
 
-/* ══════════════════════════════════════════════════════════
-   TYPES
-══════════════════════════════════════════════════════════ */
 interface Employee {
   id: string;
   user_id: string;
@@ -49,7 +42,7 @@ type DraftShift = {
   end_time: string;
   type: string;
   note: string;
-  employee_id: string; // "" = open shift
+  employee_id: string;
 };
 
 type DraftEmployee = {
@@ -61,9 +54,6 @@ type DraftEmployee = {
 
 type View = "grille" | "liste";
 
-/* ══════════════════════════════════════════════════════════
-   CONSTANTS
-══════════════════════════════════════════════════════════ */
 const ACCENT = "#38bdf8";
 const ease   = [0.16, 1, 0.3, 1] as const;
 
@@ -84,9 +74,6 @@ const EMPLOYEE_COLORS = [
 const DAY_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const DAY_FULL  = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
-/* ══════════════════════════════════════════════════════════
-   HELPERS
-══════════════════════════════════════════════════════════ */
 function getWeekDays(ref: Date): Date[] {
   const d = ref.getDay();
   const mon = new Date(ref);
@@ -130,10 +117,6 @@ function emptyEmployee(color?: string): DraftEmployee {
   return { name: "", email: "", role: "", color: color ?? EMPLOYEE_COLORS[0] };
 }
 
-
-/* ══════════════════════════════════════════════════════════
-   SHIFT CARD
-══════════════════════════════════════════════════════════ */
 function ShiftCard({ shift, employee, onEdit, onDelete }: {
   shift: Shift;
   employee?: Employee;
@@ -149,10 +132,8 @@ function ShiftCard({ shift, employee, onEdit, onDelete }: {
       className="group relative flex flex-col gap-0.5 rounded-xl border p-2 text-left transition cursor-pointer"
       style={{ backgroundColor: `${color}10`, borderColor: `${color}28` }}
     >
-      {/* Left accent bar */}
-      <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full" style={{ backgroundColor: color }} />
-      {/* Published dot */}
-      {shift.status === "published" && (
+            <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full" style={{ backgroundColor: color }} />
+            {shift.status === "published" && (
         <div className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-green-400/80" />
       )}
       <div className="pl-2.5 pr-4">
@@ -178,18 +159,11 @@ function ShiftCard({ shift, employee, onEdit, onDelete }: {
   );
 }
 
-/* ══════════════════════════════════════════════════════════
-   INPUT helpers
-══════════════════════════════════════════════════════════ */
 const inputCls = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-500/40";
 const labelCls = "mb-1.5 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30";
 
-/* ══════════════════════════════════════════════════════════
-   PAGE
-══════════════════════════════════════════════════════════ */
 export default function PlanificationPage() {
-  /* ── Core state ── */
-  const [userId,     setUserId]     = useState<string | null>(null);
+    const [userId,     setUserId]     = useState<string | null>(null);
   const [employees,  setEmployees]  = useState<Employee[]>([]);
   const [shifts,     setShifts]     = useState<Shift[]>([]);
   const [loading,    setLoading]    = useState(true);
@@ -198,28 +172,23 @@ export default function PlanificationPage() {
   const [publishing, setPublishing] = useState(false);
   const { toasts, add: addToast, remove: removeToast } = useToastStack();
 
-  /* ── Shift modal ── */
-  const [shiftModal,  setShiftModal]  = useState(false);
+    const [shiftModal,  setShiftModal]  = useState(false);
   const [editShiftId, setEditShiftId] = useState<string | null>(null);
   const [shiftDraft,  setShiftDraft]  = useState<DraftShift>(emptyShift());
   const [savingShift, setSavingShift] = useState(false);
   const [shiftErrors, setShiftErrors] = useState<Record<string, string>>({});
 
-  /* ── Employee modal ── */
-  const [empModal,  setEmpModal]  = useState(false);
+    const [empModal,  setEmpModal]  = useState(false);
   const [editEmpId, setEditEmpId] = useState<string | null>(null);
   const [empDraft,  setEmpDraft]  = useState<DraftEmployee>(emptyEmployee());
   const [savingEmp, setSavingEmp] = useState(false);
 
-  /* ── Delete confirm ── */
-  const [delConfirm, setDelConfirm] = useState<{ type: "shift" | "employee"; id: string } | null>(null);
+    const [delConfirm, setDelConfirm] = useState<{ type: "shift" | "employee"; id: string } | null>(null);
   const [deleting,   setDeleting]   = useState(false);
 
-  /* ── Publish confirm ── */
-  const [pubModal, setPubModal] = useState(false);
+    const [pubModal, setPubModal] = useState(false);
 
-  /* ── Derived ── */
-  const weekDays  = useMemo(() => getWeekDays(weekRef), [weekRef]);
+    const weekDays  = useMemo(() => getWeekDays(weekRef), [weekRef]);
   const today     = todayISO();
   const weekStart = toISO(weekDays[0]);
 
@@ -228,16 +197,14 @@ export default function PlanificationPage() {
 
   const showToast = (type: "success" | "error", msg: string) => addToast(msg, type);
 
-  /* ── Fetch employees ── */
-  const fetchEmployees = useCallback(async (uid: string) => {
+    const fetchEmployees = useCallback(async (uid: string) => {
     const { data, error } = await supabase.from("employees").select("*").eq("user_id", uid).order("created_at").limit(100);
     if (error) { showToast("error", "Erreur chargement employés : " + error.message); return; }
     if (data) setEmployees(data as Employee[]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
-  /* ── Fetch shifts ── */
-  const fetchShifts = useCallback(async (uid: string, days: Date[]) => {
+    const fetchShifts = useCallback(async (uid: string, days: Date[]) => {
     setLoading(true);
     const { data, error } = await supabase
       .from("shifts").select("*")
@@ -247,32 +214,28 @@ export default function PlanificationPage() {
     if (error) showToast("error", "Erreur chargement shifts : " + error.message);
     if (data) setShifts(data as Shift[]);
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
-  /* ── Mobile: default to list view ── */
-  useEffect(() => {
+    useEffect(() => {
     if (window.innerWidth < 640) setView("liste");
   }, []);
 
-  /* ── Auth + initial fetch ── */
-  useEffect(() => {
+    useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
       await Promise.all([fetchEmployees(user.id), fetchShifts(user.id, weekDays)]);
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
-  /* ── Refetch on week change ── */
-  useEffect(() => {
+    useEffect(() => {
     if (userId) fetchShifts(userId, weekDays);
   }, [weekRef, userId, weekDays, fetchShifts]);
 
-  /* ── Memoized lookups ── */
-  const shiftsByKey = useMemo(() => {
+    const shiftsByKey = useMemo(() => {
     const map = new Map<string, Shift[]>();
     for (const s of shifts) {
       const k = `${s.employee_id ?? "open"}|${s.date}`;
@@ -302,20 +265,17 @@ export default function PlanificationPage() {
     return m;
   }, [employees]);
 
-  /* ── Week stats ── */
-  const weekStats = useMemo(() => {
+    const weekStats = useMemo(() => {
     const min = shifts.reduce((a, s) => a + Math.max(0, timeToMin(s.end_time) - timeToMin(s.start_time)), 0);
     const h = Math.floor(min / 60), m = min % 60;
     return { hours: h > 0 ? (m > 0 ? `${h}h${m}` : `${h}h`) : `${m}m`, count: shifts.length };
   }, [shifts]);
 
-  /* ── Week navigation ── */
-  const prevWeek = () => { const d = new Date(weekRef); d.setDate(d.getDate() - 7); setWeekRef(d); };
+    const prevWeek = () => { const d = new Date(weekRef); d.setDate(d.getDate() - 7); setWeekRef(d); };
   const nextWeek = () => { const d = new Date(weekRef); d.setDate(d.getDate() + 7); setWeekRef(d); };
   const goToday  = () => setWeekRef(new Date());
 
-  /* ── Open shift modal ── */
-  const openAddShift = (date?: string, empId?: string) => {
+    const openAddShift = (date?: string, empId?: string) => {
     setEditShiftId(null);
     setShiftDraft(emptyShift(date, empId));
     setShiftModal(true);
@@ -327,8 +287,7 @@ export default function PlanificationPage() {
     setShiftModal(true);
   };
 
-  /* ── Save shift ── */
-  const handleSaveShift = async () => {
+    const handleSaveShift = async () => {
     const d = shiftDraft;
     if (!d.title.trim()) { showToast("error", "Titre obligatoire"); return; }
     if (timeToMin(d.end_time) <= timeToMin(d.start_time)) { showToast("error", "Fin doit être après le début"); return; }
@@ -357,8 +316,7 @@ export default function PlanificationPage() {
       const newShift = data as Shift;
       setShifts(prev => [...prev, newShift]);
 
-      /* ── Email immédiat à l'employé assigné ── */
-      if (newShift.employee_id) {
+            if (newShift.employee_id) {
         const assignedEmp = employees.find(e => e.id === newShift.employee_id);
         if (assignedEmp?.email) {
           fetch("/api/planification/notify", {
@@ -393,8 +351,7 @@ export default function PlanificationPage() {
     setShiftModal(false);
   };
 
-  /* ── Save employee ── */
-  const handleSaveEmployee = async () => {
+    const handleSaveEmployee = async () => {
     const d = empDraft;
     if (!d.name.trim()) { showToast("error", "Nom obligatoire"); return; }
     if (!d.email.trim()) { showToast("error", "Email obligatoire — nécessaire pour les notifications de planning"); return; }
@@ -421,8 +378,7 @@ export default function PlanificationPage() {
     setEmpModal(false);
   };
 
-  /* ── Delete ── */
-  const handleDelete = async () => {
+    const handleDelete = async () => {
     if (!delConfirm) return;
     setDeleting(true);
     const table = delConfirm.type === "shift" ? "shifts" : "employees";
@@ -435,8 +391,7 @@ export default function PlanificationPage() {
     showToast("success", "Supprimé");
   };
 
-  /* ── Publish ── */
-  const handlePublish = async () => {
+    const handlePublish = async () => {
     if (!userId) return;
     setPublishing(true);
     setPubModal(false);
@@ -464,21 +419,15 @@ export default function PlanificationPage() {
     setPublishing(false);
   };
 
-  /* ══════════════════════════════════════════════════════
-     RENDER
-  ══════════════════════════════════════════════════════ */
-  return (
+    return (
     <div className="min-h-screen bg-[#080a0f]">
-      {/* Ambient glow */}
-      <div className="pointer-events-none fixed inset-0 z-0">
+            <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute left-[10%] top-[5%] h-[600px] w-[600px] rounded-full bg-[rgba(56,189,248,0.025)] blur-[180px]" />
       </div>
 
-      {/* ══ HEADER ══ */}
-      <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(8,10,15,0.92)] px-4 py-3 backdrop-blur-xl sm:px-8">
+            <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(8,10,15,0.92)] px-4 py-3 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-3">
-          {/* Left */}
-          <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl border"
                  style={{ backgroundColor: `${ACCENT}15`, borderColor: `${ACCENT}30` }}>
               <CalendarRange size={16} style={{ color: ACCENT }} />
@@ -491,10 +440,8 @@ export default function PlanificationPage() {
             </div>
           </div>
 
-          {/* Right */}
-          <div className="flex items-center gap-2">
-            {/* View toggle */}
-            <div className="hidden sm:flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
+                    <div className="flex items-center gap-2">
+                        <div className="hidden sm:flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
               {(["grille", "liste"] as View[]).map(v => (
                 <button key={v} onClick={() => setView(v)}
                   className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition"
@@ -506,8 +453,7 @@ export default function PlanificationPage() {
               ))}
             </div>
 
-            {/* Add employee */}
-            <button
+                        <button
               onClick={() => { setEditEmpId(null); setEmpDraft(emptyEmployee(EMPLOYEE_COLORS[employees.length % EMPLOYEE_COLORS.length])); setEmpModal(true); }}
               className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/50 transition hover:text-white/80"
             >
@@ -515,8 +461,7 @@ export default function PlanificationPage() {
               <span className="hidden sm:inline">Employé</span>
             </button>
 
-            {/* Add shift */}
-            <button
+                        <button
               onClick={() => openAddShift()}
               className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition"
               style={{ backgroundColor: `${ACCENT}12`, borderColor: `${ACCENT}25`, color: ACCENT }}
@@ -525,8 +470,7 @@ export default function PlanificationPage() {
               <span className="hidden sm:inline">Shift</span>
             </button>
 
-            {/* Publish */}
-            {allPublished ? (
+                        {allPublished ? (
               <div className="flex items-center gap-1.5 rounded-xl border border-green-500/25 bg-green-500/10 px-3 py-2 text-xs font-bold text-green-400">
                 <CheckCircle2 size={13} />
                 <span className="hidden sm:inline">Publiée</span>
@@ -547,8 +491,7 @@ export default function PlanificationPage() {
         </div>
       </div>
 
-      {/* ══ WEEK NAV ══ */}
-      <div className="relative z-10 mx-auto max-w-screen-xl px-4 pt-4 sm:px-8">
+            <div className="relative z-10 mx-auto max-w-screen-xl px-4 pt-4 sm:px-8">
         <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-2.5">
           <button onClick={prevWeek}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] text-white/40 hover:text-white/70 transition">
@@ -577,19 +520,16 @@ export default function PlanificationPage() {
         </div>
       </div>
 
-      {/* ══ CONTENT ══ */}
-      <div className="relative z-10 mx-auto max-w-screen-xl px-4 py-4 sm:px-8">
+            <div className="relative z-10 mx-auto max-w-screen-xl px-4 py-4 sm:px-8">
         {loading ? (
           <div className="flex items-center justify-center py-24">
             <Loader2 size={22} className="animate-spin text-white/20" />
           </div>
         ) : view === "grille" ? (
-          /* ════ GRID VIEW ════ */
-          <div className="overflow-x-auto pb-4">
+                    <div className="overflow-x-auto pb-4">
             <div style={{ minWidth: "900px" }}>
 
-              {/* Day header row */}
-              <div className="mb-2 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
+                            <div className="mb-2 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
                 <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
                   <Users size={12} className="text-white/30" />
                   <span className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Équipe</span>
@@ -609,8 +549,7 @@ export default function PlanificationPage() {
                 })}
               </div>
 
-              {/* Open shifts row */}
-              <div className="mb-1.5 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
+                            <div className="mb-1.5 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
                 <div className="flex items-center gap-2 rounded-xl border border-dashed border-amber-500/20 bg-amber-500/[0.04] px-3 py-2">
                   <div>
                     <p className="text-[0.58rem] font-bold uppercase tracking-widest text-amber-400/70">Open</p>
@@ -638,11 +577,9 @@ export default function PlanificationPage() {
                 })}
               </div>
 
-              {/* Employee rows */}
-              {employees.map(emp => (
+                            {employees.map(emp => (
                 <div key={emp.id} className="mb-1.5 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
-                  {/* Employee label */}
-                  <div className="group flex items-center justify-between gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                                    <div className="group flex items-center justify-between gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[0.6rem] font-black text-white"
                            style={{ backgroundColor: `${emp.color}30` }}>
@@ -664,8 +601,7 @@ export default function PlanificationPage() {
                       ><Trash2 size={9} /></button>
                     </div>
                   </div>
-                  {/* Day cells */}
-                  {weekDays.map(day => {
+                                    {weekDays.map(day => {
                     const iso = toISO(day);
                     const dayShifts = getShiftsFor(emp.id, iso);
                     return (
@@ -687,8 +623,7 @@ export default function PlanificationPage() {
                 </div>
               ))}
 
-              {/* Empty employees CTA */}
-              {employees.length === 0 && (
+                            {employees.length === 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
                   className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/[0.07] py-10 text-center"
@@ -711,8 +646,7 @@ export default function PlanificationPage() {
             </div>
           </div>
         ) : (
-          /* ════ LIST VIEW ════ */
-          <div className="space-y-3">
+                    <div className="space-y-3">
             {weekDays.map((day, i) => {
               const iso = toISO(day);
               const isToday = iso === today;
@@ -723,8 +657,7 @@ export default function PlanificationPage() {
                   transition={{ duration: 0.25, delay: i * 0.04, ease }}
                   className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]"
                 >
-                  {/* Day header */}
-                  <div className="flex items-center justify-between border-b border-white/[0.05] px-4 py-3"
+                                    <div className="flex items-center justify-between border-b border-white/[0.05] px-4 py-3"
                        style={isToday ? { backgroundColor: `${ACCENT}08` } : {}}>
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-sm font-black"
@@ -804,10 +737,7 @@ export default function PlanificationPage() {
         )}
       </div>
 
-      {/* ══════════════════════════════════════════
-          SHIFT MODAL
-      ══════════════════════════════════════════ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {shiftModal && (
           <>
             <motion.div key="sb" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -835,8 +765,7 @@ export default function PlanificationPage() {
               </div>
 
               <div className="max-h-[72vh] space-y-4 overflow-y-auto px-6 py-5">
-                {/* Title */}
-                <div>
+                                <div>
                   <label className={labelCls}>Titre <span style={{ color: ACCENT }}>*</span></label>
                   <input autoFocus value={shiftDraft.title}
                     onChange={e => setShiftDraft(d => ({ ...d, title: e.target.value }))}
@@ -845,8 +774,7 @@ export default function PlanificationPage() {
                   />
                 </div>
 
-                {/* Type */}
-                <div>
+                                <div>
                   <label className={labelCls}>Type</label>
                   <div className="flex flex-wrap gap-2">
                     {SHIFT_TYPES.map(t => (
@@ -862,8 +790,7 @@ export default function PlanificationPage() {
                   </div>
                 </div>
 
-                {/* Date + Times */}
-                <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="grid gap-3 sm:grid-cols-3">
                   <div>
                     <label className={labelCls}>Date <span style={{ color: ACCENT }}>*</span></label>
                     <input type="date" value={shiftDraft.date}
@@ -884,8 +811,7 @@ export default function PlanificationPage() {
                   </div>
                 </div>
 
-                {/* Assign to */}
-                <div>
+                                <div>
                   <label className="mb-2 flex items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">
                     <User size={10} /> Assigner à
                   </label>
@@ -917,8 +843,7 @@ export default function PlanificationPage() {
                       ))}
                     </div>
                   )}
-                  {/* Warn if selected employee has no email */}
-                  {shiftDraft.employee_id && (() => {
+                                    {shiftDraft.employee_id && (() => {
                     const sel = employees.find(e => e.id === shiftDraft.employee_id);
                     if (!sel || sel.email) return null;
                     return (
@@ -936,8 +861,7 @@ export default function PlanificationPage() {
                   })()}
                 </div>
 
-                {/* Note */}
-                <div>
+                                <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">
                     <Tag size={10} /> Note (optionnel)
                   </label>
@@ -948,8 +872,7 @@ export default function PlanificationPage() {
                   />
                 </div>
 
-                {/* Info: email behavior */}
-                <div className="flex items-start gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+                                <div className="flex items-start gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
                   <Info size={11} className="mt-0.5 shrink-0 text-white/25" />
                   <p className="text-[0.62rem] leading-relaxed text-white/30">
                     Un email est envoyé{" "}
@@ -958,8 +881,7 @@ export default function PlanificationPage() {
                   </p>
                 </div>
 
-                {/* Actions */}
-                <div className="flex gap-3 pb-2">
+                                <div className="flex gap-3 pb-2">
                   <button onClick={() => setShiftModal(false)}
                     className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-semibold text-white/40 hover:text-white/60 transition">
                     Annuler
@@ -980,10 +902,7 @@ export default function PlanificationPage() {
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════════════════════════
-          EMPLOYEE MODAL
-      ══════════════════════════════════════════ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {empModal && (
           <>
             <motion.div key="eb" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -1069,13 +988,9 @@ export default function PlanificationPage() {
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════════════════════════
-          PUBLISH CONFIRM MODAL
-      ══════════════════════════════════════════ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {pubModal && (() => {
-          /* employees with shifts this week but no email */
-          const assignedIds = new Set(shifts.map(s => s.employee_id).filter(Boolean));
+                    const assignedIds = new Set(shifts.map(s => s.employee_id).filter(Boolean));
           const missingEmail = employees.filter(e => assignedIds.has(e.id) && !e.email);
           const canPublish   = missingEmail.length === 0;
           const willEmail    = employees.filter(e => assignedIds.has(e.id) && e.email).length;
@@ -1100,8 +1015,7 @@ export default function PlanificationPage() {
                   )}
                 </p>
 
-                {/* Blocking error — missing emails */}
-                {missingEmail.length > 0 && (
+                                {missingEmail.length > 0 && (
                   <div className="mt-3 rounded-xl border border-red-500/25 bg-red-500/[0.07] p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <AlertCircle size={12} className="shrink-0 text-red-400" />
@@ -1145,8 +1059,7 @@ export default function PlanificationPage() {
         })()}
       </AnimatePresence>
 
-      {/* ══ DELETE CONFIRM ══ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {delConfirm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
@@ -1181,8 +1094,7 @@ export default function PlanificationPage() {
         )}
       </AnimatePresence>
 
-      {/* ══ TOAST ══ */}
-      <ToastStack toasts={toasts} remove={removeToast} />
+            <ToastStack toasts={toasts} remove={removeToast} />
     </div>
   );
 }

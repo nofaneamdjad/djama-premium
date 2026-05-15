@@ -1,7 +1,4 @@
 "use client";
-/**
- * Équipe — Membres · Tâches (Kanban) · Chat · RH · IA
- */
 
 import React, {
   useState, useEffect, useCallback, useMemo, useRef,
@@ -20,9 +17,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
-/* ══════════════════════════════════════════════════════════
-   Types
-══════════════════════════════════════════════════════════ */
 type MemberRole   = "admin"|"manager"|"employee"|"accountant"|"extern";
 type MemberStatus = "active"|"away"|"leave"|"inactive";
 type TaskStatus   = "todo"|"in_progress"|"done"|"late";
@@ -64,9 +58,6 @@ interface TeamMeeting {
   participants:string[]; notes:string; status:string; created_at:string;
 }
 
-/* ══════════════════════════════════════════════════════════
-   Constants
-══════════════════════════════════════════════════════════ */
 const SKY = "#0ea5e9";
 
 const STATUSES: { v:MemberStatus; l:string; c:string }[] = [
@@ -120,9 +111,6 @@ const TABS: { k:AppTab; l:string; icon:LucideIcon }[] = [
   { k:"hr",      l:"RH",       icon: Briefcase },
 ];
 
-/* ══════════════════════════════════════════════════════════
-   Helpers
-══════════════════════════════════════════════════════════ */
 const initials = (n:string) =>
   n.trim().split(/\s+/).map(w => w[0]?.toUpperCase()??"").slice(0,2).join("");
 
@@ -173,9 +161,6 @@ function parseTask(r:Record<string,unknown>): TeamTask {
   };
 }
 
-/* ══════════════════════════════════════════════════════════
-   Avatar component
-══════════════════════════════════════════════════════════ */
 function Avatar({ name, color, size=36 }: { name:string; color:string; size?:number }) {
   return (
     <div className="rounded-full flex items-center justify-center font-bold shrink-0 select-none"
@@ -185,12 +170,8 @@ function Avatar({ name, color, size=36 }: { name:string; color:string; size?:num
   );
 }
 
-/* ══════════════════════════════════════════════════════════
-   Page
-══════════════════════════════════════════════════════════ */
 export default function EquipePage() {
-  /* ── State ── */
-  const [tab,      setTab]      = useState<AppTab>("members");
+    const [tab,      setTab]      = useState<AppTab>("members");
   const [members,  setMembers]  = useState<TeamMember[]>([]);
   const [tasks,    setTasks]    = useState<TeamTask[]>([]);
   const [messages, setMessages] = useState<TeamMessage[]>([]);
@@ -200,44 +181,37 @@ export default function EquipePage() {
   const [search,   setSearch]   = useState("");
   const [toastData,setToastData]= useState<ToastData|null>(null);
 
-  /* member modal */
-  const [showMemberModal, setShowMemberModal] = useState(false);
+    const [showMemberModal, setShowMemberModal] = useState(false);
   const [editMember,      setEditMember]      = useState<TeamMember|null>(null);
   const [mForm,           setMForm]           = useState<Partial<TeamMember>>({});
   const [savingM,         setSavingM]         = useState(false);
 
-  /* task modal */
-  const [showTaskModal, setShowTaskModal] = useState(false);
+    const [showTaskModal, setShowTaskModal] = useState(false);
   const [editTask,      setEditTask]      = useState<TeamTask|null>(null);
   const [tForm,         setTForm]         = useState<Partial<TeamTask>>({});
   const [savingT,       setSavingT]       = useState(false);
   const [quickTask,     setQuickTask]     = useState("");
   const [qTaskCol,      setQTaskCol]      = useState<TaskStatus>("todo");
 
-  /* leave modal */
-  const [showLeaveModal, setShowLeaveModal] = useState(false);
+    const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [lForm,          setLForm]          = useState<Partial<TeamLeave>>({});
   const [savingL,        setSavingL]        = useState(false);
 
-  /* meeting modal */
-  const [showMeetModal, setShowMeetModal] = useState(false);
+    const [showMeetModal, setShowMeetModal] = useState(false);
   const [meetForm,      setMeetForm]      = useState<Partial<TeamMeeting>>({});
   const [savingMeet,    setSavingMeet]    = useState(false);
 
-  /* chat */
-  const [chatMsg,     setChatMsg]    = useState("");
+    const [chatMsg,     setChatMsg]    = useState("");
   const [chatChannel, setChatChannel]= useState("général");
   const [mySenderName,setMySenderName]= useState("");
   const [sendingMsg,  setSendingMsg]  = useState(false);
   const msgEndRef = useRef<HTMLDivElement>(null);
 
-  /* AI */
-  const [showAI,   setShowAI]   = useState(false);
+    const [showAI,   setShowAI]   = useState(false);
   const [aiLoad,   setAiLoad]   = useState(false);
   const [aiResult, setAiResult] = useState("");
 
-  /* ── Load ── */
-  const load = useCallback(async () => {
+    const load = useCallback(async () => {
     const { data:{ user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
     const uid = user.id;
@@ -254,7 +228,7 @@ export default function EquipePage() {
     setLeaves((lR.data??[]) as TeamLeave[]);
     setMeetings((mrR.data??[]) as TeamMeeting[]);
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   useEffect(()=>{ load(); },[load]);
@@ -263,8 +237,7 @@ export default function EquipePage() {
     if (tab==="chat") setTimeout(()=>msgEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
   },[tab, messages]);
 
-  /* ── Stats ── */
-  const stats = useMemo(()=>({
+    const stats = useMemo(()=>({
     active:   members.filter(m=>m.status==="active").length,
     inProg:   tasks.filter(t=>t.status==="in_progress").length,
     done:     tasks.filter(t=>t.status==="done").length,
@@ -275,8 +248,7 @@ export default function EquipePage() {
                       .sort((a,b)=>new Date(a.date_at).getTime()-new Date(b.date_at).getTime())[0],
   }),[members,tasks,leaves,meetings]);
 
-  /* ── Member CRUD ── */
-  function openNewMember() {
+    function openNewMember() {
     setEditMember(null);
     setMForm({ name:"", email:"", phone:"", position:"", department:"",
       role:"employee", status:"active",
@@ -309,8 +281,7 @@ export default function EquipePage() {
     setToastData({type:"success",msg:"Membre supprimé"});
   }
 
-  /* ── Task CRUD ── */
-  function openNewTask(col:TaskStatus="todo") {
+    function openNewTask(col:TaskStatus="todo") {
     setEditTask(null);
     setTForm({title:"",description:"",priority:"normal",status:col,project:"",estimated_hours:0});
     setShowTaskModal(true);
@@ -353,8 +324,7 @@ export default function EquipePage() {
     setQuickTask("");
   }
 
-  /* ── Chat ── */
-  async function sendMessage() {
+    async function sendMessage() {
     if (!chatMsg.trim() || !mySenderName.trim()) return;
     setSendingMsg(true);
     const { data:{ user } } = await supabase.auth.getUser();
@@ -367,8 +337,7 @@ export default function EquipePage() {
     setChatMsg(""); setSendingMsg(false);
   }
 
-  /* ── Leave CRUD ── */
-  async function saveLeave() {
+    async function saveLeave() {
     if (!lForm.member_id || !lForm.start_date || !lForm.end_date) return;
     setSavingL(true);
     const { data:{ user } } = await supabase.auth.getUser();
@@ -386,8 +355,7 @@ export default function EquipePage() {
     setLeaves(p=>p.map(l=>l.id===id?{...l,status}:l));
   }
 
-  /* ── Meeting CRUD ── */
-  async function saveMeeting() {
+    async function saveMeeting() {
     if (!meetForm.title?.trim() || !meetForm.date_at) return;
     setSavingMeet(true);
     const { data:{ user } } = await supabase.auth.getUser();
@@ -402,8 +370,7 @@ export default function EquipePage() {
     setToastData({type:"success",msg:"Réunion créée"});
   }
 
-  /* ── AI ── */
-  async function runAI(prompt:string) {
+    async function runAI(prompt:string) {
     setAiLoad(true); setAiResult("");
     const ctx = [
       `Équipe : ${members.length} membres (${stats.active} actifs, ${stats.onLeave} en congé)`,
@@ -422,8 +389,7 @@ export default function EquipePage() {
     finally { setAiLoad(false); }
   }
 
-  /* ── Filtered members ── */
-  const filteredMembers = useMemo(()=>{
+    const filteredMembers = useMemo(()=>{
     if (!search.trim()) return members;
     const q = search.toLowerCase();
     return members.filter(m=>
@@ -434,8 +400,7 @@ export default function EquipePage() {
     );
   },[members,search]);
 
-  /* ── Chat channels ── */
-  const channelMessages = messages.filter(m=>m.channel===chatChannel);
+    const channelMessages = messages.filter(m=>m.channel===chatChannel);
   const groupedMsgs = useMemo(()=>{
     const groups: {date:string; msgs:TeamMessage[]}[] = [];
     channelMessages.forEach(m=>{
@@ -447,16 +412,11 @@ export default function EquipePage() {
     return groups;
   },[channelMessages]);
 
-  /* ══════════════════════════════════════════════════════
-     RENDER TABS
-  ══════════════════════════════════════════════════════ */
 
-  /* Members tab */
-  function renderMembers() {
+    function renderMembers() {
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5 py-4 border-b border-white/[0.06] shrink-0">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5 py-4 border-b border-white/[0.06] shrink-0">
           {[
             { l:"Membres actifs",  v:stats.active,  c:"#10b981" },
             { l:"Tâches en cours", v:stats.inProg,  c:"#f59e0b" },
@@ -473,8 +433,7 @@ export default function EquipePage() {
           ))}
         </div>
 
-        {/* Member grid */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+                <div className="flex-1 overflow-y-auto px-5 py-4">
           {filteredMembers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <Users size={32} className="text-white/15"/>
@@ -497,8 +456,7 @@ export default function EquipePage() {
                     className="group relative rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 cursor-pointer transition-all hover:border-white/15 hover:bg-white/[0.05]"
                     onClick={()=>openEditMember(m)}>
 
-                    {/* Status dot */}
-                    <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full"
+                                        <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full"
                       style={{background:status?.c??SKY}} title={status?.l}/>
 
                     <div className="flex items-start gap-3">
@@ -544,16 +502,14 @@ export default function EquipePage() {
     );
   }
 
-  /* Tasks tab — Kanban */
-  function renderTasks() {
+    function renderTasks() {
     return (
       <div className="flex gap-4 overflow-x-auto flex-1 p-5 pb-4">
         {TASK_COLS.map(col=>{
           const colTasks = tasks.filter(t=>t.status===col.k);
           return (
             <div key={col.k} className="w-72 xl:w-80 shrink-0 flex flex-col rounded-2xl border border-white/[0.06] bg-white/[0.02]">
-              {/* Column header */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+                            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
                 <div className="w-2.5 h-2.5 rounded-full" style={{background:col.c}}/>
                 <span className="text-sm font-bold text-white/70">{col.l}</span>
                 <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-white/8 text-white/35">{colTasks.length}</span>
@@ -563,8 +519,7 @@ export default function EquipePage() {
                 </button>
               </div>
 
-              {/* Tasks */}
-              <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2">
                 <AnimatePresence>
                   {colTasks.map(t=>{
                     const prio   = PRIOS.find(p=>p.v===t.priority);
@@ -602,8 +557,7 @@ export default function EquipePage() {
                             </span>
                           )}
                         </div>
-                        {/* Status changer */}
-                        <div className="flex gap-1 mt-2 ml-4 opacity-0 group-hover:opacity-100 transition-all">
+                                                <div className="flex gap-1 mt-2 ml-4 opacity-0 group-hover:opacity-100 transition-all">
                           {TASK_COLS.filter(c=>c.k!==col.k).map(c=>(
                             <button key={c.k}
                               onClick={e=>{e.stopPropagation();changeTaskStatus(t.id,c.k);}}
@@ -619,8 +573,7 @@ export default function EquipePage() {
                 </AnimatePresence>
               </div>
 
-              {/* Quick add */}
-              <div className="p-2 border-t border-white/[0.06]">
+                            <div className="p-2 border-t border-white/[0.06]">
                 <div className="flex items-center gap-1">
                   <input
                     value={qTaskCol===col.k ? quickTask : ""}
@@ -643,12 +596,10 @@ export default function EquipePage() {
     );
   }
 
-  /* Chat tab */
-  function renderChat() {
+    function renderChat() {
     return (
       <div className="flex flex-1 overflow-hidden">
-        {/* Channel sidebar */}
-        <div className="w-48 shrink-0 border-r border-white/[0.06] bg-white/[0.025] p-3 space-y-1">
+                <div className="w-48 shrink-0 border-r border-white/[0.06] bg-white/[0.025] p-3 space-y-1">
           <p className="text-[10px] font-bold text-white/25 uppercase tracking-wider px-2 mb-3">Canaux</p>
           {CHANNELS.map(ch=>(
             <button key={ch} onClick={()=>setChatChannel(ch)}
@@ -662,17 +613,14 @@ export default function EquipePage() {
           ))}
         </div>
 
-        {/* Messages */}
-        <div className="flex flex-col flex-1 min-w-0">
-          {/* Channel header */}
-          <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2 shrink-0">
+                <div className="flex flex-col flex-1 min-w-0">
+                    <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2 shrink-0">
             <Hash size={14} className="text-white/30"/>
             <span className="font-bold text-sm text-white/80">{chatChannel}</span>
             <span className="text-xs text-white/25 ml-auto">{channelMessages.length} messages</span>
           </div>
 
-          {/* Message list */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+                    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
             {groupedMsgs.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <MessageSquare size={28} className="text-white/15"/>
@@ -710,8 +658,7 @@ export default function EquipePage() {
             <div ref={msgEndRef}/>
           </div>
 
-          {/* Input */}
-          <div className="px-4 py-3 border-t border-white/[0.06] space-y-2 shrink-0">
+                    <div className="px-4 py-3 border-t border-white/[0.06] space-y-2 shrink-0">
             {!mySenderName.trim() && (
               <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
                 <AlertCircle size={12} className="text-amber-400 shrink-0"/>
@@ -737,14 +684,12 @@ export default function EquipePage() {
     );
   }
 
-  /* HR tab */
-  function renderHR() {
+    function renderHR() {
     const upcomingMeetings = meetings.filter(m=>m.status==="planned"&&new Date(m.date_at)>new Date()).slice(0,5);
     return (
       <div className="flex-1 overflow-y-auto px-5 py-5 grid gap-6 lg:grid-cols-2">
 
-        {/* Leave requests */}
-        <section>
+                <section>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-white/70 flex items-center gap-2">
               <Calendar size={15}/>Congés & Absences
@@ -800,8 +745,7 @@ export default function EquipePage() {
           </div>
         </section>
 
-        {/* Meetings */}
-        <section>
+                <section>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-white/70 flex items-center gap-2">
               <Video size={15}/>Réunions à venir
@@ -854,17 +798,13 @@ export default function EquipePage() {
     );
   }
 
-  /* ══════════════════════════════════════════════════════
-     MAIN RENDER
-  ══════════════════════════════════════════════════════ */
-  return (
+    return (
     <div className="flex flex-col h-[calc(100vh-56px)] bg-[#0a0f1e] text-white overflow-hidden">
       <AnimatePresence>
         {toastData && <Toast toast={toastData} onClose={()=>setToastData(null)}/>}
       </AnimatePresence>
 
-      {/* ── Top bar ── */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.06] shrink-0 flex-wrap gap-y-2">
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.06] shrink-0 flex-wrap gap-y-2">
         <div className="flex items-center gap-2 mr-auto">
           <Users size={20} style={{color:SKY}}/>
           <h1 className="font-bold text-lg">Équipe</h1>
@@ -873,8 +813,7 @@ export default function EquipePage() {
           </span>
         </div>
 
-        {/* Search */}
-        {tab==="members" && (
+                {tab==="members" && (
           <div className="relative w-48">
             <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"/>
             <input value={search} onChange={e=>setSearch(e.target.value)}
@@ -883,8 +822,7 @@ export default function EquipePage() {
           </div>
         )}
 
-        {/* AI */}
-        <button onClick={()=>setShowAI(p=>!p)}
+                <button onClick={()=>setShowAI(p=>!p)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
           style={{
             background: showAI ? `${SKY}22` : "rgba(255,255,255,.05)",
@@ -894,8 +832,7 @@ export default function EquipePage() {
           <Sparkles size={13}/>IA Équipe
         </button>
 
-        {/* Add button */}
-        <button
+                <button
           onClick={()=>{
             if (tab==="members") openNewMember();
             else if (tab==="tasks") openNewTask("todo");
@@ -908,8 +845,7 @@ export default function EquipePage() {
         </button>
       </div>
 
-      {/* ── AI Panel ── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showAI && (
           <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}}
             className="border-b border-white/[0.06] bg-white/[0.025] overflow-hidden shrink-0">
@@ -944,8 +880,7 @@ export default function EquipePage() {
         )}
       </AnimatePresence>
 
-      {/* ── Tabs ── */}
-      <div className="flex border-b border-white/[0.06] shrink-0 px-5">
+            <div className="flex border-b border-white/[0.06] shrink-0 px-5">
         {TABS.map(t=>(
           <button key={t.k} onClick={()=>setTab(t.k)}
             className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px"
@@ -964,8 +899,7 @@ export default function EquipePage() {
         ))}
       </div>
 
-      {/* ── Content ── */}
-      {loading ? (
+            {loading ? (
         <div className="flex items-center justify-center flex-1">
           <Loader2 size={24} className="animate-spin text-white/20"/>
         </div>
@@ -978,10 +912,7 @@ export default function EquipePage() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════
-          MEMBER MODAL
-      ══════════════════════════════════════════════════ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showMemberModal && (
           <>
             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
@@ -991,8 +922,7 @@ export default function EquipePage() {
               className="fixed inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-50 rounded-3xl border border-white/[0.08] bg-white/[0.025] shadow-2xl flex flex-col overflow-hidden"
               onClick={e=>e.stopPropagation()}>
 
-              {/* Header */}
-              <div className="flex items-center gap-3 px-5 pt-5 pb-3 shrink-0 border-b border-white/[0.06]">
+                            <div className="flex items-center gap-3 px-5 pt-5 pb-3 shrink-0 border-b border-white/[0.06]">
                 {mForm.name && <Avatar name={mForm.name} color={mForm.avatar_color??SKY} size={40}/>}
                 <div className="flex-1">
                   <p className="font-bold text-sm text-white">{editMember ? "Modifier le membre" : "Nouveau membre"}</p>
@@ -1003,18 +933,15 @@ export default function EquipePage() {
                 </button>
               </div>
 
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-                {/* Name */}
-                <div className="space-y-1">
+                            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+                                <div className="space-y-1">
                   <label className="text-[10px] text-white/35 uppercase tracking-wide">Nom complet *</label>
                   <input value={mForm.name??""} onChange={e=>setMForm(p=>({...p,name:e.target.value}))}
                     placeholder="Prénom Nom"
                     className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-sky-500/40"/>
                 </div>
 
-                {/* Role + Status */}
-                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-[10px] text-white/35 uppercase tracking-wide">Rôle</label>
                     <select value={mForm.role??"employee"} onChange={e=>setMForm(p=>({...p,role:e.target.value as MemberRole}))}
@@ -1031,8 +958,7 @@ export default function EquipePage() {
                   </div>
                 </div>
 
-                {/* Position + Department */}
-                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-3">
                   {[
                     {l:"Poste",        k:"position"   as const, icon:<Briefcase size={12}/>, ph:"Ex: Développeur"},
                     {l:"Département",  k:"department" as const, icon:<Building size={12}/>,  ph:"Ex: Tech"},
@@ -1049,8 +975,7 @@ export default function EquipePage() {
                   ))}
                 </div>
 
-                {/* Email + Phone */}
-                {[
+                                {[
                   {l:"Email",     k:"email" as const, icon:<Mail size={12}/>,  ph:"prenom@company.com", type:"email"},
                   {l:"Téléphone", k:"phone" as const, icon:<Phone size={12}/>, ph:"+33 6 …",            type:"tel"},
                 ].map(f=>(
@@ -1065,15 +990,13 @@ export default function EquipePage() {
                   </div>
                 ))}
 
-                {/* Entry date */}
-                <div className="space-y-1">
+                                <div className="space-y-1">
                   <label className="text-[10px] text-white/35 uppercase tracking-wide">Date d&apos;entrée</label>
                   <input type="date" value={mForm.entry_date??""} onChange={e=>setMForm(p=>({...p,entry_date:e.target.value||null}))}
                     className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white/70 outline-none [color-scheme:dark]"/>
                 </div>
 
-                {/* Avatar color */}
-                <div className="space-y-2">
+                                <div className="space-y-2">
                   <label className="text-[10px] text-white/35 uppercase tracking-wide">Couleur avatar</label>
                   <div className="flex gap-2 flex-wrap">
                     {AVATAR_COLORS.map(c=>(
@@ -1085,8 +1008,7 @@ export default function EquipePage() {
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="flex items-center gap-2 px-5 py-4 border-t border-white/[0.06] shrink-0">
+                            <div className="flex items-center gap-2 px-5 py-4 border-t border-white/[0.06] shrink-0">
                 {editMember && (
                   <button onClick={()=>deleteMember(editMember.id)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all">
@@ -1108,10 +1030,7 @@ export default function EquipePage() {
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════════════════════════════════
-          TASK MODAL
-      ══════════════════════════════════════════════════ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showTaskModal && (
           <>
             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
@@ -1187,10 +1106,7 @@ export default function EquipePage() {
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════════════════════════════════
-          LEAVE MODAL
-      ══════════════════════════════════════════════════ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showLeaveModal && (
           <>
             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
@@ -1247,10 +1163,7 @@ export default function EquipePage() {
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════════════════════════════════
-          MEETING MODAL
-      ══════════════════════════════════════════════════ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showMeetModal && (
           <>
             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}

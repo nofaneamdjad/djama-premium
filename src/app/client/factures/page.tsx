@@ -17,9 +17,6 @@ import type { PreviewData }       from "@/components/invoice/shared";
 import { TemplateSelector }       from "@/components/invoice/TemplateSelector";
 import { InvoiceTemplate }        from "@/components/invoice/InvoiceTemplate";
 
-/* ═══════════════════════════════════════════════════════════
-   TYPES
-═══════════════════════════════════════════════════════════ */
 type DocType   = "facture" | "devis";
 type DocStatut = "brouillon" | "envoyé" | "payé" | "en_retard";
 
@@ -38,53 +35,39 @@ interface Document {
   type:             DocType;
   numero:           string;
   statut:           DocStatut;
-  /* Objet */
-  sujet:            string;
-  /* Émetteur */
-  emetteur_nom:     string;
+    sujet:            string;
+    emetteur_nom:     string;
   emetteur_email:   string;
   emetteur_adresse: string;
   emetteur_siret:   string;
   emetteur_logo:    string;
-  /* Client */
-  client_nom:       string;
+    client_nom:       string;
   client_societe:   string;
   client_email:     string;
   client_telephone: string;
   client_adresse:   string;
-  /* Dates */
-  date_document:    string;
+    date_document:    string;
   date_echeance:    string;
-  /* Remise & Acompte */
-  remise_pct:       number;
+    remise_pct:       number;
   acompte:          number;
-  /* RIB */
-  rib_titulaire:    string;
+    rib_titulaire:    string;
   rib_iban:         string;
   rib_bic:          string;
   rib_banque:       string;
-  /* Mémos */
-  notes:            string;
+    notes:            string;
   conditions:       string;
-  /* Couleur */
-  couleur:          string;
-  /* Template PDF */
-  template:         TemplateType;
-  /* Totaux */
-  total_ht:         number;
+    couleur:          string;
+    template:         TemplateType;
+    total_ht:         number;
   total_tva:        number;
   total_ttc:        number;
-  /* Timestamps */
-  created_at:       string;
+    created_at:       string;
   updated_at:       string;
 }
 
 type DraftDoc = Omit<Document,
   "id"|"user_id"|"created_at"|"updated_at"|"total_ht"|"total_tva"|"total_ttc">;
 
-/* ═══════════════════════════════════════════════════════════
-   CONSTANTES
-═══════════════════════════════════════════════════════════ */
 const ease = [0.16, 1, 0.3, 1] as const;
 
 const STATUTS: Record<DocStatut,{label:string;color:string;bg:string;border:string;Icon:React.ElementType}> = {
@@ -124,9 +107,6 @@ const EMPTY_DRAFT = (): DraftDoc => ({
   template: "modern" as TemplateType,
 });
 
-/* ═══════════════════════════════════════════════════════════
-   UTILITAIRES
-═══════════════════════════════════════════════════════════ */
 function calcTotals(items: DocItem[], remise_pct = 0, acompte = 0) {
   let htRaw = 0, tvaRaw = 0;
   for (const it of items) {
@@ -161,9 +141,6 @@ function contrastColor(hex: string): "#0a0a0a"|"#ffffff" {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? "#0a0a0a" : "#ffffff";
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PDF EXPORT
-═══════════════════════════════════════════════════════════ */
 async function exportPDFWithTemplate(
   draft:        DraftDoc,
   items:        DocItem[],
@@ -173,7 +150,7 @@ async function exportPDFWithTemplate(
 ) {
   const { generatePdf } = await import("@/lib/pdf/generatePdf");
 
-  // TVA dominante (première ligne)
+
   const mainTaxRate = items[0]?.vat_rate ?? 20;
 
   await generatePdf({
@@ -184,18 +161,15 @@ async function exportPDFWithTemplate(
     due_date:        draft.type === "facture" ? (draft.date_echeance || null) : null,
     valid_until:     draft.type === "devis"   ? (draft.date_echeance || null) : null,
 
-    /* Client */
-    client_name:     draft.client_nom      || "(Client)",
+        client_name:     draft.client_nom      || "(Client)",
     client_company:  draft.client_societe  || null,
     client_email:    draft.client_email,
     client_phone:    draft.client_telephone || null,
     client_address:  draft.client_adresse  || null,
 
-    /* Objet */
-    subject:         draft.sujet || draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
+        subject:         draft.sujet || draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
 
-    /* Lignes */
-    items: items.map(it => ({
+        items: items.map(it => ({
       description: it.description || "(description)",
       quantity:    it.quantity,
       unit_price:  it.unit_price,
@@ -203,30 +177,25 @@ async function exportPDFWithTemplate(
       tax_rate:    it.vat_rate,
     })),
 
-    /* Totaux */
-    subtotal:      totals.subtotal_ht,
+        subtotal:      totals.subtotal_ht,
     discount_rate: draft.remise_pct > 0 ? draft.remise_pct : null,
     discount:      totals.remise > 0    ? totals.remise    : null,
     tax_rate:      mainTaxRate,
     tax_amount:    totals.tva,
     total:         totals.ttc,
 
-    /* Acompte */
-    deposit:       draft.acompte > 0 ? draft.acompte      : null,
+        deposit:       draft.acompte > 0 ? draft.acompte      : null,
     deposit_label: draft.acompte > 0 ? "Acompte verse"    : null,
 
-    /* RIB */
-    rib_titulaire: draft.rib_titulaire || null,
+        rib_titulaire: draft.rib_titulaire || null,
     rib_iban:      draft.rib_iban      || null,
     rib_bic:       draft.rib_bic       || null,
     rib_banque:    draft.rib_banque    || null,
 
-    /* Notes */
-    notes:         draft.notes      || null,
+        notes:         draft.notes      || null,
     footer_text:   draft.conditions || null,
 
-    /* Entreprise */
-    company: {
+        company: {
       logoUrl:      draft.emetteur_logo    || null,
       name:         draft.emetteur_nom     || "",
       email:        draft.emetteur_email   || "",
@@ -240,9 +209,6 @@ async function exportPDFWithTemplate(
   });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   ADAPTER — DraftDoc → PreviewData
-═══════════════════════════════════════════════════════════ */
 function draftToPreviewData(
   draft:  DraftDoc,
   items:  DocItem[],
@@ -279,9 +245,6 @@ function draftToPreviewData(
   };
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SOUS-COMPOSANTS
-═══════════════════════════════════════════════════════════ */
 function StatutBadge({ statut }: { statut: DocStatut }) {
   const s = STATUTS[statut];
   return (
@@ -374,8 +337,7 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
       <div className="flex items-center gap-3">
         {value ? (
           <div className="relative group">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value} alt="Logo" className="h-12 w-auto max-w-[120px] rounded-lg border border-white/10 bg-white/5 object-contain p-1"/>
+                        <img src={value} alt="Logo" className="h-12 w-auto max-w-[120px] rounded-lg border border-white/10 bg-white/5 object-contain p-1"/>
             <button onClick={() => onChange("")}
               className="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full border border-red-500/30 bg-white/[0.025] text-red-400 transition group-hover:flex">
               <X size={10}/>
@@ -397,9 +359,6 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PAGE PRINCIPALE
-═══════════════════════════════════════════════════════════ */
 export default function FacturesPage() {
   const [documents,   setDocuments]   = useState<Document[]>([]);
   const [selected,    setSelected]    = useState<Document|null>(null);
@@ -417,8 +376,7 @@ export default function FacturesPage() {
   const [confirmDel,  setConfirmDel]  = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
-  /* ── Logo options (persistées en localStorage) ── */
-  const [logoSize,     setLogoSize]     = useState<"sm"|"md"|"lg">(() => {
+    const [logoSize,     setLogoSize]     = useState<"sm"|"md"|"lg">(() => {
     if (typeof window !== "undefined") {
       return (localStorage.getItem("pdf.logo_size") as "sm"|"md"|"lg") ?? "md";
     }
@@ -431,21 +389,18 @@ export default function FacturesPage() {
     return false;
   });
 
-  /* ── Email modal ── */
-  const [emailModal,   setEmailModal]   = useState(false);
+    const [emailModal,   setEmailModal]   = useState(false);
   const [emailTo,      setEmailTo]      = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMsg,     setEmailMsg]     = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
 
-  /* ── Payment link modal ── */
-  const [payLinkModal,   setPayLinkModal]   = useState(false);
+    const [payLinkModal,   setPayLinkModal]   = useState(false);
   const [payLinkLoading, setPayLinkLoading] = useState(false);
   const [payLinkUrl,     setPayLinkUrl]     = useState("");
   const [copied,         setCopied]         = useState(false);
 
-  /* ── Portail client modal ── */
-  const [portalModal,   setPortalModal]   = useState(false);
+    const [portalModal,   setPortalModal]   = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalUrl,     setPortalUrl]     = useState("");
   const [portalCopied,  setPortalCopied]  = useState(false);
@@ -455,8 +410,7 @@ export default function FacturesPage() {
     [items, draft?.remise_pct, draft?.acompte]
   );
 
-  /* ── Charger ── */
-  const fetchDocs = useCallback(async () => {
+    const fetchDocs = useCallback(async () => {
     setLoadingAll(true);
     const { data, error } = await supabase.from("documents").select("*").order("updated_at", { ascending: false }).limit(200);
     if (error) {
@@ -472,8 +426,7 @@ export default function FacturesPage() {
 
   function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
 
-  /* ── Ouvrir ── */
-  async function openDoc(doc: Document) {
+    async function openDoc(doc: Document) {
     setSelected(doc);
     setDraft({
       type:             doc.type,
@@ -509,8 +462,7 @@ export default function FacturesPage() {
     setMobileView("editor");
   }
 
-  /* ── Nouveau ── */
-  function newDoc(type: DocType = "facture") {
+    function newDoc(type: DocType = "facture") {
     setSelected(null);
     setDraft({ ...EMPTY_DRAFT(), type, numero: newNumero(type, documents) });
     setItems([EMPTY_ITEM()]);
@@ -523,8 +475,7 @@ export default function FacturesPage() {
     setDirty(true);
   }
 
-  /* ── Lignes ── */
-  function updItem(idx: number, k: keyof DocItem, v: string|number) {
+    function updItem(idx: number, k: keyof DocItem, v: string|number) {
     setItems(p => p.map((it, i) => i === idx ? { ...it, [k]: v } : it));
     setDirty(true);
   }
@@ -534,8 +485,7 @@ export default function FacturesPage() {
     setDirty(true);
   }
 
-  /* ── SAUVEGARDER ── */
-  async function handleSave() {
+    async function handleSave() {
     if (!draft) { showToast("error", "Aucun document ouvert."); return; }
     setSaving(true);
 
@@ -616,8 +566,7 @@ export default function FacturesPage() {
     }
   }
 
-  /* ── Supprimer ── */
-  async function handleDelete() {
+    async function handleDelete() {
     if (!selected) return;
     setDeleting(true);
     const { error } = await supabase.from("documents").delete().eq("id", selected.id);
@@ -628,8 +577,7 @@ export default function FacturesPage() {
     showToast("success", "Document supprimé.");
   }
 
-  /* ── Statut ── */
-  async function handleStatut(statut: DocStatut) {
+    async function handleStatut(statut: DocStatut) {
     if (!selected) return;
     const { error } = await supabase.from("documents").update({ statut }).eq("id", selected.id);
     if (error) { showToast("error", error.message); return; }
@@ -639,8 +587,7 @@ export default function FacturesPage() {
     showToast("success", `Statut : ${STATUTS[statut].label}`);
   }
 
-  /* ── Convertir devis → facture ── */
-  async function handleConvert() {
+    async function handleConvert() {
     if (!selected || selected.type !== "devis") return;
     setConverting(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -683,8 +630,7 @@ export default function FacturesPage() {
     openDoc(newDoc as Document);
   }
 
-  /* ── Envoyer par email ── */
-  function openEmailModal() {
+    function openEmailModal() {
     if (!draft || !selected) return;
     setEmailTo(draft.client_email || "");
     setEmailSubject(`${draft.type === "facture" ? "Facture" : "Devis"} ${draft.numero} — ${draft.emetteur_nom || "DJAMA"}`);
@@ -717,8 +663,7 @@ export default function FacturesPage() {
     }
   }
 
-  /* ── Lien de paiement Stripe ── */
-  async function handlePaymentLink() {
+    async function handlePaymentLink() {
     if (!selected || !draft) return;
     setPayLinkLoading(true);
     setPayLinkUrl("");
@@ -754,8 +699,7 @@ export default function FacturesPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  /* ── Portail client ── */
-  async function handlePortalLink() {
+    async function handlePortalLink() {
     if (!draft) return;
     setPortalLoading(true);
     setPortalUrl("");
@@ -793,8 +737,7 @@ export default function FacturesPage() {
     setTimeout(() => setPortalCopied(false), 2000);
   }
 
-  /* ── Filtres ── */
-  const filtered = useMemo(() => {
+    const filtered = useMemo(() => {
     let list = [...documents];
     if (filterType !== "tous") list = list.filter(d => d.type === filterType);
     if (query.trim()) {
@@ -806,14 +749,10 @@ export default function FacturesPage() {
 
   const activeColor = draft?.couleur || "#c9a55a";
 
-  /* ══════════════════════════════════════════════════════
-     RENDER
-  ══════════════════════════════════════════════════════ */
-  return (
+    return (
     <div className="flex flex-col bg-[#0a0f1e]">
 
-      {/* ── Sub-header ── */}
-      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+            <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -840,11 +779,9 @@ export default function FacturesPage() {
         </div>
       </div>
 
-      {/* ── Corps ── */}
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 px-5 py-5 sm:px-5">
+            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 px-5 py-5 sm:px-5">
 
-        {/* ══ Liste ══ */}
-        <aside className={`flex w-full flex-col border-r border-white/[0.06] bg-white/[0.025] sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-white/[0.07] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}>
+                <aside className={`flex w-full flex-col border-r border-white/[0.06] bg-white/[0.025] sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-white/[0.07] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}>
           <div className="space-y-2.5 border-b border-white/6 p-4">
             <div className="relative">
               <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25"/>
@@ -905,8 +842,7 @@ export default function FacturesPage() {
           </div>
         </aside>
 
-        {/* ══ Éditeur ══ */}
-        <main className={`flex flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
+                <main className={`flex flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
           {!draft ? (
             <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
               className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.025] p-8 text-center">
@@ -933,13 +869,11 @@ export default function FacturesPage() {
               transition={{ duration:0.3, ease }}
               className="flex h-full flex-col overflow-hidden rounded-none bg-white/[0.025] sm:rounded-xl sm:border sm:border-white/[0.07]">
 
-              {/* ── Toolbar ── */}
-              <div className="flex flex-wrap items-center gap-2 border-b border-white/6 px-5 py-3">
+                            <div className="flex flex-wrap items-center gap-2 border-b border-white/6 px-5 py-3">
                 <button onClick={() => setMobileView("list")} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition sm:hidden">
                   <ArrowLeft size={13}/>
                 </button>
-                {/* Type toggle */}
-                <div className="flex rounded-xl border border-white/10 bg-white/5 p-0.5">
+                                <div className="flex rounded-xl border border-white/10 bg-white/5 p-0.5">
                   {(["facture", "devis"] as DocType[]).map(t => (
                     <button key={t} onClick={() => { updDraft("type", t); if (!selected) setDraft(d => d ? { ...d, numero: newNumero(t, documents) } : d); }}
                       className={`rounded-lg px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition ${draft.type === t ? "bg-gradient-to-r from-[#c9a55a] to-[#b08d45] text-[#0a0a0a]" : "text-white/40 hover:text-white/70"}`}>
@@ -947,8 +881,7 @@ export default function FacturesPage() {
                     </button>
                   ))}
                 </div>
-                {/* Statut */}
-                <div className="relative">
+                                <div className="relative">
                   <select value={draft.statut}
                     onChange={e => selected ? handleStatut(e.target.value as DocStatut) : updDraft("statut", e.target.value)}
                     className="appearance-none rounded-xl border py-1.5 pl-3 pr-7 text-[0.65rem] font-bold uppercase tracking-wider outline-none cursor-pointer transition"
@@ -971,36 +904,31 @@ export default function FacturesPage() {
                       {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
                     </button>
                   )}
-                  {/* Aperçu */}
-                  <button onClick={() => setShowPreview(true)}
+                                    <button onClick={() => setShowPreview(true)}
                     className="hidden items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/50 transition hover:border-white/20 hover:text-white/80 sm:flex"
                     title="Aperçu du document">
                     <Eye size={13}/> Aperçu
                   </button>
-                  {/* PDF */}
-                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
+                                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
                     className="hidden items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/50 transition hover:border-white/20 hover:text-white/80 sm:flex"
                     title="Exporter en PDF">
                     <FileDown size={13}/> PDF
                   </button>
-                  {/* Email */}
-                  {selected && (
+                                    {selected && (
                     <button onClick={openEmailModal}
                       className="hidden items-center gap-1.5 rounded-xl border border-[rgba(56,189,248,0.2)] px-3 py-2 text-xs font-semibold text-sky-400/70 transition hover:border-[rgba(56,189,248,0.4)] hover:text-sky-400 sm:flex"
                       title="Envoyer par email">
                       <Mail size={13}/> Email
                     </button>
                   )}
-                  {/* Stripe payment link */}
-                  {selected && draft.type === "facture" && (
+                                    {selected && draft.type === "facture" && (
                     <button onClick={handlePaymentLink} disabled={payLinkLoading}
                       className="hidden items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#a78bfa]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#a78bfa] disabled:opacity-40 sm:flex"
                       title="Créer un lien de paiement Stripe">
                       {payLinkLoading ? <Loader2 size={13} className="animate-spin"/> : <Link2 size={13}/>} Paiement
                     </button>
                   )}
-                  {/* Portail client */}
-                  {selected && draft.client_nom && (
+                                    {selected && draft.client_nom && (
                     <button onClick={handlePortalLink} disabled={portalLoading}
                       className="hidden items-center gap-1.5 rounded-xl border border-[rgba(34,211,238,0.2)] px-3 py-2 text-xs font-semibold text-[#22d3ee]/70 transition hover:border-[rgba(34,211,238,0.4)] hover:text-[#22d3ee] disabled:opacity-40 sm:flex"
                       title="Générer un portail client sécurisé">
@@ -1026,16 +954,14 @@ export default function FacturesPage() {
                 </div>
               </div>
 
-              {/* ── Corps éditeur ── */}
-              <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-7 sm:py-7">
+                            <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-7 sm:py-7">
                 <div className="mx-auto max-w-3xl space-y-7">
 
-                  {/* Aperçu mini-header */}
-                  <div className="overflow-hidden rounded-xl border border-white/8">
+                                    <div className="overflow-hidden rounded-xl border border-white/8">
                     <div className="flex items-center gap-4 px-5 py-4"
                       style={{ background:"linear-gradient(135deg,#080a0f 0%,rgba(8,10,15,0.92) 100%)", borderBottom:`2px solid ${activeColor}` }}>
                       {draft.emetteur_logo ? (
-                        // eslint-disable-next-line @next/next/no-img-element
+
                         <img src={draft.emetteur_logo} alt="Logo" className="h-10 w-auto max-w-[80px] rounded object-contain"/>
                       ) : (
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5">
@@ -1054,21 +980,17 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                  {/* Infos document */}
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                     <DInput label="Numéro" value={draft.numero} onChange={v => updDraft("numero", v)} placeholder="FAC-2026-001"/>
                     <DInput label="Date d'émission" type="date" value={draft.date_document} onChange={v => updDraft("date_document", v)}/>
                     <DInput label={draft.type === "facture" ? "Date d'échéance" : "Valable jusqu'au"} type="date" value={draft.date_echeance} onChange={v => updDraft("date_echeance", v)}/>
                   </div>
 
-                  {/* Objet */}
-                  <DInput label="Objet / Intitulé *" value={draft.sujet} onChange={v => updDraft("sujet", v)} placeholder="Développement application web, Mission de conseil…"/>
+                                    <DInput label="Objet / Intitulé *" value={draft.sujet} onChange={v => updDraft("sujet", v)} placeholder="Développement application web, Mission de conseil…"/>
 
-                  {/* Couleur */}
-                  <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
+                                    <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
 
-                  {/* Template PDF */}
-                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                     <TemplateSelector
                       value={draft.template ?? "modern"}
                       onChange={v => { setDraft(d => d ? { ...d, template: v } : d); setDirty(true); }}
@@ -1076,10 +998,8 @@ export default function FacturesPage() {
                     />
                   </div>
 
-                  {/* Émetteur | Client */}
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    {/* Émetteur */}
-                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                                    <div className="grid gap-5 sm:grid-cols-2">
+                                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <Building2 size={13} style={{ color: activeColor }}/>
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Votre entreprise</span>
@@ -1087,11 +1007,9 @@ export default function FacturesPage() {
                       <div className="space-y-2.5">
                         <LogoUploader value={draft.emetteur_logo} onChange={v => updDraft("emetteur_logo", v)}/>
 
-                        {/* Options logo (visibles seulement si logo uploadé) */}
-                        {draft.emetteur_logo && (
+                                                {draft.emetteur_logo && (
                           <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 space-y-3">
-                            {/* Taille logo */}
-                            <div>
+                                                        <div>
                               <p className="mb-1.5 text-[0.65rem] font-medium text-white/35">Taille du logo</p>
                               <div className="flex gap-1.5">
                                 {([
@@ -1116,8 +1034,7 @@ export default function FacturesPage() {
                                 ))}
                               </div>
                             </div>
-                            {/* Logo seul */}
-                            <button
+                                                        <button
                               type="button"
                               onClick={() => {
                                 const next = !logoHideName;
@@ -1141,8 +1058,7 @@ export default function FacturesPage() {
                         <DInput value={draft.emetteur_siret}   onChange={v => updDraft("emetteur_siret", v)}   placeholder="SIRET"/>
                       </div>
                     </div>
-                    {/* Client */}
-                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <User size={13} className="text-blue-400"/>
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Client</span>
@@ -1157,8 +1073,7 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                  {/* Coordonnées bancaires */}
-                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                     <div className="mb-3 flex items-center gap-2">
                       <Landmark size={13} style={{ color: activeColor }}/>
                       <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Coordonnées bancaires</span>
@@ -1174,8 +1089,7 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                  {/* Lignes de prestation */}
-                  <div>
+                                    <div>
                     <div className="mb-3 flex items-center justify-between">
                       <span className="text-xs font-extrabold uppercase tracking-widest text-white/40">Prestations</span>
                       <button onClick={addItem}
@@ -1218,8 +1132,7 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                  {/* Remise & Acompte */}
-                  <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="grid gap-4 sm:grid-cols-2">
                     <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <Percent size={12} style={{ color: activeColor }}/>
@@ -1253,8 +1166,7 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                  {/* Totaux */}
-                  <div className="flex justify-end">
+                                    <div className="flex justify-end">
                     <div className="w-full max-w-xs rounded-xl border border-white/[0.07] bg-white/[0.025] p-5 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-white/50">Sous-total HT</span>
@@ -1289,14 +1201,12 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                  {/* Notes & conditions */}
-                  <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="grid gap-4 sm:grid-cols-2">
                     <DTextarea label="Notes au client" value={draft.notes} onChange={v => updDraft("notes", v)} placeholder="Informations complémentaires…" rows={3}/>
                     <DTextarea label="Conditions de paiement" value={draft.conditions} onChange={v => updDraft("conditions", v)} placeholder="Paiement à 30 jours nets…" rows={3}/>
                   </div>
 
-                  {/* Actions mobile */}
-                  <div className="flex flex-wrap gap-3 sm:hidden">
+                                    <div className="flex flex-wrap gap-3 sm:hidden">
                     {selected?.type === "devis" && (
                       <button onClick={handleConvert} disabled={converting}
                         className="flex items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400 transition hover:bg-blue-400/8 disabled:opacity-40">
@@ -1320,13 +1230,11 @@ export default function FacturesPage() {
         </main>
       </div>
 
-      {/* ══ MODAL APERÇU ══ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {showPreview && draft && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm">
-            {/* Barre supérieure */}
-            <div className="flex items-center justify-between border-b border-white/[0.07] bg-[rgba(10,11,16,0.97)] px-6 py-3">
+                        <div className="flex items-center justify-between border-b border-white/[0.07] bg-[rgba(10,11,16,0.97)] px-6 py-3">
               <div className="flex items-center gap-3">
                 <Eye size={15} style={{ color: activeColor }}/>
                 <span className="text-sm font-bold text-white">
@@ -1345,8 +1253,7 @@ export default function FacturesPage() {
                 </button>
               </div>
             </div>
-            {/* Preview scrollable */}
-            <div className="flex-1 overflow-y-auto px-4 py-8">
+                        <div className="flex-1 overflow-y-auto px-4 py-8">
               <div className="mx-auto w-full max-w-[620px]">
                 <div className="overflow-hidden rounded-lg shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
                   <InvoiceTemplate
@@ -1360,8 +1267,7 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-      {/* ══ Confirmation suppression ══ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {confirmDel && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
@@ -1386,8 +1292,7 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-      {/* ══ Modal Email ══ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {emailModal && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
@@ -1438,8 +1343,7 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-      {/* ══ Modal Lien de paiement ══ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {payLinkModal && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
@@ -1488,8 +1392,7 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-      {/* ══ Modal Portail client ══ */}
-      <AnimatePresence>
+            <AnimatePresence>
         {portalModal && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
@@ -1544,8 +1447,7 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Toast ── */}
-      <AnimatePresence>
+            <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)}/>}
       </AnimatePresence>
     </div>

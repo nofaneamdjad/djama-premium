@@ -12,9 +12,6 @@ import {
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-/* ═══════════════════════════════════════════════════════════
-   CONTENU DES COURS
-═══════════════════════════════════════════════════════════ */
 const COURS_DATA: Record<string, {
   title: string; subtitle: string; duration: string; level: string;
   color: string; unlocked: boolean; done?: boolean; active?: boolean;
@@ -314,9 +311,6 @@ Script de relance téléphonique :
   },
 };
 
-/* ═══════════════════════════════════════════════════════════
-   PAGE
-═══════════════════════════════════════════════════════════ */
 export default function CoursDetailPage() {
   const params = useParams();
   const id = (params?.id as string) ?? "01";
@@ -327,8 +321,7 @@ export default function CoursDetailPage() {
   const [showExercise, setShowExercise] = useState(false);
   const [showExemple, setShowExemple] = useState(false);
 
-  /* Quiz state */
-  const [quizStarted, setQuizStarted] = useState(false);
+    const [quizStarted, setQuizStarted] = useState(false);
   const [qIndex, setQIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<number[]>([]);
@@ -349,8 +342,7 @@ export default function CoursDetailPage() {
   const prevId = numId > 1 ? String(numId - 1).padStart(2, "0") : null;
   const nextId = numId < 20 ? String(numId + 1).padStart(2, "0") : null;
 
-  /* Cours verrouillé */
-  if (!cours) {
+    if (!cours) {
     return (
       <div className="min-h-screen bg-[#0a0f1e]">
         <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">

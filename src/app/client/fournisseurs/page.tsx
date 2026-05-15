@@ -16,8 +16,6 @@ import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { fmtDate, fmtEur } from "@/lib/format";
 
-// ─────────────────────────── TYPES ───────────────────────────
-
 type OrderStatus   = "draft"|"sent"|"confirmed"|"in_delivery"|"received"|"partial"|"cancelled";
 type InvoiceStatus = "unpaid"|"partial"|"paid"|"overdue"|"disputed";
 type FournCat      = "produits"|"services"|"logiciels"|"matieres"|"transport"|"autre";
@@ -61,8 +59,6 @@ interface FRating {
   id: string; fournisseur_id: string; reliability: number; quality: number;
   price: number; delays: number; comment: string; created_at: string;
 }
-
-// ─────────────────────────── CONSTANTS ───────────────────────────
 
 const violet = "#8b5cf6";
 const ease   = [0.16, 1, 0.3, 1] as const;
@@ -138,8 +134,6 @@ function Stars({ value, onChange }: { value: number; onChange?: (n: number) => v
   );
 }
 
-// ─────────────────────────── FOURNISSEUR MODAL ───────────────────────────
-
 function FournModal({ data, onSave, onClose }: {
   data: Partial<Fournisseur>; onSave: (f: Partial<Fournisseur>) => Promise<void>; onClose: () => void;
 }) {
@@ -155,8 +149,7 @@ function FournModal({ data, onSave, onClose }: {
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
         className="w-full max-w-2xl bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: violet + "18", border: `1px solid ${violet}30` }}>
               <Truck size={14} style={{ color: violet }}/>
@@ -168,8 +161,7 @@ function FournModal({ data, onSave, onClose }: {
           </div>
           <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors"><X size={14}/></button>
         </div>
-        {/* Step bar */}
-        <div className="flex gap-1 px-6 pt-4">
+                <div className="flex gap-1 px-6 pt-4">
           {[1,2,3].map((s) => (
             <div key={s} className="flex-1 h-1 rounded-full transition-all duration-300"
               style={{ background: s <= step ? violet : "rgba(255,255,255,0.08)" }}/>
@@ -177,8 +169,7 @@ function FournModal({ data, onSave, onClose }: {
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[65vh] space-y-4">
-          {/* Step 1: Identité */}
-          {step === 1 && (
+                    {step === 1 && (
             <>
               <div><Lbl>Nom de l'entreprise *</Lbl>
                 <input value={form.company_name ?? ""} onChange={(e) => set("company_name", e.target.value)} placeholder="ACME Fournisseurs SARL" className={inp()}/>
@@ -489,8 +480,6 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
     </motion.div>
   );
 }
-
-// ─────────────────────────── RATING MODAL ───────────────────────────
 
 function RatingModal({ fournisseur, onSave, onClose }: {
   fournisseur: Fournisseur; onSave: (r: { reliability: number; quality: number; price: number; delays: number; comment: string }) => Promise<void>; onClose: () => void;
