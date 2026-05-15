@@ -30,6 +30,9 @@ export default function Navbar() {
   const [hidden,   setHidden]   = useState(false);
   const lastY = useRef(0);
 
+  const isHomepage = pathname === "/";
+  const lightNav   = isHomepage && !scrolled;
+
   const { scrollY, scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 400, damping: 40 });
 
@@ -67,7 +70,9 @@ export default function Navbar() {
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
           scrolled
             ? "bg-[rgba(9,9,11,0.92)] backdrop-blur-2xl border-b border-white/[0.07] shadow-[0_1px_0_rgba(255,255,255,0.05),0_8px_32px_rgba(0,0,0,0.4)]"
-            : "bg-transparent"
+            : lightNav
+              ? "bg-white border-b border-gray-100"
+              : "bg-transparent"
         }`}
       >
         <div className="mx-auto flex h-[88px] max-w-6xl items-center justify-between px-6">
@@ -88,7 +93,8 @@ export default function Navbar() {
                   src="/logo-navbar.png"
                   alt="Logo DJAMA"
                   width={400} height={90} priority
-                  className="h-[52px] md:h-[72px] w-auto object-contain"
+                  className="h-[52px] md:h-[72px] w-auto object-contain transition-all duration-300"
+                  style={lightNav ? { filter: "brightness(0)" } : {}}
                 />
               </motion.div>
             </motion.div>
@@ -108,7 +114,9 @@ export default function Navbar() {
                   <Link
                     href={href}
                     className={`group relative px-3.5 py-2 text-sm font-medium transition-colors duration-200 ${
-                      active ? "text-white" : "text-white/55 hover:text-white/90"
+                      lightNav
+                        ? active ? "text-gray-900" : "text-gray-500 hover:text-gray-900"
+                        : active ? "text-white"    : "text-white/55 hover:text-white/90"
                     }`}
                   >
                     <ShimmerText variant="white" className="font-medium">{label}</ShimmerText>
@@ -128,11 +136,13 @@ export default function Navbar() {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
             className="hidden md:flex items-center gap-3"
           >
-            <div className="flex items-center gap-1 rounded-full border border-white/[0.09] bg-white/[0.04] p-1">
+            <div className={`flex items-center gap-1 rounded-full border p-1 ${lightNav ? "border-gray-200 bg-gray-100" : "border-white/[0.09] bg-white/[0.04]"}`}>
               {(["fr", "en"] as const).map((l) => (
                 <button key={l} onClick={() => setLang(l)}
-                  className={`rounded-full px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-widest transition-all duration-200 ${
-                    lang === l ? "bg-[#c9a55a] text-[#09090b] shadow-[0_1px_4px_rgba(201,165,90,0.4)]" : "text-white/35 hover:text-white/65"
+                  className={`rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-widest transition-all duration-200 ${
+                    lang === l
+                      ? "bg-[#c9a55a] text-[#09090b] shadow-[0_1px_4px_rgba(201,165,90,0.4)]"
+                      : lightNav ? "text-gray-400 hover:text-gray-700" : "text-white/35 hover:text-white/65"
                   }`}>{l}</button>
               ))}
             </div>
@@ -154,19 +164,19 @@ export default function Navbar() {
               <motion.span
                 animate={menuOpen ? { rotate: 45, y: 9, width: "28px" } : { rotate: 0, y: 0, width: "28px" }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute block rounded-full bg-white"
+                className={`absolute block rounded-full ${lightNav ? "bg-gray-800" : "bg-white"}`}
                 style={{ height: "3px", top: "3px", originX: "50%", originY: "50%" }}
               />
               <motion.span
                 animate={menuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
                 transition={{ duration: 0.2 }}
-                className="absolute block rounded-full bg-white"
+                className={`absolute block rounded-full ${lightNav ? "bg-gray-800" : "bg-white"}`}
                 style={{ height: "3px", width: "20px", top: "50%", marginTop: "-1.5px" }}
               />
               <motion.span
                 animate={menuOpen ? { rotate: -45, y: -9, width: "28px" } : { rotate: 0, y: 0, width: "28px" }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute block rounded-full bg-white"
+                className={`absolute block rounded-full ${lightNav ? "bg-gray-800" : "bg-white"}`}
                 style={{ height: "3px", bottom: "3px", originX: "50%", originY: "50%" }}
               />
             </span>
