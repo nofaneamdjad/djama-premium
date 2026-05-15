@@ -353,13 +353,12 @@ export default function AdminContenu() {
                 <div className="mb-5 flex items-center gap-3">
                   <div
                     className="flex h-9 w-9 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${section.color}18` }}
+                    style={{ backgroundColor: `${section.color}18`, color: section.color }}
                   >
                     {Icon && (
                       <Icon
                         size={15}
                         className="shrink-0"
-                        style={{ color: section.color }}
                       />
                     )}
                   </div>
