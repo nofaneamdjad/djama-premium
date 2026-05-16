@@ -478,7 +478,7 @@ function CategoryFilter({
   filterLabels: Record<string, string>;
 }) {
   const CATEGORIES: ("all" | CatKey)[] = [
-    "all", "Digital", "Création de contenu", "Accompagnement", "Coaching",
+    "all", "Digital", "Création de contenu", "Accompagnement",
   ];
 
   return (
@@ -580,7 +580,7 @@ const STATIC_SERVICES: ServiceRow[] = [
   { id:"s13", slug:"recherche-fournisseurs",       title:"Recherche fournisseurs internationaux",category:"Accompagnement",      price:"Sur devis",       description:"Identification, sélection et mise en relation avec des fournisseurs qualifiés à l'international (Asie, Europe, Afrique).\nNégociation incluse.", active:true, sort_order:13, created_at:NOW },
   { id:"s14", slug:"marches-publics",              title:"Marchés publics & privés",             category:"Accompagnement",      price:"Sur devis",       description:"Veille sur les appels d'offres, constitution de dossiers de candidature complets, conseil stratégique.\nTaux de réussite élevé.", active:true, sort_order:14, created_at:NOW },
   /* ── Coaching ── */
-  { id:"s16", slug:"soutien-scolaire",             title:"Soutien scolaire",                     category:"Coaching",            price:"14 €/heure",      description:"Cours particuliers toutes matières, collège et lycée, présentiel ou en ligne.\nSuivi régulier et progression garantie.", active:true, sort_order:16, created_at:NOW },
+  { id:"s16", slug:"soutien-scolaire",             title:"Soutien scolaire",                     category:"Accompagnement",            price:"14 €/heure",      description:"Cours particuliers toutes matières, collège et lycée, présentiel ou en ligne.\nSuivi régulier et progression garantie.", active:true, sort_order:16, created_at:NOW },
 ];
 
 /* ─────────────────────────────────────────────────────────
@@ -614,12 +614,15 @@ export default function ServicesPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Coaching est fusionné dans Accompagnement côté affichage
+  const normalizeCategory = (cat: string) => cat === "Coaching" ? "Accompagnement" : cat;
+
   const filtered = activeCategory === "all"
     ? rows
-    : rows.filter((sv) => sv.category === activeCategory);
+    : rows.filter((sv) => normalizeCategory(sv.category) === activeCategory);
 
-  const counts = (["Digital", "Création de contenu", "Accompagnement", "Coaching"] as CatKey[]).reduce((acc, cat) => {
-    acc[cat] = rows.filter((sv) => sv.category === cat).length;
+  const counts = (["Digital", "Création de contenu", "Accompagnement"] as CatKey[]).reduce((acc, cat) => {
+    acc[cat] = rows.filter((sv) => normalizeCategory(sv.category) === cat).length;
     return acc;
   }, {} as Record<string, number>);
 
