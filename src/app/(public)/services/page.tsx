@@ -757,7 +757,7 @@ export default function ServicesPage() {
           <CategoryFilter
             active={activeCategory}
             onChange={setActiveCategory}
-            counts={{ ...counts, all: rows.length }}
+            counts={{ ...counts, all: rows.filter(sv => sv.slug !== "coaching-ia" && sv.title !== "Coaching IA" && sv.category !== "Documents & Outils").length }}
             filterLabels={s.filters}
           />
 
