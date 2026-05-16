@@ -107,10 +107,9 @@ export default function Page() {
 }
 
 const HERO_STATS = [
-  { value: "50+",   label: "clients accompagnés" },
-  { value: "100+",  label: "projets livrés"       },
-  { value: "11,90", label: "€ / mois"             },
-  { value: "0",     label: "engagement"           },
+  { value: "50+",  label: "clients accompagnés" },
+  { value: "100+", label: "projets livrés"       },
+  { value: "✓",   label: "sans engagement"      },
 ] as const;
 
 function HomeContent() {
