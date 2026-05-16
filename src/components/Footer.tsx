@@ -147,7 +147,7 @@ export default function Footer() {
                 height={90}
                 priority
                 className="h-[56px] md:h-[76px] w-auto object-contain"
-                style={{ filter: "invert(1) hue-rotate(180deg) brightness(1.3)" }}
+                style={{ filter: "none" }}
               />
             </motion.div>
           </Link>
