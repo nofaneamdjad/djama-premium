@@ -139,10 +139,12 @@ export default function Footer() {
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.25 }}
-              className="rounded-2xl px-6 py-3"
               style={{
-                background: "rgba(255,255,255,0.96)",
-                boxShadow: "0 2px 24px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.10)",
+                background: "#ffffff",
+                borderRadius: "16px",
+                padding: "12px 28px",
+                display: "inline-flex",
+                boxShadow: "0 4px 32px rgba(0,0,0,0.25)",
               }}
             >
               <Image
@@ -151,8 +153,12 @@ export default function Footer() {
                 width={400}
                 height={90}
                 priority
-                className="h-[44px] md:h-[58px] w-auto object-contain"
-                style={{ filter: "none" }}
+                style={{
+                  height: "48px",
+                  width: "auto",
+                  display: "block",
+                  filter: "none",
+                }}
               />
             </motion.div>
           </Link>
