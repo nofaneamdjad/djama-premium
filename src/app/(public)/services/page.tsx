@@ -621,8 +621,13 @@ export default function ServicesPage() {
     ? rows
     : rows.filter((sv) => normalizeCategory(sv.category) === activeCategory);
 
+  const isVisible = (sv: ServiceRow) =>
+    sv.slug !== "coaching-ia" &&
+    sv.title !== "Coaching IA" &&
+    sv.category !== "Documents & Outils";
+
   const counts = (["Digital", "Création de contenu", "Accompagnement"] as CatKey[]).reduce((acc, cat) => {
-    acc[cat] = rows.filter((sv) => normalizeCategory(sv.category) === cat).length;
+    acc[cat] = rows.filter((sv) => isVisible(sv) && normalizeCategory(sv.category) === cat).length;
     return acc;
   }, {} as Record<string, number>);
 
@@ -704,7 +709,7 @@ export default function ServicesPage() {
             className="mt-9 grid grid-cols-3 gap-3 border-t border-gray-100 pt-6"
           >
             {([
-              { value: "16", label: lang === "fr" ? "services\ndisponibles" : "services\navailable", Icon: Layers },
+              { value: "14", label: lang === "fr" ? "services\ndisponibles" : "services\navailable", Icon: Layers },
               { value: "50+",  label: lang === "fr" ? "clients\naccompagnés" : "clients\nsupported",  Icon: Users2  },
               { value: "24h",  label: lang === "fr" ? "délai de\nréponse"    : "response\ntime",       Icon: Zap     },
             ] as const).map(({ value, label, Icon }) => (
@@ -743,7 +748,7 @@ export default function ServicesPage() {
           >
             <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.24)] bg-[rgba(201,165,90,0.07)] px-3.5 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]">
               <Sparkles size={9} />
-              {lang === "fr" ? "16 services disponibles" : "16 services available"}
+              {lang === "fr" ? "14 services disponibles" : "14 services available"}
             </span>
             <h2 className="mt-4 text-[2rem] font-extrabold leading-[1.12] text-gray-900 sm:text-[2.5rem]">
               {lang === "fr"
@@ -760,7 +765,7 @@ export default function ServicesPage() {
           <CategoryFilter
             active={activeCategory}
             onChange={setActiveCategory}
-            counts={{ ...counts, all: rows.filter(sv => sv.slug !== "coaching-ia" && sv.title !== "Coaching IA" && sv.category !== "Documents & Outils").length }}
+            counts={{ ...counts, all: rows.filter(isVisible).length }}
             filterLabels={s.filters}
           />
 
