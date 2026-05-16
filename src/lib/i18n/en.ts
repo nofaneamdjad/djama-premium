@@ -376,7 +376,7 @@ export const en: Translations = {
 
   footer: {
     tagline:
-      "Digital creation, professional tools and expert guidance for entrepreneurs, individuals and businesses.",
+      "Your digital partner — websites, apps, AI & pro tools to grow your business.",
     services: {
       title: "Services",
       links: [

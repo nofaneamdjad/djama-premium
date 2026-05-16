@@ -7,11 +7,11 @@ import { LanguageProvider } from "@/lib/language-context";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight, Mail, Users2, Shield, ShieldCheck,
   CheckCircle2, Sparkles, HeartHandshake,
-  Globe, Brain, MessageCircle,
+  Globe, Brain,
   Code2, BarChart3, Briefcase,
   Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem, Star,
 } from "lucide-react";
@@ -19,7 +19,6 @@ import { getSiteData } from "@/lib/site-data";
 import {
   fadeIn, staggerContainer, staggerContainerFast, cardReveal, viewport,
 } from "@/lib/animations";
-import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import PartnerLogosSection from "@/components/PartnerLogosSection";
@@ -108,13 +107,6 @@ function HomeContent() {
   useLanguage();
   const { settings }          = useSiteSettings();
 
-  const ctaFinalTitle1   = (settings?.cta_final_title_1  ?? "Prêt à transformer")                          as string;
-  const ctaFinalTitle2   = (settings?.cta_final_title_2  ?? "votre activité ?")                            as string;
-  const ctaFinalSubtitle = (settings?.cta_final_subtitle ?? "Rejoignez les entrepreneurs qui font confiance à DJAMA.") as string;
-  const ctaPrimText      = (settings?.cta_primary_text   ?? "Démarrer maintenant")                         as string;
-  const ctaPrimHref      = (settings?.cta_primary_href   ?? "/espace-client")                              as string;
-  const ctaSecText       = (settings?.cta_secondary_text ?? "En savoir plus")                              as string;
-  const ctaSecHref       = (settings?.cta_secondary_href ?? "/services")                                   as string;
 
   return (
     <div className="overflow-hidden">
@@ -837,70 +829,62 @@ function HomeContent() {
         </motion.div>
       </section>
 
-      {/* ── Final CTA ──────────────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-6 pb-20 pt-14">
+      {/* ── Final CTA — bande compacte ─────────────────────── */}
+      <section className="bg-white px-5 pb-16 pt-10">
         <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={staggerContainer}
-          className="relative overflow-hidden rounded-[2rem] px-8 py-20 text-center md:px-20"
-          style={{ background: "linear-gradient(135deg,#6366f1 0%,#4f46e5 50%,#7c3aed 100%)" }}
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="mx-auto max-w-2xl overflow-hidden rounded-3xl"
+          style={{
+            background: "linear-gradient(135deg,#0f172a 0%,#1e1b4b 60%,#1e1035 100%)",
+            boxShadow: "0 20px 60px rgba(99,102,241,0.22), 0 4px 20px rgba(0,0,0,0.18)",
+          }}
         >
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[200px] bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(255,255,255,.18),transparent)]" />
+          {/* Barre dorée top */}
+          <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg,#c9a55a,#e8cc94,#c9a55a)` }} />
 
-          <div className="relative z-10">
-            <motion.div
-              variants={fadeIn}
-              className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em] text-white"
-            >
-              <Sparkles size={10} /> Prêt à commencer ?
-            </motion.div>
+          <div className="flex flex-col items-center gap-5 px-8 py-10 text-center">
 
-            <h2 className="text-[2.1rem] font-extrabold leading-tight text-white sm:text-[2.8rem]">
-              <MultiLineReveal
-                lines={[ctaFinalTitle1, ctaFinalTitle2]}
-                highlight={1} stagger={0.13} wordStagger={0.065}
-                lineClassName="justify-center text-white"
-              />
+            {/* Titre court */}
+            <h2 className="text-[1.7rem] font-extrabold leading-tight text-white sm:text-[2.1rem]">
+              Lancez votre projet{" "}
+              <span style={{ color: GOLD }}>dès aujourd&apos;hui</span>.
             </h2>
 
-            <FadeReveal delay={0.26} as="p" className="mx-auto mt-5 max-w-md text-base leading-relaxed text-white/75">
-              {ctaFinalSubtitle}
-            </FadeReveal>
-
-            <FadeReveal delay={0.4} className="mt-10 flex flex-wrap justify-center gap-3">
-              <Link href={ctaPrimHref}
-                className="btn-primary group relative overflow-hidden px-8 py-[0.95rem] text-[0.925rem]">
-                <span className="relative z-10 flex items-center gap-2">
-                  {ctaPrimText}
-                  <ArrowRight size={15} className="transition-transform duration-300 group-hover:translate-x-1" />
+            {/* Bullets horizontaux */}
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+              {[
+                { icon: CheckCircle2, text: "Sans engagement" },
+                { icon: CheckCircle2, text: "Réponse sous 24h" },
+                { icon: CheckCircle2, text: "Appel offert" },
+              ].map(({ icon: Icon, text }) => (
+                <span key={text} className="flex items-center gap-1.5 text-[0.75rem] font-semibold" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  <Icon size={11} style={{ color: "#4ade80" }} />
+                  {text}
                 </span>
-                <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
-              </Link>
-              <Link href={ctaSecHref}
-                className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-white/30 bg-white/10 px-8 py-[0.95rem] text-[0.925rem] font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20 hover:border-white/50">
-                {ctaSecText}
-              </Link>
-            </FadeReveal>
+              ))}
+            </div>
 
-            <FadeReveal delay={0.52} className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-7">
-              <a
-                href={`mailto:${data.contact.email}`}
-                className="flex items-center gap-2 text-[0.82rem] text-white/65 transition-colors duration-200 hover:text-white/90"
+            {/* CTAs */}
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
+              <Link
+                href="/contact"
+                className="flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-[0.92rem] font-bold text-[#0f172a] transition-all duration-200 hover:scale-[1.03] active:scale-[.97]"
+                style={{ background: `linear-gradient(135deg,#c9a55a,#e8cc94)` }}
               >
-                <Mail size={12} className="text-white/50" />
-                {data.contact.email}
-              </a>
-              <span className="hidden text-white/30 sm:inline">·</span>
-              <span className="flex items-center gap-2 text-[0.82rem] text-white/65">
-                <CheckCircle2 size={12} className="text-white/50" />
-                Sans engagement · Réponse sous 24h
-              </span>
-              <span className="hidden text-white/30 sm:inline">·</span>
-              <span className="flex items-center gap-2 text-[0.82rem] text-white/65">
-                <CheckCircle2 size={12} className="text-white/50" />
-                Appel découverte gratuit · 30 min
-              </span>
-            </FadeReveal>
+                Démarrer un projet <ArrowRight size={14} />
+              </Link>
+              <Link
+                href="/espace-client"
+                className="flex items-center justify-center gap-2 rounded-2xl border px-7 py-3.5 text-[0.92rem] font-bold text-white transition-all duration-200 hover:bg-white/10"
+                style={{ borderColor: "rgba(255,255,255,0.18)" }}
+              >
+                Accès espace client
+              </Link>
+            </div>
+
           </div>
         </motion.div>
       </section>
