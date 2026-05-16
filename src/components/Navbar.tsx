@@ -94,7 +94,7 @@ export default function Navbar() {
                   alt="Logo DJAMA"
                   width={400} height={90} priority
                   className="h-[52px] md:h-[72px] w-auto object-contain transition-all duration-300"
-                  style={{ filter: "invert(1) hue-rotate(180deg)" }}
+                  style={{ filter: "none" }}
                 />
               </motion.div>
             </motion.div>
