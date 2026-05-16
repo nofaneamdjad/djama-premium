@@ -207,6 +207,12 @@ body {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
+@keyframes ticker-reverse {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+.animate-ticker         { animation: ticker         28s linear infinite; }
+.animate-ticker-reverse { animation: ticker-reverse 32s linear infinite; }
 
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(16px); }

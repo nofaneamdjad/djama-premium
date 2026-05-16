@@ -354,109 +354,120 @@ function HomeContent() {
         </motion.div>
       </section>
 
-      {/* ── Services ───────────────────────────────────────── */}
-      <section className="bg-white py-14 sm:py-20">
+      {/* ── Services ticker ────────────────────────────────── */}
+      <section className="overflow-hidden bg-white py-14 sm:py-20">
+
+        {/* Header */}
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
           variants={staggerContainer}
-          className="mx-auto max-w-6xl px-6"
+          className="mx-auto mb-10 max-w-xl px-6 text-center"
         >
-          <div className="mb-10 text-center">
-            <motion.div
-              variants={fadeIn}
-              className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(99,102,241,.25)] bg-[rgba(99,102,241,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
-              style={{ color: "#6366f1" }}
-            >
-              <Sparkles size={11} /> Nos services
-            </motion.div>
-            <motion.h2
-              variants={fadeIn}
-              className="text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]"
-            >
-              Tout ce que DJAMA peut faire{" "}
-              <span style={{ color: "#6366f1" }}>pour vous</span>.
-            </motion.h2>
-            <motion.p
-              variants={fadeIn}
-              className="mx-auto mt-3 max-w-md text-[0.9rem] text-gray-500"
-            >
-              Des outils à 11,90€/mois jusqu&apos;aux projets sur mesure — DJAMA vous accompagne à chaque étape.
-            </motion.p>
-          </div>
-
           <motion.div
-            variants={staggerContainerFast}
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            variants={fadeIn}
+            className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(99,102,241,.25)] bg-[rgba(99,102,241,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
+            style={{ color: "#6366f1" }}
           >
-            {([
-              {
-                icon: Globe,
-                color: "#60a5fa",
-                title: "Sites web & E-commerce",
-                desc: "Sites vitrine, boutiques et plateformes sur mesure — livrés en 7 à 14 jours.",
-                href: "/services",
-                cta: "Explorer",
-              },
-              {
-                icon: Code2,
-                color: "#a78bfa",
-                title: "Applications mobiles",
-                desc: "iOS & Android sur mesure pour digitaliser votre activité et fidéliser vos clients.",
-                href: "/services",
-                cta: "Découvrir",
-              },
-              {
-                icon: Brain,
-                color: GOLD,
-                title: "Coaching IA",
-                desc: "6 modules pour maîtriser l'IA, automatiser vos tâches et gagner 10h par semaine.",
-                href: "/services/coaching-ia",
-                cta: "190€ · Voir le coaching",
-              },
-              {
-                icon: HeartHandshake,
-                color: "#f59e0b",
-                title: "Accompagnement",
-                desc: "Sourcing, marchés publics, conseil stratégique et soutien administratif sur devis.",
-                href: "/contact",
-                cta: "Demander un devis",
-              },
-            ] as const).map(({ icon: Icon, color, title, desc, href, cta }) => (
-              <motion.div
-                key={title}
-                variants={cardReveal}
-                whileHover={{ y: -6, transition: { duration: 0.25, ease } }}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:border-gray-300 hover:shadow-[0_8px_30px_rgba(0,0,0,.11)]"
+            <Sparkles size={11} /> Nos services
+          </motion.div>
+          <motion.h2
+            variants={fadeIn}
+            className="text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]"
+          >
+            Tout ce que DJAMA peut faire{" "}
+            <span style={{ color: "#6366f1" }}>pour vous</span>.
+          </motion.h2>
+          <motion.p variants={fadeIn} className="mt-3 text-[0.9rem] text-gray-500">
+            Création digitale, outils pros, coaching IA et accompagnement — tout en un seul endroit.
+          </motion.p>
+        </motion.div>
+
+        {/* ── Ligne 1 → gauche ── */}
+        <div className="relative mb-3">
+          {/* Fade masks */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-white to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-white to-transparent" />
+
+          <div className="animate-ticker flex w-max gap-3">
+            {[
+              { Icon: Globe,         color: "#60a5fa", label: "Sites web & E-commerce"     },
+              { Icon: Code2,         color: "#a78bfa", label: "Applications mobiles"        },
+              { Icon: Brain,         color: GOLD,      label: "Coaching IA"                 },
+              { Icon: MessageCircle, color: "#34d399", label: "Montage vidéo"               },
+              { Icon: Sparkles,      color: "#f472b6", label: "Visuels publicitaires"        },
+              { Icon: Receipt,       color: "#6366f1", label: "Factures & devis"            },
+              { Icon: Globe,         color: "#60a5fa", label: "Sites web & E-commerce"     },
+              { Icon: Code2,         color: "#a78bfa", label: "Applications mobiles"        },
+              { Icon: Brain,         color: GOLD,      label: "Coaching IA"                 },
+              { Icon: MessageCircle, color: "#34d399", label: "Montage vidéo"               },
+              { Icon: Sparkles,      color: "#f472b6", label: "Visuels publicitaires"        },
+              { Icon: Receipt,       color: "#6366f1", label: "Factures & devis"            },
+            ].map(({ Icon, color, label }, i) => (
+              <div
+                key={i}
+                className="flex shrink-0 items-center gap-2.5 rounded-2xl border border-gray-200 bg-white px-5 py-3 shadow-sm"
               >
                 <div
-                  className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border"
-                  style={{ background: `${color}14`, borderColor: `${color}28` }}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                  style={{ background: `${color}18` }}
                 >
-                  <Icon size={20} style={{ color }} strokeWidth={1.7} />
+                  <Icon size={15} style={{ color }} strokeWidth={1.8} />
                 </div>
-                <h3 className="text-[0.92rem] font-bold text-gray-900">{title}</h3>
-                <p className="mt-2 flex-1 text-[0.8rem] leading-relaxed text-gray-500">{desc}</p>
-                <Link
-                  href={href}
-                  className="mt-4 inline-flex items-center gap-1.5 text-[0.78rem] font-semibold transition-opacity hover:opacity-75"
-                  style={{ color }}
-                >
-                  {cta}
-                  <ArrowRight size={12} className="transition-transform duration-200 group-hover:translate-x-1" />
-                </Link>
-              </motion.div>
+                <span className="text-[0.82rem] font-semibold text-gray-700 whitespace-nowrap">
+                  {label}
+                </span>
+              </div>
             ))}
-          </motion.div>
+          </div>
+        </div>
 
-          <FadeReveal delay={0.3} className="mt-8 flex justify-center">
-            <Link
-              href="/services"
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-6 py-3 text-[0.88rem] font-semibold text-gray-500 transition-all hover:border-gray-300 hover:bg-gray-100 hover:text-gray-700"
-            >
-              Voir tous nos services <ArrowRight size={14} />
-            </Link>
-          </FadeReveal>
-        </motion.div>
+        {/* ── Ligne 2 → droite ── */}
+        <div className="relative">
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-white to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-white to-transparent" />
+
+          <div className="animate-ticker-reverse flex w-max gap-3">
+            {[
+              { Icon: HeartHandshake, color: "#f59e0b", label: "Accompagnement entreprise"  },
+              { Icon: Shield,         color: "#34d399", label: "Automatisation IA"           },
+              { Icon: Star,           color: "#a78bfa", label: "Retouche photo"              },
+              { Icon: Users2,         color: "#60a5fa", label: "Soutien scolaire"            },
+              { Icon: Globe,          color: "#f472b6", label: "Sourcing fournisseurs"       },
+              { Icon: CreditCard,     color: "#6366f1", label: "Plateforme sur mesure"       },
+              { Icon: HeartHandshake, color: "#f59e0b", label: "Accompagnement entreprise"  },
+              { Icon: Shield,         color: "#34d399", label: "Automatisation IA"           },
+              { Icon: Star,           color: "#a78bfa", label: "Retouche photo"              },
+              { Icon: Users2,         color: "#60a5fa", label: "Soutien scolaire"            },
+              { Icon: Globe,          color: "#f472b6", label: "Sourcing fournisseurs"       },
+              { Icon: CreditCard,     color: "#6366f1", label: "Plateforme sur mesure"       },
+            ].map(({ Icon, color, label }, i) => (
+              <div
+                key={i}
+                className="flex shrink-0 items-center gap-2.5 rounded-2xl border border-gray-200 bg-white px-5 py-3 shadow-sm"
+              >
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                  style={{ background: `${color}18` }}
+                >
+                  <Icon size={15} style={{ color }} strokeWidth={1.8} />
+                </div>
+                <span className="text-[0.82rem] font-semibold text-gray-700 whitespace-nowrap">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <FadeReveal delay={0.3} className="mt-10 flex justify-center">
+          <Link
+            href="/services"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-6 py-3 text-[0.88rem] font-semibold text-gray-500 transition-all hover:border-[rgba(99,102,241,.4)] hover:bg-[rgba(99,102,241,.05)] hover:text-[#6366f1]"
+          >
+            Voir tous nos services <ArrowRight size={14} />
+          </Link>
+        </FadeReveal>
       </section>
 
       {/* ── Processus ──────────────────────────────────────── */}
