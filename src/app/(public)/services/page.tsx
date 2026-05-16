@@ -366,20 +366,6 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
           <CardVisual icon={Icon} config={config} />
         )}
 
-        {/* Espace client banner */}
-        {isOutil && (
-          <div
-            className="flex items-center justify-center gap-1.5 py-1.5 text-[0.6rem] font-black uppercase tracking-[0.15em]"
-            style={{
-              background: `rgba(${config.accentRgb}, 0.08)`,
-              color: config.accent,
-              borderBottom: `1px solid rgba(${config.accentRgb}, 0.15)`,
-            }}
-          >
-            <span className="h-1 w-1 rounded-full" style={{ background: config.accent }} />
-            {lang === "en" ? "Included in subscription" : "Inclus dans l'abonnement"}
-          </div>
-        )}
 
         <div className="flex flex-col p-5 sm:p-7">
           {/* Badge catégorie + prix */}
