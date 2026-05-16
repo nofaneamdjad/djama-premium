@@ -136,16 +136,9 @@ export default function Footer() {
         <motion.div variants={itemVariants}>
           <Link href="/" aria-label="DJAMA — Accueil">
             <motion.div
-              whileHover={{ scale: 1.05, y: -2 }}
+              whileHover={{ scale: 1.05, filter: "drop-shadow(0 0 16px rgba(201,165,90,0.4))" }}
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.25 }}
-              style={{
-                background: "#ffffff",
-                borderRadius: "16px",
-                padding: "12px 28px",
-                display: "inline-flex",
-                boxShadow: "0 4px 32px rgba(0,0,0,0.25)",
-              }}
             >
               <Image
                 src="/logo-navbar.png"
@@ -153,12 +146,8 @@ export default function Footer() {
                 width={400}
                 height={90}
                 priority
-                style={{
-                  height: "48px",
-                  width: "auto",
-                  display: "block",
-                  filter: "none",
-                }}
+                className="h-[56px] md:h-[72px] w-auto object-contain"
+                style={{ filter: "invert(1) hue-rotate(180deg)" }}
               />
             </motion.div>
           </Link>
