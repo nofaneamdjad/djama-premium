@@ -142,11 +142,19 @@ function HomeContent() {
           >
             Tout votre business<br />
             sur{" "}
-            <span
-              className="relative inline-block -rotate-[0.5deg] rounded-lg px-2 py-0.5"
-              style={{ background: GOLD, color: "#0a0f1e" }}
-            >
-              une plateforme
+            <span className="relative inline whitespace-nowrap">
+              {/* Marker highlight — style Odoo */}
+              <span
+                aria-hidden
+                className="absolute inset-x-0 bottom-0 -rotate-[0.8deg]"
+                style={{
+                  height: "42%",
+                  background: `rgba(${GOLDR}, 0.55)`,
+                  borderRadius: "3px",
+                  zIndex: 0,
+                }}
+              />
+              <span className="relative z-10">une plateforme</span>
             </span>.
           </motion.h1>
 
