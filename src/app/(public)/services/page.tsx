@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Sparkles, CheckCircle2, Zap, Users, Users2, TrendingUp,
   Shield, Clock, Settings2, MessageSquare, Star, BadgeCheck,
-  Code2, LayoutGrid, Layers, ChevronRight,
+  Code2, LayoutGrid, Layers, ChevronRight, HeartHandshake,
 } from "lucide-react";
 import { MultiLineReveal, FadeReveal } from "@/components/ui/WordReveal";
 import {
@@ -631,16 +631,6 @@ export default function ServicesPage() {
     return acc;
   }, {} as Record<string, number>);
 
-  const WHY_ICONS  = [Zap, TrendingUp, Users, Settings2, Shield, Clock] as const;
-  const WHY_COLORS = [
-    { color: "#c9a55a", rgb: "201,165,90"  },
-    { color: "#60a5fa", rgb: "96,165,250"  },
-    { color: "#4ade80", rgb: "74,222,128"  },
-    { color: "#f9a826", rgb: "249,168,38"  },
-    { color: "#a78bfa", rgb: "167,139,250" },
-    { color: "#f87171", rgb: "248,113,113" },
-  ] as const;
-
   return (
     <div className="bg-white">
 
@@ -809,48 +799,180 @@ export default function ServicesPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          POURQUOI DJAMA — compact strip
+          SCHÉMA ANIMÉ — Processus DJAMA
       ══════════════════════════════════════════════════ */}
-      <section className="border-t border-gray-100 bg-[#f8f9fa] px-6 py-14">
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={staggerContainer}
-          className="mx-auto max-w-4xl"
-        >
+      <section
+        className="border-t border-gray-100 px-6 py-20 sm:py-28"
+        style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e1b4b 60%,#1e1035 100%)" }}
+      >
+        {/* Gold top line */}
+        <div className="h-[3px] w-full mb-0 -mt-20 sm:-mt-28"
+          style={{ background: "linear-gradient(90deg,transparent,#c9a55a,transparent)" }}
+        />
+        <div className="mx-auto max-w-5xl pt-20 sm:pt-28">
+
           {/* Header */}
-          <motion.div variants={fadeIn} className="mb-8 flex flex-col items-center gap-2 text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]">
-              <Star size={9} /> {s.whyUs.badge}
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.6, ease }}
+            className="mb-16 text-center"
+          >
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.30)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]">
+              <Sparkles size={9} /> {lang === "fr" ? "Notre approche" : "Our approach"}
             </span>
-            <h2 className="text-[1.6rem] font-extrabold text-gray-900 sm:text-[2rem]">{s.whyUs.title}</h2>
+            <h2 className="mt-4 text-[2rem] font-extrabold leading-[1.12] text-white sm:text-[2.5rem]">
+              {lang === "fr"
+                ? <>Votre projet, <span style={{ color: "#c9a55a" }}>notre mission.</span></>
+                : <>Your project, <span style={{ color: "#c9a55a" }}>our mission.</span></>}
+            </h2>
+            <p className="mt-3 text-[0.9rem] text-white/45">
+              {lang === "fr"
+                ? "Un processus simple, transparent et orienté résultats."
+                : "A simple, transparent, results-driven process."}
+            </p>
           </motion.div>
 
-          {/* Liste compacte — ligne par item */}
-          <motion.div variants={staggerContainerFast} className="flex flex-col divide-y divide-gray-200 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,.05)]">
-            {s.whyUs.items.map(({ title, desc }, i) => {
-              const Icon = WHY_ICONS[i];
-              const { color, rgb } = WHY_COLORS[i];
-              return (
+          {/* 3-step schema */}
+          <div className="flex flex-col items-center gap-0 sm:flex-row sm:items-start sm:justify-between">
+            {([
+              {
+                num: "01",
+                icon: MessageSquare,
+                color: "#7c6fcd",
+                rgb: "124,111,205",
+                title: lang === "fr" ? "Votre besoin" : "Your need",
+                desc:  lang === "fr" ? "15 min d'échange pour cerner votre projet et vos objectifs." : "15-min call to understand your project and goals.",
+              },
+              {
+                num: "02",
+                icon: Zap,
+                color: "#c9a55a",
+                rgb: "201,165,90",
+                title: lang === "fr" ? "DJAMA réalise" : "DJAMA delivers",
+                desc:  lang === "fr" ? "Notre équipe conçoit, développe et livre avec soin." : "Our team designs, builds and delivers with care.",
+              },
+              {
+                num: "03",
+                icon: TrendingUp,
+                color: "#34d399",
+                rgb: "52,211,153",
+                title: lang === "fr" ? "Vos résultats" : "Your results",
+                desc:  lang === "fr" ? "Image renforcée, performance mesurable, objectifs atteints." : "Stronger brand, measurable performance, goals reached.",
+              },
+            ] as const).map((step, i) => (
+              <Fragment key={step.num}>
+                {/* Step node */}
                 <motion.div
-                  key={title}
-                  variants={cardReveal}
-                  className="flex items-center gap-4 px-5 py-4"
+                  initial={{ opacity: 0, y: 32 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={viewport}
+                  transition={{ duration: 0.55, ease, delay: i * 0.18 }}
+                  className="flex w-full flex-col items-center text-center sm:w-[28%]"
                 >
-                  <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                    style={{ background: `rgba(${rgb},0.10)`, border: `1px solid rgba(${rgb},0.20)` }}
+                  {/* Step number */}
+                  <span
+                    className="mb-3 text-[0.58rem] font-black tracking-[0.22em]"
+                    style={{ color: `rgba(${step.rgb},0.55)` }}
                   >
-                    <Icon size={17} style={{ color }} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[0.88rem] font-bold text-gray-800">{title}</p>
-                    <p className="mt-0.5 text-[0.76rem] leading-snug text-gray-500">{desc}</p>
-                  </div>
+                    {step.num}
+                  </span>
+
+                  {/* Glow icon */}
+                  <motion.div
+                    className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl"
+                    style={{
+                      background: `rgba(${step.rgb},0.12)`,
+                      border: `1.5px solid rgba(${step.rgb},0.28)`,
+                    }}
+                    animate={{
+                      boxShadow: [
+                        `0 0 0px rgba(${step.rgb},0)`,
+                        `0 0 28px rgba(${step.rgb},0.30)`,
+                        `0 0 0px rgba(${step.rgb},0)`,
+                      ],
+                    }}
+                    transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.9 }}
+                  >
+                    <step.icon size={28} style={{ color: step.color }} />
+                  </motion.div>
+
+                  <p className="mt-4 text-[0.95rem] font-extrabold text-white">{step.title}</p>
+                  <p className="mt-1.5 max-w-[200px] text-[0.76rem] leading-snug text-white/45">{step.desc}</p>
                 </motion.div>
-              );
-            })}
+
+                {/* Animated connector arrow */}
+                {i < 2 && (
+                  <div className="flex shrink-0 items-center justify-center py-4 sm:mt-[36px] sm:w-[8%] sm:py-0">
+                    {/* Vertical — mobile */}
+                    <motion.div
+                      className="h-10 w-px sm:hidden"
+                      initial={{ scaleY: 0, opacity: 0 }}
+                      whileInView={{ scaleY: 1, opacity: 1 }}
+                      viewport={viewport}
+                      transition={{ duration: 0.5, ease, delay: i * 0.18 + 0.28 }}
+                      style={{ background: "linear-gradient(180deg,rgba(201,165,90,0.12),rgba(201,165,90,0.5),rgba(201,165,90,0.12))", transformOrigin: "top" }}
+                    />
+                    {/* Horizontal arrow — desktop */}
+                    <motion.svg
+                      className="hidden sm:block"
+                      width="44" height="18" viewBox="0 0 44 18"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={viewport}
+                      transition={{ duration: 0.3, delay: i * 0.18 + 0.22 }}
+                    >
+                      <motion.path
+                        d="M2 9 L36 9 M29 3 L36 9 L29 15"
+                        stroke="rgba(201,165,90,0.45)"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="none"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        viewport={viewport}
+                        transition={{ duration: 0.7, ease, delay: i * 0.18 + 0.3 }}
+                      />
+                    </motion.svg>
+                  </div>
+                )}
+              </Fragment>
+            ))}
+          </div>
+
+          {/* Bottom 4-chip row */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.6, ease, delay: 0.55 }}
+            className="mt-16 grid grid-cols-2 gap-2.5 sm:grid-cols-4"
+          >
+            {([
+              { icon: Zap,             color: "#c9a55a", rgb: "201,165,90", label: lang === "fr" ? "Livraison rapide"     : "Fast delivery"         },
+              { icon: Shield,          color: "#7c6fcd", rgb: "124,111,205", label: lang === "fr" ? "Qualité garantie"    : "Quality guaranteed"    },
+              { icon: HeartHandshake,  color: "#34d399", rgb: "52,211,153",  label: lang === "fr" ? "Suivi personnalisé"  : "Personal follow-up"    },
+              { icon: TrendingUp,      color: "#f9a826", rgb: "249,168,38",  label: lang === "fr" ? "Résultats mesurables": "Measurable results"    },
+            ] as const).map(({ icon: Icon, color, rgb, label }) => (
+              <div
+                key={label}
+                className="flex items-center gap-2.5 rounded-xl px-3 py-3"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
+              >
+                <div
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                  style={{ background: `rgba(${rgb},0.14)` }}
+                >
+                  <Icon size={13} style={{ color }} />
+                </div>
+                <span className="text-[0.73rem] font-semibold text-white/65">{label}</span>
+              </div>
+            ))}
           </motion.div>
-        </motion.div>
+
+        </div>
       </section>
 
       {/* ══════════════════════════════════════════════════
