@@ -9,10 +9,10 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight, Mail, Users2, Shield,
+  ArrowRight, Mail, Users2, Shield, ShieldCheck,
   CheckCircle2, Sparkles, HeartHandshake,
   Globe, Brain, MessageCircle,
-  Code2, BarChart3,
+  Code2, BarChart3, Briefcase,
   Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem, Star,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
@@ -107,10 +107,10 @@ export default function Page() {
 }
 
 const HERO_STATS = [
-  { value: "50+",  label: "clients accompagnés" },
-  { value: "100+", label: "projets livrés"       },
-  { value: "✓",   label: "sans engagement"      },
-] as const;
+  { value: "50+",  label: "clients\naccompagnés", Icon: Users2      },
+  { value: "100+", label: "projets\nlivrés",       Icon: Briefcase   },
+  { value: "Sans", label: "engagement",            Icon: ShieldCheck },
+];
 
 function HomeContent() {
   const data                  = getSiteData();
@@ -226,17 +226,37 @@ function HomeContent() {
             </Link>
           </motion.div>
 
-          {/* Stats */}
+          {/* Stats — 3 cards avec icônes */}
           <motion.div
             variants={fadeIn}
-            className="mt-9 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-gray-100 pt-6"
+            className="mt-9 grid grid-cols-3 gap-3 border-t border-gray-100 pt-6"
           >
-            {HERO_STATS.map(({ value, label }) => (
-              <div key={label} className="flex items-center gap-1.5">
-                <span className="text-lg font-extrabold text-gray-900">
+            {HERO_STATS.map(({ value, label, Icon }) => (
+              <div
+                key={label}
+                className="flex flex-col items-center gap-2.5 rounded-2xl px-2 py-4"
+                style={{ background: "rgba(99,102,241,0.06)" }}
+              >
+                {/* Icône */}
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-xl"
+                  style={{ background: "rgba(99,102,241,0.12)", color: "#6366f1" }}
+                >
+                  <Icon size={18} />
+                </div>
+
+                {/* Valeur */}
+                <span className="text-[1.35rem] font-extrabold leading-none text-gray-900">
                   <SmartStat value={value} />
                 </span>
-                <span className="text-xs text-gray-400">{label}</span>
+
+                {/* Label */}
+                <span
+                  className="text-center text-[0.7rem] leading-snug text-gray-500"
+                  style={{ whiteSpace: "pre-line" }}
+                >
+                  {label}
+                </span>
               </div>
             ))}
           </motion.div>
