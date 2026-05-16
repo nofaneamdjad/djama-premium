@@ -976,133 +976,65 @@ export default function ServicesPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          LE SYSTÈME DJAMA
+          MARQUEE — services défilants
       ══════════════════════════════════════════════════ */}
-      <section className="relative border-t border-gray-200 bg-[#f8f9fa] px-6 py-28 overflow-hidden">
-        <div className="relative mx-auto max-w-6xl">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={viewport}
-            variants={staggerContainer}
-          >
-            <div className="grid items-center gap-16 lg:grid-cols-[1fr_480px]">
+      <section className="overflow-hidden border-t border-gray-100 bg-white py-12">
+        {/* Fade edges */}
+        <div className="pointer-events-none absolute left-0 z-10 h-full w-24 bg-gradient-to-r from-white to-transparent" />
+        <div className="pointer-events-none absolute right-0 z-10 h-full w-24 bg-gradient-to-l from-white to-transparent" />
 
-              {/* Text left */}
-              <div>
-                <motion.span
-                  variants={fadeIn}
-                  className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]"
+        {(() => {
+          const ROW1 = [
+            { icon: Code2,         color: "#7c6fcd", label: lang === "fr" ? "Site vitrine"               : "Website"              },
+            { icon: Sparkles,      color: "#dc5078", label: lang === "fr" ? "E-commerce"                 : "E-commerce"           },
+            { icon: MessageSquare, color: "#f9a826", label: lang === "fr" ? "Application mobile"         : "Mobile app"           },
+            { icon: Layers,        color: "#7c6fcd", label: lang === "fr" ? "Plateforme web"             : "Web platform"         },
+            { icon: Zap,           color: "#c9a55a", label: lang === "fr" ? "Automatisation & IA"        : "AI automation"        },
+            { icon: TrendingUp,    color: "#34d399", label: lang === "fr" ? "Montage vidéo"              : "Video editing"        },
+            { icon: Star,          color: "#f9a826", label: lang === "fr" ? "Retouche photo"             : "Photo retouching"     },
+          ];
+          const ROW2 = [
+            { icon: BadgeCheck,    color: "#34d399", label: lang === "fr" ? "Visuels publicitaires"      : "Ad visuals"           },
+            { icon: Users,         color: "#f9a826", label: lang === "fr" ? "Soutien scolaire"           : "Tutoring"             },
+            { icon: Shield,        color: "#7c6fcd", label: lang === "fr" ? "Création auto-entrepreneur" : "Business registration" },
+            { icon: Clock,         color: "#dc5078", label: lang === "fr" ? "Déclarations URSSAF"        : "URSSAF declarations"  },
+            { icon: Settings2,     color: "#c9a55a", label: lang === "fr" ? "Assistance administrative"  : "Admin assistance"     },
+            { icon: ArrowRight,    color: "#34d399", label: lang === "fr" ? "Marchés publics"            : "Public tenders"       },
+            { icon: Users2,        color: "#f9a826", label: lang === "fr" ? "Recherche fournisseurs"     : "Supplier sourcing"    },
+          ];
+
+          const Chip = ({ icon: Icon, color, label }: { icon: React.ElementType; color: string; label: string }) => (
+            <div className="flex shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-[0.78rem] font-semibold text-gray-700 whitespace-nowrap">
+              <Icon size={12} style={{ color }} />
+              {label}
+            </div>
+          );
+
+          return (
+            <div className="flex flex-col gap-3">
+              {/* Row 1 — scroll left */}
+              <div className="flex overflow-hidden">
+                <motion.div
+                  animate={{ x: ["0%", "-50%"] }}
+                  transition={{ duration: 22, ease: "linear", repeat: Infinity }}
+                  className="flex gap-3 pr-3"
                 >
-                  <Layers size={10} /> {lang === "fr" ? "L'approche DJAMA" : "The DJAMA approach"}
-                </motion.span>
-                <motion.h2 variants={fadeIn} className="display-section mt-4 text-gray-900">
-                  {lang === "fr" ? (
-                    <>Plus qu&apos;un service.<br /><span className="text-gold">Un système complet.</span></>
-                  ) : (
-                    <>More than a service.<br /><span className="text-gold">A complete system.</span></>
-                  )}
-                </motion.h2>
-                <motion.p variants={fadeIn} className="mt-5 max-w-md text-base leading-relaxed text-gray-500">
-                  {lang === "fr"
-                    ? "Chez DJAMA, vous ne commandez pas une prestation isolée. Vous accédez à un écosystème : image, outils, accompagnement, performance."
-                    : "At DJAMA, you don't just order a single service. You access an ecosystem: brand, tools, support, performance."}
-                </motion.p>
-
-                <motion.div variants={staggerContainerFast} className="mt-8 space-y-3">
-                  {(lang === "fr" ? [
-                    { label: "Création & Design",                 desc: "Site, app, visuels — une image premium qui convertit." },
-                    { label: "Outils professionnels",             desc: "Factures, planning, bloc-notes — intégrés à votre workflow." },
-                    { label: "Accompagnement",                    desc: "Administratif, fournisseurs, marchés — on gère à votre place." },
-                    { label: "Coaching & montée en compétence",   desc: "IA, scolaire, numérique — vous progressez vraiment." },
-                  ] : [
-                    { label: "Creation & Design",     desc: "Website, app, visuals — a premium image that converts." },
-                    { label: "Professional tools",    desc: "Invoices, scheduling, notes — integrated into your workflow." },
-                    { label: "Support",               desc: "Admin, suppliers, tenders — we handle it for you." },
-                    { label: "Coaching & upskilling", desc: "AI, academic, digital — you truly progress." },
-                  ]).map(({ label, desc }, i) => (
-                    <motion.div
-                      key={label}
-                      variants={cardReveal}
-                      className="group flex items-start gap-4 rounded-[1.25rem] border border-gray-200 bg-white p-4 shadow-[0_2px_10px_rgba(0,0,0,.04)] transition-all duration-300 hover:border-[rgba(201,165,90,0.25)] hover:bg-[rgba(201,165,90,0.03)]"
-                    >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.1)] text-xs font-black text-[#c9a55a] transition-all duration-300 group-hover:bg-[rgba(201,165,90,0.18)]">
-                        {i + 1}
-                      </div>
-                      <div>
-                        <p className="text-sm font-extrabold text-gray-800">{label}</p>
-                        <p className="mt-0.5 text-xs text-gray-400">{desc}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-
-                <motion.div variants={fadeIn} className="mt-8">
-                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }} className="inline-block">
-                    <Link href="/contact" className="btn-primary">
-                      {lang === "fr" ? "Parlons de votre projet" : "Let's talk about your project"}
-                      <ArrowRight size={16} />
-                    </Link>
-                  </motion.div>
+                  {[...ROW1, ...ROW1].map((c, i) => <Chip key={i} {...c} />)}
                 </motion.div>
               </div>
-
-              {/* Visual right — system card */}
-              <motion.div variants={cardRevealBlur}>
-                <div className="relative overflow-hidden rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_2px_10px_rgba(0,0,0,.06)]">
-                  <div className="relative">
-                    <p className="text-[0.65rem] font-black uppercase tracking-[0.18em] text-gray-400">
-                      {lang === "fr" ? "Ce que vous obtenez" : "What you get"}
-                    </p>
-
-                    <div className="mt-6 space-y-3">
-                      {[
-                        { icon: Code2,         color: "#7c6fcd", rgb: "124,111,205", label: lang === "fr" ? "Présence digitale"    : "Digital presence",    value: lang === "fr" ? "Site · App · E-commerce"          : "Website · App · E-commerce"    },
-                        { icon: LayoutGrid,    color: "#34d399", rgb: "52,211,153",  label: lang === "fr" ? "Outils opérationnels" : "Operational tools",   value: lang === "fr" ? "Factures · Planning · Notes"       : "Invoices · Scheduling · Notes"  },
-                        { icon: MessageSquare, color: "#f9a826", rgb: "249,168,38",  label: lang === "fr" ? "Accompagnement"       : "Support",             value: lang === "fr" ? "Admin · Fournisseurs · Marchés"    : "Admin · Suppliers · Tenders"    },
-                        { icon: Sparkles,      color: "#c9a55a", rgb: "201,165,90",  label: "Coaching",                                                      value: lang === "fr" ? "IA · Scolaire · Numérique"         : "AI · Academic · Digital"        },
-                        { icon: TrendingUp,    color: "#f87171", rgb: "248,113,113", label: lang === "fr" ? "Résultats"            : "Results",             value: lang === "fr" ? "Performance · Croissance · Clarté" : "Performance · Growth · Clarity"  },
-                      ].map(({ icon: Icon, color, rgb, label, value }) => (
-                        <motion.div
-                          key={label}
-                          className="group/row flex items-center gap-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all duration-300 hover:border-gray-300 hover:bg-white"
-                          whileHover={{ x: 4 }}
-                          transition={{ duration: 0.22 }}
-                        >
-                          <div
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-300 group-hover/row:scale-110"
-                            style={{ background: `rgba(${rgb}, 0.12)`, border: `1px solid rgba(${rgb}, 0.22)` }}
-                          >
-                            <Icon size={15} style={{ color }} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[0.7rem] font-bold text-gray-700">{label}</p>
-                            <p className="truncate text-[0.6rem] text-gray-400">{value}</p>
-                          </div>
-                          <motion.div
-                            animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
-                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                          >
-                            <CheckCircle2 size={14} className="shrink-0 text-[#c9a55a]" />
-                          </motion.div>
-                        </motion.div>
-                      ))}
-                    </div>
-
-                    <div className="mt-6 rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.06)] px-4 py-3 text-center">
-                      <p className="text-xs font-bold text-[#c9a55a]">
-                        {lang === "fr"
-                          ? "Devis gratuit · Réponse sous 24h · Sans engagement"
-                          : "Free quote · Reply within 24h · No commitment"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
+              {/* Row 2 — scroll right */}
+              <div className="flex overflow-hidden">
+                <motion.div
+                  animate={{ x: ["-50%", "0%"] }}
+                  transition={{ duration: 26, ease: "linear", repeat: Infinity }}
+                  className="flex gap-3 pr-3"
+                >
+                  {[...ROW2, ...ROW2].map((c, i) => <Chip key={i} {...c} />)}
+                </motion.div>
+              </div>
             </div>
-          </motion.div>
-        </div>
+          );
+        })()}
       </section>
 
       {/* ══════════════════════════════════════════════════
