@@ -839,83 +839,48 @@ export default function ServicesPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          POURQUOI DJAMA
+          POURQUOI DJAMA — compact strip
       ══════════════════════════════════════════════════ */}
-      <section className="relative border-t border-gray-200 px-6 py-28 overflow-hidden bg-white">
-        <div className="relative mx-auto max-w-6xl">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={viewport}
-            variants={staggerContainer}
-          >
-            {/* Header */}
-            <div className="mb-10 sm:mb-16 text-center">
-              <motion.span
-                variants={fadeIn}
-                className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]"
-              >
-                <Star size={10} /> {s.whyUs.badge}
-              </motion.span>
-              <motion.h2 variants={fadeIn} className="display-section mt-4 text-gray-900">
-                {s.whyUs.title}
-              </motion.h2>
-              <motion.p variants={fadeIn} className="mx-auto mt-4 max-w-lg text-base text-gray-500">
-                {lang === "fr" ? "Ce qui nous différencie, au-delà des mots." : "What actually sets us apart."}
-              </motion.p>
-            </div>
-
-            {/* Grid 3×2 */}
-            <motion.div
-              variants={staggerContainerFast}
-              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            >
-              {s.whyUs.items.map(({ title, desc }, i) => {
-                const Icon = WHY_ICONS[i];
-                const { color, rgb } = WHY_COLORS[i];
-                return (
-                  <motion.div
-                    key={title}
-                    variants={cardRevealBlur}
-                    whileHover={{ y: -6, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
-                    className="group relative overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white p-7 shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-all duration-300 hover:border-gray-300"
-                  >
-                    {/* Faint number watermark */}
-                    <span
-                      className="pointer-events-none absolute -right-1 -top-5 select-none text-[6.5rem] font-black leading-none opacity-[0.03] text-gray-900"
-                      aria-hidden="true"
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-
-                    {/* Radial hover glow */}
-                    <div
-                      className="pointer-events-none absolute inset-0 rounded-[1.5rem] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
-                      style={{ background: `radial-gradient(ellipse at 15% 0%, rgba(${rgb}, 0.08) 0%, transparent 60%)` }}
-                    />
-
-                    {/* Icon */}
-                    <motion.div
-                      className="relative mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl border"
-                      style={{
-                        background: `rgba(${rgb}, 0.10)`,
-                        borderColor: `rgba(${rgb}, 0.22)`,
-                        boxShadow: `0 0 14px rgba(${rgb}, 0.10)`,
-                      }}
-                      whileHover={{ scale: 1.12, boxShadow: `0 0 28px rgba(${rgb}, 0.3)` }}
-                      transition={{ duration: 0.25 }}
-                    >
-                      <Icon size={22} style={{ color }} />
-                    </motion.div>
-
-                    <h3 className="relative text-[0.95rem] font-extrabold text-gray-800">{title}</h3>
-                    <p className="relative mt-2.5 text-sm leading-relaxed text-gray-500">{desc}</p>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
+      <section className="border-t border-gray-100 bg-[#f8f9fa] px-6 py-14">
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={staggerContainer}
+          className="mx-auto max-w-4xl"
+        >
+          {/* Header */}
+          <motion.div variants={fadeIn} className="mb-8 flex flex-col items-center gap-2 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]">
+              <Star size={9} /> {s.whyUs.badge}
+            </span>
+            <h2 className="text-[1.6rem] font-extrabold text-gray-900 sm:text-[2rem]">{s.whyUs.title}</h2>
           </motion.div>
-        </div>
+
+          {/* Liste compacte — ligne par item */}
+          <motion.div variants={staggerContainerFast} className="flex flex-col divide-y divide-gray-200 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,.05)]">
+            {s.whyUs.items.map(({ title, desc }, i) => {
+              const Icon = WHY_ICONS[i];
+              const { color, rgb } = WHY_COLORS[i];
+              return (
+                <motion.div
+                  key={title}
+                  variants={cardReveal}
+                  className="flex items-center gap-4 px-5 py-4"
+                >
+                  <div
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: `rgba(${rgb},0.10)`, border: `1px solid rgba(${rgb},0.20)` }}
+                  >
+                    <Icon size={17} style={{ color }} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[0.88rem] font-bold text-gray-800">{title}</p>
+                    <p className="mt-0.5 text-[0.76rem] leading-snug text-gray-500">{desc}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* ══════════════════════════════════════════════════
