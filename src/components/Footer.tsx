@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   Instagram, Linkedin, Facebook, Youtube, Twitter, Globe,
@@ -131,39 +132,23 @@ export default function Footer() {
         variants={containerVariants}
         className="relative mx-auto max-w-6xl px-6 pt-16 pb-12 flex flex-col items-center text-center"
       >
-        {/* Logo — rendu CSS pour fond sombre */}
+        {/* Logo */}
         <motion.div variants={itemVariants}>
           <Link href="/" aria-label="DJAMA — Accueil">
             <motion.div
               whileHover={{ scale: 1.05, filter: "drop-shadow(0 0 18px rgba(201,165,90,0.45))" }}
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.25 }}
-              className="inline-flex items-center gap-2.5"
             >
-              {/* Texte DJAMA en blanc */}
-              <span
-                className="text-[2rem] md:text-[2.6rem] font-black tracking-tight text-white"
-                style={{ letterSpacing: "-0.03em", fontFamily: "inherit" }}
-              >
-                DJAMA
-              </span>
-
-              {/* Demi-lune dorée */}
-              <span
-                className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full"
-                style={{
-                  width:  "clamp(22px, 2.2vw, 32px)",
-                  height: "clamp(22px, 2.2vw, 32px)",
-                  background: "linear-gradient(135deg, #f5d060 0%, #c9a55a 100%)",
-                }}
-              >
-                <span
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background: `radial-gradient(circle at 68% 50%, transparent 36%, #071525 37%)`,
-                  }}
-                />
-              </span>
+              <Image
+                src="/logo-navbar.png"
+                alt="Logo DJAMA"
+                width={400}
+                height={90}
+                priority
+                className="h-[56px] md:h-[76px] w-auto object-contain"
+                style={{ filter: "none" }}
+              />
             </motion.div>
           </Link>
         </motion.div>
