@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight, Sparkles, CheckCircle2, Zap, Users, TrendingUp,
+  ArrowRight, Sparkles, CheckCircle2, Zap, Users, Users2, TrendingUp,
   Shield, Clock, Settings2, MessageSquare, Star, BadgeCheck,
   Code2, LayoutGrid, Layers, ChevronRight,
 } from "lucide-react";
@@ -634,122 +634,91 @@ export default function ServicesPage() {
     <div className="bg-white">
 
       {/* ══════════════════════════════════════════════════
-          HERO
+          HERO — style homepage
       ══════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pb-14 pt-[108px] sm:pb-32 sm:pt-[128px] bg-white">
+      <section className="relative overflow-hidden bg-white px-5 pb-14 pt-[108px] sm:pb-20 sm:pt-[132px]">
 
-        {/* Breathing mesh gradient */}
-        <motion.div
-          className="pointer-events-none absolute inset-0"
-          animate={{
-            background: [
-              "radial-gradient(ellipse 65% 55% at 50% 0%, rgba(201,165,90,0.05) 0%, transparent 72%)",
-              "radial-gradient(ellipse 75% 60% at 50% 0%, rgba(124,111,205,0.04) 0%, transparent 72%)",
-              "radial-gradient(ellipse 65% 55% at 50% 0%, rgba(201,165,90,0.05) 0%, transparent 72%)",
-            ],
-          }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-        />
+        {/* Orbes */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="hero-orb-1 absolute -top-32 -right-24 h-[480px] w-[480px] rounded-full blur-[90px]"
+            style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 68%)" }} />
+          <div className="hero-orb-2 absolute -bottom-16 -left-28 h-[380px] w-[380px] rounded-full blur-[80px]"
+            style={{ background: "radial-gradient(circle, rgba(201,165,90,0.18) 0%, transparent 68%)" }} />
+          <div className="hero-orb-3 absolute top-0 left-1/2 -translate-x-1/2 h-[340px] w-[560px] rounded-full blur-[100px]"
+            style={{ background: "radial-gradient(circle, rgba(168,85,247,0.07) 0%, transparent 70%)" }} />
+        </div>
 
-        {/* Orb 1 — gold, top center */}
         <motion.div
-          className="pointer-events-none absolute inset-x-0 top-0 flex justify-center"
-          animate={{ y: [0, -18, 0], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          initial="hidden" animate="visible" variants={staggerContainer}
+          className="relative z-10 mx-auto max-w-md text-center"
         >
-          <div className="h-[420px] w-[640px] rounded-full bg-[rgba(201,165,90,0.05)] blur-[90px]" />
-        </motion.div>
-
-        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
-
           {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease }}
-            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#c9a55a]"
+          <motion.div variants={fadeIn}
+            className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em]"
+            style={{ borderColor: "rgba(201,165,90,0.25)", background: "rgba(201,165,90,0.07)", color: "#c9a55a" }}
           >
-            <Sparkles size={11} />
-            {s.hero.badge}
+            <Sparkles size={11} /> {s.hero.badge}
           </motion.div>
 
-          {/* Title */}
-          <h1 className="display-hero text-gray-900">
-            <MultiLineReveal
-              lines={s.hero.titleLines}
-              highlight={1}
-              stagger={0.18}
-              wordStagger={0.07}
-              delay={0.1}
-              lineClassName="justify-center"
-            />
-          </h1>
-
-          <FadeReveal
-            delay={0.65}
-            as="p"
-            className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-gray-500"
+          {/* Titre */}
+          <motion.h1 variants={fadeIn}
+            className="text-[2.75rem] font-extrabold leading-[1.1] tracking-tight text-gray-900 sm:text-[3.4rem]"
           >
-            {s.hero.subtitle}
-          </FadeReveal>
+            {lang === "fr" ? "Nos services," : "Our services,"}<br />
+            <span className="relative inline whitespace-nowrap">
+              <span aria-hidden className="hero-marker absolute inset-x-[-2px] bottom-[2px]"
+                style={{ height: "38%", background: "linear-gradient(90deg,rgba(201,165,90,0.72) 0%,rgba(201,165,90,0.38) 100%)", borderRadius: "4px", zIndex: 0 }} />
+              <span className="relative z-10">{lang === "fr" ? "votre croissance" : "your growth"}</span>
+            </span>.
+          </motion.h1>
+
+          {/* Sous-titre */}
+          <motion.p variants={fadeIn} className="mt-5 text-[1rem] font-medium text-gray-500">
+            {lang === "fr"
+              ? "Du site web à l'accompagnement administratif — tout ce dont vous avez besoin pour avancer."
+              : "From website to business support — everything you need to grow."}
+          </motion.p>
 
           {/* CTAs */}
-          <FadeReveal delay={0.8} className="mt-10 flex flex-wrap justify-center gap-3">
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
-              <Link href="/contact" className="btn-primary">
-                {lang === "fr" ? "Démarrer un projet" : "Start a project"}
-                <motion.span
-                  animate={{ x: [0, 3, 0] }}
-                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <ArrowRight size={16} />
-                </motion.span>
-              </Link>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
-              <Link
-                href="#services"
-                className="inline-flex items-center gap-2 rounded-[1.25rem] border border-gray-200 bg-gray-50 px-7 py-[0.875rem] text-sm font-bold text-gray-600 transition-all duration-300 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900"
-              >
-                {lang === "fr" ? "Explorer les services" : "Explore services"}
-              </Link>
-            </motion.div>
-          </FadeReveal>
-
-          {/* Stats */}
-          <FadeReveal delay={0.95} className="mt-14 border-t border-gray-200 pt-12">
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1, delayChildren: 1.0 } } }}
-              className="flex flex-wrap justify-center gap-10"
+          <motion.div variants={fadeIn} className="mt-9 flex flex-col gap-3">
+            <Link href="/contact"
+              className="hero-btn w-full rounded-2xl py-4 text-center text-[1rem] font-bold text-white shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-[1.015] active:scale-[.98]"
             >
-              {[
-                { value: loading ? "…" : `${rows.length}`, label: lang === "fr" ? "services disponibles" : "services available" },
-                { value: "5",    label: lang === "fr" ? "pôles d'expertise"    : "areas of expertise" },
-                { value: "50+",  label: lang === "fr" ? "clients accompagnés"  : "clients supported"  },
-                { value: "24h",  label: lang === "fr" ? "délai de réponse"     : "response time"      },
-              ].map(({ value, label }) => (
-                <motion.div
-                  key={label}
-                  variants={blurReveal}
-                  className="text-center"
+              {lang === "fr" ? "Démarrer un projet →" : "Start a project →"}
+            </Link>
+            <Link href="#services"
+              className="w-full rounded-2xl border border-gray-200 bg-white py-4 text-center text-[1rem] font-semibold text-gray-500 shadow-sm transition-all duration-200 hover:border-gray-300 hover:text-gray-700 active:scale-[.98]"
+            >
+              {lang === "fr" ? "Explorer les services" : "Explore services"}
+            </Link>
+          </motion.div>
+
+          {/* Stats cards */}
+          <motion.div variants={fadeIn}
+            className="mt-9 grid grid-cols-3 gap-3 border-t border-gray-100 pt-6"
+          >
+            {([
+              { value: loading ? "…" : `${rows.length || 16}`, label: lang === "fr" ? "services\ndisponibles" : "services\navailable", Icon: Layers },
+              { value: "50+",  label: lang === "fr" ? "clients\naccompagnés" : "clients\nsupported",  Icon: Users2  },
+              { value: "24h",  label: lang === "fr" ? "délai de\nréponse"    : "response\ntime",       Icon: Zap     },
+            ] as const).map(({ value, label, Icon }) => (
+              <div key={label}
+                className="flex flex-col items-center gap-2.5 rounded-2xl px-2 py-4"
+                style={{ background: "rgba(201,165,90,0.06)" }}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl"
+                  style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a" }}
                 >
-                  <p className="text-2xl font-black tracking-tight text-gray-900">{value}</p>
-                  <p className="mt-0.5 text-xs text-gray-400">{label}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </FadeReveal>
+                  <Icon size={18} />
+                </div>
+                <span className="text-[1.3rem] font-extrabold leading-none text-gray-900">{value}</span>
+                <span className="text-center text-[0.68rem] leading-snug text-gray-500" style={{ whiteSpace: "pre-line" }}>{label}</span>
+              </div>
+            ))}
+          </motion.div>
 
           {/* Category chips */}
-          <FadeReveal delay={1.1} className="mt-10">
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08, delayChildren: 1.15 } } }}
-              className="flex flex-wrap justify-center gap-2"
-            >
+          <motion.div variants={fadeIn} className="mt-7 flex flex-wrap justify-center gap-2">
               {(Object.keys(CAT_CONFIG) as CatKey[]).map((cat) => {
                 const c = CAT_CONFIG[cat];
                 return (
@@ -767,9 +736,9 @@ export default function ServicesPage() {
                   </motion.span>
                 );
               })}
-            </motion.div>
-          </FadeReveal>
-        </div>
+          </motion.div>
+
+        </motion.div>
       </section>
 
       {/* ══════════════════════════════════════════════════
