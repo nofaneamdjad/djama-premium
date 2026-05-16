@@ -467,110 +467,6 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
   );
 }
 
-/* ─────────────────────────────────────────────────────────
-   OUTILS BLOCK — bloc unique pour Documents & Outils
-───────────────────────────────────────────────────────── */
-const OUTILS_LIST = [
-  "Factures & Devis PDF",
-  "Planning",
-  "Planification",
-  "Bloc-notes IA",
-  "CRM Client",
-  "Chrono Pro",
-  "Dépenses Pro",
-  "Trésorerie",
-  "Contrats IA",
-  "Sourcing IA",
-  "Coach Business IA",
-] as const;
-
-function OutilsBlock({ lang }: { lang: "fr" | "en" }) {
-  const cfg = CAT_CONFIG["Documents & Outils"];
-
-  return (
-    <motion.div
-      variants={cardRevealBlur}
-      className="group relative sm:col-span-2 xl:col-span-3"
-    >
-      {/* Gradient border bloom on hover */}
-      <div
-        className="pointer-events-none absolute -inset-[1px] rounded-[1.8rem] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-        style={{
-          background: `linear-gradient(145deg, rgba(${cfg.accentRgb},0.45) 0%, transparent 45%, rgba(${cfg.accentRgb},0.18) 100%)`,
-        }}
-      />
-
-      <motion.div
-        className="relative overflow-hidden rounded-[1.75rem] border bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)]"
-        style={{
-          borderColor: cfg.border,
-        }}
-        whileHover={{ y: -6, boxShadow: cfg.hoverShadow }}
-        transition={{ duration: 0.38, ease }}
-      >
-        {/* Shimmer sweep */}
-        <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[1.75rem]">
-          <div className="absolute inset-y-0 -left-[60%] w-[40%] -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.3] to-transparent transition-all duration-700 ease-out group-hover:left-[160%]" />
-        </div>
-        {/* Top edge glow on hover */}
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-          style={{ background: `linear-gradient(90deg, transparent, rgba(${cfg.accentRgb},0.9), transparent)` }}
-        />
-
-        {/* ── Header visuel — image ── */}
-        <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
-          <Image
-            src="/services-outils.jpg"
-            alt="Documents & Outils professionnels inclus — DJAMA"
-            fill
-            className="object-cover object-center"
-            sizes="(max-width: 640px) 100vw, 900px"
-            priority
-          />
-        </div>
-
-        {/* ── Corps ── */}
-        <div className="p-6 sm:p-8">
-          {/* Grille d'outils */}
-          <div className="mb-7 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-2.5">
-            {OUTILS_LIST.map((tool) => (
-              <div
-                key={tool}
-                className="flex items-center gap-2.5 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 transition-all hover:border-[rgba(52,211,153,0.22)] hover:bg-[rgba(52,211,153,0.05)]"
-              >
-                <CheckCircle2 size={11} className="shrink-0" style={{ color: cfg.accent }} />
-                <span className="truncate text-[0.77rem] font-semibold text-gray-600">{tool}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Footer */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[0.72rem] text-gray-400">
-              {lang === "fr"
-                ? "Accès depuis votre espace client · Synchronisation en temps réel"
-                : "Access from your client space · Real-time sync"}
-            </p>
-            <Link
-              href="/abonnement"
-              className="group/cta relative z-[1] inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-6 py-3 text-sm font-bold transition-all duration-300 hover:brightness-110 active:scale-[0.98]"
-              style={{ background: cfg.accent, color: "#fff" }}
-            >
-              {lang === "fr" ? "Accéder aux outils" : "Access tools"}
-              <motion.span
-                animate={{ x: [0, 3, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <ChevronRight size={16} />
-              </motion.span>
-            </Link>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
 
 /* ─────────────────────────────────────────────────────────
    FILTRE CATÉGORIES — animated layoutId pill
@@ -932,17 +828,9 @@ export default function ServicesPage() {
                 variants={staggerContainerFast}
                 className="mt-12 grid items-start gap-6 sm:grid-cols-2 xl:grid-cols-3"
               >
-                {/* Bloc Outils — affiché en tête, pleine largeur */}
-                {(activeCategory === "all" || activeCategory === "Documents & Outils") && (
-                  <OutilsBlock lang={lang} />
-                )}
-
-                {/* Autres services (Documents & Outils exclus) */}
-                {filtered
-                  .filter((sv) => sv.category !== "Documents & Outils")
-                  .map((service) => (
-                    <ServiceCard key={service.id} service={service} lang={lang} />
-                  ))}
+                {filtered.map((service) => (
+                  <ServiceCard key={service.id} service={service} lang={lang} />
+                ))}
               </motion.div>
             </AnimatePresence>
           )}
