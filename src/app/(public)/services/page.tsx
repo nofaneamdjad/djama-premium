@@ -469,8 +469,17 @@ function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en"
 
 
 /* ─────────────────────────────────────────────────────────
-   FILTRE CATÉGORIES — animated layoutId pill
+   FILTRE CATÉGORIES — icon tab bar
 ───────────────────────────────────────────────────────── */
+const CAT_FILTER_ICONS: Record<string, React.ElementType> = {
+  all:                    LayoutGrid,
+  Digital:                Code2,
+  "Création de contenu":  Sparkles,
+  "Documents & Outils":   BadgeCheck,
+  Accompagnement:         Users,
+  Coaching:               Star,
+};
+
 function CategoryFilter({
   active,
   onChange,
@@ -487,69 +496,79 @@ function CategoryFilter({
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease, delay: 0.4 }}
-      className="flex flex-wrap justify-center gap-2"
-    >
-      {CATEGORIES.map((cat) => {
-        const isActive = active === cat;
-        const config   = cat !== "all" ? CAT_CONFIG[cat as CatKey] : null;
-        const count    = counts[cat] ?? 0;
-        const label    = cat === "all" ? filterLabels["all"] : (filterLabels[cat] ?? (config ? config.label : cat));
+    <div className="relative mb-10">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease, delay: 0.25 }}
+        className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {CATEGORIES.map((cat) => {
+          const isActive = active === cat;
+          const config   = cat !== "all" ? CAT_CONFIG[cat as CatKey] : null;
+          const count    = counts[cat] ?? 0;
+          const label    = cat === "all" ? (filterLabels["all"] ?? "Tout") : (filterLabels[cat] ?? (config ? config.label : cat));
+          const Icon     = CAT_FILTER_ICONS[cat] ?? Code2;
 
-        return (
-          <motion.button
-            key={cat}
-            onClick={() => onChange(cat)}
-            whileTap={{ scale: 0.93 }}
-            className="relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200"
-            style={{
-              color: isActive
-                ? config ? config.accent : "#c9a55a"
-                : "rgba(0,0,0,0.4)",
-            }}
-          >
-            {/* Animated active pill */}
-            {isActive ? (
-              <motion.span
-                layoutId="active-cat-pill"
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: config ? `rgba(${config.accentRgb}, 0.10)` : "rgba(201,165,90,0.10)",
-                  border: `1px solid ${config ? config.border : "rgba(201,165,90,0.3)"}`,
-                }}
-                transition={{ type: "spring", bounce: 0.18, duration: 0.48 }}
-              />
-            ) : (
-              <span
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: "rgba(0,0,0,0.03)",
-                  border: "1px solid rgba(0,0,0,0.08)",
-                }}
-              />
-            )}
-
-            <span className="relative z-10">{label}</span>
-            <span
-              className="relative z-10 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[0.55rem] font-black"
+          return (
+            <motion.button
+              key={cat}
+              onClick={() => onChange(cat)}
+              whileTap={{ scale: 0.94 }}
+              className="relative flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-200"
               style={{
-                background: isActive
-                  ? config ? `rgba(${config.accentRgb}, 0.15)` : "rgba(201,165,90,0.15)"
-                  : "rgba(0,0,0,0.06)",
                 color: isActive
                   ? config ? config.accent : "#c9a55a"
-                  : "rgba(0,0,0,0.35)",
+                  : "rgba(0,0,0,0.45)",
+                background: isActive
+                  ? config ? `rgba(${config.accentRgb}, 0.08)` : "rgba(201,165,90,0.08)"
+                  : "rgba(0,0,0,0.03)",
+                border: `1.5px solid ${
+                  isActive
+                    ? config ? config.border : "rgba(201,165,90,0.32)"
+                    : "rgba(0,0,0,0.07)"
+                }`,
               }}
             >
-              {count}
-            </span>
-          </motion.button>
-        );
-      })}
-    </motion.div>
+              {/* Sliding active background */}
+              {isActive && (
+                <motion.span
+                  layoutId="cat-filter-bg"
+                  className="absolute inset-0 rounded-xl"
+                  style={{
+                    background: config
+                      ? `rgba(${config.accentRgb}, 0.06)`
+                      : "rgba(201,165,90,0.06)",
+                  }}
+                  transition={{ type: "spring", bounce: 0.14, duration: 0.44 }}
+                />
+              )}
+              <Icon
+                size={13}
+                className="relative z-10"
+                style={{ opacity: isActive ? 1 : 0.55 }}
+              />
+              <span className="relative z-10">{label}</span>
+              <span
+                className="relative z-10 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[0.52rem] font-black"
+                style={{
+                  background: isActive
+                    ? config ? `rgba(${config.accentRgb}, 0.15)` : "rgba(201,165,90,0.15)"
+                    : "rgba(0,0,0,0.06)",
+                  color: isActive
+                    ? config ? config.accent : "#c9a55a"
+                    : "rgba(0,0,0,0.3)",
+                }}
+              >
+                {count}
+              </span>
+            </motion.button>
+          );
+        })}
+      </motion.div>
+      {/* Scroll-fade hint on mobile */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent sm:hidden" />
+    </div>
   );
 }
 
@@ -722,27 +741,33 @@ export default function ServicesPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          FILTRES + GRILLE SERVICES
+          CATALOGUE — header + filtres + grille
       ══════════════════════════════════════════════════ */}
-      <section id="services" className="border-t border-gray-200 px-6 py-12 sm:py-20 bg-[#f8f9fa]">
+      <section id="services" className="border-t border-gray-100 bg-white px-6 py-16 sm:py-24">
         <div className="mx-auto max-w-6xl">
 
-          {/* Section header */}
+          {/* Header — left-aligned, bold */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport}
             transition={{ duration: 0.65, ease }}
-            className="mb-12 text-center"
+            className="mb-10"
           >
-            <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-gray-400">
-              {lang === "fr" ? "Catalogue complet" : "Full catalogue"}
-            </p>
-            <h2 className="mt-2 text-2xl font-extrabold text-gray-700">
-              {lang === "fr" ? "Filtrez par catégorie" : "Filter by category"}
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.24)] bg-[rgba(201,165,90,0.07)] px-3.5 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]">
+              <Sparkles size={9} />
+              {lang === "fr" ? "16 services disponibles" : "16 services available"}
+            </span>
+            <h2 className="mt-4 text-[2rem] font-extrabold leading-[1.12] text-gray-900 sm:text-[2.5rem]">
+              {lang === "fr"
+                ? <>Tous nos <span style={{ color: "#c9a55a" }}>services</span></>
+                : <>All our <span style={{ color: "#c9a55a" }}>services</span></>}
             </h2>
-            {/* Decorative line */}
-            <div className="mx-auto mt-4 h-px w-12 rounded-full bg-gradient-to-r from-transparent via-[#c9a55a]/40 to-transparent" />
+            <p className="mt-2.5 max-w-xl text-[0.92rem] leading-relaxed text-gray-500">
+              {lang === "fr"
+                ? "Choisissez une catégorie pour filtrer, ou parcourez l'intégralité de notre offre."
+                : "Pick a category to filter, or browse our full offering."}
+            </p>
           </motion.div>
 
           <CategoryFilter
@@ -753,17 +778,17 @@ export default function ServicesPage() {
           />
 
           {loading ? (
-            <div className="mt-12 grid items-start gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid items-start gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-[340px] sm:h-[400px] animate-pulse rounded-[1.75rem] border border-gray-200 bg-gray-100"
+                  className="h-[340px] animate-pulse rounded-[1.75rem] border border-gray-200 bg-gray-100"
                   style={{ animationDelay: `${i * 0.1}s` }}
                 />
               ))}
             </div>
           ) : fetchErr ? (
-            <div className="mt-10 rounded-2xl border border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.07)] px-6 py-8 text-center">
+            <div className="rounded-2xl border border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.07)] px-6 py-8 text-center">
               <p className="text-sm font-bold text-[#f87171]">Impossible de charger les services</p>
               <p className="mt-1 text-xs text-gray-500">{fetchErr}</p>
             </div>
@@ -774,7 +799,7 @@ export default function ServicesPage() {
                 initial="hidden"
                 animate="visible"
                 variants={staggerContainerFast}
-                className="mt-12 grid items-start gap-6 sm:grid-cols-2 xl:grid-cols-3"
+                className="grid items-start gap-5 sm:grid-cols-2 xl:grid-cols-3"
               >
                 {filtered
                   .filter(sv => sv.slug !== "coaching-ia" && sv.title !== "Coaching IA")
