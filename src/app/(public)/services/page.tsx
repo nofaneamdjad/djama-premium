@@ -577,7 +577,6 @@ const STATIC_SERVICES: ServiceRow[] = [
   { id:"s13", slug:"recherche-fournisseurs",       title:"Recherche fournisseurs internationaux",category:"Accompagnement",      price:"Sur devis",       description:"Identification, sélection et mise en relation avec des fournisseurs qualifiés à l'international (Asie, Europe, Afrique).\nNégociation incluse.", active:true, sort_order:13, created_at:NOW },
   { id:"s14", slug:"marches-publics",              title:"Marchés publics & privés",             category:"Accompagnement",      price:"Sur devis",       description:"Veille sur les appels d'offres, constitution de dossiers de candidature complets, conseil stratégique.\nTaux de réussite élevé.", active:true, sort_order:14, created_at:NOW },
   /* ── Coaching ── */
-  { id:"s15", slug:"coaching-ia",                  title:"Coaching IA",                          category:"Coaching",            price:"190 € unique",    description:"Formation complète : 6 modules, 20 chapitres, 4h d'accompagnement expert, accès 3 mois.\nGarantie satisfait ou remboursé 7 jours.", active:true, sort_order:15, created_at:NOW },
   { id:"s16", slug:"soutien-scolaire",             title:"Soutien scolaire",                     category:"Coaching",            price:"14 €/heure",      description:"Cours particuliers toutes matières, collège et lycée, présentiel ou en ligne.\nSuivi régulier et progression garantie.", active:true, sort_order:16, created_at:NOW },
 ];
 
@@ -828,9 +827,11 @@ export default function ServicesPage() {
                 variants={staggerContainerFast}
                 className="mt-12 grid items-start gap-6 sm:grid-cols-2 xl:grid-cols-3"
               >
-                {filtered.map((service) => (
-                  <ServiceCard key={service.id} service={service} lang={lang} />
-                ))}
+                {filtered
+                  .filter(sv => sv.slug !== "coaching-ia" && sv.title !== "Coaching IA")
+                  .map((service) => (
+                    <ServiceCard key={service.id} service={service} lang={lang} />
+                  ))}
               </motion.div>
             </AnimatePresence>
           )}
