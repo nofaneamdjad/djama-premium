@@ -717,26 +717,6 @@ export default function ServicesPage() {
             ))}
           </motion.div>
 
-          {/* Category chips */}
-          <motion.div variants={fadeIn} className="mt-7 flex flex-wrap justify-center gap-2">
-              {(Object.keys(CAT_CONFIG) as CatKey[]).map((cat) => {
-                const c = CAT_CONFIG[cat];
-                return (
-                  <motion.span
-                    key={cat}
-                    variants={blurReveal}
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.62rem] font-bold"
-                    style={{
-                      background: `rgba(${c.accentRgb}, 0.08)`,
-                      border: `1px solid rgba(${c.accentRgb}, 0.20)`,
-                      color: c.accent,
-                    }}
-                  >
-                    {c.emoji} {c.label}
-                  </motion.span>
-                );
-              })}
-          </motion.div>
 
         </motion.div>
       </section>
