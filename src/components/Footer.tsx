@@ -147,7 +147,7 @@ export default function Footer() {
                 height={90}
                 priority
                 className="h-[56px] md:h-[76px] w-auto object-contain"
-                style={{ filter: "drop-shadow(0 0 1px rgba(255,255,255,0.6)) drop-shadow(0 1px 3px rgba(255,255,255,0.25))" }}
+                style={{ filter: "none" }}
               />
             </motion.div>
           </Link>
