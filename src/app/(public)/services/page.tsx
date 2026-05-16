@@ -1038,87 +1038,66 @@ export default function ServicesPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          CTA FINAL
+          CTA FINAL — strip compact
       ══════════════════════════════════════════════════ */}
-      <section className="border-t border-gray-200 px-6 py-12 sm:py-24">
-        <div className="mx-auto max-w-4xl">
-          <motion.div
-            initial={{ opacity: 0, y: 36 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
-            transition={{ duration: 0.85, ease }}
-            className="relative overflow-hidden rounded-[2.5rem] p-12 text-center"
-            style={{
-              background: "linear-gradient(135deg,#6366f1 0%,#4f46e5 50%,#7c3aed 100%)",
-            }}
-          >
-            {/* Top border highlight */}
-            <div
-              className="pointer-events-none absolute inset-x-0 top-0 h-px"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)" }}
-            />
+      <section className="bg-white px-5 pb-16 pt-10">
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport}
+          transition={{ duration: 0.7, ease }}
+          className="mx-auto max-w-2xl overflow-hidden rounded-3xl"
+          style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e1b4b 60%,#1e1035 100%)" }}
+        >
+          {/* Gold top line */}
+          <div className="h-[3px] w-full" style={{ background: "linear-gradient(90deg,#c9a55a,#e8cc94,#c9a55a)" }} />
 
-            <div className="relative">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-white">
-                <Sparkles size={10} /> {lang === "fr" ? "On vous attend" : "We're ready for you"}
-              </span>
+          <div className="flex flex-col items-center gap-5 px-8 py-10 text-center">
+            <h2 className="text-[1.55rem] font-extrabold leading-[1.18] text-white sm:text-[1.9rem]">
+              {lang === "fr"
+                ? <>Lancez votre projet <span style={{ color: "#c9a55a" }}>dès aujourd&apos;hui.</span></>
+                : <>Launch your project <span style={{ color: "#c9a55a" }}>today.</span></>}
+            </h2>
 
-              <h2 className="display-section mt-5 text-white">
-                {lang === "fr" ? "Parlons de votre projet." : "Let's talk about your project."}
-              </h2>
-
-              <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/80">
-                {lang === "fr"
-                  ? "Que vous ayez besoin d'un site, d'outils professionnels ou d'accompagnement — DJAMA vous aide à construire des solutions digitales modernes."
-                  : "Whether you need a website, professional tools or expert guidance — DJAMA helps you build modern digital solutions."}
-              </p>
-
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
-                  <Link href="/contact" className="btn-primary px-8 py-4 text-base">
-                    {lang === "fr" ? "Demander un devis" : "Request a quote"}
-                    <motion.span
-                      animate={{ x: [0, 3, 0] }}
-                      transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <ArrowRight size={17} />
-                    </motion.span>
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.2 }}>
-                  <Link
-                    href="/abonnement"
-                    className="inline-flex items-center gap-2 rounded-[1.25rem] border border-white/30 bg-white/10 px-8 py-4 text-base font-bold text-white transition-all duration-300 hover:bg-white/20"
-                  >
-                    {lang === "fr" ? "Voir nos outils" : "View our tools"} <ChevronRight size={17} />
-                  </Link>
-                </motion.div>
-              </div>
-
-              {/* Trust signals */}
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
-                {[
-                  { icon: Shield,     label: lang === "fr" ? "Devis gratuit"          : "Free quote"            },
-                  { icon: Clock,      label: lang === "fr" ? "Réponse sous 24h"        : "Reply within 24h"     },
-                  { icon: BadgeCheck, label: lang === "fr" ? "Sans engagement"         : "No commitment"        },
-                  { icon: Star,       label: lang === "fr" ? "50+ clients satisfaits"  : "50+ satisfied clients" },
-                ].map(({ icon: Icon, label }, i) => (
-                  <motion.div
-                    key={label}
-                    className="flex items-center gap-1.5 text-xs text-white/70"
-                    initial={{ opacity: 0, y: 8 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={viewport}
-                    transition={{ duration: 0.4, delay: i * 0.08 }}
-                  >
-                    <Icon size={12} className="text-white/80" />
-                    {label}
-                  </motion.div>
-                ))}
-              </div>
+            {/* 3 trust bullets */}
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
+              {[
+                { icon: BadgeCheck, label: lang === "fr" ? "Devis gratuit"    : "Free quote"       },
+                { icon: Clock,      label: lang === "fr" ? "Réponse sous 24h" : "Reply within 24h" },
+                { icon: Shield,     label: lang === "fr" ? "Sans engagement"  : "No commitment"    },
+              ].map(({ icon: Icon, label }) => (
+                <span key={label} className="flex items-center gap-1.5 text-[0.72rem] font-semibold text-white/55">
+                  <Icon size={11} style={{ color: "#c9a55a" }} /> {label}
+                </span>
+              ))}
             </div>
-          </motion.div>
-        </div>
+
+            {/* CTAs */}
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
+                <Link
+                  href="/contact"
+                  className="flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-extrabold text-[#0f172a] transition-all duration-300 hover:brightness-110"
+                  style={{ background: "linear-gradient(90deg,#c9a55a,#e8cc94,#c9a55a)", backgroundSize: "200% 100%" }}
+                >
+                  {lang === "fr" ? "Demander un devis" : "Request a quote"}
+                  <motion.span animate={{ x: [0, 3, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>
+                    <ArrowRight size={15} />
+                  </motion.span>
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
+                <Link
+                  href="/contact"
+                  className="flex items-center justify-center gap-2 rounded-2xl border px-7 py-3.5 text-sm font-bold text-white/80 transition-all duration-300 hover:bg-white/10 hover:text-white"
+                  style={{ borderColor: "rgba(255,255,255,0.15)" }}
+                >
+                  {lang === "fr" ? "Nous contacter" : "Contact us"} <ChevronRight size={14} />
+                </Link>
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
       </section>
 
     </div>
