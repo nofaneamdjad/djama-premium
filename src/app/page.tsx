@@ -131,26 +131,61 @@ function HomeContent() {
     <div className="overflow-hidden">
 
       {/* ── Hero ───────────────────────────────────────────── */}
-      <section className="bg-white px-5 pb-12 pt-[108px] sm:pb-16 sm:pt-[128px]">
+      <section className="relative overflow-hidden bg-white px-5 pb-14 pt-[108px] sm:pb-20 sm:pt-[132px]">
+
+        {/* ── Orbes gradient animées ── */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          {/* Violet — haut droite */}
+          <div
+            className="hero-orb-1 absolute -top-32 -right-24 h-[480px] w-[480px] rounded-full blur-[90px]"
+            style={{ background: "radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 68%)" }}
+          />
+          {/* Or DJAMA — bas gauche */}
+          <div
+            className="hero-orb-2 absolute -bottom-16 -left-28 h-[380px] w-[380px] rounded-full blur-[80px]"
+            style={{ background: `radial-gradient(circle, rgba(${GOLDR},0.20) 0%, transparent 68%)` }}
+          />
+          {/* Rose — centre haut */}
+          <div
+            className="hero-orb-3 absolute top-0 left-1/2 -translate-x-1/2 h-[340px] w-[560px] rounded-full blur-[100px]"
+            style={{ background: "radial-gradient(circle, rgba(168,85,247,0.09) 0%, transparent 70%)" }}
+          />
+        </div>
+
         <motion.div
           initial="hidden" animate="visible" variants={staggerContainer}
-          className="mx-auto max-w-md text-center"
+          className="relative z-10 mx-auto max-w-md text-center"
         >
+          {/* Badge */}
+          <motion.div
+            variants={fadeIn}
+            className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em]"
+            style={{
+              borderColor: "rgba(99,102,241,0.22)",
+              background: "rgba(99,102,241,0.06)",
+              color: "#6366f1",
+            }}
+          >
+            <Sparkles size={11} />
+            Plateforme tout-en-un
+          </motion.div>
+
+          {/* Titre */}
           <motion.h1
             variants={fadeIn}
-            className="text-[2.7rem] font-extrabold leading-[1.12] tracking-tight text-gray-900 sm:text-[3.5rem]"
+            className="text-[2.75rem] font-extrabold leading-[1.1] tracking-tight text-gray-900 sm:text-[3.6rem]"
           >
             Tout votre business<br />
             sur{" "}
             <span className="relative inline whitespace-nowrap">
-              {/* Marker highlight — style Odoo */}
+              {/* Marker doré — dessiné de gauche à droite */}
               <span
                 aria-hidden
-                className="absolute inset-x-0 bottom-0 -rotate-[0.8deg]"
+                className="hero-marker absolute inset-x-[-2px] bottom-[2px]"
                 style={{
-                  height: "42%",
-                  background: `rgba(${GOLDR}, 0.55)`,
-                  borderRadius: "3px",
+                  height: "38%",
+                  background: `linear-gradient(90deg, rgba(${GOLDR},0.72) 0%, rgba(${GOLDR},0.42) 100%)`,
+                  borderRadius: "4px",
                   zIndex: 0,
                 }}
               />
@@ -158,42 +193,51 @@ function HomeContent() {
             </span>.
           </motion.h1>
 
+          {/* Sous-titre */}
           <motion.p
             variants={fadeIn}
-            className="mt-5 text-[1.05rem] font-semibold text-gray-700"
+            className="mt-5 text-[1.05rem] font-medium text-gray-500"
           >
             Simple, efficace, et{" "}
-            <span className="underline decoration-[#6366f1] decoration-[3px] underline-offset-4">
+            <span
+              className="font-semibold"
+              style={{
+                background: "linear-gradient(90deg,#6366f1,#a855f7)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
               abordable
             </span>{" "}!
           </motion.p>
 
-          <motion.div variants={fadeIn} className="mt-8 flex flex-col gap-3">
+          {/* CTAs */}
+          <motion.div variants={fadeIn} className="mt-9 flex flex-col gap-3">
             <Link
               href="/espace-client"
-              className="w-full rounded-2xl py-4 text-center text-[1rem] font-bold text-white shadow-md transition-all duration-200 hover:opacity-90 active:scale-[.98]"
-              style={{ background: "#6366f1" }}
+              className="hero-btn w-full rounded-2xl py-4 text-center text-[1rem] font-bold text-white shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-[1.015] active:scale-[.98]"
             >
-              Lancez-vous
+              Lancez-vous →
             </Link>
             <Link
               href="/reserver-appel"
-              className="w-full rounded-2xl bg-gray-100 py-4 text-center text-[1rem] font-semibold text-gray-600 transition-all duration-200 hover:bg-gray-200 active:scale-[.98]"
+              className="w-full rounded-2xl border border-gray-200 bg-white py-4 text-center text-[1rem] font-semibold text-gray-500 shadow-sm transition-all duration-200 hover:border-gray-300 hover:text-gray-700 active:scale-[.98]"
             >
               Rencontrer un conseiller
             </Link>
           </motion.div>
 
+          {/* Stats */}
           <motion.div
             variants={fadeIn}
-            className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-gray-100 pt-6"
+            className="mt-9 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-gray-100 pt-6"
           >
             {HERO_STATS.map(({ value, label }) => (
               <div key={label} className="flex items-center gap-1.5">
                 <span className="text-lg font-extrabold text-gray-900">
                   <SmartStat value={value} />
                 </span>
-                <span className="text-sm text-gray-400">{label}</span>
+                <span className="text-xs text-gray-400">{label}</span>
               </div>
             ))}
           </motion.div>
