@@ -698,7 +698,7 @@ export default function ServicesPage() {
             className="mt-9 grid grid-cols-3 gap-3 border-t border-gray-100 pt-6"
           >
             {([
-              { value: loading ? "…" : `${rows.length || 16}`, label: lang === "fr" ? "services\ndisponibles" : "services\navailable", Icon: Layers },
+              { value: "16", label: lang === "fr" ? "services\ndisponibles" : "services\navailable", Icon: Layers },
               { value: "50+",  label: lang === "fr" ? "clients\naccompagnés" : "clients\nsupported",  Icon: Users2  },
               { value: "24h",  label: lang === "fr" ? "délai de\nréponse"    : "response\ntime",       Icon: Zap     },
             ] as const).map(({ value, label, Icon }) => (
