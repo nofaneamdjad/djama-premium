@@ -741,53 +741,81 @@ export default function PlanningPage() {
 
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] shrink-0 flex-wrap gap-y-2">
-                    <div className="flex items-center gap-1">
-            <button onClick={() => navigate(-1)}
-              className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all">
-              <ChevronLeft size={16}/>
+        {/* Animated header */}
+        <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+          {/* Orbs */}
+          <div className="pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
+          <div className="pointer-events-none absolute -bottom-8 right-16 h-24 w-24 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#6366f1,transparent)" }}/>
+
+          {/* Main row */}
+          <div className="relative flex items-center gap-2 px-4 pt-3 pb-2">
+            <div className="flex items-center gap-0.5">
+              <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.08] transition-all">
+                <ChevronLeft size={15}/>
+              </button>
+              <button onClick={() => setCurrent(new Date())} className="px-2 py-1 rounded-lg text-xs font-medium text-white/40 hover:text-white hover:bg-white/[0.08] transition-all">
+                Aujourd&apos;hui
+              </button>
+              <button onClick={() => navigate(1)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.08] transition-all">
+                <ChevronRight size={15}/>
+              </button>
+            </div>
+            <h2 className="text-sm font-bold text-white mr-auto">{headerLabel}</h2>
+            <button onClick={() => setShowAI(p => !p)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${showAI
+                ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
+                : "border-white/[0.08] text-white/50 hover:border-violet-500/30 hover:text-violet-300"}`}>
+              <Sparkles size={12}/> IA Planning
             </button>
-            <button onClick={() => setCurrent(new Date())}
-              className="px-2.5 py-1 rounded-lg text-xs font-medium text-white/40 hover:text-white hover:bg-white/8 transition-all">
-              Aujourd&apos;hui
-            </button>
-            <button onClick={() => navigate(1)}
-              className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all">
-              <ChevronRight size={16}/>
-            </button>
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => openCreate()}
+              className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all"
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a", boxShadow: "0 2px 12px rgba(201,165,90,0.28)" }}>
+              <Plus size={13}/> Événement
+            </motion.button>
           </div>
 
-          <h2 className="text-sm font-bold text-white/80 mr-auto">{headerLabel}</h2>
+          {/* KPI strip */}
+          <div className="relative px-4 pb-2">
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: "Total",       value: events.length,                                                                                                                                     icon: Calendar     },
+                { label: "Aujourd'hui", value: events.filter(e => fmtDate(new Date(e.start_at)) === today).length,                                                                                icon: Clock        },
+                { label: "Semaine",     value: events.filter(e => { const d = fmtDate(new Date(e.start_at)); const ws = fmtDate(startOfWeek(new Date())); const we = fmtDate(addDays(startOfWeek(new Date()), 6)); return d >= ws && d <= we; }).length, icon: Target       },
+                { label: "Tâches",      value: todayTasks.length,                                                                                                                                 icon: CheckCircle2 },
+              ].map((kpi, i) => {
+                const KpiIcon = kpi.icon;
+                return (
+                  <motion.div key={kpi.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border border-white/[0.06] bg-white/[0.03]">
+                    <KpiIcon size={11} style={{ color: "#c9a55a" }} className="shrink-0"/>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white leading-none">{kpi.value}</p>
+                      <p className="text-[0.55rem] text-white/35 uppercase tracking-wide mt-0.5 truncate">{kpi.label}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
 
-                    <div className="flex rounded-xl border border-white/8 overflow-hidden">
-            {(["month","week","agenda"] as CalView[]).map(v => (
+          {/* View tabs */}
+          <div className="relative px-4 flex gap-0.5">
+            {(["month", "week", "agenda"] as CalView[]).map((v) => (
               <button key={v} onClick={() => setView(v)}
-                className="px-3 py-1.5 text-xs font-medium transition-all"
-                style={{
-                  background: view===v ? `${INDIGO}25` : "transparent",
-                  color:      view===v ? INDIGO : "rgba(255,255,255,.4)",
-                  borderRight: v !== "agenda" ? "1px solid rgba(255,255,255,.06)" : "none",
-                }}>
+                className={`relative px-3 py-2 text-xs font-semibold transition-all ${view === v ? "text-white" : "text-white/35 hover:text-white/60"}`}>
                 {v === "month" ? "Mois" : v === "week" ? "Semaine" : "Agenda"}
+                {view === v && (
+                  <motion.div layoutId="plan-tab-indicator"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                    style={{ background: "#c9a55a" }}/>
+                )}
               </button>
             ))}
           </div>
 
-                    <button onClick={() => setShowAI(p => !p)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-            style={{
-              background: showAI ? `${INDIGO}25` : "rgba(255,255,255,.05)",
-              color:      showAI ? INDIGO : "rgba(255,255,255,.5)",
-              border:     `1px solid ${showAI ? `${INDIGO}40` : "rgba(255,255,255,.08)"}`,
-            }}>
-            <Sparkles size={13}/> IA Planning
-          </button>
-
-                    <button onClick={() => openCreate()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:opacity-90"
-            style={{ background:INDIGO, color:"#fff" }}>
-            <Plus size={14}/>Événement
-          </button>
+          {/* Gold bottom line */}
+          <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
         </div>
 
                 <AnimatePresence>
