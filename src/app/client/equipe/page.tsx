@@ -415,24 +415,7 @@ export default function EquipePage() {
     function renderMembers() {
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5 py-4 border-b border-white/[0.06] shrink-0">
-          {[
-            { l:"Membres actifs",  v:stats.active,  c:"#10b981" },
-            { l:"Tâches en cours", v:stats.inProg,  c:"#f59e0b" },
-            { l:"En retard",       v:stats.late,    c:"#f87171" },
-            { l:"En congé",        v:stats.onLeave, c:"#60a5fa" },
-          ].map(s=>(
-            <div key={s.l} className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{background:s.c}}/>
-              <div>
-                <p className="text-xl font-extrabold" style={{color:s.c}}>{s.v}</p>
-                <p className="text-[10px] text-white/35">{s.l}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-                <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto px-5 py-4">
           {filteredMembers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <Users size={32} className="text-white/15"/>
@@ -803,48 +786,96 @@ export default function EquipePage() {
         {toastData && <Toast toast={toastData} onClose={()=>setToastData(null)}/>}
       </AnimatePresence>
 
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.06] shrink-0 flex-wrap gap-y-2">
-        <div className="flex items-center gap-2 mr-auto">
-          <Users size={20} style={{color:SKY}}/>
-          <h1 className="font-bold text-lg">Équipe</h1>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-medium">
-            {members.length} membre{members.length!==1?"s":""}
-          </span>
-        </div>
+      {/* Animated header */}
+      <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+        <div className="pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
+        <div className="pointer-events-none absolute -bottom-8 right-16 h-24 w-24 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#0ea5e9,transparent)" }}/>
 
-                {tab==="members" && (
-          <div className="relative w-48">
+        {/* Main row */}
+        <div className="relative flex items-center gap-3 px-5 pt-4 pb-3 flex-wrap gap-y-2">
+          <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
+            className="h-10 w-10 flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] shrink-0">
+            <Users size={17} style={{ color: "#c9a55a" }}/>
+          </motion.div>
+          <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }} className="mr-auto">
+            <h1 className="text-base font-bold text-white tracking-tight">Équipe</h1>
+            <p className="text-[0.62rem] text-white/35">{members.length} membre{members.length!==1?"s":""} · {stats.active} actif{stats.active!==1?"s":""}</p>
+          </motion.div>
+          <div className="relative">
             <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"/>
             <input value={search} onChange={e=>setSearch(e.target.value)}
               placeholder="Chercher…"
-              className="w-full pl-8 pr-3 py-1.5 bg-white/[0.05] border border-white/[0.08] rounded-xl text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-sky-500/40"/>
+              className="pl-8 pr-3 py-1.5 bg-white/[0.05] border border-white/[0.08] rounded-xl text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-[#c9a55a]/40 w-36 [color-scheme:dark]"/>
           </div>
-        )}
+          <button onClick={()=>setShowAI(p=>!p)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${showAI
+              ? "border-sky-500/50 bg-sky-500/20 text-sky-300"
+              : "border-white/[0.08] text-white/50 hover:border-sky-500/30 hover:text-sky-300"}`}>
+            <Sparkles size={12}/>IA Équipe
+          </button>
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            onClick={()=>{
+              if (tab==="members") openNewMember();
+              else if (tab==="tasks") openNewTask("todo");
+              else if (tab==="hr") { setMeetForm({status:"planned",duration_minutes:60,participants:[]}); setShowMeetModal(true); }
+            }}
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all"
+            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a", boxShadow: "0 2px 12px rgba(201,165,90,0.28)" }}>
+            <Plus size={13}/>
+            {tab==="members" ? "Membre" : tab==="tasks" ? "Tâche" : tab==="hr" ? "Réunion" : "Nouveau"}
+          </motion.button>
+        </div>
 
-                <button onClick={()=>setShowAI(p=>!p)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-          style={{
-            background: showAI ? `${SKY}22` : "rgba(255,255,255,.05)",
-            color:      showAI ? SKY : "rgba(255,255,255,.5)",
-            border:     `1px solid ${showAI ? `${SKY}40` : "rgba(255,255,255,.08)"}`,
-          }}>
-          <Sparkles size={13}/>IA Équipe
-        </button>
+        {/* KPI strip */}
+        <div className="relative px-5 pb-2">
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: "Actifs",    value: stats.active,  icon: Users        },
+              { label: "En cours",  value: stats.inProg,  icon: CheckSquare  },
+              { label: "En retard", value: stats.late,    icon: AlertCircle  },
+              { label: "En congé",  value: stats.onLeave, icon: Briefcase    },
+            ].map((kpi, i) => {
+              const KpiIcon = kpi.icon;
+              return (
+                <motion.div key={kpi.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 border border-white/[0.06] bg-white/[0.03]">
+                  <KpiIcon size={11} style={{ color: "#c9a55a" }} className="shrink-0"/>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-white leading-none">{kpi.value}</p>
+                    <p className="text-[0.55rem] text-white/35 uppercase tracking-wide mt-0.5 truncate">{kpi.label}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
 
-                <button
-          onClick={()=>{
-            if (tab==="members") openNewMember();
-            else if (tab==="tasks") openNewTask("todo");
-            else if (tab==="hr") { setMeetForm({status:"planned",duration_minutes:60,participants:[]}); setShowMeetModal(true); }
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:opacity-90"
-          style={{background:SKY,color:"#fff"}}>
-          <Plus size={14}/>
-          {tab==="members" ? "Membre" : tab==="tasks" ? "Tâche" : tab==="hr" ? "Réunion" : "Nouveau"}
-        </button>
+        {/* Tabs */}
+        <div className="relative px-5 flex gap-0.5">
+          {TABS.map(t => (
+            <button key={t.k} onClick={()=>setTab(t.k)}
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${tab===t.k ? "text-white" : "text-white/35 hover:text-white/60"}`}>
+              <t.icon size={12}/>{t.l}
+              {t.k==="tasks" && stats.late > 0 && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">{stats.late}</span>
+              )}
+              {t.k==="hr" && stats.pending > 0 && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400">{stats.pending}</span>
+              )}
+              {tab===t.k && (
+                <motion.div layoutId="equipe-tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                  style={{ background: "#c9a55a" }}/>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Gold bottom line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
       </div>
 
-            <AnimatePresence>
+      <AnimatePresence>
         {showAI && (
           <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}}
             className="border-b border-white/[0.06] bg-white/[0.025] overflow-hidden shrink-0">
@@ -878,25 +909,6 @@ export default function EquipePage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-            <div className="flex border-b border-white/[0.06] shrink-0 px-5">
-        {TABS.map(t=>(
-          <button key={t.k} onClick={()=>setTab(t.k)}
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px"
-            style={{
-              color:       tab===t.k ? SKY : "rgba(255,255,255,.4)",
-              borderColor: tab===t.k ? SKY : "transparent",
-            }}>
-            <t.icon size={13}/>{t.l}
-            {t.k==="tasks" && stats.late > 0 && (
-              <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">{stats.late}</span>
-            )}
-            {t.k==="hr" && stats.pending > 0 && (
-              <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400">{stats.pending}</span>
-            )}
-          </button>
-        ))}
-      </div>
 
             {loading ? (
         <div className="flex items-center justify-center flex-1">
