@@ -235,9 +235,11 @@ export default function EquipePage() {
     if (!credTarget || !credEmail.trim() || !credPwd.trim()) return;
     setCreatingCred(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? "";
       const res = await fetch("/api/equipe/create-member-account", {
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},
         body:JSON.stringify({ memberId:credTarget.id, name:credTarget.name, email:credEmail.trim(), password:credPwd.trim() }),
       });
       const data = await res.json();
