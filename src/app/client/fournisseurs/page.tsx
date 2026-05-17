@@ -61,6 +61,7 @@ interface FRating {
 }
 
 const violet = "#8b5cf6";
+const gold   = "#c9a55a";
 const ease   = [0.16, 1, 0.3, 1] as const;
 
 const CATEGORIES: { value: FournCat; label: string; icon: LucideIcon }[] = [
@@ -272,13 +273,13 @@ function FournModal({ data, onSave, onClose }: {
           {step < 3 ? (
             <button onClick={() => setStep((s) => s + 1)} disabled={!form.company_name}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-              style={{ background: violet, color: "#fff" }}>
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
               Suivant <ChevronRight size={14} className="inline-block"/>
             </button>
           ) : (
             <button onClick={async () => { setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.company_name}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-              style={{ background: violet, color: "#fff" }}>
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
               {saving ? <RefreshCw size={14} className="animate-spin"/> : <Check size={14}/>}
               {form.id ? "Enregistrer" : "Créer le fournisseur"}
             </button>
@@ -377,7 +378,7 @@ function OrderModal({ fournisseurs, order, onSave, onClose }: {
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
           <button onClick={async () => { setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.fournisseur_id}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2"
-            style={{ background: violet, color: "#fff" }}>
+            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {saving ? <RefreshCw size={13} className="animate-spin"/> : <Check size={13}/>}
             {form.id ? "Enregistrer" : "Créer la commande"}
           </button>
@@ -471,7 +472,7 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
           <button onClick={async () => { setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.fournisseur_id}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2"
-            style={{ background: violet, color: "#fff" }}>
+            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {saving ? <RefreshCw size={13} className="animate-spin"/> : <Check size={13}/>}
             {form.id ? "Enregistrer" : "Créer la facture"}
           </button>
@@ -523,7 +524,8 @@ function RatingModal({ fournisseur, onSave, onClose }: {
         <div className="flex gap-3 px-6 pb-6">
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10">Annuler</button>
           <button onClick={async () => { setSaving(true); await onSave(form); setSaving(false); }} disabled={saving}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2" style={{ background: violet, color: "#fff" }}>
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {saving ? <RefreshCw size={13} className="animate-spin"/> : <Star size={13}/>} Enregistrer l'évaluation
           </button>
         </div>
@@ -694,11 +696,12 @@ function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDel
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"/>
         </div>
         <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none">
+          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
           <option value="all">Toutes catégories</option>
           {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
-        <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: violet, color: "#fff" }}>
+        <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"
+          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
           <Plus size={13}/> Nouveau
         </button>
       </div>
@@ -784,11 +787,12 @@ function OrdersView({ orders, fournisseurs, onNew, onEdit, onDelete }: {
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex items-center gap-2 p-4 border-b border-white/[0.06] flex-wrap">
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as OrderStatus | "all")}
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none flex-1 max-w-xs">
+          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark] flex-1 max-w-xs">
           <option value="all">Tous statuts</option>
           {Object.entries(ORDER_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <button onClick={onNew} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: violet, color: "#fff" }}>
+        <button onClick={onNew} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"
+          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
           <Plus size={13}/> Nouvelle commande
         </button>
       </div>
@@ -844,7 +848,7 @@ function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }: {
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex items-center gap-2 p-4 border-b border-white/[0.06] flex-wrap">
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as InvoiceStatus | "all")}
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none flex-1 max-w-xs">
+          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark] flex-1 max-w-xs">
           <option value="all">Tous statuts</option>
           {Object.entries(INV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
@@ -854,7 +858,8 @@ function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }: {
             <span className="text-xs font-bold text-orange-400">{fmtEur(totalDue)} à payer</span>
           </div>
         )}
-        <button onClick={onNew} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: violet, color: "#fff" }}>
+        <button onClick={onNew} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"
+          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
           <Plus size={13}/> Nouvelle facture
         </button>
       </div>
@@ -1050,45 +1055,86 @@ export default function FournisseursPage() {
     <div className="min-h-screen bg-[#0a0f1e] text-white flex flex-col">
       <ToastStack toasts={toasts} remove={removeToast}/>
 
-      {/* Sub-header */}
-      <div className="border-b border-white/[0.06] bg-white/[0.025] px-5 py-4 backdrop-blur-xl sticky top-0 z-10">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
-              <Truck size={16} style={{ color: "#c9a55a" }}/>
+      {/* Animated header */}
+      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+        {/* Orbs */}
+        <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
+        <div className="pointer-events-none absolute -bottom-10 right-20 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#6366f1,transparent)" }}/>
+
+        {/* Main row */}
+        <div className="relative px-5 pt-4 pb-3 sm:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
+                className="h-10 w-10 flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
+                <Truck size={18} style={{ color: gold }}/>
+              </motion.div>
+              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
+                <h1 className="text-base font-bold text-white tracking-tight">Fournisseurs</h1>
+                <p className="text-[0.62rem] text-white/35">Fiches · Commandes · Factures · Évaluation</p>
+              </motion.div>
             </div>
-            <div>
-              <h1 className="text-base font-semibold text-white">Fournisseurs</h1>
-              <p className="text-[0.65rem] text-white/30">Fiches · Commandes · Factures · Évaluation</p>
+            <div className="flex items-center gap-2">
+              <button onClick={exportCSV} title="Exporter CSV" className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all">
+                <Download size={14}/>
+              </button>
+              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                onClick={() => { setEditFourn(EMPTY_FOURN()); setShowFournModal(true); }}
+                className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all"
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a", boxShadow: "0 4px 16px rgba(201,165,90,0.35)" }}>
+                <Plus size={13}/> Nouveau fournisseur
+              </motion.button>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={exportCSV} title="Exporter CSV" className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all">
-              <Download size={14}/>
-            </button>
-            <button onClick={() => { setEditFourn(EMPTY_FOURN()); setShowFournModal(true); }}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: violet, boxShadow: `0 4px 16px ${violet}40` }}>
-              <Plus size={13}/> Nouveau fournisseur
-            </button>
           </div>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="border-b border-white/[0.06] px-5 flex gap-1 bg-[#0a0f1e]">
-        {TABS.map(({ key, label, icon: Icon }) => (
-          <button key={key} onClick={() => setTab(key)}
-            className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-all -mb-px ${tab === key ? "text-white/90" : "border-transparent text-white/35 hover:text-white/60"}`}
-            style={tab === key ? { borderBottomColor: violet, color: violet } : {}}>
-            <Icon size={12}/> {label}
-            {key === "invoices" && invoices.filter((i) => i.status !== "paid").length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold" style={{ background: violet + "30", color: violet }}>
-                {invoices.filter((i) => i.status !== "paid").length}
-              </span>
-            )}
-          </button>
-        ))}
+        {/* KPI strip */}
+        <div className="relative px-5 pb-3 sm:px-8">
+          <div className="mx-auto max-w-7xl grid grid-cols-4 gap-2">
+            {[
+              { label: "Total",      value: fournisseurs.length,                                                             icon: Building2 },
+              { label: "Actifs",     value: fournisseurs.filter((f) => f.is_active).length,                                  icon: CheckCircle },
+              { label: "Commandes",  value: orders.filter((o) => !["received","cancelled"].includes(o.status)).length,      icon: ShoppingCart },
+              { label: "Montant dû", value: fmtEur(invoices.filter((i) => i.status !== "paid").reduce((s, i) => s + (i.total_amount - i.paid_amount), 0)), icon: DollarSign },
+            ].map((kpi, i) => {
+              const KpiIcon = kpi.icon;
+              return (
+                <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.06] bg-white/[0.03]">
+                  <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-white leading-none truncate">{kpi.value}</p>
+                    <p className="text-[0.58rem] text-white/35 uppercase tracking-wide mt-0.5">{kpi.label}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="relative px-5 sm:px-8 flex gap-0.5">
+          {TABS.map(({ key, label, icon: Icon }) => (
+            <button key={key} onClick={() => setTab(key)}
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${tab === key ? "text-white" : "text-white/35 hover:text-white/60"}`}>
+              <Icon size={12}/>
+              {label}
+              {key === "invoices" && invoices.filter((i) => i.status !== "paid").length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold" style={{ background: gold + "30", color: gold }}>
+                  {invoices.filter((i) => i.status !== "paid").length}
+                </span>
+              )}
+              {tab === key && (
+                <motion.div layoutId="fourn-tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                  style={{ background: gold }}/>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Gold bottom line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
       </div>
 
       {/* Content */}
