@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plus, Search, X, RefreshCw, Trash2, Edit2,
@@ -8,6 +8,7 @@ import {
   ArrowUpCircle, ArrowDownCircle, RotateCcw, AlertOctagon,
   Truck, Download, Eye, Check, ChevronDown, Filter,
   DollarSign, ShoppingCart, Zap, Activity, Star,
+  Camera, ScanLine, Image as ImageIcon, Upload,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -88,13 +89,170 @@ function Label({ children }: { children: React.ReactNode }) {
   return <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">{children}</label>;
 }
 
+// ─────────────────────────── SCANNER OVERLAY ───────────────────────────
+
+function ScannerOverlay({ onScan, onClose }: { onScan: (code: string) => void; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animRef = useRef<number>(0);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<"loading" | "scanning" | "error">("loading");
+  const [errorMsg, setErrorMsg] = useState("");
+  const stopped = useRef(false);
+
+  const stopStream = () => {
+    stopped.current = true;
+    cancelAnimationFrame(animRef.current);
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+  };
+
+  const handleScan = (code: string) => { stopStream(); onScan(code); };
+
+  useEffect(() => {
+    async function start() {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        if (stopped.current) { s.getTracks().forEach((t) => t.stop()); return; }
+        streamRef.current = s;
+        if (videoRef.current) { videoRef.current.srcObject = s; await videoRef.current.play(); }
+        setStatus("scanning");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ("BarcodeDetector" in window) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const detector = new (window as any).BarcodeDetector({ formats: ["ean_13","ean_8","code_128","code_39","qr_code","upc_a","upc_e"] });
+          const loop = async () => {
+            if (stopped.current) return;
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const barcodes = await detector.detect(videoRef.current!);
+              if (barcodes.length > 0) { handleScan(barcodes[0].rawValue); return; }
+            } catch { /* ignore */ }
+            animRef.current = requestAnimationFrame(loop);
+          };
+          animRef.current = requestAnimationFrame(loop);
+        } else {
+          setStatus("error");
+          setErrorMsg("Scanner automatique non supporté sur ce navigateur.");
+        }
+      } catch {
+        setStatus("error");
+        setErrorMsg("Accès caméra refusé — vérifiez les permissions.");
+      }
+    }
+    start();
+    return () => stopStream();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ("BarcodeDetector" in window) {
+        const img = await createImageBitmap(file);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const detector = new (window as any).BarcodeDetector();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const barcodes = await detector.detect(img);
+        if (barcodes.length > 0) { handleScan(barcodes[0].rawValue); return; }
+      }
+      setErrorMsg("Aucun code-barres détecté dans l'image.");
+    } catch { setErrorMsg("Erreur lors de l'analyse de l'image."); }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-xs">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <ScanLine size={16} style={{ color: gold }}/>
+            <h3 className="text-sm font-bold text-white">Scanner code-barres</h3>
+          </div>
+          <button onClick={() => { stopStream(); onClose(); }} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors"><X size={14}/></button>
+        </div>
+
+        {status === "loading" && (
+          <div className="flex items-center justify-center py-12">
+            <RefreshCw size={22} className="animate-spin text-white/30"/>
+          </div>
+        )}
+
+        {status === "scanning" && (
+          <div className="relative aspect-square overflow-hidden rounded-2xl bg-black border border-white/[0.08]">
+            <video ref={videoRef} className="w-full h-full object-cover" playsInline muted/>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="relative w-3/4 h-3/4 rounded-xl" style={{ border: `2px solid ${gold}60` }}>
+                <motion.div className="absolute left-3 right-3 h-0.5 rounded-full" style={{ background: gold }}
+                  animate={{ top: ["8%", "88%"] }}
+                  transition={{ duration: 1.5, repeat: Infinity, repeatType: "reverse", ease: "linear" }}/>
+                {/* Corner accents */}
+                {[["top-0 left-0","border-t-2 border-l-2"],["top-0 right-0","border-t-2 border-r-2"],["bottom-0 left-0","border-b-2 border-l-2"],["bottom-0 right-0","border-b-2 border-r-2"]].map(([pos, cls]) => (
+                  <div key={pos} className={`absolute h-5 w-5 ${pos} ${cls} rounded-sm`} style={{ borderColor: gold }}/>
+                ))}
+              </div>
+            </div>
+            <p className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-white/40">Pointez la caméra vers le code-barres</p>
+          </div>
+        )}
+
+        {status === "error" && (
+          <div className="text-center space-y-3 py-4">
+            <div className="h-12 w-12 mx-auto flex items-center justify-center rounded-2xl" style={{ background: gold + "15", border: `1px solid ${gold}30` }}>
+              <Camera size={20} style={{ color: gold }}/>
+            </div>
+            <p className="text-xs text-white/50 leading-relaxed">{errorMsg}</p>
+          </div>
+        )}
+
+        {/* File fallback — always shown */}
+        <div className="mt-3 text-center">
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden"/>
+          <button onClick={() => fileRef.current?.click()}
+            className="text-xs underline underline-offset-2 transition-colors"
+            style={{ color: gold + "80" }}>
+            Ou analyser une photo
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────── PRODUCT MODAL ───────────────────────────
+
 function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
   product: Partial<Product>; suppliers: Supplier[]; warehouses: Warehouse[];
   onSave: (p: Partial<Product>) => Promise<void>; onClose: () => void;
 }) {
   const [form, setForm] = useState<Partial<Product>>(product);
   const [saving, setSaving] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof Product, v: string | number | boolean | null) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxSize = 480;
+        const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        set("image_url", canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const save = async () => {
     if (!form.name) return;
@@ -120,6 +278,40 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
           <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors"><X size={14}/></button>
         </div>
         <div className="p-6 overflow-y-auto max-h-[75vh] space-y-4">
+          {/* Image upload */}
+          <div>
+            <Label>Photo du produit</Label>
+            <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden"/>
+            {form.image_url ? (
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-white/[0.08] bg-white/[0.03]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={form.image_url} alt="Produit" className="h-16 w-16 object-cover rounded-xl border border-white/[0.08] shrink-0"/>
+                <div className="flex flex-col gap-2 flex-1">
+                  <button onClick={() => imageInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white/60 transition-all">
+                    <Upload size={11}/> Changer
+                  </button>
+                  <button onClick={() => set("image_url", "")}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 transition-all">
+                    <X size={11}/> Supprimer
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => imageInputRef.current?.click()}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border border-dashed border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.22] transition-all">
+                <div className="h-10 w-10 flex items-center justify-center rounded-xl shrink-0" style={{ background: gold + "15", border: `1px solid ${gold}30` }}>
+                  <ImageIcon size={16} style={{ color: gold }}/>
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-semibold text-white/60">Ajouter une photo</p>
+                  <p className="text-[10px] text-white/30">JPG, PNG · Affiché dans l'inventaire</p>
+                </div>
+                <Upload size={13} className="ml-auto text-white/25 shrink-0"/>
+              </button>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2"><Label>Nom du produit *</Label>
               <input value={form.name ?? ""} onChange={(e) => set("name", e.target.value)} placeholder="Nom du produit" className={inp()}/>
@@ -128,7 +320,14 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
               <input value={form.sku ?? ""} onChange={(e) => set("sku", e.target.value)} placeholder="REF-001" className={inp()}/>
             </div>
             <div><Label>Code-barres</Label>
-              <input value={form.barcode ?? ""} onChange={(e) => set("barcode", e.target.value)} placeholder="EAN13..." className={inp()}/>
+              <div className="flex gap-2">
+                <input value={form.barcode ?? ""} onChange={(e) => set("barcode", e.target.value)} placeholder="EAN13, QR code…" className={inp()}/>
+                <button onClick={() => setShowScanner(true)} title="Scanner"
+                  className="h-[42px] px-3 shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white transition-all flex items-center gap-1.5">
+                  <ScanLine size={14}/>
+                  <span className="text-xs font-semibold">Scan</span>
+                </button>
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -197,12 +396,21 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
           <button onClick={save} disabled={saving || !form.name}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-            style={{ background: green, color: "#0a0f1e" }}>
+            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {saving ? <RefreshCw size={14} className="animate-spin"/> : <Check size={14}/>}
             {form.id ? "Enregistrer" : "Créer le produit"}
           </button>
         </div>
       </motion.div>
+
+      {/* Scanner overlay — portal-like, above modal */}
+      <AnimatePresence>
+        {showScanner && (
+          <ScannerOverlay
+            onScan={(code) => { set("barcode", code); setShowScanner(false); }}
+            onClose={() => setShowScanner(false)}/>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -349,7 +557,7 @@ function SupplierModal({ supplier, onSave, onClose }: {
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
           <button onClick={async () => { if (!form.name) return; setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.name}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-            style={{ background: green, color: "#0a0f1e" }}>
+            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {saving ? <RefreshCw size={13} className="animate-spin inline"/> : form.id ? "Enregistrer" : "Créer"}
           </button>
         </div>
@@ -538,18 +746,18 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"/>
         </div>
         <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none">
+          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
           <option value="all">Toutes catégories</option>
           {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none">
+          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
           <option value="all">Tout le stock</option>
           <option value="low">Stock faible</option>
           <option value="out">Ruptures</option>
         </select>
         <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
-          style={{ background: green, color: "#0a0f1e" }}>
+          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
           <Plus size={13}/> Nouveau produit
         </button>
       </div>
@@ -576,8 +784,10 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
                 <motion.div key={p.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                   className="group grid grid-cols-12 gap-3 items-center bg-white/[0.025] border border-white/[0.06] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
                   <div className="col-span-4 flex items-center gap-3 min-w-0">
-                    <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-white/[0.05] text-lg">
-                      <Package size={14} className="text-white/40"/>
+                    <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-white/[0.05] overflow-hidden">
+                      {p.image_url
+                        ? <img src={p.image_url} alt={p.name} className="h-full w-full object-cover"/>
+                        : <Package size={14} className="text-white/40"/>}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-white/85 truncate">{p.name}</p>
@@ -634,16 +844,16 @@ function MovementsView({ movements, products, warehouses, onNew }: {
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex items-center gap-2 p-4 border-b border-white/[0.06] flex-wrap">
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as MovementType | "all")}
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none">
+          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
           <option value="all">Tous types</option>
           {MOV_TYPES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
         <select value={productFilter} onChange={(e) => setProductFilter(e.target.value)}
-          className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none max-w-xs">
+          className="flex-1 bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark] max-w-xs">
           <option value="all">Tous produits</option>
           {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
-        <button onClick={onNew} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: green, color: "#0a0f1e" }}>
+        <button onClick={onNew} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
           <Plus size={13}/> Mouvement
         </button>
       </div>
@@ -695,7 +905,7 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
     <div className="flex-1 overflow-y-auto p-5 space-y-5">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-white/60">{suppliers.length} fournisseur{suppliers.length > 1 ? "s" : ""}</h3>
-        <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: green, color: "#0a0f1e" }}>
+        <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
           <Plus size={13}/> Nouveau fournisseur
         </button>
       </div>
@@ -703,7 +913,7 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
         <div className="flex flex-col items-center gap-4 py-16 text-center">
           <Truck size={28} className="text-white/20"/>
           <p className="text-white/30 text-sm">Aucun fournisseur</p>
-          <button onClick={onNew} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold" style={{ background: green + "20", color: green, border: `1px solid ${green}40` }}>
+          <button onClick={onNew} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold" style={{ background: "rgba(201,165,90,0.15)", color: gold, border: `1px solid rgba(201,165,90,0.3)` }}>
             <Plus size={13}/> Ajouter
           </button>
         </div>
@@ -984,40 +1194,81 @@ export default function StocksPage() {
     <div className="min-h-screen bg-[#0a0f1e] text-white flex flex-col">
       <ToastStack toasts={toasts} remove={removeToast}/>
 
-      {/* Sub-header */}
-      <div className="border-b border-white/[0.06] bg-white/[0.025] px-5 py-4 backdrop-blur-xl sticky top-0 z-10">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
-              <Package size={16} style={{ color: gold }}/>
+      {/* Animated header */}
+      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+        {/* Orbs */}
+        <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
+        <div className="pointer-events-none absolute -bottom-10 right-20 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#10b981,transparent)" }}/>
+
+        {/* Main row */}
+        <div className="relative px-5 pt-4 pb-3 sm:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
+                className="h-10 w-10 flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
+                <Package size={18} style={{ color: gold }}/>
+              </motion.div>
+              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
+                <h1 className="text-base font-bold text-white tracking-tight">Stocks & Inventaire</h1>
+                <p className="text-[0.62rem] text-white/35">Gestion · Mouvements · Alertes · Fournisseurs</p>
+              </motion.div>
             </div>
-            <div>
-              <h1 className="text-base font-semibold text-white">Stocks & Inventaire</h1>
-              <p className="text-[0.65rem] text-white/30">Gestion · Mouvements · Alertes · Fournisseurs</p>
+            <div className="flex items-center gap-2">
+              <button onClick={exportCSV} title="Exporter CSV" className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all">
+                <Download size={14}/>
+              </button>
+              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                onClick={() => { setEditProduct(EMPTY_PRODUCT()); setShowProductModal(true); }}
+                className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all"
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a", boxShadow: "0 4px 16px rgba(201,165,90,0.35)" }}>
+                <Plus size={13}/> Nouveau produit
+              </motion.button>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={exportCSV} title="Exporter CSV" className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all">
-              <Download size={14}/>
-            </button>
-            <button onClick={() => { setEditProduct(EMPTY_PRODUCT()); setShowProductModal(true); }}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-[#0a0f1e] transition-all hover:opacity-90"
-              style={{ background: green, boxShadow: `0 4px 16px ${green}40` }}>
-              <Plus size={13}/> Nouveau produit
-            </button>
           </div>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="border-b border-white/[0.06] px-5 flex gap-1 bg-[#0a0f1e]">
-        {TABS.map(({ key, label, icon: Icon }) => (
-          <button key={key} onClick={() => setTab(key)}
-            className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-all -mb-px ${tab === key ? "text-white/90" : "border-transparent text-white/35 hover:text-white/60"}`}
-            style={tab === key ? { borderBottomColor: green, color: green } : {}}>
-            <Icon size={12}/> {label}
-          </button>
-        ))}
+        {/* KPI strip */}
+        <div className="relative px-5 pb-3 sm:px-8">
+          <div className="mx-auto max-w-7xl grid grid-cols-4 gap-2">
+            {[
+              { label: "Produits",  value: products.length,                                                              icon: Package },
+              { label: "Ruptures",  value: products.filter((p) => p.stock_current <= 0).length,                         icon: AlertOctagon },
+              { label: "Valeur",    value: fmtEur(products.reduce((s, p) => s + p.stock_current * p.purchase_price, 0)), icon: DollarSign },
+              { label: "Mvts",      value: movements.length,                                                             icon: Activity },
+            ].map((kpi, i) => {
+              const KpiIcon = kpi.icon;
+              return (
+                <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.06] bg-white/[0.03]">
+                  <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-white leading-none truncate">{kpi.value}</p>
+                    <p className="text-[0.58rem] text-white/35 uppercase tracking-wide mt-0.5">{kpi.label}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="relative px-5 sm:px-8 flex gap-0.5">
+          {TABS.map(({ key, label, icon: Icon }) => (
+            <button key={key} onClick={() => setTab(key)}
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${tab === key ? "text-white" : "text-white/35 hover:text-white/60"}`}>
+              <Icon size={12}/>
+              {label}
+              {tab === key && (
+                <motion.div layoutId="stocks-tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                  style={{ background: gold }}/>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Gold bottom line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
       </div>
 
       {/* Content */}
