@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Zap, ListChecks, Activity, Target, ArrowRight, Loader2,
+  Zap, ListChecks, Activity, Target, ArrowRight, Loader2, Plus,
   Play, Square, CornerDownLeft, AlertTriangle, Sparkles, FileText,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -534,91 +534,133 @@ export default function ProductivitePage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white">
-      <div className="mx-auto max-w-[1600px] px-6 py-8 space-y-6">
+    <div className="min-h-screen bg-[#0a0f1e] text-white flex flex-col">
 
-                <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white/90 flex items-center gap-2">
-              <Zap size={20} style={{ color: VIOLET }} /> Productivité
-            </h1>
-            <p className="text-sm text-white/35 mt-0.5">
-              {completionRate}% de complétion · {tasks.filter(isLate).length} en retard
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowAI(s => !s)}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${showAI
-                ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
-                : "border-white/[0.08] text-white/50 hover:border-violet-500/30 hover:text-violet-300"}`}>
-              <Sparkles size={14}/> IA
-            </button>
-            <button onClick={() => openNew()}
-              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-              style={{ background: `linear-gradient(135deg, ${VIOLET}, #6d28d9)` }}>
-              + Nouvelle tâche
-            </button>
+      {/* ── Animated header ── */}
+      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+        {/* Orbs */}
+        <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
+        <div className="pointer-events-none absolute -bottom-10 right-20 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#8b5cf6,transparent)" }}/>
+
+        {/* Main row */}
+        <div className="relative px-5 pt-4 pb-3 sm:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
+                className="h-10 w-10 flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
+                <Zap size={18} style={{ color: "#c9a55a" }}/>
+              </motion.div>
+              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
+                <h1 className="text-base font-bold text-white tracking-tight">Productivité</h1>
+                <p className="text-[0.62rem] text-white/35">{completionRate}% de complétion · {tasks.filter(isLate).length} en retard</p>
+              </motion.div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowAI(s => !s)}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${showAI
+                  ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
+                  : "border-white/[0.08] text-white/50 hover:border-violet-500/30 hover:text-violet-300"}`}>
+                <Sparkles size={13}/> IA
+              </button>
+              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                onClick={() => openNew()}
+                className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all"
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a", boxShadow: "0 4px 16px rgba(201,165,90,0.35)" }}>
+                <Plus size={13}/> Nouvelle tâche
+              </motion.button>
+            </div>
           </div>
         </div>
 
-                <div className="grid grid-cols-5 gap-3">
-          {kpis.map(k => (
-            <div key={k.l} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
-              <p className="text-[0.7rem] text-white/40 mb-1">{k.l}</p>
-              <p className="text-2xl font-bold" style={{ color: k.col }}>{k.v}</p>
+        {/* KPI strip */}
+        <div className="relative px-5 pb-2 sm:px-8">
+          <div className="mx-auto max-w-7xl space-y-2">
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: "Total",     value: tasks.length,                                         icon: ListChecks },
+                { label: "En cours",  value: tasks.filter(t => t.status === "in_progress").length,  icon: Activity },
+                { label: "En retard", value: tasks.filter(isLate).length,                           icon: AlertTriangle },
+                { label: "Terminées", value: tasks.filter(t => t.status === "done").length,         icon: Target },
+              ].map((kpi, i) => {
+                const KpiIcon = kpi.icon;
+                return (
+                  <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.06] bg-white/[0.03]">
+                    <KpiIcon size={13} style={{ color: "#c9a55a" }} className="shrink-0"/>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-white leading-none">{kpi.value}</p>
+                      <p className="text-[0.58rem] text-white/35 uppercase tracking-wide mt-0.5">{kpi.label}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
+            {/* Completion bar */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                <motion.div className="h-full rounded-full" style={{ background: "#c9a55a" }}
+                  initial={{ width: 0 }} animate={{ width: `${completionRate}%` }} transition={{ duration: 0.8 }} />
+              </div>
+              <span className="text-[0.58rem] text-white/35 shrink-0">{completionRate}% terminé</span>
+            </div>
+          </div>
+        </div>
+
+        {/* View tabs */}
+        <div className="relative px-5 sm:px-8 flex gap-0.5">
+          {(["kanban", "list"] as View[]).map((v) => (
+            <button key={v} onClick={() => setView(v)}
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${view === v ? "text-white" : "text-white/35 hover:text-white/60"}`}>
+              {v === "kanban" ? "⊞ Kanban" : "☰ Liste"}
+              {view === v && (
+                <motion.div layoutId="prod-tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                  style={{ background: "#c9a55a" }}/>
+              )}
+            </button>
           ))}
         </div>
 
-                <div className="flex items-center gap-3">
-          <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-            <motion.div className="h-full rounded-full" style={{ background: VIOLET }}
-              initial={{ width: 0 }} animate={{ width: `${completionRate}%` }} transition={{ duration: 0.8 }} />
-          </div>
-          <span className="text-xs text-white/35 shrink-0">{completionRate}% terminé</span>
-        </div>
+        {/* Gold bottom line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
+      </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="🔍 Rechercher une tâche…"
-            className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-sm text-white/70 outline-none placeholder:text-white/25 w-52 hover:border-white/15 focus:border-violet-500/40" />
+      {/* ── Scrollable content ── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-[1600px] px-5 py-4 space-y-4">
 
-          <select value={fprio} onChange={e => setFprio(e.target.value)} className={SEL}>
-            <option value="" className="bg-white/[0.025] text-white/70">Toutes priorités</option>
-            {(Object.keys(PRIO) as Priority[]).map(p => (
-              <option key={p} value={p} className="bg-white/[0.025] text-white/70">{PRIO[p].label}</option>
-            ))}
-          </select>
+          {/* Filter bar */}
+          <div className="flex flex-wrap items-center gap-2">
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="🔍 Rechercher une tâche…"
+              className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 text-sm text-white/70 outline-none placeholder:text-white/25 w-52 hover:border-white/15 focus:border-violet-500/40 [color-scheme:dark]" />
 
-          <select value={fcat} onChange={e => setFcat(e.target.value)} className={SEL}>
-            <option value="" className="bg-white/[0.025] text-white/70">Toutes catégories</option>
-            {CATS.map(c => <option key={c} value={c} className="bg-white/[0.025] text-white/70">{c}</option>)}
-          </select>
+            <select value={fprio} onChange={e => setFprio(e.target.value)} className="rounded-lg border border-white/[0.08] bg-[#131c30] py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition [color-scheme:dark]">
+              <option value="">Toutes priorités</option>
+              {(Object.keys(PRIO) as Priority[]).map(p => (
+                <option key={p} value={p}>{PRIO[p].label}</option>
+              ))}
+            </select>
 
-          <select value={fstat} onChange={e => setFstat(e.target.value)} className={SEL}>
-            <option value="" className="bg-white/[0.025] text-white/70">Tous statuts</option>
-            {(Object.keys(STAT) as Status[]).map(s => (
-              <option key={s} value={s} className="bg-white/[0.025] text-white/70">{STAT[s].label}</option>
-            ))}
-          </select>
+            <select value={fcat} onChange={e => setFcat(e.target.value)} className="rounded-lg border border-white/[0.08] bg-[#131c30] py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition [color-scheme:dark]">
+              <option value="">Toutes catégories</option>
+              {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
 
-          {(search || fprio || fcat || fstat) && (
-            <button onClick={() => { setSearch(""); setFprio(""); setFcat(""); setFstat(""); }}
-              className="rounded-xl border border-white/[0.08] px-3 py-2 text-xs text-white/40 hover:text-white/70 transition">
-              ✕ Réinitialiser
-            </button>
-          )}
+            <select value={fstat} onChange={e => setFstat(e.target.value)} className="rounded-lg border border-white/[0.08] bg-[#131c30] py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition [color-scheme:dark]">
+              <option value="">Tous statuts</option>
+              {(Object.keys(STAT) as Status[]).map(s => (
+                <option key={s} value={s}>{STAT[s].label}</option>
+              ))}
+            </select>
 
-          <div className="ml-auto flex rounded-xl border border-white/[0.08] overflow-hidden">
-            {(["kanban", "list"] as View[]).map(v => (
-              <button key={v} onClick={() => setView(v)}
-                className={`px-4 py-2 text-xs font-medium transition ${view === v ? "text-white" : "text-white/40 hover:text-white/70"}`}
-                style={view === v ? { background: VIOLET + "33" } : {}}>
-                {v === "kanban" ? "⊞ Kanban" : "☰ Liste"}
+            {(search || fprio || fcat || fstat) && (
+              <button onClick={() => { setSearch(""); setFprio(""); setFcat(""); setFstat(""); }}
+                className="rounded-xl border border-white/[0.08] px-3 py-2 text-xs text-white/40 hover:text-white/70 transition">
+                ✕ Réinitialiser
               </button>
-            ))}
+            )}
           </div>
-        </div>
 
                 {view === "kanban" && (
           <div className="grid grid-cols-4 gap-4" style={{ minHeight: "60vh" }}>
@@ -769,9 +811,10 @@ export default function ProductivitePage() {
             </div>
           </div>
         )}
+        </div>
       </div>
 
-            <AnimatePresence>
+      <AnimatePresence>
         {showModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center pt-6 pb-6 px-4 overflow-y-auto"
