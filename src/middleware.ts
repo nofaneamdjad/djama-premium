@@ -35,6 +35,8 @@ export const config = {
   matcher: [
     "/client",
     "/client/:path*",
+    "/membre",
+    "/membre/:path*",
     "/coaching-ia/espace",
     "/coaching-ia/espace/:path*",
     "/planning-agenda",

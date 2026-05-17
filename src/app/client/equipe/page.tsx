@@ -13,6 +13,7 @@ import {
   Video, Hash, AtSign, MoreHorizontal,
   Umbrella, Thermometer, BookOpen, FileText,
   BarChart2, AlertTriangle, RefreshCw, Target, Folder,
+  Key, Copy, ShieldCheck, ShieldOff,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Toast, { type ToastData } from "@/components/ui/Toast";
@@ -30,6 +31,7 @@ interface TeamMember {
   position:string; department:string; role:MemberRole;
   status:MemberStatus; avatar_color:string;
   entry_date:string|null; notes:string; created_at:string;
+  auth_user_id?:string|null;
 }
 
 interface TeamTask {
@@ -210,6 +212,44 @@ export default function EquipePage() {
     const [showAI,   setShowAI]   = useState(false);
   const [aiLoad,   setAiLoad]   = useState(false);
   const [aiResult, setAiResult] = useState("");
+
+    const [credTarget,  setCredTarget]  = useState<TeamMember|null>(null);
+  const [credEmail,   setCredEmail]   = useState("");
+  const [credPwd,     setCredPwd]     = useState("");
+  const [creatingCred,setCreatingCred]= useState(false);
+  const [credResult,  setCredResult]  = useState<{email:string;password:string}|null>(null);
+
+  function genPassword() {
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#!";
+    return "Djama-" + Array.from({length:7}, ()=>chars[Math.floor(Math.random()*chars.length)]).join("");
+  }
+
+  function openCredModal(m: TeamMember) {
+    setCredTarget(m);
+    setCredEmail(m.email ?? "");
+    setCredPwd(genPassword());
+    setCredResult(null);
+  }
+
+  async function createMemberAccount() {
+    if (!credTarget || !credEmail.trim() || !credPwd.trim()) return;
+    setCreatingCred(true);
+    try {
+      const res = await fetch("/api/equipe/create-member-account", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ memberId:credTarget.id, name:credTarget.name, email:credEmail.trim(), password:credPwd.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setToastData({type:"error",msg:data.error??"Erreur création compte"}); }
+      else {
+        setCredResult({ email:credEmail.trim(), password:credPwd.trim() });
+        setMembers(p=>p.map(m=>m.id===credTarget.id ? {...m,auth_user_id:data.auth_user_id} : m));
+        setToastData({type:"success",msg:"Compte créé avec succès !"});
+      }
+    } catch { setToastData({type:"error",msg:"Erreur réseau"}); }
+    finally { setCreatingCred(false); }
+  }
 
     const load = useCallback(async () => {
     const { data:{ user } } = await supabase.auth.getUser();
@@ -474,6 +514,18 @@ export default function EquipePage() {
                         )}
                       </div>
                     )}
+
+                    <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                      <button
+                        onClick={e=>{e.stopPropagation();openCredModal(m);}}
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-medium transition-all"
+                        style={m.auth_user_id
+                          ? {background:"rgba(16,185,129,0.08)",color:"#10b981",border:"1px solid rgba(16,185,129,0.2)"}
+                          : {background:"rgba(201,165,90,0.08)",color:"#c9a55a",border:"1px solid rgba(201,165,90,0.2)"}}>
+                        {m.auth_user_id ? <ShieldCheck size={11}/> : <Key size={11}/>}
+                        {m.auth_user_id ? "Compte actif" : "Créer identifiants"}
+                      </button>
+                    </div>
                   </motion.div>
                 );
               })}
@@ -1227,6 +1279,102 @@ export default function EquipePage() {
           </>
         )}
       </AnimatePresence>
+
+      {/* ── Modal Identifiants Membre ── */}
+      <AnimatePresence>
+        {credTarget && (
+          <>
+            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+              className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50" onClick={()=>{setCredTarget(null);setCredResult(null);}}/>
+            <motion.div
+              initial={{opacity:0,scale:0.95,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
+              className="fixed inset-x-4 top-[15%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md z-[51] rounded-3xl border border-white/[0.08] shadow-2xl overflow-hidden"
+              style={{background:"#0f1520"}}
+              onClick={e=>e.stopPropagation()}>
+
+              <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-white/[0.07]">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"rgba(201,165,90,0.12)"}}>
+                  <Key size={16} style={{color:"#c9a55a"}}/>
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-white">Identifiants membre</p>
+                  <p className="text-[11px] text-white/35">{credTarget.name}</p>
+                </div>
+                <button onClick={()=>{setCredTarget(null);setCredResult(null);}}
+                  className="ml-auto p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all"><X size={15}/></button>
+              </div>
+
+              <div className="px-5 py-5 space-y-4">
+                {!credResult ? (
+                  <>
+                    <p className="text-xs text-white/45 leading-relaxed">
+                      Créez un compte pour <strong className="text-white/70">{credTarget.name}</strong>.
+                      Il pourra se connecter sur <span className="text-[#c9a55a]">/membre/login</span> avec ces identifiants.
+                    </p>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-white/35 uppercase tracking-wide">Email</label>
+                      <input value={credEmail} onChange={e=>setCredEmail(e.target.value)} type="email"
+                        placeholder="email@exemple.com"
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#c9a55a]/40"/>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-white/35 uppercase tracking-wide">Mot de passe</label>
+                      <div className="flex gap-2">
+                        <input value={credPwd} onChange={e=>setCredPwd(e.target.value)}
+                          className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#c9a55a]/40 font-mono tracking-wider"/>
+                        <button onClick={()=>setCredPwd(genPassword())} title="Regénérer"
+                          className="px-3 rounded-xl border border-white/[0.08] text-white/30 hover:text-white hover:bg-white/8 transition-all">
+                          <RefreshCw size={13}/>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button onClick={()=>{setCredTarget(null);setCredResult(null);}}
+                        className="px-4 py-2 rounded-xl text-xs text-white/40 hover:text-white hover:bg-white/8 transition-all">Annuler</button>
+                      <button onClick={createMemberAccount} disabled={creatingCred||!credEmail.trim()||!credPwd.trim()}
+                        className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold disabled:opacity-50 transition-all"
+                        style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
+                        {creatingCred ? <Loader2 size={12} className="animate-spin"/> : <ShieldCheck size={12}/>}
+                        {creatingCred ? "Création…" : "Créer le compte"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 p-3 rounded-2xl" style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)"}}>
+                      <ShieldCheck size={16} className="text-emerald-400 shrink-0"/>
+                      <p className="text-xs text-emerald-300 font-medium">Compte créé avec succès !</p>
+                    </div>
+                    <p className="text-[11px] text-white/40">Transmettez ces identifiants à <strong className="text-white/60">{credTarget.name}</strong> :</p>
+                    {[
+                      {l:"URL de connexion", v:typeof window !== "undefined" ? window.location.origin + "/membre/login" : "/membre/login"},
+                      {l:"Email", v:credResult.email},
+                      {l:"Mot de passe", v:credResult.password},
+                    ].map(row=>(
+                      <div key={row.l} className="space-y-1">
+                        <label className="text-[10px] text-white/30 uppercase tracking-wide">{row.l}</label>
+                        <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.07] rounded-xl px-3 py-2.5">
+                          <span className="flex-1 text-sm text-white/80 font-mono truncate">{row.v}</span>
+                          <button onClick={()=>navigator.clipboard.writeText(row.v)}
+                            className="text-white/25 hover:text-[#c9a55a] transition-all shrink-0">
+                            <Copy size={13}/>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={()=>{setCredTarget(null);setCredResult(null);}}
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
+                      style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
+                      Fermer
+                    </button>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
