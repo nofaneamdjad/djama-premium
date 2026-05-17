@@ -304,11 +304,15 @@ export default function EquipePage() {
     setSavingM(true);
     const { data:{ user } } = await supabase.auth.getUser();
     if (!user) { setSavingM(false); return; }
+    // Exclure auth_user_id du payload (colonne peut ne pas exister encore)
+    const { auth_user_id: _omit, id: _id, created_at: _ca, ...cleanForm } = mForm as TeamMember & { auth_user_id?: string|null };
     if (editMember) {
-      const { data } = await supabase.from("team_members").update(mForm).eq("id",editMember.id).select().single();
+      const { data, error } = await supabase.from("team_members").update(cleanForm).eq("id",editMember.id).select().single();
+      if (error) { setSavingM(false); setToastData({type:"error",msg:error.message}); return; }
       if (data) setMembers(p=>p.map(m=>m.id===editMember.id ? parseMember(data as Record<string,unknown>) : m));
     } else {
-      const { data } = await supabase.from("team_members").insert({...mForm,user_id:user.id}).select().single();
+      const { data, error } = await supabase.from("team_members").insert({...cleanForm,user_id:user.id}).select().single();
+      if (error) { setSavingM(false); setToastData({type:"error",msg:error.message}); return; }
       if (data) setMembers(p=>[parseMember(data as Record<string,unknown>),...p]);
     }
     setSavingM(false); setShowMemberModal(false);
