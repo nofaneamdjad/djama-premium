@@ -77,24 +77,34 @@ type Rapport = {
 
 const SHORT_MONTHS = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 
-function ToolCard({ item }: { item: typeof TOOLS[number] }) {
+function ToolCard({ item, delay = 0 }: { item: typeof TOOLS[number]; delay?: number }) {
   const Icon = item.icon;
   return (
-    <Link href={item.href} className="group block">
-      <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-3 transition-colors duration-150 hover:border-gray-300 hover:bg-gray-100">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-          style={{ background: `${item.hue}1a`, border: `1px solid ${item.hue}30` }}>
-          <Icon size={14} style={{ color: item.hue }} strokeWidth={1.8} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[0.8rem] font-semibold text-gray-700 leading-tight group-hover:text-gray-900 transition-colors">
-            {item.label}
-          </p>
-          <p className="truncate text-[0.67rem] text-gray-400">{item.desc}</p>
-        </div>
-        <ArrowUpRight size={12} className="shrink-0 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-    </Link>
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay }}
+    >
+      <Link href={item.href} className="group block">
+        <motion.div
+          whileHover={{ scale: 1.02, x: 4 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: "spring", stiffness: 420, damping: 20 }}
+          className="flex items-center gap-3 rounded-2xl px-3.5 py-3"
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+            style={{ background: `${item.hue}22`, border: `1px solid ${item.hue}30` }}>
+            <Icon size={14} style={{ color: item.hue }} strokeWidth={1.8} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[0.78rem] font-semibold text-white/70 group-hover:text-white transition-colors">{item.label}</p>
+            <p className="truncate text-[0.64rem] text-white/30">{item.desc}</p>
+          </div>
+          <ChevronRight size={12} className="shrink-0 text-white/15 group-hover:text-white/45 transition-colors" />
+        </motion.div>
+      </Link>
+    </motion.div>
   );
 }
 
@@ -188,188 +198,216 @@ export default function DashboardPage() {
     { label: "Contacts actifs",       value: stats ? String(stats.contactsActifs)   : "—", icon: UserCheck,   href: "/client/crm" },
   ];
 
-  return (
-    <div className="min-h-full pb-16 bg-gray-50">
+  const ease = [0.22, 1, 0.36, 1] as const;
+  const kpiColors = ["#c9a55a", "#60a5fa", "#f87171", "#a78bfa"];
 
-      {/* Header */}
-      <div className="border-b border-gray-200 bg-white px-5 py-4 sm:px-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
-              <LayoutDashboard size={15} style={{ color: GOLD }} />
-            </div>
-            <div>
-              <h1 className="text-[0.9rem] font-semibold text-gray-900">Tableau de bord</h1>
-              <p className="text-[0.65rem] text-gray-500">Vue d&apos;ensemble de votre activité</p>
-            </div>
+  return (
+    <div className="min-h-full pb-16" style={{ background: "#0c1222" }}>
+
+      {/* ── Header ── */}
+      <div className="relative overflow-hidden px-5 pb-7 pt-5"
+        style={{ background: "linear-gradient(160deg,#0c1222 0%,#111827 55%,#0d1320 100%)" }}
+      >
+        {/* Animated gold line */}
+        <motion.div
+          initial={{ scaleX: 0, opacity: 0 }} animate={{ scaleX: 1, opacity: 1 }}
+          transition={{ duration: 0.9, ease }}
+          className="absolute inset-x-0 top-0 h-[1.5px] origin-left bg-gradient-to-r from-transparent via-[#c9a55a]/60 to-transparent"
+        />
+        {/* Orbs */}
+        <motion.div animate={{ y:[0,-16,0], opacity:[0.06,0.13,0.06] }} transition={{ duration:6, repeat:Infinity, ease:"easeInOut" }}
+          className="pointer-events-none absolute -top-12 left-1/2 h-[300px] w-[500px] -translate-x-1/2 rounded-full blur-[90px]"
+          style={{ background:"rgba(201,165,90,0.13)" }}
+        />
+        <motion.div animate={{ y:[0,12,0], x:[0,-8,0], opacity:[0.04,0.09,0.04] }} transition={{ duration:8, repeat:Infinity, ease:"easeInOut", delay:2 }}
+          className="pointer-events-none absolute -bottom-8 right-0 h-[200px] w-[280px] rounded-full blur-[80px]"
+          style={{ background:"rgba(99,102,241,0.09)" }}
+        />
+
+        <div className="relative mx-auto max-w-4xl">
+          {/* Greeting row */}
+          <div className="mb-6 flex items-start justify-between gap-3">
+            <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.35, ease }}>
+              <p className="text-[0.6rem] capitalize tracking-[0.18em] text-white/30">{fmtFullDate()}</p>
+              <h1 className="mt-1 text-[1.5rem] font-black leading-tight text-white">
+                {getGreeting()}
+                {userName && (
+                  <motion.span
+                    initial={{ opacity:0, y:5 }} animate={{ opacity:1, y:0 }}
+                    transition={{ duration:0.4, delay:0.22, ease }}
+                    className="ml-1.5 font-black text-white/75"
+                  >{userName.split(" ")[0]}</motion.span>
+                )}
+              </h1>
+              <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.4, delay:0.3 }}
+                className="mt-0.5 text-[0.75rem] text-white/35"
+              >Voici un résumé de votre activité DJAMA PRO.</motion.p>
+            </motion.div>
+
+            <motion.button
+              initial={{ opacity:0, scale:0.88 }} animate={{ opacity:1, scale:1 }}
+              transition={{ duration:0.35, delay:0.18, ease }}
+              whileTap={{ scale:0.92 }}
+              onClick={runRapport} disabled={rapportLoading}
+              className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.07] px-3.5 py-2.5 text-[0.72rem] font-semibold text-white/55 transition hover:bg-white/[0.13] hover:text-white disabled:opacity-40"
+            >
+              {rapportLoading ? <Loader2 size={12} className="animate-spin" style={{ color:GOLD }}/> : <FileBarChart2 size={12} style={{ color:GOLD }}/>}
+              <span className="hidden sm:inline">Rapport IA</span>
+            </motion.button>
           </div>
-          <button
-            onClick={runRapport}
-            disabled={rapportLoading}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-[0.75rem] font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
-          >
-            {rapportLoading ? <Loader2 size={12} className="animate-spin" /> : <FileBarChart2 size={12} />}
-            <span className="hidden sm:inline">Rapport mensuel</span>
-          </button>
+
+          {/* KPI grid */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {kpis.map(({ label, value, icon: Icon, href }, i) => (
+              <motion.div key={label}
+                initial={{ opacity:0, y:20, scale:0.88 }} animate={{ opacity:1, y:0, scale:1 }}
+                transition={{ type:"spring", stiffness:300, damping:22, delay:0.1 + i*0.08 }}
+              >
+                <Link href={href} className="block group">
+                  <motion.div
+                    whileHover={{ scale:1.04, y:-3 }} whileTap={{ scale:0.96 }}
+                    transition={{ type:"spring", stiffness:440, damping:18 }}
+                    className="rounded-2xl p-4"
+                    style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.09)" }}
+                  >
+                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl"
+                      style={{ background:`${kpiColors[i]}20` }}>
+                      <Icon size={16} style={{ color:kpiColors[i] }}/>
+                    </div>
+                    <p className="text-[0.58rem] font-medium uppercase tracking-wider text-white/30">{label}</p>
+                    {statsLoading
+                      ? <div className="mt-1.5 h-5 w-14 animate-pulse rounded-lg" style={{ background:"rgba(255,255,255,0.10)" }}/>
+                      : <motion.p
+                          key={value}
+                          initial={{ opacity:0, scale:0.8 }} animate={{ opacity:1, scale:1 }}
+                          transition={{ type:"spring", stiffness:380, damping:18 }}
+                          className="mt-1 text-[1.25rem] font-black leading-none text-white"
+                        >{value}</motion.p>
+                    }
+                  </motion.div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="mx-auto max-w-5xl space-y-7 px-5 py-7 sm:px-8">
-
-        {/* Greeting */}
-        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
-          <p className="text-[0.68rem] font-medium text-gray-400 capitalize">{fmtFullDate()}</p>
-          <h2 className="mt-1 text-lg font-semibold text-gray-900 sm:text-xl">
-            {getGreeting()}{userName ? `, ${userName}` : ""}
-          </h2>
-          <p className="mt-0.5 text-[0.8rem] text-gray-500">Voici un résumé de votre activité DJAMA PRO.</p>
-        </div>
-
-        {/* KPI Cards */}
-        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-          {kpis.map((kpi) => {
-            const Icon = kpi.icon;
-            return (
-              <Link key={kpi.label} href={kpi.href} className="group block">
-                <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
-                    <Icon size={14} className="text-gray-500" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[0.65rem] font-medium text-gray-500">{kpi.label}</p>
-                    {statsLoading
-                      ? <div className="mt-1 h-4 w-16 animate-pulse rounded-md bg-gray-100" />
-                      : <p className="mt-0.5 text-[0.95rem] font-semibold text-gray-800 leading-none">{kpi.value}</p>
-                    }
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+      {/* ── Body ── */}
+      <div className="mx-auto max-w-4xl space-y-4 px-5 py-5 sm:px-6">
 
         {/* Overdue alert */}
-        {!chartsLoading && overdue.length > 0 && (
-          <Link href="/client/tresorerie" className="block">
-            <div className="flex items-center gap-3.5 rounded-xl border border-red-500/20 bg-red-500/[0.06] px-4 py-3.5 transition-colors hover:bg-red-500/[0.1]">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10">
-                <AlertTriangle size={14} className="text-red-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[0.8rem] font-semibold text-gray-800">
-                  {overdue.length} facture{overdue.length > 1 ? "s" : ""} en retard
-                </p>
-                <p className="text-[0.68rem] text-gray-500 truncate">
-                  {overdue.map(i => i.client_nom || i.numero).join(", ")}
-                </p>
-              </div>
-              <ChevronRight size={14} className="shrink-0 text-red-400/50" />
-            </div>
-          </Link>
-        )}
+        <AnimatePresence>
+          {!chartsLoading && overdue.length > 0 && (
+            <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}>
+              <Link href="/client/tresorerie" className="block">
+                <motion.div whileHover={{ scale:1.01 }} whileTap={{ scale:0.99 }}
+                  className="flex items-center gap-3.5 rounded-2xl border border-red-500/20 bg-red-500/[0.08] px-4 py-3.5"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-red-500/15">
+                    <AlertTriangle size={14} className="text-red-400"/>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[0.8rem] font-bold text-white">{overdue.length} facture{overdue.length>1?"s":""} en retard</p>
+                    <p className="text-[0.67rem] text-white/35 truncate">{overdue.map(i=>i.client_nom||i.numero).join(", ")}</p>
+                  </div>
+                  <ChevronRight size={14} className="shrink-0 text-red-400/50"/>
+                </motion.div>
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Revenue chart + Top clients */}
-        <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+        {/* Chart + Top clients */}
+        <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
 
           {/* Revenue chart */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.22 }}
+            className="rounded-3xl p-5"
+            style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.09)" }}
+          >
             <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
-                  <BarChart3 size={13} className="text-gray-500" />
-                </div>
-                <div>
-                  <p className="text-[0.8rem] font-semibold text-gray-700">Revenus encaissés</p>
-                  <p className="text-[0.65rem] text-gray-500">6 derniers mois</p>
-                </div>
+              <div>
+                <p className="text-[0.8rem] font-bold text-white">Revenus encaissés</p>
+                <p className="text-[0.6rem] text-white/30">6 derniers mois</p>
               </div>
               {!chartsLoading && revenues.length > 0 && (
-                <p className="text-[0.8rem] font-semibold" style={{ color: GOLD }}>
-                  {fmtEurInt(revenues.reduce((s,r) => s+r.amount, 0))}
+                <p className="text-[0.82rem] font-black" style={{ color:GOLD }}>
+                  {fmtEurInt(revenues.reduce((s,r)=>s+r.amount,0))}
                 </p>
               )}
             </div>
             {chartsLoading ? (
-              <div className="flex items-end gap-3 h-28">
-                {[1,2,3,4,5,6].map(i => (
-                  <div key={i} className="flex-1 animate-pulse rounded-lg bg-gray-100" style={{ height: `${40+i*10}%` }} />
+              <div className="flex items-end gap-2 h-28">
+                {[1,2,3,4,5,6].map(i=>(
+                  <div key={i} className="flex-1 animate-pulse rounded-xl" style={{ height:`${32+i*11}%`, background:"rgba(255,255,255,0.07)" }}/>
                 ))}
               </div>
             ) : (
-              <div className="flex items-end gap-2 h-32 sm:gap-3">
-                {(() => {
-                  const max = Math.max(...revenues.map(r => r.amount), 1);
-                  return revenues.map((r, i) => {
-                    const pct = Math.max((r.amount / max) * 100, r.amount > 0 ? 8 : 2);
-                    const isLast = i === revenues.length - 1;
+              <div className="flex items-end gap-2 h-32">
+                {(()=>{
+                  const max = Math.max(...revenues.map(r=>r.amount),1);
+                  return revenues.map((r,i)=>{
+                    const pct  = Math.max((r.amount/max)*100, r.amount>0?8:3);
+                    const isLast = i===revenues.length-1;
                     return (
                       <div key={r.label} className="group flex flex-1 flex-col items-center gap-1.5">
-                        <div className="relative w-full" style={{ height: "96px" }}>
-                          <div className="absolute bottom-0 w-full overflow-hidden rounded-t-md transition-all duration-700"
+                        <div className="relative flex w-full items-end" style={{ height:"96px" }}>
+                          <motion.div
+                            initial={{ height:0 }} animate={{ height:`${pct}%` }}
+                            transition={{ duration:0.7, delay:0.3+i*0.07, ease }}
+                            className="w-full rounded-xl"
                             style={{
-                              height: `${pct}%`,
-                              background: isLast
-                                ? `${GOLD}cc`
-                                : "rgba(0,0,0,0.07)",
+                              background: isLast ? `linear-gradient(180deg,${GOLD},${GOLD}77)` : "rgba(255,255,255,0.10)",
+                              boxShadow: isLast ? `0 6px 24px ${GOLD}40` : "none",
                             }}
                           />
-                          {r.amount > 0 && (
-                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-2 py-1 text-[0.6rem] font-medium text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-sm">
+                          {r.amount>0 && (
+                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white/10 bg-[#1a2235] px-2 py-1 text-[0.6rem] font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
                               {fmtEurInt(r.amount)}
                             </div>
                           )}
                         </div>
-                        <span className={`text-[0.6rem] font-medium ${isLast ? "" : "text-gray-400"}`}
-                          style={isLast ? { color: GOLD } : {}}>
-                          {r.label}
-                        </span>
+                        <span className="text-[0.58rem] font-medium" style={{ color: isLast ? GOLD : "rgba(255,255,255,0.28)" }}>{r.label}</span>
                       </div>
                     );
                   });
                 })()}
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* Top clients */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="mb-4 flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
-                <Star size={13} className="text-gray-500" />
-              </div>
-              <div>
-                <p className="text-[0.8rem] font-semibold text-gray-700">Meilleurs clients</p>
-                <p className="text-[0.65rem] text-gray-500">3 mois glissants</p>
-              </div>
+          <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.30 }}
+            className="rounded-3xl p-5"
+            style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.09)" }}
+          >
+            <div className="mb-4">
+              <p className="text-[0.8rem] font-bold text-white">Meilleurs clients</p>
+              <p className="text-[0.6rem] text-white/30">3 mois glissants</p>
             </div>
             {chartsLoading ? (
-              <div className="space-y-2.5">
-                {[1,2,3].map(i => <div key={i} className="h-9 animate-pulse rounded-lg bg-gray-100" />)}
-              </div>
-            ) : topClients.length === 0 ? (
+              <div className="space-y-3">{[1,2,3].map(i=><div key={i} className="h-8 animate-pulse rounded-xl" style={{ background:"rgba(255,255,255,0.07)" }}/>)}</div>
+            ) : topClients.length===0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-center">
-                <Users size={18} className="text-gray-300" />
-                <p className="text-[0.75rem] text-gray-400">Aucun encaissement récent</p>
+                <Users size={18} className="text-white/15"/>
+                <p className="text-[0.72rem] text-white/25">Aucun encaissement récent</p>
               </div>
             ) : (
-              <div className="space-y-2.5">
-                {topClients.map((c, i) => {
-                  const max = topClients[0].amount;
-                  const pct = Math.round((c.amount / max) * 100);
+              <div className="space-y-3">
+                {topClients.map((c,i)=>{
+                  const pct = Math.round((c.amount/topClients[0].amount)*100);
                   return (
                     <div key={c.name} className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[0.75rem] font-medium text-gray-600 truncate max-w-[140px]">{c.name}</span>
-                        <span className="text-[0.75rem] font-semibold" style={{ color: GOLD }}>{fmtEurInt(c.amount)}</span>
+                        <span className="text-[0.72rem] font-medium text-white/55 truncate max-w-[120px]">{c.name}</span>
+                        <span className="text-[0.72rem] font-bold" style={{ color:GOLD }}>{fmtEurInt(c.amount)}</span>
                       </div>
-                      <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
+                      <div className="h-1 w-full overflow-hidden rounded-full" style={{ background:"rgba(255,255,255,0.08)" }}>
                         <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.8, delay: 0.3 + i * 0.08 }}
+                          initial={{ width:0 }} animate={{ width:`${pct}%` }}
+                          transition={{ duration:0.8, delay:0.4+i*0.08 }}
                           className="h-full rounded-full"
-                          style={{ background: i === 0 ? GOLD : `${GOLD}55` }}
+                          style={{ background: i===0 ? GOLD : `${GOLD}55` }}
                         />
                       </div>
                     </div>
@@ -377,143 +415,107 @@ export default function DashboardPage() {
                 })}
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
 
-        {/* Rapport mensuel panel */}
+        {/* Rapport modal */}
         <AnimatePresence>
           {rapportOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden rounded-xl border border-gray-200 bg-white"
+              initial={{ opacity:0, y:-10, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }}
+              exit={{ opacity:0, y:-8, scale:0.97 }} transition={{ duration:0.25 }}
+              className="overflow-hidden rounded-3xl border border-white/10"
+              style={{ background:"rgba(255,255,255,0.05)" }}
             >
-              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
-                    <FileBarChart2 size={12} className="text-gray-500" />
-                  </div>
-                  <span className="text-[0.85rem] font-semibold text-gray-900">
-                    Rapport — {new Date().toLocaleDateString("fr-FR",{ month:"long", year:"numeric" })}
+                  <FileBarChart2 size={13} style={{ color:GOLD }}/>
+                  <span className="text-[0.85rem] font-bold text-white">
+                    Rapport IA — {new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}
                   </span>
                 </div>
-                <button onClick={() => setRapportOpen(false)} className="text-gray-400 transition hover:text-gray-600">
-                  <X size={14} />
+                <button onClick={()=>setRapportOpen(false)} className="text-white/30 hover:text-white transition-colors">
+                  <X size={15}/>
                 </button>
               </div>
 
               {rapportLoading ? (
                 <div className="flex flex-col items-center gap-3 py-12">
-                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-gray-500" />
-                  <p className="text-[0.8rem] text-gray-500">Génération du rapport en cours…</p>
+                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]"/>
+                  <p className="text-[0.8rem] text-white/40">Génération du rapport en cours…</p>
                 </div>
               ) : rapport && (
-                <div className="p-5 space-y-5">
-                  {/* Score + résumé */}
+                <div className="space-y-5 p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                     <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
                       <svg className="absolute inset-0 -rotate-90" viewBox="0 0 64 64">
-                        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="5"/>
+                        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5"/>
                         <circle cx="32" cy="32" r="26" fill="none"
-                          stroke={rapport.score_sante >= 70 ? "#10b981" : rapport.score_sante >= 40 ? "#f59e0b" : "#ef4444"}
+                          stroke={rapport.score_sante>=70?"#10b981":rapport.score_sante>=40?"#f59e0b":"#ef4444"}
                           strokeWidth="5" strokeLinecap="round"
-                          strokeDasharray={`${2 * Math.PI * 26}`}
-                          strokeDashoffset={`${2 * Math.PI * 26 * (1 - rapport.score_sante / 100)}`}
-                          style={{ transition: "stroke-dashoffset 1s ease" }}
+                          strokeDasharray={`${2*Math.PI*26}`}
+                          strokeDashoffset={`${2*Math.PI*26*(1-rapport.score_sante/100)}`}
+                          style={{ transition:"stroke-dashoffset 1s ease" }}
                         />
                       </svg>
-                      <span className="text-base font-bold"
-                        style={{ color: rapport.score_sante >= 70 ? "#10b981" : rapport.score_sante >= 40 ? "#f59e0b" : "#ef4444" }}>
+                      <span className="text-base font-black" style={{ color:rapport.score_sante>=70?"#10b981":rapport.score_sante>=40?"#f59e0b":"#ef4444" }}>
                         {rapport.score_sante}
                       </span>
                     </div>
                     <div className="flex-1">
-                      <p className="text-[0.65rem] font-medium text-gray-500">Santé financière</p>
-                      <p className="mt-1 text-[0.82rem] leading-relaxed text-gray-600">{rapport.resume_executif}</p>
+                      <p className="text-[0.62rem] font-medium text-white/35">Santé financière</p>
+                      <p className="mt-1 text-[0.8rem] leading-relaxed text-white/70">{rapport.resume_executif}</p>
                     </div>
                   </div>
-
-                  {/* KPIs */}
                   {rapport.kpis && (
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {[
-                        { label: "Revenu encaissé",   value: fmtEurInt(rapport.kpis.revenu_total)     },
-                        { label: "Dépenses totales",  value: fmtEurInt(rapport.kpis.depenses_totales)  },
-                        { label: "Résultat net",      value: fmtEurInt(rapport.kpis.resultat_net)      },
-                        { label: "Taux recouvrement", value: rapport.kpis.taux_recouvrement            },
-                        { label: "Factures",          value: String(rapport.kpis.nb_factures)          },
-                        { label: "Clients actifs",    value: String(rapport.kpis.nb_clients)           },
-                      ].map(k => (
-                        <div key={k.label} className="rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-3">
-                          <p className="text-[0.62rem] font-medium text-gray-500">{k.label}</p>
-                          <p className="mt-0.5 text-[0.95rem] font-semibold text-gray-800">{k.value}</p>
+                        { label:"Revenu encaissé",   value:fmtEurInt(rapport.kpis.revenu_total) },
+                        { label:"Dépenses totales",  value:fmtEurInt(rapport.kpis.depenses_totales) },
+                        { label:"Résultat net",      value:fmtEurInt(rapport.kpis.resultat_net) },
+                        { label:"Taux recouvrement", value:rapport.kpis.taux_recouvrement },
+                        { label:"Factures",          value:String(rapport.kpis.nb_factures) },
+                        { label:"Clients actifs",    value:String(rapport.kpis.nb_clients) },
+                      ].map(k=>(
+                        <div key={k.label} className="rounded-2xl px-3.5 py-3" style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.08)" }}>
+                          <p className="text-[0.6rem] font-medium text-white/35">{k.label}</p>
+                          <p className="mt-0.5 text-[0.95rem] font-black text-white">{k.value}</p>
                         </div>
                       ))}
                     </div>
                   )}
-
-                  {/* Points forts + Alertes */}
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {rapport.points_forts?.length > 0 && (
-                      <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.05] p-4">
-                        <div className="mb-2 flex items-center gap-2">
-                          <ShieldCheck size={11} className="text-emerald-400" />
-                          <span className="text-[0.65rem] font-semibold text-emerald-600">Points forts</span>
-                        </div>
-                        <ul className="space-y-1.5">
-                          {rapport.points_forts.map((p, i) => (
-                            <li key={i} className="flex items-start gap-2 text-[0.75rem] text-gray-600">
-                              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400/70" />{p}
-                            </li>
-                          ))}
-                        </ul>
+                    {rapport.points_forts?.length>0 && (
+                      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] p-4">
+                        <div className="mb-2 flex items-center gap-2"><ShieldCheck size={11} className="text-emerald-400"/><span className="text-[0.63rem] font-bold text-emerald-400">Points forts</span></div>
+                        <ul className="space-y-1.5">{rapport.points_forts.map((p,i)=><li key={i} className="flex items-start gap-2 text-[0.73rem] text-white/55"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400/70"/>{p}</li>)}</ul>
                       </div>
                     )}
-                    {rapport.alertes?.length > 0 && (
-                      <div className="rounded-lg border border-amber-500/15 bg-amber-500/[0.05] p-4">
-                        <div className="mb-2 flex items-center gap-2">
-                          <AlertTriangle size={11} className="text-amber-400" />
-                          <span className="text-[0.65rem] font-semibold text-amber-600">Alertes</span>
-                        </div>
-                        <ul className="space-y-1.5">
-                          {rapport.alertes.map((a, i) => (
-                            <li key={i} className="flex items-start gap-2 text-[0.75rem] text-gray-600">
-                              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400/70" />{a}
-                            </li>
-                          ))}
-                        </ul>
+                    {rapport.alertes?.length>0 && (
+                      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.07] p-4">
+                        <div className="mb-2 flex items-center gap-2"><AlertTriangle size={11} className="text-amber-400"/><span className="text-[0.63rem] font-bold text-amber-400">Alertes</span></div>
+                        <ul className="space-y-1.5">{rapport.alertes.map((a,i)=><li key={i} className="flex items-start gap-2 text-[0.73rem] text-white/55"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400/70"/>{a}</li>)}</ul>
                       </div>
                     )}
                   </div>
-
-                  {/* Recommandations */}
-                  {rapport.recommandations?.length > 0 && (
-                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                      <div className="mb-2 flex items-center gap-2">
-                        <Lightbulb size={11} className="text-gray-500" />
-                        <span className="text-[0.65rem] font-semibold text-gray-500">Recommandations</span>
-                      </div>
-                      <ol className="space-y-1.5">
-                        {rapport.recommandations.map((r, i) => (
-                          <li key={i} className="flex items-start gap-2.5 text-[0.75rem] text-gray-600">
-                            <span className="shrink-0 mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-[0.55rem] font-semibold text-gray-500">{i+1}</span>
-                            {r}
-                          </li>
-                        ))}
-                      </ol>
+                  {rapport.recommandations?.length>0 && (
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                      <div className="mb-2 flex items-center gap-2"><Lightbulb size={11} style={{ color:GOLD }}/><span className="text-[0.63rem] font-bold text-white/40">Recommandations</span></div>
+                      <ol className="space-y-1.5">{rapport.recommandations.map((r,i)=>(
+                        <li key={i} className="flex items-start gap-2.5 text-[0.73rem] text-white/55">
+                          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[0.55rem] font-bold" style={{ background:"rgba(201,165,90,0.2)", color:GOLD }}>{i+1}</span>
+                          {r}
+                        </li>
+                      ))}</ol>
                     </div>
                   )}
-
-                  {/* Objectif */}
                   {rapport.objectif_mois_prochain && (
-                    <div className="flex items-start gap-3 rounded-lg border p-4"
-                      style={{ borderColor: `${GOLD}25`, background: `${GOLD}0a` }}>
-                      <TrendingUp size={13} className="mt-0.5 shrink-0" style={{ color: GOLD }} />
+                    <div className="flex items-start gap-3 rounded-2xl border p-4"
+                      style={{ borderColor:`${GOLD}25`, background:`${GOLD}0d` }}>
+                      <TrendingUp size={13} className="mt-0.5 shrink-0" style={{ color:GOLD }}/>
                       <div>
-                        <p className="mb-1 text-[0.65rem] font-semibold" style={{ color: `${GOLD}aa` }}>Objectif mois prochain</p>
-                        <p className="text-[0.78rem] text-gray-600">{rapport.objectif_mois_prochain}</p>
+                        <p className="mb-1 text-[0.62rem] font-bold" style={{ color:`${GOLD}99` }}>Objectif mois prochain</p>
+                        <p className="text-[0.77rem] text-white/60">{rapport.objectif_mois_prochain}</p>
                       </div>
                     </div>
                   )}
@@ -523,23 +525,15 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
-        {/* Tools grid */}
-        <div>
-          <div className="mb-3 flex items-center gap-3">
-            <h2 className="text-[0.72rem] font-semibold text-gray-500">Vos outils</h2>
-            <div className="flex-1 border-t border-gray-200" />
-            <span className="text-[0.65rem] text-gray-400">{TOOLS.length} modules</span>
+        {/* Tools */}
+        <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.38 }}>
+          <p className="mb-3 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-white/25">Accès rapides</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {TOOLS.map((item,i)=><ToolCard key={item.href} item={item} delay={0.4+i*0.035}/>)}
           </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {TOOLS.map((tool) => (
-              <ToolCard key={tool.href} item={tool} />
-            ))}
-          </div>
-        </div>
+        </motion.div>
 
-        <p className="text-center text-[0.63rem] text-gray-300">
-          DJAMA PRO · Données mises à jour en temps réel
-        </p>
+        <p className="text-center text-[0.62rem] text-white/15">DJAMA PRO · Données en temps réel</p>
       </div>
     </div>
   );

@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, Fragment } from "react";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import {
   FileText, CalendarRange, StickyNote, Brain, Timer, CreditCard, Globe,
   CheckCircle2, ArrowRight, Sparkles, Shield, Zap, Lock, Wallet,
   AlertTriangle, MessageCircle, Users, LogIn, BadgeCheck,
-  ChevronRight,
+  ChevronRight, MousePointerClick, Rocket, Star,
 } from "lucide-react";
 import StripeButton from "@/components/ui/StripeButton";
 import { staggerContainerFast, cardReveal, viewport } from "@/lib/animations";
@@ -68,16 +68,16 @@ function AlreadySubscribedRedirect() {
    DONNÉES
 ───────────────────────────────────────────────────────── */
 const TOOLS = [
-  { icon: FileText,    title: "Factures & Devis",     desc: "Créez des documents pro avec logo, TVA et export PDF.",            color: "#c9a55a", rgb: "201,165,90"  },
-  { icon: CalendarRange, title: "Agenda",             desc: "Rendez-vous, équipes et tâches organisés en un seul endroit.",     color: "#60a5fa", rgb: "96,165,250"  },
-  { icon: Brain,       title: "Coach Business IA",    desc: "Analyse vos données réelles et vous guide chaque jour.",          color: "#a78bfa", rgb: "167,139,250" },
-  { icon: Users,       title: "CRM Client",           desc: "Contacts, prospects et historique client centralisés.",           color: "#22d3ee", rgb: "34,211,238"  },
-  { icon: Wallet,      title: "Trésorerie",           desc: "Solde, flux et prévisions financières en temps réel.",           color: "#34d399", rgb: "52,211,153"  },
-  { icon: Timer,       title: "Chrono Pro",           desc: "Temps par projet et client pour mesurer votre rentabilité.",      color: "#fb923c", rgb: "251,146,60"  },
-  { icon: CreditCard,  title: "Dépenses Pro",         desc: "Frais professionnels classés par catégorie et suivis.",          color: "#f43f5e", rgb: "244,63,94"   },
-  { icon: Shield,      title: "Contrats IA",          desc: "Contrats personnalisés générés en quelques secondes.",           color: "#eab308", rgb: "234,179,8"   },
-  { icon: Globe,       title: "Sourcing IA",          desc: "Fournisseurs mondiaux, marchés publics & privés via l'IA.",      color: "#f59e0b", rgb: "245,158,11"  },
-  { icon: StickyNote,  title: "Bloc-notes pro",       desc: "Notes par catégorie avec export PDF et sauvegarde auto.",        color: "#4ade80", rgb: "74,222,128"  },
+  { icon: FileText,      title: "Factures & Devis",   desc: "Créez des documents pro avec logo, TVA et export PDF.",           color: "#c9a55a", rgb: "201,165,90"  },
+  { icon: CalendarRange, title: "Agenda",              desc: "Rendez-vous, équipes et tâches organisés en un seul endroit.",    color: "#60a5fa", rgb: "96,165,250"  },
+  { icon: Brain,         title: "Coach Business IA",   desc: "Analyse vos données réelles et vous guide chaque jour.",         color: "#a78bfa", rgb: "167,139,250" },
+  { icon: Users,         title: "CRM Client",          desc: "Contacts, prospects et historique client centralisés.",          color: "#22d3ee", rgb: "34,211,238"  },
+  { icon: Wallet,        title: "Trésorerie",          desc: "Solde, flux et prévisions financières en temps réel.",          color: "#34d399", rgb: "52,211,153"  },
+  { icon: Timer,         title: "Chrono Pro",          desc: "Temps par projet et client pour mesurer votre rentabilité.",     color: "#fb923c", rgb: "251,146,60"  },
+  { icon: CreditCard,    title: "Dépenses Pro",        desc: "Frais professionnels classés par catégorie et suivis.",         color: "#f43f5e", rgb: "244,63,94"   },
+  { icon: Shield,        title: "Contrats IA",         desc: "Contrats personnalisés générés en quelques secondes.",          color: "#eab308", rgb: "234,179,8"   },
+  { icon: Globe,         title: "Sourcing IA",         desc: "Fournisseurs mondiaux, marchés publics & privés via l'IA.",     color: "#f59e0b", rgb: "245,158,11"  },
+  { icon: StickyNote,    title: "Bloc-notes pro",      desc: "Notes par catégorie avec export PDF et sauvegarde auto.",       color: "#4ade80", rgb: "74,222,128"  },
 ] as const;
 
 const INCLUS = [
@@ -95,11 +95,10 @@ const INCLUS = [
 ] as const;
 
 const STEPS = [
-  { n: "01", title: "Choisissez votre offre", desc: "Un seul plan à 11,90€/mois, tout inclus." },
-  { n: "02", title: "Créez votre compte",    desc: "Accès envoyé par email en moins de 2 minutes." },
-  { n: "03", title: "Utilisez vos outils",   desc: "Tableau de bord prêt dès la première connexion." },
+  { n: "01", icon: MousePointerClick, color: "#c9a55a", rgb: "201,165,90",  title: "Choisissez l'offre",     desc: "Un seul plan à 11,90€/mois, tout inclus. Aucun engagement." },
+  { n: "02", icon: Rocket,            color: "#60a5fa", rgb: "96,165,250",  title: "Créez votre compte",     desc: "Lien d'accès envoyé par email en moins de 2 minutes."        },
+  { n: "03", icon: Star,              color: "#34d399", rgb: "52,211,153",  title: "Pilotez votre activité", desc: "Tableau de bord prêt dès la première connexion."              },
 ] as const;
-
 
 /* ─────────────────────────────────────────────────────────
    PAGE
@@ -113,13 +112,19 @@ export default function EspaceClientPage() {
       </Suspense>
 
       {/* ══════════════════════════════════════════════
-          HERO
+          HERO — dark navy
       ══════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pt-[108px] pb-24 sm:pt-[128px] sm:pb-36 bg-white">
-        {/* Glows — subtler on white */}
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,0.06)] blur-[130px]" />
-        <div className="pointer-events-none absolute left-0 top-1/2 h-[400px] w-[300px] rounded-full bg-[rgba(96,165,250,0.04)] blur-[100px]" />
-        <div className="pointer-events-none absolute right-0 top-1/3 h-[350px] w-[300px] rounded-full bg-[rgba(167,139,250,0.04)] blur-[100px]" />
+      <section
+        className="relative overflow-hidden pt-[108px] pb-28 sm:pt-[136px] sm:pb-44"
+        style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e1b4b 55%,#1e1035 100%)" }}
+      >
+        {/* Gold top accent */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#c9a55a]/80 to-transparent" />
+
+        {/* Orbs */}
+        <div className="pointer-events-none absolute left-1/2 top-1/3 h-[700px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(201,165,90,0.07)] blur-[150px]" />
+        <div className="pointer-events-none absolute -left-20 bottom-0 h-[500px] w-[500px] rounded-full bg-[rgba(96,165,250,0.05)] blur-[130px]" />
+        <div className="pointer-events-none absolute -right-20 top-0 h-[500px] w-[500px] rounded-full bg-[rgba(167,139,250,0.05)] blur-[130px]" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
           {/* Badge */}
@@ -127,7 +132,7 @@ export default function EspaceClientPage() {
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, ease }}
-            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.28)] bg-[rgba(201,165,90,0.08)] px-5 py-2 text-[0.7rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]"
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.30)] bg-[rgba(201,165,90,0.10)] px-5 py-2 text-[0.7rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]"
           >
             <Sparkles size={9} />
             Espace Client DJAMA
@@ -138,7 +143,7 @@ export default function EspaceClientPage() {
             initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease, delay: 0.1 }}
-            className="text-[2.6rem] font-black leading-[1.1] tracking-tight text-gray-900 sm:text-[4rem] lg:text-[5rem]"
+            className="text-[2.6rem] font-black leading-[1.1] tracking-tight text-white sm:text-[4rem] lg:text-[5rem]"
           >
             Gérez votre activité.{" "}
             <br className="hidden sm:block" />
@@ -154,13 +159,13 @@ export default function EspaceClientPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease, delay: 0.35 }}
-            className="mx-auto mt-6 max-w-xl text-base leading-[1.85] text-gray-500 sm:text-lg"
+            className="mx-auto mt-6 max-w-xl text-base leading-[1.85] text-white/60 sm:text-lg"
           >
             11 outils professionnels réunis en un seul abonnement — factures, CRM, trésorerie,
             Coach IA, contrats et bien plus encore.
           </motion.p>
 
-          {/* CTA bloc */}
+          {/* CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -177,7 +182,7 @@ export default function EspaceClientPage() {
             </Link>
             <Link
               href="#outils"
-              className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-9 py-4 text-sm font-semibold text-gray-600 transition-all duration-200 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900"
+              className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-9 py-4 text-sm font-semibold text-white/80 transition-all duration-200 hover:bg-white/15 hover:text-white"
             >
               Découvrir les outils
               <ArrowRight size={14} />
@@ -192,12 +197,12 @@ export default function EspaceClientPage() {
             className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
           >
             {[
-              { icon: Zap,          text: "Accès immédiat" },
-              { icon: Lock,         text: "Paiement Stripe" },
-              { icon: BadgeCheck,   text: "Sans engagement" },
-              { icon: Users,        text: "+50 abonnés" },
+              { icon: Zap,        text: "Accès immédiat" },
+              { icon: Lock,       text: "Paiement Stripe" },
+              { icon: BadgeCheck, text: "Sans engagement" },
+              { icon: Users,      text: "+50 abonnés" },
             ].map(({ icon: Icon, text }) => (
-              <span key={text} className="flex items-center gap-1.5 text-[0.72rem] text-gray-400">
+              <span key={text} className="flex items-center gap-1.5 text-[0.72rem] text-white/40">
                 <Icon size={10} className="text-[#c9a55a]" />
                 {text}
               </span>
@@ -207,9 +212,9 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          DÉJÀ ABONNÉ — carte login immédiate
+          DÉJÀ ABONNÉ — carte login
       ══════════════════════════════════════════════ */}
-      <section className="px-6 pb-16 bg-white">
+      <section className="bg-white px-6 pb-14 pt-14">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -217,12 +222,8 @@ export default function EspaceClientPage() {
           transition={{ duration: 0.6, ease }}
           className="mx-auto max-w-2xl"
         >
-          <div
-            className="relative overflow-hidden rounded-[1.6rem] border border-[rgba(201,165,90,0.25)] bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)]"
-          >
-            {/* Accent top */}
+          <div className="relative overflow-hidden rounded-[1.6rem] border border-[rgba(201,165,90,0.25)] bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)]">
             <div className="h-px w-full bg-gradient-to-r from-transparent via-[#c9a55a]/60 to-transparent" />
-
             <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
               <div className="flex items-center gap-4">
                 <div
@@ -240,7 +241,6 @@ export default function EspaceClientPage() {
                   </p>
                 </div>
               </div>
-
               <Link
                 href="/login"
                 className="group flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgba(201,165,90,0.40)] bg-[rgba(201,165,90,0.12)] px-6 py-3 text-sm font-bold text-[#c9a55a] transition-all duration-200 hover:border-[rgba(201,165,90,0.65)] hover:bg-[rgba(201,165,90,0.20)] sm:w-auto"
@@ -254,57 +254,108 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          COMMENT ÇA MARCHE
+          COMMENT ÇA MARCHE — schéma animé 3 étapes
       ══════════════════════════════════════════════ */}
-      <section className="border-y border-gray-200 bg-[#f8f9fa] py-16 sm:py-20">
+      <section className="border-y border-gray-100 bg-[#f8f9fa] py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-6">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport}
             transition={{ duration: 0.5, ease }}
-            className="mb-12 text-center"
+            className="mb-14 text-center"
           >
             <p className="text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
-              3 étapes
+              Démarrez en 3 étapes
             </p>
             <h2 className="mt-2 text-2xl font-black text-gray-900 sm:text-3xl">
-              Prêt en moins de 2 minutes.
+              Prêt en moins de{" "}
+              <span className="text-[#c9a55a]">2 minutes.</span>
             </h2>
           </motion.div>
 
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={viewport}
-            variants={staggerContainerFast}
-            className="grid gap-px sm:grid-cols-3"
-            style={{ background: "rgba(0,0,0,0.06)", borderRadius: "1.5rem", overflow: "hidden" }}
-          >
-            {STEPS.map(({ n, title, desc }, i) => (
-              <motion.div
-                key={n}
-                variants={cardReveal}
-                className="flex flex-col gap-3 bg-[#f8f9fa] px-8 py-8"
-              >
-                <span
-                  className="text-[2.2rem] font-black leading-none"
-                  style={{ color: i === 0 ? "#c9a55a" : "rgba(0,0,0,0.10)" }}
-                >
-                  {n}
-                </span>
-                <h3 className="text-[0.92rem] font-extrabold text-gray-900">{title}</h3>
-                <p className="text-[0.78rem] leading-relaxed text-gray-400">{desc}</p>
-              </motion.div>
-            ))}
-          </motion.div>
+          {/* Schéma */}
+          <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-start sm:justify-center sm:gap-0">
+            {STEPS.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <Fragment key={step.n}>
+                  {/* Step card */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={viewport}
+                    transition={{ duration: 0.55, ease, delay: i * 0.15 }}
+                    className="flex w-full max-w-[200px] flex-col items-center gap-3 text-center"
+                  >
+                    {/* Icon ring */}
+                    <div
+                      className="flex h-16 w-16 items-center justify-center rounded-2xl border shadow-[0_4px_20px_rgba(0,0,0,0.07)]"
+                      style={{
+                        background: `rgba(${step.rgb}, 0.12)`,
+                        borderColor: `rgba(${step.rgb}, 0.28)`,
+                      }}
+                    >
+                      <Icon size={26} style={{ color: step.color }} />
+                    </div>
+                    {/* Big number */}
+                    <span
+                      className="text-[2.4rem] font-black leading-none"
+                      style={{ color: `rgba(${step.rgb}, 0.18)` }}
+                    >
+                      {step.n}
+                    </span>
+                    <h3 className="text-[0.9rem] font-extrabold text-gray-900">{step.title}</h3>
+                    <p className="text-[0.75rem] leading-relaxed text-gray-400">{step.desc}</p>
+                  </motion.div>
+
+                  {/* Connector arrow */}
+                  {i < STEPS.length - 1 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={viewport}
+                      transition={{ duration: 0.4, delay: i * 0.15 + 0.3 }}
+                      className="hidden sm:flex items-center justify-center px-4 pt-7"
+                    >
+                      <svg width="52" height="22" viewBox="0 0 52 22" fill="none">
+                        <motion.path
+                          d="M2 11 C 14 11, 38 11, 46 11"
+                          stroke="rgba(201,165,90,0.35)"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          fill="none"
+                          initial={{ pathLength: 0 }}
+                          whileInView={{ pathLength: 1 }}
+                          viewport={viewport}
+                          transition={{ duration: 0.55, delay: i * 0.15 + 0.4 }}
+                        />
+                        <motion.path
+                          d="M40 5 L46 11 L40 17"
+                          stroke="rgba(201,165,90,0.55)"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
+                          initial={{ pathLength: 0 }}
+                          whileInView={{ pathLength: 1 }}
+                          viewport={viewport}
+                          transition={{ duration: 0.3, delay: i * 0.15 + 0.65 }}
+                        />
+                      </svg>
+                    </motion.div>
+                  )}
+                </Fragment>
+              );
+            })}
+          </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════
           OUTILS
       ══════════════════════════════════════════════ */}
-      <section id="outils" className="py-16 sm:py-28 bg-white">
+      <section id="outils" className="bg-white py-20 sm:py-32">
         <div className="mx-auto max-w-6xl px-6">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -343,7 +394,6 @@ export default function EspaceClientPage() {
                   whileHover={{ boxShadow: `0 12px 40px rgba(${tool.rgb}, 0.12)` }}
                   transition={{ duration: 0.3, ease }}
                 >
-                  {/* Icon */}
                   <div
                     className="flex h-10 w-10 items-center justify-center rounded-xl border"
                     style={{
@@ -357,7 +407,7 @@ export default function EspaceClientPage() {
                     <p className="text-[0.82rem] font-extrabold text-gray-900">{tool.title}</p>
                     <p className="mt-1 text-[0.72rem] leading-relaxed text-gray-400">{tool.desc}</p>
                   </div>
-                  {/* Accent bas */}
+                  {/* Accent bas au hover */}
                   <div
                     className="mt-auto h-px w-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                     style={{ background: `linear-gradient(90deg, ${tool.color}, transparent)` }}
@@ -389,7 +439,7 @@ export default function EspaceClientPage() {
       {/* ══════════════════════════════════════════════
           PRICING
       ══════════════════════════════════════════════ */}
-      <section id="abonnement" className="bg-[#f8f9fa] py-16 sm:py-28">
+      <section id="abonnement" className="bg-[#f8f9fa] py-20 sm:py-32">
         <div className="mx-auto max-w-5xl px-6">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -427,12 +477,11 @@ export default function EspaceClientPage() {
                   </div>
                 ))}
               </div>
-
               <div className="mt-4 flex flex-wrap gap-4 border-t border-gray-200 pt-6">
                 {[
-                  { icon: Zap,     text: "Accès immédiat" },
-                  { icon: Lock,    text: "Stripe SSL" },
-                  { icon: Shield,  text: "RGPD" },
+                  { icon: Zap,           text: "Accès immédiat" },
+                  { icon: Lock,          text: "Stripe SSL" },
+                  { icon: Shield,        text: "RGPD" },
                   { icon: MessageCircle, text: "Support 24h" },
                 ].map(({ icon: Icon, text }) => (
                   <span key={text} className="flex items-center gap-1.5 text-[0.72rem] text-gray-400">
@@ -481,7 +530,7 @@ export default function EspaceClientPage() {
                   ))}
                 </ul>
 
-                {/* CTA */}
+                {/* CTA Stripe */}
                 <StripeButton label="Commencer maintenant →" />
 
                 <p className="mt-4 text-center text-[0.65rem] text-gray-400">
@@ -503,46 +552,58 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          CTA FINAL
+          CTA FINAL — dark navy compact strip
       ══════════════════════════════════════════════ */}
       <section
-        className="border-t border-gray-200 py-16 sm:py-24"
-        style={{ background: "linear-gradient(135deg,#6366f1 0%,#4f46e5 50%,#7c3aed 100%)" }}
+        className="relative overflow-hidden py-16 sm:py-20"
+        style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e1b4b 60%,#1e1035 100%)" }}
       >
-        <div className="relative mx-auto max-w-2xl px-6 text-center">
+        {/* Gold accent line */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#c9a55a]/60 to-transparent" />
+        {/* Glow */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(201,165,90,0.05)] blur-[100px]" />
+
+        <div className="relative mx-auto flex max-w-4xl flex-col items-center justify-between gap-8 px-6 text-center sm:flex-row sm:text-left">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={viewport}
             transition={{ duration: 0.6, ease }}
-            className="relative"
           >
-            <p className="mb-4 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-white/70">
-              Commencer maintenant
+            <p className="mb-1 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
+              Prêt à démarrer ?
             </p>
-            <h2 className="text-2xl font-black text-white sm:text-4xl">
-              Prêt à simplifier{" "}
-              <span className="text-[#c9a55a]">votre gestion ?</span>
+            <h2 className="text-xl font-black text-white sm:text-2xl">
+              Simplifiez votre gestion{" "}
+              <span className="text-[#c9a55a]">dès aujourd&apos;hui.</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-sm text-sm text-white/70">
+            <p className="mt-2 text-sm text-white/50">
               Rejoignez les entrepreneurs qui pilotent leur activité avec DJAMA.
             </p>
-            <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Link
-                href="#abonnement"
-                className="group flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#c9a55a] px-9 py-4 text-sm font-bold text-white shadow-[0_8px_32px_rgba(201,165,90,0.32)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_40px_rgba(201,165,90,0.48)] sm:w-auto"
-              >
-                <Wallet size={16} />
-                S&apos;abonner — 11,90€/mois
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/30 bg-white/10 px-9 py-4 text-sm font-bold text-white transition hover:bg-white/20 sm:w-auto"
-              >
-                <LogIn size={15} />
-                Déjà abonné
-              </Link>
-            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.6, ease, delay: 0.1 }}
+            className="flex shrink-0 flex-col gap-3 sm:flex-row"
+          >
+            <Link
+              href="#abonnement"
+              className="group flex items-center gap-2.5 rounded-2xl bg-[#c9a55a] px-8 py-3.5 text-sm font-bold text-white shadow-[0_8px_32px_rgba(201,165,90,0.3)] transition-all duration-200 hover:bg-[#d9b56a] hover:shadow-[0_12px_40px_rgba(201,165,90,0.45)]"
+            >
+              <Wallet size={15} />
+              S&apos;abonner — 11,90€/mois
+              <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link
+              href="/login"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/15 hover:text-white"
+            >
+              <LogIn size={14} />
+              Se connecter
+            </Link>
           </motion.div>
         </div>
       </section>

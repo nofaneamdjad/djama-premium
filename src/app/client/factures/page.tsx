@@ -7,15 +7,16 @@ import {
   Loader2, ArrowLeft, ChevronDown,
   RefreshCw, Building2, User, FileText, Send, BadgeCheck,
   AlertTriangle, ImagePlus, Palette, Landmark, Eye, Percent,
-  Mail, Link2, Copy, Check, Globe,
+  Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
+  TrendingUp, Clock, AlertCircle, DollarSign,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEur, fmtDate } from "@/lib/format";
 import Toast, { type ToastData } from "@/components/ui/Toast";
-import type { TemplateType }      from "@/lib/pdf/types";
-import type { PreviewData }       from "@/components/invoice/shared";
-import { TemplateSelector }       from "@/components/invoice/TemplateSelector";
-import { InvoiceTemplate }        from "@/components/invoice/InvoiceTemplate";
+import type { TemplateType } from "@/lib/pdf/types";
+import type { PreviewData } from "@/components/invoice/shared";
+import { TemplateSelector } from "@/components/invoice/TemplateSelector";
+import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
 
 type DocType   = "facture" | "devis";
 type DocStatut = "brouillon" | "envoyé" | "payé" | "en_retard";
@@ -24,9 +25,11 @@ interface DocItem {
   id?:         string;
   position:    number;
   description: string;
+  unit:        string;
   quantity:    number;
   unit_price:  number;
   vat_rate:    number;
+  remise_pct:  number;
 }
 
 interface Document {
@@ -35,40 +38,56 @@ interface Document {
   type:             DocType;
   numero:           string;
   statut:           DocStatut;
-    sujet:            string;
-    emetteur_nom:     string;
+  sujet:            string;
+  emetteur_nom:     string;
   emetteur_email:   string;
   emetteur_adresse: string;
   emetteur_siret:   string;
+  emetteur_tva:     string;
   emetteur_logo:    string;
-    client_nom:       string;
+  client_nom:       string;
   client_societe:   string;
   client_email:     string;
   client_telephone: string;
   client_adresse:   string;
-    date_document:    string;
+  date_document:    string;
   date_echeance:    string;
-    remise_pct:       number;
+  remise_pct:       number;
   acompte:          number;
-    rib_titulaire:    string;
+  devise:           string;
+  rib_titulaire:    string;
   rib_iban:         string;
   rib_bic:          string;
   rib_banque:       string;
-    notes:            string;
+  notes:            string;
   conditions:       string;
-    couleur:          string;
-    template:         TemplateType;
-    total_ht:         number;
+  mentions_legales: string;
+  couleur:          string;
+  template:         TemplateType;
+  total_ht:         number;
   total_tva:        number;
   total_ttc:        number;
-    created_at:       string;
+  created_at:       string;
   updated_at:       string;
 }
 
 type DraftDoc = Omit<Document,
   "id"|"user_id"|"created_at"|"updated_at"|"total_ht"|"total_tva"|"total_ttc">;
 
+interface CrmClient {
+  id:        string;
+  nom:       string;
+  societe?:  string;
+  email?:    string;
+  telephone?:string;
+  adresse?:  string;
+}
+
 const ease = [0.16, 1, 0.3, 1] as const;
+
+const B = "bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.09)]";
+const BH = "hover:border-[rgba(255,255,255,0.18)]";
+const BF = "focus:border-[rgba(201,165,90,0.4)]";
 
 const STATUTS: Record<DocStatut,{label:string;color:string;bg:string;border:string;Icon:React.ElementType}> = {
   brouillon: { label:"Brouillon", color:"#94a3b8", bg:"rgba(148,163,184,0.1)", border:"rgba(148,163,184,0.25)", Icon:FileText     },
@@ -87,114 +106,160 @@ const COLOR_PRESETS = [
   { hex:"#e2e8f0", label:"Blanc"    },
 ];
 
-const VAT_RATES = [0, 5.5, 10, 20];
+const VAT_RATES = [0, 2.1, 5.5, 8.5, 10, 20];
 
-const EMPTY_ITEM = (): DocItem => ({
-  position: 0, description: "", quantity: 1, unit_price: 0, vat_rate: 20,
-});
+const UNITS = [
+  { val: "",        label: "—"       },
+  { val: "h",       label: "h"       },
+  { val: "j",       label: "j"       },
+  { val: "forfait", label: "forfait" },
+  { val: "pièce",   label: "pièce"   },
+  { val: "m²",      label: "m²"      },
+  { val: "km",      label: "km"      },
+  { val: "kg",      label: "kg"      },
+  { val: "mois",    label: "mois"    },
+  { val: "lot",     label: "lot"     },
+];
 
-const EMPTY_DRAFT = (): DraftDoc => ({
-  type:"facture", numero:"", statut:"brouillon",
-  sujet:"",
-  emetteur_nom:"", emetteur_email:"", emetteur_adresse:"", emetteur_siret:"", emetteur_logo:"",
-  client_nom:"", client_societe:"", client_email:"", client_telephone:"", client_adresse:"",
-  date_document: new Date().toISOString().slice(0,10),
-  date_echeance:"",
-  remise_pct: 0, acompte: 0,
-  rib_titulaire:"", rib_iban:"", rib_bic:"", rib_banque:"",
-  notes:"", conditions:"",
-  couleur:"#c9a55a",
-  template: "modern" as TemplateType,
-});
+const CURRENCIES = [
+  { val: "EUR", symbol: "€",  label: "Euro (€)"       },
+  { val: "USD", symbol: "$",  label: "Dollar US ($)"  },
+  { val: "GBP", symbol: "£",  label: "Livre (£)"      },
+  { val: "CHF", symbol: "Fr", label: "Franc suisse"   },
+  { val: "CAD", symbol: "C$", label: "Dollar CA"      },
+  { val: "MAD", symbol: "DH", label: "Dirham (DH)"    },
+  { val: "XOF", symbol: "CFA",label: "Franc CFA"      },
+  { val: "DZD", symbol: "DA", label: "Dinar (DA)"     },
+];
 
-function calcTotals(items: DocItem[], remise_pct = 0, acompte = 0) {
+const CONDITIONS_PRESETS = [
+  { label: "30 j nets",  val: "Paiement à 30 jours nets à compter de la date de facturation." },
+  { label: "45 j nets",  val: "Paiement à 45 jours nets à compter de la date de facturation." },
+  { label: "60 j nets",  val: "Paiement à 60 jours nets à compter de la date de facturation." },
+  { label: "Comptant",   val: "Paiement comptant à réception de la facture." },
+];
+
+const MENTIONS_PRESETS = [
+  { label: "Auto-entrepreneur", val: "TVA non applicable, art. 293 B du CGI." },
+  { label: "Franchise TVA",     val: "Membre d'un centre de gestion agréé — le règlement des honoraires par chèque est accepté." },
+  { label: "Pénalités retard",  val: "En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal seront appliquées, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement." },
+];
+
+function r2(n: number) { return Math.round(n * 100) / 100; }
+
+function fmtAmount(n: number, devise = "EUR") {
+  const cur = CURRENCIES.find(c => c.val === devise);
+  const symbol = cur?.symbol ?? "€";
+  const formatted = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  return devise === "EUR" ? `${formatted} €` : `${formatted} ${symbol}`;
+}
+
+function calcTotals(items: DocItem[], globalRemise = 0, acompte = 0) {
+  const tvaByRate = new Map<number, { ht: number; tva: number }>();
   let htRaw = 0, tvaRaw = 0;
   for (const it of items) {
-    const lineHT = it.quantity * it.unit_price;
+    const gross   = r2(it.quantity * it.unit_price);
+    const lineRem = r2(gross * (it.remise_pct || 0) / 100);
+    const lineHT  = r2(gross - lineRem);
+    const lineTVA = r2(lineHT * it.vat_rate / 100);
     htRaw  += lineHT;
-    tvaRaw += lineHT * it.vat_rate / 100;
+    tvaRaw += lineTVA;
+    const cur = tvaByRate.get(it.vat_rate) ?? { ht: 0, tva: 0 };
+    tvaByRate.set(it.vat_rate, { ht: r2(cur.ht + lineHT), tva: r2(cur.tva + lineTVA) });
   }
   const subtotal_ht = r2(htRaw);
-  const remise      = r2(subtotal_ht * remise_pct / 100);
+  const remise      = r2(subtotal_ht * globalRemise / 100);
   const ht          = r2(subtotal_ht - remise);
   const factor      = subtotal_ht > 0 ? ht / subtotal_ht : 1;
   const tva         = r2(tvaRaw * factor);
   const ttc         = r2(ht + tva);
   const acompteVal  = r2(Math.min(acompte, ttc));
-  return { subtotal_ht, remise, ht, tva, ttc, acompte: acompteVal };
+  return { subtotal_ht, remise, ht, tva, ttc, acompte: acompteVal, tvaByRate };
 }
-function r2(n: number) { return Math.round(n * 100) / 100; }
 
 function newNumero(type: DocType, docs: Document[]): string {
   const prefix = type === "facture" ? "FAC" : "DEV";
-  const n = docs.filter(d => d.type === type).length + 1;
-  return `${prefix}-${new Date().getFullYear()}-${String(n).padStart(3, "0")}`;
+  const year   = new Date().getFullYear();
+  const yearDocs = docs.filter(d => d.type === type && d.numero?.includes(String(year)));
+  const nums = yearDocs
+    .map(d => parseInt(d.numero.split("-").pop() ?? "0", 10))
+    .filter(n => !isNaN(n));
+  const next = nums.length ? Math.max(...nums) + 1 : 1;
+  return `${prefix}-${year}-${String(next).padStart(3, "0")}`;
 }
+
 function hexToRgb(hex: string): [number, number, number] {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return [isNaN(r) ? 201 : r, isNaN(g) ? 165 : g, isNaN(b) ? 90 : b];
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return [isNaN(r)?201:r, isNaN(g)?165:g, isNaN(b)?90:b];
 }
 function contrastColor(hex: string): "#0a0a0a"|"#ffffff" {
-  const [r, g, b] = hexToRgb(hex);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? "#0a0a0a" : "#ffffff";
+  const [r,g,b] = hexToRgb(hex);
+  return (0.299*r+0.587*g+0.114*b)/255 > 0.55 ? "#0a0a0a" : "#ffffff";
 }
+
+const EMPTY_ITEM = (): DocItem => ({
+  position:0, description:"", unit:"", quantity:1, unit_price:0, vat_rate:20, remise_pct:0,
+});
+
+const EMPTY_DRAFT = (): DraftDoc => ({
+  type:"facture", numero:"", statut:"brouillon",
+  sujet:"",
+  emetteur_nom:"", emetteur_email:"", emetteur_adresse:"", emetteur_siret:"", emetteur_tva:"", emetteur_logo:"",
+  client_nom:"", client_societe:"", client_email:"", client_telephone:"", client_adresse:"",
+  date_document: new Date().toISOString().slice(0,10),
+  date_echeance:"",
+  remise_pct:0, acompte:0, devise:"EUR",
+  rib_titulaire:"", rib_iban:"", rib_bic:"", rib_banque:"",
+  notes:"", conditions:"", mentions_legales:"",
+  couleur:"#c9a55a",
+  template:"modern" as TemplateType,
+});
 
 async function exportPDFWithTemplate(
   draft:        DraftDoc,
   items:        DocItem[],
   totals:       ReturnType<typeof calcTotals>,
-  logoSize?:    "sm" | "md" | "lg",
-  logoHideName?: boolean,
+  logoSize?:    "sm"|"md"|"lg",
+  logoHideName?:boolean,
 ) {
   const { generatePdf } = await import("@/lib/pdf/generatePdf");
-
   const mainTaxRate = items[0]?.vat_rate ?? 20;
-
+  const footerParts = [draft.conditions, draft.mentions_legales].filter(Boolean);
   await generatePdf({
-    type:            draft.type === "facture" ? "invoice" : "quote",
-    template:        draft.template ?? "modern",
-    reference:       draft.numero || (draft.type === "facture" ? "FACTURE" : "DEVIS"),
-    issue_date:      draft.date_document,
-    due_date:        draft.type === "facture" ? (draft.date_echeance || null) : null,
-    valid_until:     draft.type === "devis"   ? (draft.date_echeance || null) : null,
-
-        client_name:     draft.client_nom      || "(Client)",
-    client_company:  draft.client_societe  || null,
-    client_email:    draft.client_email,
-    client_phone:    draft.client_telephone || null,
-    client_address:  draft.client_adresse  || null,
-
-        subject:         draft.sujet || draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
-
-        items: items.map(it => ({
-      description: it.description || "(description)",
-      quantity:    it.quantity,
-      unit_price:  it.unit_price,
-      total:       r2(it.quantity * it.unit_price),
-      tax_rate:    it.vat_rate,
-    })),
-
-        subtotal:      totals.subtotal_ht,
+    type:        draft.type === "facture" ? "invoice" : "quote",
+    template:    draft.template ?? "modern",
+    reference:   draft.numero || (draft.type === "facture" ? "FACTURE" : "DEVIS"),
+    issue_date:  draft.date_document,
+    due_date:    draft.type === "facture" ? (draft.date_echeance || null) : null,
+    valid_until: draft.type === "devis"   ? (draft.date_echeance || null) : null,
+    client_name:    draft.client_nom     || "(Client)",
+    client_company: draft.client_societe || null,
+    client_email:   draft.client_email,
+    client_phone:   draft.client_telephone || null,
+    client_address: draft.client_adresse   || null,
+    subject:     draft.sujet || draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
+    items: items.map(it => {
+      const gross  = r2(it.quantity * it.unit_price);
+      const lineRem = r2(gross * (it.remise_pct||0) / 100);
+      const lineHT  = r2(gross - lineRem);
+      const desc = [it.unit ? `[${it.unit}]` : "", it.description || "(description)"].filter(Boolean).join(" ");
+      return { description: desc, quantity: it.quantity, unit_price: it.unit_price, total: lineHT, tax_rate: it.vat_rate };
+    }),
+    subtotal:      totals.subtotal_ht,
     discount_rate: draft.remise_pct > 0 ? draft.remise_pct : null,
     discount:      totals.remise > 0    ? totals.remise    : null,
     tax_rate:      mainTaxRate,
     tax_amount:    totals.tva,
     total:         totals.ttc,
-
-        deposit:       draft.acompte > 0 ? draft.acompte      : null,
-    deposit_label: draft.acompte > 0 ? "Acompte verse"    : null,
-
-        rib_titulaire: draft.rib_titulaire || null,
+    deposit:       draft.acompte > 0 ? draft.acompte   : null,
+    deposit_label: draft.acompte > 0 ? "Acompte versé" : null,
+    rib_titulaire: draft.rib_titulaire || null,
     rib_iban:      draft.rib_iban      || null,
     rib_bic:       draft.rib_bic       || null,
     rib_banque:    draft.rib_banque    || null,
-
-        notes:         draft.notes      || null,
-    footer_text:   draft.conditions || null,
-
-        company: {
+    notes:         draft.notes || null,
+    footer_text:   footerParts.join("\n\n") || null,
+    company: {
       logoUrl:      draft.emetteur_logo    || null,
       name:         draft.emetteur_nom     || "",
       email:        draft.emetteur_email   || "",
@@ -208,11 +273,7 @@ async function exportPDFWithTemplate(
   });
 }
 
-function draftToPreviewData(
-  draft:  DraftDoc,
-  items:  DocItem[],
-  totals: ReturnType<typeof calcTotals>,
-): PreviewData {
+function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnType<typeof calcTotals>): PreviewData {
   return {
     type:           draft.type === "facture" ? "invoice" : "quote",
     reference:      draft.numero || (draft.type === "facture" ? "FAC-2026-001" : "DEV-2026-001"),
@@ -229,17 +290,17 @@ function draftToPreviewData(
       unit_price:  it.unit_price,
       total:       r2(it.quantity * it.unit_price),
     })),
-    subtotal:   totals.subtotal_ht,
-    tax_rate:   items[0]?.vat_rate ?? 20,
-    tax_amount: totals.tva,
-    total:      totals.ttc,
-    notes:      draft.notes || null,
-    color:      draft.couleur || "#c9a55a",
+    subtotal:    totals.subtotal_ht,
+    tax_rate:    items[0]?.vat_rate ?? 20,
+    tax_amount:  totals.tva,
+    total:       totals.ttc,
+    notes:       draft.notes || null,
+    color:       draft.couleur || "#c9a55a",
     valid_until: draft.type !== "facture" ? (draft.date_echeance || null) : null,
     company: {
-      name:    draft.emetteur_nom  || "DJAMA",
+      name:    draft.emetteur_nom   || "DJAMA",
       email:   draft.emetteur_email,
-      logoUrl: draft.emetteur_logo || null,
+      logoUrl: draft.emetteur_logo  || null,
     },
   };
 }
@@ -258,15 +319,15 @@ function DInput({ label, value, onChange, placeholder, type="text", small }:
   { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; type?:string; small?:boolean }) {
   const [focused, setFocused] = useState(false);
   const cls = small
-    ? "w-full rounded-lg border border-gray-200bg-gray-100 px-2.5 py-1.5 text-xs text-white placeholder:text-white/20 outline-none transition hover:border-white/20"
-    : "w-full rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20";
+    ? `w-full rounded-lg ${B} ${BH} px-2.5 py-1.5 text-xs text-white placeholder:text-white/20 outline-none transition`
+    : `w-full rounded-xl ${B} ${BH} ${BF} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition`;
   return (
     <div>
       {label && <label className="mb-1 block text-[0.65rem] font-medium text-white/35">{label}</label>}
       <div className="relative">
-        <motion.div animate={{ opacity: focused ? 1 : 0 }} transition={{ duration: 0.15 }}
+        <motion.div animate={{ opacity: focused ? 1 : 0 }} transition={{ duration:0.15 }}
           className="pointer-events-none absolute inset-0 rounded-xl"
-          style={{ boxShadow: "0 0 0 2px rgba(201,165,90,0.35)" }}/>
+          style={{ boxShadow:"0 0 0 2px rgba(201,165,90,0.35)" }}/>
         <input type={type} value={value} onChange={e => onChange(e.target.value)}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
           placeholder={placeholder} className={cls}/>
@@ -275,13 +336,36 @@ function DInput({ label, value, onChange, placeholder, type="text", small }:
   );
 }
 
-function DTextarea({ label, value, onChange, placeholder, rows=3 }:
-  { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; rows?:number }) {
+function DSelect({ label, value, onChange, options, small }:
+  { label?:string; value:string; onChange:(v:string)=>void; options:{val:string;label:string}[]; small?:boolean }) {
+  const cls = small
+    ? `w-full rounded-lg ${B} ${BH} px-2 py-1.5 text-xs text-white outline-none transition appearance-none cursor-pointer`
+    : `w-full rounded-xl ${B} ${BH} ${BF} px-3.5 py-2.5 text-sm text-white outline-none transition appearance-none cursor-pointer`;
   return (
     <div>
       {label && <label className="mb-1 block text-[0.65rem] font-medium text-white/35">{label}</label>}
+      <div className="relative">
+        <select value={value} onChange={e => onChange(e.target.value)} className={cls}>
+          {options.map(o => <option key={o.val} value={o.val} style={{ background:"#0f1117" }}>{o.label}</option>)}
+        </select>
+        <ChevronDown size={10} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30"/>
+      </div>
+    </div>
+  );
+}
+
+function DTextarea({ label, value, onChange, placeholder, rows=3, hint }:
+  { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; rows?:number; hint?:string }) {
+  return (
+    <div>
+      {label && (
+        <div className="mb-1 flex items-center justify-between">
+          <label className="text-[0.65rem] font-medium text-white/35">{label}</label>
+          {hint && <span className="text-[0.58rem] text-white/20">{hint}</span>}
+        </div>
+      )}
       <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-        className="w-full resize-none rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
+        className={`w-full resize-none rounded-xl ${B} ${BH} ${BF} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition`}/>
     </div>
   );
 }
@@ -336,20 +420,20 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
       <div className="flex items-center gap-3">
         {value ? (
           <div className="relative group">
-                        <img src={value} alt="Logo" className="h-12 w-auto max-w-[120px] rounded-lg border border-gray-200bg-gray-100 object-contain p-1"/>
+            <img src={value} alt="Logo" className={`h-12 w-auto max-w-[120px] rounded-lg ${B} object-contain p-1`}/>
             <button onClick={() => onChange("")}
-              className="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full border border-red-500/30 bg-white text-red-400 transition group-hover:flex">
+              className="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full border border-red-500/30 bg-[#0a0f1e] text-red-400 transition group-hover:flex">
               <X size={10}/>
             </button>
           </div>
         ) : (
           <div onClick={() => ref.current?.click()}
-            className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white/3 text-white/25 transition hover:border-white/30 hover:text-gray-500">
+            className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/3 text-white/25 transition hover:border-white/30`}>
             <ImagePlus size={18}/>
           </div>
         )}
         <button onClick={() => ref.current?.click()}
-          className="text-[0.7rem] font-semibold text-white/35 underline-offset-2 transition hover:text-gray-600 hover:underline">
+          className="text-[0.7rem] font-semibold text-white/35 underline-offset-2 transition hover:text-white/60 hover:underline">
           {value ? "Remplacer" : "Importer le logo"}
         </button>
         <input ref={ref} type="file" accept="image/*" onChange={handleFile} className="hidden"/>
@@ -358,66 +442,79 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
   );
 }
 
+function SectionLabel({ icon, label, hint }: { icon?: React.ReactNode; label: string; hint?: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      {icon && <span className="shrink-0 text-white/25">{icon}</span>}
+      <span className="shrink-0 text-[0.63rem] font-bold uppercase tracking-widest text-white/30">{label}</span>
+      <div className="flex-1 h-px bg-white/[0.06]"/>
+      {hint && <span className="shrink-0 text-[0.58rem] text-white/20">{hint}</span>}
+    </div>
+  );
+}
+
 export default function FacturesPage() {
-  const [documents,   setDocuments]   = useState<Document[]>([]);
-  const [selected,    setSelected]    = useState<Document|null>(null);
-  const [draft,       setDraft]       = useState<DraftDoc|null>(null);
-  const [items,       setItems]       = useState<DocItem[]>([EMPTY_ITEM()]);
-  const [dirty,       setDirty]       = useState(false);
-  const [loadingAll,  setLoadingAll]  = useState(true);
-  const [saving,      setSaving]      = useState(false);
-  const [deleting,    setDeleting]    = useState(false);
-  const [converting,  setConverting]  = useState(false);
-  const [toast,       setToast]       = useState<ToastData | null>(null);
-  const [query,       setQuery]       = useState("");
-  const [filterType,  setFilterType]  = useState<"tous"|DocType>("tous");
-  const [mobileView,  setMobileView]  = useState<"list"|"editor">("list");
-  const [confirmDel,  setConfirmDel]  = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [documents,    setDocuments]    = useState<Document[]>([]);
+  const [selected,     setSelected]     = useState<Document|null>(null);
+  const [draft,        setDraft]        = useState<DraftDoc|null>(null);
+  const [items,        setItems]        = useState<DocItem[]>([EMPTY_ITEM()]);
+  const [dirty,        setDirty]        = useState(false);
+  const [loadingAll,   setLoadingAll]   = useState(true);
+  const [saving,       setSaving]       = useState(false);
+  const [deleting,     setDeleting]     = useState(false);
+  const [converting,   setConverting]   = useState(false);
+  const [duplicating,  setDuplicating]  = useState(false);
+  const [toast,        setToast]        = useState<ToastData|null>(null);
+  const [query,        setQuery]        = useState("");
+  const [filterType,   setFilterType]   = useState<"tous"|DocType>("tous");
+  const [mobileView,   setMobileView]   = useState<"list"|"editor">("list");
+  const [confirmDel,   setConfirmDel]   = useState(false);
+  const [showPreview,  setShowPreview]  = useState(false);
 
-    const [logoSize,     setLogoSize]     = useState<"sm"|"md"|"lg">(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("pdf.logo_size") as "sm"|"md"|"lg") ?? "md";
-    }
-    return "md";
-  });
-  const [logoHideName, setLogoHideName] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("pdf.logo_hide_name") === "true";
-    }
-    return false;
-  });
+  const [logoSize,     setLogoSize]     = useState<"sm"|"md"|"lg">(() =>
+    typeof window !== "undefined" ? ((localStorage.getItem("pdf.logo_size") as "sm"|"md"|"lg") ?? "md") : "md");
+  const [logoHideName, setLogoHideName] = useState<boolean>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pdf.logo_hide_name") === "true" : false);
 
-    const [emailModal,   setEmailModal]   = useState(false);
+  const [emailModal,   setEmailModal]   = useState(false);
   const [emailTo,      setEmailTo]      = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMsg,     setEmailMsg]     = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
 
-    const [payLinkModal,   setPayLinkModal]   = useState(false);
+  const [payLinkModal,   setPayLinkModal]   = useState(false);
   const [payLinkLoading, setPayLinkLoading] = useState(false);
   const [payLinkUrl,     setPayLinkUrl]     = useState("");
   const [copied,         setCopied]         = useState(false);
 
-    const [portalModal,   setPortalModal]   = useState(false);
+  const [portalModal,   setPortalModal]   = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalUrl,     setPortalUrl]     = useState("");
   const [portalCopied,  setPortalCopied]  = useState(false);
+
+  const [crmModal,      setCrmModal]      = useState(false);
+  const [crmQuery,      setCrmQuery]      = useState("");
+  const [crmClients,    setCrmClients]    = useState<CrmClient[]>([]);
+  const [crmLoading,    setCrmLoading]    = useState(false);
 
   const totals = useMemo(
     () => calcTotals(items, draft?.remise_pct ?? 0, draft?.acompte ?? 0),
     [items, draft?.remise_pct, draft?.acompte]
   );
 
-    const fetchDocs = useCallback(async () => {
+  const stats = useMemo(() => {
+    const factures = documents.filter(d => d.type === "facture");
+    const ca       = factures.filter(d => d.statut === "payé").reduce((s,d) => s + (d.total_ttc||0), 0);
+    const pending  = factures.filter(d => d.statut === "envoyé").length;
+    const overdue  = factures.filter(d => d.statut === "en_retard").length;
+    return { ca, pending, overdue };
+  }, [documents]);
+
+  const fetchDocs = useCallback(async () => {
     setLoadingAll(true);
-    const { data, error } = await supabase.from("documents").select("*").order("updated_at", { ascending: false }).limit(200);
-    if (error) {
-      console.error("[fetchDocs]", error);
-      showToast("error", `Chargement impossible : ${error.message}`);
-    } else {
-      setDocuments((data as Document[]) ?? []);
-    }
+    const { data, error } = await supabase.from("documents").select("*").order("updated_at", { ascending:false }).limit(300);
+    if (error) showToast("error", `Chargement impossible : ${error.message}`);
+    else setDocuments((data as Document[]) ?? []);
     setLoadingAll(false);
   }, []);
 
@@ -425,7 +522,7 @@ export default function FacturesPage() {
 
   function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
 
-    async function openDoc(doc: Document) {
+  async function openDoc(doc: Document) {
     setSelected(doc);
     setDraft({
       type:             doc.type,
@@ -436,6 +533,7 @@ export default function FacturesPage() {
       emetteur_email:   doc.emetteur_email    ?? "",
       emetteur_adresse: doc.emetteur_adresse  ?? "",
       emetteur_siret:   doc.emetteur_siret    ?? "",
+      emetteur_tva:     doc.emetteur_tva      ?? "",
       emetteur_logo:    doc.emetteur_logo     ?? "",
       client_nom:       doc.client_nom        ?? "",
       client_societe:   doc.client_societe    ?? "",
@@ -446,12 +544,14 @@ export default function FacturesPage() {
       date_echeance:    doc.date_echeance     ?? "",
       remise_pct:       doc.remise_pct        ?? 0,
       acompte:          doc.acompte           ?? 0,
+      devise:           doc.devise            ?? "EUR",
       rib_titulaire:    doc.rib_titulaire     ?? "",
       rib_iban:         doc.rib_iban          ?? "",
       rib_bic:          doc.rib_bic           ?? "",
       rib_banque:       doc.rib_banque        ?? "",
       notes:            doc.notes             ?? "",
       conditions:       doc.conditions        ?? "",
+      mentions_legales: doc.mentions_legales  ?? "",
       couleur:          doc.couleur           ?? "#c9a55a",
       template:         (doc.template as TemplateType) ?? "modern",
     });
@@ -461,7 +561,7 @@ export default function FacturesPage() {
     setMobileView("editor");
   }
 
-    function newDoc(type: DocType = "facture") {
+  function newDoc(type: DocType = "facture") {
     setSelected(null);
     setDraft({ ...EMPTY_DRAFT(), type, numero: newNumero(type, documents) });
     setItems([EMPTY_ITEM()]);
@@ -469,29 +569,26 @@ export default function FacturesPage() {
     setMobileView("editor");
   }
 
-  function updDraft(k: keyof DraftDoc, v: string | number) {
+  function updDraft(k: keyof DraftDoc, v: string|number) {
     setDraft(d => d ? { ...d, [k]: v } : d);
     setDirty(true);
   }
 
-    function updItem(idx: number, k: keyof DocItem, v: string|number) {
+  function updItem(idx: number, k: keyof DocItem, v: string|number) {
     setItems(p => p.map((it, i) => i === idx ? { ...it, [k]: v } : it));
     setDirty(true);
   }
   function addItem()  { setItems(p => [...p, { ...EMPTY_ITEM(), position: p.length }]); setDirty(true); }
   function removeItem(idx: number) {
-    setItems(p => p.filter((_, i) => i !== idx).map((it, i) => ({ ...it, position: i })));
+    setItems(p => p.filter((_,i) => i !== idx).map((it,i) => ({ ...it, position:i })));
     setDirty(true);
   }
 
-    async function handleSave() {
+  async function handleSave() {
     if (!draft) { showToast("error", "Aucun document ouvert."); return; }
     setSaving(true);
-
-    const { data: { user }, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !user) {
-      showToast("error", "Non connecté."); setSaving(false); return;
-    }
+    const { data:{ user }, error:authErr } = await supabase.auth.getUser();
+    if (authErr || !user) { showToast("error", "Non connecté."); setSaving(false); return; }
 
     const payload = {
       type:             draft.type,
@@ -502,6 +599,7 @@ export default function FacturesPage() {
       emetteur_email:   draft.emetteur_email,
       emetteur_adresse: draft.emetteur_adresse,
       emetteur_siret:   draft.emetteur_siret,
+      emetteur_tva:     draft.emetteur_tva,
       emetteur_logo:    draft.emetteur_logo,
       client_nom:       draft.client_nom,
       client_societe:   draft.client_societe,
@@ -512,12 +610,14 @@ export default function FacturesPage() {
       date_echeance:    draft.date_echeance || null,
       remise_pct:       draft.remise_pct,
       acompte:          draft.acompte,
+      devise:           draft.devise || "EUR",
       rib_titulaire:    draft.rib_titulaire,
       rib_iban:         draft.rib_iban,
       rib_bic:          draft.rib_bic,
       rib_banque:       draft.rib_banque,
       notes:            draft.notes,
       conditions:       draft.conditions,
+      mentions_legales: draft.mentions_legales,
       couleur:          draft.couleur,
       template:         draft.template ?? "modern",
       total_ht:         totals.ht,
@@ -530,14 +630,14 @@ export default function FacturesPage() {
     if (selected) {
       const { error } = await supabase.from("documents").update(payload).eq("id", selected.id);
       if (error) {
-        const msg = [error.message, error.details, error.hint].filter(Boolean).join(" | ");
-        showToast("error", `Erreur : ${msg}`); setSaving(false); return;
+        showToast("error", `Erreur : ${[error.message, error.details, error.hint].filter(Boolean).join(" | ")}`);
+        setSaving(false); return;
       }
     } else {
-      const { data, error } = await supabase.from("documents").insert({ ...payload, user_id: user.id }).select().single();
+      const { data, error } = await supabase.from("documents").insert({ ...payload, user_id:user.id }).select().single();
       if (error) {
-        const msg = [error.message, error.details, error.hint].filter(Boolean).join(" | ");
-        showToast("error", `Erreur : ${msg}`); setSaving(false); return;
+        showToast("error", `Erreur : ${[error.message, error.details, error.hint].filter(Boolean).join(" | ")}`);
+        setSaving(false); return;
       }
       docId = (data as Document).id;
     }
@@ -545,10 +645,15 @@ export default function FacturesPage() {
     if (docId) {
       await supabase.from("document_items").delete().eq("document_id", docId);
       if (items.length) {
-        const rows = items.map((it, i) => ({
-          document_id: docId, position: i,
-          description: it.description, quantity: it.quantity,
-          unit_price: it.unit_price, vat_rate: it.vat_rate,
+        const rows = items.map((it,i) => ({
+          document_id:  docId,
+          position:     i,
+          description:  it.description,
+          unit:         it.unit        || "",
+          quantity:     it.quantity,
+          unit_price:   it.unit_price,
+          vat_rate:     it.vat_rate,
+          remise_pct:   it.remise_pct  || 0,
         }));
         const { error } = await supabase.from("document_items").insert(rows);
         if (error) { showToast("error", `Lignes : ${error.message}`); setSaving(false); return; }
@@ -556,8 +661,7 @@ export default function FacturesPage() {
     }
 
     showToast("success", "Document enregistré");
-    setDirty(false);
-    setSaving(false);
+    setDirty(false); setSaving(false);
     await fetchDocs();
     if (docId) {
       const { data } = await supabase.from("documents").select("*").eq("id", docId).single();
@@ -565,7 +669,7 @@ export default function FacturesPage() {
     }
   }
 
-    async function handleDelete() {
+  async function handleDelete() {
     if (!selected) return;
     setDeleting(true);
     const { error } = await supabase.from("documents").delete().eq("id", selected.id);
@@ -576,7 +680,7 @@ export default function FacturesPage() {
     showToast("success", "Document supprimé.");
   }
 
-    async function handleStatut(statut: DocStatut) {
+  async function handleStatut(statut: DocStatut) {
     if (!selected) return;
     const { error } = await supabase.from("documents").update({ statut }).eq("id", selected.id);
     if (error) { showToast("error", error.message); return; }
@@ -586,40 +690,42 @@ export default function FacturesPage() {
     showToast("success", `Statut : ${STATUTS[statut].label}`);
   }
 
-    async function handleConvert() {
+  async function handleConvert() {
     if (!selected || selected.type !== "devis") return;
     setConverting(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data:{ user } } = await supabase.auth.getUser();
     if (!user) { setConverting(false); return; }
     const newNum = newNumero("facture", documents);
     const { data: newDoc, error } = await supabase.from("documents").insert({
-      user_id: user.id, type: "facture", numero: newNum, statut: "brouillon",
-      sujet: selected.sujet ?? "",
-      emetteur_nom: selected.emetteur_nom, emetteur_email: selected.emetteur_email,
-      emetteur_adresse: selected.emetteur_adresse, emetteur_siret: selected.emetteur_siret,
-      emetteur_logo: selected.emetteur_logo ?? "",
-      client_nom: selected.client_nom, client_societe: selected.client_societe ?? "",
-      client_email: selected.client_email, client_telephone: selected.client_telephone ?? "",
-      client_adresse: selected.client_adresse,
-      date_document: new Date().toISOString().slice(0, 10),
-      date_echeance: selected.date_echeance,
-      remise_pct: selected.remise_pct ?? 0, acompte: 0,
-      rib_titulaire: selected.rib_titulaire ?? "", rib_iban: selected.rib_iban ?? "",
-      rib_bic: selected.rib_bic ?? "", rib_banque: selected.rib_banque ?? "",
-      notes: selected.notes, conditions: selected.conditions,
-      couleur: selected.couleur ?? "#c9a55a", template: selected.template ?? "modern",
-      total_ht: selected.total_ht, total_tva: selected.total_tva, total_ttc: selected.total_ttc,
+      user_id: user.id, type:"facture", numero:newNum, statut:"brouillon",
+      sujet:             selected.sujet ?? "",
+      emetteur_nom:      selected.emetteur_nom,      emetteur_email: selected.emetteur_email,
+      emetteur_adresse:  selected.emetteur_adresse,  emetteur_siret: selected.emetteur_siret,
+      emetteur_tva:      selected.emetteur_tva      ?? "",
+      emetteur_logo:     selected.emetteur_logo     ?? "",
+      client_nom:        selected.client_nom,         client_societe: selected.client_societe ?? "",
+      client_email:      selected.client_email,       client_telephone: selected.client_telephone ?? "",
+      client_adresse:    selected.client_adresse,
+      date_document:     new Date().toISOString().slice(0,10),
+      date_echeance:     selected.date_echeance,
+      remise_pct:        selected.remise_pct ?? 0,    acompte:0,
+      devise:            selected.devise ?? "EUR",
+      rib_titulaire:     selected.rib_titulaire ?? "", rib_iban: selected.rib_iban ?? "",
+      rib_bic:           selected.rib_bic ?? "",       rib_banque: selected.rib_banque ?? "",
+      notes:             selected.notes,               conditions: selected.conditions,
+      mentions_legales:  selected.mentions_legales  ?? "",
+      couleur:           selected.couleur ?? "#c9a55a", template: selected.template ?? "modern",
+      total_ht:          selected.total_ht,  total_tva: selected.total_tva, total_ttc: selected.total_ttc,
     }).select().single();
-    if (error || !newDoc) {
-      showToast("error", "Erreur lors de la conversion."); setConverting(false); return;
-    }
+    if (error || !newDoc) { showToast("error", "Erreur lors de la conversion."); setConverting(false); return; }
     const { data: srcItems } = await supabase.from("document_items").select("*").eq("document_id", selected.id);
     if (srcItems?.length) {
       await supabase.from("document_items").insert(
-        (srcItems as (DocItem & { document_id: string })[]).map((it, i) => ({
-          document_id: (newDoc as Document).id, position: i,
-          description: it.description, quantity: it.quantity,
-          unit_price: it.unit_price, vat_rate: it.vat_rate,
+        (srcItems as (DocItem & { document_id:string })[]).map((it,i) => ({
+          document_id: (newDoc as Document).id, position:i,
+          description: it.description, unit: it.unit||"",
+          quantity: it.quantity, unit_price: it.unit_price,
+          vat_rate: it.vat_rate, remise_pct: it.remise_pct||0,
         }))
       );
     }
@@ -629,11 +735,58 @@ export default function FacturesPage() {
     openDoc(newDoc as Document);
   }
 
-    function openEmailModal() {
+  async function handleDuplicate() {
+    if (!selected || !draft) return;
+    setDuplicating(true);
+    const { data:{ user } } = await supabase.auth.getUser();
+    if (!user) { setDuplicating(false); return; }
+    const newNum = newNumero(draft.type, documents);
+    const { data: newDoc, error } = await supabase.from("documents").insert({
+      user_id:           user.id,
+      type:              draft.type,
+      numero:            newNum,
+      statut:            "brouillon",
+      sujet:             draft.sujet,
+      emetteur_nom:      draft.emetteur_nom,      emetteur_email:   draft.emetteur_email,
+      emetteur_adresse:  draft.emetteur_adresse,  emetteur_siret:   draft.emetteur_siret,
+      emetteur_tva:      draft.emetteur_tva,       emetteur_logo:    draft.emetteur_logo,
+      client_nom:        draft.client_nom,          client_societe:   draft.client_societe,
+      client_email:      draft.client_email,        client_telephone: draft.client_telephone,
+      client_adresse:    draft.client_adresse,
+      date_document:     new Date().toISOString().slice(0,10),
+      date_echeance:     "",
+      remise_pct:        draft.remise_pct,          acompte:          0,
+      devise:            draft.devise || "EUR",
+      rib_titulaire:     draft.rib_titulaire,       rib_iban:         draft.rib_iban,
+      rib_bic:           draft.rib_bic,             rib_banque:       draft.rib_banque,
+      notes:             draft.notes,               conditions:       draft.conditions,
+      mentions_legales:  draft.mentions_legales,
+      couleur:           draft.couleur,             template:         draft.template ?? "modern",
+      total_ht:          totals.ht,                 total_tva:        totals.tva,
+      total_ttc:         totals.ttc,
+    }).select().single();
+    if (error || !newDoc) { showToast("error", "Erreur duplication."); setDuplicating(false); return; }
+    if (items.length) {
+      await supabase.from("document_items").insert(
+        items.map((it,i) => ({
+          document_id: (newDoc as Document).id, position:i,
+          description: it.description, unit: it.unit||"",
+          quantity: it.quantity, unit_price: it.unit_price,
+          vat_rate: it.vat_rate, remise_pct: it.remise_pct||0,
+        }))
+      );
+    }
+    setDuplicating(false);
+    showToast("success", `Dupliqué → ${newNum}`);
+    await fetchDocs();
+    openDoc(newDoc as Document);
+  }
+
+  function openEmailModal() {
     if (!draft || !selected) return;
     setEmailTo(draft.client_email || "");
     setEmailSubject(`${draft.type === "facture" ? "Facture" : "Devis"} ${draft.numero} — ${draft.emetteur_nom || "DJAMA"}`);
-    setEmailMsg(`Bonjour ${draft.client_nom || ""},\n\nVeuillez trouver ci-dessous les détails de votre ${draft.type === "facture" ? "facture" : "devis"}.\n\nRestant à votre disposition pour toute question.`);
+    setEmailMsg(`Bonjour ${draft.client_nom || ""},\n\nVeuillez trouver ci-joint votre ${draft.type === "facture" ? "facture" : "devis"}.\n\nCordialement,\n${draft.emetteur_nom || "DJAMA"}`);
     setEmailModal(true);
   }
 
@@ -642,122 +795,118 @@ export default function FacturesPage() {
     setSendingEmail(true);
     try {
       const res = await fetch("/api/factures/email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          document_id: selected.id,
-          to_email:    emailTo,
-          to_name:     draft?.client_nom,
-          subject:     emailSubject,
-          message:     emailMsg,
-        }),
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ document_id:selected.id, to_email:emailTo, to_name:draft?.client_nom, subject:emailSubject, message:emailMsg }),
       });
       if (!res.ok) throw new Error("Erreur envoi");
-      showToast("success", "Email envoyé");
-      setEmailModal(false);
-    } catch {
-      showToast("error", "Erreur lors de l'envoi de l'email");
-    } finally {
-      setSendingEmail(false);
-    }
+      showToast("success", "Email envoyé"); setEmailModal(false);
+    } catch { showToast("error", "Erreur lors de l'envoi de l'email"); }
+    finally { setSendingEmail(false); }
   }
 
-    async function handlePaymentLink() {
+  async function handlePaymentLink() {
     if (!selected || !draft) return;
-    setPayLinkLoading(true);
-    setPayLinkUrl("");
-    setPayLinkModal(true);
+    setPayLinkLoading(true); setPayLinkUrl(""); setPayLinkModal(true);
     try {
       const res = await fetch("/api/stripe/payment-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount:      totals.ttc,
-          description: draft.sujet || `${draft.type === "facture" ? "Facture" : "Devis"} ${draft.numero}`,
-          document_id: selected.id,
-          reference:   draft.numero,
-          client_email:draft.client_email,
-        }),
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ amount:totals.ttc, description:draft.sujet||`${draft.type === "facture" ? "Facture":"Devis"} ${draft.numero}`, document_id:selected.id, reference:draft.numero, client_email:draft.client_email }),
       });
-      const data = await res.json() as { url?: string; error?: string };
+      const data = await res.json() as { url?:string; error?:string };
       if (!res.ok || data.error) throw new Error(data.error || "Erreur Stripe");
       setPayLinkUrl(data.url || "");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erreur Stripe";
-      showToast("error", msg);
+      showToast("error", err instanceof Error ? err.message : "Erreur Stripe");
       setPayLinkModal(false);
-    } finally {
-      setPayLinkLoading(false);
-    }
+    } finally { setPayLinkLoading(false); }
   }
 
   async function handleCopyLink() {
     if (!payLinkUrl) return;
     await navigator.clipboard.writeText(payLinkUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
   }
 
-    async function handlePortalLink() {
+  async function handlePortalLink() {
     if (!draft) return;
-    setPortalLoading(true);
-    setPortalUrl("");
-    setPortalModal(true);
+    setPortalLoading(true); setPortalUrl(""); setPortalModal(true);
     try {
-      const { data: { session } } = await (await import("@/lib/supabase")).supabase.auth.getSession();
+      const { data:{ session } } = await supabase.auth.getSession();
       const res = await fetch("/api/portail/generer", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token || ""}`,
-        },
-        body: JSON.stringify({
-          client_nom:   draft.client_nom,
-          client_email: draft.client_email,
-          expires_days: 30,
-        }),
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${session?.access_token || ""}` },
+        body: JSON.stringify({ client_nom:draft.client_nom, client_email:draft.client_email, expires_days:30 }),
       });
-      const data = await res.json() as { url?: string; error?: string };
+      const data = await res.json() as { url?:string; error?:string };
       if (!res.ok || data.error) throw new Error(data.error || "Erreur portail");
       setPortalUrl(data.url || "");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erreur génération portail";
-      showToast("error", msg);
+      showToast("error", err instanceof Error ? err.message : "Erreur portail");
       setPortalModal(false);
-    } finally {
-      setPortalLoading(false);
-    }
+    } finally { setPortalLoading(false); }
   }
 
   async function handleCopyPortal() {
     if (!portalUrl) return;
     await navigator.clipboard.writeText(portalUrl);
-    setPortalCopied(true);
-    setTimeout(() => setPortalCopied(false), 2000);
+    setPortalCopied(true); setTimeout(() => setPortalCopied(false), 2000);
   }
 
-    const filtered = useMemo(() => {
+  async function openCrmModal() {
+    setCrmModal(true); setCrmQuery(""); setCrmLoading(true);
+    const { data } = await supabase.from("clients_crm").select("id,nom,societe,email,telephone,adresse").order("nom").limit(50);
+    setCrmClients((data as CrmClient[]) ?? []);
+    setCrmLoading(false);
+  }
+
+  async function searchCrm(q: string) {
+    setCrmQuery(q); setCrmLoading(true);
+    const { data } = await supabase.from("clients_crm").select("id,nom,societe,email,telephone,adresse")
+      .or(`nom.ilike.%${q}%,societe.ilike.%${q}%,email.ilike.%${q}%`).limit(20);
+    setCrmClients((data as CrmClient[]) ?? []);
+    setCrmLoading(false);
+  }
+
+  function applyCrmClient(c: CrmClient) {
+    setDraft(d => d ? {
+      ...d,
+      client_nom:       c.nom        || "",
+      client_societe:   c.societe    || "",
+      client_email:     c.email      || "",
+      client_telephone: c.telephone  || "",
+      client_adresse:   c.adresse    || "",
+    } : d);
+    setDirty(true);
+    setCrmModal(false);
+  }
+
+  const filtered = useMemo(() => {
     let list = [...documents];
     if (filterType !== "tous") list = list.filter(d => d.type === filterType);
     if (query.trim()) {
       const q = query.toLowerCase();
-      list = list.filter(d => d.numero.toLowerCase().includes(q) || d.client_nom.toLowerCase().includes(q));
+      list = list.filter(d =>
+        d.numero?.toLowerCase().includes(q) ||
+        d.client_nom?.toLowerCase().includes(q) ||
+        d.sujet?.toLowerCase().includes(q)
+      );
     }
     return list;
   }, [documents, filterType, query]);
 
   const activeColor = draft?.couleur || "#c9a55a";
+  const devise      = draft?.devise  || "EUR";
+  const fmt         = (n: number) => fmtAmount(n, devise);
 
-    return (
+  return (
     <div className="flex flex-col bg-[#0a0f1e]">
 
-            <div className="border-b border-gray-200 bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+      {/* ── Header ── */}
+      <div className="border-b border-white/[0.07] bg-[rgba(10,11,16,0.95)] px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 bg-white/[0.04]">
-                <ReceiptText size={16} style={{ color: "#c9a55a" }} />
-              </div>
+            <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
+              <ReceiptText size={16} style={{ color:"#c9a55a" }}/>
             </div>
             <div>
               <h1 className="text-base font-extrabold text-white">Factures & Devis</h1>
@@ -766,38 +915,63 @@ export default function FacturesPage() {
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => newDoc("devis")}
-              className="hidden items-center gap-1.5 rounded-xl border border-gray-200 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-gray-600 transition hover:bg-white/[0.08] sm:flex">
+              className={`hidden items-center gap-1.5 rounded-xl ${B} ${BH} px-3 py-2 text-xs font-semibold text-white/50 transition hover:text-white/80 sm:flex`}>
               <Plus size={12}/> Devis
             </button>
             <button onClick={() => newDoc("facture")}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
-              style={{ background: "#4ade80", boxShadow: "0 4px 16px #4ade8040" }}>
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition hover:opacity-90"
+              style={{ background:"linear-gradient(135deg,#c9a55a,#b08d45)", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(201,165,90,0.35)" }}>
               <Plus size={13}/> Facture
             </button>
           </div>
         </div>
       </div>
 
-            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 px-5 py-5 sm:px-5">
+      {/* ── Body ── */}
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 px-5 py-5 sm:px-5">
 
-                <aside className={`flex w-full flex-col border-r border-gray-200 bg-white sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-gray-200 ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}>
-          <div className="space-y-2.5 border-b border-gray-200 p-4">
+        {/* ── Sidebar list ── */}
+        <aside className={`flex w-full flex-col border-r border-white/[0.06] sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-white/[0.08] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}
+          style={{ background:"rgba(255,255,255,0.025)" }}>
+
+          {/* Stats bar */}
+          <div className="grid grid-cols-3 border-b border-white/[0.07] px-3 py-3 gap-2">
+            <div className="flex flex-col items-center gap-0.5 rounded-lg bg-white/[0.04] px-2 py-2">
+              <TrendingUp size={11} className="text-green-400"/>
+              <span className="text-[0.6rem] font-bold text-green-400 truncate w-full text-center">{fmtEur(stats.ca)}</span>
+              <span className="text-[0.55rem] text-white/25">CA payé</span>
+            </div>
+            <div className="flex flex-col items-center gap-0.5 rounded-lg bg-white/[0.04] px-2 py-2">
+              <Clock size={11} className="text-blue-400"/>
+              <span className="text-[0.6rem] font-bold text-blue-400">{stats.pending}</span>
+              <span className="text-[0.55rem] text-white/25">En attente</span>
+            </div>
+            <div className="flex flex-col items-center gap-0.5 rounded-lg bg-white/[0.04] px-2 py-2">
+              <AlertCircle size={11} className="text-red-400"/>
+              <span className="text-[0.6rem] font-bold text-red-400">{stats.overdue}</span>
+              <span className="text-[0.55rem] text-white/25">En retard</span>
+            </div>
+          </div>
+
+          {/* Search + filter */}
+          <div className="space-y-2.5 border-b border-white/[0.07] p-4">
             <div className="relative">
               <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25"/>
-              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Numéro, client…"
-                className="w-full rounded-xl border border-gray-200 bg-gray-100 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-gray-200 focus:border-[rgba(201,165,90,0.4)]"/>
-              {query && <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-gray-600"><X size={12}/></button>}
+              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Numéro, client, objet…"
+                className={`w-full rounded-xl ${B} ${BH} ${BF} py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/25 outline-none transition`}/>
+              {query && <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"><X size={12}/></button>}
             </div>
             <div className="flex gap-1.5">
-              {(["tous", "facture", "devis"] as const).map(t => (
+              {(["tous","facture","devis"] as const).map(t => (
                 <button key={t} onClick={() => setFilterType(t)}
-                  className={`rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition ${filterType === t ? "bg-gray-200 text-white" : "text-white/30 hover:text-gray-600"}`}>
+                  className={`rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition ${filterType === t ? "bg-white/10 text-white" : "text-white/30 hover:text-white/60"}`}>
                   {t === "tous" ? "Tous" : t === "facture" ? "Factures" : "Devis"}
                 </button>
               ))}
             </div>
           </div>
 
+          {/* Doc list */}
           <div className="flex-1 overflow-y-auto">
             {loadingAll ? (
               <div className="flex items-center justify-center py-14"><Loader2 size={20} className="animate-spin text-white/20"/></div>
@@ -819,7 +993,7 @@ export default function FacturesPage() {
                     initial={{ opacity:0, x:-12 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-12 }}
                     transition={{ duration:0.22, ease }}
                     onClick={() => openDoc(doc)}
-                    className={`group w-full border-b border-gray-200px-4 py-3.5 text-left transition hover:bg-gray-100 ${selected?.id === doc.id ? "bg-white/6" : ""}`}>
+                    className={`group w-full border-b border-white/[0.05] px-4 py-3.5 text-left transition hover:bg-white/[0.04] ${selected?.id === doc.id ? "bg-white/[0.06]" : ""}`}>
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-[0.58rem] font-extrabold uppercase tracking-widest ${
                         doc.type === "facture" ? "bg-[rgba(201,165,90,0.12)] text-[#c9a55a]" : "bg-[rgba(59,130,246,0.12)] text-blue-400"}`}>
@@ -827,11 +1001,11 @@ export default function FacturesPage() {
                       </span>
                       <StatutBadge statut={doc.statut}/>
                     </div>
-                    <p className="text-sm font-bold text-gray-800">{doc.numero || "(sans numéro)"}</p>
-                    {doc.sujet && <p className="text-xs text-gray-500 truncate">{doc.sujet}</p>}
-                    <p className="text-xs text-gray-500 truncate">{doc.client_nom || "(client)"}</p>
+                    <p className="text-sm font-bold text-white">{doc.numero || "(sans numéro)"}</p>
+                    {doc.sujet && <p className="text-xs text-white/40 truncate">{doc.sujet}</p>}
+                    <p className="text-xs text-white/30 truncate">{doc.client_nom || "(client)"}</p>
                     <div className="mt-1.5 flex items-center justify-between">
-                      <span className="text-[0.65rem] text-white/25">{fmtDate(doc.date_document)}</span>
+                      <span className="text-[0.65rem] text-white/20">{fmtDate(doc.date_document)}</span>
                       <span className="text-xs font-bold" style={{ color: doc.couleur || "#c9a55a" }}>{fmtEur(doc.total_ttc)}</span>
                     </div>
                   </motion.button>
@@ -841,12 +1015,13 @@ export default function FacturesPage() {
           </div>
         </aside>
 
-                <main className={`flex flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
+        {/* ── Editor ── */}
+        <main className={`flex flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
           {!draft ? (
             <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-              className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-gray-200 bg-white p-8 text-center">
+              className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-white/[0.08] bg-white/[0.025] p-8 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)]">
-                <ReceiptText size={28} style={{ color: "#c9a55a" }}/>
+                <ReceiptText size={28} style={{ color:"#c9a55a" }}/>
               </div>
               <div>
                 <p className="text-base font-bold text-white">Sélectionnez ou créez un document</p>
@@ -854,11 +1029,12 @@ export default function FacturesPage() {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => newDoc("devis")}
-                  className="flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-400 transition hover:bg-blue-400/15">
+                  className="flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-400/[0.07] px-4 py-2 text-sm font-semibold text-blue-400 transition hover:bg-blue-400/15">
                   <Plus size={14}/> Nouveau devis
                 </button>
                 <button onClick={() => newDoc("facture")}
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition">
+                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold transition hover:opacity-90"
+                  style={{ background:"linear-gradient(135deg,#c9a55a,#b08d45)", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(201,165,90,0.3)" }}>
                   <Plus size={14}/> Nouvelle facture
                 </button>
               </div>
@@ -866,21 +1042,26 @@ export default function FacturesPage() {
           ) : (
             <motion.div key={selected?.id ?? "new"} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
               transition={{ duration:0.3, ease }}
-              className="flex h-full flex-col overflow-hidden rounded-none bg-white sm:rounded-xl sm:border sm:border-gray-200">
+              className="flex h-full flex-col overflow-hidden rounded-none sm:rounded-xl sm:border sm:border-white/[0.08]"
+              style={{ background:"rgba(255,255,255,0.025)" }}>
 
-                            <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 px-5 py-3">
-                <button onClick={() => setMobileView("list")} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-600 transition sm:hidden">
+              {/* ── Toolbar ── */}
+              <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.07] px-5 py-3">
+                <button onClick={() => setMobileView("list")} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition sm:hidden">
                   <ArrowLeft size={13}/>
                 </button>
-                                <div className="flex rounded-xl border border-gray-200bg-gray-100 p-0.5">
-                  {(["facture", "devis"] as DocType[]).map(t => (
+                {/* Type toggle */}
+                <div className={`flex rounded-xl ${B} p-0.5`}>
+                  {(["facture","devis"] as DocType[]).map(t => (
                     <button key={t} onClick={() => { updDraft("type", t); if (!selected) setDraft(d => d ? { ...d, numero: newNumero(t, documents) } : d); }}
-                      className={`rounded-lg px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition ${draft.type === t ? "bg-gradient-to-r from-[#c9a55a] to-[#b08d45] text-[#0a0a0a]" : "text-gray-500 hover:text-gray-600"}`}>
+                      className={`rounded-lg px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition ${draft.type === t ? "text-[#0a0a0a]" : "text-white/40 hover:text-white/70"}`}
+                      style={draft.type === t ? { background:`linear-gradient(135deg,${activeColor},${activeColor}cc)` } : {}}>
                       {t}
                     </button>
                   ))}
                 </div>
-                                <div className="relative">
+                {/* Statut select */}
+                <div className="relative">
                   <select value={draft.statut}
                     onChange={e => selected ? handleStatut(e.target.value as DocStatut) : updDraft("statut", e.target.value)}
                     className="appearance-none rounded-xl border py-1.5 pl-3 pr-7 text-[0.65rem] font-bold uppercase tracking-wider outline-none cursor-pointer transition"
@@ -896,41 +1077,43 @@ export default function FacturesPage() {
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#c9a55a]"/>Non sauvegardé
                   </span>
                 )}
-                <div className="ml-auto flex items-center gap-2">
+                <div className="ml-auto flex items-center gap-1.5">
                   {selected?.type === "devis" && (
                     <button onClick={handleConvert} disabled={converting}
-                      className="hidden items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400 disabled:opacity-40 sm:flex">
+                      className={`hidden items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400 disabled:opacity-40 sm:flex`}>
                       {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
                     </button>
                   )}
-                                    <button onClick={() => setShowPreview(true)}
-                    className="hidden items-center gap-1.5 rounded-xl border border-gray-200px-3 py-2 text-xs font-semibold text-gray-500 transition hover:border-white/20 hover:text-gray-700 sm:flex"
-                    title="Aperçu du document">
+                  {selected && (
+                    <button onClick={handleDuplicate} disabled={duplicating}
+                      className={`hidden items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/20 hover:text-white/70 disabled:opacity-40 sm:flex`}
+                      title="Dupliquer ce document">
+                      {duplicating ? <Loader2 size={12} className="animate-spin"/> : <CopyPlus size={12}/>} Dupliquer
+                    </button>
+                  )}
+                  <button onClick={() => setShowPreview(true)}
+                    className={`hidden items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/20 hover:text-white/70 sm:flex`}>
                     <Eye size={13}/> Aperçu
                   </button>
-                                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
-                    className="hidden items-center gap-1.5 rounded-xl border border-gray-200px-3 py-2 text-xs font-semibold text-gray-500 transition hover:border-white/20 hover:text-gray-700 sm:flex"
-                    title="Exporter en PDF">
+                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
+                    className={`hidden items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/20 hover:text-white/70 sm:flex`}>
                     <FileDown size={13}/> PDF
                   </button>
-                                    {selected && (
+                  {selected && (
                     <button onClick={openEmailModal}
-                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(56,189,248,0.2)] px-3 py-2 text-xs font-semibold text-sky-400/70 transition hover:border-[rgba(56,189,248,0.4)] hover:text-sky-400 sm:flex"
-                      title="Envoyer par email">
+                      className="hidden items-center gap-1.5 rounded-xl border border-sky-400/20 px-3 py-2 text-xs font-semibold text-sky-400/70 transition hover:border-sky-400/40 hover:text-sky-400 sm:flex">
                       <Mail size={13}/> Email
                     </button>
                   )}
-                                    {selected && draft.type === "facture" && (
+                  {selected && draft.type === "facture" && (
                     <button onClick={handlePaymentLink} disabled={payLinkLoading}
-                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#a78bfa]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#a78bfa] disabled:opacity-40 sm:flex"
-                      title="Créer un lien de paiement Stripe">
+                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#a78bfa]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#a78bfa] disabled:opacity-40 sm:flex">
                       {payLinkLoading ? <Loader2 size={13} className="animate-spin"/> : <Link2 size={13}/>} Paiement
                     </button>
                   )}
-                                    {selected && draft.client_nom && (
+                  {selected && draft.client_nom && (
                     <button onClick={handlePortalLink} disabled={portalLoading}
-                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(34,211,238,0.2)] px-3 py-2 text-xs font-semibold text-[#22d3ee]/70 transition hover:border-[rgba(34,211,238,0.4)] hover:text-[#22d3ee] disabled:opacity-40 sm:flex"
-                      title="Générer un portail client sécurisé">
+                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(34,211,238,0.2)] px-3 py-2 text-xs font-semibold text-[#22d3ee]/70 transition hover:border-[rgba(34,211,238,0.4)] hover:text-[#22d3ee] disabled:opacity-40 sm:flex">
                       {portalLoading ? <Loader2 size={13} className="animate-spin"/> : <Globe size={13}/>} Portail
                     </button>
                   )}
@@ -944,8 +1127,8 @@ export default function FacturesPage() {
                   <button onClick={handleSave} disabled={saving || !dirty}
                     className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold shadow-[0_2px_12px_rgba(0,0,0,0.3)] transition hover:opacity-90 disabled:opacity-50"
                     style={{
-                      background: saving || !dirty ? "rgba(100,100,100,0.3)" : `linear-gradient(135deg, ${activeColor}, ${activeColor}bb)`,
-                      color: saving || !dirty ? "#666" : contrastColor(activeColor),
+                      background: saving||!dirty ? "rgba(100,100,100,0.3)" : `linear-gradient(135deg,${activeColor},${activeColor}bb)`,
+                      color: saving||!dirty ? "#666" : contrastColor(activeColor),
                     }}>
                     {saving ? <Loader2 size={13} className="animate-spin"/> : <Save size={13}/>}
                     {saving ? "Enregistrement…" : "Enregistrer"}
@@ -953,114 +1136,108 @@ export default function FacturesPage() {
                 </div>
               </div>
 
-                            <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-7 sm:py-7">
-                <div className="mx-auto max-w-3xl space-y-7">
+              {/* ── Form + Live Preview ── */}
+              <div className="flex flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-6">
+                <div className="space-y-7">
 
-                                    <div className="overflow-hidden rounded-xl border border-gray-200">
-                    <div className="flex items-center gap-4 px-5 py-4"
-                      style={{ background:"linear-gradient(135deg,#080a0f 0%,rgba(8,10,15,0.92) 100%)", borderBottom:`2px solid ${activeColor}` }}>
+                  {/* Document identity card */}
+                  <div className="overflow-hidden rounded-2xl" style={{ background:"linear-gradient(145deg,#08090e,#0d1225)", border:`1px solid ${activeColor}35` }}>
+                    <div className="flex items-center gap-4 px-5 py-5">
                       {draft.emetteur_logo ? (
-
-                        <img src={draft.emetteur_logo} alt="Logo" className="h-10 w-auto max-w-[80px] rounded object-contain"/>
+                        <img src={draft.emetteur_logo} alt="Logo" className="h-12 w-auto max-w-[90px] rounded object-contain"/>
                       ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200bg-gray-100">
-                          <Building2 size={16} style={{ color: activeColor }}/>
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08]" style={{ background:`${activeColor}18` }}>
+                          <Building2 size={18} style={{ color:activeColor }}/>
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: activeColor }}>{draft.type}</p>
-                        <p className="text-sm font-extrabold text-white truncate">{draft.numero || "(numéro)"}</p>
-                        {draft.sujet && <p className="text-[0.65rem] text-gray-500 truncate">{draft.sujet}</p>}
+                        <p className="text-[0.56rem] font-black uppercase tracking-[0.22em]" style={{ color:activeColor }}>{draft.type}</p>
+                        <p className="text-lg font-extrabold text-white leading-tight truncate">{draft.numero || "(numéro)"}</p>
+                        <p className="text-[0.65rem] text-white/35 truncate">{draft.sujet || "Objet non renseigné"}</p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-[0.6rem] text-white/30">{fmtDate(draft.date_document)}</p>
-                        <p className="text-base font-bold" style={{ color: activeColor }}>{fmtEur(totals.ttc)}</p>
+                        <p className="text-[0.58rem] text-white/30">{fmtDate(draft.date_document)}</p>
+                        <p className="text-2xl font-black leading-tight" style={{ color:activeColor }}>{fmt(totals.ttc)}</p>
+                        {draft.client_nom && <p className="text-[0.62rem] text-white/30 truncate max-w-[110px]">{draft.client_nom}</p>}
                       </div>
+                    </div>
+                    <div className="h-[2px]" style={{ background:`linear-gradient(90deg,${activeColor},${activeColor}44,transparent)` }}/>
+                  </div>
+
+                  {/* ── Informations du document ── */}
+                  <div className="space-y-3">
+                    <SectionLabel icon={<FileText size={10}/>} label="Informations du document"/>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <DInput label="Numéro" value={draft.numero} onChange={v => updDraft("numero", v)} placeholder="FAC-2026-001"/>
+                      <DInput label="Date d'émission" type="date" value={draft.date_document} onChange={v => updDraft("date_document", v)}/>
+                      <DInput label={draft.type === "facture" ? "Date d'échéance" : "Valable jusqu'au"} type="date" value={draft.date_echeance} onChange={v => updDraft("date_echeance", v)}/>
+                      <DSelect label="Devise" value={draft.devise || "EUR"} onChange={v => updDraft("devise", v)} options={CURRENCIES.map(c => ({ val:c.val, label:c.val }))}/>
+                    </div>
+                    <DInput label="Objet / Intitulé *" value={draft.sujet} onChange={v => updDraft("sujet", v)} placeholder="Développement application web, Mission de conseil…"/>
+                  </div>
+
+                  {/* ── Apparence ── */}
+                  <div className="space-y-3">
+                    <SectionLabel icon={<Palette size={10}/>} label="Apparence"/>
+                    <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
+                    <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+                      <TemplateSelector
+                        value={draft.template ?? "modern"}
+                        onChange={v => { setDraft(d => d ? { ...d, template:v } : d); setDirty(true); }}
+                        data={draftToPreviewData(draft, items, totals)}
+                      />
                     </div>
                   </div>
 
-                                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                    <DInput label="Numéro" value={draft.numero} onChange={v => updDraft("numero", v)} placeholder="FAC-2026-001"/>
-                    <DInput label="Date d'émission" type="date" value={draft.date_document} onChange={v => updDraft("date_document", v)}/>
-                    <DInput label={draft.type === "facture" ? "Date d'échéance" : "Valable jusqu'au"} type="date" value={draft.date_echeance} onChange={v => updDraft("date_echeance", v)}/>
-                  </div>
-
-                                    <DInput label="Objet / Intitulé *" value={draft.sujet} onChange={v => updDraft("sujet", v)} placeholder="Développement application web, Mission de conseil…"/>
-
-                                    <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
-
-                                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                    <TemplateSelector
-                      value={draft.template ?? "modern"}
-                      onChange={v => { setDraft(d => d ? { ...d, template: v } : d); setDirty(true); }}
-                      data={draftToPreviewData(draft, items, totals)}
-                    />
-                  </div>
-
-                                    <div className="grid gap-5 sm:grid-cols-2">
-                                        <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="mb-3 flex items-center gap-2">
-                        <Building2 size={13} style={{ color: activeColor }}/>
-                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-500">Votre entreprise</span>
-                      </div>
+                  {/* ── Parties ── */}
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-3">
+                      <SectionLabel icon={<Building2 size={10}/>} label="Votre entreprise"/>
                       <div className="space-y-2.5">
                         <LogoUploader value={draft.emetteur_logo} onChange={v => updDraft("emetteur_logo", v)}/>
-
-                                                {draft.emetteur_logo && (
-                          <div className="rounded-xl border border-gray-200 bg-white/[0.03] p-3 space-y-3">
-                                                        <div>
+                        {draft.emetteur_logo && (
+                          <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 space-y-3">
+                            <div>
                               <p className="mb-1.5 text-[0.65rem] font-medium text-white/35">Taille du logo</p>
                               <div className="flex gap-1.5">
-                                {([
-                                  { val: "sm" as const, label: "S", desc: "Petit" },
-                                  { val: "md" as const, label: "M", desc: "Moyen" },
-                                  { val: "lg" as const, label: "L", desc: "Grand" },
-                                ]).map(({ val, label, desc }) => (
-                                  <button
-                                    key={val}
-                                    type="button"
-                                    title={desc}
+                                {([{val:"sm" as const,label:"S"},{val:"md" as const,label:"M"},{val:"lg" as const,label:"L"}]).map(({ val, label }) => (
+                                  <button key={val} type="button"
                                     onClick={() => { setLogoSize(val); localStorage.setItem("pdf.logo_size", val); }}
-                                    className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all ${
-                                      logoSize === val
-                                        ? "text-[#0a0b10] shadow"
-                                        : "border border-gray-200bg-transparent text-gray-500 hover:text-gray-600"
-                                    }`}
-                                    style={logoSize === val ? { backgroundColor: activeColor } : {}}
-                                  >
+                                    className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all ${logoSize === val ? "text-[#0a0b10] shadow" : "border border-white/[0.09] bg-transparent text-white/40 hover:text-white/70"}`}
+                                    style={logoSize === val ? { backgroundColor:activeColor } : {}}>
                                     {label}
                                   </button>
                                 ))}
                               </div>
                             </div>
-                                                        <button
-                              type="button"
-                              onClick={() => {
-                                const next = !logoHideName;
-                                setLogoHideName(next);
-                                localStorage.setItem("pdf.logo_hide_name", String(next));
-                              }}
-                              className="flex w-full items-center justify-between gap-2 text-left"
-                            >
-                              <span className="text-[0.7rem] text-gray-500">Logo seul (sans nom)</span>
+                            <button type="button"
+                              onClick={() => { const next = !logoHideName; setLogoHideName(next); localStorage.setItem("pdf.logo_hide_name", String(next)); }}
+                              className="flex w-full items-center justify-between gap-2 text-left">
+                              <span className="text-[0.7rem] text-white/40">Logo seul (sans nom)</span>
                               <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${logoHideName ? "bg-[var(--c)]" : "bg-white/10"}`}
-                                style={{ "--c": activeColor } as React.CSSProperties}>
+                                style={{ "--c":activeColor } as React.CSSProperties}>
                                 <span className={`inline-block h-3.5 w-3.5 translate-x-0.5 rounded-full bg-white shadow transition-transform ${logoHideName ? "translate-x-[1.15rem]" : ""}`}/>
                               </span>
                             </button>
                           </div>
                         )}
-
                         <DInput value={draft.emetteur_nom}     onChange={v => updDraft("emetteur_nom", v)}     placeholder="Nom / Société"/>
                         <DInput value={draft.emetteur_email}   onChange={v => updDraft("emetteur_email", v)}   placeholder="email@exemple.com"/>
                         <DInput value={draft.emetteur_adresse} onChange={v => updDraft("emetteur_adresse", v)} placeholder="Adresse complète"/>
                         <DInput value={draft.emetteur_siret}   onChange={v => updDraft("emetteur_siret", v)}   placeholder="SIRET"/>
+                        <DInput value={draft.emetteur_tva}     onChange={v => updDraft("emetteur_tva", v)}     placeholder="N° TVA intracommunautaire (FR12345678901)"/>
                       </div>
                     </div>
-                                        <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="mb-3 flex items-center gap-2">
-                        <User size={13} className="text-blue-400"/>
-                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-500">Client</span>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2.5">
+                        <User size={10} className="shrink-0 text-blue-400/60"/>
+                        <span className="shrink-0 text-[0.63rem] font-bold uppercase tracking-widest text-white/30">Client</span>
+                        <div className="flex-1 h-px bg-white/[0.06]"/>
+                        <button onClick={openCrmModal}
+                          className="flex shrink-0 items-center gap-1 rounded-lg border border-[rgba(96,165,250,0.2)] px-2 py-1 text-[0.62rem] font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400">
+                          <Users size={9}/> CRM
+                        </button>
                       </div>
                       <div className="space-y-2.5">
                         <DInput value={draft.client_nom}       onChange={v => updDraft("client_nom", v)}       placeholder="Prénom Nom du contact"/>
@@ -1072,12 +1249,9 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                    <div className="mb-3 flex items-center gap-2">
-                      <Landmark size={13} style={{ color: activeColor }}/>
-                      <span className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-500">Coordonnées bancaires</span>
-                      <span className="ml-auto text-[0.58rem] text-white/20">optionnel — apparaît dans le PDF</span>
-                    </div>
+                  {/* ── Coordonnées bancaires ── */}
+                  <div className="space-y-3">
+                    <SectionLabel icon={<Landmark size={10}/>} label="Coordonnées bancaires" hint="optionnel — apparaît dans le PDF"/>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <DInput label="Titulaire du compte" value={draft.rib_titulaire} onChange={v => updDraft("rib_titulaire", v)} placeholder="Prénom NOM"/>
                       <DInput label="Banque"              value={draft.rib_banque}    onChange={v => updDraft("rib_banque", v)}    placeholder="Nom de la banque"/>
@@ -1088,37 +1262,46 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                                    <div>
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Prestations</span>
+                  {/* ── Lignes de prestation ── */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2.5">
+                      <ReceiptText size={10} className="shrink-0 text-white/25"/>
+                      <span className="shrink-0 text-[0.63rem] font-bold uppercase tracking-widest text-white/30">Lignes de prestation</span>
+                      <div className="flex-1 h-px bg-white/[0.06]"/>
                       <button onClick={addItem}
-                        className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[0.65rem] font-semibold transition hover:opacity-80"
                         style={{ color:activeColor, borderColor:`${activeColor}44`, background:`${activeColor}11` }}>
-                        <Plus size={12}/> Ajouter une ligne
+                        <Plus size={10}/> Ajouter une ligne
                       </button>
                     </div>
-                    <div className="mb-1 hidden grid-cols-[1fr_60px_80px_70px_80px_32px] gap-2 px-3 sm:grid">
-                      {["Description", "Qté", "Prix HT", "TVA %", "Total HT", ""].map(h => (
+                    {/* Column headers */}
+                    <div className="mb-1 hidden grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] gap-1.5 px-3 sm:grid">
+                      {["Description","Unité","Qté","Prix HT","Remise %","TVA %","Total HT",""].map(h => (
                         <span key={h} className="text-[0.6rem] font-bold uppercase tracking-wider text-white/25">{h}</span>
                       ))}
                     </div>
                     <div className="space-y-2">
                       <AnimatePresence initial={false}>
                         {items.map((it, idx) => {
-                          const lineHT = r2(it.quantity * it.unit_price);
+                          const gross   = r2(it.quantity * it.unit_price);
+                          const lineRem = r2(gross * (it.remise_pct||0) / 100);
+                          const lineHT  = r2(gross - lineRem);
                           return (
                             <motion.div key={idx} layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
                               transition={{ duration:0.2, ease }}
-                              className="group grid grid-cols-1 gap-2 rounded-xl border border-gray-200 bg-white p-3 sm:grid-cols-[1fr_60px_80px_70px_80px_32px] sm:items-center">
-                              <DInput small value={it.description} onChange={v => updItem(idx, "description", v)} placeholder="Description de la prestation"/>
-                              <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx, "quantity",   parseFloat(v) || 0)} placeholder="1"/>
-                              <DInput small type="number" value={String(it.unit_price)} onChange={v => updItem(idx, "unit_price", parseFloat(v) || 0)} placeholder="0.00"/>
-                              <select value={it.vat_rate} onChange={e => updItem(idx, "vat_rate", parseFloat(e.target.value))}
-                                className="w-full rounded-lg border border-gray-200bg-gray-100 px-2.5 py-1.5 text-xs text-white outline-none transition hover:border-white/20">
-                                {VAT_RATES.map(r => <option key={r} value={r} style={{ background:"#0f1117" }}>{r}%</option>)}
-                              </select>
+                              className="group grid grid-cols-1 gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 sm:grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] sm:items-center">
+                              <DInput small value={it.description} onChange={v => updItem(idx,"description",v)} placeholder="Description de la prestation"/>
+                              <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
+                              <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx,"quantity",   parseFloat(v)||0)} placeholder="1"/>
+                              <DInput small type="number" value={String(it.unit_price)} onChange={v => updItem(idx,"unit_price", parseFloat(v)||0)} placeholder="0.00"/>
+                              <div className="relative">
+                                <DInput small type="number" value={String(it.remise_pct||"")} onChange={v => updItem(idx,"remise_pct", parseFloat(v)||0)} placeholder="0"/>
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6rem] text-white/30 pointer-events-none">%</span>
+                              </div>
+                              <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
+                                options={VAT_RATES.map(r => ({ val:String(r), label:`${r}%` }))}/>
                               <div className="flex items-center justify-end">
-                                <span className="text-xs font-bold" style={{ color: activeColor }}>{fmtEur(lineHT)}</span>
+                                <span className="text-xs font-bold" style={{ color:activeColor }}>{fmt(lineHT)}</span>
                               </div>
                               <button onClick={() => removeItem(idx)} disabled={items.length === 1}
                                 className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-500/15 text-red-400/40 transition hover:border-red-500/35 hover:text-red-400 disabled:opacity-20 opacity-0 group-hover:opacity-100">
@@ -1131,134 +1314,206 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="mb-3 flex items-center gap-2">
-                        <Percent size={12} style={{ color: activeColor }}/>
-                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-500">Remise globale</span>
+                  {/* ── Remise & Acompte ── */}
+                  <div className="space-y-3">
+                    <SectionLabel icon={<Percent size={10}/>} label="Remise & acompte"/>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                        <Percent size={13} style={{ color:activeColor }}/>
+                        <div className="flex-1">
+                          <p className="mb-1 text-[0.63rem] font-medium text-white/35">Remise globale</p>
+                          <div className="flex items-center gap-2">
+                            <input type="number" min="0" max="100" step="0.5"
+                              value={draft.remise_pct || ""}
+                              onChange={e => updDraft("remise_pct", parseFloat(e.target.value)||0)}
+                              placeholder="0"
+                              className={`w-16 rounded-lg ${B} ${BH} ${BF} px-2.5 py-1.5 text-sm text-white outline-none transition`}/>
+                            <span className="text-sm text-white/40">%</span>
+                            {totals.remise > 0 && <span className="text-sm font-bold text-red-400/80">− {fmt(totals.remise)}</span>}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <input type="number" min="0" max="100" step="0.5"
-                          value={draft.remise_pct || ""}
-                          onChange={e => updDraft("remise_pct", parseFloat(e.target.value) || 0)}
-                          placeholder="0"
-                          className="w-20 rounded-xl border border-gray-200bg-gray-100 px-3 py-2 text-sm text-white outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
-                        <span className="text-sm text-gray-500">%</span>
-                        {totals.remise > 0 && (
-                          <span className="text-sm font-bold text-red-400/80">− {fmtEur(totals.remise)}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="mb-3 flex items-center gap-2">
-                        <BadgeCheck size={12} className="text-green-400"/>
-                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-500">Acompte versé</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <input type="number" min="0" step="0.01"
-                          value={draft.acompte || ""}
-                          onChange={e => updDraft("acompte", parseFloat(e.target.value) || 0)}
-                          placeholder="0.00"
-                          className="w-28 rounded-xl border border-gray-200bg-gray-100 px-3 py-2 text-sm text-white outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
-                        <span className="text-sm text-gray-500">€</span>
+                      <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                        <BadgeCheck size={13} className="text-green-400"/>
+                        <div className="flex-1">
+                          <p className="mb-1 text-[0.63rem] font-medium text-white/35">Acompte versé</p>
+                          <div className="flex items-center gap-2">
+                            <input type="number" min="0" step="0.01"
+                              value={draft.acompte || ""}
+                              onChange={e => updDraft("acompte", parseFloat(e.target.value)||0)}
+                              placeholder="0.00"
+                              className={`w-24 rounded-lg ${B} ${BH} ${BF} px-2.5 py-1.5 text-sm text-white outline-none transition`}/>
+                            <span className="text-sm text-white/40">{CURRENCIES.find(c => c.val === devise)?.symbol ?? "€"}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                                    <div className="flex justify-end">
-                    <div className="w-full max-w-xs rounded-xl border border-gray-200 bg-white p-5 space-y-2">
+                  {/* Totaux */}
+                  <div className="flex justify-end">
+                    <div className="w-full max-w-xs rounded-xl border border-white/[0.08] bg-white/[0.03] p-5 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500">Sous-total HT</span>
-                        <span className="text-sm font-semibold text-gray-700">{fmtEur(totals.subtotal_ht)}</span>
+                        <span className="text-sm text-white/40">Sous-total HT</span>
+                        <span className="text-sm font-semibold text-white/70">{fmt(totals.subtotal_ht)}</span>
                       </div>
                       {totals.remise > 0 && (
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500">Remise ({draft.remise_pct}%)</span>
-                          <span className="text-sm font-semibold text-red-400">− {fmtEur(totals.remise)}</span>
+                          <span className="text-sm text-white/40">Remise ({draft.remise_pct}%)</span>
+                          <span className="text-sm font-semibold text-red-400">− {fmt(totals.remise)}</span>
                         </div>
                       )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500">TVA</span>
-                        <span className="text-sm font-semibold text-gray-700">{fmtEur(totals.tva)}</span>
-                      </div>
-                      <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
+                      {/* TVA breakdown by rate */}
+                      {Array.from(totals.tvaByRate.entries())
+                        .sort(([a],[b]) => a - b)
+                        .map(([rate, { ht, tva }]) => rate > 0 && (
+                          <div key={rate} className="flex items-center justify-between">
+                            <span className="text-sm text-white/40">TVA {rate}% <span className="text-white/20 text-xs">(HT {fmt(ht)})</span></span>
+                            <span className="text-sm font-semibold text-white/70">{fmt(tva)}</span>
+                          </div>
+                        ))
+                      }
+                      {totals.tvaByRate.size === 0 || !Array.from(totals.tvaByRate.keys()).some(r => r > 0) && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-white/40">TVA</span>
+                          <span className="text-sm font-semibold text-white/70">{fmt(totals.tva)}</span>
+                        </div>
+                      )}
+                      <div className="border-t border-white/[0.08] pt-2 flex items-center justify-between">
                         <span className="text-base font-extrabold text-white">Total TTC</span>
-                        <span className="text-xl font-bold" style={{ color: activeColor }}>{fmtEur(totals.ttc)}</span>
+                        <span className="text-xl font-bold" style={{ color:activeColor }}>{fmt(totals.ttc)}</span>
                       </div>
                       {totals.acompte > 0 && (
                         <>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">Acompte versé</span>
-                            <span className="text-sm font-semibold text-green-400">− {fmtEur(totals.acompte)}</span>
+                            <span className="text-sm text-white/40">Acompte versé</span>
+                            <span className="text-sm font-semibold text-green-400">− {fmt(totals.acompte)}</span>
                           </div>
-                          <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
-                            <span className="text-sm font-bold text-gray-600">Net à payer</span>
-                            <span className="text-base font-bold" style={{ color: activeColor }}>{fmtEur(totals.ttc - totals.acompte)}</span>
+                          <div className="border-t border-white/[0.08] pt-2 flex items-center justify-between">
+                            <span className="text-sm font-bold text-white/60">Net à payer</span>
+                            <span className="text-base font-bold" style={{ color:activeColor }}>{fmt(totals.ttc - totals.acompte)}</span>
                           </div>
                         </>
                       )}
                     </div>
                   </div>
 
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                    <DTextarea label="Notes au client" value={draft.notes} onChange={v => updDraft("notes", v)} placeholder="Informations complémentaires…" rows={3}/>
-                    <DTextarea label="Conditions de paiement" value={draft.conditions} onChange={v => updDraft("conditions", v)} placeholder="Paiement à 30 jours nets…" rows={3}/>
+                  {/* ── Notes & conditions ── */}
+                  <div className="space-y-3">
+                    <SectionLabel icon={<FileText size={10}/>} label="Notes & conditions"/>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <DTextarea label="Notes au client" value={draft.notes} onChange={v => updDraft("notes", v)} placeholder="Informations complémentaires…" rows={3}/>
+                      <div>
+                        <DTextarea label="Conditions de paiement" value={draft.conditions} onChange={v => updDraft("conditions", v)} placeholder="Paiement à 30 jours nets…" rows={3}/>
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {CONDITIONS_PRESETS.map(p => (
+                            <button key={p.label} onClick={() => updDraft("conditions", p.val)}
+                              className="rounded-full border border-white/[0.08] px-2 py-0.5 text-[0.6rem] font-semibold text-white/30 transition hover:border-white/20 hover:text-white/60">
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                                    <div className="flex flex-wrap gap-3 sm:hidden">
+                  {/* ── Mentions légales ── */}
+                  <div className="space-y-3">
+                    <SectionLabel icon={<FileText size={10}/>} label="Mentions légales" hint="apparaît en pied de PDF"/>
+                    <DTextarea value={draft.mentions_legales} onChange={v => updDraft("mentions_legales", v)}
+                      placeholder="TVA non applicable art. 293B CGI — Pénalités de retard…" rows={3}/>
+                    <div className="flex flex-wrap gap-1.5">
+                      {MENTIONS_PRESETS.map(p => (
+                        <button key={p.label} onClick={() => updDraft("mentions_legales", draft.mentions_legales ? `${draft.mentions_legales}\n${p.val}` : p.val)}
+                          className="flex items-center gap-1 rounded-full border border-white/[0.08] px-2.5 py-1 text-[0.62rem] font-semibold text-white/30 transition hover:border-white/20 hover:text-white/60">
+                          <Plus size={8}/>{p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Mobile actions */}
+                  <div className="flex flex-wrap gap-3 sm:hidden">
                     {selected?.type === "devis" && (
                       <button onClick={handleConvert} disabled={converting}
-                        className="flex items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400 transition hover:bg-blue-50 disabled:opacity-40">
+                        className="flex items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400 transition hover:bg-blue-400/10 disabled:opacity-40">
                         {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
                       </button>
                     )}
+                    {selected && (
+                      <button onClick={handleDuplicate} disabled={duplicating}
+                        className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70 disabled:opacity-40">
+                        {duplicating ? <Loader2 size={12} className="animate-spin"/> : <CopyPlus size={12}/>} Dupliquer
+                      </button>
+                    )}
                     <button onClick={() => setShowPreview(true)}
-                      className="flex items-center gap-1.5 rounded-xl border border-gray-200px-3 py-2 text-xs font-semibold text-gray-600 transition hover:border-white/20">
+                      className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70">
                       <Eye size={13}/> Aperçu
                     </button>
                     <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
-                      className="flex items-center gap-1.5 rounded-xl border border-gray-200px-3 py-2 text-xs font-semibold text-gray-600 transition hover:border-white/20">
-                      <FileDown size={13}/> Exporter PDF
+                      className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70">
+                      <FileDown size={13}/> PDF
                     </button>
                   </div>
 
                 </div>
+              </div>
+
+              {/* ── Live Preview panel (XL+) ── */}
+              <div className="hidden xl:flex w-[420px] shrink-0 flex-col border-l border-white/[0.07] overflow-y-auto"
+                style={{ background:"rgba(0,0,0,0.18)" }}>
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] px-4 py-3"
+                  style={{ background:"rgba(6,8,14,0.97)", backdropFilter:"blur(12px)" }}>
+                  <div className="flex items-center gap-2">
+                    <Eye size={11} style={{ color:activeColor }}/>
+                    <span className="text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Aperçu PDF</span>
+                  </div>
+                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.65rem] font-bold transition hover:opacity-90"
+                    style={{ background:`${activeColor}22`, color:activeColor, border:`1px solid ${activeColor}33` }}>
+                    <FileDown size={10}/> PDF
+                  </button>
+                </div>
+                <div className="p-5 pb-8">
+                  <div className="overflow-hidden rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+                    <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals)}/>
+                  </div>
+                </div>
+              </div>
+
               </div>
             </motion.div>
           )}
         </main>
       </div>
 
-            <AnimatePresence>
+      {/* ── Preview modal ── */}
+      <AnimatePresence>
         {showPreview && draft && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm">
-                        <div className="flex items-center justify-between border-b border-gray-200 bg-[rgba(10,11,16,0.97)] px-6 py-3">
+            <div className="flex items-center justify-between border-b border-white/[0.07] bg-[rgba(10,11,16,0.97)] px-6 py-3">
               <div className="flex items-center gap-3">
-                <Eye size={15} style={{ color: activeColor }}/>
-                <span className="text-sm font-bold text-white">
-                  Aperçu — {draft.numero || (draft.type === "facture" ? "Facture" : "Devis")}
-                </span>
-                {draft.sujet && <span className="text-xs text-gray-500">{draft.sujet}</span>}
+                <Eye size={15} style={{ color:activeColor }}/>
+                <span className="text-sm font-bold text-white">Aperçu — {draft.numero || (draft.type === "facture" ? "Facture" : "Devis")}</span>
+                {draft.sujet && <span className="text-xs text-white/40">{draft.sujet}</span>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => { exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName); }}
-                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:opacity-90">
+                <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
+                  className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold transition hover:opacity-90"
+                  style={{ background:"linear-gradient(135deg,#c9a55a,#b08d45)", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(201,165,90,0.3)" }}>
                   <FileDown size={13}/> Télécharger PDF
                 </button>
                 <button onClick={() => setShowPreview(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200text-gray-500 transition hover:border-white/20 hover:text-gray-700">
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.08] text-white/40 transition hover:border-white/20 hover:text-white/70">
                   <X size={15}/>
                 </button>
               </div>
             </div>
-                        <div className="flex-1 overflow-y-auto px-4 py-8">
+            <div className="flex-1 overflow-y-auto px-4 py-8">
               <div className="mx-auto w-full max-w-[620px]">
                 <div className="overflow-hidden rounded-lg shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
-                  <InvoiceTemplate
-                    type={draft.template ?? "modern"}
-                    data={draftToPreviewData(draft, items, totals)}
-                  />
+                  <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals)}/>
                 </div>
               </div>
             </div>
@@ -1266,21 +1521,65 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-            <AnimatePresence>
+      {/* ── CRM modal ── */}
+      <AnimatePresence>
+        {crmModal && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
+              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
+              className="w-full max-w-md rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-400/25 bg-blue-400/[0.08]">
+                    <Users size={15} className="text-blue-400"/>
+                  </div>
+                  <h3 className="text-sm font-extrabold text-white">Importer depuis le CRM</h3>
+                </div>
+                <button onClick={() => setCrmModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+              </div>
+              <div className="relative mb-3">
+                <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25"/>
+                <input value={crmQuery}
+                  onChange={e => searchCrm(e.target.value)}
+                  placeholder="Rechercher un client…"
+                  className={`w-full rounded-xl ${B} ${BH} ${BF} py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/25 outline-none transition`}/>
+              </div>
+              <div className="max-h-64 overflow-y-auto space-y-1">
+                {crmLoading ? (
+                  <div className="flex justify-center py-6"><Loader2 size={18} className="animate-spin text-white/20"/></div>
+                ) : crmClients.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-white/30">Aucun client trouvé</p>
+                ) : crmClients.map(c => (
+                  <button key={c.id} onClick={() => applyCrmClient(c)}
+                    className="w-full rounded-xl border border-transparent px-3 py-2.5 text-left transition hover:border-white/[0.09] hover:bg-white/[0.04]">
+                    <p className="text-sm font-semibold text-white">{c.nom}</p>
+                    {c.societe && <p className="text-xs text-white/40">{c.societe}</p>}
+                    {c.email   && <p className="text-xs text-white/30">{c.email}</p>}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Confirm delete ── */}
+      <AnimatePresence>
         {confirmDel && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-2xl border border-gray-200bg-white p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10">
                 <Trash2 size={18} className="text-red-400"/>
               </div>
               <h3 className="text-base font-extrabold text-white">Supprimer ce document ?</h3>
-              <p className="mt-1.5 text-sm text-gray-500">Cette action est irréversible.</p>
+              <p className="mt-1.5 text-sm text-white/40">Cette action est irréversible.</p>
               <div className="mt-5 flex gap-3">
                 <button onClick={() => setConfirmDel(false)}
-                  className="flex-1 rounded-xl border border-gray-200py-2.5 text-sm font-semibold text-gray-600 transition hover:border-white/20">Annuler</button>
+                  className={`flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20`}>Annuler</button>
                 <button onClick={handleDelete} disabled={deleting}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-red-500 disabled:opacity-50">
                   {deleting && <Loader2 size={13} className="animate-spin"/>}Supprimer
@@ -1291,16 +1590,17 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-            <AnimatePresence>
+      {/* ── Email modal ── */}
+      <AnimatePresence>
         {emailModal && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-md rounded-2xl border border-gray-200bg-white p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-md rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-sky-400/25 bg-sky-400/8">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-sky-400/25 bg-sky-400/[0.08]">
                     <Mail size={15} className="text-sky-400"/>
                   </div>
                   <div>
@@ -1308,29 +1608,28 @@ export default function FacturesPage() {
                     <p className="text-[0.65rem] text-white/30">{draft?.numero}</p>
                   </div>
                 </div>
-                <button onClick={() => setEmailModal(false)} className="text-white/25 hover:text-gray-600"><X size={15}/></button>
+                <button onClick={() => setEmailModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
               </div>
               <div className="space-y-3">
                 <div>
                   <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Destinataire</label>
-                  <input value={emailTo} onChange={e => setEmailTo(e.target.value)}
-                    placeholder="email@client.com"
-                    className="w-full rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
+                  <input value={emailTo} onChange={e => setEmailTo(e.target.value)} placeholder="email@client.com"
+                    className={`w-full rounded-xl ${B} ${BH} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-400/40`}/>
                 </div>
                 <div>
                   <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Objet</label>
                   <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
+                    className={`w-full rounded-xl ${B} ${BH} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-400/40`}/>
                 </div>
                 <div>
                   <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Message</label>
                   <textarea value={emailMsg} onChange={e => setEmailMsg(e.target.value)} rows={4}
-                    className="w-full resize-none rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/20 focus:border-sky-400/40"/>
+                    className={`w-full resize-none rounded-xl ${B} ${BH} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-400/40`}/>
                 </div>
               </div>
               <div className="mt-5 flex gap-3">
                 <button onClick={() => setEmailModal(false)}
-                  className="flex-1 rounded-xl border border-gray-200py-2.5 text-sm font-semibold text-gray-600 transition hover:border-white/20">Annuler</button>
+                  className={`flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20`}>Annuler</button>
                 <button onClick={handleSendEmail} disabled={sendingEmail || !emailTo}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-sky-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-sky-500 disabled:opacity-50">
                   {sendingEmail ? <Loader2 size={13} className="animate-spin"/> : <Send size={13}/>}
@@ -1342,13 +1641,14 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-            <AnimatePresence>
+      {/* ── Payment link modal ── */}
+      <AnimatePresence>
         {payLinkModal && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-2xl border border-gray-200bg-white p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)]">
@@ -1356,28 +1656,26 @@ export default function FacturesPage() {
                   </div>
                   <h3 className="text-sm font-extrabold text-white">Lien de paiement</h3>
                 </div>
-                <button onClick={() => setPayLinkModal(false)} className="text-white/25 hover:text-gray-600"><X size={15}/></button>
+                <button onClick={() => setPayLinkModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
               </div>
               {payLinkLoading ? (
                 <div className="flex flex-col items-center gap-3 py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200border-t-[#a78bfa]"/>
-                  <p className="text-sm text-gray-500">Génération du lien Stripe…</p>
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#a78bfa]"/>
+                  <p className="text-sm text-white/40">Génération du lien Stripe…</p>
                 </div>
               ) : payLinkUrl ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-600">Lien de paiement créé pour <strong className="text-white">{fmtEur(totals.ttc)}</strong></p>
-                  <div className="flex items-center gap-2 rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5">
-                    <span className="flex-1 truncate text-xs text-gray-600">{payLinkUrl}</span>
-                    <button onClick={handleCopyLink}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-200text-gray-500 transition hover:text-gray-700">
+                  <p className="text-sm text-white/50">Lien créé pour <strong className="text-white">{fmt(totals.ttc)}</strong></p>
+                  <div className={`flex items-center gap-2 rounded-xl ${B} px-3.5 py-2.5`}>
+                    <span className="flex-1 truncate text-xs text-white/50">{payLinkUrl}</span>
+                    <button onClick={handleCopyLink} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.09] text-white/40 transition hover:text-white/70">
                       {copied ? <Check size={13} className="text-emerald-400"/> : <Copy size={13}/>}
                     </button>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={handleCopyLink}
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] py-2.5 text-sm font-semibold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.15)]">
-                      {copied ? <Check size={13}/> : <Copy size={13}/>}
-                      {copied ? "Copié !" : "Copier"}
+                      {copied ? <Check size={13}/> : <Copy size={13}/>} {copied ? "Copié !" : "Copier"}
                     </button>
                     <a href={payLinkUrl} target="_blank" rel="noopener noreferrer"
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a78bfa] to-[#8b5cf6] py-2.5 text-sm font-bold text-white transition hover:opacity-90">
@@ -1391,13 +1689,14 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-            <AnimatePresence>
+      {/* ── Portal modal ── */}
+      <AnimatePresence>
         {portalModal && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-2xl border border-gray-200bg-white p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(34,211,238,0.25)] bg-[rgba(34,211,238,0.08)]">
@@ -1408,31 +1707,28 @@ export default function FacturesPage() {
                     <p className="text-[0.62rem] text-white/35">{draft?.client_nom}</p>
                   </div>
                 </div>
-                <button onClick={() => setPortalModal(false)} className="text-white/25 hover:text-gray-600"><X size={15}/></button>
+                <button onClick={() => setPortalModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
               </div>
               {portalLoading ? (
                 <div className="flex flex-col items-center gap-3 py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200border-t-[#22d3ee]"/>
-                  <p className="text-sm text-gray-500">Génération du lien…</p>
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#22d3ee]"/>
+                  <p className="text-sm text-white/40">Génération du lien…</p>
                 </div>
               ) : portalUrl ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-600">
-                    Partagez ce lien sécurisé avec <strong className="text-white">{draft?.client_nom}</strong>.
-                    <br/><span className="text-xs text-white/30">Valide 30 jours.</span>
+                  <p className="text-sm text-white/50">Partagez ce lien sécurisé avec <strong className="text-white">{draft?.client_nom}</strong>.
+                    <br/><span className="text-xs text-white/25">Valide 30 jours.</span>
                   </p>
-                  <div className="flex items-center gap-2 rounded-xl border border-gray-200bg-gray-100 px-3.5 py-2.5">
-                    <span className="flex-1 truncate text-xs text-gray-600">{portalUrl}</span>
-                    <button onClick={handleCopyPortal}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-200text-gray-500 transition hover:text-gray-700">
+                  <div className={`flex items-center gap-2 rounded-xl ${B} px-3.5 py-2.5`}>
+                    <span className="flex-1 truncate text-xs text-white/50">{portalUrl}</span>
+                    <button onClick={handleCopyPortal} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.09] text-white/40 transition hover:text-white/70">
                       {portalCopied ? <Check size={13} className="text-emerald-400"/> : <Copy size={13}/>}
                     </button>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={handleCopyPortal}
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[rgba(34,211,238,0.25)] bg-[rgba(34,211,238,0.08)] py-2.5 text-sm font-semibold text-[#22d3ee] transition hover:bg-[rgba(34,211,238,0.15)]">
-                      {portalCopied ? <Check size={13}/> : <Copy size={13}/>}
-                      {portalCopied ? "Copié !" : "Copier"}
+                      {portalCopied ? <Check size={13}/> : <Copy size={13}/>} {portalCopied ? "Copié !" : "Copier"}
                     </button>
                     <a href={portalUrl} target="_blank" rel="noopener noreferrer"
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#22d3ee] to-[#0ea5e9] py-2.5 text-sm font-bold text-[#09090b] transition hover:opacity-90">
@@ -1446,7 +1742,8 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-            <AnimatePresence>
+      {/* ── Toast ── */}
+      <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)}/>}
       </AnimatePresence>
     </div>

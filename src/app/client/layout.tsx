@@ -9,14 +9,13 @@ import {
   LogOut, Lock, Clock, CheckCircle2, MessageCircle,
   Bell, X, Menu,
   CreditCard, Wallet, Users, FileText, Timer, CalendarRange, Search, Star,
-  LayoutDashboard, Brain, Zap, Mic, ChevronRight,
+  Home, BarChart2, Brain, Zap, Mic, ChevronRight,
   Package, Truck, ListTodo, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRequireSubscription } from "@/lib/use-require-subscription";
 
 const GOLD   = "#c9a55a";
-const BORDER = "rgba(17,24,39,0.08)";
 
 type NavEntry = { href: string; label: string; icon: React.ElementType; exact?: boolean };
 
@@ -24,8 +23,8 @@ const NAV_GROUPS: { label: string | null; items: NavEntry[] }[] = [
   {
     label: null,
     items: [
-      { href: "/client",           label: "Cockpit",      icon: LayoutDashboard, exact: true },
-      { href: "/client/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+      { href: "/client",           label: "Accueil",          icon: Home,       exact: true },
+      { href: "/client/dashboard", label: "Tableau de bord",  icon: BarChart2   },
     ],
   },
   {
@@ -39,26 +38,26 @@ const NAV_GROUPS: { label: string | null; items: NavEntry[] }[] = [
   {
     label: "Commercial",
     items: [
-      { href: "/client/crm",         label: "CRM",          icon: Users    },
-      { href: "/client/contrats",    label: "Contrats",     icon: FileText },
-      { href: "/client/fournisseurs",label: "Fournisseurs", icon: Truck    },
-      { href: "/client/stocks",      label: "Stocks",       icon: Package  },
+      { href: "/client/crm",          label: "CRM",          icon: Users    },
+      { href: "/client/contrats",     label: "Contrats",     icon: FileText },
+      { href: "/client/fournisseurs", label: "Fournisseurs", icon: Truck    },
+      { href: "/client/stocks",       label: "Stocks",       icon: Package  },
     ],
   },
   {
     label: "Opérations",
     items: [
-      { href: "/client/productivite", label: "Tâches",       icon: ListTodo      },
-      { href: "/client/planning",     label: "Planning",     icon: Calendar      },
-      { href: "/client/equipe",       label: "Équipe",       icon: CalendarRange },
-      { href: "/client/chrono",       label: "Chrono",       icon: Timer         },
+      { href: "/client/productivite", label: "Tâches",   icon: ListTodo      },
+      { href: "/client/planning",     label: "Planning",  icon: Calendar      },
+      { href: "/client/equipe",       label: "Équipe",    icon: CalendarRange },
+      { href: "/client/chrono",       label: "Chrono",    icon: Timer         },
     ],
   },
   {
     label: "Notes",
     items: [
-      { href: "/client/notes",    label: "Notes IA",   icon: StickyNote },
-      { href: "/client/bloc-note",label: "Bloc-note",  icon: Mic        },
+      { href: "/client/notes",     label: "Notes IA",  icon: StickyNote },
+      { href: "/client/bloc-note", label: "Bloc-note", icon: Mic        },
     ],
   },
   {
@@ -146,11 +145,12 @@ function NotifBell({ ready }: { ready: boolean }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 top-10 z-50 w-76 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.1)]"
+            className="absolute right-0 top-10 z-50 w-72 overflow-hidden rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+            style={{ background: "rgba(10,14,26,0.97)", border: "1px solid rgba(255,255,255,0.08)" }}
           >
-            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-              <span className="text-xs font-semibold text-gray-700">Événements à venir</span>
-              <button onClick={() => setOpen(false)} aria-label="Fermer" className="text-gray-400 hover:text-gray-600 transition">
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+              <span className="text-xs font-semibold text-white/80">Événements à venir</span>
+              <button onClick={() => setOpen(false)} aria-label="Fermer" className="text-white/40 hover:text-white/70 transition">
                 <X size={13} />
               </button>
             </div>
@@ -158,8 +158,8 @@ function NotifBell({ ready }: { ready: boolean }) {
             <div className="max-h-[320px] overflow-y-auto">
               {events.length === 0 ? (
                 <div className="px-4 py-8 text-center">
-                  <Calendar size={20} className="mx-auto mb-2 text-gray-300" />
-                  <p className="text-xs text-gray-400">Aucun événement cette semaine</p>
+                  <Calendar size={20} className="mx-auto mb-2 text-white/20" />
+                  <p className="text-xs text-white/40">Aucun événement cette semaine</p>
                   <Link href="/client/planning" onClick={() => setOpen(false)}
                     className="mt-2 inline-block text-xs font-medium transition hover:opacity-80"
                     style={{ color: GOLD }}>
@@ -174,14 +174,14 @@ function NotifBell({ ready }: { ready: boolean }) {
                     { label: "Cette semaine", evts: laterEvts,    showDate: true  },
                   ].map(({ label, evts, showDate }) => evts.length === 0 ? null : (
                     <div key={label}>
-                      <p className="px-4 pb-1 pt-3 text-[0.6rem] font-bold uppercase tracking-wider text-gray-400">{label}</p>
+                      <p className="px-4 pb-1 pt-3 text-[0.6rem] font-bold uppercase tracking-wider text-white/30">{label}</p>
                       {evts.map(ev => (
                         <Link href="/client/planning" key={ev.id} onClick={() => setOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2 transition hover:bg-gray-50">
+                          className="flex items-center gap-3 px-4 py-2 transition hover:bg-white/[0.04]">
                           <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: GOLD }} />
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-medium text-gray-700">{ev.title}</p>
-                            <p className="text-[0.65rem] text-gray-400">
+                            <p className="truncate text-xs font-medium text-white/80">{ev.title}</p>
+                            <p className="text-[0.65rem] text-white/40">
                               {showDate ? `${fmtEvtDate(ev.event_date)} · ` : ""}{ev.event_time ?? "Sans heure"}
                             </p>
                           </div>
@@ -193,7 +193,7 @@ function NotifBell({ ready }: { ready: boolean }) {
               )}
             </div>
 
-            <div className="border-t border-gray-100 px-4 py-2.5">
+            <div className="px-4 py-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
               <Link href="/client/planning" onClick={() => setOpen(false)}
                 className="flex items-center justify-center gap-1.5 text-xs font-medium transition hover:opacity-75"
                 style={{ color: GOLD }}>
@@ -224,7 +224,7 @@ function PendingScreen() {
         </p>
         <div className="mb-6 space-y-2.5 rounded-xl border border-gray-200 bg-gray-50 p-4 text-left">
           {[
-            { icon: CheckCircle2,  color: "#4ade80", label: "Paiement reçu et validé",           badge: "Fait",     badgeColor: "#4ade80" },
+            { icon: CheckCircle2,  color: "#4ade80", label: "Paiement reçu et validé",             badge: "Fait",     badgeColor: "#4ade80" },
             { icon: Clock,         color: GOLD,      label: "Activation de votre accès par DJAMA", badge: "En cours", badgeColor: GOLD },
             { icon: MessageCircle, color: "#60a5fa", label: "Email de confirmation à l'activation", badge: null,       badgeColor: "" },
           ].map(({ icon: Icon, color, label, badge, badgeColor }, i) => (
@@ -270,7 +270,7 @@ function NavItem({
     <Link
       href={href}
       onClick={onClick}
-      className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.8rem] font-medium transition-colors duration-100 ${
+      className={`group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.8rem] font-medium transition-colors duration-100 ${
         active
           ? "text-gray-900"
           : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"

@@ -14,6 +14,7 @@ import {
   Globe, Brain,
   Code2, BarChart3, Briefcase,
   Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem, Star,
+  Truck, Package, ListTodo, Zap,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import {
@@ -82,8 +83,247 @@ const ESPACE_TOOLS = [
   { icon: Shield,        color: "#34d399",  title: "Trésorerie",              desc: "Flux, solde et finances." },
   { icon: Shield,        color: "#eab308",  title: "Contrats IA",             desc: "Contrats personnalisés en secondes." },
   { icon: Globe,         color: "#f59e0b",  title: "Sourcing IA",             desc: "Fournisseurs et marchés publics." },
+  { icon: Truck,         color: "#16a34a",  title: "Fournisseurs",            desc: "Catalogue et commandes." },
+  { icon: Package,       color: "#0d9488",  title: "Stocks",                  desc: "Inventaire en temps réel." },
+  { icon: ListTodo,      color: "#be185d",  title: "Tâches",                  desc: "To-do, projets et suivi." },
+  { icon: Users2,        color: "#0891b2",  title: "Équipe",                  desc: "Membres et planification RH." },
+  { icon: StickyNote,    color: "#92400e",  title: "Notes IA",                desc: "Prise de notes intelligente." },
+  { icon: Zap,           color: "#0369a1",  title: "Assistant IA",            desc: "Relances auto et conseils." },
+  { icon: Star,          color: "#b91c1c",  title: "Réputation",              desc: "Avis et e-réputation." },
+  { icon: Zap,           color: "#e1306c",  title: "Réseaux Sociaux IA",      desc: "Planifiez et créez du contenu." },
 ] as const;
 
+const PUBLIC_APP_ICONS = [
+  /* 0 – Factures & devis */
+  <svg key="p0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub0" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f59e0b"/><stop offset="1" stopColor="#c9a55a"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub0)"/>
+    <rect x="12" y="10" width="20" height="26" rx="3" fill="white" fillOpacity="0.95"/>
+    <rect x="15" y="16" width="14" height="2" rx="1" fill="#c9a55a"/>
+    <rect x="15" y="20" width="11" height="2" rx="1" fill="#c9a55a" fillOpacity="0.6"/>
+    <rect x="15" y="24" width="9" height="2" rx="1" fill="#c9a55a" fillOpacity="0.4"/>
+    <circle cx="31" cy="33" r="7" fill="#f59e0b"/>
+    <path d="M27.5 33l2.5 2.5 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>,
+
+  /* 1 – Agenda & Planification */
+  <svg key="p1" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub1" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#3b82f6"/><stop offset="1" stopColor="#6366f1"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub1)"/>
+    <rect x="9" y="14" width="30" height="24" rx="4" fill="white" fillOpacity="0.92"/>
+    <rect x="9" y="14" width="30" height="9" rx="4" fill="white" fillOpacity="0.3"/>
+    <rect x="9" y="19" width="30" height="4" fill="white" fillOpacity="0.3"/>
+    <rect x="16" y="10" width="3" height="8" rx="1.5" fill="white" fillOpacity="0.9"/>
+    <rect x="29" y="10" width="3" height="8" rx="1.5" fill="white" fillOpacity="0.9"/>
+    <circle cx="17" cy="28" r="1.8" fill="#3b82f6"/>
+    <circle cx="24" cy="28" r="1.8" fill="#3b82f6"/>
+    <circle cx="31" cy="28" r="1.8" fill="#3b82f6"/>
+    <circle cx="17" cy="34" r="1.8" fill="#6366f1" fillOpacity="0.5"/>
+    <circle cx="24" cy="34" r="2.5" fill="#6366f1"/>
+    <circle cx="31" cy="34" r="1.8" fill="#6366f1" fillOpacity="0.5"/>
+  </svg>,
+
+  /* 2 – Bloc-notes pro */
+  <svg key="p2" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub2" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#4ade80"/><stop offset="1" stopColor="#16a34a"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub2)"/>
+    <rect x="11" y="9" width="22" height="28" rx="3" fill="white" fillOpacity="0.92"/>
+    <circle cx="15" cy="13" r="1.5" fill="#4ade80"/>
+    <circle cx="15" cy="18" r="1.5" fill="#4ade80"/>
+    <circle cx="15" cy="23" r="1.5" fill="#4ade80"/>
+    <rect x="18" y="12" width="11" height="2" rx="1" fill="#16a34a" fillOpacity="0.5"/>
+    <rect x="18" y="17" width="9" height="2" rx="1" fill="#16a34a" fillOpacity="0.5"/>
+    <rect x="18" y="22" width="11" height="2" rx="1" fill="#16a34a" fillOpacity="0.5"/>
+    <rect x="18" y="27" width="7" height="2" rx="1" fill="#16a34a" fillOpacity="0.4"/>
+    <path d="M28 32l4-4 4 4-4 4z" fill="#16a34a" fillOpacity="0.85"/>
+    <rect x="33" y="25" width="3" height="8" rx="1.5" transform="rotate(45 33 25)" fill="#4ade80"/>
+  </svg>,
+
+  /* 3 – Coach Business IA */
+  <svg key="p3" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub3" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#a78bfa"/><stop offset="1" stopColor="#7c3aed"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub3)"/>
+    <rect x="9" y="13" width="26" height="18" rx="6" fill="white" fillOpacity="0.92"/>
+    <path d="M18 31l-4 5v-5z" fill="white" fillOpacity="0.92"/>
+    <circle cx="17" cy="22" r="2.2" fill="#a78bfa"/>
+    <circle cx="24" cy="22" r="2.2" fill="#a78bfa"/>
+    <circle cx="31" cy="22" r="2.2" fill="#a78bfa"/>
+    <circle cx="37" cy="12" r="6" fill="#7c3aed"/>
+    <path d="M37 9v6M34 12h6" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+  </svg>,
+
+  /* 4 – CRM Client */
+  <svg key="p4" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub4" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#22d3ee"/><stop offset="1" stopColor="#0891b2"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub4)"/>
+    <circle cx="24" cy="17" r="7" fill="white" fillOpacity="0.95"/>
+    <path d="M13 38 C13 31.373 18.373 26 25 26 C31.627 26 37 31.373 37 38" fill="white" fillOpacity="0.95"/>
+    <circle cx="10" cy="21" r="4" fill="white" fillOpacity="0.55"/>
+    <path d="M5 35 C5 31.134 8.134 28 12 28" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.55"/>
+    <circle cx="38" cy="21" r="4" fill="white" fillOpacity="0.55"/>
+    <path d="M43 35 C43 31.134 39.866 28 36 28" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.55"/>
+  </svg>,
+
+  /* 5 – Chrono Pro */
+  <svg key="p5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub5" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#fb923c"/><stop offset="1" stopColor="#ea580c"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub5)"/>
+    <circle cx="24" cy="28" r="13" fill="white" fillOpacity="0.92"/>
+    <rect x="20" y="10" width="8" height="5" rx="2.5" fill="white" fillOpacity="0.9"/>
+    <line x1="24" y1="28" x2="24" y2="19" stroke="#ea580c" strokeWidth="2.5" strokeLinecap="round"/>
+    <line x1="24" y1="28" x2="31" y2="29" stroke="#fb923c" strokeWidth="2.5" strokeLinecap="round"/>
+    <circle cx="24" cy="28" r="2.5" fill="#ea580c"/>
+    <line x1="24" y1="16" x2="24" y2="18" stroke="#fb923c" strokeWidth="2" strokeOpacity="0.5"/>
+    <line x1="36" y1="28" x2="34" y2="28" stroke="#fb923c" strokeWidth="2" strokeOpacity="0.5"/>
+    <line x1="12" y1="28" x2="14" y2="28" stroke="#fb923c" strokeWidth="2" strokeOpacity="0.5"/>
+  </svg>,
+
+  /* 6 – Dépenses Pro */
+  <svg key="p6" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub6" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f43f5e"/><stop offset="1" stopColor="#be123c"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub6)"/>
+    <rect x="7" y="15" width="28" height="18" rx="4" fill="white" fillOpacity="0.92"/>
+    <rect x="7" y="21" width="28" height="5" fill="white" fillOpacity="0.35"/>
+    <rect x="11" y="28" width="5" height="3" rx="1" fill="#f43f5e" fillOpacity="0.5"/>
+    <rect x="18" y="28" width="9" height="3" rx="1" fill="#f43f5e" fillOpacity="0.35"/>
+    <circle cx="37" cy="31" r="8" fill="#be123c"/>
+    <path d="M34 29.5l3 3 3-3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <line x1="37" y1="27" x2="37" y2="32.5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+  </svg>,
+
+  /* 7 – Trésorerie */
+  <svg key="p7" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub7" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#34d399"/><stop offset="1" stopColor="#059669"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub7)"/>
+    <rect x="8" y="30" width="8" height="10" rx="2" fill="white" fillOpacity="0.6"/>
+    <rect x="20" y="22" width="8" height="18" rx="2" fill="white" fillOpacity="0.8"/>
+    <rect x="32" y="13" width="8" height="27" rx="2" fill="white" fillOpacity="0.95"/>
+    <path d="M10 28l12-9 8 4 10-13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.8"/>
+    <circle cx="38" cy="11" r="3" fill="white" fillOpacity="0.9"/>
+  </svg>,
+
+  /* 8 – Contrats IA */
+  <svg key="p8" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub8" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#facc15"/><stop offset="1" stopColor="#ca8a04"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub8)"/>
+    <rect x="10" y="9" width="20" height="26" rx="3" fill="white" fillOpacity="0.92"/>
+    <rect x="13" y="15" width="14" height="2" rx="1" fill="#ca8a04" fillOpacity="0.6"/>
+    <rect x="13" y="20" width="11" height="2" rx="1" fill="#ca8a04" fillOpacity="0.5"/>
+    <rect x="13" y="25" width="8" height="2" rx="1" fill="#ca8a04" fillOpacity="0.4"/>
+    <path d="M34 26 L28 28.5 L28 35 C28 39.5 34 42 34 42 C34 42 40 39.5 40 35 L40 28.5 Z" fill="#ca8a04"/>
+    <path d="M31 34 L33.5 36.5 L37.5 32" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>,
+
+  /* 9 – Sourcing IA */
+  <svg key="p9" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub9" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#fbbf24"/><stop offset="1" stopColor="#d97706"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub9)"/>
+    <circle cx="21" cy="22" r="12" fill="white" fillOpacity="0.92"/>
+    <path d="M9 22h24M21 10 C18 13 16 17 16 22 C16 27 18 31 21 34M21 10 C24 13 26 17 26 22 C26 27 24 31 21 34" stroke="#d97706" strokeWidth="1.3" strokeOpacity="0.6"/>
+    <circle cx="37" cy="37" r="7" fill="#d97706"/>
+    <circle cx="37" cy="37" r="4" fill="white" fillOpacity="0.9"/>
+    <line x1="40.5" y1="40.5" x2="44" y2="44" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>,
+
+  /* 10 – Fournisseurs */
+  <svg key="p10" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub10" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#4ade80"/><stop offset="1" stopColor="#166534"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub10)"/>
+    <rect x="6" y="18" width="24" height="16" rx="3" fill="white" fillOpacity="0.92"/>
+    <path d="M30 26h8l-3-8h-5v8z" fill="white" fillOpacity="0.85"/>
+    <rect x="31" y="21" width="5" height="5" rx="1" fill="#166534" fillOpacity="0.4"/>
+    <circle cx="14" cy="36" r="4" fill="white" fillOpacity="0.95"/>
+    <circle cx="14" cy="36" r="2" fill="#166534" fillOpacity="0.6"/>
+    <circle cx="33" cy="36" r="4" fill="white" fillOpacity="0.95"/>
+    <circle cx="33" cy="36" r="2" fill="#166534" fillOpacity="0.6"/>
+  </svg>,
+
+  /* 11 – Stocks */
+  <svg key="p11" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub11" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#14b8a6"/><stop offset="1" stopColor="#0f766e"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub11)"/>
+    <rect x="8" y="29" width="32" height="11" rx="3" fill="white" fillOpacity="0.7"/>
+    <rect x="12" y="19" width="24" height="11" rx="3" fill="white" fillOpacity="0.82"/>
+    <rect x="16" y="10" width="16" height="10" rx="3" fill="white" fillOpacity="0.95"/>
+    <line x1="24" y1="10" x2="24" y2="20" stroke="#0f766e" strokeWidth="1.5" strokeOpacity="0.45"/>
+    <line x1="24" y1="19" x2="24" y2="30" stroke="#0f766e" strokeWidth="1.5" strokeOpacity="0.35"/>
+    <line x1="24" y1="29" x2="24" y2="40" stroke="#0f766e" strokeWidth="1.5" strokeOpacity="0.25"/>
+  </svg>,
+
+  /* 12 – Tâches */
+  <svg key="p12" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub12" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f472b6"/><stop offset="1" stopColor="#be185d"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub12)"/>
+    <rect x="9" y="9" width="24" height="30" rx="3" fill="white" fillOpacity="0.92"/>
+    <circle cx="15" cy="18" r="3" fill="#f472b6"/>
+    <path d="M13.5 18l1.5 1.5 2.5-2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="21" y="17" width="9" height="2" rx="1" fill="#be185d" fillOpacity="0.5"/>
+    <circle cx="15" cy="25" r="3" fill="#f472b6"/>
+    <path d="M13.5 25l1.5 1.5 2.5-2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="21" y="24" width="7" height="2" rx="1" fill="#be185d" fillOpacity="0.4"/>
+    <circle cx="15" cy="32" r="3" fill="white" stroke="#f472b6" strokeWidth="1.5"/>
+    <rect x="21" y="31" width="9" height="2" rx="1" fill="#be185d" fillOpacity="0.3"/>
+    <circle cx="33" cy="35" r="7" fill="#be185d"/>
+    <path d="M30 35l2.5 2.5 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>,
+
+  /* 13 – Équipe */
+  <svg key="p13" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub13" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#38bdf8"/><stop offset="1" stopColor="#0891b2"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub13)"/>
+    <circle cx="17" cy="19" r="5.5" fill="white" fillOpacity="0.65"/>
+    <path d="M8 38 C8 32.5 12 28.5 17 28.5 C22 28.5 26 32.5 26 38" fill="white" fillOpacity="0.65"/>
+    <circle cx="31" cy="17" r="7" fill="white" fillOpacity="0.95"/>
+    <path d="M21 38 C21 31.6 25.5 27 31 27 C36.5 27 41 31.6 41 38" fill="white" fillOpacity="0.95"/>
+  </svg>,
+
+  /* 14 – Notes IA */
+  <svg key="p14" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub14" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#fbbf24"/><stop offset="1" stopColor="#92400e"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub14)"/>
+    <path d="M10 11 H32 V31 L24 39 H10 Z" fill="white" fillOpacity="0.92"/>
+    <path d="M32 31 L24 39 V31 Z" fill="#92400e" fillOpacity="0.35"/>
+    <rect x="13" y="17" width="14" height="2" rx="1" fill="#92400e" fillOpacity="0.5"/>
+    <rect x="13" y="22" width="11" height="2" rx="1" fill="#92400e" fillOpacity="0.4"/>
+    <rect x="13" y="27" width="8" height="2" rx="1" fill="#92400e" fillOpacity="0.3"/>
+    <circle cx="36" cy="13" r="7" fill="#92400e"/>
+    <path d="M36 7 L33 14 L35.5 14 L33.5 19 L40 13 L37 13 Z" fill="white" fillOpacity="0.95"/>
+  </svg>,
+
+  /* 15 – Assistant IA */
+  <svg key="p15" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub15" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#38bdf8"/><stop offset="1" stopColor="#0369a1"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub15)"/>
+    <path d="M26 8 L15 27 L22 27 L19 40 L34 21 L27 21 Z" fill="white" fillOpacity="0.95"/>
+    <circle cx="10" cy="14" r="2" fill="white" fillOpacity="0.45"/>
+    <circle cx="39" cy="11" r="2.5" fill="white" fillOpacity="0.5"/>
+    <circle cx="38" cy="36" r="2" fill="white" fillOpacity="0.4"/>
+  </svg>,
+
+  /* 16 – Réputation */
+  <svg key="p16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub16" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f87171"/><stop offset="1" stopColor="#b91c1c"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub16)"/>
+    <path d="M24 8 L27.5 19 L39.5 19 L30 25.5 L33.5 37 L24 30.5 L14.5 37 L18 25.5 L8.5 19 L20.5 19 Z" fill="white" fillOpacity="0.95"/>
+    <circle cx="9" cy="11" r="2" fill="white" fillOpacity="0.4"/>
+    <circle cx="39" cy="10" r="2.5" fill="white" fillOpacity="0.45"/>
+    <circle cx="40" cy="38" r="2" fill="white" fillOpacity="0.35"/>
+    <circle cx="8" cy="39" r="2" fill="white" fillOpacity="0.35"/>
+  </svg>,
+
+  /* 17 – Réseaux Sociaux IA */
+  <svg key="p17" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub17" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#e1306c"/><stop offset="1" stopColor="#833ab4"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub17)"/>
+    <rect x="14" y="8" width="20" height="32" rx="4" fill="white" fillOpacity="0.92"/>
+    <rect x="17" y="14" width="7" height="7" rx="2" fill="#e1306c" fillOpacity="0.55"/>
+    <rect x="26" y="14" width="5" height="7" rx="2" fill="#833ab4" fillOpacity="0.55"/>
+    <rect x="17" y="23" width="5" height="7" rx="2" fill="#833ab4" fillOpacity="0.55"/>
+    <rect x="24" y="23" width="7" height="7" rx="2" fill="#e1306c" fillOpacity="0.55"/>
+    <circle cx="37" cy="35" r="7" fill="#e1306c"/>
+    <path d="M37 40 C34 37 31 34.5 31 32 C31 30.3 32.3 29 34 29 C35.2 29 36.3 29.8 37 31 C37.7 29.8 38.8 29 40 29 C41.7 29 43 30.3 43 32 C43 34.5 40 37 37 40Z" fill="white" fillOpacity="0.95"/>
+  </svg>,
+];
 
 export default function Page() {
   return (
@@ -265,7 +505,7 @@ function HomeContent() {
               variants={fadeIn}
               className="text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]"
             >
-              10 outils pros,{" "}
+              18 outils pros,{" "}
               <span style={{ color: "#6366f1" }}>1 abonnement</span>.
             </motion.h2>
 
@@ -291,7 +531,7 @@ function HomeContent() {
             variants={staggerContainerFast}
             className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5"
           >
-            {ESPACE_TOOLS.map(({ icon: Icon, color, title }) => (
+            {ESPACE_TOOLS.map(({ title }, i) => (
               <motion.div
                 key={title}
                 variants={cardReveal}
@@ -303,11 +543,8 @@ function HomeContent() {
                   href="/espace-client"
                   className="flex flex-col items-center gap-3 rounded-2xl bg-white px-2 py-5 shadow-[0_2px_10px_rgba(0,0,0,.07)] transition-all duration-200"
                 >
-                  <div
-                    className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                    style={{ background: `${color}18` }}
-                  >
-                    <Icon size={26} style={{ color }} strokeWidth={1.6} />
+                  <div className="h-14 w-14 overflow-hidden rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,.15)]">
+                    {PUBLIC_APP_ICONS[i]}
                   </div>
                   <span className="text-center text-[10.5px] font-semibold leading-tight text-gray-700">
                     {title}
@@ -322,7 +559,7 @@ function HomeContent() {
             className="mt-5 flex flex-wrap items-center justify-center gap-5 rounded-2xl bg-white px-6 py-4 shadow-[0_2px_12px_rgba(0,0,0,.06)] sm:gap-10"
           >
             {([
-              { val: "10",     label: "outils inclus",  color: "#6366f1" },
+              { val: "18",     label: "outils inclus",  color: "#6366f1" },
               { val: "11,90€", label: "/ mois",         color: "#c9a55a" },
               { val: "0",      label: "engagement",     color: "#10b981" },
               { val: "✓",      label: "accès immédiat", color: "#f59e0b" },

@@ -8,7 +8,7 @@ import {
   Phone, BookOpen, Megaphone, ShoppingBag, HelpCircle, CreditCard,
   Banknote, Wallet, DollarSign, CheckCircle2, XCircle,
   Droplets, Calendar, FileCheck,
-  AlertTriangle, Zap,
+  AlertTriangle, Zap, ChevronDown,
 } from "lucide-react";
 import { supabase as supabaseClient } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
@@ -133,6 +133,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inp = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all";
+const sel = "w-full rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2.5 pr-8 text-[0.8rem] text-white outline-none appearance-none [color-scheme:dark] focus:border-white/[0.15] transition-all";
 
 function ExpenseModal({
   expense, reports, userId, onSave, onClose,
@@ -202,16 +203,19 @@ function ExpenseModal({
 
                 <div className="grid grid-cols-3 gap-3">
           <Field label="Date">
-            <input type="date" value={form.date ?? ""} onChange={e => set("date", e.target.value)} className={inp} />
+            <input type="date" value={form.date ?? ""} onChange={e => set("date", e.target.value)} className={`${inp} [color-scheme:dark]`} />
           </Field>
           <Field label="Montant">
             <input type="number" step="0.01" min="0" placeholder="0.00"
               value={form.amount ?? ""} onChange={e => set("amount", parseFloat(e.target.value) || 0)} className={inp} />
           </Field>
           <Field label="Devise">
-            <select value={form.currency ?? "EUR"} onChange={e => set("currency", e.target.value)} className={inp}>
-              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <div className="relative">
+              <select value={form.currency ?? "EUR"} onChange={e => set("currency", e.target.value)} className={sel}>
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+            </div>
           </Field>
         </div>
 
@@ -239,14 +243,20 @@ function ExpenseModal({
 
                 <div className="grid grid-cols-2 gap-3">
           <Field label="Moyen de paiement">
-            <select value={form.payment_method ?? "carte_pro"} onChange={e => set("payment_method", e.target.value)} className={inp}>
-              {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
-            </select>
+            <div className="relative">
+              <select value={form.payment_method ?? "carte_pro"} onChange={e => set("payment_method", e.target.value)} className={sel}>
+                {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
+              </select>
+              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+            </div>
           </Field>
           <Field label="Statut">
-            <select value={form.status ?? "draft"} onChange={e => set("status", e.target.value)} className={inp}>
-              {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
-            </select>
+            <div className="relative">
+              <select value={form.status ?? "draft"} onChange={e => set("status", e.target.value)} className={sel}>
+                {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
+              </select>
+              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+            </div>
           </Field>
         </div>
 
@@ -285,10 +295,13 @@ function ExpenseModal({
 
                 {reports.length > 0 && (
           <Field label="Note de frais associée">
-            <select value={form.expense_report_id ?? ""} onChange={e => set("expense_report_id", e.target.value || null)} className={inp}>
-              <option value="">— Sans note de frais —</option>
-              {reports.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
-            </select>
+            <div className="relative">
+              <select value={form.expense_report_id ?? ""} onChange={e => set("expense_report_id", e.target.value || null)} className={sel}>
+                <option value="">— Sans note de frais —</option>
+                {reports.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
+              </select>
+              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+            </div>
           </Field>
         )}
 
@@ -352,7 +365,8 @@ function ExpenseModal({
             Annuler
           </button>
           <button type="button" onClick={handleSave} disabled={saving || uploading}
-            className="flex-1 rounded-xl bg-white py-2.5 text-[0.78rem] font-bold text-black hover:bg-white/90 disabled:opacity-40 transition-all">
+            className="flex-1 rounded-xl py-2.5 text-[0.78rem] font-bold disabled:opacity-40 transition-all hover:brightness-110"
+            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {saving ? "Enregistrement…" : expense?.id ? "Mettre à jour" : "Ajouter"}
           </button>
         </div>
@@ -403,9 +417,12 @@ function ReportModal({
           </Field>
         </div>
         <Field label="Statut">
-          <select className={inp} value={form.status ?? "draft"} onChange={e => set("status", e.target.value)}>
-            {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
-          </select>
+          <div className="relative">
+            <select className={sel} value={form.status ?? "draft"} onChange={e => set("status", e.target.value)}>
+              {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
+            </select>
+            <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+          </div>
         </Field>
         <Field label="Notes">
           <textarea rows={2} className={`${inp} resize-none`} placeholder="Notes…"
@@ -417,7 +434,8 @@ function ReportModal({
             Annuler
           </button>
           <button onClick={() => onSave(form)} disabled={!form.title?.trim()}
-            className="flex-1 rounded-xl bg-white py-2.5 text-[0.78rem] font-bold text-black hover:bg-white/90 disabled:opacity-40 transition-all">
+            className="flex-1 rounded-xl py-2.5 text-[0.78rem] font-bold disabled:opacity-40 transition-all hover:brightness-110"
+            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {report ? "Mettre à jour" : "Créer"}
           </button>
         </div>
@@ -497,7 +515,7 @@ function BudgetView({
         <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2">
           <Calendar size={13} className="shrink-0 text-white/30" />
           <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-            className="bg-transparent text-[0.78rem] text-white outline-none" />
+            className="[color-scheme:dark] bg-transparent text-[0.78rem] text-white outline-none" />
         </div>
         <p className="text-[0.72rem] text-white/40">
           Budget total : <span className="font-semibold text-white">{fmtCur(totalBudget)}</span>
@@ -844,294 +862,355 @@ export default function DepensesPage() {
   const grandTotal = expenses.filter(e => e.status !== "rejected").reduce((a, e) => a + e.amount, 0);
 
   if (loading) return (
-    <div className="flex h-full items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+    <div className="flex h-full items-center justify-center" style={{ background:"#0c1222" }}>
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
     </div>
   );
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden" style={{ background: "#0c1222" }}>
       <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       </AnimatePresence>
 
-            <div className="shrink-0 flex items-center justify-between gap-4 border-b border-white/[0.05] p-4 sm:p-6">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">Dépenses</h1>
-          <p className="mt-0.5 text-[0.65rem] text-white/30">
-            {expenses.length} dépense{expenses.length !== 1 ? "s" : ""} · {fmtCur(grandTotal)} total
-          </p>
+      {/* ── Animated header ── */}
+      <div className="relative shrink-0 overflow-hidden px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6"
+        style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+
+        {/* Gold top line */}
+        <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, ease: "easeOut" }}
+          className="absolute inset-x-0 top-0 h-[2px] origin-left"
+          style={{ background: "linear-gradient(90deg,#c9a55a,#e8c97a,#c9a55a44,transparent)" }} />
+
+        {/* Floating orbs */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-8 -right-8 h-40 w-40 rounded-full opacity-[0.06]"
+            style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }} />
+          <div className="absolute bottom-0 left-1/3 h-24 w-24 rounded-full opacity-[0.04]"
+            style={{ background: "radial-gradient(circle,#6366f1,transparent 70%)" }} />
         </div>
-        <div className="flex gap-2">
-          <button onClick={exportCSV} title="Exporter CSV"
-            className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.04] text-white/30 hover:bg-white/[0.08] hover:text-white transition-all">
-            <Download size={15} />
-          </button>
-          <button onClick={() => { setEditExpense(null); setShowModal(true); }}
-            className="flex h-8 items-center gap-2 rounded-xl bg-white px-3 text-[0.72rem] font-bold text-black hover:bg-white/90 transition-all">
-            <Plus size={14} /> Dépense
-          </button>
+
+        <div className="relative z-10 flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl"
+              style={{ background: "rgba(201,165,90,0.12)", border: "1px solid rgba(201,165,90,0.25)" }}>
+              <Receipt size={18} style={{ color: "#c9a55a" }} />
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight text-white">Dépenses</h1>
+              <p className="mt-0.5 text-[0.65rem] text-white/30">
+                {expenses.length} dépense{expenses.length !== 1 ? "s" : ""} · {fmtCur(grandTotal)} total
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }} onClick={exportCSV} title="Exporter CSV"
+              className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition-all hover:text-white"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <Download size={14} />
+            </motion.button>
+            <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.25 }}
+              onClick={() => { setEditExpense(null); setShowModal(true); }}
+              className="flex h-8 items-center gap-2 rounded-xl px-4 text-[0.72rem] font-bold transition-all hover:brightness-110"
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+              <Plus size={14} /> Dépense
+            </motion.button>
+          </div>
+        </div>
+
+        {/* KPI cards */}
+        <div className="relative z-10 mt-5 grid grid-cols-3 gap-3">
+          {[
+            { l: "Total filtré",    v: fmtCur(filteredTotal), c: "#c9a55a", delay: 0.1 },
+            { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#10b981", delay: 0.15 },
+            { l: "À rembourser",    v: fmtCur(filteredReimb), c: "#f59e0b", delay: 0.2 },
+          ].map(({ l, v, c, delay }) => (
+            <motion.div key={l} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay, type: "spring", stiffness: 260, damping: 22 }}
+              className="rounded-2xl p-3"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <p className="text-[0.6rem] font-semibold uppercase tracking-widest" style={{ color: c + "99" }}>{l}</p>
+              <p className="mt-1 text-[1.05rem] font-black leading-tight text-white">{v}</p>
+              <div className="mt-2 h-0.5 rounded-full" style={{ background: `linear-gradient(90deg,${c}60,transparent)` }} />
+            </motion.div>
+          ))}
         </div>
       </div>
 
-            <div className="shrink-0 flex gap-1 border-b border-white/[0.05] px-3 py-2 sm:px-6">
-        {TABS.map(({ id, l, I, badge }) => (
+      {/* ── Tab bar ── */}
+      <div className="relative shrink-0 flex border-b border-white/[0.07] px-4 sm:px-8"
+        style={{ background: "rgba(6,8,14,0.5)" }}>
+        {TABS.map(({ id, l, I }) => (
           <button key={id} onClick={() => setTab(id as typeof tab)}
-            className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[0.72rem] font-semibold transition-all ${
-              tab === id ? "bg-white/[0.08] text-white" : "text-white/30 hover:text-white/60"
+            className={`relative flex items-center gap-2 whitespace-nowrap px-4 py-3 text-[0.72rem] font-semibold transition-colors ${
+              tab === id ? "text-white" : "text-white/30 hover:text-white/60"
             }`}>
             <I size={13} />{l}
-            {badge > 0 && (
-              <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[0.55rem] font-bold text-white/60">{badge}</span>
+            {tab === id && (
+              <motion.div layoutId="dep-tab-indicator"
+                className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
+                style={{ background: "linear-gradient(90deg,#c9a55a,#e8c97a)" }} />
             )}
           </button>
         ))}
       </div>
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <AnimatePresence mode="wait">
+      {/* ── Content ── */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="mx-auto max-w-4xl">
+          <AnimatePresence mode="wait">
 
-                    {tab === "depenses" && (
-            <motion.div key="dep" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="space-y-4">
+            {tab === "depenses" && (
+              <motion.div key="dep" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="space-y-4">
 
-                            <div className="grid grid-cols-3 gap-3">
-                {[
-                  { l: "Total (filtré)",  v: fmtCur(filteredTotal), c: "#c9a55a" },
-                  { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#10b981" },
-                  { l: "À rembourser",    v: fmtCur(filteredReimb), c: "#f59e0b" },
-                ].map(({ l, v }) => (
-                  <div key={l} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
-                    <p className="text-[0.65rem] font-medium text-white/35">{l}</p>
-                    <p className="mt-0.5 text-[1.05rem] font-semibold leading-tight text-white">{v}</p>
+                {/* Filters */}
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2">
+                    <Search size={13} className="shrink-0 text-white/25" />
+                    <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
+                      className="flex-1 bg-transparent text-[0.78rem] text-white placeholder-white/20 outline-none" />
                   </div>
-                ))}
-              </div>
-
-                            <div className="flex flex-wrap gap-2">
-                <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                  <Search size={13} className="shrink-0 text-white/25" />
-                  <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
-                    className="flex-1 bg-transparent text-[0.78rem] text-white placeholder-white/20 outline-none" />
-                </div>
-                <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
-                  <option value="">Toutes catégories</option>
-                  {CATS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
-                </select>
-                <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
-                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
-                  <option value="">Tous statuts</option>
-                  {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
-                </select>
-                <select value={filterPay} onChange={e => setFilterPay(e.target.value)}
-                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none">
-                  <option value="">Tous paiements</option>
-                  {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
-                </select>
-                <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
-                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[0.75rem] text-white/50 outline-none" />
-                {hasFilters && (
-                  <button onClick={() => { setSearch(""); setFilterCat(""); setFilterSt(""); setFilterMonth(""); setFilterPay(""); }}
-                    className="flex items-center gap-1 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.72rem] text-white/30 hover:text-white/60 transition-colors">
-                    <X size={12} /> Effacer
-                  </button>
-                )}
-              </div>
-
-                            {filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3">
-                  <Receipt size={32} className="text-white/10" />
-                  <p className="text-[0.78rem] text-white/30">
-                    {hasFilters ? "Aucune dépense ne correspond aux filtres" : "Aucune dépense enregistrée"}
-                  </p>
-                  {!hasFilters && (
-                    <button onClick={() => { setEditExpense(null); setShowModal(true); }}
-                      className="flex items-center gap-2 rounded-xl bg-white/[0.05] px-4 py-2 text-[0.72rem] text-white/50 hover:bg-white/[0.08] hover:text-white transition-all">
-                      <Plus size={13} /> Ajouter votre première dépense
+                  <div className="relative">
+                    <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
+                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0d1426] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
+                      <option value="">Toutes catégories</option>
+                      {CATS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+                    </select>
+                    <ChevronDown size={11} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25" />
+                  </div>
+                  <div className="relative">
+                    <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
+                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0d1426] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
+                      <option value="">Tous statuts</option>
+                      {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
+                    </select>
+                    <ChevronDown size={11} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25" />
+                  </div>
+                  <div className="relative">
+                    <select value={filterPay} onChange={e => setFilterPay(e.target.value)}
+                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0d1426] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
+                      <option value="">Tous paiements</option>
+                      {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
+                    </select>
+                    <ChevronDown size={11} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25" />
+                  </div>
+                  <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
+                    className="[color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0d1426] px-3 py-2 text-[0.75rem] text-white/50 outline-none" />
+                  {hasFilters && (
+                    <button onClick={() => { setSearch(""); setFilterCat(""); setFilterSt(""); setFilterMonth(""); setFilterPay(""); }}
+                      className="flex items-center gap-1 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.72rem] text-white/30 hover:text-white/60 transition-colors">
+                      <X size={12} /> Effacer
                     </button>
                   )}
                 </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <AnimatePresence initial={false}>
-                    {filtered.map(e => {
-                      const ci = getCat(e.category);
-                      const CI = ci.I;
-                      return (
-                        <motion.div key={e.id} layout
-                          initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
-                          className="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 hover:bg-white/[0.03] transition-all">
 
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                            style={{ backgroundColor: ci.c + "22" }}>
-                            <CI size={15} style={{ color: ci.c }} />
-                          </div>
+                {/* Expense list */}
+                {filtered.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-24 gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl"
+                      style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
+                      <Receipt size={24} style={{ color: "#c9a55a66" }} />
+                    </div>
+                    <p className="text-[0.78rem] text-white/30">
+                      {hasFilters ? "Aucune dépense ne correspond aux filtres" : "Aucune dépense enregistrée"}
+                    </p>
+                    {!hasFilters && (
+                      <button onClick={() => { setEditExpense(null); setShowModal(true); }}
+                        className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] text-white/50 hover:text-white transition-all"
+                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <Plus size={13} /> Ajouter votre première dépense
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <AnimatePresence initial={false}>
+                      {filtered.map(e => {
+                        const ci = getCat(e.category);
+                        const CI = ci.I;
+                        return (
+                          <motion.div key={e.id} layout
+                            initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
+                            className="group flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 hover:bg-white/[0.05] transition-all">
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="truncate text-[0.78rem] font-semibold text-white/90">{e.description}</p>
-                              {e.receipt_url && (
-                                <a href={e.receipt_url} target="_blank" rel="noreferrer"
-                                  className="shrink-0 text-[0.6rem] text-blue-400/60 hover:text-blue-400 transition-colors" title="Justificatif">📎</a>
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                              style={{ backgroundColor: ci.c + "22" }}>
+                              <CI size={16} style={{ color: ci.c }} />
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="truncate text-[0.78rem] font-semibold text-white/90">{e.description}</p>
+                                {e.receipt_url && (
+                                  <a href={e.receipt_url} target="_blank" rel="noreferrer"
+                                    className="shrink-0 text-[0.6rem] text-blue-400/60 hover:text-blue-400 transition-colors" title="Justificatif">📎</a>
+                                )}
+                              </div>
+                              <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                                <span className="text-[0.62rem] text-white/30">{fmtDate(e.date)}</span>
+                                {e.project && <span className="rounded-full bg-white/[0.05] px-1.5 py-0.5 text-[0.58rem] text-white/30">{e.project}</span>}
+                                {e.invoice_number && <span className="text-[0.58rem] text-white/20">{e.invoice_number}</span>}
+                              </div>
+                            </div>
+
+                            <div className="hidden sm:flex shrink-0 flex-col items-end gap-1">
+                              <CatBadge cat={e.category} />
+                              <StBadge st={e.status} />
+                            </div>
+
+                            <div className="shrink-0 text-right">
+                              <p className="text-[0.88rem] font-bold text-white">{fmtCur(e.amount, e.currency)}</p>
+                              {e.vat_recoverable && e.vat_amount > 0 && (
+                                <p className="text-[0.58rem] text-green-400/60">TVA {fmtCur(e.vat_amount)}</p>
                               )}
                             </div>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                              <span className="text-[0.62rem] text-white/30">{fmtDate(e.date)}</span>
-                              {e.project && <span className="rounded-full bg-white/[0.05] px-1.5 py-0.5 text-[0.58rem] text-white/30">{e.project}</span>}
-                              {e.invoice_number && <span className="text-[0.58rem] text-white/20">{e.invoice_number}</span>}
+
+                            <div className="shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => { setEditExpense(e); setShowModal(true); }}
+                                className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white transition-all">
+                                <Edit2 size={12} />
+                              </button>
+                              <button onClick={() => deleteExpense(e.id)}
+                                className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400 transition-all">
+                                <Trash2 size={12} />
+                              </button>
                             </div>
-                          </div>
 
-                          <div className="hidden sm:flex shrink-0 flex-col items-end gap-1">
-                            <CatBadge cat={e.category} />
-                            <StBadge st={e.status} />
-                          </div>
+                            <select value={e.status} onChange={ev => updateStatus(e.id, ev.target.value as ExpStatus)}
+                              className="shrink-0 cursor-pointer appearance-none [color-scheme:dark] rounded-lg border border-white/[0.05] bg-[#0d1426] px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 hover:border-white/15 group-hover:opacity-100 transition-all"
+                              style={{ minWidth: "90px" }}>
+                              {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
+                            </select>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
 
-                          <div className="shrink-0 text-right">
-                            <p className="text-[0.88rem] font-bold text-white">{fmtCur(e.amount, e.currency)}</p>
-                            {e.vat_recoverable && e.vat_amount > 0 && (
-                              <p className="text-[0.58rem] text-green-400/60">TVA {fmtCur(e.vat_amount)}</p>
-                            )}
-                          </div>
-
-                          <div className="shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => { setEditExpense(e); setShowModal(true); }}
-                              className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white transition-all">
-                              <Edit2 size={12} />
-                            </button>
-                            <button onClick={() => deleteExpense(e.id)}
-                              className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400 transition-all">
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-
-                          <select value={e.status} onChange={ev => updateStatus(e.id, ev.target.value as ExpStatus)}
-                            className="shrink-0 cursor-pointer rounded-lg border border-white/[0.05] bg-white/[0.025] px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 hover:border-white/15 group-hover:opacity-100 transition-all appearance-none"
-                            style={{ minWidth: "90px" }}>
-                            {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
-                          </select>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-
-                                    <div className="flex flex-wrap items-center justify-end gap-4 rounded-xl border border-white/[0.04] bg-white/[0.01] px-4 py-2.5 text-[0.72rem]">
-                    <span className="text-white/30">{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</span>
-                    <span className="text-white/50">TVA rép. : <span className="font-semibold text-green-400">{fmtCur(filteredVAT)}</span></span>
-                    <span className="font-bold text-white">Total : {fmtCur(filteredTotal)}</span>
+                    <div className="flex flex-wrap items-center justify-end gap-4 rounded-2xl border border-white/[0.04] bg-white/[0.01] px-4 py-2.5 text-[0.72rem]">
+                      <span className="text-white/30">{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</span>
+                      <span className="text-white/50">TVA rép. : <span className="font-semibold text-green-400">{fmtCur(filteredVAT)}</span></span>
+                      <span className="font-bold text-white">Total : {fmtCur(filteredTotal)}</span>
+                    </div>
                   </div>
-                </div>
-              )}
-            </motion.div>
-          )}
+                )}
+              </motion.div>
+            )}
 
-                    {tab === "notes" && (
-            <motion.div key="notes" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="space-y-4">
-              <div className="flex justify-end">
-                <button onClick={() => { setEditReport(null); setShowReportModal(true); }}
-                  className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-[0.72rem] font-bold text-black hover:bg-white/90 transition-all">
-                  <Plus size={14} /> Nouvelle note
-                </button>
-              </div>
-
-              {reports.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3">
-                  <FileText size={32} className="text-white/10" />
-                  <p className="text-[0.78rem] text-white/30">Aucune note de frais</p>
+            {tab === "notes" && (
+              <motion.div key="notes" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="space-y-4">
+                <div className="flex justify-end">
                   <button onClick={() => { setEditReport(null); setShowReportModal(true); }}
-                    className="flex items-center gap-2 rounded-xl bg-white/[0.05] px-4 py-2 text-[0.72rem] text-white/50 hover:bg-white/[0.08] hover:text-white transition-all">
-                    <Plus size={13} /> Créer une note de frais
+                    className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                    <Plus size={14} /> Nouvelle note
                   </button>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {reports.map(r => {
-                    const linked = expenses.filter(e => e.expense_report_id === r.id);
-                    const total  = linked.reduce((a, e) => a + e.amount, 0);
-                    const vatRec = linked.filter(e => e.vat_recoverable).reduce((a, e) => a + e.vat_amount, 0);
-                    return (
-                      <div key={r.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-[0.85rem] font-bold text-white">{r.title}</h3>
-                              <StBadge st={r.status} />
+
+                {reports.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-24 gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl"
+                      style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
+                      <FileText size={24} style={{ color: "#c9a55a66" }} />
+                    </div>
+                    <p className="text-[0.78rem] text-white/30">Aucune note de frais</p>
+                    <button onClick={() => { setEditReport(null); setShowReportModal(true); }}
+                      className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] text-white/50 hover:text-white transition-all"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <Plus size={13} /> Créer une note de frais
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {reports.map(r => {
+                      const linked = expenses.filter(e => e.expense_report_id === r.id);
+                      const total  = linked.reduce((a, e) => a + e.amount, 0);
+                      const vatRec = linked.filter(e => e.vat_recoverable).reduce((a, e) => a + e.vat_amount, 0);
+                      return (
+                        <div key={r.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-3">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="text-[0.85rem] font-bold text-white">{r.title}</h3>
+                                <StBadge st={r.status} />
+                              </div>
+                              <div className="mt-1 flex flex-wrap items-center gap-3 text-[0.65rem] text-white/30">
+                                <span>{linked.length} dépense{linked.length !== 1 ? "s" : ""}</span>
+                                {r.period_start && (
+                                  <span>{fmtDate(r.period_start)} → {r.period_end ? fmtDate(r.period_end) : "en cours"}</span>
+                                )}
+                              </div>
+                              {r.notes && <p className="mt-1 text-[0.65rem] italic text-white/25 truncate">{r.notes}</p>}
                             </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-3 text-[0.65rem] text-white/30">
-                              <span>{linked.length} dépense{linked.length !== 1 ? "s" : ""}</span>
-                              {r.period_start && (
-                                <span>{fmtDate(r.period_start)} → {r.period_end ? fmtDate(r.period_end) : "en cours"}</span>
-                              )}
+                            <div className="shrink-0 text-right">
+                              <p className="text-[0.95rem] font-semibold text-white">{fmtCur(total)}</p>
+                              {vatRec > 0 && <p className="text-[0.6rem] text-green-400/60">TVA {fmtCur(vatRec)}</p>}
                             </div>
-                            {r.notes && <p className="mt-1 text-[0.65rem] italic text-white/25 truncate">{r.notes}</p>}
+                            <div className="shrink-0 flex gap-1">
+                              <button onClick={() => { setEditReport(r); setShowReportModal(true); }}
+                                className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white transition-all">
+                                <Edit2 size={12} />
+                              </button>
+                              <button onClick={() => deleteReport(r.id)}
+                                className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400 transition-all">
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
                           </div>
-                          <div className="shrink-0 text-right">
-                            <p className="text-[0.95rem] font-semibold text-white">{fmtCur(total)}</p>
-                            {vatRec > 0 && <p className="text-[0.6rem] text-green-400/60">TVA {fmtCur(vatRec)}</p>}
-                          </div>
-                          <div className="shrink-0 flex gap-1">
-                            <button onClick={() => { setEditReport(r); setShowReportModal(true); }}
-                              className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white transition-all">
-                              <Edit2 size={12} />
-                            </button>
-                            <button onClick={() => deleteReport(r.id)}
-                              className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400 transition-all">
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
+
+                          {linked.length > 0 ? (
+                            <div className="space-y-1 border-t border-white/[0.04] pt-3">
+                              {linked.map(e => {
+                                const ci = getCat(e.category);
+                                const CI = ci.I;
+                                return (
+                                  <div key={e.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-white/[0.02] transition-colors">
+                                    <CI size={11} style={{ color: ci.c }} className="shrink-0" />
+                                    <span className="flex-1 truncate text-[0.68rem] text-white/50">{e.description}</span>
+                                    <span className="shrink-0 text-[0.62rem] text-white/30">{fmtDate(e.date)}</span>
+                                    <span className="shrink-0 text-[0.7rem] font-semibold text-white/70">{fmtCur(e.amount, e.currency)}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="py-2 text-center text-[0.68rem] text-white/20">
+                              Associez des dépenses à cette note via le formulaire de dépense.
+                            </p>
+                          )}
                         </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            )}
 
-                        {linked.length > 0 ? (
-                          <div className="space-y-1 border-t border-white/[0.04] pt-3">
-                            {linked.map(e => {
-                              const ci = getCat(e.category);
-                              const CI = ci.I;
-                              return (
-                                <div key={e.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-white/[0.02] transition-colors">
-                                  <CI size={11} style={{ color: ci.c }} className="shrink-0" />
-                                  <span className="flex-1 truncate text-[0.68rem] text-white/50">{e.description}</span>
-                                  <span className="shrink-0 text-[0.62rem] text-white/30">{fmtDate(e.date)}</span>
-                                  <span className="shrink-0 text-[0.7rem] font-semibold text-white/70">{fmtCur(e.amount, e.currency)}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <p className="py-2 text-center text-[0.68rem] text-white/20">
-                            Associez des dépenses à cette note via le formulaire de dépense.
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          )}
+            {tab === "budgets" && (
+              <motion.div key="bud" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                {userId && (
+                  <BudgetView
+                    expenses={expenses} budgets={budgets}
+                    userId={userId} onBudgetsChange={setBudgets}
+                  />
+                )}
+              </motion.div>
+            )}
 
-                    {tab === "budgets" && (
-            <motion.div key="bud" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              {userId && (
-                <BudgetView
-                  expenses={expenses} budgets={budgets}
-                  userId={userId} onBudgetsChange={setBudgets}
-                />
-              )}
-            </motion.div>
-          )}
+            {tab === "rapport" && (
+              <motion.div key="rap" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <RapportView expenses={expenses} />
+              </motion.div>
+            )}
 
-                    {tab === "rapport" && (
-            <motion.div key="rap" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <RapportView expenses={expenses} />
-            </motion.div>
-          )}
-
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
       </div>
 
-            <AnimatePresence>
+      <AnimatePresence>
         {showModal && userId && (
           <ExpenseModal
             expense={editExpense} reports={reports} userId={userId}
