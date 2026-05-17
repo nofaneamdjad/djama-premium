@@ -27,6 +27,8 @@ export interface ContractPDFData {
   prestataire_siret?:     string;
   /* Signature */
   ville_signature?:       string;
+  /* Branding */
+  company_logo?:          string;   // base64 data URL (PNG/JPG)
 }
 
 export type PDFTheme = "classique";   // variantes à venir
@@ -252,6 +254,18 @@ export function generateContractPDF(
      BLOC 1 — EN-TÊTE PREMIÈRE PAGE
   ════════════════════════════════════════════════════════ */
   y = 14;
+
+  /* -- Logo société (si fourni) ────────────────────────── */
+  if (contract.company_logo) {
+    try {
+      const logoMaxW = 38;
+      const logoMaxH = 16;
+      doc.addImage(contract.company_logo, "PNG", ML, y - 2, logoMaxW, logoMaxH, undefined, "FAST");
+      y += logoMaxH + 2;
+    } catch {
+      // logo invalide — on ignore silencieusement
+    }
+  }
 
   const ref   = contractRef(contract.created_at);
   const today = new Date().toLocaleDateString("fr-FR", {

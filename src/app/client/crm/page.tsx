@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Plus, Search, Trash2, Pencil, X, Loader2, Mail, Phone,
-  Building2, Download, UserCheck, ChevronRight, ChevronDown,
+  Building2, Download, Upload, UserCheck, ChevronRight, ChevronDown,
   Calendar, Clock, FileText, MessageSquare, Video, PhoneCall,
   Star, Tag, Globe, Linkedin, MapPin, Briefcase, TrendingUp,
   CheckSquare, Square, AlertCircle, Ticket, BarChart2, Filter,
@@ -39,6 +39,7 @@ interface Contact {
   website?: string; linkedin?: string;
   budget?: number; interest_level?: number;
   tags?: string[];
+  next_relance?: string;
   created_at: string; updated_at: string;
 }
 
@@ -188,7 +189,7 @@ function Select({ label, children, ...props }: React.SelectHTMLAttributes<HTMLSe
     <div className="space-y-1">
       {label && <label className="block text-[0.62rem] font-bold uppercase tracking-widest text-white/30">{label}</label>}
       <select {...props}
-        className="w-full rounded-xl border border-white/[0.08] bg-[#0f1117] px-3 py-2 text-[0.8rem] text-white outline-none focus:border-white/20 transition-colors">
+        className="w-full rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 text-[0.8rem] text-white outline-none focus:border-white/[0.15] transition-colors appearance-none [color-scheme:dark]">
         {children}
       </select>
     </div>
@@ -351,8 +352,8 @@ function PipelineView({
                 <button onClick={() => { setAddModal(null); setEditOpp(null); setForm({}); }}
                   className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white transition-colors">Annuler</button>
                 <button onClick={save} disabled={!form.title}
-                  className="flex-1 rounded-xl py-2.5 text-sm font-bold text-[#0a0b10] transition-opacity disabled:opacity-40"
-                  style={{ backgroundColor: addModal ? STAGES[addModal].color : STAGES[editOpp?.stage ?? "nouveau"].color }}>
+                  className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
+                  style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
                   {editOpp ? "Mettre à jour" : "Créer"}
                 </button>
               </div>
@@ -418,7 +419,8 @@ function TachesView({
           ))}
         </div>
         <button onClick={() => setAddModal(true)}
-          className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors">
+          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all hover:brightness-110"
+          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
           <Plus size={11}/> Nouvelle tâche
         </button>
       </div>
@@ -510,7 +512,8 @@ function TachesView({
                 <button onClick={() => setAddModal(false)}
                   className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white">Annuler</button>
                 <button onClick={saveTask} disabled={!form.title}
-                  className="flex-1 rounded-xl bg-white/10 py-2.5 text-sm font-bold text-white hover:bg-white/15 disabled:opacity-40">
+                  className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
+                  style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
                   Créer
                 </button>
               </div>
@@ -643,6 +646,154 @@ function RapportView({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function TicketsGlobalView({
+  tickets, contacts, onAdd, onUpdate, onDelete,
+}: {
+  tickets: SupportTicket[];
+  contacts: Contact[];
+  onAdd: (data: Partial<SupportTicket>) => Promise<void>;
+  onUpdate: (id: string, data: Partial<SupportTicket>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [filter, setFilter] = useState<TicketStatus | "tous">("tous");
+  const [addModal, setAddModal] = useState(false);
+  const [form, setForm] = useState<Partial<SupportTicket>>({ status: "ouvert", priority: "normale" });
+
+  const filtered = useMemo(() =>
+    filter === "tous" ? tickets : tickets.filter(t => t.status === filter),
+    [tickets, filter]);
+
+  const counts = useMemo(() => ({
+    tous:     tickets.length,
+    ouvert:   tickets.filter(t => t.status === "ouvert").length,
+    en_cours: tickets.filter(t => t.status === "en_cours").length,
+    résolu:   tickets.filter(t => t.status === "résolu").length,
+    fermé:    tickets.filter(t => t.status === "fermé").length,
+  }), [tickets]);
+
+  async function save() {
+    if (!form.title) return;
+    await onAdd(form);
+    setAddModal(false);
+    setForm({ status: "ouvert", priority: "normale" });
+  }
+
+  const TICKET_PRIORITIES: Record<TicketPriority, string> = {
+    basse: "#94a3b8", normale: "#60a5fa", haute: "#fb923c", urgente: "#f87171",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex gap-1.5 flex-wrap">
+          {(["tous","ouvert","en_cours","résolu","fermé"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className="rounded-full px-3 py-1 text-xs font-bold transition-all"
+              style={{ background: filter===f ? "rgba(201,165,90,0.15)" : "transparent", color: filter===f ? "#c9a55a" : "rgba(255,255,255,0.3)" }}>
+              {f === "tous" ? "Tous" : f === "en_cours" ? "En cours" : f.charAt(0).toUpperCase()+f.slice(1)}
+              {counts[f] > 0 && <span className="ml-1.5 text-[0.6rem] opacity-70">{counts[f]}</span>}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setAddModal(true)}
+          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all hover:brightness-110"
+          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+          <Plus size={11}/> Nouveau ticket
+        </button>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="py-16 text-center text-white/20 text-sm">
+          <Ticket size={36} className="mx-auto mb-4 opacity-20"/>
+          Aucun ticket {filter !== "tous" ? `"${filter}"` : ""}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <AnimatePresence initial={false}>
+            {filtered.map(ticket => (
+              <motion.div key={ticket.id} layout initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, height:0 }}
+                className="rounded-2xl border border-white/[0.06] p-4 group"
+                style={{ background: "rgba(15,17,23,0.8)" }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[0.78rem] font-bold text-white">{ticket.title}</p>
+                    {ticket.contact && (
+                      <p className="text-[0.62rem] text-white/40 mt-0.5">{ticket.contact.name}{ticket.contact.company ? ` · ${ticket.contact.company}` : ""}</p>
+                    )}
+                    {ticket.description && <p className="text-[0.65rem] text-white/35 mt-1 leading-relaxed">{ticket.description}</p>}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge label={TICKET_STATUSES[ticket.status].label} color={TICKET_STATUSES[ticket.status].color}/>
+                    <span className="text-[0.58rem] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ background: `${TICKET_PRIORITIES[ticket.priority]}18`, color: TICKET_PRIORITIES[ticket.priority] }}>
+                      {ticket.priority}
+                    </span>
+                    <button onClick={() => onDelete(ticket.id)}
+                      className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all ml-1">
+                      <Trash2 size={11}/>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 mt-3">
+                  <div className="relative">
+                    <select value={ticket.status}
+                      onChange={e => onUpdate(ticket.id, { status: e.target.value as TicketStatus })}
+                      className="rounded-lg border border-white/[0.08] bg-[#131c30] pl-2 pr-6 py-1 text-[0.62rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+                      {(["ouvert","en_cours","résolu","fermé"] as TicketStatus[]).map(s =>
+                        <option key={s} value={s}>{TICKET_STATUSES[s].label}</option>)}
+                    </select>
+                    <ChevronDown size={8} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none"/>
+                  </div>
+                  <p className="text-[0.6rem] text-white/25 ml-auto">{fmtDate(ticket.created_at)}</p>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {addModal && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setAddModal(false)}>
+            <motion.div initial={{ y:40, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:40, opacity:0 }}
+              transition={{ type:"spring", stiffness:300, damping:30 }}
+              className="w-full max-w-md rounded-3xl border border-white/[0.08] p-6 space-y-4"
+              style={{ background: "rgba(10,14,26,0.98)" }}
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-black text-white text-sm">Nouveau ticket</h3>
+                <button onClick={() => setAddModal(false)} className="text-white/30 hover:text-white"><X size={16}/></button>
+              </div>
+              <Input label="Objet *" placeholder="Décrire le problème…" value={form.title ?? ""} onChange={e => setForm(f=>({...f, title: e.target.value}))}/>
+              <div className="grid grid-cols-2 gap-3">
+                <Select label="Priorité" value={form.priority ?? "normale"} onChange={e => setForm(f=>({...f, priority: e.target.value as TicketPriority}))}>
+                  {(["basse","normale","haute","urgente"] as TicketPriority[]).map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase()+p.slice(1)}</option>)}
+                </Select>
+                <Select label="Contact lié" value={form.contact_id ?? ""} onChange={e => setForm(f=>({...f, contact_id: e.target.value || null}))}>
+                  <option value="">— Aucun —</option>
+                  {contacts.map(c => <option key={c.id} value={c.id}>{c.name}{c.company ? ` (${c.company})` : ""}</option>)}
+                </Select>
+              </div>
+              <Textarea label="Description" placeholder="Détails du ticket…" value={form.description ?? ""} onChange={e => setForm(f=>({...f, description: e.target.value}))}/>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setAddModal(false)}
+                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white transition-colors">Annuler</button>
+                <button onClick={save} disabled={!form.title}
+                  className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
+                  style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                  Créer le ticket
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -820,7 +971,8 @@ function ContactDetail({
                   <button onClick={() => { setEditing(false); setForm({ ...contact }); }}
                     className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white">Annuler</button>
                   <button onClick={saveEdit}
-                    className="flex-1 rounded-xl bg-white/10 py-2.5 text-sm font-bold text-white hover:bg-white/15">
+                    className="flex-1 rounded-xl py-2.5 text-sm font-bold transition-all hover:brightness-110"
+                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
                     Enregistrer
                   </button>
                 </div>
@@ -935,7 +1087,8 @@ function ContactDetail({
                   <button onClick={() => setNewAct(null)} className="flex-1 rounded-xl border border-white/[0.08] py-2 text-xs text-white/50 hover:text-white">Annuler</button>
                   <button disabled={!newAct.title}
                     onClick={async () => { await onAddActivity(newAct); setNewAct(null); }}
-                    className="flex-1 rounded-xl bg-white/10 py-2 text-xs font-bold text-white hover:bg-white/15 disabled:opacity-40">
+                    className="flex-1 rounded-xl py-2 text-xs font-bold disabled:opacity-40 transition-all hover:brightness-110"
+                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
                     Enregistrer
                   </button>
                 </div>
@@ -1020,7 +1173,8 @@ function ContactDetail({
                   <button onClick={() => setNewTask(null)} className="flex-1 rounded-xl border border-white/[0.08] py-2 text-xs text-white/50 hover:text-white">Annuler</button>
                   <button disabled={!newTask.title}
                     onClick={async () => { await onAddTask(newTask); setNewTask(null); }}
-                    className="flex-1 rounded-xl bg-white/10 py-2 text-xs font-bold text-white disabled:opacity-40">Créer</button>
+                    className="flex-1 rounded-xl py-2 text-xs font-bold disabled:opacity-40 transition-all hover:brightness-110"
+                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>Créer</button>
                 </div>
               </div>
             )}
@@ -1072,7 +1226,8 @@ function ContactDetail({
                   <button onClick={() => setNewTicket(null)} className="flex-1 rounded-xl border border-white/[0.08] py-2 text-xs text-white/50 hover:text-white">Annuler</button>
                   <button disabled={!newTicket.title}
                     onClick={async () => { await onAddTicket(newTicket); setNewTicket(null); }}
-                    className="flex-1 rounded-xl bg-white/10 py-2 text-xs font-bold text-white disabled:opacity-40">Créer</button>
+                    className="flex-1 rounded-xl py-2 text-xs font-bold disabled:opacity-40 transition-all hover:brightness-110"
+                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>Créer</button>
                 </div>
               </div>
             )}
@@ -1114,7 +1269,7 @@ export default function CRMPage() {
   const [tickets,       setTickets]       = useState<SupportTicket[]>([]);
 
   const [loading,       setLoading]       = useState(true);
-  const [mainTab,       setMainTab]       = useState<"contacts" | "pipeline" | "taches" | "rapport">("contacts");
+  const [mainTab,       setMainTab]       = useState<"contacts" | "pipeline" | "taches" | "tickets" | "rapport">("contacts");
   const [selected,      setSelected]      = useState<Contact | null>(null);
 
   const [query,         setQuery]         = useState("");
@@ -1320,46 +1475,125 @@ export default function CRMPage() {
   const selectedTickets       = useMemo(() => tickets.filter(t => t.contact_id === selected?.id), [tickets, selected]);
 
   const MAIN_TABS = [
-    { id: "contacts", label: "Contacts",     icon: Users,      badge: contacts.length },
-    { id: "pipeline", label: "Pipeline",     icon: TrendingUp, badge: opportunities.filter(o => o.stage !== "perdu").length },
-    { id: "taches",   label: "Tâches",       icon: CheckSquare,badge: tasks.filter(t => !t.done).length },
-    { id: "rapport",  label: "Rapport",      icon: BarChart2,  badge: 0 },
+    { id: "contacts", label: "Contacts",  icon: Users,       badge: contacts.length },
+    { id: "pipeline", label: "Pipeline",  icon: TrendingUp,  badge: opportunities.filter(o => o.stage !== "perdu").length },
+    { id: "taches",   label: "Tâches",    icon: CheckSquare, badge: tasks.filter(t => !t.done).length },
+    { id: "tickets",  label: "Tickets",   icon: Ticket,      badge: tickets.filter(t => t.status === "ouvert" || t.status === "en_cours").length },
+    { id: "rapport",  label: "Rapport",   icon: BarChart2,   badge: 0 },
   ] as const;
 
+  async function handleImportCSV(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+    const text = await file.text();
+    const lines = text.split("\n").filter(l => l.trim());
+    if (lines.length < 2) { toast("Fichier CSV vide ou invalide", "error"); return; }
+    const headers = lines[0].split(",").map(h => h.replace(/"/g,"").trim().toLowerCase());
+    const nameIdx  = headers.findIndex(h => h.includes("nom") || h === "name");
+    const emailIdx = headers.findIndex(h => h.includes("email") || h.includes("mail"));
+    const phoneIdx = headers.findIndex(h => h.includes("phone") || h.includes("tél") || h.includes("tel"));
+    const compIdx  = headers.findIndex(h => h.includes("sociét") || h.includes("company") || h.includes("entreprise"));
+    if (nameIdx < 0) { toast("Colonne 'nom' introuvable dans le CSV", "error"); return; }
+    const rows = lines.slice(1).map(l => {
+      const cols = l.split(",").map(v => v.replace(/^"|"$/g,"").trim());
+      return {
+        name: cols[nameIdx] ?? "",
+        email: emailIdx >= 0 ? (cols[emailIdx] ?? "") : "",
+        phone: phoneIdx >= 0 ? (cols[phoneIdx] ?? "") : "",
+        company: compIdx >= 0 ? (cols[compIdx] ?? "") : "",
+        status: "prospect" as ContactStatus,
+        type: "prospect" as ContactType,
+        user_id: userId,
+      };
+    }).filter(r => r.name);
+    if (!rows.length) { toast("Aucun contact valide trouvé", "error"); return; }
+    const { data, error } = await supabase.from("contacts").insert(rows).select();
+    if (error) { toast("Erreur import: " + error.message, "error"); return; }
+    if (data) setContacts(cs => [...(data as Contact[]), ...cs]);
+    toast(`${rows.length} contact(s) importés`, "success");
+    e.target.value = "";
+  }
+
     return (
-    <div className="relative flex h-full flex-col gap-0">
+    <div className="relative flex h-full flex-col gap-0" style={{ background: "#0c1222" }}>
       <ToastStack toasts={toasts} remove={removeToast} />
 
-            <div className="shrink-0 flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-white/[0.05]">
-        <div>
-          <h1 className="text-xl font-black text-white tracking-tight">CRM</h1>
-          <p className="text-[0.65rem] text-white/30 mt-0.5">
-            {contacts.length} contacts · {opportunities.filter(o => o.stage !== "perdu").length} opportunités actives
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={exportCSV}
-            className="h-8 w-8 rounded-xl bg-white/[0.04] flex items-center justify-center text-white/30 hover:text-white hover:bg-white/[0.08] transition-all"
-            title="Exporter CSV">
-            <Download size={14}/>
-          </button>
-          <button onClick={() => { setForm({ status: "prospect", type: "prospect" }); setEditContact(null); setAddModal(true); }}
-            className="flex items-center gap-2 rounded-xl bg-white/10 px-3.5 py-2 text-[0.75rem] font-bold text-white hover:bg-white/15 transition-colors">
-            <Plus size={13}/> Nouveau contact
-          </button>
+      {/* ── HEADER ── */}
+      <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+        <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
+        <div className="pointer-events-none absolute -bottom-8 right-10 h-32 w-32 rounded-full opacity-[0.04]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.3),transparent)" }}/>
+        <div className="relative px-4 sm:px-6 pt-5 pb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl shrink-0" style={{ background: "rgba(201,165,90,0.12)", border: "1px solid rgba(201,165,90,0.25)" }}>
+                <Users size={20} style={{ color: "#c9a55a" }}/>
+              </div>
+              <div>
+                <h1 className="text-xl font-black text-white tracking-tight">CRM</h1>
+                <p className="text-[0.65rem] text-white/40 mt-0.5">
+                  {contacts.length} contacts · {opportunities.filter(o => o.stage !== "perdu").length} opportunités actives
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <label title="Importer CSV"
+                className="h-9 w-9 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:brightness-110"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <Upload size={14} className="text-white/50"/>
+                <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV}/>
+              </label>
+              <button onClick={exportCSV} title="Exporter CSV"
+                className="h-9 w-9 rounded-xl flex items-center justify-center transition-all hover:brightness-110"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <Download size={14} className="text-white/50"/>
+              </button>
+              <button onClick={() => { setForm({ status: "prospect", type: "prospect" }); setEditContact(null); setAddModal(true); }}
+                className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                <Plus size={13}/> Nouveau contact
+              </button>
+            </div>
+          </div>
+          {/* KPI strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+            {[
+              { label: "Contacts",       value: contacts.length,                                                    color: "#c9a55a", icon: Users },
+              { label: "Actifs",         value: contacts.filter(c => c.status === "actif").length,                 color: "#34d399", icon: UserCheck },
+              { label: "Pipeline",       value: fmtEur(opportunities.filter(o=>o.stage!=="perdu").reduce((s,o)=>s+(o.amount??0),0)), color: "#a78bfa", icon: TrendingUp },
+              { label: "Tâches en cours",value: tasks.filter(t => !t.done).length,                                 color: "#f59e0b", icon: CheckSquare },
+            ].map(k => (
+              <motion.div key={k.label} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ type:"spring", stiffness:300, damping:30 }}
+                className="rounded-xl p-3 flex items-center gap-2.5"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${k.color}18` }}>
+                  <k.icon size={13} style={{ color: k.color }}/>
+                </div>
+                <div>
+                  <p className="text-[0.6rem] text-white/35">{k.label}</p>
+                  <p className="text-sm font-black text-white">{k.value}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
 
-            <div className="shrink-0 flex border-b border-white/[0.05] px-4 sm:px-6 overflow-x-auto">
+      {/* ── TABS ── */}
+      <div className="relative shrink-0 flex overflow-x-auto" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.15)" }}>
         {MAIN_TABS.map(t => (
           <button key={t.id} onClick={() => setMainTab(t.id)}
-            className={`flex items-center gap-1.5 px-3 py-3.5 text-[0.67rem] font-bold uppercase tracking-wider whitespace-nowrap transition-colors border-b-2 ${
-              mainTab === t.id ? "border-white text-white" : "border-transparent text-white/30 hover:text-white/60"}`}>
+            className="relative flex items-center gap-1.5 px-4 py-3.5 text-[0.67rem] font-bold uppercase tracking-wider whitespace-nowrap transition-colors"
+            style={{ color: mainTab === t.id ? "#ffffff" : "rgba(255,255,255,0.3)" }}>
             <t.icon size={11}/>{t.label}
             {t.badge > 0 && (
-              <span className={`rounded-full px-1.5 text-[0.58rem] ${mainTab === t.id ? "bg-white/15 text-white" : "bg-white/[0.06] text-white/30"}`}>
+              <span className="rounded-full px-1.5 text-[0.58rem]"
+                style={{ background: mainTab===t.id ? "rgba(201,165,90,0.2)" : "rgba(255,255,255,0.06)", color: mainTab===t.id ? "#c9a55a" : "rgba(255,255,255,0.3)" }}>
                 {t.badge}
               </span>
+            )}
+            {mainTab === t.id && (
+              <motion.div layoutId="crm-tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: "#c9a55a" }}/>
             )}
           </button>
         ))}
@@ -1369,8 +1603,8 @@ export default function CRMPage() {
         <div className={`flex-1 overflow-y-auto p-4 sm:p-6 ${selected ? "hidden sm:block" : ""}`}>
 
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 size={22} className="animate-spin text-white/20"/>
+            <div className="flex h-full items-center justify-center py-20">
+              <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]"/>
             </div>
           ) : (
 
@@ -1386,12 +1620,12 @@ export default function CRMPage() {
                     </div>
                     <div className="flex gap-2 flex-wrap">
                       <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ContactStatus | "tous")}
-                        className="rounded-xl border border-white/[0.08] bg-[#0f1117] px-3 py-2 text-[0.75rem] text-white/60 outline-none">
+                        className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
                         <option value="tous">Tous statuts</option>
                         {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
                       <select value={filterType} onChange={e => setFilterType(e.target.value as ContactType | "tous")}
-                        className="rounded-xl border border-white/[0.08] bg-[#0f1117] px-3 py-2 text-[0.75rem] text-white/60 outline-none">
+                        className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
                         <option value="tous">Tous types</option>
                         {Object.entries(CONTACT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
@@ -1446,12 +1680,18 @@ export default function CRMPage() {
                                   {c.company && <span className="text-[0.65rem] text-white/40 truncate">{c.company}</span>}
                                   {c.sector  && <span className="text-[0.6rem] text-white/25 truncate">{c.sector}</span>}
                                 </div>
-                                <div className="flex items-center gap-3 mt-1">
+                                <div className="flex items-center gap-3 mt-1 flex-wrap">
                                   {c.email && <span className="text-[0.62rem] text-white/25 truncate flex items-center gap-0.5"><Mail size={8}/>{c.email}</span>}
                                   {c.phone && <span className="text-[0.62rem] text-white/25 flex items-center gap-0.5"><Phone size={8}/>{c.phone}</span>}
+                                  {c.next_relance && (
+                                    <span className="text-[0.58rem] flex items-center gap-0.5"
+                                      style={{ color: c.next_relance < new Date().toISOString().split("T")[0] ? "#f87171" : "#f59e0b" }}>
+                                      <Bell size={7}/> {fmtDate(c.next_relance)}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3 shrink-0">
+                              <div className="flex items-center gap-2 shrink-0">
                                 {cOpps > 0 && (
                                   <div className="text-center hidden sm:block">
                                     <div className="text-xs font-black" style={{ color: "#a78bfa" }}>{cOpps}</div>
@@ -1464,9 +1704,21 @@ export default function CRMPage() {
                                     <div className="text-[0.52rem] text-white/20">budget</div>
                                   </div>
                                 )}
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex gap-1">
+                                  {c.email && (
+                                    <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} title={c.email}
+                                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/20 hover:text-blue-400 hover:bg-blue-400/10 transition-all">
+                                      <Mail size={11}/>
+                                    </a>
+                                  )}
+                                  {c.phone && (
+                                    <a href={`tel:${c.phone}`} onClick={e => e.stopPropagation()} title={c.phone}
+                                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/20 hover:text-green-400 hover:bg-green-400/10 transition-all">
+                                      <Phone size={11}/>
+                                    </a>
+                                  )}
                                   <button onClick={e => { e.stopPropagation(); setForm({ ...c }); setEditContact(c); setAddModal(true); }}
-                                    className="h-7 w-7 rounded-lg bg-white/[0.04] flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-all">
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 transition-all">
                                     <Pencil size={11}/>
                                   </button>
                                 </div>
@@ -1500,6 +1752,16 @@ export default function CRMPage() {
                   onDelete={deleteTask}
                   onAdd={addTask}
                   onUpdate={async () => {}}
+                />
+              )}
+
+              {mainTab === "tickets" && (
+                <TicketsGlobalView
+                  tickets={tickets}
+                  contacts={contacts}
+                  onAdd={addTicket}
+                  onUpdate={updateTicket}
+                  onDelete={deleteTicket}
                 />
               )}
 
@@ -1547,7 +1809,8 @@ export default function CRMPage() {
             onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); }}>
             <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-lg rounded-3xl border border-white/[0.08] bg-[#0f1117] p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-lg rounded-3xl border border-white/[0.08] p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+              style={{ background: "rgba(10,14,26,0.98)" }}
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-white">{editContact ? "Modifier le contact" : "Nouveau contact"}</h3>
@@ -1585,14 +1848,44 @@ export default function CRMPage() {
                 </Select>
                 <Input label="Taille société" placeholder="TPE / PME / ETI" value={form.company_size ?? ""} onChange={e => setForm(f => ({ ...f, company_size: e.target.value }))}/>
               </div>
-              <Input label="Budget estimé (€)" type="number" value={form.budget ?? ""} onChange={e => setForm(f => ({ ...f, budget: +e.target.value }))}/>
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Budget estimé (€)" type="number" value={form.budget ?? ""} onChange={e => setForm(f => ({ ...f, budget: +e.target.value }))}/>
+                <Input label="Prochaine relance" type="date" value={form.next_relance ?? ""} onChange={e => setForm(f => ({ ...f, next_relance: e.target.value || undefined }))}/>
+              </div>
               <Textarea label="Notes" placeholder="Informations complémentaires…" value={form.notes ?? ""} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}/>
+
+              {/* Tags */}
+              <div className="space-y-1">
+                <label className="block text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Tags</label>
+                <div className="flex flex-wrap gap-1.5 min-h-[36px] rounded-xl border border-white/[0.08] bg-white/[0.04] p-2">
+                  {(form.tags ?? []).map(tag => (
+                    <span key={tag} className="flex items-center gap-1 rounded-full bg-white/[0.08] px-2.5 py-0.5 text-[0.65rem] text-white/70">
+                      {tag}
+                      <button type="button" onClick={() => setForm(f => ({ ...f, tags: (f.tags ?? []).filter(t => t !== tag) }))}
+                        className="text-white/30 hover:text-white/70 ml-0.5"><X size={9}/></button>
+                    </span>
+                  ))}
+                  <input placeholder="Ajouter un tag…"
+                    className="bg-transparent text-[0.72rem] text-white placeholder-white/20 outline-none flex-1 min-w-[80px]"
+                    onKeyDown={e => {
+                      if ((e.key === "Enter" || e.key === ",") && e.currentTarget.value.trim()) {
+                        e.preventDefault();
+                        const tag = e.currentTarget.value.trim().toLowerCase();
+                        if (!(form.tags ?? []).includes(tag)) setForm(f => ({ ...f, tags: [...(f.tags ?? []), tag] }));
+                        e.currentTarget.value = "";
+                      }
+                    }}
+                  />
+                </div>
+                <p className="text-[0.58rem] text-white/20">Entrée ou virgule pour ajouter</p>
+              </div>
 
               <div className="flex gap-2 pt-1">
                 <button onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); }}
-                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white">Annuler</button>
+                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white transition-colors">Annuler</button>
                 <button onClick={saveContact} disabled={!form.name}
-                  className="flex-1 rounded-xl bg-white/10 py-2.5 text-sm font-bold text-white hover:bg-white/15 disabled:opacity-40">
+                  className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
+                  style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
                   {editContact ? "Mettre à jour" : "Créer le contact"}
                 </button>
               </div>

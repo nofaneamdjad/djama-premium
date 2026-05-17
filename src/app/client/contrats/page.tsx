@@ -9,7 +9,7 @@ import {
   Activity, MessageSquare, Calendar, TrendingUp, Pen, DollarSign,
   AlertOctagon, Lightbulb, Award, BarChart2, FileSignature,
   ChevronDown, Globe, Lock, Star, Wrench, Monitor, ShoppingCart,
-  Cloud, Home, Briefcase, File,
+  Cloud, Home, Briefcase, File, Upload, Image as ImageIcon,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -53,6 +53,7 @@ interface Contract {
   expires_at?: string | null;
   created_at: string;
   updated_at?: string;
+  logo_url?: string;
 }
 
 interface Signer {
@@ -101,6 +102,7 @@ type DraftForm = {
   language: string;
   specifics: string;
   selected_clauses: string[];
+  logo: string;
 };
 
 const gold = "#c9a55a";
@@ -158,7 +160,7 @@ const EMPTY_FORM = (): DraftForm => ({
   title: "", client_name: "", client_email: "", client_company: "",
   type: "prestation", amount: "", currency: "EUR", duration_months: "12",
   start_date: "", end_date: "", jurisdiction: "France", language: "fr",
-  specifics: "", selected_clauses: [],
+  specifics: "", selected_clauses: [], logo: "",
 });
 
 function analyzeContract(c: Contract): {
@@ -947,7 +949,16 @@ function CreateModal({
 }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<DraftForm>(EMPTY_FORM());
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof DraftForm, v: string | string[]) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => set("logo", (ev.target?.result as string) ?? "");
+    reader.readAsDataURL(file);
+  };
 
   const toggleClause = (c: string) => {
     set("selected_clauses", form.selected_clauses.includes(c)
@@ -1013,6 +1024,36 @@ function CreateModal({
           {/* Step 2: Details */}
           {step === 2 && (
             <div className="space-y-3">
+              {/* Logo upload */}
+              <div>
+                <Label>Logo société (optionnel)</Label>
+                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden"/>
+                {form.logo ? (
+                  <div className="flex items-center gap-3 p-3 rounded-xl border border-white/[0.08] bg-white/[0.03]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={form.logo} alt="Logo" className="h-10 w-auto max-w-[80px] object-contain rounded"/>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-white/60">Logo chargé</p>
+                      <p className="text-[10px] text-white/30 truncate">Affiché dans le PDF du contrat</p>
+                    </div>
+                    <button onClick={() => set("logo", "")} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-red-400 transition-colors">
+                      <X size={12}/>
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => logoInputRef.current?.click()}
+                    className="w-full flex items-center gap-2.5 p-3 rounded-xl border border-dashed border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.2] transition-all text-left">
+                    <div className="h-8 w-8 flex items-center justify-center rounded-lg flex-shrink-0" style={{ background: gold + "15", border: `1px solid ${gold}30` }}>
+                      <ImageIcon size={14} style={{ color: gold }}/>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-white/60">Ajouter un logo</p>
+                      <p className="text-[10px] text-white/30">PNG, JPG, SVG · Apparaîtra dans le PDF</p>
+                    </div>
+                    <Upload size={13} className="ml-auto text-white/25"/>
+                  </button>
+                )}
+              </div>
               <div><Label>Intitulé *</Label>
                 <input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Mission développement web" className={inp()}/>
               </div>
@@ -1247,6 +1288,7 @@ export default function ContratsPage() {
       amount: selected.amount, start_date: selected.start_date,
       end_date: selected.end_date, created_at: selected.created_at,
       prestataire_nom: userName, prestataire_email: userEmail,
+      company_logo: selected.logo_url || undefined,
     };
   }, [selected, editContent, userName, userEmail]);
 
@@ -1294,6 +1336,7 @@ export default function ContratsPage() {
         start_date: form.start_date || null, end_date: form.end_date || null,
         jurisdiction: form.jurisdiction, language: form.language,
         specific_clauses: [...form.selected_clauses, form.specifics].filter(Boolean).join("\n"),
+        logo_url: form.logo || null,
       };
       const { data, error } = await supabase.from("contracts").insert(payload).select().single();
       if (error) throw new Error(error.message);
@@ -1411,46 +1454,80 @@ export default function ContratsPage() {
     <div className="min-h-screen bg-[#0a0f1e] text-white">
       <ToastStack toasts={toasts} remove={removeToast}/>
 
-      {/* Sub-header */}
-      <div className="border-b border-white/[0.06] bg-white/[0.025] px-5 py-4 backdrop-blur-xl sm:px-8 sticky top-0 z-10">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
-              <FileText size={16} style={{ color: gold }}/>
+      {/* Animated header */}
+      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+        {/* Decorative orbs */}
+        <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
+        <div className="pointer-events-none absolute -bottom-10 right-16 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#6366f1,transparent)" }}/>
+
+        {/* Main row */}
+        <div className="relative px-5 pt-4 pb-3 sm:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
+                className="h-10 w-10 flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
+                <FileText size={18} style={{ color: gold }}/>
+              </motion.div>
+              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
+                <h1 className="text-base font-bold text-white tracking-tight">Contrats IA</h1>
+                <p className="text-[0.62rem] text-white/35">Génération · Signature · Suivi juridique</p>
+              </motion.div>
             </div>
-            <div>
-              <h1 className="text-base font-semibold text-white">Contrats IA</h1>
-              <p className="text-[0.65rem] text-white/30">Génération · Signature · Suivi juridique</p>
+            <div className="flex items-center gap-2">
+              <div className="flex rounded-xl border border-white/[0.07] overflow-hidden">
+                {(["list", "dashboard"] as const).map((v) => (
+                  <button key={v} onClick={() => setView(v)}
+                    className={`px-3 py-1.5 text-xs font-semibold transition-all ${view === v ? "text-[#0a0a0a]" : "text-white/40 hover:text-white/60"}`}
+                    style={view === v ? { background: gold } : {}}>
+                    {v === "list" ? "Liste" : "Dashboard"}
+                  </button>
+                ))}
+              </div>
+              <button onClick={exportCSV} className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all" title="Exporter CSV">
+                <Download size={14}/>
+              </button>
+              <motion.button onClick={() => setShowModal(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all"
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a", boxShadow: "0 4px 16px rgba(201,165,90,0.35)" }}>
+                <Plus size={13}/> Nouveau
+              </motion.button>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* View toggle */}
-            <div className="flex rounded-xl border border-white/[0.07] overflow-hidden">
-              {(["list", "dashboard"] as const).map((v) => (
-                <button key={v} onClick={() => setView(v)}
-                  className={`px-3 py-1.5 text-xs font-semibold transition-all ${view === v ? "text-[#0a0f1e]" : "text-white/40 hover:text-white/60"}`}
-                  style={view === v ? { background: gold } : {}}>
-                  {v === "list" ? "Liste" : "Dashboard"}
-                </button>
-              ))}
-            </div>
-            <button onClick={exportCSV} className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all" title="Exporter CSV">
-              <Download size={14}/>
-            </button>
-            <button onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-[#0a0f1e] transition-all hover:opacity-90"
-              style={{ background: gold, boxShadow: `0 4px 16px ${gold}40` }}>
-              <Plus size={13}/> Nouveau
-            </button>
           </div>
         </div>
+
+        {/* KPI strip */}
+        <div className="relative px-5 pb-4 sm:px-8">
+          <div className="mx-auto max-w-7xl grid grid-cols-4 gap-2">
+            {[
+              { label: "Total", value: contracts.length, icon: FileText },
+              { label: "Signés", value: contracts.filter((c) => c.status === "signé").length, icon: CheckCircle },
+              { label: "En cours", value: contracts.filter((c) => ["actif","validation","envoyé","vu"].includes(c.status)).length, icon: Clock },
+              { label: "Valeur", value: contracts.reduce((s, c) => s + (c.amount ?? 0), 0) > 0 ? fmtEur(contracts.reduce((s, c) => s + (c.amount ?? 0), 0)) : "—", icon: DollarSign },
+            ].map((kpi, i) => {
+              const KpiIcon = kpi.icon;
+              return (
+                <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.06] bg-white/[0.03]">
+                  <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-white leading-none truncate">{kpi.value}</p>
+                    <p className="text-[0.58rem] text-white/35 uppercase tracking-wide mt-0.5">{kpi.label}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Gold bottom line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.45),transparent)" }}/>
       </div>
 
       {/* Body */}
       {view === "dashboard" ? (
         <DashboardView contracts={contracts} onNew={() => setShowModal(true)} onSelect={(c) => { setView("list"); selectContract(c); }}/>
       ) : (
-        <div className="flex h-[calc(100vh-73px)]">
+        <div className="flex h-[calc(100vh-140px)]">
           {/* Left: list */}
           <div className={`flex flex-col border-r border-white/[0.06] overflow-hidden ${selected ? "hidden md:flex md:w-[340px] lg:w-[380px]" : "flex w-full md:w-[340px] lg:w-[380px]"}`}>
             {/* Filters */}
@@ -1462,12 +1539,12 @@ export default function ContratsPage() {
               </div>
               <div className="flex gap-2">
                 <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as ContractStatus | "all")}
-                  className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-2 py-1.5 text-xs text-white/70 focus:outline-none appearance-none">
+                  className="flex-1 bg-[#131c30] border border-white/[0.08] rounded-xl px-2 py-1.5 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
                   <option value="all">Tous statuts</option>
                   {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
                 <select value={filterType} onChange={(e) => setFilterType(e.target.value as ContractType | "all")}
-                  className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-2 py-1.5 text-xs text-white/70 focus:outline-none appearance-none">
+                  className="flex-1 bg-[#131c30] border border-white/[0.08] rounded-xl px-2 py-1.5 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
                   <option value="all">Tous types</option>
                   {CONTRACT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
