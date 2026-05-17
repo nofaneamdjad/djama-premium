@@ -235,12 +235,12 @@ export default function EquipePage() {
     if (!credTarget || !credEmail.trim() || !credPwd.trim()) return;
     setCreatingCred(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token ?? "";
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const chefId = currentUser?.id ?? "";
       const res = await fetch("/api/equipe/create-member-account", {
         method:"POST",
-        headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},
-        body:JSON.stringify({ memberId:credTarget.id, name:credTarget.name, email:credEmail.trim(), password:credPwd.trim() }),
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ memberId:credTarget.id, name:credTarget.name, email:credEmail.trim(), password:credPwd.trim(), chefId }),
       });
       const data = await res.json();
       if (!res.ok) { setToastData({type:"error",msg:data.error??"Erreur création compte"}); }
