@@ -1361,8 +1361,11 @@ export default function EquipePage() {
                         <label className="text-[10px] text-white/30 uppercase tracking-wide">{row.l}</label>
                         <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.07] rounded-xl px-3 py-2.5">
                           <span className="flex-1 text-sm text-white/80 font-mono truncate">{row.v}</span>
-                          <button onClick={()=>navigator.clipboard.writeText(row.v)}
-                            className="text-white/25 hover:text-[#c9a55a] transition-all shrink-0">
+                          <button onClick={()=>{
+                            try { navigator.clipboard.writeText(row.v); }
+                            catch { const el=document.createElement("textarea"); el.value=row.v; document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el); }
+                            setToastData({type:"success",msg:"Copié !"});
+                          }} className="text-white/25 hover:text-[#c9a55a] transition-all shrink-0">
                             <Copy size={13}/>
                           </button>
                         </div>
