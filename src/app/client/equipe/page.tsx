@@ -187,6 +187,7 @@ export default function EquipePage() {
   const [editMember,      setEditMember]      = useState<TeamMember|null>(null);
   const [mForm,           setMForm]           = useState<Partial<TeamMember>>({});
   const [savingM,         setSavingM]         = useState(false);
+  const [mFormError,      setMFormError]      = useState<string|null>(null);
 
     const [showTaskModal, setShowTaskModal] = useState(false);
   const [editTask,      setEditTask]      = useState<TeamTask|null>(null);
@@ -302,7 +303,8 @@ export default function EquipePage() {
     setEditMember(m); setMForm({...m}); setShowMemberModal(true);
   }
   async function saveMember() {
-    if (!mForm.name?.trim()) return;
+    if (!mForm.name?.trim()) { setMFormError("Le nom est requis."); return; }
+    setMFormError(null);
     setSavingM(true);
     const { data:{ user } } = await supabase.auth.getUser();
     if (!user) { setSavingM(false); return; }
@@ -317,7 +319,7 @@ export default function EquipePage() {
       if (error) { setSavingM(false); setToastData({type:"error",msg:error.message}); return; }
       if (data) setMembers(p=>[parseMember(data as Record<string,unknown>),...p]);
     }
-    setSavingM(false); setShowMemberModal(false);
+    setSavingM(false); setShowMemberModal(false); setMFormError(null);
     setToastData({type:"success",msg:editMember?"Membre mis à jour":"Membre ajouté"});
   }
   async function deleteMember(id:string) {
@@ -985,7 +987,7 @@ export default function EquipePage() {
         {showMemberModal && (
           <>
             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40" onClick={()=>setShowMemberModal(false)}/>
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40" onClick={()=>{setShowMemberModal(false);setMFormError(null);}}/>
             <motion.div
               initial={{opacity:0,scale:0.95,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
               className="fixed inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-50 rounded-3xl border border-white/[0.08] bg-white/[0.025] shadow-2xl flex flex-col overflow-hidden"
@@ -997,7 +999,7 @@ export default function EquipePage() {
                   <p className="font-bold text-sm text-white">{editMember ? "Modifier le membre" : "Nouveau membre"}</p>
                   {editMember && <p className="text-xs text-white/35">Depuis le {fmtDate(editMember.created_at)}</p>}
                 </div>
-                <button onClick={()=>setShowMemberModal(false)} className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all">
+                <button onClick={()=>{setShowMemberModal(false);setMFormError(null);}} className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all">
                   <X size={15}/>
                 </button>
               </div>
@@ -1005,9 +1007,10 @@ export default function EquipePage() {
                             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
                                 <div className="space-y-1">
                   <label className="text-[10px] text-white/35 uppercase tracking-wide">Nom complet *</label>
-                  <input value={mForm.name??""} onChange={e=>setMForm(p=>({...p,name:e.target.value}))}
+                  <input value={mForm.name??""} onChange={e=>{setMForm(p=>({...p,name:e.target.value}));setMFormError(null);}}
                     placeholder="Prénom Nom"
-                    className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-sky-500/40"/>
+                    className={`w-full bg-white/[0.05] border rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none ${mFormError?"border-red-500/60 focus:border-red-500/80":"border-white/[0.08] focus:border-sky-500/40"}`}/>
+                  {mFormError && <p className="text-xs text-red-400 mt-1">{mFormError}</p>}
                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
@@ -1084,7 +1087,7 @@ export default function EquipePage() {
                     <Trash2 size={13}/>Supprimer
                   </button>
                 )}
-                <button onClick={()=>setShowMemberModal(false)} className="ml-auto px-4 py-2 rounded-xl text-xs text-white/40 hover:text-white hover:bg-white/8 transition-all">
+                <button onClick={()=>{setShowMemberModal(false);setMFormError(null);}} className="ml-auto px-4 py-2 rounded-xl text-xs text-white/40 hover:text-white hover:bg-white/8 transition-all">
                   Annuler
                 </button>
                 <button onClick={saveMember} disabled={savingM||!mForm.name?.trim()}
