@@ -31,12 +31,12 @@ export async function POST(req: NextRequest) {
       const { data, error } = await adminClient.auth.admin.createUser({
         email: email.trim().toLowerCase(),
         password,
-        email_confirm: false, // envoie l'email de confirmation au membre
+        email_confirm: true, // compte actif immédiatement, pas d'email requis
         user_metadata: metadata,
       });
       if (!error && data.user) {
         authUserId = data.user.id;
-        needsConfirmation = true;
+        needsConfirmation = false;
       } else if (error) {
         const msg = (error as { message?: string }).message ?? "";
         if (msg.includes("already") || msg.includes("registered") || msg.includes("exists"))
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Essai 2 : signUp via anon key — envoie aussi un email de confirmation
+    // Essai 2 : signUp via anon key, puis confirmation immédiate via service_role si dispo
     if (!authUserId) {
       const anonClient = createClient(url, anonKey, {
         auth: { autoRefreshToken: false, persistSession: false },
@@ -63,7 +63,14 @@ export async function POST(req: NextRequest) {
       if (!data.user)
         return NextResponse.json({ error: "Impossible de créer le compte." }, { status: 500 });
       authUserId = data.user.id;
-      needsConfirmation = true;
+      // Confirmer l'email immédiatement via service_role si disponible
+      if (svcValid) {
+        const adminClient = createClient(url, svcKey, { auth: { autoRefreshToken: false, persistSession: false } });
+        await adminClient.auth.admin.updateUserById(authUserId, { email_confirm: true });
+        needsConfirmation = false;
+      } else {
+        needsConfirmation = true;
+      }
     }
 
     // Lier auth_user_id dans team_members

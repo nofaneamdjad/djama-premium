@@ -1360,12 +1360,19 @@ export default function EquipePage() {
                       <ShieldCheck size={16} className="text-emerald-400 shrink-0"/>
                       <p className="text-xs text-emerald-300 font-medium">Compte créé avec succès !</p>
                     </div>
-                    {credResult?.needsConfirmation && (
+                    {credResult?.needsConfirmation ? (
                       <div className="flex items-start gap-2 p-3 rounded-2xl" style={{background:"rgba(251,191,36,0.08)",border:"1px solid rgba(251,191,36,0.2)"}}>
                         <Mail size={14} className="text-amber-400 shrink-0 mt-0.5"/>
                         <p className="text-xs text-amber-300 leading-relaxed">
-                          Un email de confirmation a été envoyé à <strong>{credResult.email}</strong>.<br/>
-                          Le membre doit cliquer sur le lien avant de pouvoir se connecter.
+                          Le membre doit confirmer son email avant de se connecter.<br/>
+                          Vérifiez aussi les spams.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2 p-3 rounded-2xl" style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)"}}>
+                        <Check size={14} className="text-emerald-400 shrink-0 mt-0.5"/>
+                        <p className="text-xs text-emerald-300 leading-relaxed">
+                          Le membre peut se connecter <strong>immédiatement</strong> avec ces identifiants.
                         </p>
                       </div>
                     )}
