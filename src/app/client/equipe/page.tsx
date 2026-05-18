@@ -1371,7 +1371,7 @@ export default function EquipePage() {
                     )}
                     <p className="text-[11px] text-white/40">Transmettez ces identifiants à <strong className="text-white/60">{credTarget.name}</strong> :</p>
                     {[
-                      {l:"URL de connexion", v:typeof window !== "undefined" ? window.location.origin + "/membre/login" : "/membre/login"},
+                      {l:"URL de connexion", v:typeof window !== "undefined" ? (window.location.hostname==="localhost"?"https://djama.space":window.location.origin)+"/membre/login" : "https://djama.space/membre/login"},
                       {l:"Email", v:credResult.email},
                       {l:"Mot de passe", v:credResult.password},
                     ].map(row=>(
