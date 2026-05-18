@@ -217,7 +217,7 @@ export default function EquipePage() {
   const [credEmail,   setCredEmail]   = useState("");
   const [credPwd,     setCredPwd]     = useState("");
   const [creatingCred,setCreatingCred]= useState(false);
-  const [credResult,  setCredResult]  = useState<{email:string;password:string}|null>(null);
+  const [credResult,  setCredResult]  = useState<{email:string;password:string;needsConfirmation:boolean}|null>(null);
 
   function genPassword() {
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#!";
@@ -245,7 +245,7 @@ export default function EquipePage() {
       const data = await res.json();
       if (!res.ok) { setToastData({type:"error",msg:data.error??"Erreur création compte"}); }
       else {
-        setCredResult({ email:credEmail.trim(), password:credPwd.trim() });
+        setCredResult({ email:credEmail.trim(), password:credPwd.trim(), needsConfirmation:!!data.needs_confirmation });
         setMembers(p=>p.map(m=>m.id===credTarget.id ? {...m,auth_user_id:data.auth_user_id} : m));
         setToastData({type:"success",msg:"Compte créé avec succès !"});
       }
@@ -1351,6 +1351,15 @@ export default function EquipePage() {
                       <ShieldCheck size={16} className="text-emerald-400 shrink-0"/>
                       <p className="text-xs text-emerald-300 font-medium">Compte créé avec succès !</p>
                     </div>
+                    {credResult?.needsConfirmation && (
+                      <div className="flex items-start gap-2 p-3 rounded-2xl" style={{background:"rgba(251,191,36,0.08)",border:"1px solid rgba(251,191,36,0.2)"}}>
+                        <Mail size={14} className="text-amber-400 shrink-0 mt-0.5"/>
+                        <p className="text-xs text-amber-300 leading-relaxed">
+                          Un email de confirmation a été envoyé à <strong>{credResult.email}</strong>.<br/>
+                          Le membre doit cliquer sur le lien avant de pouvoir se connecter.
+                        </p>
+                      </div>
+                    )}
                     <p className="text-[11px] text-white/40">Transmettez ces identifiants à <strong className="text-white/60">{credTarget.name}</strong> :</p>
                     {[
                       {l:"URL de connexion", v:typeof window !== "undefined" ? window.location.origin + "/membre/login" : "/membre/login"},

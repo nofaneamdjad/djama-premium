@@ -20,8 +20,9 @@ export async function POST(req: NextRequest) {
     };
 
     let authUserId: string | null = null;
+    let needsConfirmation = false;
 
-    // Essai 1 : admin.createUser via service_role (email auto-confirmé)
+    // Essai 1 : admin.createUser via service_role — envoie un email de confirmation
     const svcValid = svcKey.length > 100 && svcKey.startsWith("eyJ");
     if (svcValid) {
       const adminClient = createClient(url, svcKey, {
@@ -30,20 +31,20 @@ export async function POST(req: NextRequest) {
       const { data, error } = await adminClient.auth.admin.createUser({
         email: email.trim().toLowerCase(),
         password,
-        email_confirm: true,
+        email_confirm: false, // envoie l'email de confirmation au membre
         user_metadata: metadata,
       });
       if (!error && data.user) {
         authUserId = data.user.id;
+        needsConfirmation = true;
       } else if (error) {
         const msg = (error as { message?: string }).message ?? "";
         if (msg.includes("already") || msg.includes("registered") || msg.includes("exists"))
           return NextResponse.json({ error: "Cet email est déjà utilisé." }, { status: 409 });
-        // Si ce n'est pas une erreur de doublons, on tente la méthode signUp
       }
     }
 
-    // Essai 2 : signUp via anon key (fonctionne si "Confirm email" est désactivé dans Supabase)
+    // Essai 2 : signUp via anon key — envoie aussi un email de confirmation
     if (!authUserId) {
       const anonClient = createClient(url, anonKey, {
         auth: { autoRefreshToken: false, persistSession: false },
@@ -60,15 +61,21 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: msg || "Erreur création compte." }, { status: 500 });
       }
       if (!data.user)
-        return NextResponse.json({ error: "Compte non créé — activez la confirmation d'email désactivée dans Supabase → Auth → Providers → Email." }, { status: 500 });
+        return NextResponse.json({ error: "Impossible de créer le compte." }, { status: 500 });
       authUserId = data.user.id;
+      needsConfirmation = true;
     }
 
     // Lier auth_user_id dans team_members
     const admin = createSupabaseAdmin();
     await admin.from("team_members").update({ auth_user_id: authUserId }).eq("id", memberId).eq("user_id", chefId);
 
-    return NextResponse.json({ success: true, auth_user_id: authUserId, email: email.trim().toLowerCase() });
+    return NextResponse.json({
+      success: true,
+      auth_user_id: authUserId,
+      email: email.trim().toLowerCase(),
+      needs_confirmation: needsConfirmation,
+    });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
