@@ -307,16 +307,15 @@ export default function EquipePage() {
     setMFormError(null);
     setSavingM(true);
     const { data:{ user } } = await supabase.auth.getUser();
-    if (!user) { setSavingM(false); return; }
-    // Exclure auth_user_id du payload (colonne peut ne pas exister encore)
+    if (!user) { setSavingM(false); setMFormError("Non connecté. Rechargez la page."); return; }
     const { auth_user_id: _omit, id: _id, created_at: _ca, ...cleanForm } = mForm as TeamMember & { auth_user_id?: string|null };
     if (editMember) {
       const { data, error } = await supabase.from("team_members").update(cleanForm).eq("id",editMember.id).select().single();
-      if (error) { setSavingM(false); setToastData({type:"error",msg:error.message}); return; }
+      if (error) { setSavingM(false); setMFormError(error.message); return; }
       if (data) setMembers(p=>p.map(m=>m.id===editMember.id ? parseMember(data as Record<string,unknown>) : m));
     } else {
       const { data, error } = await supabase.from("team_members").insert({...cleanForm,user_id:user.id}).select().single();
-      if (error) { setSavingM(false); setToastData({type:"error",msg:error.message}); return; }
+      if (error) { setSavingM(false); setMFormError(error.message); return; }
       if (data) setMembers(p=>[parseMember(data as Record<string,unknown>),...p]);
     }
     setSavingM(false); setShowMemberModal(false); setMFormError(null);
@@ -1080,7 +1079,13 @@ export default function EquipePage() {
                 </div>
               </div>
 
-                            <div className="flex items-center gap-2 px-5 py-4 border-t border-white/[0.06] shrink-0">
+                            <div className="shrink-0 border-t border-white/[0.06]">
+                {mFormError && (
+                  <div className="px-5 pt-3 pb-0">
+                    <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{mFormError}</p>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 px-5 py-4">
                 {editMember && (
                   <button onClick={()=>deleteMember(editMember.id)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all">
@@ -1090,12 +1095,13 @@ export default function EquipePage() {
                 <button onClick={()=>{setShowMemberModal(false);setMFormError(null);}} className="ml-auto px-4 py-2 rounded-xl text-xs text-white/40 hover:text-white hover:bg-white/8 transition-all">
                   Annuler
                 </button>
-                <button onClick={saveMember} disabled={savingM||!mForm.name?.trim()}
+                <button onClick={saveMember} disabled={savingM}
                   className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold disabled:opacity-50 transition-all"
                   style={{background:SKY,color:"#fff"}}>
                   {savingM ? <Loader2 size={12} className="animate-spin"/> : <Check size={12}/>}
                   {savingM ? "Sauvegarde…" : editMember ? "Mettre à jour" : "Ajouter"}
                 </button>
+                </div>
               </div>
             </motion.div>
           </>
