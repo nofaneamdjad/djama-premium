@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     let needsConfirmation = false;
 
     // Essai 1 : admin.createUser via service_role — envoie un email de confirmation
-    const svcValid = svcKey.length > 100 && svcKey.startsWith("eyJ");
+    const svcValid = svcKey.length > 20 && !svcKey.startsWith("COLLER_ICI");
     if (svcValid) {
       const adminClient = createClient(url, svcKey, {
         auth: { autoRefreshToken: false, persistSession: false },
@@ -96,7 +96,7 @@ export async function DELETE(req: NextRequest) {
 
     const svcKey  = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
     const url     = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? "";
-    const svcValid = svcKey.length > 100 && svcKey.startsWith("eyJ");
+    const svcValid = svcKey.length > 20 && !svcKey.startsWith("COLLER_ICI");
     if (!svcValid) return NextResponse.json({ error: "Service role key requise pour supprimer." }, { status: 403 });
 
     const adminClient = createClient(url, svcKey, { auth: { autoRefreshToken: false, persistSession: false } });
