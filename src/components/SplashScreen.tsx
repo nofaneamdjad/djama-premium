@@ -4,62 +4,58 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Globe, LayoutDashboard, ArrowRight } from "lucide-react";
+import { LogIn, UserPlus, Sparkles, Shield, Zap, ArrowRight } from "lucide-react";
+
+const GOLD = "#c9a55a";
+
+/** Détecte si l'app tourne en mode PWA (standalone) */
+function isPWA(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (navigator as any).standalone === true
+  );
+}
 
 export default function SplashScreen() {
-  const [visible,     setVisible]     = useState(false); // false SSR → évite flash/hydration mismatch
-  const [showChoices, setShowChoices] = useState(false);
+  const [mode, setMode] = useState<"idle" | "pwa" | "web">("idle");
   const router = useRouter();
 
   useEffect(() => {
-    // Première visite de la session uniquement
-    if (sessionStorage.getItem("djama_splash_seen")) return;
-
-    sessionStorage.setItem("djama_splash_seen", "1");
-    document.body.style.overflow = "hidden";
-    setVisible(true); // monté côté client uniquement
-
-    // Après l'animation d'intro → afficher les choix
-    const t = setTimeout(() => setShowChoices(true), 1900);
-    return () => {
-      clearTimeout(t);
-      document.body.style.overflow = "";
-    };
+    const pwa = isPWA();
+    if (pwa) {
+      setMode("pwa");
+    } else {
+      // Navigateur web → pas de splash, on laisse la page s'afficher directement
+      setMode("web");
+    }
   }, []);
 
-  const handleChoice = (path: string) => {
-    document.body.style.overflow = "";
-    setVisible(false);
-    setTimeout(() => router.push(path), 500);
-  };
+  // En mode web : rien à afficher
+  if (mode === "web" || mode === "idle") return null;
 
+  // En mode PWA : écran d'accueil dédié
   return (
-    <AnimatePresence onExitComplete={() => { document.body.style.overflow = ""; }}>
-      {visible && (
+    <AnimatePresence>
+      {mode === "pwa" && (
         <motion.div
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-          className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-white select-none"
+          className="fixed inset-0 z-[300] flex flex-col items-center justify-between bg-[#0a0f1e] select-none overflow-y-auto"
         >
-          {/* Subtle radial glow */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_50%_50%,rgba(99,102,241,0.05),transparent_72%)]" />
+          {/* Fond dégradé */}
+          <div className="pointer-events-none absolute inset-0"
+            style={{ background: "radial-gradient(ellipse 80% 50% at 50% 0%,rgba(201,165,90,0.08),transparent 70%)" }} />
 
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, y: 28, scale: 0.88 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
-          >
+          {/* Contenu centré */}
+          <div className="flex flex-col items-center justify-center flex-1 w-full max-w-xs mx-auto px-6 py-12 gap-8">
+
+            {/* Logo */}
             <motion.div
-              animate={{
-                filter: [
-                  "drop-shadow(0 0 0px rgba(201,165,90,0))",
-                  "drop-shadow(0 0 20px rgba(201,165,90,0.35))",
-                  "drop-shadow(0 0 4px rgba(201,165,90,0.08))",
-                ],
-              }}
-              transition={{ duration: 1.5, delay: 0.75, ease: "easeOut", times: [0, 0.45, 1] }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.16,1,0.3,1], delay: 0.1 }}
+              className="flex flex-col items-center gap-3"
             >
               <Image
                 src="/logo-navbar.png"
@@ -67,89 +63,98 @@ export default function SplashScreen() {
                 width={435}
                 height={97}
                 priority
-                className="w-44 sm:w-52 h-auto object-contain"
-                style={{ filter: "brightness(0)" }}
+                className="w-40 h-auto object-contain"
+                style={{ filter: "brightness(0) invert(1)" }}
               />
+              <div className="h-px w-8 rounded-full" style={{ background: `rgba(${GOLD},0.5)` }} />
             </motion.div>
-          </motion.div>
 
-          {/* Divider doré */}
-          <motion.div
-            initial={{ scaleX: 0, opacity: 0 }}
-            animate={{ scaleX: 1, opacity: 1 }}
-            transition={{ duration: 0.55, delay: 0.85, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-6 h-px w-10 origin-center rounded-full bg-gradient-to-r from-transparent via-[#c9a55a]/50 to-transparent"
-          />
-
-          {/* Tagline */}
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 1.0 }}
-            className="mt-4 text-[0.65rem] font-semibold uppercase tracking-[0.26em] text-gray-400"
-          >
-            Bienvenue sur DJAMA
-          </motion.p>
-
-          {/* ── Choix ─────────────────────────────────────── */}
-          <AnimatePresence>
-            {showChoices && (
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-12 flex flex-col sm:flex-row gap-4 px-6 w-full max-w-sm sm:max-w-none sm:w-auto items-center"
-              >
-                {/* Site général */}
-                <button
-                  onClick={() => handleChoice("/")}
-                  className="group flex items-center gap-4 px-6 py-4 rounded-2xl
-                    border border-gray-200 bg-gray-50
-                    hover:bg-white hover:border-gray-300 hover:shadow-[0_4px_16px_rgba(0,0,0,.08)]
-                    transition-all duration-200 w-full sm:w-[220px] text-left"
-                >
-                  <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,.06)]">
-                    <Globe className="w-4 h-4 text-gray-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 leading-none mb-1">Site général</p>
-                    <p className="text-[11px] text-gray-400 leading-none">Découvrir DJAMA</p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 flex-shrink-0 transition-colors" />
-                </button>
-
-                {/* Espace client — mis en valeur */}
-                <button
-                  onClick={() => handleChoice("/espace-client")}
-                  className="group flex items-center gap-4 px-6 py-4 rounded-2xl
-                    border border-[rgba(201,165,90,0.35)] bg-[rgba(201,165,90,0.06)]
-                    hover:bg-[rgba(201,165,90,0.10)] hover:border-[rgba(201,165,90,0.55)]
-                    hover:shadow-[0_4px_20px_rgba(201,165,90,0.15)]
-                    transition-all duration-200 w-full sm:w-[220px] text-left"
-                >
-                  <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-[rgba(201,165,90,0.10)] border border-[rgba(201,165,90,0.25)] flex items-center justify-center">
-                    <LayoutDashboard className="w-4 h-4 text-[#c9a55a]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 leading-none mb-1">Espace client</p>
-                    <p className="text-[11px] text-[#c9a55a]/70 leading-none">Accès à votre tableau de bord</p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-[#c9a55a]/40 group-hover:text-[#c9a55a] flex-shrink-0 transition-colors" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Barre de progression — uniquement avant les choix */}
-          {!showChoices && (
+            {/* Badge essai */}
             <motion.div
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 1.7, delay: 0.2, ease: "linear" }}
-              className="absolute bottom-0 left-0 h-[2px] w-full origin-left bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent"
-            />
-          )}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: [0.16,1,0.3,1], delay: 0.35 }}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest"
+              style={{ background: "rgba(201,165,90,0.12)", border: "1px solid rgba(201,165,90,0.3)", color: GOLD }}
+            >
+              <Sparkles size={11} />
+              30 jours d&apos;essai gratuit
+            </motion.div>
+
+            {/* Features */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.16,1,0.3,1], delay: 0.5 }}
+              className="flex flex-col gap-3 w-full"
+            >
+              {[
+                { icon: Zap,    color: "#60a5fa", text: "Facturation, devis et gestion" },
+                { icon: Shield, color: "#4ade80", text: "Planning, équipe et CRM" },
+                { icon: Sparkles, color: GOLD,   text: "Assistant IA intégré" },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: `${f.color}15` }}>
+                    <f.icon size={13} style={{ color: f.color }} />
+                  </div>
+                  <p className="text-sm text-white/60">{f.text}</p>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Boutons */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.16,1,0.3,1], delay: 0.7 }}
+              className="flex flex-col gap-3 w-full"
+            >
+              {/* Créer un compte */}
+              <button
+                onClick={() => router.push("/register")}
+                className="flex items-center justify-between px-5 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.97]"
+                style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}
+              >
+                <div className="flex items-center gap-2">
+                  <UserPlus size={15} />
+                  Créer un compte
+                </div>
+                <ArrowRight size={14} />
+              </button>
+
+              {/* Se connecter */}
+              <button
+                onClick={() => router.push("/login")}
+                className="flex items-center justify-between px-5 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.97]"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)" }}
+              >
+                <div className="flex items-center gap-2">
+                  <LogIn size={15} />
+                  Se connecter
+                </div>
+                <ArrowRight size={14} className="text-white/30" />
+              </button>
+
+              {/* Espace équipe (membre) */}
+              <button
+                onClick={() => router.push("/membre/login")}
+                className="text-xs text-white/25 hover:text-white/45 transition-colors text-center mt-1"
+              >
+                Connexion espace équipe →
+              </button>
+            </motion.div>
+          </div>
+
+          {/* Footer */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="text-[10px] text-white/15 pb-6 text-center px-6"
+          >
+            Sans carte bancaire · Annulable à tout moment
+          </motion.p>
         </motion.div>
       )}
     </AnimatePresence>
