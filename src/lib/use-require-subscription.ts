@@ -74,6 +74,13 @@ export function useRequireSubscription() {
         if (!cancelled) setReady(true);
         return;
       }
+      /* Trial 30 jours — vérifie que la date n'est pas expirée */
+      if (meta.trial === true && meta.trial_end) {
+        if (new Date(meta.trial_end) > new Date()) {
+          if (!cancelled) setReady(true);
+          return;
+        }
+      }
 
       /* 5. Fallback legacy : table clients */
       const { data: client } = await supabase

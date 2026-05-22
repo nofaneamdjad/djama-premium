@@ -66,11 +66,22 @@ export default function RegisterPage() {
     setError("");
     setLoading(true);
 
-    /* 1. Créer le compte auth */
+    const trialStart = new Date().toISOString();
+    const trialEnd   = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    /* 1. Créer le compte auth avec accès trial activé */
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: { data: { name: nom.trim() } },
+      options: {
+        data: {
+          name: nom.trim(),
+          subscription_active: true,
+          trial: true,
+          trial_start: trialStart,
+          trial_end: trialEnd,
+        },
+      },
     });
 
     if (signUpError) {
