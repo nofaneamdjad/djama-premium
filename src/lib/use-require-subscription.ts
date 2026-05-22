@@ -100,8 +100,8 @@ export function useRequireSubscription() {
         return;
       }
 
-      /* 6. Aucun accès */
-      router.replace("/espace-client?acces=requis");
+      /* 6. Accès libre — tout utilisateur connecté a accès (trial automatique) */
+      if (!cancelled) setReady(true);
     }
 
     check();
