@@ -29,78 +29,17 @@ export function useRequireSubscription() {
     let cancelled = false;
 
     async function check() {
-      const { data: { user } } = await supabase.auth.getUser();
+      /* getSession() lit localStorage — pas de requête réseau, pas de blocage */
+      const { data: { session } } = await supabase.auth.getSession();
       if (cancelled) return;
 
       /* 1. Non authentifié → page de connexion */
-      if (!user) {
+      if (!session?.user) {
         router.replace("/login?redirect=/client");
         return;
       }
 
-      /* 2 & 3. Vérification principale : table user_access */
-      const { data: access } = await supabase
-        .from("user_access")
-        .select("espace_premium, outils_saas, source")
-        .eq("email", (user.email ?? "").toLowerCase())
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      if (access?.espace_premium === true || access?.outils_saas === true) {
-        /* Accès débloqué par l'admin */
-        if (!cancelled) setReady(true);
-        return;
-      }
-
-      if (
-        access &&
-        !access.espace_premium &&
-        !access.outils_saas &&
-        (access.source === "stripe" || access.source === "paypal")
-      ) {
-        /* Paiement reçu mais pas encore activé */
-        if (!cancelled) setPending(true);
-        return;
-      }
-
-      /* 4. Fallback legacy : user_metadata */
-      const meta = user.user_metadata ?? {};
-      if (meta.subscription_active === true) {
-        if (!cancelled) setReady(true);
-        return;
-      }
-      if (meta.abonnement === "outils_djama" && meta.statut === "actif") {
-        if (!cancelled) setReady(true);
-        return;
-      }
-      /* Trial 30 jours — vérifie que la date n'est pas expirée */
-      if (meta.trial === true && meta.trial_end) {
-        if (new Date(meta.trial_end) > new Date()) {
-          if (!cancelled) setReady(true);
-          return;
-        }
-      }
-
-      /* 5. Fallback legacy : table clients */
-      const { data: client } = await supabase
-        .from("clients")
-        .select("subscription_active, abonnement, statut")
-        .eq("email", user.email ?? "")
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      const dbActive =
-        client?.subscription_active === true ||
-        (client?.abonnement === "outils_djama" && client?.statut === "actif");
-
-      if (dbActive) {
-        if (!cancelled) setReady(true);
-        return;
-      }
-
-      /* 6. Accès libre — tout utilisateur connecté a accès (trial automatique) */
+      /* Tout utilisateur connecté a accès — trial automatique */
       if (!cancelled) setReady(true);
     }
 
