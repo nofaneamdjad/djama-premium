@@ -344,15 +344,14 @@ function LoginPageInner() {
             transition={{ duration: 0.4, delay: 0.4 }}
             className="mt-6 space-y-3 text-center"
           >
-            <p className="text-xs text-white/20">Accès réservé aux clients DJAMA.</p>
             <div className="h-px bg-white/5" />
             <p className="text-xs text-white/35">
-              Pas encore d&apos;accès ?{" "}
+              Pas encore de compte ?{" "}
               <Link
-                href="/espace-client"
+                href="/register"
                 className="font-semibold text-[#c9a55a] underline underline-offset-2 transition hover:text-[#e8cc94]"
               >
-                Activez votre abonnement 11,90€&nbsp;/&nbsp;mois
+                Créer un compte gratuit
               </Link>
             </p>
           </motion.div>

@@ -60,15 +60,22 @@ export default function RegisterPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    if (!nom.trim())   { setError("Le nom est requis."); return; }
+    if (!email.trim()) { setError("L'email est requis."); return; }
+    if (password.length < 8) { setError("Le mot de passe doit contenir au moins 8 caractères."); return; }
     setError("");
     setLoading(true);
 
     /* 1. Créer le compte auth */
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+      options: { data: { name: nom.trim() } },
+    });
 
     if (signUpError) {
       setError(
-        signUpError.message.includes("already registered")
+        signUpError.message.includes("already registered") || signUpError.message.includes("already been registered")
           ? "Un compte existe déjà avec cet email."
           : signUpError.message
       );
@@ -78,30 +85,29 @@ export default function RegisterPage() {
 
     const userId = data.user?.id;
     if (!userId) {
-      setError("Compte créé. Vérifiez votre email pour confirmer votre inscription.");
+      setError("Erreur lors de la création du compte. Réessayez.");
       setLoading(false);
       return;
     }
 
-    /* 2. Insérer le profil dans la table clients */
-    const { error: clientError } = await supabase.from("clients").insert({
+    /* 2. Insérer le profil dans la table clients (best-effort) */
+    await supabase.from("clients").insert({
       id: userId,
-      nom,
-      email,
+      nom: nom.trim(),
+      email: email.trim().toLowerCase(),
       telephone: telephone || null,
       abonnement,
       statut: "actif",
     });
 
-    if (clientError && !clientError.message.includes("duplicate")) {
-      setError(`Profil non créé : ${clientError.message}`);
-      setLoading(false);
-      return;
-    }
-
     setSuccess(true);
     setLoading(false);
-    setTimeout(() => router.push("/client/factures"), 1500);
+
+    /* 3. Si session immédiate (email confirm désactivé) → dashboard direct */
+    if (data.session) {
+      setTimeout(() => { window.location.href = "/client"; }, 1200);
+    }
+    /* Sinon → l'utilisateur voit le message succès et doit confirmer son email */
   }
 
   return (
@@ -213,7 +219,10 @@ export default function RegisterPage() {
                   className="flex items-start gap-2.5 overflow-hidden rounded-2xl border border-green-500/20 bg-green-500/10 px-4 py-3"
                 >
                   <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-green-400" />
-                  <p className="text-xs text-green-300">Compte créé ! Redirection vers votre espace…</p>
+                  <p className="text-xs text-green-300 leading-relaxed">
+                    Compte créé avec succès !<br/>
+                    <span className="text-green-400/70">Redirection vers votre espace…</span>
+                  </p>
                 </motion.div>
               )}
             </AnimatePresence>
