@@ -1,297 +1,286 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  Crown, CheckCircle2, Zap, Loader2, ExternalLink,
-  ReceiptText, Users, Timer, Receipt, FileText, Search,
-  TrendingUp, StickyNote, Star, Sparkles, CalendarRange,
-  ShieldCheck, RefreshCw, Brain, Gift, Clock,
+  Crown, CheckCircle2, ArrowRight, Sparkles,
+  ShieldCheck, Clock, RefreshCw, ExternalLink,
 } from "lucide-react";
 import { useSubscription } from "@/lib/use-require-subscription";
 import StripeButton from "@/components/ui/StripeButton";
+import Link from "next/link";
 
-const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD = "#c9a55a";
+const ease = [0.16, 1, 0.3, 1] as const;
 
 const FEATURES = [
-  { Icon: ReceiptText, label: "Factures & Devis Pro",      desc: "Templates premium, PDF, TVA automatique"      },
-  { Icon: Users,       label: "CRM Contacts",              desc: "Gestion prospects, export CSV"                },
-  { Icon: Timer,       label: "Chrono Pro",                desc: "Timer pause/reprise, suivi par projet"        },
-  { Icon: Receipt,     label: "Dépenses",                  desc: "Catégorisation, export mensuel"               },
-  { Icon: FileText,    label: "Contrats IA",               desc: "Génération IA en secondes, PDF"               },
-  { Icon: Search,      label: "Sourcing IA",               desc: "Expert fournisseurs mondial avec raisonnement"},
-  { Icon: TrendingUp,  label: "Trésorerie",                desc: "Cash-flow, flux consolidés"                   },
-  { Icon: StickyNote,  label: "Bloc-notes IA",             desc: "Notes intelligentes, catégories, favoris"     },
-  { Icon: Star,        label: "Réputation",                desc: "Avis clients, tendance, export"               },
-  { Icon: Sparkles,    label: "Coaching IA",               desc: "Objectifs, sessions, progression"             },
-  { Icon: Zap,         label: "Assistant IA",              desc: "Relances automatiques, actions urgentes"      },
-  { Icon: CalendarRange,label: "Planification",            desc: "Planning équipe, emails auto"                 },
+  "CRM & pipeline clients",
+  "Trésorerie & suivi des dépenses",
+  "Contrats IA & factures illimitées",
+  "Assistant IA & Coaching personnalisé",
+  "Stocks & gestion fournisseurs",
+  "Équipe, planning & time tracking",
 ] as const;
 
 export default function AbonnementsPage() {
-  const subscription = useSubscription();
-  const { level, isPremium, trialDaysLeft, email: userEmail } = subscription;
+  const { level, isPremium, isFree, trialDaysLeft, email: userEmail } = useSubscription();
 
   const loading = level === "loading";
-  const isPaid  = level === "premium";
   const isTrial = level === "trial";
+  const isPaid  = level === "premium";
 
-    return (
-    <div className="min-h-screen bg-[#0a0f1e]">
+  return (
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0a0c10] px-4 py-16">
 
-            <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-4xl items-center gap-3">
-          <div className="relative">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border" style={{ backgroundColor: GOLD + "14", borderColor: GOLD + "30" }}>
-              <Crown size={16} style={{ color: GOLD }} />
-            </div>
-          </div>
-          <div>
-            <h1 className="text-base font-extrabold text-white">Abonnements</h1>
-            <p className="text-[0.65rem] text-white/30">Gérez votre accès DJAMA PRO</p>
-          </div>
-        </div>
+      {/* Background glows */}
+      <div className="pointer-events-none absolute inset-0">
+        <div
+          className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[140px]"
+          style={{ background: "rgba(201,165,90,0.07)" }}
+        />
+        <div
+          className="absolute left-[-80px] top-[15%] h-[300px] w-[300px] rounded-full blur-[100px]"
+          style={{ background: "rgba(59,130,246,0.04)" }}
+        />
+        <div
+          className="absolute bottom-[10%] right-[-60px] h-[250px] w-[250px] rounded-full blur-[100px]"
+          style={{ background: "rgba(139,92,246,0.04)" }}
+        />
+        {/* Subtle grid */}
+        <div
+          className="absolute inset-0 opacity-[0.018]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
       </div>
 
-            <div className="relative z-10 mx-auto max-w-4xl space-y-8 px-5 py-8 sm:px-8">
+      {/* Back link */}
+      <div className="relative z-10 mb-8 w-full max-w-[440px]">
+        <Link
+          href="/client"
+          className="inline-flex items-center gap-1.5 text-xs text-white/30 transition hover:text-white/60"
+        >
+          ← Retour à l&apos;espace client
+        </Link>
+      </div>
 
-                <AnimatePresence mode="wait">
-          {loading ? (
-            <motion.div key="loading"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.025] px-6 py-5"
+      {/* Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.55, ease }}
+        className="relative z-10 w-full max-w-[440px]"
+      >
+        {/* Outer glow border */}
+        <div
+          className="absolute inset-0 rounded-[2rem] opacity-60 blur-sm"
+          style={{ background: `linear-gradient(160deg, ${GOLD}18, transparent 60%)` }}
+        />
+
+        <div
+          className="relative overflow-hidden rounded-[2rem] p-8"
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            backdropFilter: "blur(40px)",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)",
+          }}
+        >
+          {/* Inner glow top */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-0 h-32 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+            style={{ background: `${GOLD}14` }}
+          />
+
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.1, ease }}
+            className="relative mb-8 flex flex-col items-center gap-3 text-center"
+          >
+            <div
+              className="flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}28` }}
             >
-              <Loader2 size={18} className="animate-spin text-white/30" />
-              <span className="text-sm text-white/30">Chargement de votre abonnement…</span>
-            </motion.div>
-          ) : isPaid ? (
-            /* ── Abonnement actif ── */
-            <motion.div key="active"
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
-              className="relative overflow-hidden rounded-2xl border border-[rgba(74,222,128,0.25)] bg-white/[0.025] p-6"
-            >
-              <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 60% at 0% 50%, rgba(74,222,128,0.07) 0%, transparent 70%)" }} />
-              <div className="relative flex items-start justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10">
-                    <ShieldCheck size={22} className="text-emerald-400" />
-                  </div>
+              <Crown size={24} style={{ color: GOLD }} />
+            </div>
+            <div>
+              <div
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest"
+                style={{
+                  background: `${GOLD}10`,
+                  border: `1px solid ${GOLD}22`,
+                  color: GOLD,
+                }}
+              >
+                <Sparkles size={9} /> DJAMA PRO
+              </div>
+              <h1 className="mt-2.5 text-2xl font-extrabold text-white">Tout débloquer</h1>
+              <p className="mt-1 text-sm text-white/40">Accès complet · sans engagement</p>
+            </div>
+          </motion.div>
+
+          {/* Price */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.18, ease }}
+            className="relative mb-8 text-center"
+          >
+            <div className="flex items-end justify-center gap-1">
+              <span className="text-[3.5rem] font-black leading-none text-white tracking-tight">11</span>
+              <span className="mb-2 text-[1.8rem] font-black text-white/80">,90</span>
+              <span className="mb-2 text-2xl font-black text-white/60">€</span>
+              <span className="mb-1 ml-1 text-sm font-medium text-white/30">/mois</span>
+            </div>
+            <p className="mt-1.5 text-[0.68rem] text-white/25">Sans engagement · Résiliable à tout moment</p>
+          </motion.div>
+
+          {/* Features */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25, ease }}
+            className="relative mb-7 space-y-2.5"
+          >
+            {FEATURES.map((feat) => (
+              <div key={feat} className="flex items-center gap-3">
+                <div
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: `${GOLD}12` }}
+                >
+                  <CheckCircle2 size={12} style={{ color: GOLD }} />
+                </div>
+                <span className="text-sm text-white/65">{feat}</span>
+              </div>
+            ))}
+            <div className="flex items-center gap-3 pt-0.5">
+              <div
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                style={{ background: `${GOLD}08` }}
+              >
+                <span className="text-[0.6rem] font-bold" style={{ color: `${GOLD}70` }}>+</span>
+              </div>
+              <span className="text-sm text-white/30">9 autres outils inclus</span>
+            </div>
+          </motion.div>
+
+          {/* CTA or Status */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.32, ease }}
+            className="relative space-y-3"
+          >
+            {loading ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/10 border-t-white/50" />
+              </div>
+
+            ) : isPaid ? (
+              /* Premium active */
+              <div
+                className="flex items-center justify-between gap-3 rounded-xl px-4 py-3.5"
+                style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.18)" }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck size={16} className="shrink-0 text-emerald-400" />
                   <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-base font-extrabold text-white">Abonnement actif</p>
-                      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/12 px-2 py-0.5 text-[0.6rem] font-bold text-emerald-400">PRO</span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-white/40">Accès complet à tous les outils DJAMA PRO</p>
-                    {userEmail && <p className="mt-0.5 text-xs text-white/25">{userEmail}</p>}
+                    <p className="text-sm font-bold text-emerald-400">Abonnement actif</p>
+                    {userEmail && (
+                      <p className="text-[0.65rem] text-white/30">{userEmail}</p>
+                    )}
                   </div>
                 </div>
-                <a href="https://billing.stripe.com/p/login/test_00g00g00g" target="_blank" rel="noopener noreferrer"
-                  className="flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold text-white/50 transition hover:border-white/20 hover:text-white/80">
-                  <RefreshCw size={11} /> Gérer <ExternalLink size={10} />
+                <a
+                  href="https://billing.stripe.com/p/login/test_00g00g00g"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex shrink-0 items-center gap-1 text-[0.65rem] font-medium text-white/35 transition hover:text-white/60"
+                >
+                  Gérer <ExternalLink size={10} /> <RefreshCw size={10} />
                 </a>
               </div>
-            </motion.div>
-          ) : isTrial ? (
-            /* ── Essai gratuit en cours ── */
-            <motion.div key="trial"
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
-              className="relative overflow-hidden rounded-2xl border bg-white/[0.025] p-6"
-              style={{ borderColor: "rgba(201,165,90,0.3)" }}
-            >
-              <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 60% at 0% 50%, ${GOLD}08 0%, transparent 70%)` }} />
-              <div className="relative flex items-start justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border" style={{ borderColor: `${GOLD}30`, background: `${GOLD}10` }}>
-                    <Clock size={22} style={{ color: GOLD }} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-base font-extrabold text-white">Essai gratuit en cours</p>
-                      <span className="rounded-full border px-2 py-0.5 text-[0.6rem] font-bold" style={{ borderColor: `${GOLD}40`, background: `${GOLD}14`, color: GOLD }}>
-                        {trialDaysLeft}j restants
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-white/40">
-                      Accès complet à tous les outils · Expiration dans {trialDaysLeft} jour{trialDaysLeft > 1 ? "s" : ""}
-                    </p>
-                    {userEmail && <p className="mt-0.5 text-xs text-white/25">{userEmail}</p>}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ) : (
-            /* ── Plan gratuit / aucun abonnement ── */
-            <motion.div key="inactive"
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
-              className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-white/[0.025] p-6"
-            >
-              <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 60% at 0% 50%, rgba(245,158,11,0.05) 0%, transparent 70%)" }} />
-              <div className="relative flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/8">
-                  <Crown size={20} style={{ color: "#f59e0b" }} />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white/80">Plan gratuit</p>
-                  <p className="mt-0.5 text-xs text-white/35">
-                    Débloquez tous les outils DJAMA PRO pour {" "}
-                    <span className="font-bold" style={{ color: GOLD }}>11,90€/mois</span>
+
+            ) : isTrial ? (
+              /* Trial — convert CTA */
+              <>
+                <div
+                  className="flex items-center gap-2.5 rounded-xl px-4 py-3"
+                  style={{ background: `${GOLD}0c`, border: `1px solid ${GOLD}1a` }}
+                >
+                  <Clock size={14} style={{ color: GOLD }} className="shrink-0" />
+                  <p className="text-sm" style={{ color: GOLD }}>
+                    Essai en cours · <strong>{trialDaysLeft} jour{trialDaysLeft > 1 ? "s" : ""}</strong> restants
                   </p>
                 </div>
-              </div>
+                <StripeButton label="Continuer après l'essai — 11,90€/mois" />
+                <p className="text-center text-[0.62rem] text-white/20">
+                  Paiement sécurisé · Sans engagement · Résiliable
+                </p>
+              </>
+
+            ) : (
+              /* Free — main CTA */
+              <>
+                <StripeButton label="Commencer maintenant" />
+                <p className="text-center text-[0.62rem] text-white/20">
+                  Paiement sécurisé · Sans engagement · Résiliable à tout moment
+                </p>
+              </>
+            )}
+          </motion.div>
+
+          {/* Trust badges */}
+          {!isPaid && !loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.45 }}
+              className="relative mt-6 flex items-center justify-center gap-5"
+            >
+              {["Stripe SSL", "Sans CB", "Résiliable"].map((badge) => (
+                <div key={badge} className="flex items-center gap-1.5">
+                  <div
+                    className="h-1 w-1 rounded-full"
+                    style={{ background: `${GOLD}50` }}
+                  />
+                  <span className="text-[0.6rem] text-white/25">{badge}</span>
+                </div>
+              ))}
             </motion.div>
           )}
-        </AnimatePresence>
 
-                <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease, delay: 0.1 }}
-          className="relative overflow-hidden rounded-2xl border bg-white/[0.025] shadow-[0_16px_60px_rgba(0,0,0,0.5)]"
-          style={{ borderColor: GOLD + "28" }}
-        >
-                    <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${GOLD}00, ${GOLD}, ${GOLD}00)` }} />
+          {/* Trial badge — new users */}
+          {isFree && !loading && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
+              className="relative mt-5 flex items-center justify-center gap-2 rounded-xl py-2.5"
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <Sparkles size={11} style={{ color: `${GOLD}80` }} />
+              <span className="text-[0.68rem] font-medium" style={{ color: `${GOLD}80` }}>
+                30 jours d&apos;essai gratuit inclus à l&apos;inscription
+              </span>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
 
-                    <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${GOLD}08 0%, transparent 60%)` }} />
-
-          <div className="relative p-8 sm:p-10">
-
-                        <div className="mb-8 flex items-start justify-between gap-4">
-              <div>
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border" style={{ backgroundColor: GOLD + "14", borderColor: GOLD + "30" }}>
-                    <Crown size={18} style={{ color: GOLD }} />
-                  </div>
-                  <span className="rounded-full border px-3 py-1 text-[0.65rem] font-bold" style={{ color: GOLD, borderColor: GOLD + "40", backgroundColor: GOLD + "12" }}>
-                    Recommandé
-                  </span>
-                </div>
-                <h2 className="text-2xl font-bold text-white">DJAMA PRO</h2>
-                <p className="mt-1 text-sm text-white/40">Accès complet à la suite d'outils professionnels</p>
-
-                {/* ── Coaching IA offert ── */}
-                <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-[rgba(217,70,239,0.3)] bg-[rgba(217,70,239,0.08)] px-4 py-2.5">
-                  <Gift size={15} className="shrink-0 text-fuchsia-400" />
-                  <div>
-                    <p className="text-xs font-extrabold text-fuchsia-300">Coaching IA offert</p>
-                    <p className="text-[0.65rem] text-white/45 leading-tight">
-                      Le programme Coaching IA (valeur 29€/mois) est inclus gratuitement avec votre abonnement DJAMA PRO.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Price */}
-              <div className="text-right shrink-0">
-                <div className="flex items-end justify-end gap-1">
-                  <span className="text-4xl font-bold text-white">11,90</span>
-                  <span className="mb-1 text-lg font-bold text-white/60">€</span>
-                </div>
-                <p className="text-xs text-white/35">/ mois · sans engagement</p>
-              </div>
-            </div>
-
-            {/* Features grid */}
-            <div className="mb-8 grid gap-3 sm:grid-cols-2">
-              {FEATURES.map(({ Icon, label, desc }) => {
-                const isCoaching = label === "Coaching IA";
-                return (
-                  <div
-                    key={label}
-                    className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
-                      isCoaching
-                        ? "border-[rgba(217,70,239,0.25)] bg-[rgba(217,70,239,0.06)]"
-                        : "border-white/6 bg-white/3"
-                    }`}
-                  >
-                    <div
-                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border"
-                      style={
-                        isCoaching
-                          ? { backgroundColor: "rgba(217,70,239,0.12)", borderColor: "rgba(217,70,239,0.3)" }
-                          : { backgroundColor: GOLD + "10", borderColor: GOLD + "25" }
-                      }
-                    >
-                      <Icon size={13} style={{ color: isCoaching ? "#e879f9" : GOLD }} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <p className={`text-xs font-bold ${isCoaching ? "text-fuchsia-300" : "text-white/85"}`}>{label}</p>
-                        {isCoaching && (
-                          <span className="rounded-full border border-[rgba(217,70,239,0.4)] bg-[rgba(217,70,239,0.15)] px-1.5 py-0.5 text-[0.55rem] font-bold text-fuchsia-300">
-                            Offert
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-0.5 text-[0.65rem] text-white/35 leading-tight">{desc}</p>
-                    </div>
-                    <CheckCircle2 size={13} className={`mt-0.5 shrink-0 ${isCoaching ? "text-fuchsia-400/60" : "text-emerald-400/60"}`} />
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* CTA */}
-            {!loading && (
-              isPremium ? (
-                <div className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/8 py-4 text-sm font-bold text-emerald-400">
-                  <CheckCircle2 size={16} />
-                  Vous bénéficiez déjà de tous ces avantages
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <StripeButton label="S'abonner pour 11,90€ / mois" />
-                  <p className="text-center text-[0.65rem] text-white/25">
-                    Paiement sécurisé par Stripe · Résiliation à tout moment · Aucun frais caché
-                  </p>
-                </div>
-              )
-            )}
-          </div>
-        </motion.div>
-
-        {/* ── Garanties ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease, delay: 0.25 }}
-          className="grid gap-3 sm:grid-cols-3"
-        >
-          {[
-            { title: "Paiement sécurisé",  desc: "Stripe · Chiffrement SSL · 3D Secure"    },
-            { title: "Sans engagement",     desc: "Résiliez à tout moment depuis votre espace" },
-            { title: "Accès immédiat",      desc: "Outils disponibles dès la confirmation"  },
-          ].map((g) => (
-            <div key={g.title} className="flex items-start gap-3 rounded-xl border border-white/6 bg-white/[0.025] px-4 py-4">
-              <div>
-                <p className="text-xs font-bold text-white/80">{g.title}</p>
-                <p className="mt-0.5 text-[0.65rem] leading-tight text-white/35">{g.desc}</p>
-              </div>
-            </div>
-          ))}
-        </motion.div>
-
-        {/* ── FAQ ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.4 }}
-          className="rounded-xl border border-white/6 bg-white/[0.025] p-6 space-y-4"
-        >
-          <p className="text-[0.65rem] font-medium text-white/35 mb-2">Questions fréquentes</p>
-          {[
-            { q: "Puis-je résilier à tout moment ?",          r: "Oui. Vous pouvez annuler votre abonnement depuis votre portail Stripe à tout moment, sans frais." },
-            { q: "Que se passe-t-il après résiliation ?",     r: "Votre accès reste actif jusqu'à la fin de la période payée. Vos données sont conservées 30 jours." },
-            { q: "Y a-t-il une période d'essai ?",            r: "Oui. Chaque nouveau compte bénéficie de 30 jours d'essai gratuit complet, sans carte bancaire requise." },
-            { q: "Facturation TVA incluse ?",                  r: "Oui. Le prix de 11,90€ est TTC. Une facture est émise automatiquement par Stripe chaque mois." },
-          ].map(({ q, r }) => (
-            <div key={q} className="border-t border-white/5 pt-4 first:border-0 first:pt-0">
-              <p className="text-xs font-bold text-white/70">{q}</p>
-              <p className="mt-1 text-xs leading-relaxed text-white/35">{r}</p>
-            </div>
-          ))}
-        </motion.div>
-
-      </div>
+      {/* Bottom note */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+        className="relative z-10 mt-6 text-center text-[0.65rem] text-white/20"
+      >
+        DJAMA · Plateforme SaaS professionnelle · Données hébergées en Europe
+      </motion.p>
     </div>
   );
 }
