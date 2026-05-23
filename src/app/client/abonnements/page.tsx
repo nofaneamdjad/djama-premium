@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Crown, CheckCircle2, Zap, Loader2, ExternalLink,
   ReceiptText, Users, Timer, Receipt, FileText, Search,
   TrendingUp, StickyNote, Star, Sparkles, CalendarRange,
-  ShieldCheck, RefreshCw, Brain, Gift,
+  ShieldCheck, RefreshCw, Brain, Gift, Clock,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { useSubscription } from "@/lib/use-require-subscription";
 import StripeButton from "@/components/ui/StripeButton";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -30,44 +28,13 @@ const FEATURES = [
   { Icon: CalendarRange,label: "Planification",            desc: "Planning équipe, emails auto"                 },
 ] as const;
 
-interface ClientRow {
-  paid: boolean;
-  statut: string;
-  abonnement: string | null;
-  subscribed_at: string | null;
-  stripe_subscription_id: string | null;
-}
-
 export default function AbonnementsPage() {
-  const router = useRouter();
-  const [client,  setClient]  = useState<ClientRow | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState("");
+  const subscription = useSubscription();
+  const { level, isPremium, trialDaysLeft, email: userEmail } = subscription;
 
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
-      setUserEmail(user.email ?? "");
-
-      const { data } = await supabase
-        .from("clients")
-        .select("paid, statut, abonnement, subscribed_at, stripe_subscription_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      setClient(data as ClientRow | null);
-      setLoading(false);
-    })();
-  }, []);
-
-  const isPaid = client?.paid === true || client?.statut === "actif";
-
-  useEffect(() => {
-    if (!loading && isPaid) {
-      router.replace("/client/dashboard");
-    }
-  }, [loading, isPaid, router]);
+  const loading = level === "loading";
+  const isPaid  = level === "premium";
+  const isTrial = level === "trial";
 
     return (
     <div className="min-h-screen bg-[#0a0f1e]">
@@ -98,11 +65,12 @@ export default function AbonnementsPage() {
               <span className="text-sm text-white/30">Chargement de votre abonnement…</span>
             </motion.div>
           ) : isPaid ? (
+            /* ── Abonnement actif ── */
             <motion.div key="active"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
               className="relative overflow-hidden rounded-2xl border border-[rgba(74,222,128,0.25)] bg-white/[0.025] p-6"
             >
-                            <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 60% at 0% 50%, rgba(74,222,128,0.07) 0%, transparent 70%)" }} />
+              <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 60% at 0% 50%, rgba(74,222,128,0.07) 0%, transparent 70%)" }} />
               <div className="relative flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10">
@@ -111,29 +79,48 @@ export default function AbonnementsPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-base font-extrabold text-white">Abonnement actif</p>
-                      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/12 px-2 py-0.5 text-[0.6rem] font-bold text-emerald-400">
-                        Pro
-                      </span>
+                      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/12 px-2 py-0.5 text-[0.6rem] font-bold text-emerald-400">PRO</span>
                     </div>
-                    <p className="mt-0.5 text-xs text-white/40">
-                      {client?.subscribed_at
-                        ? `Actif depuis le ${new Date(client.subscribed_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}`
-                        : "Accès complet à tous les outils DJAMA PRO"}
-                    </p>
+                    <p className="mt-0.5 text-xs text-white/40">Accès complet à tous les outils DJAMA PRO</p>
                     {userEmail && <p className="mt-0.5 text-xs text-white/25">{userEmail}</p>}
                   </div>
                 </div>
-                <a
-                  href="https://billing.stripe.com/p/login/test_00g00g00g"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold text-white/50 transition hover:border-white/20 hover:text-white/80"
-                >
+                <a href="https://billing.stripe.com/p/login/test_00g00g00g" target="_blank" rel="noopener noreferrer"
+                  className="flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold text-white/50 transition hover:border-white/20 hover:text-white/80">
                   <RefreshCw size={11} /> Gérer <ExternalLink size={10} />
                 </a>
               </div>
             </motion.div>
+          ) : isTrial ? (
+            /* ── Essai gratuit en cours ── */
+            <motion.div key="trial"
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
+              className="relative overflow-hidden rounded-2xl border bg-white/[0.025] p-6"
+              style={{ borderColor: "rgba(201,165,90,0.3)" }}
+            >
+              <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 60% at 0% 50%, ${GOLD}08 0%, transparent 70%)` }} />
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border" style={{ borderColor: `${GOLD}30`, background: `${GOLD}10` }}>
+                    <Clock size={22} style={{ color: GOLD }} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-base font-extrabold text-white">Essai gratuit en cours</p>
+                      <span className="rounded-full border px-2 py-0.5 text-[0.6rem] font-bold" style={{ borderColor: `${GOLD}40`, background: `${GOLD}14`, color: GOLD }}>
+                        {trialDaysLeft}j restants
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-white/40">
+                      Accès complet à tous les outils · Expiration dans {trialDaysLeft} jour{trialDaysLeft > 1 ? "s" : ""}
+                    </p>
+                    {userEmail && <p className="mt-0.5 text-xs text-white/25">{userEmail}</p>}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           ) : (
+            /* ── Plan gratuit / aucun abonnement ── */
             <motion.div key="inactive"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
               className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-white/[0.025] p-6"
@@ -144,9 +131,10 @@ export default function AbonnementsPage() {
                   <Crown size={20} style={{ color: "#f59e0b" }} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white/80">Aucun abonnement actif</p>
+                  <p className="text-sm font-bold text-white/80">Plan gratuit</p>
                   <p className="mt-0.5 text-xs text-white/35">
-                    Débloquez tous les outils DJAMA PRO pour 11,90€/mois
+                    Débloquez tous les outils DJAMA PRO pour {" "}
+                    <span className="font-bold" style={{ color: GOLD }}>11,90€/mois</span>
                   </p>
                 </div>
               </div>
@@ -244,7 +232,7 @@ export default function AbonnementsPage() {
 
             {/* CTA */}
             {!loading && (
-              isPaid ? (
+              isPremium ? (
                 <div className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/8 py-4 text-sm font-bold text-emerald-400">
                   <CheckCircle2 size={16} />
                   Vous bénéficiez déjà de tous ces avantages
@@ -293,7 +281,7 @@ export default function AbonnementsPage() {
           {[
             { q: "Puis-je résilier à tout moment ?",          r: "Oui. Vous pouvez annuler votre abonnement depuis votre portail Stripe à tout moment, sans frais." },
             { q: "Que se passe-t-il après résiliation ?",     r: "Votre accès reste actif jusqu'à la fin de la période payée. Vos données sont conservées 30 jours." },
-            { q: "Y a-t-il une période d'essai ?",            r: "DJAMA PRO n'offre pas d'essai gratuit, mais la résiliation sans engagement vous permet de tester sans risque." },
+            { q: "Y a-t-il une période d'essai ?",            r: "Oui. Chaque nouveau compte bénéficie de 30 jours d'essai gratuit complet, sans carte bancaire requise." },
             { q: "Facturation TVA incluse ?",                  r: "Oui. Le prix de 11,90€ est TTC. Une facture est émise automatiquement par Stripe chaque mois." },
           ].map(({ q, r }) => (
             <div key={q} className="border-t border-white/5 pt-4 first:border-0 first:pt-0">

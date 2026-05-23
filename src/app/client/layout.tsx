@@ -10,12 +10,13 @@ import {
   Bell, X, Menu,
   CreditCard, Wallet, Users, FileText, Timer, CalendarRange, Search, Star,
   Home, BarChart2, Brain, Zap, Mic, ChevronRight,
-  Package, Truck, ListTodo, Sparkles,
+  Package, Truck, ListTodo, Sparkles, Crown, ArrowRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useRequireSubscription } from "@/lib/use-require-subscription";
+import { useSubscription } from "@/lib/use-require-subscription";
+import { getToolTier, PLAN_PRICE_LABEL, PlanTier } from "@/lib/plans";
 
-const GOLD   = "#c9a55a";
+const GOLD = "#c9a55a";
 
 type NavEntry = { href: string; label: string; icon: React.ElementType; exact?: boolean };
 
@@ -23,16 +24,16 @@ const NAV_GROUPS: { label: string | null; items: NavEntry[] }[] = [
   {
     label: null,
     items: [
-      { href: "/client",           label: "Accueil",          icon: Home,       exact: true },
-      { href: "/client/dashboard", label: "Tableau de bord",  icon: BarChart2   },
+      { href: "/client",           label: "Accueil",         icon: Home,      exact: true },
+      { href: "/client/dashboard", label: "Tableau de bord", icon: BarChart2  },
     ],
   },
   {
     label: "Finance",
     items: [
-      { href: "/client/factures",   label: "Factures & Devis", icon: ReceiptText  },
-      { href: "/client/depenses",   label: "Dépenses",         icon: CreditCard   },
-      { href: "/client/tresorerie", label: "Trésorerie",       icon: Wallet       },
+      { href: "/client/factures",   label: "Factures & Devis", icon: ReceiptText },
+      { href: "/client/depenses",   label: "Dépenses",          icon: CreditCard  },
+      { href: "/client/tresorerie", label: "Trésorerie",        icon: Wallet      },
     ],
   },
   {
@@ -83,6 +84,9 @@ function fmtEvtDate(iso: string) {
   return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 }
 
+/* ─────────────────────────────────────────────────
+   NOTIF BELL
+───────────────────────────────────────────────── */
 function NotifBell({ ready }: { ready: boolean }) {
   const [open,   setOpen]   = useState(false);
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
@@ -257,15 +261,42 @@ function PendingScreen() {
 }
 
 /* ─────────────────────────────────────────────────
+   PLAN BADGE
+───────────────────────────────────────────────── */
+function PlanBadge({ tier, isPremium }: { tier: PlanTier; isPremium: boolean }) {
+  if (tier === "free") {
+    return (
+      <span className="ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-[0.52rem] font-bold uppercase tracking-wide"
+        style={{ background: "rgba(74,222,128,0.12)", color: "#4ade80" }}>
+        Gratuit
+      </span>
+    );
+  }
+  // premium tool
+  if (!isPremium) {
+    return (
+      <span className="ml-auto shrink-0 flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[0.52rem] font-bold uppercase tracking-wide"
+        style={{ background: "rgba(201,165,90,0.12)", color: GOLD }}>
+        <Lock size={8} /> PRO
+      </span>
+    );
+  }
+  return null; // premium user, premium tool → no badge needed
+}
+
+/* ─────────────────────────────────────────────────
    NAV ITEM
 ───────────────────────────────────────────────── */
 function NavItem({
-  href, label, icon: Icon, exact = false, pathname, onClick,
+  href, label, icon: Icon, exact = false, pathname, onClick, tier, isPremium,
 }: {
   href: string; label: string; icon: React.ElementType;
   exact?: boolean; pathname: string; onClick?: () => void;
+  tier: PlanTier; isPremium: boolean;
 }) {
   const active = exact ? pathname === href : pathname.startsWith(href);
+  const locked = tier === "premium" && !isPremium;
+
   return (
     <Link
       href={href}
@@ -273,6 +304,8 @@ function NavItem({
       className={`group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.8rem] font-medium transition-colors duration-100 ${
         active
           ? "text-gray-900"
+          : locked
+          ? "text-gray-400 hover:bg-orange-50/50 hover:text-gray-500"
           : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
       }`}
       style={active ? { background: `${GOLD}14` } : {}}
@@ -288,7 +321,162 @@ function NavItem({
         className={active ? "" : "text-gray-400 group-hover:text-gray-600"}
       />
       <span className="flex-1 truncate">{label}</span>
+      <PlanBadge tier={tier} isPremium={isPremium} />
     </Link>
+  );
+}
+
+/* ─────────────────────────────────────────────────
+   UPGRADE MODAL
+───────────────────────────────────────────────── */
+function UpgradeModal({ open, onClose, trialDaysLeft }: {
+  open: boolean; onClose: () => void; trialDaysLeft: number;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+          />
+
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 16 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4"
+          >
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0f1117] shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
+
+              {/* Glow décor */}
+              <div className="pointer-events-none absolute inset-0 opacity-30">
+                <div className="absolute left-1/2 top-0 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+                  style={{ background: GOLD }} />
+              </div>
+
+              {/* Close */}
+              <button onClick={onClose}
+                className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/10 hover:text-white/70"
+                aria-label="Fermer">
+                <X size={14} />
+              </button>
+
+              <div className="relative p-7">
+                {/* Icon */}
+                <div className="mb-5 flex flex-col items-center gap-3">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border"
+                    style={{ background: `${GOLD}14`, borderColor: `${GOLD}28` }}>
+                    <Crown size={24} style={{ color: GOLD }} />
+                  </div>
+                  <div className="text-center">
+                    <h2 className="text-xl font-extrabold text-white">Fonctionnalité Premium</h2>
+                    <p className="mt-1 text-sm text-white/50">
+                      {trialDaysLeft > 0
+                        ? `Il vous reste ${trialDaysLeft} jours d'essai`
+                        : "Passez à la version PRO pour débloquer cet outil"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Features */}
+                <div className="mb-6 space-y-2.5 rounded-xl border border-white/8 bg-white/4 p-4">
+                  {[
+                    "Tableau de bord & analytiques",
+                    "CRM & gestion clients",
+                    "Trésorerie & dépenses",
+                    "Assistant & Coaching IA",
+                    "Tous les outils illimités",
+                  ].map((feat) => (
+                    <div key={feat} className="flex items-center gap-2.5">
+                      <CheckCircle2 size={13} style={{ color: GOLD }} className="shrink-0" />
+                      <p className="text-sm text-white/70">{feat}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Price */}
+                <div className="mb-5 text-center">
+                  <span className="text-3xl font-black text-white">11,90€</span>
+                  <span className="ml-1.5 text-sm text-white/40">/ mois</span>
+                  <p className="mt-1 text-xs text-white/30">Sans engagement · Résiliable à tout moment</p>
+                </div>
+
+                {/* CTA */}
+                <a
+                  href="/client/abonnements"
+                  onClick={onClose}
+                  className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-3.5 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_20px_rgba(201,165,90,0.35)] transition-shadow hover:shadow-[0_8px_32px_rgba(201,165,90,0.5)]"
+                  style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                >
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                  <Crown size={15} />
+                  Passer au plan PRO
+                  <ArrowRight size={14} />
+                </a>
+
+                <button onClick={onClose}
+                  className="mt-3 w-full text-center text-xs text-white/30 transition hover:text-white/50">
+                  Continuer avec le plan gratuit
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ─────────────────────────────────────────────────
+   TRIAL BANNER
+───────────────────────────────────────────────── */
+function TrialBanner({ daysLeft }: { daysLeft: number }) {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed || daysLeft <= 0) return null;
+
+  const urgent = daysLeft <= 5;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="flex shrink-0 items-center justify-between gap-3 px-4 py-2"
+      style={{
+        background: urgent
+          ? "linear-gradient(90deg, rgba(251,146,60,0.15), rgba(251,146,60,0.08))"
+          : `linear-gradient(90deg, ${GOLD}1a, ${GOLD}0d)`,
+        borderBottom: `1px solid ${urgent ? "rgba(251,146,60,0.25)" : `${GOLD}25`}`,
+      }}
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        <Sparkles size={12} style={{ color: urgent ? "#fb923c" : GOLD, flexShrink: 0 }} />
+        <p className="truncate text-xs font-medium" style={{ color: urgent ? "#fb923c" : GOLD }}>
+          {urgent
+            ? `⚡ Plus que ${daysLeft} jour${daysLeft > 1 ? "s" : ""} d'essai`
+            : `${daysLeft} jours d'essai offerts restants`}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <a href="/client/abonnements"
+          className="rounded-lg px-2.5 py-1 text-[0.65rem] font-bold text-[#0a0a0a] transition hover:opacity-90"
+          style={{ background: urgent ? "#fb923c" : GOLD }}>
+          S&apos;abonner — {PLAN_PRICE_LABEL}
+        </a>
+        <button onClick={() => setDismissed(true)}
+          className="flex h-5 w-5 items-center justify-center rounded text-white/30 hover:text-white/60 transition"
+          aria-label="Masquer">
+          <X size={11} />
+        </button>
+      </div>
+    </motion.div>
   );
 }
 
@@ -296,21 +484,26 @@ function NavItem({
    LAYOUT
 ───────────────────────────────────────────────── */
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const pathname  = usePathname();
-  const { ready, pending } = useRequireSubscription();
-  const [userInitial, setUserInitial] = useState("U");
-  const [userEmail,   setUserEmail]   = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname     = usePathname();
+  const subscription = useSubscription();
+  const [sidebarOpen,  setSidebarOpen]  = useState(false);
+  const [upgradeModal, setUpgradeModal] = useState(false);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data.user?.email ?? "";
-      setUserInitial(email[0]?.toUpperCase() ?? "U");
-      setUserEmail(email);
-    });
-  }, []);
+  const { level, isPremium, trialDaysLeft, name, email } = subscription;
+  const userInitial  = (name?.[0] ?? email?.[0] ?? "U").toUpperCase();
+  const displayName  = name || email || "Mon compte";
+  const isReady      = level !== "loading" && level !== "unauthenticated";
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
+
+  // Bloquer les outils premium si plan gratuit
+  useEffect(() => {
+    if (level === "free" && getToolTier(pathname) === "premium") {
+      setUpgradeModal(true);
+    } else {
+      setUpgradeModal(false);
+    }
+  }, [pathname, level]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -322,21 +515,28 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     .find(item => item.exact ? pathname === item.href : pathname.startsWith(item.href))
     ?.label ?? "Espace client";
 
-  if (pending) return <PendingScreen />;
-
-  if (!ready) {
+  if (level === "loading") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white">
         <div className="h-7 w-7 animate-spin rounded-full border-2 border-gray-100 border-t-[#c9a55a]" />
         <p className="text-xs text-gray-400 flex items-center gap-1.5">
-          <Lock size={10} /> Vérification de l&apos;accès…
+          <Lock size={10} /> Chargement…
         </p>
       </div>
     );
   }
 
+  if (level === "unauthenticated") return null;
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#f8f9fa]">
+
+      {/* Upgrade modal */}
+      <UpgradeModal
+        open={upgradeModal}
+        onClose={() => setUpgradeModal(false)}
+        trialDaysLeft={trialDaysLeft}
+      />
 
       {/* Mobile overlay */}
       <AnimatePresence>
@@ -379,6 +579,42 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </button>
         </div>
 
+        {/* Plan badge in sidebar */}
+        {!isPremium && (
+          <div className="mx-2 mt-2 mb-0.5 flex items-center justify-between rounded-lg px-3 py-2"
+            style={{ background: `${GOLD}0d`, border: `1px solid ${GOLD}18` }}>
+            <div className="flex items-center gap-1.5">
+              <Sparkles size={10} style={{ color: GOLD }} />
+              <span className="text-[0.65rem] font-semibold" style={{ color: GOLD }}>Plan Gratuit</span>
+            </div>
+            <a href="/client/abonnements"
+              className="text-[0.6rem] font-bold underline underline-offset-2 transition hover:opacity-80"
+              style={{ color: GOLD }}>
+              Passer PRO
+            </a>
+          </div>
+        )}
+        {isPremium && level === "trial" && trialDaysLeft > 0 && (
+          <div className="mx-2 mt-2 mb-0.5 flex items-center justify-between rounded-lg px-3 py-2"
+            style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.18)" }}>
+            <div className="flex items-center gap-1.5">
+              <Clock size={10} style={{ color: "#4ade80" }} />
+              <span className="text-[0.65rem] font-semibold text-green-400">Essai gratuit</span>
+            </div>
+            <span className="text-[0.6rem] font-bold text-green-400">{trialDaysLeft}j</span>
+          </div>
+        )}
+        {isPremium && level === "premium" && (
+          <div className="mx-2 mt-2 mb-0.5 flex items-center justify-between rounded-lg px-3 py-2"
+            style={{ background: `${GOLD}0d`, border: `1px solid ${GOLD}18` }}>
+            <div className="flex items-center gap-1.5">
+              <Crown size={10} style={{ color: GOLD }} />
+              <span className="text-[0.65rem] font-semibold" style={{ color: GOLD }}>Plan PRO</span>
+            </div>
+            <CheckCircle2 size={10} style={{ color: GOLD }} />
+          </div>
+        )}
+
         {/* Nav */}
         <nav className="relative flex-1 overflow-y-auto px-2 py-2 scrollbar-none">
           {NAV_GROUPS.map((group, gi) => (
@@ -398,6 +634,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                     exact={item.exact ?? false}
                     pathname={pathname}
                     onClick={() => setSidebarOpen(false)}
+                    tier={getToolTier(item.href)}
+                    isPremium={isPremium}
                   />
                 ))}
               </div>
@@ -408,14 +646,18 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         {/* User footer */}
         <div className="shrink-0 border-t border-gray-200 p-2">
           <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.65rem] font-bold"
-              style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}25`, color: GOLD }}>
+            <Link href="/client/profil"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.65rem] font-bold transition hover:opacity-80"
+              style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}25`, color: GOLD }}
+              title="Mon profil">
               {userInitial}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[0.72rem] font-medium text-gray-700">{userEmail || "Mon compte"}</p>
-              <p className="text-[0.58rem] text-gray-400">DJAMA PRO</p>
-            </div>
+            </Link>
+            <Link href="/client/profil" className="min-w-0 flex-1 group">
+              <p className="truncate text-[0.72rem] font-medium text-gray-700 group-hover:text-gray-900 transition">{displayName}</p>
+              <p className="text-[0.58rem] text-gray-400">
+                {level === "premium" ? "PRO" : level === "trial" ? `Essai · ${trialDaysLeft}j` : "Gratuit"}
+              </p>
+            </Link>
             <button
               onClick={handleLogout}
               aria-label="Se déconnecter"
@@ -429,6 +671,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       {/* ── CONTENU ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
+
+        {/* Trial banner */}
+        <AnimatePresence>
+          {level === "trial" && trialDaysLeft > 0 && (
+            <TrialBanner daysLeft={trialDaysLeft} />
+          )}
+        </AnimatePresence>
 
         {/* Top bar */}
         <header
@@ -448,7 +697,16 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <div className="hidden flex-1 lg:block" />
 
           <div className="flex items-center gap-2">
-            <NotifBell ready={ready} />
+            {!isPremium && (
+              <a
+                href="/client/abonnements"
+                className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-[#0a0a0a] transition hover:opacity-90"
+                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+              >
+                <Crown size={11} /> Passer PRO
+              </a>
+            )}
+            <NotifBell ready={isReady} />
             <div className="flex h-7 w-7 items-center justify-center rounded-lg text-[0.65rem] font-bold"
               style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}25`, color: GOLD }}>
               {userInitial}
