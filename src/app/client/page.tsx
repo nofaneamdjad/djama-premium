@@ -6,12 +6,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ReceiptText, Users, Timer, CreditCard, FileText, Search,
   Wallet, StickyNote, Calendar, CalendarRange, Brain, Zap, Star, Mic,
-  Truck, Package, Bell, Plus, BarChart2,
+  Truck, Package, Bell, BarChart2,
   ChevronRight, LogOut, Settings, LayoutGrid, ListTodo,
-  Sparkles, TrendingUp, TrendingDown, ArrowUpRight, Send, Share2,
+  Sparkles, TrendingUp, TrendingDown, Send, Share2,
+  Lock, Crown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
+import { useSubscription } from "@/lib/use-require-subscription";
+import { getToolTier } from "@/lib/plans";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const GOLD = "#c9a55a";
@@ -64,11 +67,11 @@ const MODULE_GROUPS = [
     icon: Brain,
     color: "#6d28d9",
     modules: [
-      { href: "/client/sourcing",    label: "Sourcing IA",   sub: "Trouver clients et partenaires", icon: Search, color: "#6d28d9", bg: "#ede9fe" },
-      { href: "/client/assistant",   label: "Assistant IA",  sub: "Relances auto et questions",     icon: Zap,    color: "#0369a1", bg: "#e0f2fe" },
-      { href: "/client/reputation",        label: "Réputation",        sub: "Avis, e-réputation, veille",       icon: Star,   color: "#b91c1c", bg: "#fee2e2" },
-      { href: "/client/reseaux-sociaux",  label: "Réseaux Sociaux IA", sub: "Planifier et créer du contenu",   icon: Share2, color: "#e1306c", bg: "#fce7f3" },
-      { href: "/coaching-ia/espace",      label: "Coaching IA",        sub: "Accompagnement personnalisé",     icon: Brain,  color: "#9d174d", bg: "#fdf2f8" },
+      { href: "/client/sourcing",          label: "Sourcing IA",        sub: "Trouver clients et partenaires", icon: Search, color: "#6d28d9", bg: "#ede9fe" },
+      { href: "/client/assistant",         label: "Assistant IA",       sub: "Relances auto et questions",     icon: Zap,    color: "#0369a1", bg: "#e0f2fe" },
+      { href: "/client/reputation",        label: "Réputation",         sub: "Avis, e-réputation, veille",     icon: Star,   color: "#b91c1c", bg: "#fee2e2" },
+      { href: "/client/reseaux-sociaux",   label: "Réseaux Sociaux IA", sub: "Planifier et créer du contenu",  icon: Share2, color: "#e1306c", bg: "#fce7f3" },
+      { href: "/coaching-ia/espace",       label: "Coaching IA",        sub: "Accompagnement personnalisé",    icon: Brain,  color: "#9d174d", bg: "#fdf2f8" },
     ],
   },
 ] as const;
@@ -87,8 +90,9 @@ function getDay() {
 }
 
 /* ── Quick Action Button (Revolut style) ── */
-function QuickAction({ href, icon: Icon, label, color, bg, delay = 0 }: {
-  href: string; icon: React.ElementType; label: string; color: string; bg: string; delay?: number;
+function QuickAction({ href, icon: Icon, label, color, bg, delay = 0, locked = false }: {
+  href: string; icon: React.ElementType; label: string; color: string; bg: string;
+  delay?: number; locked?: boolean;
 }) {
   return (
     <motion.div
@@ -99,12 +103,20 @@ function QuickAction({ href, icon: Icon, label, color, bg, delay = 0 }: {
       <Link href={href} className="flex flex-col items-center gap-1.5 group">
         <motion.div
           whileTap={{ scale: 0.80 }}
-          whileHover={{ scale: 1.13, y: -5, boxShadow: `0 12px 30px ${color}55` }}
+          whileHover={{ scale: 1.13, y: -5, boxShadow: `0 12px 30px ${locked ? "rgba(201,165,90,0.4)" : color + "55"}` }}
           transition={{ type: "spring", stiffness: 500, damping: 16 }}
-          className="flex h-12 w-12 items-center justify-center rounded-2xl"
-          style={{ background: bg }}
+          className="relative flex h-12 w-12 items-center justify-center rounded-2xl"
+          style={{ background: bg, opacity: locked ? 0.7 : 1 }}
         >
           <Icon size={20} style={{ color }} strokeWidth={1.8} />
+          {locked && (
+            <div
+              className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full shadow-sm"
+              style={{ background: GOLD }}
+            >
+              <Lock size={6} color="white" strokeWidth={3} />
+            </div>
+          )}
         </motion.div>
         <span className="text-[10px] font-medium text-white/50 group-hover:text-white/85 transition-colors">{label}</span>
       </Link>
@@ -378,20 +390,28 @@ const APP_ICONS: Record<string, React.ReactElement> = {
 };
 
 /* ── App icon renderer ── */
-function AppModuleIcon({ href }: { href: string }) {
+function AppModuleIcon({ href, locked = false }: { href: string; locked?: boolean }) {
   const icon = APP_ICONS[href];
   if (!icon) return null;
   return (
-    <div className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.18)]">
+    <div
+      className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.18)] transition-opacity duration-200"
+      style={{ opacity: locked ? 0.5 : 1 }}
+    >
       {icon}
     </div>
   );
 }
 
-/* ── Module Row (Revolut/Odoo style) ── */
+/* ── Module Row (Revolut/Odoo style) — tier-aware ── */
 type AnyModule = { href: string; label: string; icon: React.ElementType; color: string; bg: string; sub?: string };
 
-function ModuleRow({ mod, index, last }: { mod: AnyModule; index: number; last: boolean }) {
+function ModuleRow({ mod, index, last, isPremium }: {
+  mod: AnyModule; index: number; last: boolean; isPremium: boolean;
+}) {
+  const tier = getToolTier(mod.href);
+  const isLocked = tier === "premium" && !isPremium;
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -8 }}
@@ -401,14 +421,64 @@ function ModuleRow({ mod, index, last }: { mod: AnyModule; index: number; last: 
       <Link href={mod.href} className="group block">
         <motion.div
           whileTap={{ scale: 0.985 }}
-          className={`flex items-center gap-3.5 px-4 py-3 transition-colors hover:bg-gray-50 active:bg-gray-100 ${!last ? "border-b border-gray-100" : ""}`}
+          className={`flex items-center gap-3.5 px-4 py-3 transition-colors
+            ${isLocked
+              ? "hover:bg-amber-50/70 active:bg-amber-50"
+              : "hover:bg-gray-50 active:bg-gray-100"}
+            ${!last ? "border-b border-gray-100" : ""}`}
         >
-          <AppModuleIcon href={mod.href} />
-          <div className="flex-1 min-w-0">
-            <p className="text-[13.5px] font-semibold text-gray-800 leading-tight">{mod.label}</p>
-            {mod.sub && <p className="text-[11px] text-gray-400 mt-0.5 truncate">{mod.sub}</p>}
+          {/* Icon with lock badge overlay */}
+          <div className="relative shrink-0">
+            <AppModuleIcon href={mod.href} locked={isLocked} />
+            {isLocked && (
+              <div
+                className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full shadow-md"
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", border: "1.5px solid #fff" }}
+              >
+                <Lock size={8} color="white" strokeWidth={2.5} />
+              </div>
+            )}
           </div>
-          <ChevronRight size={15} className="shrink-0 text-gray-300 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-gray-400" />
+
+          {/* Label + sub */}
+          <div className="flex-1 min-w-0">
+            <p className={`text-[13.5px] font-semibold leading-tight ${isLocked ? "text-gray-500" : "text-gray-800"}`}>
+              {mod.label}
+            </p>
+            {mod.sub && (
+              <p className={`text-[11px] mt-0.5 truncate ${isLocked ? "text-gray-350" : "text-gray-400"}`}>
+                {isLocked ? "Accès PRO requis" : mod.sub}
+              </p>
+            )}
+          </div>
+
+          {/* Right badge */}
+          {isLocked ? (
+            <div
+              className="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
+              style={{
+                background: "rgba(201,165,90,0.10)",
+                border: "1px solid rgba(201,165,90,0.30)",
+                color: GOLD,
+              }}
+            >
+              <Crown size={7} />
+              PRO
+            </div>
+          ) : tier === "free" ? (
+            <div
+              className="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
+              style={{
+                background: "rgba(34,197,94,0.10)",
+                border: "1px solid rgba(34,197,94,0.22)",
+                color: "#16a34a",
+              }}
+            >
+              Gratuit
+            </div>
+          ) : (
+            <ChevronRight size={15} className="shrink-0 text-gray-300 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-gray-400" />
+          )}
         </motion.div>
       </Link>
     </motion.div>
@@ -429,6 +499,8 @@ function NotifBadge({ count }: { count: number }) {
    PAGE
 ───────────────────────────────────────────────── */
 export default function CockpitPage() {
+  const { isPremium, isFree } = useSubscription();
+
   const [firstName,  setFirstName]  = useState("");
   const [initial,    setInitial]    = useState("?");
   const [kpiLoading, setKpiLoading] = useState(true);
@@ -447,9 +519,9 @@ export default function CockpitPage() {
       const fullName = (user.user_metadata?.full_name as string | undefined)?.trim() ?? "";
       const emailFallback = user.email?.split("@")[0] ?? "";
       const name = fullName || (emailFallback.charAt(0).toUpperCase() + emailFallback.slice(1));
-      const firstName = fullName ? fullName.split(" ")[0] : name;
-      setFirstName(firstName);
-      setInitial(firstName.charAt(0).toUpperCase());
+      const fn = fullName ? fullName.split(" ")[0] : name;
+      setFirstName(fn);
+      setInitial(fn.charAt(0).toUpperCase());
 
       const now    = new Date();
       const y      = now.getFullYear();
@@ -488,10 +560,6 @@ export default function CockpitPage() {
     return () => document.removeEventListener("mousedown", handle);
   }, []);
 
-  const caEvoLabel = caEvo !== null
-    ? `${caEvo >= 0 ? "+" : ""}${caEvo}% vs mois dernier`
-    : "ce mois";
-
   const totalModules = MODULE_GROUPS.reduce((n, g) => n + g.modules.length, 0);
 
   return (
@@ -511,21 +579,19 @@ export default function CockpitPage() {
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-x-0 top-0 h-[1.5px] origin-left bg-gradient-to-r from-transparent via-[#c9a55a]/60 to-transparent"
         />
-        {/* Floating orb — gold, centre */}
+        {/* Floating orbs */}
         <motion.div
           animate={{ y: [0, -18, 0], opacity: [0.06, 0.13, 0.06] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           className="pointer-events-none absolute -top-10 left-1/2 h-[320px] w-[600px] -translate-x-1/2 rounded-full blur-[100px]"
           style={{ background: "rgba(201,165,90,0.12)" }}
         />
-        {/* Floating orb — indigo, bas gauche */}
         <motion.div
           animate={{ y: [0, 14, 0], x: [0, -10, 0], opacity: [0.04, 0.09, 0.04] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
           className="pointer-events-none absolute -bottom-10 -left-10 h-[220px] w-[320px] rounded-full blur-[80px]"
           style={{ background: "rgba(99,102,241,0.10)" }}
         />
-        {/* Floating orb — teal, droite */}
         <motion.div
           animate={{ y: [0, -12, 0], x: [0, 8, 0], opacity: [0.03, 0.08, 0.03] }}
           transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 3 }}
@@ -602,11 +668,11 @@ export default function CockpitPage() {
                     >
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-[12px] font-semibold text-gray-900">{firstName}</p>
-                        <p className="text-[11px] text-gray-400">DJAMA PRO</p>
+                        <p className="text-[11px] text-gray-400">{isPremium ? "DJAMA PRO" : "Plan Gratuit"}</p>
                       </div>
                       {[
                         { icon:LayoutGrid, label:"Dashboard",  href:"/client/dashboard"  },
-                        { icon:Settings,   label:"Paramètres", href:"/client/abonnements" },
+                        { icon:Settings,   label:"Abonnement", href:"/client/abonnements" },
                       ].map(item => {
                         const Icon = item.icon;
                         return (
@@ -632,19 +698,17 @@ export default function CockpitPage() {
             </div>
           </motion.div>
 
-          {/* ── Balance card ── */}
+          {/* ── Balance / CA card ── */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.38, delay: 0.06, ease }}
             className="mb-7"
           >
-            {/* Label */}
             <p className="mb-1 text-[11px] font-medium uppercase tracking-widest text-white/35">
-              Chiffre d'affaires
+              Chiffre d&apos;affaires
             </p>
 
-            {/* Big amount */}
             <div className="flex items-end gap-3">
               {kpiLoading ? (
                 <div className="h-10 w-36 animate-pulse rounded-xl" style={{ background:"rgba(255,255,255,0.1)" }}/>
@@ -659,7 +723,6 @@ export default function CockpitPage() {
                 </motion.p>
               )}
 
-              {/* Trend badge */}
               {!kpiLoading && caEvo !== null && (
                 <motion.div
                   initial={{ opacity:0, x:8 }}
@@ -690,13 +753,13 @@ export default function CockpitPage() {
           <div className="mb-7 flex items-start justify-between gap-1">
             <QuickAction href="/client/factures"   icon={ReceiptText} label="Facture"  color="#c9a55a" bg="rgba(201,165,90,0.18)"  delay={0.14}/>
             <QuickAction href="/client/factures"   icon={Send}        label="Devis"    color="#60a5fa" bg="rgba(59,130,246,0.15)"  delay={0.20}/>
-            <QuickAction href="/client/depenses"   icon={CreditCard}  label="Dépense"  color="#f97316" bg="rgba(249,115,22,0.15)"  delay={0.26}/>
-            <QuickAction href="/client/crm"        icon={Users}       label="Clients"  color="#a78bfa" bg="rgba(167,139,250,0.15)" delay={0.32}/>
-            <QuickAction href="/client/tresorerie" icon={Wallet}      label="Tréso"    color="#34d399" bg="rgba(52,211,153,0.15)"  delay={0.38}/>
-            <QuickAction href="/client/dashboard"  icon={BarChart2}   label="Bilan"    color="#38bdf8" bg="rgba(56,189,248,0.15)"  delay={0.44}/>
+            <QuickAction href="/client/depenses"   icon={CreditCard}  label="Dépense"  color="#f97316" bg="rgba(249,115,22,0.15)"  delay={0.26} locked={isFree}/>
+            <QuickAction href="/client/crm"        icon={Users}       label="Clients"  color="#a78bfa" bg="rgba(167,139,250,0.15)" delay={0.32} locked={isFree}/>
+            <QuickAction href="/client/tresorerie" icon={Wallet}      label="Tréso"    color="#34d399" bg="rgba(52,211,153,0.15)"  delay={0.38} locked={isFree}/>
+            <QuickAction href="/client/dashboard"  icon={BarChart2}   label="Bilan"    color="#38bdf8" bg="rgba(56,189,248,0.15)"  delay={0.44} locked={isFree}/>
           </div>
 
-          {/* ── Secondary stats row ── */}
+          {/* ── Stats row ── */}
           <div className="flex gap-2.5 pb-6">
             <StatPill label="Contacts CRM"  value={String(nbContacts)}   color="#60a5fa" loading={kpiLoading} delay={0.38}/>
             <StatPill label="En attente"    value={String(nbFactures)}   color={nbFactures > 0 ? "#f87171" : "#4ade80"} loading={kpiLoading} delay={0.46}/>
@@ -707,32 +770,94 @@ export default function CockpitPage() {
       </div>
 
       {/* ══════════════════════════════════════════════
-          MAIN CONTENT
+          MAIN CONTENT — Module groups
       ══════════════════════════════════════════════ */}
       <div className="mx-auto max-w-4xl px-4 pb-12 pt-5 sm:px-6">
 
-        {/* Module groups — Odoo / Revolut style */}
+        {/* Free-tier upgrade nudge banner */}
+        {isFree && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2, ease }}
+            className="mb-4 flex items-center justify-between gap-3 overflow-hidden rounded-2xl px-4 py-3"
+            style={{
+              background: "linear-gradient(135deg, rgba(201,165,90,0.08), rgba(176,141,69,0.05))",
+              border: "1px solid rgba(201,165,90,0.22)",
+            }}
+          >
+            <div className="flex items-center gap-2.5">
+              <div
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl"
+                style={{ background: "rgba(201,165,90,0.15)" }}
+              >
+                <Crown size={13} style={{ color: GOLD }} />
+              </div>
+              <div>
+                <p className="text-[12px] font-bold text-gray-800">Débloquez tous les modules</p>
+                <p className="text-[10.5px] text-gray-400">15 outils PRO · 11,90€/mois · Sans engagement</p>
+              </div>
+            </div>
+            <Link
+              href="/client/abonnements"
+              className="shrink-0 rounded-xl px-3 py-1.5 text-[11px] font-bold text-white transition hover:opacity-90"
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}
+            >
+              Voir PRO
+            </Link>
+          </motion.div>
+        )}
+
+        {/* Module groups */}
         <div className="space-y-3">
           {MODULE_GROUPS.map((group, gi) => {
             const GroupIcon = group.icon;
+            // Check if ALL modules in this group are premium (for group-level PRO badge)
+            const allPremium = group.modules.every(m => getToolTier(m.href) === "premium");
+            const groupIsLocked = allPremium && isFree;
+
             return (
               <motion.div
                 key={group.label}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 + gi * 0.05, ease }}
-                className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(0,0,0,0.07),0_4px_16px_rgba(0,0,0,0.04)]"
+                className="overflow-hidden rounded-2xl bg-white"
+                style={{
+                  boxShadow: groupIsLocked
+                    ? "0 2px 12px rgba(201,165,90,0.08), 0 8px 24px rgba(0,0,0,0.04)"
+                    : "0 2px 12px rgba(0,0,0,0.07), 0 8px 24px rgba(0,0,0,0.04)",
+                  border: groupIsLocked
+                    ? "1px solid rgba(201,165,90,0.18)"
+                    : "1px solid rgba(0,0,0,0.05)",
+                }}
               >
                 {/* Section header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-lg"
-                      style={{ background: `${group.color}18` }}>
+                    <div
+                      className="flex h-6 w-6 items-center justify-center rounded-lg"
+                      style={{ background: `${group.color}18` }}
+                    >
                       <GroupIcon size={13} style={{ color: group.color }} strokeWidth={2}/>
                     </div>
                     <span className="text-[12px] font-bold text-gray-700 tracking-wide">{group.label}</span>
                   </div>
-                  <span className="text-[10px] font-semibold text-gray-300 tabular-nums">{group.modules.length}</span>
+                  <div className="flex items-center gap-1.5">
+                    {groupIsLocked && (
+                      <div
+                        className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                        style={{
+                          background: "rgba(201,165,90,0.10)",
+                          border: "1px solid rgba(201,165,90,0.25)",
+                          color: GOLD,
+                        }}
+                      >
+                        <Crown size={7} /> PRO
+                      </div>
+                    )}
+                    <span className="text-[10px] font-semibold text-gray-300 tabular-nums">{group.modules.length}</span>
+                  </div>
                 </div>
 
                 {/* Module rows */}
@@ -742,6 +867,7 @@ export default function CockpitPage() {
                     mod={mod as AnyModule}
                     index={gi * 6 + mi}
                     last={mi === group.modules.length - 1}
+                    isPremium={isPremium}
                   />
                 ))}
               </motion.div>

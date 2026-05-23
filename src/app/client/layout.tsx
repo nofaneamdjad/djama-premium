@@ -181,10 +181,8 @@ function NotifBell({ ready }: { ready: boolean }) {
       >
         <Bell size={15} />
         {badge > 0 && (
-          <span
-            className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[0.52rem] font-black"
-            style={{ background: GOLD, color: "#fff" }}
-          >
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[0.52rem] font-black"
+            style={{ background: GOLD, color: "#fff" }}>
             {badge > 9 ? "9+" : badge}
           </span>
         )}
@@ -214,9 +212,7 @@ function NotifBell({ ready }: { ready: boolean }) {
                   <p className="text-xs text-white/40">Aucun événement cette semaine</p>
                   <Link href="/client/planning" onClick={() => setOpen(false)}
                     className="mt-2 inline-block text-xs font-medium transition hover:opacity-80"
-                    style={{ color: GOLD }}>
-                    + Ajouter
-                  </Link>
+                    style={{ color: GOLD }}>+ Ajouter</Link>
                 </div>
               ) : (
                 <div className="py-1">
@@ -277,27 +273,19 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
             transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
             className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 px-4"
           >
-            <div
-              className="relative overflow-hidden rounded-2xl"
+            <div className="relative overflow-hidden rounded-2xl"
               style={{
                 background: "#0f1117",
                 border: "1px solid rgba(255,255,255,0.09)",
                 boxShadow: "0 32px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06)",
-              }}
-            >
-              {/* Glow */}
-              <div
-                className="pointer-events-none absolute left-1/2 top-0 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-                style={{ background: `${GOLD}1a` }}
-              />
+              }}>
+              <div className="pointer-events-none absolute left-1/2 top-0 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+                style={{ background: `${GOLD}1a` }} />
 
-              {/* Header */}
               <div className="relative flex items-center justify-between px-5 pb-3 pt-5">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-xl"
-                    style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}25` }}
-                  >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl"
+                    style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}25` }}>
                     <Crown size={16} style={{ color: GOLD }} />
                   </div>
                   <div>
@@ -305,30 +293,20 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
                     <p className="text-[0.62rem] text-white/35">{PRO_TOOLS.length} outils professionnels</p>
                   </div>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/10 hover:text-white/60"
-                  aria-label="Fermer"
-                >
+                <button onClick={onClose}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/10 hover:text-white/60">
                   <X size={13} />
                 </button>
               </div>
 
-              {/* Tools grid */}
-              <div
-                className="relative grid max-h-56 grid-cols-2 gap-1 overflow-y-auto px-4 pb-1"
-                style={{ scrollbarWidth: "none" }}
-              >
+              <div className="relative grid max-h-56 grid-cols-2 gap-1 overflow-y-auto px-4 pb-1"
+                style={{ scrollbarWidth: "none" }}>
                 {PRO_TOOLS.map(({ href, label, icon: Icon }) => (
-                  <div
-                    key={href}
+                  <div key={href}
                     className="flex items-center gap-2 rounded-lg px-2.5 py-2.5"
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)" }}
-                  >
-                    <div
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
-                      style={{ background: `${GOLD}12` }}
-                    >
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
+                      style={{ background: `${GOLD}12` }}>
                       <Icon size={10} style={{ color: GOLD }} />
                     </div>
                     <span className="truncate text-[0.72rem] font-medium text-white/60">{label}</span>
@@ -336,17 +314,10 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
                 ))}
               </div>
 
-              {/* CTA */}
               <div className="relative p-4 pt-3.5">
-                <a
-                  href="/client/abonnements"
-                  onClick={onClose}
+                <a href="/client/abonnements" onClick={onClose}
                   className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-3.5 text-sm font-bold text-[#0a0a0a]"
-                  style={{
-                    background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
-                    boxShadow: `0 4px 20px rgba(201,165,90,0.35)`,
-                  }}
-                >
+                  style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, boxShadow: "0 4px 20px rgba(201,165,90,0.35)" }}>
                   <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                   <Crown size={14} />
                   Débloquer tout — 11,90€/mois
@@ -364,111 +335,88 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
   );
 }
 
-/* ─────────── UPGRADE MODAL (premium page blocked) ─────────── */
-function UpgradeModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+/* ─────────── PREMIUM GATE (replaces page content for free users) ─────────── */
+function PremiumGate() {
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed left-1/2 top-1/2 z-50 w-full max-w-[420px] -translate-x-1/2 -translate-y-1/2 px-4"
-          >
-            <div
-              className="relative overflow-hidden rounded-2xl"
-              style={{
-                background: "#0f1117",
-                border: "1px solid rgba(255,255,255,0.09)",
-                boxShadow: "0 32px 80px rgba(0,0,0,0.8)",
-              }}
+    <div
+      className="flex min-h-full flex-col items-center justify-center px-6 py-16"
+      style={{ background: "#f6f7f9" }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-sm text-center"
+      >
+        {/* Icon */}
+        <div
+          className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl"
+          style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}25` }}
+        >
+          <Crown size={32} style={{ color: GOLD }} />
+        </div>
+
+        {/* Title */}
+        <h1 className="mb-2 text-2xl font-extrabold text-gray-900">Outil PRO</h1>
+        <p className="mb-7 text-sm leading-relaxed text-gray-400">
+          Cet outil est disponible avec l&apos;abonnement DJAMA PRO.<br />
+          <span className="font-medium text-gray-500">11,90€/mois · sans engagement</span>
+        </p>
+
+        {/* Feature chips */}
+        <div className="mb-7 flex flex-wrap justify-center gap-2">
+          {["CRM", "Trésorerie", "Contrats IA", "Assistant IA", "Stocks", "+ 10 autres"].map(f => (
+            <span
+              key={f}
+              className="rounded-full px-3 py-1 text-xs font-semibold"
+              style={{ background: `${GOLD}0f`, color: GOLD, border: `1px solid ${GOLD}1e` }}
             >
-              <div
-                className="pointer-events-none absolute left-1/2 top-0 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-                style={{ background: `${GOLD}18` }}
-              />
-              <button
-                onClick={onClose}
-                className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/10 hover:text-white/60"
-              >
-                <X size={13} />
-              </button>
+              {f}
+            </span>
+          ))}
+        </div>
 
-              <div className="relative p-7">
-                {/* Icon + title */}
-                <div className="mb-5 flex flex-col items-center gap-3 text-center">
-                  <div
-                    className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                    style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}28` }}
-                  >
-                    <Crown size={22} style={{ color: GOLD }} />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-extrabold text-white">Outil PRO</h2>
-                    <p className="mt-1 text-sm text-white/40">Disponible avec l&apos;abonnement DJAMA PRO</p>
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div className="mb-5 space-y-2.5">
-                  {[
-                    "CRM & gestion clients",
-                    "Trésorerie & dépenses",
-                    "Contrats & factures illimitées",
-                    "Assistant & Coaching IA",
-                    "Tous les outils sans restriction",
-                  ].map(feat => (
-                    <div key={feat} className="flex items-center gap-2.5">
-                      <CheckCircle2 size={13} style={{ color: GOLD }} className="shrink-0" />
-                      <p className="text-sm text-white/60">{feat}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Price */}
-                <div className="mb-5 text-center">
-                  <span className="text-4xl font-black text-white">11,90€</span>
-                  <span className="ml-1.5 text-sm text-white/35">/mois</span>
-                  <p className="mt-1 text-[0.7rem] text-white/25">Sans engagement · Résiliable à tout moment</p>
-                </div>
-
-                {/* CTA */}
-                <a
-                  href="/client/abonnements"
-                  onClick={onClose}
-                  className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-3.5 text-sm font-extrabold text-[#0a0a0a] transition-shadow hover:shadow-[0_8px_32px_rgba(201,165,90,0.5)]"
-                  style={{
-                    background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
-                    boxShadow: "0 4px 20px rgba(201,165,90,0.35)",
-                  }}
-                >
-                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                  <Crown size={14} /> Passer au plan PRO <ArrowRight size={13} />
-                </a>
-                <button
-                  onClick={onClose}
-                  className="mt-3 w-full text-center text-xs text-white/25 transition hover:text-white/45"
-                >
-                  Continuer gratuitement
-                </button>
-              </div>
+        {/* Features list */}
+        <div className="mb-7 space-y-2.5 text-left">
+          {[
+            "Accès complet immédiat",
+            "30 jours d'essai gratuit",
+            "Résiliable à tout moment",
+          ].map(feat => (
+            <div key={feat} className="flex items-center gap-2.5">
+              <CheckCircle2 size={14} style={{ color: GOLD }} className="shrink-0" />
+              <span className="text-sm text-gray-600">{feat}</span>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <a
+          href="/client/abonnements"
+          className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-4 text-base font-extrabold text-[#0a0a0a] transition-shadow hover:shadow-[0_12px_32px_rgba(201,165,90,0.45)]"
+          style={{
+            background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
+            boxShadow: "0 6px 24px rgba(201,165,90,0.35)",
+          }}
+        >
+          <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+          <Crown size={17} />
+          Débloquer maintenant
+          <ArrowRight size={15} />
+        </a>
+
+        <Link
+          href="/client"
+          className="mt-4 block text-center text-xs text-gray-300 transition hover:text-gray-500"
+        >
+          ← Retour à l&apos;accueil
+        </Link>
+      </motion.div>
+    </div>
   );
 }
 
-/* ─────────── TRIAL BANNER (slim elegant strip) ─────────── */
+/* ─────────── TRIAL BANNER ─────────── */
 function TrialBanner({ daysLeft }: { daysLeft: number }) {
   const [dismissed, setDismissed] = useState(false);
   const urgent = daysLeft <= 5;
@@ -497,18 +445,14 @@ function TrialBanner({ daysLeft }: { daysLeft: number }) {
             </span>
           </div>
           <div className="flex items-center gap-2.5">
-            <a
-              href="/client/abonnements"
+            <a href="/client/abonnements"
               className="rounded-lg px-2.5 py-1 text-[0.65rem] font-bold transition hover:opacity-80"
-              style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}20` }}
-            >
+              style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}20` }}>
               Passer PRO
             </a>
-            <button
-              onClick={() => setDismissed(true)}
+            <button onClick={() => setDismissed(true)}
               className="flex h-5 w-5 items-center justify-center rounded text-gray-300 transition hover:text-gray-500"
-              aria-label="Fermer"
-            >
+              aria-label="Fermer">
               <X size={10} />
             </button>
           </div>
@@ -524,22 +468,16 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const subscription = useSubscription();
   const [sidebarOpen,  setSidebarOpen]  = useState(false);
   const [proModalOpen, setProModalOpen] = useState(false);
-  const [upgradeModal, setUpgradeModal] = useState(false);
 
   const { level, isPremium, trialDaysLeft, name, email } = subscription;
   const userInitial = (name?.[0] ?? email?.[0] ?? "U").toUpperCase();
   const displayName = name || email || "Mon compte";
   const isReady     = level !== "loading" && level !== "unauthenticated";
 
-  useEffect(() => { setSidebarOpen(false); }, [pathname]);
+  /* Block premium pages for free users — gate replaces content */
+  const isGated = level === "free" && getToolTier(pathname) === "premium";
 
-  useEffect(() => {
-    if (level === "free" && getToolTier(pathname) === "premium") {
-      setUpgradeModal(true);
-    } else {
-      setUpgradeModal(false);
-    }
-  }, [pathname, level]);
+  useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -561,9 +499,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "#f6f7f9" }}>
 
-      {/* Modals */}
+      {/* PRO discovery modal (sidebar button) */}
       <ProToolsModal open={proModalOpen} onClose={() => setProModalOpen(false)} />
-      <UpgradeModal  open={upgradeModal} onClose={() => setUpgradeModal(false)} />
 
       {/* Mobile overlay */}
       <AnimatePresence>
@@ -577,7 +514,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         )}
       </AnimatePresence>
 
-      {/* ── SIDEBAR (Dark, minimal) ── */}
+      {/* ── SIDEBAR ── */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-40 flex w-[218px] flex-col
@@ -588,15 +525,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         style={{ background: DARK, borderRight: "1px solid rgba(255,255,255,0.07)" }}
       >
         {/* Logo */}
-        <div
-          className="flex h-[52px] shrink-0 items-center justify-between px-4"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
-        >
+        <div className="flex h-[52px] shrink-0 items-center justify-between px-4"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <Link href="/client" className="flex items-center gap-2.5">
-            <div
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-              style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}28` }}
-            >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+              style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}28` }}>
               <Sparkles size={13} style={{ color: GOLD }} />
             </div>
             <div className="leading-none">
@@ -606,92 +539,58 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               </p>
             </div>
           </Link>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Fermer"
-            className="text-white/25 transition hover:text-white/60 lg:hidden"
-          >
+          <button onClick={() => setSidebarOpen(false)} aria-label="Fermer"
+            className="text-white/25 transition hover:text-white/60 lg:hidden">
             <X size={14} />
           </button>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-2 py-3" style={{ scrollbarWidth: "none" }}>
-
           {!isPremium ? (
-            /* FREE USER — limited nav + PRO button */
             <>
-              <p
-                className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
-                style={{ color: "rgba(255,255,255,0.25)" }}
-              >
+              <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
+                style={{ color: "rgba(255,255,255,0.25)" }}>
                 Outils gratuits
               </p>
-
               <div className="space-y-0.5">
                 {FREE_NAV.map(item => (
-                  <DarkNavItem
-                    key={item.href}
-                    {...item}
-                    pathname={pathname}
-                    onClick={() => setSidebarOpen(false)}
-                  />
+                  <DarkNavItem key={item.href} {...item} pathname={pathname}
+                    onClick={() => setSidebarOpen(false)} />
                 ))}
               </div>
-
               <div className="mx-2 my-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
-
-              {/* PRO button */}
               <button
                 onClick={() => { setProModalOpen(true); setSidebarOpen(false); }}
                 className="group w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-medium transition-all"
-                style={{
-                  background: `${GOLD}0c`,
-                  border: `1px solid ${GOLD}1a`,
-                  color: GOLD,
-                }}
+                style={{ background: `${GOLD}0c`, border: `1px solid ${GOLD}1a`, color: GOLD }}
               >
-                <div
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
-                  style={{ background: `${GOLD}14` }}
-                >
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
+                  style={{ background: `${GOLD}14` }}>
                   <Lock size={9} style={{ color: GOLD }} />
                 </div>
                 <span className="flex-1 text-left">+ 14 outils PRO</span>
-                <ChevronRight
-                  size={11}
-                  className="opacity-40 transition-transform group-hover:translate-x-0.5"
-                />
+                <ChevronRight size={11} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
               </button>
-
-              <a
-                href="/client/abonnements"
+              <a href="/client/abonnements"
                 className="mt-2 block text-center text-[0.63rem] font-medium transition hover:opacity-70"
-                style={{ color: `${GOLD}70` }}
-              >
+                style={{ color: `${GOLD}70` }}>
                 Essai gratuit 30j →
               </a>
             </>
           ) : (
-            /* PREMIUM USER — full grouped nav */
             PREMIUM_GROUPS.map((group, gi) => (
               <div key={gi} className={gi > 0 ? "mt-4" : ""}>
                 {group.label && (
-                  <p
-                    className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
-                    style={{ color: "rgba(255,255,255,0.25)" }}
-                  >
+                  <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
+                    style={{ color: "rgba(255,255,255,0.25)" }}>
                     {group.label}
                   </p>
                 )}
                 <div className="space-y-0.5">
                   {group.items.map(item => (
-                    <DarkNavItem
-                      key={item.href}
-                      {...item}
-                      pathname={pathname}
-                      onClick={() => setSidebarOpen(false)}
-                    />
+                    <DarkNavItem key={item.href} {...item} pathname={pathname}
+                      onClick={() => setSidebarOpen(false)} />
                   ))}
                 </div>
               </div>
@@ -702,12 +601,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         {/* User footer */}
         <div className="shrink-0 p-2" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2">
-            <Link
-              href="/client/profil"
+            <Link href="/client/profil"
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.65rem] font-bold transition hover:opacity-75"
               style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}22`, color: GOLD }}
-              title="Mon profil"
-            >
+              title="Mon profil">
               {userInitial}
             </Link>
             <Link href="/client/profil" className="group min-w-0 flex-1">
@@ -718,12 +615,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 {level === "premium" ? "PRO" : level === "trial" ? `Essai · ${trialDaysLeft}j` : "Gratuit"}
               </p>
             </Link>
-            <button
-              onClick={handleLogout}
-              aria-label="Se déconnecter"
-              title="Se déconnecter"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/25 transition hover:bg-white/5 hover:text-white/60"
-            >
+            <button onClick={handleLogout} aria-label="Se déconnecter" title="Se déconnecter"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/25 transition hover:bg-white/5 hover:text-white/60">
               <LogOut size={12} />
             </button>
           </div>
@@ -739,47 +632,34 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         )}
 
         {/* Topbar */}
-        <header
-          className="flex h-[52px] shrink-0 items-center gap-3 border-b border-gray-100 bg-white px-4"
-          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-        >
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Ouvrir le menu"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600 lg:hidden"
-          >
+        <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-gray-100 bg-white px-4"
+          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <button onClick={() => setSidebarOpen(true)} aria-label="Ouvrir le menu"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600 lg:hidden">
             <Menu size={16} />
           </button>
-
           <div className="flex-1" />
-
-          {/* Right actions */}
           <div className="flex items-center gap-2">
             {!isPremium && (
-              <button
-                onClick={() => setProModalOpen(true)}
+              <button onClick={() => setProModalOpen(true)}
                 className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.72rem] font-bold text-[#0a0a0a] transition hover:opacity-90"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
-              >
+                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
                 <Crown size={11} /> Passer PRO
               </button>
             )}
             <NotifBell ready={isReady} />
-            <Link
-              href="/client/profil"
+            <Link href="/client/profil"
               className="flex h-7 w-7 items-center justify-center rounded-lg text-[0.65rem] font-bold transition hover:opacity-75"
               style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}22`, color: GOLD }}
-              title="Mon profil"
-            >
+              title="Mon profil">
               {userInitial}
             </Link>
           </div>
         </header>
 
-        {/* Page content */}
+        {/* Page — gated for free users on premium routes */}
         <main className="flex-1 overflow-auto">
-          {children}
+          {isGated ? <PremiumGate /> : children}
         </main>
       </div>
     </div>

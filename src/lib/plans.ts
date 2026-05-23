@@ -15,13 +15,15 @@ export interface Tool {
 
 /** Outils gratuits à vie */
 export const FREE_TOOLS: string[] = [
-  "/client",
+  "/client",                 // Home — toujours accessible
   "/client/planning",
-  "/client/planification",
+  "/client/planification",   // alias
   "/client/bloc-note",
-  "/client/bloc-notes",
+  "/client/bloc-notes",      // alias
   "/client/factures",        // limité à 3/mois
   "/client/factures/liste",
+  "/client/profil",          // profil utilisateur — toujours accessible
+  "/client/abonnements",     // page abonnement — toujours accessible
 ];
 
 /** Tous les outils premium (accès trial 30j puis payant) */
