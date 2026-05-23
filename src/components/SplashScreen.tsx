@@ -21,7 +21,10 @@ export default function SplashScreen() {
   const [pressed, setPressed] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isPWA()) setShow(true);
+    // Afficher uniquement sur la page d'accueil "/" en mode PWA
+    if (isPWA() && window.location.pathname === "/") {
+      setShow(true);
+    }
   }, []);
 
   if (!show) return null;
