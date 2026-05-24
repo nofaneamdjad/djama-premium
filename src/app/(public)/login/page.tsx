@@ -13,6 +13,19 @@ import {
 import { supabase } from "@/lib/supabase";
 
 const ease = [0.16, 1, 0.3, 1] as const;
+const GOLD = "#c9a55a";
+
+/* ── Google SVG ─────────────────────────────────── */
+function GoogleIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  );
+}
 
 /* ── Champ de formulaire animé ─────────────────── */
 function AuthField({
@@ -31,10 +44,10 @@ function AuthField({
           animate={{ opacity: focused ? 1 : 0 }}
           transition={{ duration: 0.2 }}
           className="pointer-events-none absolute inset-0 rounded-2xl"
-          style={{ boxShadow: "0 0 0 2px rgba(201,165,90,0.5)" }}
+          style={{ boxShadow: `0 0 0 2px ${GOLD}80` }}
         />
         <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-          <Icon size={15} style={{ color: focused ? "#c9a55a" : "rgba(255,255,255,0.25)" }} />
+          <Icon size={15} style={{ color: focused ? GOLD : "rgba(255,255,255,0.25)" }} />
         </div>
         <input
           type={type}
@@ -57,25 +70,39 @@ function AuthField({
 function LoginPageInner() {
   const router       = useRouter();
   const searchParams = useSearchParams();
-  /* Destination après connexion — ?redirect=/coaching-ia/espace etc. */
   const redirectTo   = searchParams.get("redirect") ?? "/client";
 
   const [email,       setEmail]       = useState("");
   const [password,    setPassword]    = useState("");
   const [showPwd,     setShowPwd]     = useState(false);
   const [loading,     setLoading]     = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [phase,       setPhase]       = useState<"idle" | "auth" | "checking" | "redirecting">("idle");
   const [resending,   setResending]   = useState(false);
   const [error,       setError]       = useState("");
   const [errorType,   setErrorType]   = useState<"credentials" | "other" | null>(null);
   const [resendOk,    setResendOk]    = useState(false);
 
-  /* Déconnecte toute session active dès que la page login s'affiche.
-     Garantit que l'utilisateur DOIT entrer ses identifiants,
-     même s'il avait une session Supabase en mémoire. */
   useEffect(() => {
     supabase.auth.signOut();
   }, []);
+
+  async function handleGoogleAuth() {
+    setError("");
+    setGoogleLoading(true);
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/client`,
+        queryParams: { access_type: "offline", prompt: "select_account" },
+      },
+    });
+    if (oauthError) {
+      setError(oauthError.message);
+      setGoogleLoading(false);
+    }
+    /* Si OK, Supabase redirige automatiquement — pas besoin de setLoading(false) */
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -86,14 +113,9 @@ function LoginPageInner() {
     setPhase("auth");
 
     const trimmedEmail = email.trim().toLowerCase();
-
-    /* On track si on part en navigation pour NE PAS
-       rappeler setLoading(false) — sinon le bouton
-       flashe "Se connecter" pendant le chargement. */
     let willRedirect = false;
 
     try {
-      /* ── 1. Authentification ─────────────────────── */
       const { data, error: sbError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
@@ -122,12 +144,9 @@ function LoginPageInner() {
         return;
       }
 
-      /* ── 2. MODE TEST : redirection directe sans vérif abonnement
-         TODO: réactiver le check clients table quand prêt           */
       const needsReset = data.session.user.user_metadata?.needs_password_reset === true;
       const dest       = needsReset ? "/definir-mot-de-passe" : redirectTo;
 
-      /* ── 3. Redirection ─────────────────────────── */
       setPhase("redirecting");
       willRedirect = true;
       window.location.href = dest;
@@ -136,9 +155,6 @@ function LoginPageInner() {
       setError("Erreur inattendue. Vérifiez votre connexion et réessayez.");
       setErrorType("other");
     } finally {
-      /* Remettre loading à false SEULEMENT s'il n'y a pas de
-         redirection en cours — sinon le spinner reste affiché
-         jusqu'au chargement de la nouvelle page (UX propre). */
       if (!willRedirect) {
         setLoading(false);
         setPhase("idle");
@@ -146,7 +162,6 @@ function LoginPageInner() {
     }
   }
 
-  /* Renvoyer l'email de confirmation */
   async function handleResend() {
     if (!email.trim()) {
       setError("Saisissez votre adresse email ci-dessus avant de renvoyer.");
@@ -167,7 +182,7 @@ function LoginPageInner() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080a0f] px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080a0f] px-4 py-8">
 
       {/* Glows */}
       <div className="pointer-events-none absolute inset-0">
@@ -198,7 +213,7 @@ function LoginPageInner() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.12, ease }}
-            className="mb-8 flex flex-col items-center gap-4"
+            className="mb-7 flex flex-col items-center gap-4"
           >
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.09)]">
               <Image
@@ -215,18 +230,52 @@ function LoginPageInner() {
                 <Lock size={9} />
                 Espace client
               </span>
-              <h1 className="mt-3 text-2xl font-extrabold text-white">Bienvenue</h1>
+              <h1 className="mt-3 text-2xl font-extrabold text-white">Bon retour 👋</h1>
               <p className="mt-1 text-sm text-white/35">
-                Connectez-vous pour accéder à vos outils
+                Vos outils professionnels vous attendent
               </p>
             </div>
           </motion.div>
 
-          {/* Formulaire */}
+          {/* Bouton Google */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2, ease }}
+          >
+            <motion.button
+              type="button"
+              onClick={handleGoogleAuth}
+              disabled={googleLoading || loading}
+              whileHover={{ scale: 1.015, y: -1 }}
+              whileTap={{ scale: 0.985 }}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/12 bg-white/6 py-3.5 text-sm font-semibold text-white/85 transition-all duration-200 hover:border-white/20 hover:bg-white/10 disabled:opacity-50"
+            >
+              {googleLoading ? (
+                <motion.span
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                  className="inline-block h-4 w-4 rounded-full border-2 border-white/20 border-t-white/70"
+                />
+              ) : (
+                <GoogleIcon />
+              )}
+              {googleLoading ? "Connexion…" : "Continuer avec Google"}
+            </motion.button>
+          </motion.div>
+
+          {/* Séparateur OU */}
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-white/8" />
+            <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-white/25">ou</span>
+            <div className="h-px flex-1 bg-white/8" />
+          </div>
+
+          {/* Formulaire email/mot de passe */}
           <motion.form
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.25 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
             onSubmit={handleLogin}
             className="space-y-4"
           >
@@ -286,8 +335,6 @@ function LoginPageInner() {
                     <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-400" />
                     <div className="flex-1">
                       <p className="text-xs leading-relaxed text-red-300">{error}</p>
-
-                      {/* Bouton renvoyer la confirmation */}
                       {errorType === "credentials" && (
                         <button
                           type="button"
@@ -310,7 +357,7 @@ function LoginPageInner() {
               type="submit"
               whileHover={{ scale: 1.015, y: -1 }}
               whileTap={{ scale: 0.985 }}
-              disabled={loading}
+              disabled={loading || googleLoading}
               className="group relative mt-2 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-6 py-4 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_20px_rgba(201,165,90,0.3)] transition-shadow duration-300 hover:shadow-[0_8px_32px_rgba(201,165,90,0.45)] disabled:opacity-60"
             >
               <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
@@ -337,15 +384,24 @@ function LoginPageInner() {
             </motion.button>
           </motion.form>
 
-          {/* Lien abonnement */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.4 }}
-            className="mt-6 space-y-3 text-center"
-          >
-            <div className="h-px bg-white/5" />
-            <p className="text-xs text-white/35">
+          {/* Badges de réassurance */}
+          <div className="mt-5 flex items-center justify-center gap-4">
+            {[
+              { icon: "🔒", label: "Données sécurisées" },
+              { icon: "⚡", label: "Accès instantané" },
+              { icon: "☁️", label: "Sauvegarde auto" },
+            ].map(({ icon, label }) => (
+              <div key={label} className="flex items-center gap-1">
+                <span className="text-[0.6rem]">{icon}</span>
+                <span className="text-[0.6rem] text-white/25">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Lien inscription */}
+          <div className="mt-4 flex items-center justify-center gap-1">
+            <div className="h-px flex-1 bg-white/5" />
+            <p className="mx-3 whitespace-nowrap text-xs text-white/30">
               Pas encore de compte ?{" "}
               <Link
                 href="/register"
@@ -354,7 +410,8 @@ function LoginPageInner() {
                 Créer un compte gratuit
               </Link>
             </p>
-          </motion.div>
+            <div className="h-px flex-1 bg-white/5" />
+          </div>
         </div>
       </motion.div>
     </div>

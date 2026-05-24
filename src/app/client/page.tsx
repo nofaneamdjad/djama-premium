@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
 import { useSubscription } from "@/lib/use-require-subscription";
 import { getToolTier } from "@/lib/plans";
+import OnboardingModal from "@/components/OnboardingModal";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const GOLD = "#c9a55a";
@@ -516,7 +517,11 @@ export default function CockpitPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const fullName = (user.user_metadata?.full_name as string | undefined)?.trim() ?? "";
+      const fullName = (
+        (user.user_metadata?.full_name as string | undefined)
+        || (user.user_metadata?.name as string | undefined)
+        || ""
+      ).trim();
       const emailFallback = user.email?.split("@")[0] ?? "";
       const name = fullName || (emailFallback.charAt(0).toUpperCase() + emailFallback.slice(1));
       const fn = fullName ? fullName.split(" ")[0] : name;
@@ -564,6 +569,9 @@ export default function CockpitPage() {
 
   return (
     <div className="min-h-full overflow-x-hidden" style={{ background: "#f8f9fa" }}>
+
+      {/* Onboarding modal — shown once after first login */}
+      <OnboardingModal name={firstName} />
 
       {/* ══════════════════════════════════════════════
           HEADER — Revolut / banking style
