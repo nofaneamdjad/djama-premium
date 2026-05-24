@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  User, Mail, Crown, CheckCircle2, Clock,
+  User, Mail, Crown, CheckCircle2,
   LogOut, ArrowRight, Sparkles, Lock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -16,7 +16,7 @@ const ease  = [0.16, 1, 0.3, 1] as const;
 
 export default function ProfilPage() {
   const sub = useSubscription();
-  const { level, isPremium, trialDaysLeft, name, email, userId } = sub;
+  const { level, isPremium, name, email, userId } = sub;
 
   const [displayName, setDisplayName] = useState(name);
   const [saving,      setSaving]      = useState(false);
@@ -46,20 +46,9 @@ export default function ProfilPage() {
     );
   }
 
-  const planLabel =
-    level === "premium" ? "DJAMA PRO" :
-    level === "trial"   ? `Essai gratuit · ${trialDaysLeft}j restants` :
-    "Plan Gratuit";
-
-  const planColor =
-    level === "premium" ? GOLD :
-    level === "trial"   ? "#4ade80" :
-    "#9ca3af";
-
-  const PlanIcon =
-    level === "premium" ? Crown :
-    level === "trial"   ? Clock :
-    Sparkles;
+  const planLabel = isPremium ? "DJAMA PRO" : "Plan Gratuit";
+  const planColor = isPremium ? GOLD : "#9ca3af";
+  const PlanIcon  = isPremium ? Crown : Sparkles;
 
   return (
     <div className="mx-auto max-w-xl px-4 py-8">
@@ -172,34 +161,20 @@ export default function ProfilPage() {
             </div>
           </div>
 
-          {level === "free" && (
+          {!isPremium && (
             <div className="space-y-3">
               <p className="text-sm text-gray-500">
-                Vous êtes sur le plan <strong>gratuit</strong>. Passez à PRO pour accéder à tous les outils sans restriction.
+                Vous êtes sur le <strong>plan gratuit</strong>. Passez à DJAMA PRO pour accéder à tous les outils sans restriction.
               </p>
               <Link href="/client/abonnements"
                 className="flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-extrabold text-[#0a0a0a] transition hover:opacity-90"
                 style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
-                <Crown size={14} /> Passer au plan PRO — {PLAN_PRICE_LABEL} <ArrowRight size={13} />
+                <Crown size={14} /> Passer à DJAMA PRO — {PLAN_PRICE_LABEL} <ArrowRight size={13} />
               </Link>
             </div>
           )}
 
-          {level === "trial" && (
-            <div className="space-y-3">
-              <p className="text-sm text-gray-500">
-                Votre essai gratuit expire dans <strong>{trialDaysLeft} jour{trialDaysLeft > 1 ? "s" : ""}</strong>.
-                Abonnez-vous maintenant pour conserver l&apos;accès à tous les outils.
-              </p>
-              <Link href="/client/abonnements"
-                className="flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-extrabold text-[#0a0a0a] transition hover:opacity-90"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
-                <Crown size={14} /> S&apos;abonner — {PLAN_PRICE_LABEL} <ArrowRight size={13} />
-              </Link>
-            </div>
-          )}
-
-          {level === "premium" && (
+          {isPremium && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
                 <CheckCircle2 size={15} className="shrink-0 text-green-500" />

@@ -9,7 +9,7 @@ import {
   Users, FileText, Truck, Package, ListTodo, Calendar,
   CalendarRange, Timer, StickyNote, Mic, Search, Zap, Star, Brain,
   Crown, Sparkles, Lock, ChevronRight, X, Menu,
-  LogOut, Bell, ArrowRight, CheckCircle2,
+  LogOut, Bell, ArrowRight, CheckCircle2, Share2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSubscription } from "@/lib/use-require-subscription";
@@ -18,7 +18,7 @@ import { getToolTier } from "@/lib/plans";
 const GOLD = "#c9a55a";
 const DARK = "#111318";
 
-/* ─────────── FREE NAV (4 tools always visible) ─────────── */
+/* ─────────── FREE NAV (outils gratuits) ─────────── */
 const FREE_NAV = [
   { href: "/client",           label: "Accueil",          icon: Home,        exact: true  },
   { href: "/client/factures",  label: "Factures & Devis", icon: ReceiptText, exact: false },
@@ -28,21 +28,22 @@ const FREE_NAV = [
 
 /* ─────────── ALL PRO TOOLS (for popup) ─────────── */
 const PRO_TOOLS = [
-  { href: "/client/dashboard",    label: "Tableau de bord",  icon: BarChart2    },
-  { href: "/client/crm",          label: "CRM",              icon: Users        },
-  { href: "/client/assistant",    label: "Assistant IA",     icon: Zap          },
-  { href: "/client/depenses",     label: "Dépenses",         icon: CreditCard   },
-  { href: "/client/tresorerie",   label: "Trésorerie",       icon: Wallet       },
-  { href: "/client/contrats",     label: "Contrats",         icon: FileText     },
-  { href: "/client/fournisseurs", label: "Fournisseurs",     icon: Truck        },
-  { href: "/client/stocks",       label: "Stocks",           icon: Package      },
-  { href: "/client/productivite", label: "Tâches",           icon: ListTodo     },
-  { href: "/client/equipe",       label: "Équipe",           icon: CalendarRange},
-  { href: "/client/chrono",       label: "Chrono",           icon: Timer        },
-  { href: "/client/notes",        label: "Notes IA",         icon: StickyNote   },
-  { href: "/client/sourcing",     label: "Sourcing IA",      icon: Search       },
-  { href: "/client/reputation",   label: "Réputation",       icon: Star         },
-  { href: "/coaching-ia/espace",  label: "Coaching IA",      icon: Brain        },
+  { href: "/client/dashboard",       label: "Tableau de bord",   icon: BarChart2    },
+  { href: "/client/crm",             label: "CRM",               icon: Users        },
+  { href: "/client/assistant",       label: "Assistant IA",      icon: Zap          },
+  { href: "/client/depenses",        label: "Dépenses",          icon: CreditCard   },
+  { href: "/client/tresorerie",      label: "Trésorerie",        icon: Wallet       },
+  { href: "/client/contrats",        label: "Contrats",          icon: FileText     },
+  { href: "/client/fournisseurs",    label: "Fournisseurs",      icon: Truck        },
+  { href: "/client/stocks",          label: "Stocks",            icon: Package      },
+  { href: "/client/productivite",    label: "Tâches",            icon: ListTodo     },
+  { href: "/client/equipe",          label: "Équipe",            icon: CalendarRange},
+  { href: "/client/chrono",          label: "Chrono",            icon: Timer        },
+  { href: "/client/notes",           label: "Notes IA",          icon: StickyNote   },
+  { href: "/client/sourcing",        label: "Sourcing IA",       icon: Search       },
+  { href: "/client/reputation",      label: "Réputation",        icon: Star         },
+  { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux",   icon: Share2       },
+  { href: "/coaching-ia/espace",     label: "Coaching IA",       icon: Brain        },
 ] as const;
 
 /* ─────────── PREMIUM GROUPED NAV ─────────── */
@@ -83,12 +84,13 @@ const PREMIUM_GROUPS = [
   {
     label: "Notes & IA",
     items: [
-      { href: "/client/notes",       label: "Notes IA",     icon: StickyNote, exact: false },
-      { href: "/client/bloc-note",   label: "Bloc-note",    icon: Mic,        exact: false },
-      { href: "/client/sourcing",    label: "Sourcing IA",  icon: Search,     exact: false },
-      { href: "/client/assistant",   label: "Assistant IA", icon: Zap,        exact: false },
-      { href: "/client/reputation",  label: "Réputation",   icon: Star,       exact: false },
-      { href: "/coaching-ia/espace", label: "Coaching IA",  icon: Brain,      exact: false },
+      { href: "/client/notes",           label: "Notes IA",       icon: StickyNote, exact: false },
+      { href: "/client/bloc-note",       label: "Bloc-note",      icon: Mic,        exact: false },
+      { href: "/client/sourcing",        label: "Sourcing IA",    icon: Search,     exact: false },
+      { href: "/client/assistant",       label: "Assistant IA",   icon: Zap,        exact: false },
+      { href: "/client/reputation",      label: "Réputation",     icon: Star,       exact: false },
+      { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux",icon: Share2,     exact: false },
+      { href: "/coaching-ia/espace",     label: "Coaching IA",    icon: Brain,      exact: false },
     ],
   },
 ] as const;
@@ -289,7 +291,7 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
                     <Crown size={16} style={{ color: GOLD }} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">Outils DJAMA PRO</h3>
+                    <h3 className="text-sm font-bold text-white">DJAMA PRO</h3>
                     <p className="text-[0.62rem] text-white/35">{PRO_TOOLS.length} outils professionnels</p>
                   </div>
                 </div>
@@ -320,11 +322,11 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
                   style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, boxShadow: "0 4px 20px rgba(201,165,90,0.35)" }}>
                   <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                   <Crown size={14} />
-                  Débloquer tout — 11,90€/mois
+                  Débloquer DJAMA PRO — 11,90€/mois
                   <ArrowRight size={13} />
                 </a>
                 <p className="mt-2.5 text-center text-[0.6rem] text-white/25">
-                  30 jours d&apos;essai gratuit · Sans engagement
+                  Sans engagement · Résiliable à tout moment
                 </p>
               </div>
             </div>
@@ -335,7 +337,7 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
   );
 }
 
-/* ─────────── PREMIUM GATE (replaces page content for free users) ─────────── */
+/* ─────────── PREMIUM GATE (remplace le contenu des pages premium) ─────────── */
 function PremiumGate() {
   return (
     <div
@@ -348,7 +350,7 @@ function PremiumGate() {
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-sm text-center"
       >
-        {/* Icon */}
+        {/* Icône */}
         <div
           className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl"
           style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}25` }}
@@ -356,16 +358,16 @@ function PremiumGate() {
           <Crown size={32} style={{ color: GOLD }} />
         </div>
 
-        {/* Title */}
+        {/* Titre */}
         <h1 className="mb-2 text-2xl font-extrabold text-gray-900">Outil PRO</h1>
         <p className="mb-7 text-sm leading-relaxed text-gray-400">
-          Cet outil est disponible avec l&apos;abonnement DJAMA PRO.<br />
+          Cet outil est inclus dans l&apos;abonnement DJAMA PRO.<br />
           <span className="font-medium text-gray-500">11,90€/mois · sans engagement</span>
         </p>
 
         {/* Feature chips */}
         <div className="mb-7 flex flex-wrap justify-center gap-2">
-          {["CRM", "Trésorerie", "Contrats IA", "Assistant IA", "Stocks", "+ 10 autres"].map(f => (
+          {["CRM", "Trésorerie", "Contrats IA", "Assistant IA", "Stocks", "+ 11 autres"].map(f => (
             <span
               key={f}
               className="rounded-full px-3 py-1 text-xs font-semibold"
@@ -380,7 +382,7 @@ function PremiumGate() {
         <div className="mb-7 space-y-2.5 text-left">
           {[
             "Accès complet immédiat",
-            "30 jours d'essai gratuit",
+            "Tous les outils débloqués",
             "Résiliable à tout moment",
           ].map(feat => (
             <div key={feat} className="flex items-center gap-2.5">
@@ -416,52 +418,6 @@ function PremiumGate() {
   );
 }
 
-/* ─────────── TRIAL BANNER ─────────── */
-function TrialBanner({ daysLeft }: { daysLeft: number }) {
-  const [dismissed, setDismissed] = useState(false);
-  const urgent = daysLeft <= 5;
-  const accent = urgent ? "#fb923c" : GOLD;
-
-  return (
-    <AnimatePresence>
-      {!dismissed && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="flex shrink-0 items-center justify-between overflow-hidden px-4 py-2"
-          style={{
-            background: urgent ? "rgba(251,146,60,0.07)" : `${GOLD}09`,
-            borderBottom: `1px solid ${urgent ? "rgba(251,146,60,0.15)" : `${GOLD}18`}`,
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <Sparkles size={10} style={{ color: accent }} />
-            <span className="text-xs font-medium" style={{ color: accent }}>
-              {urgent
-                ? `Plus que ${daysLeft} jour${daysLeft > 1 ? "s" : ""} d'essai`
-                : `✨ Essai gratuit · ${daysLeft} jours restants`}
-            </span>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <a href="/client/abonnements"
-              className="rounded-lg px-2.5 py-1 text-[0.65rem] font-bold transition hover:opacity-80"
-              style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}20` }}>
-              Passer PRO
-            </a>
-            <button onClick={() => setDismissed(true)}
-              className="flex h-5 w-5 items-center justify-center rounded text-gray-300 transition hover:text-gray-500"
-              aria-label="Fermer">
-              <X size={10} />
-            </button>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
 /* ─────────── LAYOUT ─────────── */
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname     = usePathname();
@@ -469,7 +425,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [sidebarOpen,  setSidebarOpen]  = useState(false);
   const [proModalOpen, setProModalOpen] = useState(false);
 
-  const { level, isPremium, trialDaysLeft, name, email } = subscription;
+  const { level, isPremium, name, email } = subscription;
   const userInitial = (name?.[0] ?? email?.[0] ?? "U").toUpperCase();
   const displayName = name || email || "Mon compte";
   const isReady     = level !== "loading" && level !== "unauthenticated";
@@ -499,7 +455,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "#f6f7f9" }}>
 
-      {/* PRO discovery modal (sidebar button) */}
+      {/* PRO discovery modal */}
       <ProToolsModal open={proModalOpen} onClose={() => setProModalOpen(false)} />
 
       {/* Mobile overlay */}
@@ -535,7 +491,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             <div className="leading-none">
               <p className="text-[0.88rem] font-bold" style={{ color: GOLD }}>DJAMA</p>
               <p className="mt-0.5 text-[0.5rem] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.25)" }}>
-                {isPremium ? "PRO · Actif" : "Plan gratuit"}
+                {isPremium ? "PRO · Actif" : "Plan Gratuit"}
               </p>
             </div>
           </Link>
@@ -569,13 +525,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                   style={{ background: `${GOLD}14` }}>
                   <Lock size={9} style={{ color: GOLD }} />
                 </div>
-                <span className="flex-1 text-left">+ 14 outils PRO</span>
+                <span className="flex-1 text-left">Débloquer les outils PRO</span>
                 <ChevronRight size={11} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
               </button>
               <a href="/client/abonnements"
                 className="mt-2 block text-center text-[0.63rem] font-medium transition hover:opacity-70"
                 style={{ color: `${GOLD}70` }}>
-                Essai gratuit 30j →
+                Voir DJAMA PRO →
               </a>
             </>
           ) : (
@@ -612,7 +568,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 {displayName}
               </p>
               <p className="text-[0.55rem]" style={{ color: "rgba(255,255,255,0.28)" }}>
-                {level === "premium" ? "PRO" : level === "trial" ? `Essai · ${trialDaysLeft}j` : "Gratuit"}
+                {isPremium ? "DJAMA PRO" : "Plan Gratuit"}
               </p>
             </Link>
             <button onClick={handleLogout} aria-label="Se déconnecter" title="Se déconnecter"
@@ -625,11 +581,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       {/* ── MAIN CONTENT ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
-
-        {/* Trial banner */}
-        {level === "trial" && trialDaysLeft > 0 && (
-          <TrialBanner daysLeft={trialDaysLeft} />
-        )}
 
         {/* Topbar */}
         <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-gray-100 bg-white px-4"
@@ -644,7 +595,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               <button onClick={() => setProModalOpen(true)}
                 className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.72rem] font-bold text-[#0a0a0a] transition hover:opacity-90"
                 style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
-                <Crown size={11} /> Passer PRO
+                <Crown size={11} /> Voir DJAMA PRO
               </button>
             )}
             <NotifBell ready={isReady} />

@@ -3,24 +3,21 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { TRIAL_DAYS } from "@/lib/plans";
 
-export type AccessLevel = "loading" | "free" | "trial" | "premium" | "unauthenticated";
+export type AccessLevel = "loading" | "free" | "premium" | "unauthenticated";
 
 export interface SubscriptionState {
-  level:      AccessLevel;
-  isPremium:  boolean;   // trial OU payant actif
-  isFree:     boolean;   // connecté mais pas de premium
-  trialDaysLeft: number; // -1 si pas en trial
-  trialEnd:   string | null;
-  email:      string;
-  name:       string;
-  userId:     string;
+  level:     AccessLevel;
+  isPremium: boolean;  // abonnement actif
+  isFree:    boolean;  // connecté, pas d'abonnement
+  email:     string;
+  name:      string;
+  userId:    string;
 }
 
 const DEFAULT_STATE: SubscriptionState = {
   level: "loading", isPremium: false, isFree: false,
-  trialDaysLeft: -1, trialEnd: null, email: "", name: "", userId: "",
+  email: "", name: "", userId: "",
 };
 
 export function useSubscription(): SubscriptionState {
@@ -31,7 +28,7 @@ export function useSubscription(): SubscriptionState {
     let cancelled = false;
 
     async function check() {
-      /* 1. Lecture session locale (pas de requête réseau) */
+      /* 1. Session locale (pas de requête réseau) */
       const { data: { session } } = await supabase.auth.getSession();
       if (cancelled) return;
 
@@ -46,33 +43,19 @@ export function useSubscription(): SubscriptionState {
       const name  = meta.name ?? email.split("@")[0] ?? "Utilisateur";
       const now   = new Date();
 
-      /* 2. Trial 30 jours (stocké dans user_metadata) */
-      if (meta.trial === true && meta.trial_end) {
-        const end  = new Date(meta.trial_end);
-        const left = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (left > 0) {
-          if (!cancelled) setState({
-            level: "trial", isPremium: true, isFree: false,
-            trialDaysLeft: left, trialEnd: meta.trial_end,
-            email, name, userId: user.id,
-          });
-          return;
-        }
-      }
-
-      /* 3. subscription_active dans metadata (accès activé manuellement) */
+      /* 2. subscription_active dans metadata (activé via webhook Stripe) */
       if (meta.subscription_active === true) {
         if (!cancelled) setState({
           level: "premium", isPremium: true, isFree: false,
-          trialDaysLeft: -1, trialEnd: null, email, name, userId: user.id,
+          email, name, userId: user.id,
         });
         return;
       }
 
-      /* 4. Table user_access (accès admin / Stripe / PayPal) */
+      /* 3. Table user_access (accès admin / Stripe / PayPal) */
       const { data: access } = await supabase
         .from("user_access")
-        .select("espace_premium, outils_saas, source, expires_at")
+        .select("espace_premium, outils_saas, expires_at")
         .eq("email", email)
         .maybeSingle();
 
@@ -83,16 +66,16 @@ export function useSubscription(): SubscriptionState {
         if (!expired) {
           if (!cancelled) setState({
             level: "premium", isPremium: true, isFree: false,
-            trialDaysLeft: -1, trialEnd: null, email, name, userId: user.id,
+            email, name, userId: user.id,
           });
           return;
         }
       }
 
-      /* 5. Table clients (legacy Stripe) */
+      /* 4. Table clients (legacy Stripe) */
       const { data: client } = await supabase
         .from("clients")
-        .select("subscription_active, abonnement, statut, trial_end")
+        .select("subscription_active")
         .eq("email", email)
         .maybeSingle();
 
@@ -101,43 +84,15 @@ export function useSubscription(): SubscriptionState {
       if (client?.subscription_active === true) {
         if (!cancelled) setState({
           level: "premium", isPremium: true, isFree: false,
-          trialDaysLeft: -1, trialEnd: null, email, name, userId: user.id,
-        });
-        return;
-      }
-
-      /* 6. Trial dans la table clients */
-      if (client?.trial_end) {
-        const end  = new Date(client.trial_end);
-        const left = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (left > 0) {
-          if (!cancelled) setState({
-            level: "trial", isPremium: true, isFree: false,
-            trialDaysLeft: left, trialEnd: client.trial_end,
-            email, name, userId: user.id,
-          });
-          return;
-        }
-      }
-
-      /* 7. Nouveaux inscrits sans trial → donner trial automatique de 30j */
-      const createdAt = new Date(user.created_at ?? now);
-      const daysSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-      if (daysSinceCreation <= TRIAL_DAYS) {
-        const trialEnd = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
-        const left = Math.ceil((new Date(trialEnd).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (!cancelled) setState({
-          level: "trial", isPremium: true, isFree: false,
-          trialDaysLeft: left, trialEnd,
           email, name, userId: user.id,
         });
         return;
       }
 
-      /* 8. Plan gratuit */
+      /* 5. Plan gratuit */
       if (!cancelled) setState({
         level: "free", isPremium: false, isFree: true,
-        trialDaysLeft: -1, trialEnd: null, email, name, userId: user.id,
+        email, name, userId: user.id,
       });
     }
 

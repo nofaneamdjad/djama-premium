@@ -1,6 +1,7 @@
 /**
- * DJAMA — Définition des plans freemium
- * Modifie ici pour changer quels outils sont gratuits/premium
+ * DJAMA — Définition des plans
+ * Plan Gratuit : 3 outils à vie
+ * Plan PRO     : tous les outils — 11,90€/mois
  */
 
 export type PlanTier = "free" | "premium";
@@ -9,24 +10,22 @@ export interface Tool {
   href: string;
   label: string;
   tier: PlanTier;
-  /** Limite spéciale pour les outils gratuits (ex: 3 factures/mois) */
-  freeLimit?: { count: number; period: "month"; label: string };
 }
 
 /** Outils gratuits à vie */
 export const FREE_TOOLS: string[] = [
-  "/client",                 // Home — toujours accessible
-  "/client/planning",
-  "/client/planification",   // alias
-  "/client/bloc-note",
-  "/client/bloc-notes",      // alias
-  "/client/factures",        // limité à 3/mois
+  "/client",               // Accueil — toujours accessible
+  "/client/planning",      // Planning
+  "/client/planification", // alias
+  "/client/bloc-note",     // Bloc-note
+  "/client/bloc-notes",    // alias
+  "/client/factures",      // Factures & Devis
   "/client/factures/liste",
-  "/client/profil",          // profil utilisateur — toujours accessible
-  "/client/abonnements",     // page abonnement — toujours accessible
+  "/client/profil",        // Profil — toujours accessible
+  "/client/abonnements",   // Abonnement — toujours accessible
 ];
 
-/** Tous les outils premium (accès trial 30j puis payant) */
+/** Outils PRO (abonnement requis) */
 export const PREMIUM_TOOLS: string[] = [
   "/client/dashboard",
   "/client/crm",
@@ -49,7 +48,6 @@ export const PREMIUM_TOOLS: string[] = [
 ];
 
 export function getToolTier(pathname: string): PlanTier {
-  // Vérifie les préfixes premium
   if (PREMIUM_TOOLS.some(p => pathname === p || pathname.startsWith(p + "/"))) {
     return "premium";
   }
@@ -57,6 +55,5 @@ export function getToolTier(pathname: string): PlanTier {
 }
 
 /** Prix de l'abonnement mensuel */
-export const PLAN_PRICE = 11.90;
+export const PLAN_PRICE       = 11.90;
 export const PLAN_PRICE_LABEL = "11,90€ / mois";
-export const TRIAL_DAYS = 30;

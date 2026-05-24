@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 import {
-  Crown, CheckCircle2, ArrowRight, Sparkles,
-  ShieldCheck, Clock, RefreshCw, ExternalLink,
+  Crown, CheckCircle2, Sparkles,
+  ShieldCheck, RefreshCw, ExternalLink,
 } from "lucide-react";
 import { useSubscription } from "@/lib/use-require-subscription";
 import StripeButton from "@/components/ui/StripeButton";
@@ -18,14 +18,13 @@ const FEATURES = [
   "Contrats IA & factures illimitées",
   "Assistant IA & Coaching personnalisé",
   "Stocks & gestion fournisseurs",
-  "Équipe, planning & time tracking",
+  "Équipe, planning avancé & time tracking",
 ] as const;
 
 export default function AbonnementsPage() {
-  const { level, isPremium, isFree, trialDaysLeft, email: userEmail } = useSubscription();
+  const { level, isPremium, email: userEmail } = useSubscription();
 
   const loading = level === "loading";
-  const isTrial = level === "trial";
   const isPaid  = level === "premium";
 
   return (
@@ -45,7 +44,6 @@ export default function AbonnementsPage() {
           className="absolute bottom-[10%] right-[-60px] h-[250px] w-[250px] rounded-full blur-[100px]"
           style={{ background: "rgba(139,92,246,0.04)" }}
         />
-        {/* Subtle grid */}
         <div
           className="absolute inset-0 opacity-[0.018]"
           style={{
@@ -110,11 +108,7 @@ export default function AbonnementsPage() {
             <div>
               <div
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest"
-                style={{
-                  background: `${GOLD}10`,
-                  border: `1px solid ${GOLD}22`,
-                  color: GOLD,
-                }}
+                style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}22`, color: GOLD }}
               >
                 <Sparkles size={9} /> DJAMA PRO
               </div>
@@ -168,7 +162,7 @@ export default function AbonnementsPage() {
             </div>
           </motion.div>
 
-          {/* CTA or Status */}
+          {/* CTA ou statut */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -181,7 +175,7 @@ export default function AbonnementsPage() {
               </div>
 
             ) : isPaid ? (
-              /* Premium active */
+              /* Abonnement actif */
               <div
                 className="flex items-center justify-between gap-3 rounded-xl px-4 py-3.5"
                 style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.18)" }}
@@ -205,28 +199,10 @@ export default function AbonnementsPage() {
                 </a>
               </div>
 
-            ) : isTrial ? (
-              /* Trial — convert CTA */
-              <>
-                <div
-                  className="flex items-center gap-2.5 rounded-xl px-4 py-3"
-                  style={{ background: `${GOLD}0c`, border: `1px solid ${GOLD}1a` }}
-                >
-                  <Clock size={14} style={{ color: GOLD }} className="shrink-0" />
-                  <p className="text-sm" style={{ color: GOLD }}>
-                    Essai en cours · <strong>{trialDaysLeft} jour{trialDaysLeft > 1 ? "s" : ""}</strong> restants
-                  </p>
-                </div>
-                <StripeButton label="Continuer après l'essai — 11,90€/mois" />
-                <p className="text-center text-[0.62rem] text-white/20">
-                  Paiement sécurisé · Sans engagement · Résiliable
-                </p>
-              </>
-
             ) : (
-              /* Free — main CTA */
+              /* Plan gratuit — CTA */
               <>
-                <StripeButton label="Commencer maintenant" />
+                <StripeButton label="Débloquer DJAMA PRO — 11,90€/mois" />
                 <p className="text-center text-[0.62rem] text-white/20">
                   Paiement sécurisé · Sans engagement · Résiliable à tout moment
                 </p>
@@ -242,31 +218,12 @@ export default function AbonnementsPage() {
               transition={{ duration: 0.4, delay: 0.45 }}
               className="relative mt-6 flex items-center justify-center gap-5"
             >
-              {["Stripe SSL", "Sans CB", "Résiliable"].map((badge) => (
+              {["Stripe SSL", "Paiement sécurisé", "Résiliable"].map((badge) => (
                 <div key={badge} className="flex items-center gap-1.5">
-                  <div
-                    className="h-1 w-1 rounded-full"
-                    style={{ background: `${GOLD}50` }}
-                  />
+                  <div className="h-1 w-1 rounded-full" style={{ background: `${GOLD}50` }} />
                   <span className="text-[0.6rem] text-white/25">{badge}</span>
                 </div>
               ))}
-            </motion.div>
-          )}
-
-          {/* Trial badge — new users */}
-          {isFree && !loading && (
-            <motion.div
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.5 }}
-              className="relative mt-5 flex items-center justify-center gap-2 rounded-xl py-2.5"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
-            >
-              <Sparkles size={11} style={{ color: `${GOLD}80` }} />
-              <span className="text-[0.68rem] font-medium" style={{ color: `${GOLD}80` }}>
-                30 jours d&apos;essai gratuit inclus à l&apos;inscription
-              </span>
             </motion.div>
           )}
         </div>
