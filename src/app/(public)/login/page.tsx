@@ -58,7 +58,7 @@ function AuthField({
           placeholder={placeholder}
           autoComplete={autoComplete}
           required
-          className="w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-12 text-sm text-white placeholder:text-white/25 outline-none transition-colors duration-200 hover:border-white/20"
+          className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-11 pr-12 text-sm text-white placeholder:text-white/25 outline-none transition-colors duration-200 hover:border-white/20"
         />
         {right && <div className="absolute right-4 top-1/2 -translate-y-1/2">{right}</div>}
       </div>
@@ -206,7 +206,7 @@ function LoginPageInner() {
         {/* Bordure glow externe */}
         <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-[rgba(201,165,90,0.12)] to-transparent opacity-70 blur-sm" />
 
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f1117]/90 p-8 shadow-[0_32px_80px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f1117]/90 px-6 py-7 shadow-[0_32px_80px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:p-8">
 
           {/* Logo + titre */}
           <motion.div

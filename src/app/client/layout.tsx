@@ -337,83 +337,159 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
   );
 }
 
-/* ─────────── PREMIUM GATE (remplace le contenu des pages premium) ─────────── */
+/* ─────────── PREMIUM GATE — blur + cadenas + popup ─────────── */
 function PremiumGate() {
+  /* Fake blurred rows to simulate content behind the gate */
+  const MockRows = () => (
+    <div className="pointer-events-none select-none overflow-hidden" aria-hidden>
+      {/* mock header */}
+      <div className="flex items-center gap-3 border-b border-gray-200/60 bg-white px-5 py-4">
+        <div className="h-8 w-8 rounded-xl bg-gray-200" />
+        <div className="space-y-1.5">
+          <div className="h-3 w-28 rounded-full bg-gray-200" />
+          <div className="h-2 w-16 rounded-full bg-gray-100" />
+        </div>
+        <div className="ml-auto h-8 w-20 rounded-xl bg-gray-200" />
+      </div>
+      {/* mock content rows */}
+      {[100, 80, 90, 65, 75, 55, 85].map((w, i) => (
+        <div key={i} className={`flex items-center gap-4 px-5 py-3.5 ${i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}`}>
+          <div className="h-9 w-9 rounded-xl bg-gray-200/80" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-2.5 rounded-full bg-gray-200" style={{ width: `${w}%` }} />
+            <div className="h-2 w-24 rounded-full bg-gray-100" />
+          </div>
+          <div className="h-6 w-14 rounded-full bg-gray-200/70" />
+        </div>
+      ))}
+    </div>
+  );
+
   return (
-    <div
-      className="flex min-h-full flex-col items-center justify-center px-6 py-16"
-      style={{ background: "#f6f7f9" }}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-sm text-center"
-      >
-        {/* Icône */}
-        <div
-          className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl"
-          style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}25` }}
+    <div className="relative min-h-full overflow-hidden" style={{ background: "#f6f7f9" }}>
+
+      {/* Blurred mock content */}
+      <div className="absolute inset-0" style={{ filter: "blur(3px)", transform: "scale(1.02)", transformOrigin: "top" }}>
+        <MockRows />
+      </div>
+
+      {/* Dark overlay */}
+      <div className="absolute inset-0" style={{ background: "rgba(246,247,249,0.82)" }} />
+
+      {/* Centered card */}
+      <div className="relative flex min-h-full items-center justify-center px-4 py-16">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-[360px]"
         >
-          <Crown size={32} style={{ color: GOLD }} />
-        </div>
+          {/* Glow border */}
+          <div className="absolute inset-0 rounded-3xl opacity-40 blur-sm"
+            style={{ background: `linear-gradient(135deg, ${GOLD}28, transparent 60%)` }} />
 
-        {/* Titre */}
-        <h1 className="mb-2 text-2xl font-extrabold text-gray-900">Outil PRO</h1>
-        <p className="mb-7 text-sm leading-relaxed text-gray-400">
-          Cet outil est inclus dans l&apos;abonnement DJAMA PRO.<br />
-          <span className="font-medium text-gray-500">11,90€/mois · sans engagement</span>
-        </p>
+          <div className="relative overflow-hidden rounded-3xl bg-white px-7 py-8 shadow-[0_24px_64px_rgba(0,0,0,0.12)] text-center"
+            style={{ border: "1px solid rgba(201,165,90,0.15)" }}>
 
-        {/* Feature chips */}
-        <div className="mb-7 flex flex-wrap justify-center gap-2">
-          {["CRM", "Trésorerie", "Contrats IA", "Assistant IA", "Stocks", "+ 11 autres"].map(f => (
-            <span
-              key={f}
-              className="rounded-full px-3 py-1 text-xs font-semibold"
-              style={{ background: `${GOLD}0f`, color: GOLD, border: `1px solid ${GOLD}1e` }}
+            {/* Top glow */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-30"
+              style={{ background: `linear-gradient(180deg, ${GOLD}22, transparent)` }} />
+
+            {/* Lock badge */}
+            <motion.div
+              initial={{ scale: 0, rotate: -12 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 360, damping: 20, delay: 0.12 }}
+              className="relative mx-auto mb-5 flex h-[72px] w-[72px] items-center justify-center rounded-[22px]"
+              style={{ background: `linear-gradient(135deg, ${GOLD}18, ${GOLD}08)`, border: `1.5px solid ${GOLD}28` }}
             >
-              {f}
-            </span>
-          ))}
-        </div>
+              <Crown size={30} style={{ color: GOLD }} />
+              {/* Small lock pip */}
+              <div className="absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, border: "2px solid white" }}>
+                <Lock size={10} color="white" strokeWidth={2.5} />
+              </div>
+            </motion.div>
 
-        {/* Features list */}
-        <div className="mb-7 space-y-2.5 text-left">
-          {[
-            "Accès complet immédiat",
-            "Tous les outils débloqués",
-            "Résiliable à tout moment",
-          ].map(feat => (
-            <div key={feat} className="flex items-center gap-2.5">
-              <CheckCircle2 size={14} style={{ color: GOLD }} className="shrink-0" />
-              <span className="text-sm text-gray-600">{feat}</span>
+            {/* Text */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.18 }}
+            >
+              <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-widest"
+                style={{ background: `${GOLD}12`, color: GOLD, border: `1px solid ${GOLD}22` }}>
+                <Sparkles size={8} /> DJAMA PRO
+              </div>
+              <h2 className="mt-2 text-xl font-extrabold text-gray-900">Outil PRO requis</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-gray-400">
+                Passez à PRO pour débloquer cet outil<br />et les 15+ autres modules avancés.
+              </p>
+            </motion.div>
+
+            {/* Feature pills */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.28 }}
+              className="mt-5 flex flex-wrap justify-center gap-1.5"
+            >
+              {["CRM", "Trésorerie", "Contrats IA", "Assistant IA", "Stocks", "+ 11 autres"].map(f => (
+                <span key={f} className="rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold"
+                  style={{ background: `${GOLD}0d`, color: `${GOLD}cc`, border: `1px solid ${GOLD}1a` }}>
+                  {f}
+                </span>
+              ))}
+            </motion.div>
+
+            {/* Check list */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.35 }}
+              className="mt-5 space-y-2 text-left"
+            >
+              {["Accès complet immédiat", "Tous les outils débloqués", "Résiliable à tout moment"].map(f => (
+                <div key={f} className="flex items-center gap-2">
+                  <CheckCircle2 size={13} style={{ color: GOLD }} className="shrink-0" />
+                  <span className="text-[0.8rem] text-gray-500">{f}</span>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Price */}
+            <div className="mt-5 flex items-baseline justify-center gap-1">
+              <span className="text-3xl font-black text-gray-900">11,90</span>
+              <span className="text-lg font-bold text-gray-400">€</span>
+              <span className="mb-0.5 text-sm text-gray-400">/mois</span>
             </div>
-          ))}
-        </div>
 
-        {/* CTA */}
-        <a
-          href="/client/abonnements"
-          className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-4 text-base font-extrabold text-[#0a0a0a] transition-shadow hover:shadow-[0_12px_32px_rgba(201,165,90,0.45)]"
-          style={{
-            background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
-            boxShadow: "0 6px 24px rgba(201,165,90,0.35)",
-          }}
-        >
-          <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-          <Crown size={17} />
-          Débloquer maintenant
-          <ArrowRight size={15} />
-        </a>
+            {/* CTA */}
+            <motion.a
+              href="/client/abonnements"
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.42 }}
+              className="group relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-3.5 text-sm font-extrabold text-[#0a0a0a]"
+              style={{
+                background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
+                boxShadow: "0 6px 24px rgba(201,165,90,0.35)",
+              }}
+            >
+              <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+              <Crown size={14} />
+              Débloquer DJAMA PRO
+              <ArrowRight size={13} />
+            </motion.a>
 
-        <Link
-          href="/client"
-          className="mt-4 block text-center text-xs text-gray-300 transition hover:text-gray-500"
-        >
-          ← Retour à l&apos;accueil
-        </Link>
-      </motion.div>
+            <Link href="/client" className="mt-3 block text-center text-[0.7rem] text-gray-300 transition hover:text-gray-500">
+              ← Retour à l&apos;accueil
+            </Link>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }

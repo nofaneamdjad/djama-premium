@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard,
   ReceiptText, Users, Timer, Receipt, FileText, Search,
   TrendingUp, StickyNote, Star, Zap, CalendarRange,
   Clock, Euro, UserCheck, TrendingDown, ArrowUpRight,
-  AlertTriangle, ChevronRight, BarChart3,
+  AlertTriangle, ChevronRight,
   FileBarChart2, Loader2, X, ShieldCheck, Lightbulb,
+  Plus, CheckCircle2, CircleDot, Send,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt, fmtDuration } from "@/lib/format";
@@ -52,6 +52,15 @@ function fmtFullDate(): string {
   return new Intl.DateTimeFormat("fr-FR", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   }).format(new Date());
+}
+
+interface RecentInvoice {
+  id: string;
+  numero: string;
+  client_nom: string;
+  total_ttc: number;
+  statut: string;
+  created_at: string;
 }
 
 interface Stats {
@@ -116,6 +125,7 @@ export default function DashboardPage() {
   const [topClients,    setTopClients]    = useState<TopClient[]>([]);
   const [overdue,       setOverdue]       = useState<OverdueInvoice[]>([]);
   const [chartsLoading, setChartsLoading] = useState(true);
+  const [recentInvoices, setRecentInvoices] = useState<RecentInvoice[]>([]);
   const [rapportOpen,    setRapportOpen]    = useState(false);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapport,        setRapport]        = useState<Rapport | null>(null);
@@ -159,6 +169,15 @@ export default function DashboardPage() {
         monthData.push({ label: SHORT_MONTHS[d.getMonth()], amount: (data ?? []).reduce((s,r) => s+(r.total_ttc ?? 0), 0) });
       }
       setRevenues(monthData);
+
+      /* ── Recent invoices ── */
+      const { data: recentDocs } = await supabase
+        .from("documents")
+        .select("id,numero,client_nom,total_ttc,statut,created_at")
+        .eq("type", "facture")
+        .order("created_at", { ascending: false })
+        .limit(6);
+      setRecentInvoices((recentDocs ?? []) as RecentInvoice[]);
 
       const threeAgo = new Date(today.getFullYear(), today.getMonth()-3, 1).toISOString().slice(0,10);
       const { data: paidDocs } = await supabase.from("documents").select("client_nom,total_ttc").eq("type","facture").eq("statut","payé").gte("date_document",threeAgo);
@@ -525,11 +544,121 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
+        {/* Quick create row */}
+        <motion.div
+          initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
+          transition={{ duration:0.35, delay:0.35 }}
+          className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+        >
+          {[
+            { href:"/client/factures",  label:"Nouvelle facture",  icon:ReceiptText, color:"#c9a55a" },
+            { href:"/client/factures",  label:"Nouveau devis",     icon:Send,        color:"#60a5fa" },
+            { href:"/client/crm",       label:"Ajouter client",    icon:Users,       color:"#a78bfa" },
+            { href:"/client/depenses",  label:"Saisir dépense",    icon:Receipt,     color:"#f97316" },
+          ].map(({ href, label, icon:Icon, color }) => (
+            <a key={label} href={href}
+              className="group flex items-center gap-2.5 rounded-2xl px-3.5 py-3 transition-all hover:scale-[1.02]"
+              style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-110"
+                style={{ background:`${color}20` }}>
+                <Plus size={11} style={{ color }} strokeWidth={2.5}/>
+              </div>
+              <span className="text-[0.72rem] font-medium text-white/55 group-hover:text-white/80 transition-colors leading-tight">{label}</span>
+            </a>
+          ))}
+        </motion.div>
+
+        {/* Recent activity */}
+        <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.42 }}>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-white/25">Activité récente</p>
+            <a href="/client/factures" className="text-[0.65rem] font-medium transition hover:opacity-70" style={{ color:GOLD }}>
+              Voir tout →
+            </a>
+          </div>
+          <div className="overflow-hidden rounded-3xl"
+            style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.09)" }}>
+            {chartsLoading ? (
+              <div className="space-y-0 divide-y divide-white/5">
+                {[1,2,3,4].map(i=>(
+                  <div key={i} className="flex items-center gap-3.5 px-4 py-3.5">
+                    <div className="h-8 w-8 animate-pulse rounded-xl" style={{ background:"rgba(255,255,255,0.08)" }}/>
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-2.5 w-28 animate-pulse rounded-full" style={{ background:"rgba(255,255,255,0.08)" }}/>
+                      <div className="h-2 w-16 animate-pulse rounded-full" style={{ background:"rgba(255,255,255,0.05)" }}/>
+                    </div>
+                    <div className="h-5 w-14 animate-pulse rounded-full" style={{ background:"rgba(255,255,255,0.08)" }}/>
+                  </div>
+                ))}
+              </div>
+            ) : recentInvoices.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-10">
+                <ReceiptText size={20} className="text-white/15"/>
+                <p className="text-[0.72rem] text-white/30">Aucune facture créée pour l&apos;instant</p>
+                <a href="/client/factures"
+                  className="rounded-xl px-4 py-2 text-[0.72rem] font-bold text-[#0a0a0a] transition hover:opacity-90"
+                  style={{ background:`linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
+                  Créer ma première facture
+                </a>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/[0.06]">
+                {recentInvoices.map((inv, i) => {
+                  const statusConfig: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
+                    payé:       { label:"Payée",      color:"#4ade80", bg:"rgba(74,222,128,0.12)",  icon:CheckCircle2 },
+                    envoyé:     { label:"Envoyée",    color:"#60a5fa", bg:"rgba(96,165,250,0.12)",  icon:Send         },
+                    en_attente: { label:"En attente", color:GOLD,      bg:`${GOLD}18`,              icon:CircleDot    },
+                    brouillon:  { label:"Brouillon",  color:"#9ca3af", bg:"rgba(156,163,175,0.12)", icon:FileText     },
+                    en_retard:  { label:"En retard",  color:"#f87171", bg:"rgba(248,113,113,0.12)", icon:AlertTriangle},
+                  };
+                  const s = statusConfig[inv.statut] ?? { label:inv.statut, color:"#9ca3af", bg:"rgba(156,163,175,0.12)", icon:CircleDot };
+                  const StatusIcon = s.icon;
+                  const date = new Date(inv.created_at).toLocaleDateString("fr-FR", { day:"numeric", month:"short" });
+
+                  return (
+                    <motion.div key={inv.id}
+                      initial={{ opacity:0, x:-6 }}
+                      animate={{ opacity:1, x:0 }}
+                      transition={{ duration:0.22, delay:0.44 + i*0.04 }}
+                    >
+                      <a href="/client/factures"
+                        className="group flex items-center gap-3.5 px-4 py-3 transition-colors hover:bg-white/[0.03]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                          style={{ background:"rgba(201,165,90,0.10)", border:"1px solid rgba(201,165,90,0.15)" }}>
+                          <ReceiptText size={14} style={{ color:GOLD }}/>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[0.78rem] font-semibold text-white/70">
+                            {inv.client_nom || inv.numero || "Sans nom"}
+                          </p>
+                          <p className="text-[0.62rem] text-white/30">
+                            {inv.numero ? `${inv.numero} · ` : ""}{date}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 rounded-full px-2 py-0.5"
+                            style={{ background:s.bg }}>
+                            <StatusIcon size={9} style={{ color:s.color }}/>
+                            <span className="text-[0.6rem] font-semibold" style={{ color:s.color }}>{s.label}</span>
+                          </div>
+                          <span className="text-[0.78rem] font-bold" style={{ color:GOLD }}>
+                            {fmtEurInt(inv.total_ttc ?? 0)}
+                          </span>
+                        </div>
+                      </a>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
+
         {/* Tools */}
-        <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.38 }}>
+        <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.52 }}>
           <p className="mb-3 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-white/25">Accès rapides</p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {TOOLS.map((item,i)=><ToolCard key={item.href} item={item} delay={0.4+i*0.035}/>)}
+            {TOOLS.map((item,i)=><ToolCard key={item.href} item={item} delay={0.54+i*0.035}/>)}
           </div>
         </motion.div>
 
