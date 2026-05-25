@@ -15,48 +15,46 @@ import { supabase } from "@/lib/supabase";
 const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD = "#c9a55a";
 
-/* ── Splash screen style Odoo ── */
+/* ── Splash screen style Odoo — barre indéterminée ── */
 function SplashScreen({ visible }: { visible: boolean }) {
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
+          key="splash"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center"
-          style={{ background: "#07090e" }}
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#07090e]"
         >
           <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.16, 0.08] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute h-[400px] w-[400px] rounded-full blur-[120px]"
+            animate={{ scale: [1, 1.25, 1], opacity: [0.07, 0.15, 0.07] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute h-[420px] w-[420px] rounded-full blur-[130px]"
             style={{ background: GOLD }}
           />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85, y: 10 }}
+          <motion.span
+            initial={{ opacity: 0, scale: 0.82, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1, ease }}
-            className="relative mb-8"
+            transition={{ duration: 0.55, delay: 0.08, ease }}
+            className="relative mb-10 text-[3rem] font-black text-white"
+            style={{ letterSpacing: "-0.02em" }}
           >
-            <span className="text-[3.2rem] font-black tracking-tight text-white" style={{ letterSpacing: "-0.02em" }}>
-              DJAMA
-            </span>
-          </motion.div>
+            DJAMA
+          </motion.span>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.25 }}
-            className="relative w-[220px] overflow-hidden rounded-full"
-            style={{ height: "2px", background: "rgba(255,255,255,0.1)" }}
+            transition={{ delay: 0.2 }}
+            className="relative w-[200px] overflow-hidden rounded-full"
+            style={{ height: "2px", background: "rgba(255,255,255,0.08)" }}
           >
             <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: "0%" }}
-              transition={{ duration: 1.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0 rounded-full"
-              style={{ background: `linear-gradient(90deg, ${GOLD}80, ${GOLD}, ${GOLD}80)` }}
+              className="absolute top-0 h-full w-[45%] rounded-full"
+              style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }}
+              animate={{ x: ["-110%", "280%"] }}
+              transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.1 }}
             />
           </motion.div>
         </motion.div>
@@ -132,6 +130,7 @@ function LoginPageInner() {
   const [showPwd,       setShowPwd]       = useState(false);
   const [loading,       setLoading]       = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showSplash,    setShowSplash]    = useState(false);
   const [phase,         setPhase]         = useState<"idle"|"auth"|"checking"|"redirecting">("idle");
   const [resending,     setResending]     = useState(false);
   const [error,         setError]         = useState("");
@@ -141,17 +140,18 @@ function LoginPageInner() {
   useEffect(() => { supabase.auth.signOut(); }, []);
 
   async function handleGoogleAuth() {
-    setError(""); setGoogleLoading(true);
+    setError(""); setGoogleLoading(true); setShowSplash(true);
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/client`, queryParams: { access_type: "offline", prompt: "select_account" } },
     });
-    if (err) { setError(err.message); setGoogleLoading(false); }
+    if (err) { setError(err.message); setGoogleLoading(false); setShowSplash(false); }
+    /* Si OK → redirection navigateur, splash reste */
   }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setError(""); setErrorType(null); setResendOk(false);
+    setError(""); setErrorType(null); setResendOk(false); setShowSplash(true);
     setLoading(true); setPhase("auth");
     let willRedirect = false;
     try {
@@ -177,7 +177,7 @@ function LoginPageInner() {
       setError("Erreur inattendue. Vérifiez votre connexion.");
       setErrorType("other");
     } finally {
-      if (!willRedirect) { setLoading(false); setPhase("idle"); }
+      if (!willRedirect) { setLoading(false); setPhase("idle"); setShowSplash(false); }
     }
   }
 
@@ -193,8 +193,7 @@ function LoginPageInner() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#07090e] px-4 py-8">
 
-      {/* Splash plein écran pendant la connexion */}
-      <SplashScreen visible={loading || googleLoading} />
+      <SplashScreen visible={showSplash} />
 
       {/* ── Animated background orbs ── */}
       <div className="pointer-events-none absolute inset-0">
