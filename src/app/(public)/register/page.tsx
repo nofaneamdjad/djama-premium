@@ -12,7 +12,7 @@ import { supabase } from "@/lib/supabase";
 const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD = "#c9a55a";
 
-/* ── Google SVG ─────────────────────────────────── */
+/* ── Google SVG ── */
 function GoogleIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
@@ -24,34 +24,40 @@ function GoogleIcon() {
   );
 }
 
-/* ── Champ de formulaire ── */
+/* ── Champ animé ── */
 function AuthField({
-  label, type, value, onChange, placeholder, icon: Icon, right, autoComplete, optional,
+  label, type, value, onChange, placeholder, icon: Icon, right, autoComplete, optional, delay = 0,
 }: {
   label: string; type: string; value: string;
   onChange: (v: string) => void; placeholder: string;
-  icon: React.ElementType; right?: React.ReactNode; autoComplete?: string; optional?: boolean;
+  icon: React.ElementType; right?: React.ReactNode;
+  autoComplete?: string; optional?: boolean; delay?: number;
 }) {
   const [focused, setFocused] = useState(false);
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white/40">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay, ease }}
+      className="flex flex-col gap-1.5"
+    >
+      <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white/35">
         {label}
         {optional && (
-          <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[0.55rem] normal-case tracking-normal text-white/25">
+          <span className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[0.5rem] normal-case tracking-normal text-white/20">
             optionnel
           </span>
         )}
       </label>
       <div className="relative">
         <motion.div
-          animate={{ opacity: focused ? 1 : 0 }}
-          transition={{ duration: 0.2 }}
+          animate={{ opacity: focused ? 1 : 0, scale: focused ? 1 : 0.98 }}
+          transition={{ duration: 0.18 }}
           className="pointer-events-none absolute inset-0 rounded-2xl"
-          style={{ boxShadow: `0 0 0 2px ${GOLD}80` }}
+          style={{ boxShadow: `0 0 0 2px ${GOLD}70, 0 0 20px ${GOLD}18` }}
         />
-        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-          <Icon size={15} style={{ color: focused ? GOLD : "rgba(255,255,255,0.25)" }} />
+        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-200">
+          <Icon size={14} style={{ color: focused ? GOLD : "rgba(255,255,255,0.2)" }} />
         </div>
         <input
           type={type}
@@ -61,65 +67,50 @@ function AuthField({
           onBlur={() => setFocused(false)}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-11 pr-12 text-sm text-white placeholder:text-white/25 outline-none transition-colors duration-200 hover:border-white/20"
+          className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] py-3 pl-11 pr-12 text-sm text-white placeholder:text-white/20 outline-none transition-all duration-200 hover:border-white/15 hover:bg-white/[0.06]"
         />
         {right && <div className="absolute right-4 top-1/2 -translate-y-1/2">{right}</div>}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 export default function RegisterPage() {
-  const [nom,          setNom]          = useState("");
-  const [email,        setEmail]        = useState("");
-  const [telephone,    setTelephone]    = useState("");
-  const [password,     setPassword]     = useState("");
-  const [showPwd,      setShowPwd]      = useState(false);
-  const [loading,      setLoading]      = useState(false);
+  const [nom,           setNom]           = useState("");
+  const [email,         setEmail]         = useState("");
+  const [telephone,     setTelephone]     = useState("");
+  const [password,      setPassword]      = useState("");
+  const [showPwd,       setShowPwd]       = useState(false);
+  const [loading,       setLoading]       = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error,        setError]        = useState("");
-  const [success,      setSuccess]      = useState(false);
+  const [error,         setError]         = useState("");
+  const [success,       setSuccess]       = useState(false);
 
   async function handleGoogleAuth() {
-    setError("");
-    setGoogleLoading(true);
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+    setError(""); setGoogleLoading(true);
+    const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/client`,
-        queryParams: { access_type: "offline", prompt: "select_account" },
-      },
+      options: { redirectTo: `${window.location.origin}/client`, queryParams: { access_type: "offline", prompt: "select_account" } },
     });
-    if (oauthError) {
-      setError(oauthError.message);
-      setGoogleLoading(false);
-    }
+    if (err) { setError(err.message); setGoogleLoading(false); }
   }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
-    if (!nom.trim())          { setError("Le nom est requis."); return; }
-    if (!email.trim())        { setError("L'adresse e-mail est requise."); return; }
-    if (password.length < 8)  { setError("Le mot de passe doit contenir au moins 8 caractères."); return; }
-    setError("");
-    setLoading(true);
+    if (!nom.trim())         { setError("Le nom est requis."); return; }
+    if (!email.trim())       { setError("L'adresse e-mail est requise."); return; }
+    if (password.length < 8) { setError("Le mot de passe doit contenir au moins 8 caractères."); return; }
+    setError(""); setLoading(true);
 
-    /* 1. Créer le compte — plan gratuit, aucun abonnement */
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: {
-        data: {
-          name: nom.trim(),
-          /* Pas de subscription_active, pas de trial — compte gratuit par défaut */
-        },
-      },
+      options: { data: { name: nom.trim() } },
     });
 
     if (signUpError) {
       setError(
-        signUpError.message.includes("already registered") ||
-        signUpError.message.includes("already been registered")
+        signUpError.message.includes("already registered") || signUpError.message.includes("already been registered")
           ? "Un compte existe déjà avec cet e-mail."
           : signUpError.message
       );
@@ -128,153 +119,168 @@ export default function RegisterPage() {
     }
 
     const userId = data.user?.id;
-    if (!userId) {
-      setError("Erreur lors de la création du compte. Veuillez réessayer.");
-      setLoading(false);
-      return;
-    }
+    if (!userId) { setError("Erreur lors de la création. Réessayez."); setLoading(false); return; }
 
-    /* 2. Insérer le profil dans la table clients (best-effort) */
     await supabase.from("clients").insert({
-      id:        userId,
-      nom:       nom.trim(),
-      email:     email.trim().toLowerCase(),
+      id: userId, nom: nom.trim(),
+      email: email.trim().toLowerCase(),
       telephone: telephone.trim() || null,
-      statut:    "actif",
+      statut: "actif",
     });
 
-    setSuccess(true);
-    setLoading(false);
-
-    /* 3. Si session immédiate (confirm email désactivé) → espace client */
-    if (data.session) {
-      setTimeout(() => { window.location.href = "/client"; }, 1200);
-    }
+    setSuccess(true); setLoading(false);
+    if (data.session) setTimeout(() => { window.location.href = "/client"; }, 1200);
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080a0f] px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#07090e] px-4 py-12">
 
-      {/* Glows d'arrière-plan */}
+      {/* ── Animated background orbs ── */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(176,141,87,0.07)] blur-[120px]" />
-        <div className="absolute left-[-100px] top-[10%] h-[300px] w-[300px] rounded-full bg-[rgba(59,157,255,0.04)] blur-[80px]" />
-        <div className="absolute bottom-[10%] right-[-80px] h-[250px] w-[250px] rounded-full bg-[rgba(139,92,246,0.04)] blur-[80px]" />
-        <div className="absolute inset-0 opacity-[0.015]" style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
-          backgroundSize: "40px 40px",
+        <motion.div
+          animate={{ scale: [1, 1.18, 1], opacity: [0.06, 0.11, 0.06] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[130px]"
+          style={{ background: "rgba(201,165,90,1)" }}
+        />
+        <motion.div
+          animate={{ y: [0, -28, 0], x: [0, 12, 0], opacity: [0.04, 0.09, 0.04] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute -left-16 top-[12%] h-[320px] w-[320px] rounded-full blur-[90px]"
+          style={{ background: "rgba(59,130,246,1)" }}
+        />
+        <motion.div
+          animate={{ y: [0, 22, 0], x: [0, -14, 0], opacity: [0.04, 0.07, 0.04] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+          className="absolute -bottom-8 -right-12 h-[280px] w-[280px] rounded-full blur-[100px]"
+          style={{ background: "rgba(139,92,246,1)" }}
+        />
+        <div className="absolute inset-0 opacity-[0.012]" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
+          backgroundSize: "44px 44px",
         }} />
       </div>
 
+      {/* ── Card ── */}
       <motion.div
-        initial={{ opacity: 0, y: 32, scale: 0.97 }}
+        initial={{ opacity: 0, y: 40, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.65, ease }}
+        transition={{ duration: 0.7, ease }}
         className="relative z-10 w-full max-w-[440px]"
       >
-        {/* Bordure glow */}
-        <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-[rgba(201,165,90,0.12)] to-transparent opacity-70 blur-sm" />
+        {/* Outer glow */}
+        <motion.div
+          animate={{ opacity: [0.45, 0.75, 0.45] }}
+          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 rounded-[2.5rem] blur-md"
+          style={{ background: `linear-gradient(135deg, ${GOLD}16, transparent 50%, rgba(99,102,241,0.07))` }}
+        />
 
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f1117]/90 px-6 py-7 shadow-[0_32px_80px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:p-8">
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-[#0d0f16]/95 px-6 py-7 shadow-[0_40px_100px_rgba(0,0,0,0.7)] backdrop-blur-2xl sm:p-8">
 
-          {/* Header */}
+          {/* Animated gold top line */}
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={{ scaleX: 1, opacity: 1 }}
+            transition={{ duration: 1.1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-x-0 top-0 h-[1px] origin-left"
+            style={{ background: `linear-gradient(90deg, transparent, ${GOLD}80, transparent)` }}
+          />
+
+          {/* Inner glow */}
+          <div className="pointer-events-none absolute left-1/2 top-0 h-40 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+            style={{ background: `${GOLD}0e` }} />
+
+          {/* ── Header ── */}
+          <motion.div
+            initial={{ opacity: 0, y: -14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.12, ease }}
-            className="mb-7 flex flex-col items-center gap-3 text-center"
+            transition={{ duration: 0.5, delay: 0.14, ease }}
+            className="relative mb-7 flex flex-col items-center gap-3 text-center"
           >
-            <div
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0, rotate: -8 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 20, delay: 0.22 }}
               className="flex h-14 w-14 items-center justify-center rounded-2xl"
-              style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}28` }}
+              style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}28`, boxShadow: `0 8px 28px ${GOLD}18` }}
             >
-              {/* DJAMA monogramme */}
-              <span className="text-xl font-black" style={{ color: GOLD }}>D</span>
-            </div>
+              <span className="text-2xl font-black" style={{ color: GOLD }}>D</span>
+            </motion.div>
             <div>
-              <div
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest"
-                style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}22`, color: GOLD }}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.35, delay: 0.34, ease }}
+                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest"
+                style={{ borderColor: `${GOLD}22`, background: `${GOLD}0c`, color: GOLD }}
               >
                 Gratuit · Aucune carte requise
-              </div>
-              <h1 className="mt-3 text-2xl font-extrabold text-white">
+              </motion.div>
+              <motion.h1
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.42, ease }}
+                className="mt-3 text-2xl font-extrabold text-white"
+              >
                 Centralisez votre activité
-              </h1>
-              <p className="mt-1 text-sm text-white/35">
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
+                className="mt-1 text-sm text-white/30"
+              >
                 Vos outils professionnels dans un seul espace
-              </p>
+              </motion.p>
             </div>
           </motion.div>
 
-          {/* Bouton Google */}
+          {/* ── Google ── */}
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2, ease }}
+            transition={{ duration: 0.4, delay: 0.42, ease }}
           >
             <motion.button
               type="button"
               onClick={handleGoogleAuth}
               disabled={googleLoading || loading || success}
-              whileHover={{ scale: 1.015, y: -1 }}
-              whileTap={{ scale: 0.985 }}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/12 bg-white/6 py-3.5 text-sm font-semibold text-white/85 transition-all duration-200 hover:border-white/20 hover:bg-white/10 disabled:opacity-50"
+              whileHover={{ scale: 1.02, y: -1, boxShadow: "0 8px 24px rgba(255,255,255,0.06)" }}
+              whileTap={{ scale: 0.98 }}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] py-3 text-sm font-semibold text-white/75 transition-all duration-200 hover:border-white/18 hover:bg-white/[0.08] disabled:opacity-50"
             >
-              {googleLoading ? (
-                <motion.span
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                  className="inline-block h-4 w-4 rounded-full border-2 border-white/20 border-t-white/70"
-                />
-              ) : (
-                <GoogleIcon />
-              )}
+              {googleLoading
+                ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                    className="inline-block h-4 w-4 rounded-full border-2 border-white/20 border-t-white/70" />
+                : <GoogleIcon />
+              }
               {googleLoading ? "Connexion…" : "Continuer avec Google"}
             </motion.button>
           </motion.div>
 
-          {/* Séparateur OU */}
-          <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1 bg-white/8" />
-            <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-white/25">ou</span>
-            <div className="h-px flex-1 bg-white/8" />
-          </div>
-
-          {/* Formulaire */}
-          <motion.form
+          {/* ── Separator ── */}
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            onSubmit={handleRegister}
-            className="space-y-4"
+            transition={{ duration: 0.3, delay: 0.5 }}
+            className="my-5 flex items-center gap-3"
           >
-            <AuthField
-              label="Nom complet" type="text" value={nom} onChange={setNom}
-              placeholder="Jean Dupont" icon={User} autoComplete="name"
-            />
+            <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.07)" }} />
+            <span className="text-[0.6rem] font-semibold uppercase tracking-widest text-white/20">ou</span>
+            <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.07)" }} />
+          </motion.div>
 
-            <AuthField
-              label="Adresse e-mail" type="email" value={email} onChange={setEmail}
-              placeholder="vous@exemple.com" icon={Mail} autoComplete="email"
-            />
-
-            <AuthField
-              label="Téléphone" type="tel" value={telephone} onChange={setTelephone}
-              placeholder="+33 6 00 00 00 00" icon={Phone} autoComplete="tel"
-              optional
-            />
-
-            <AuthField
-              label="Mot de passe" type={showPwd ? "text" : "password"}
-              value={password} onChange={setPassword}
-              placeholder="Minimum 8 caractères"
-              icon={Lock} autoComplete="new-password"
+          {/* ── Form ── */}
+          <form onSubmit={handleRegister} className="space-y-3.5">
+            <AuthField label="Nom complet"    type="text"     value={nom}       onChange={setNom}       placeholder="Jean Dupont"         icon={User}  autoComplete="name"         delay={0.52} />
+            <AuthField label="Adresse e-mail" type="email"    value={email}     onChange={setEmail}     placeholder="vous@exemple.com"    icon={Mail}  autoComplete="email"        delay={0.58} />
+            <AuthField label="Téléphone"      type="tel"      value={telephone} onChange={setTelephone} placeholder="+33 6 00 00 00 00"   icon={Phone} autoComplete="tel"          delay={0.64} optional />
+            <AuthField label="Mot de passe"   type={showPwd ? "text" : "password"} value={password} onChange={setPassword}
+              placeholder="Minimum 8 caractères" icon={Lock} autoComplete="new-password" delay={0.70}
               right={
-                <button type="button" onClick={() => setShowPwd((v) => !v)}
-                  className="text-white/30 transition hover:text-white/60">
-                  {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                <button type="button" onClick={() => setShowPwd(v => !v)} className="text-white/25 transition hover:text-white/55">
+                  {showPwd ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               }
             />
@@ -282,90 +288,89 @@ export default function RegisterPage() {
             {/* Messages */}
             <AnimatePresence>
               {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="flex items-start gap-2.5 overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3"
-                >
-                  <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-400" />
-                  <p className="text-xs leading-relaxed text-red-300">{error}</p>
+                <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
+                  transition={{ duration:0.22 }}
+                  className="overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+                  <div className="flex gap-2.5">
+                    <AlertCircle size={13} className="mt-0.5 shrink-0 text-red-400" />
+                    <p className="text-xs text-red-300">{error}</p>
+                  </div>
                 </motion.div>
               )}
               {success && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex items-start gap-2.5 overflow-hidden rounded-2xl border border-green-500/20 bg-green-500/10 px-4 py-3"
-                >
-                  <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-green-400" />
-                  <p className="text-xs leading-relaxed text-green-300">
-                    Compte créé avec succès !<br />
-                    <span className="text-green-400/70">Redirection vers votre espace…</span>
-                  </p>
+                <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
+                  className="overflow-hidden rounded-2xl border border-green-500/20 bg-green-500/10 px-4 py-3">
+                  <div className="flex gap-2.5">
+                    <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-green-400" />
+                    <p className="text-xs text-green-300">Compte créé ! Redirection…</p>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* CTA */}
-            <motion.button
-              type="submit"
-              whileHover={{ scale: 1.015, y: -1 }}
-              whileTap={{ scale: 0.985 }}
-              disabled={loading || success || googleLoading}
-              className="group relative mt-2 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-6 py-4 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_20px_rgba(201,165,90,0.3)] transition-shadow duration-300 hover:shadow-[0_8px_32px_rgba(201,165,90,0.45)] disabled:opacity-60"
+            {/* ── CTA ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.76, ease }}
             >
-              <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-              <span className="relative flex items-center justify-center gap-2">
-                {loading ? (
-                  <>
-                    <motion.span
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                      className="inline-block h-4 w-4 rounded-full border-2 border-black/20 border-t-black/70"
-                    />
-                    Création du compte…
-                  </>
-                ) : success ? (
-                  <><CheckCircle2 size={15} /> Compte créé !</>
-                ) : (
-                  <>Créer mon espace client <ArrowRight size={15} /></>
-                )}
-              </span>
-            </motion.button>
-          </motion.form>
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.02, y: -2, boxShadow: `0 12px 36px ${GOLD}45` }}
+                whileTap={{ scale: 0.97 }}
+                disabled={loading || success || googleLoading}
+                className="group relative mt-1 w-full overflow-hidden rounded-2xl py-3.5 text-sm font-extrabold text-[#0a0a0a] disabled:opacity-60"
+                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, boxShadow: `0 4px 20px ${GOLD}30` }}
+              >
+                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                <span className="relative flex items-center justify-center gap-2">
+                  {loading ? (
+                    <>
+                      <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.75, repeat: Infinity, ease: "linear" }}
+                        className="inline-block h-4 w-4 rounded-full border-2 border-black/20 border-t-black/60" />
+                      Création du compte…
+                    </>
+                  ) : success ? (
+                    <><CheckCircle2 size={14} /> Compte créé !</>
+                  ) : (
+                    <>
+                      Créer mon espace client
+                      <motion.span animate={{ x: [0, 3, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>
+                        <ArrowRight size={14} />
+                      </motion.span>
+                    </>
+                  )}
+                </span>
+              </motion.button>
+            </motion.div>
+          </form>
 
-          {/* Badges de réassurance */}
-          <div className="mt-5 flex items-center justify-center gap-4">
-            {[
-              { src: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f512.svg", label: "Données sécurisées" },
-              { src: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/26a1.svg",  label: "Accès instantané"   },
-              { src: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2601.svg",  label: "Sauvegarde auto"    },
-            ].map(({ src, label }) => (
-              <div key={label} className="flex items-center gap-1.5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt="" width={13} height={13} />
-                <span className="text-[0.6rem] text-white/25">{label}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Note plan */}
-          <p className="mt-3 text-center text-[0.65rem] text-white/20 leading-relaxed">
+          {/* ── Note plan ── */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.82 }}
+            className="mt-4 text-center text-[0.62rem] text-white/18 leading-relaxed"
+          >
             Factures, Planning &amp; Bloc-note inclus gratuitement<br />
             Passez à PRO à tout moment depuis votre espace
-          </p>
+          </motion.p>
 
-          <p className="mt-4 text-center text-xs text-white/25">
-            Déjà un compte ?{" "}
-            <Link href="/login"
-              className="font-bold underline underline-offset-2 transition-colors hover:text-[#e8cc94]"
-              style={{ color: GOLD }}>
-              Se connecter
-            </Link>
-          </p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.88 }}
+            className="mt-4 flex items-center gap-3"
+          >
+            <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.05)" }} />
+            <p className="whitespace-nowrap text-xs text-white/25">
+              Déjà un compte ?{" "}
+              <Link href="/login" className="font-bold transition-colors hover:text-[#e8cc94]" style={{ color: GOLD }}>
+                Se connecter
+              </Link>
+            </p>
+            <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.05)" }} />
+          </motion.div>
         </div>
       </motion.div>
     </div>
