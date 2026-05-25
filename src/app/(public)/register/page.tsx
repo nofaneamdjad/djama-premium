@@ -12,6 +12,64 @@ import { supabase } from "@/lib/supabase";
 const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD = "#c9a55a";
 
+/* ── Splash screen style Odoo ── */
+function SplashScreen({ visible }: { visible: boolean }) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.35 }}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+          style={{ background: "#07090e" }}
+        >
+          {/* Glow derrière le logo */}
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.16, 0.08] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute h-[400px] w-[400px] rounded-full blur-[120px]"
+            style={{ background: GOLD }}
+          />
+
+          {/* Logo */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1, ease }}
+            className="relative mb-8 flex flex-col items-center gap-3"
+          >
+            <span
+              className="text-[3.2rem] font-black tracking-tight text-white"
+              style={{ letterSpacing: "-0.02em" }}
+            >
+              DJAMA
+            </span>
+          </motion.div>
+
+          {/* Barre de progression */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.25 }}
+            className="relative w-[220px] overflow-hidden rounded-full"
+            style={{ height: "2px", background: "rgba(255,255,255,0.1)" }}
+          >
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: "0%" }}
+              transition={{ duration: 1.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0 rounded-full"
+              style={{ background: `linear-gradient(90deg, ${GOLD}80, ${GOLD}, ${GOLD}80)` }}
+            />
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 /* ── Google SVG ── */
 function GoogleIcon() {
   return (
@@ -134,6 +192,9 @@ export default function RegisterPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#07090e] px-4 py-12">
+
+      {/* Splash plein écran pendant la création du compte */}
+      <SplashScreen visible={loading || success} />
 
       {/* ── Animated background orbs ── */}
       <div className="pointer-events-none absolute inset-0">
