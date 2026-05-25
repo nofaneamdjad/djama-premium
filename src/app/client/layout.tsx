@@ -519,9 +519,40 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   /* ── Loading ── */
   if (level === "loading") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4" style={{ background: DARK }}>
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
-        <p className="text-xs text-white/30">Chargement…</p>
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#07090e]">
+        {/* Orb gold centré */}
+        <motion.div
+          animate={{ scale: [1, 1.25, 1], opacity: [0.08, 0.18, 0.08] }}
+          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute left-1/2 top-1/2 h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
+          style={{ background: GOLD }}
+        />
+        {/* DJAMA */}
+        <motion.span
+          initial={{ opacity: 0, scale: 0.82, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.06 }}
+          className="relative mb-10 text-[3rem] font-black text-white"
+          style={{ letterSpacing: "-0.02em" }}
+        >
+          DJAMA
+        </motion.span>
+        {/* Spinner gold */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.18, duration: 0.3 }}
+          className="relative h-7 w-7"
+        >
+          <div className="absolute inset-0 rounded-full"
+            style={{ border: "2px solid rgba(201,165,90,0.18)" }} />
+          <motion.div
+            className="absolute inset-0 rounded-full"
+            style={{ border: "2px solid transparent", borderTopColor: GOLD }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+          />
+        </motion.div>
       </div>
     );
   }

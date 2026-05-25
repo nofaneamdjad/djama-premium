@@ -27,12 +27,14 @@ function SplashScreen({ visible }: { visible: boolean }) {
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#07090e]"
         >
+          {/* Orb centré correctement */}
           <motion.div
-            animate={{ scale: [1, 1.25, 1], opacity: [0.07, 0.15, 0.07] }}
+            animate={{ scale: [1, 1.25, 1], opacity: [0.08, 0.18, 0.08] }}
             transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute h-[420px] w-[420px] rounded-full blur-[130px]"
+            className="absolute left-1/2 top-1/2 h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
             style={{ background: GOLD }}
           />
+          {/* Logo DJAMA */}
           <motion.span
             initial={{ opacity: 0, scale: 0.82, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -42,18 +44,22 @@ function SplashScreen({ visible }: { visible: boolean }) {
           >
             DJAMA
           </motion.span>
+          {/* Spinner circulaire gold */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="relative w-[200px] overflow-hidden rounded-full"
-            style={{ height: "2px", background: "rgba(255,255,255,0.08)" }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.18, duration: 0.3 }}
+            className="relative h-7 w-7"
           >
+            {/* Track */}
+            <div className="absolute inset-0 rounded-full"
+              style={{ border: `2px solid rgba(201,165,90,0.18)` }} />
+            {/* Arc tournant */}
             <motion.div
-              className="absolute top-0 h-full w-[45%] rounded-full"
-              style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }}
-              animate={{ x: ["-110%", "280%"] }}
-              transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.1 }}
+              className="absolute inset-0 rounded-full"
+              style={{ border: `2px solid transparent`, borderTopColor: GOLD }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
             />
           </motion.div>
         </motion.div>
