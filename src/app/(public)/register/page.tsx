@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Mail, Phone, Lock, Eye, EyeOff,
   AlertCircle, CheckCircle2, ArrowRight,
+  ShieldCheck, Zap, Cloud,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -340,12 +341,12 @@ export default function RegisterPage() {
           {/* Badges de réassurance */}
           <div className="mt-5 flex items-center justify-center gap-4">
             {[
-              { icon: "🔒", label: "Données sécurisées" },
-              { icon: "⚡", label: "Accès instantané" },
-              { icon: "☁️", label: "Sauvegarde auto" },
-            ].map(({ icon, label }) => (
+              { Icon: ShieldCheck, label: "Données sécurisées", color: "#4ade80" },
+              { Icon: Zap,         label: "Accès instantané",   color: GOLD       },
+              { Icon: Cloud,       label: "Sauvegarde auto",    color: "#60a5fa"  },
+            ].map(({ Icon, label, color }) => (
               <div key={label} className="flex items-center gap-1">
-                <span className="text-[0.6rem]">{icon}</span>
+                <Icon size={11} style={{ color }} strokeWidth={2} />
                 <span className="text-[0.6rem] text-white/25">{label}</span>
               </div>
             ))}
