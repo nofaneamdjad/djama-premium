@@ -159,6 +159,7 @@ function NotifBell({ ready }: { ready: boolean }) {
         supabase
           .from("documents")
           .select("id, numero, client_nom, total_ttc")
+          .eq("user_id", user.id)
           .eq("statut", "en_retard")
           .order("created_at", { ascending: false })
           .limit(5),

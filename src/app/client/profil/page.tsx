@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Mail, Crown, CheckCircle2, Phone, Building2,
@@ -58,6 +59,8 @@ function Field({
 export default function ProfilPage() {
   const sub = useSubscription();
   const { level, isPremium, name, email, userId } = sub;
+  const searchParams = useSearchParams();
+  const mustResetPwd = searchParams.get("reset") === "1";
 
   /* ── Infos perso ── */
   const [displayName, setDisplayName] = useState(name ?? "");
@@ -81,14 +84,21 @@ export default function ProfilPage() {
   const [savedPwd,   setSavedPwd]   = useState(false);
   const [errorPwd,   setErrorPwd]   = useState("");
 
-  /* Load existing data from clients table */
+  /* Fix #4 — Load all client fields from DB */
   useEffect(() => {
     if (!userId) return;
-    supabase.from("clients").select("telephone,nom").eq("id", userId).single()
+    supabase
+      .from("clients")
+      .select("telephone, nom_societe, siret, adresse")
+      .eq("id", userId)
+      .single()
       .then(({ data }) => {
-        if (data) {
-          setPhone((data as { telephone?: string; nom?: string }).telephone ?? "");
-        }
+        if (!data) return;
+        const d = data as { telephone?: string; nom_societe?: string; siret?: string; adresse?: string };
+        setPhone(d.telephone ?? "");
+        setNomSociete(d.nom_societe ?? "");
+        setSiret(d.siret ?? "");
+        setAdresse(d.adresse ?? "");
       });
   }, [userId]);
 
@@ -112,6 +122,7 @@ export default function ProfilPage() {
     if (!userId) return;
     setSavingBiz(true); setSavedBiz(false);
     await supabase.from("clients").update({
+      nom_societe: nomSociete.trim() || null,
       siret: siret.trim() || null,
       adresse: adresse.trim() || null,
     }).eq("id", userId);
@@ -120,11 +131,22 @@ export default function ProfilPage() {
     setTimeout(() => setSavedBiz(false), 3000);
   }
 
-  /* ── Change password ── */
+  /* ── Change password — Fix #1: verify current password first ── */
   async function handleChangePwd(e: React.FormEvent) {
     e.preventDefault();
+    if (!pwdCurrent) { setErrorPwd("Saisissez votre mot de passe actuel."); return; }
     if (pwdNew.length < 8) { setErrorPwd("Le nouveau mot de passe doit contenir au moins 8 caractères."); return; }
+    if (pwdCurrent === pwdNew) { setErrorPwd("Le nouveau mot de passe doit être différent de l'actuel."); return; }
     setSavingPwd(true); setErrorPwd(""); setSavedPwd(false);
+    /* Re-authenticate to verify current password */
+    const { error: authErr } = await supabase.auth.signInWithPassword({
+      email: email ?? "", password: pwdCurrent,
+    });
+    if (authErr) {
+      setSavingPwd(false);
+      setErrorPwd("Mot de passe actuel incorrect.");
+      return;
+    }
     const { error: err } = await supabase.auth.updateUser({ password: pwdNew });
     setSavingPwd(false);
     if (err) { setErrorPwd(err.message); }
@@ -237,10 +259,40 @@ export default function ProfilPage() {
           </form>
         </div>
 
+        {/* Banner reset forcé (fix #5) */}
+        {mustResetPwd && (
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <AlertCircle size={15} className="mt-0.5 shrink-0 text-amber-500" />
+            <p className="text-sm text-amber-700">
+              Pour des raisons de sécurité, veuillez définir un nouveau mot de passe avant de continuer.
+            </p>
+          </div>
+        )}
+
         {/* ── Changer le mot de passe ── */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border bg-white p-5 shadow-sm"
+          style={{ borderColor: mustResetPwd ? "#fbbf24" : "#e5e7eb" }}>
           <h2 className="mb-4 text-sm font-bold text-gray-700">Changer le mot de passe</h2>
           <form onSubmit={handleChangePwd} className="space-y-3">
+            {/* Mot de passe actuel */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Mot de passe actuel
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2">
+                  <Lock size={14} className="text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  value={pwdCurrent}
+                  onChange={e => { setPwdCurrent(e.target.value); setErrorPwd(""); }}
+                  placeholder="Votre mot de passe actuel"
+                  autoComplete="current-password"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm text-gray-800 outline-none transition focus:border-[#c9a55a] focus:ring-2 focus:ring-[#c9a55a]/15"
+                />
+              </div>
+            </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-400">
                 Nouveau mot de passe
@@ -273,7 +325,7 @@ export default function ProfilPage() {
               )}
             </AnimatePresence>
 
-            <motion.button type="submit" disabled={savingPwd || savedPwd || pwdNew.length < 8}
+            <motion.button type="submit" disabled={savingPwd || savedPwd || !pwdCurrent || pwdNew.length < 8}
               whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50">
               {savedPwd ? (<><CheckCircle2 size={14} className="text-green-500"/> Mot de passe mis à jour</>)
@@ -328,5 +380,13 @@ export default function ProfilPage() {
         {userId && <p className="text-center text-[0.6rem] text-gray-200">ID · {userId}</p>}
       </motion.div>
     </div>
+  );
+}
+
+export default function ProfilPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <ProfilPage />
+    </Suspense>
   );
 }

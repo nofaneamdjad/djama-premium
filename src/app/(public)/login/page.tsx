@@ -93,7 +93,9 @@ function MailIcon() {
 /* ── Page ── */
 function LoginPageInner() {
   const searchParams = useSearchParams();
-  const redirectTo   = searchParams.get("redirect") ?? "/client";
+  /* Fix #3 — only allow relative internal paths, never external URLs */
+  const rawRedirect  = searchParams.get("redirect") ?? "/client";
+  const redirectTo   = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/client";
 
   const [email,         setEmail]         = useState("");
   const [password,      setPassword]      = useState("");
@@ -143,7 +145,10 @@ function LoginPageInner() {
         return;
       }
       if (!data.session) { setError("Session non créée. Vérifiez votre email."); setErrorType("credentials"); return; }
-      const dest = data.session.user.user_metadata?.needs_password_reset ? "/definir-mot-de-passe" : redirectTo;
+      /* Fix #5 — /definir-mot-de-passe n'existe pas, rediriger vers profil avec flag */
+      const dest = data.session.user.user_metadata?.needs_password_reset
+        ? "/client/profil?reset=1"
+        : redirectTo;
       setPhase("redirecting"); willRedirect = true;
       window.location.href = dest;
     } catch {
