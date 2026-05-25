@@ -411,7 +411,7 @@ function ModuleRow({ mod, index, last, isPremium }: {
   mod: AnyModule; index: number; last: boolean; isPremium: boolean;
 }) {
   const tier = getToolTier(mod.href);
-  const isLocked = tier === "premium" && !isPremium;
+  const isLocked = false; // TEMPORAIREMENT DÉVERROUILLÉ
 
   return (
     <motion.div
