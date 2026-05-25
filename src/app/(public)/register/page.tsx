@@ -155,7 +155,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4 py-10">
+    <div className="flex min-h-screen flex-col items-center bg-white px-4 pt-[12vh] pb-24">
 
       <SplashScreen visible={showSplash} />
 
@@ -163,35 +163,35 @@ export default function RegisterPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease }}
-        className="w-full max-w-[360px]"
+        className="w-full max-w-[380px]"
       >
         {/* ── Logo ── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.45, ease }}
-          className="mb-7 flex flex-col items-center"
+          className="mb-8 flex flex-col items-center"
         >
           <div
-            className="mb-5 flex h-[52px] w-[52px] items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm"
+            className="mb-6 flex h-[72px] w-[72px] items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-sm"
           >
             <span
-              className="text-xl font-black"
+              className="text-2xl font-black"
               style={{ color: GOLD, letterSpacing: "-0.02em" }}
             >
               D
             </span>
           </div>
-          <h1 className="mb-1.5 text-center text-[1.6rem] font-extrabold leading-tight text-gray-900">
+          <h1 className="mb-2 text-center text-[1.85rem] font-extrabold leading-tight text-gray-900">
             Créez votre espace DJAMA.
           </h1>
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-[0.95rem] text-gray-500">
             Gratuit · Aucune carte bancaire requise
           </p>
         </motion.div>
 
         {/* ── Auth buttons ── */}
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {/* Google */}
           <motion.button
             initial={{ opacity: 0, y: 8 }}
@@ -200,11 +200,11 @@ export default function RegisterPage() {
             type="button"
             onClick={handleGoogleAuth}
             disabled={googleLoading || loading || success}
-            whileHover={{ backgroundColor: "#f9fafb" }}
-            whileTap={{ scale: 0.99 }}
-            className="flex w-full items-center rounded-lg border border-gray-200 bg-white py-3 text-sm font-medium text-gray-700 shadow-sm transition-colors disabled:opacity-50"
+            whileHover={{ backgroundColor: "#f5f5f5" }}
+            whileTap={{ scale: 0.985 }}
+            className="flex w-full items-center rounded-2xl border border-gray-200 bg-white py-4 text-[0.95rem] font-medium text-gray-700 shadow-sm transition-colors disabled:opacity-50"
           >
-            <span className="flex w-12 shrink-0 items-center justify-center">
+            <span className="flex w-14 shrink-0 items-center justify-center">
               {googleLoading ? (
                 <motion.span
                   animate={{ rotate: 360 }}
@@ -215,7 +215,7 @@ export default function RegisterPage() {
                 <GoogleIcon />
               )}
             </span>
-            <span className="flex-1 text-center pr-12">
+            <span className="flex-1 text-center pr-14">
               {googleLoading ? "Connexion…" : "Google"}
             </span>
           </motion.button>
@@ -228,14 +228,14 @@ export default function RegisterPage() {
               transition={{ duration: 0.35, delay: 0.18, ease }}
               type="button"
               onClick={() => setShowForm(true)}
-              whileHover={{ backgroundColor: "#f9fafb" }}
-              whileTap={{ scale: 0.99 }}
-              className="flex w-full items-center rounded-lg border border-gray-200 bg-white py-3 text-sm font-medium text-gray-700 shadow-sm transition-colors"
+              whileHover={{ backgroundColor: "#f5f5f5" }}
+              whileTap={{ scale: 0.985 }}
+              className="flex w-full items-center rounded-2xl border border-gray-200 bg-white py-4 text-[0.95rem] font-medium text-gray-700 shadow-sm transition-colors"
             >
-              <span className="flex w-12 shrink-0 items-center justify-center text-gray-500">
+              <span className="flex w-14 shrink-0 items-center justify-center text-gray-500">
                 <MailIcon />
               </span>
-              <span className="flex-1 text-center pr-12">E-mail</span>
+              <span className="flex-1 text-center pr-14">E-mail</span>
             </motion.button>
           )}
         </div>
@@ -266,7 +266,7 @@ export default function RegisterPage() {
                     autoComplete="name"
                     required
                     autoFocus
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-gray-400 focus:ring-2 focus:ring-gray-900/5"
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-gray-400 focus:ring-2 focus:ring-gray-900/5"
                   />
                 </div>
 
@@ -282,7 +282,7 @@ export default function RegisterPage() {
                     placeholder="vous@exemple.com"
                     autoComplete="email"
                     required
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-gray-400 focus:ring-2 focus:ring-gray-900/5"
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-gray-400 focus:ring-2 focus:ring-gray-900/5"
                   />
                 </div>
 
@@ -300,7 +300,7 @@ export default function RegisterPage() {
                     onChange={(e) => setTelephone(e.target.value)}
                     placeholder="+33 6 00 00 00 00"
                     autoComplete="tel"
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-gray-400 focus:ring-2 focus:ring-gray-900/5"
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-gray-400 focus:ring-2 focus:ring-gray-900/5"
                   />
                 </div>
 
@@ -317,7 +317,7 @@ export default function RegisterPage() {
                       placeholder="Minimum 8 caractères"
                       autoComplete="new-password"
                       required
-                      className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 pr-12 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-gray-400 focus:ring-2 focus:ring-gray-900/5"
+                      className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 pr-12 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-gray-400 focus:ring-2 focus:ring-gray-900/5"
                     />
                     <button
                       type="button"
@@ -368,7 +368,7 @@ export default function RegisterPage() {
                   whileHover={{ backgroundColor: "#111827" }}
                   whileTap={{ scale: 0.99 }}
                   disabled={loading || success || googleLoading}
-                  className="w-full rounded-lg bg-gray-900 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60"
+                  className="w-full rounded-2xl bg-gray-900 py-3.5 text-[0.95rem] font-semibold text-white transition-colors disabled:opacity-60"
                 >
                   {loading
                     ? "Création du compte…"
