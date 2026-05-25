@@ -815,8 +815,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const isReady     = level !== "loading" && level !== "unauthenticated";
 
   /* Block premium pages for free users — gate replaces content */
-  // const isGated = level === "free" && getToolTier(pathname) === "premium";
-  const isGated = false; // TEMPORAIREMENT DÉSACTIVÉ
+  const isGated = level === "free" && getToolTier(pathname) === "premium";
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 

@@ -47,8 +47,11 @@ export const PREMIUM_TOOLS: string[] = [
   "/coaching-ia/espace",
 ];
 
-export function getToolTier(_pathname: string): PlanTier {
-  return "free"; // TEMPORAIREMENT DÉVERROUILLÉ
+export function getToolTier(pathname: string): PlanTier {
+  if (PREMIUM_TOOLS.some(p => pathname === p || pathname.startsWith(p + "/"))) {
+    return "premium";
+  }
+  return "free";
 }
 
 /** Prix de l'abonnement mensuel */
