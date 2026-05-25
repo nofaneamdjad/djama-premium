@@ -757,21 +757,25 @@ export default function CockpitPage() {
             </p>
           </motion.div>
 
-          {/* ── Quick action buttons (Revolut row) ── */}
-          <div className="mb-7 flex items-start justify-between gap-1">
+          {/* ── Quick action buttons (Revolut row) — 4 max ── */}
+          <div className="mb-7 flex items-start justify-around gap-2">
             <QuickAction href="/client/factures"   icon={ReceiptText} label="Facture"  color="#c9a55a" bg="rgba(201,165,90,0.18)"  delay={0.14}/>
             <QuickAction href="/client/factures"   icon={Send}        label="Devis"    color="#60a5fa" bg="rgba(59,130,246,0.15)"  delay={0.20}/>
             <QuickAction href="/client/depenses"   icon={CreditCard}  label="Dépense"  color="#f97316" bg="rgba(249,115,22,0.15)"  delay={0.26} locked={isFree}/>
             <QuickAction href="/client/crm"        icon={Users}       label="Clients"  color="#a78bfa" bg="rgba(167,139,250,0.15)" delay={0.32} locked={isFree}/>
-            <QuickAction href="/client/tresorerie" icon={Wallet}      label="Tréso"    color="#34d399" bg="rgba(52,211,153,0.15)"  delay={0.38} locked={isFree}/>
-            <QuickAction href="/client/dashboard"  icon={BarChart2}   label="Bilan"    color="#38bdf8" bg="rgba(56,189,248,0.15)"  delay={0.44} locked={isFree}/>
           </div>
 
           {/* ── Stats row ── */}
           <div className="flex gap-2.5 pb-6">
             <StatPill label="Contacts CRM"  value={String(nbContacts)}   color="#60a5fa" loading={kpiLoading} delay={0.38}/>
             <StatPill label="En attente"    value={String(nbFactures)}   color={nbFactures > 0 ? "#f87171" : "#4ade80"} loading={kpiLoading} delay={0.46}/>
-            <StatPill label="Modules"       value={String(totalModules)} color="#a78bfa" loading={false} delay={0.54}/>
+            <StatPill
+              label="vs mois dernier"
+              value={caEvo !== null ? `${caEvo >= 0 ? "+" : ""}${caEvo}%` : "—"}
+              color={caEvo === null ? "#a78bfa" : caEvo >= 0 ? "#4ade80" : "#f87171"}
+              loading={kpiLoading}
+              delay={0.54}
+            />
           </div>
 
         </div>

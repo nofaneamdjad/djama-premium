@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import {
   Crown, CheckCircle2, Sparkles,
-  ShieldCheck, RefreshCw, ExternalLink,
+  ShieldCheck, RefreshCw, ExternalLink, ArrowRight,
+  Check, Minus,
 } from "lucide-react";
 import { useSubscription } from "@/lib/use-require-subscription";
 import StripeButton from "@/components/ui/StripeButton";
@@ -12,14 +13,81 @@ import Link from "next/link";
 const GOLD = "#c9a55a";
 const ease = [0.16, 1, 0.3, 1] as const;
 
-const FEATURES = [
-  "CRM & pipeline clients",
-  "Trésorerie & suivi des dépenses",
-  "Contrats IA & factures illimitées",
-  "Assistant IA & Coaching personnalisé",
-  "Stocks & gestion fournisseurs",
-  "Équipe, planning avancé & time tracking",
-] as const;
+type FeatureValue = boolean | string;
+interface Feature { label: string; free: FeatureValue; pro: FeatureValue }
+interface Section  { category: string; features: Feature[] }
+
+const COMPARISON: Section[] = [
+  {
+    category: "Essentiels",
+    features: [
+      { label: "Factures & devis",   free: "5 max",   pro: "Illimité" },
+      { label: "Planning",           free: true,      pro: true       },
+      { label: "Bloc-note",          free: true,      pro: true       },
+    ],
+  },
+  {
+    category: "Finance",
+    features: [
+      { label: "Tableau de bord",    free: false,     pro: true },
+      { label: "Trésorerie",         free: false,     pro: true },
+      { label: "Dépenses",           free: false,     pro: true },
+    ],
+  },
+  {
+    category: "Commercial",
+    features: [
+      { label: "CRM & pipeline",     free: false,     pro: true },
+      { label: "Contrats IA",        free: false,     pro: true },
+      { label: "Fournisseurs",       free: false,     pro: true },
+      { label: "Stocks",             free: false,     pro: true },
+    ],
+  },
+  {
+    category: "Opérations",
+    features: [
+      { label: "Tâches",             free: false,     pro: true },
+      { label: "Équipe & planning",  free: false,     pro: true },
+      { label: "Chrono",             free: false,     pro: true },
+    ],
+  },
+  {
+    category: "Intelligence artificielle",
+    features: [
+      { label: "Assistant IA",       free: false,     pro: true },
+      { label: "Notes IA",           free: false,     pro: true },
+      { label: "Sourcing IA",        free: false,     pro: true },
+      { label: "Coaching IA",        free: false,     pro: true },
+    ],
+  },
+  {
+    category: "Extras",
+    features: [
+      { label: "Réputation",         free: false,     pro: true },
+      { label: "Réseaux sociaux",    free: false,     pro: true },
+      { label: "Support prioritaire",free: false,     pro: true },
+    ],
+  },
+];
+
+function Cell({ val, isProCol }: { val: FeatureValue; isProCol: boolean }) {
+  if (val === true)
+    return <Check size={15} style={{ color: isProCol ? GOLD : "#6b7280" }} strokeWidth={2.5} />;
+  if (val === false)
+    return <Minus size={13} className="text-white/20" strokeWidth={2} />;
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold"
+      style={
+        isProCol
+          ? { background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}28` }
+          : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.1)" }
+      }
+    >
+      {val}
+    </span>
+  );
+}
 
 export default function AbonnementsPage() {
   const { level, isPremium, email: userEmail } = useSubscription();
@@ -28,24 +96,16 @@ export default function AbonnementsPage() {
   const isPaid  = level === "premium";
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0a0c10] px-4 py-16">
+    <div className="relative min-h-screen overflow-hidden bg-[#0a0c10] px-4 py-10">
 
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
         <div
-          className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[140px]"
-          style={{ background: "rgba(201,165,90,0.07)" }}
+          className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[140px]"
+          style={{ background: "rgba(201,165,90,0.08)" }}
         />
         <div
-          className="absolute left-[-80px] top-[15%] h-[300px] w-[300px] rounded-full blur-[100px]"
-          style={{ background: "rgba(59,130,246,0.04)" }}
-        />
-        <div
-          className="absolute bottom-[10%] right-[-60px] h-[250px] w-[250px] rounded-full blur-[100px]"
-          style={{ background: "rgba(139,92,246,0.04)" }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.018]"
+          className="absolute inset-0 opacity-[0.015]"
           style={{
             backgroundImage:
               "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
@@ -55,7 +115,7 @@ export default function AbonnementsPage() {
       </div>
 
       {/* Back link */}
-      <div className="relative z-10 mb-8 w-full max-w-[440px]">
+      <div className="relative z-10 mb-8 w-full max-w-4xl mx-auto">
         <Link
           href="/client"
           className="inline-flex items-center gap-1.5 text-xs text-white/30 transition hover:text-white/60"
@@ -64,180 +124,236 @@ export default function AbonnementsPage() {
         </Link>
       </div>
 
-      {/* Card */}
+      {/* Page header */}
       <motion.div
-        initial={{ opacity: 0, y: 24, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.55, ease }}
-        className="relative z-10 w-full max-w-[440px]"
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease }}
+        className="relative z-10 mb-10 text-center"
       >
-        {/* Outer glow border */}
         <div
-          className="absolute inset-0 rounded-[2rem] opacity-60 blur-sm"
-          style={{ background: `linear-gradient(160deg, ${GOLD}18, transparent 60%)` }}
-        />
+          className="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest"
+          style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}22`, color: GOLD }}
+        >
+          <Sparkles size={9} /> Nos formules
+        </div>
+        <h1 className="text-3xl font-extrabold text-white">Commencez gratuitement,<br/>passez PRO quand vous êtes prêt</h1>
+        <p className="mt-2 text-sm text-white/35">Sans engagement · Résiliable à tout moment</p>
+      </motion.div>
 
+      {/* Plan cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.08, ease }}
+        className="relative z-10 mx-auto mb-10 grid max-w-2xl grid-cols-2 gap-4"
+      >
+        {/* Gratuit card */}
         <div
-          className="relative overflow-hidden rounded-[2rem] p-8"
+          className="flex flex-col rounded-2xl p-6"
           style={{
             background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            backdropFilter: "blur(40px)",
-            boxShadow: "0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)",
+            border: "1px solid rgba(255,255,255,0.08)",
           }}
         >
-          {/* Inner glow top */}
-          <div
-            className="pointer-events-none absolute left-1/2 top-0 h-32 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-            style={{ background: `${GOLD}14` }}
-          />
-
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.1, ease }}
-            className="relative mb-8 flex flex-col items-center gap-3 text-center"
-          >
-            <div
-              className="flex h-14 w-14 items-center justify-center rounded-2xl"
-              style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}28` }}
-            >
-              <Crown size={24} style={{ color: GOLD }} />
-            </div>
-            <div>
-              <div
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest"
-                style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}22`, color: GOLD }}
-              >
-                <Sparkles size={9} /> DJAMA PRO
-              </div>
-              <h1 className="mt-2.5 text-2xl font-extrabold text-white">Tout débloquer</h1>
-              <p className="mt-1 text-sm text-white/40">Accès complet · sans engagement</p>
-            </div>
-          </motion.div>
-
-          {/* Price */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.18, ease }}
-            className="relative mb-8 text-center"
-          >
-            <div className="flex items-end justify-center gap-1">
-              <span className="text-[3.5rem] font-black leading-none text-white tracking-tight">11</span>
-              <span className="mb-2 text-[1.8rem] font-black text-white/80">,90</span>
-              <span className="mb-2 text-2xl font-black text-white/60">€</span>
-              <span className="mb-1 ml-1 text-sm font-medium text-white/30">/mois</span>
-            </div>
-            <p className="mt-1.5 text-[0.68rem] text-white/25">Sans engagement · Résiliable à tout moment</p>
-          </motion.div>
-
-          {/* Features */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.25, ease }}
-            className="relative mb-7 space-y-2.5"
-          >
-            {FEATURES.map((feat) => (
-              <div key={feat} className="flex items-center gap-3">
-                <div
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: `${GOLD}12` }}
-                >
-                  <CheckCircle2 size={12} style={{ color: GOLD }} />
-                </div>
-                <span className="text-sm text-white/65">{feat}</span>
+          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-white/30">Gratuit</p>
+          <div className="flex items-end gap-1 mb-1">
+            <span className="text-4xl font-black text-white leading-none">0</span>
+            <span className="mb-1 text-xl font-bold text-white/40">€</span>
+            <span className="mb-0.5 ml-0.5 text-sm text-white/25">/mois</span>
+          </div>
+          <p className="mb-5 text-[0.68rem] text-white/25">Pour commencer</p>
+          <div className="mt-auto space-y-2.5">
+            {["Factures & devis (5 max)", "Planning", "Bloc-note"].map(f => (
+              <div key={f} className="flex items-center gap-2.5">
+                <Check size={13} className="shrink-0 text-gray-500" strokeWidth={2.5} />
+                <span className="text-sm text-white/40">{f}</span>
               </div>
             ))}
-            <div className="flex items-center gap-3 pt-0.5">
-              <div
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                style={{ background: `${GOLD}08` }}
-              >
-                <span className="text-[0.6rem] font-bold" style={{ color: `${GOLD}70` }}>+</span>
-              </div>
-              <span className="text-sm text-white/30">9 autres outils inclus</span>
+          </div>
+          {isPaid ? null : (
+            <div
+              className="mt-6 rounded-xl py-2.5 text-center text-sm font-bold"
+              style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.35)" }}
+            >
+              Plan actuel
             </div>
-          </motion.div>
+          )}
+        </div>
 
-          {/* CTA ou statut */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.32, ease }}
-            className="relative space-y-3"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/10 border-t-white/50" />
+        {/* PRO card */}
+        <div className="relative flex flex-col rounded-2xl p-6"
+          style={{
+            background: "rgba(201,165,90,0.06)",
+            border: `1.5px solid ${GOLD}35`,
+            boxShadow: `0 0 40px ${GOLD}12`,
+          }}
+        >
+          {/* Popular badge */}
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <div
+              className="flex items-center gap-1 rounded-full px-3 py-1 text-[0.6rem] font-black uppercase tracking-widest"
+              style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, color: "#0a0a0a" }}
+            >
+              <Crown size={8} /> Recommandé
+            </div>
+          </div>
+
+          <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: GOLD }}>PRO</p>
+          <div className="flex items-end gap-1 mb-1">
+            <span className="text-4xl font-black text-white leading-none">11</span>
+            <span className="mb-1 text-xl font-bold text-white/60">,90€</span>
+            <span className="mb-0.5 ml-0.5 text-sm text-white/30">/mois</span>
+          </div>
+          <p className="mb-5 text-[0.68rem] text-white/30">Accès complet · sans engagement</p>
+
+          <div className="mt-auto space-y-2.5">
+            {["Tout le plan Gratuit", "16 outils PRO débloqués", "IA & Coaching personnalisé", "Support prioritaire"].map(f => (
+              <div key={f} className="flex items-center gap-2.5">
+                <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full" style={{ background: `${GOLD}18` }}>
+                  <Check size={9} style={{ color: GOLD }} strokeWidth={3} />
+                </div>
+                <span className="text-sm text-white/70">{f}</span>
               </div>
+            ))}
+          </div>
 
+          <div className="mt-6">
+            {loading ? (
+              <div className="flex items-center justify-center py-3">
+                <div className="relative h-5 w-5">
+                  <div className="absolute inset-0 rounded-full" style={{ border: "2px solid rgba(201,165,90,0.18)" }} />
+                  <motion.div
+                    className="absolute inset-0 rounded-full"
+                    style={{ border: "2px solid transparent", borderTopColor: GOLD }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+                  />
+                </div>
+              </div>
             ) : isPaid ? (
-              /* Abonnement actif */
               <div
-                className="flex items-center justify-between gap-3 rounded-xl px-4 py-3.5"
+                className="flex items-center justify-between rounded-xl px-3 py-2.5"
                 style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.18)" }}
               >
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck size={16} className="shrink-0 text-emerald-400" />
-                  <div>
-                    <p className="text-sm font-bold text-emerald-400">Abonnement actif</p>
-                    {userEmail && (
-                      <p className="text-[0.65rem] text-white/30">{userEmail}</p>
-                    )}
-                  </div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+                  <p className="text-xs font-bold text-emerald-400">Actif</p>
                 </div>
                 <a
                   href="https://billing.stripe.com/p/login/test_00g00g00g"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex shrink-0 items-center gap-1 text-[0.65rem] font-medium text-white/35 transition hover:text-white/60"
+                  className="flex items-center gap-1 text-[0.6rem] text-white/30 transition hover:text-white/60"
                 >
-                  Gérer <ExternalLink size={10} /> <RefreshCw size={10} />
+                  Gérer <ExternalLink size={9} /> <RefreshCw size={9} />
                 </a>
               </div>
-
             ) : (
-              /* Plan gratuit — CTA */
-              <>
-                <StripeButton label="Débloquer DJAMA PRO — 11,90€/mois" />
-                <p className="text-center text-[0.62rem] text-white/20">
-                  Paiement sécurisé · Sans engagement · Résiliable à tout moment
-                </p>
-              </>
+              <StripeButton label="Débloquer PRO — 11,90€/mois" />
             )}
-          </motion.div>
-
-          {/* Trust badges */}
-          {!isPaid && !loading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.45 }}
-              className="relative mt-6 flex items-center justify-center gap-5"
-            >
-              {["Stripe SSL", "Paiement sécurisé", "Résiliable"].map((badge) => (
-                <div key={badge} className="flex items-center gap-1.5">
-                  <div className="h-1 w-1 rounded-full" style={{ background: `${GOLD}50` }} />
-                  <span className="text-[0.6rem] text-white/25">{badge}</span>
-                </div>
-              ))}
-            </motion.div>
-          )}
+          </div>
         </div>
       </motion.div>
 
-      {/* Bottom note */}
-      <motion.p
+      {/* Comparison table */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.18, ease }}
+        className="relative z-10 mx-auto max-w-2xl overflow-hidden rounded-2xl"
+        style={{
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.07)",
+        }}
+      >
+        {/* Table header */}
+        <div
+          className="grid grid-cols-[1fr_80px_80px] gap-0 border-b px-5 py-3"
+          style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}
+        >
+          <div />
+          <div className="text-center text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Gratuit</div>
+          <div className="text-center text-[0.68rem] font-bold uppercase tracking-widest" style={{ color: GOLD }}>PRO</div>
+        </div>
+
+        {/* Sections */}
+        {COMPARISON.map((section, si) => (
+          <div key={section.category}>
+            {/* Category label */}
+            <div
+              className="px-5 pb-1 pt-3"
+              style={{ borderTop: si > 0 ? "1px solid rgba(255,255,255,0.05)" : undefined }}
+            >
+              <p className="text-[0.58rem] font-bold uppercase tracking-wider text-white/25">{section.category}</p>
+            </div>
+            {/* Feature rows */}
+            {section.features.map((feat, fi) => (
+              <div
+                key={feat.label}
+                className="grid grid-cols-[1fr_80px_80px] items-center gap-0 px-5 py-2.5"
+                style={{
+                  background: fi % 2 === 1 ? "rgba(255,255,255,0.015)" : "transparent",
+                }}
+              >
+                <span className="text-sm text-white/55">{feat.label}</span>
+                <div className="flex items-center justify-center">
+                  <Cell val={feat.free} isProCol={false} />
+                </div>
+                <div className="flex items-center justify-center">
+                  <Cell val={feat.pro} isProCol={true} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+
+        {/* CTA row */}
+        {!isPaid && !loading && (
+          <div
+            className="px-5 py-4"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(201,165,90,0.03)" }}
+          >
+            <div className="grid grid-cols-[1fr_80px_80px] items-center gap-0">
+              <p className="text-sm font-semibold text-white/50">Commencer maintenant</p>
+              <div className="flex justify-center">
+                <div className="text-[0.7rem] font-semibold text-white/25">Plan actuel</div>
+              </div>
+              <div className="flex justify-center">
+                <motion.a
+                  href="/client/abonnements"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[0.72rem] font-bold text-[#0a0a0a]"
+                  style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                  onClick={(e) => e.preventDefault()}
+                >
+                  Choisir <ArrowRight size={10} />
+                </motion.a>
+              </div>
+            </div>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Trust badges */}
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
-        className="relative z-10 mt-6 text-center text-[0.65rem] text-white/20"
+        transition={{ duration: 0.4, delay: 0.4 }}
+        className="relative z-10 mt-8 flex items-center justify-center gap-6"
       >
-        DJAMA · Plateforme SaaS professionnelle · Données hébergées en Europe
-      </motion.p>
+        {["Stripe SSL", "Paiement sécurisé", "Résiliable à tout moment", "Données hébergées en Europe"].map((badge) => (
+          <div key={badge} className="flex items-center gap-1.5">
+            <div className="h-1 w-1 rounded-full" style={{ background: `${GOLD}50` }} />
+            <span className="text-[0.6rem] text-white/20">{badge}</span>
+          </div>
+        ))}
+      </motion.div>
+
+      <p className="relative z-10 mt-4 text-center text-[0.6rem] text-white/15 pb-20 lg:pb-4">
+        DJAMA · Plateforme SaaS professionnelle
+      </p>
     </div>
   );
 }

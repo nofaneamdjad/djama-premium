@@ -160,13 +160,27 @@ export default function DashboardPage() {
       setStatsLoading(false);
 
       const today = new Date();
+      /* ── 1 requête pour 6 mois (au lieu de 6 séquentielles) ── */
+      const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1).toISOString().slice(0, 10);
+      const { data: revRaw } = await supabase
+        .from("documents")
+        .select("total_ttc, date_document")
+        .eq("type", "facture")
+        .eq("statut", "payé")
+        .gte("date_document", sixMonthsAgo);
+
       const monthData: MonthRevenue[] = [];
       for (let i = 5; i >= 0; i--) {
-        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-        const start = d.toISOString().slice(0,10);
-        const end   = new Date(d.getFullYear(), d.getMonth()+1, 0).toISOString().slice(0,10);
-        const { data } = await supabase.from("documents").select("total_ttc").eq("type","facture").eq("statut","payé").gte("date_document",start).lte("date_document",end);
-        monthData.push({ label: SHORT_MONTHS[d.getMonth()], amount: (data ?? []).reduce((s,r) => s+(r.total_ttc ?? 0), 0) });
+        const d  = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const yr = d.getFullYear();
+        const mo = d.getMonth();
+        const amount = (revRaw ?? [])
+          .filter(r => {
+            const rd = new Date((r.date_document as string) + "T12:00:00");
+            return rd.getFullYear() === yr && rd.getMonth() === mo;
+          })
+          .reduce((s, r) => s + ((r.total_ttc as number) ?? 0), 0);
+        monthData.push({ label: SHORT_MONTHS[mo], amount });
       }
       setRevenues(monthData);
 
@@ -266,12 +280,17 @@ export default function DashboardPage() {
             <motion.button
               initial={{ opacity:0, scale:0.88 }} animate={{ opacity:1, scale:1 }}
               transition={{ duration:0.35, delay:0.18, ease }}
+              whileHover={{ scale:1.03, y:-1 }}
               whileTap={{ scale:0.92 }}
               onClick={runRapport} disabled={rapportLoading}
-              className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.07] px-3.5 py-2.5 text-[0.72rem] font-semibold text-white/55 transition hover:bg-white/[0.13] hover:text-white disabled:opacity-40"
+              className="flex shrink-0 items-center gap-2 rounded-2xl px-3.5 py-2.5 text-[0.72rem] font-bold text-[#0a0a0a] transition disabled:opacity-40"
+              style={{ background:`linear-gradient(135deg,${GOLD},#b08d45)`, boxShadow:`0 4px 16px ${GOLD}35` }}
             >
-              {rapportLoading ? <Loader2 size={12} className="animate-spin" style={{ color:GOLD }}/> : <FileBarChart2 size={12} style={{ color:GOLD }}/>}
-              <span className="hidden sm:inline">Rapport IA</span>
+              {rapportLoading
+                ? <motion.div className="h-3.5 w-3.5 rounded-full border-2 border-black/20 border-t-black/60"
+                    animate={{ rotate: 360 }} transition={{ duration:0.75, repeat:Infinity, ease:"linear" }} />
+                : <FileBarChart2 size={12}/>}
+              Rapport IA
             </motion.button>
           </div>
 
@@ -460,7 +479,12 @@ export default function DashboardPage() {
 
               {rapportLoading ? (
                 <div className="flex flex-col items-center gap-3 py-12">
-                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]"/>
+                  <div className="relative h-10 w-10">
+                    <div className="absolute inset-0 rounded-full" style={{ border:`2px solid rgba(201,165,90,0.18)` }}/>
+                    <motion.div className="absolute inset-0 rounded-full"
+                      style={{ border:"2px solid transparent", borderTopColor:GOLD }}
+                      animate={{ rotate:360 }} transition={{ duration:0.9, repeat:Infinity, ease:"linear" }}/>
+                  </div>
                   <p className="text-[0.8rem] text-white/40">Génération du rapport en cours…</p>
                 </div>
               ) : rapport && (

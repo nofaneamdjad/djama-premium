@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,7 +9,7 @@ import {
   Users, FileText, Truck, Package, ListTodo, Calendar,
   CalendarRange, Timer, StickyNote, Mic, Search, Zap, Star, Brain,
   Crown, Sparkles, Lock, ChevronRight, X, Menu,
-  LogOut, Bell, ArrowRight, CheckCircle2, Share2,
+  LogOut, Bell, ArrowRight, CheckCircle2, Share2, User, AlertTriangle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSubscription } from "@/lib/use-require-subscription";
@@ -135,9 +135,12 @@ function DarkNavItem({
 }
 
 /* ─────────── NOTIF BELL ─────────── */
+type OverdueDoc = { id: string; numero: string; client_nom: string; total_ttc: number };
+
 function NotifBell({ ready }: { ready: boolean }) {
-  const [open,   setOpen]   = useState(false);
-  const [events, setEvents] = useState<UpcomingEvent[]>([]);
+  const [open,    setOpen]    = useState(false);
+  const [events,  setEvents]  = useState<UpcomingEvent[]>([]);
+  const [overdue, setOverdue] = useState<OverdueDoc[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -145,14 +148,23 @@ function NotifBell({ ready }: { ready: boolean }) {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from("agenda_events")
-        .select("id, title, event_date, event_time, category")
-        .eq("user_id", user.id)
-        .gte("event_date", isoToday())
-        .lte("event_date", isoIn7())
-        .order("event_date", { ascending: true });
-      if (data) setEvents(data as UpcomingEvent[]);
+      const [evtRes, overdueRes] = await Promise.all([
+        supabase
+          .from("agenda_events")
+          .select("id, title, event_date, event_time, category")
+          .eq("user_id", user.id)
+          .gte("event_date", isoToday())
+          .lte("event_date", isoIn7())
+          .order("event_date", { ascending: true }),
+        supabase
+          .from("documents")
+          .select("id, numero, client_nom, total_ttc")
+          .eq("statut", "en_retard")
+          .order("created_at", { ascending: false })
+          .limit(5),
+      ]);
+      if (evtRes.data) setEvents(evtRes.data as UpcomingEvent[]);
+      if (overdueRes.data) setOverdue(overdueRes.data as OverdueDoc[]);
     }
     load();
     const id = setInterval(load, 60_000);
@@ -172,20 +184,20 @@ function NotifBell({ ready }: { ready: boolean }) {
   const todayEvts    = events.filter(e => e.event_date === today);
   const tomorrowEvts = events.filter(e => e.event_date === tomorrow);
   const laterEvts    = events.filter(e => e.event_date > tomorrow);
-  const badge        = todayEvts.length;
+  const totalBadge   = todayEvts.length + overdue.length;
 
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(v => !v)}
-        aria-label={`Notifications${badge > 0 ? ` — ${badge}` : ""}`}
+        aria-label={`Notifications${totalBadge > 0 ? ` — ${totalBadge}` : ""}`}
         className="relative flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
       >
         <Bell size={15} />
-        {badge > 0 && (
+        {totalBadge > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[0.52rem] font-black"
-            style={{ background: GOLD, color: "#fff" }}>
-            {badge > 9 ? "9+" : badge}
+            style={{ background: overdue.length > 0 ? "#ef4444" : GOLD, color: "#fff" }}>
+            {totalBadge > 9 ? "9+" : totalBadge}
           </span>
         )}
       </button>
@@ -202,29 +214,53 @@ function NotifBell({ ready }: { ready: boolean }) {
           >
             <div className="flex items-center justify-between px-4 py-3"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-              <span className="text-xs font-semibold text-white/80">Événements à venir</span>
+              <span className="text-xs font-semibold text-white/80">Notifications</span>
               <button onClick={() => setOpen(false)} className="text-white/40 hover:text-white/70 transition">
                 <X size={13} />
               </button>
             </div>
-            <div className="max-h-72 overflow-y-auto">
-              {events.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <Calendar size={20} className="mx-auto mb-2 text-white/20" />
-                  <p className="text-xs text-white/40">Aucun événement cette semaine</p>
-                  <Link href="/client/planning" onClick={() => setOpen(false)}
-                    className="mt-2 inline-block text-xs font-medium transition hover:opacity-80"
-                    style={{ color: GOLD }}>+ Ajouter</Link>
+            <div className="max-h-80 overflow-y-auto">
+              {/* Overdue invoices */}
+              {overdue.length > 0 && (
+                <div>
+                  <p className="px-4 pb-1 pt-3 text-[0.6rem] font-bold uppercase tracking-wider text-red-400/70">
+                    ⚠ Factures en retard
+                  </p>
+                  {overdue.map(inv => (
+                    <Link href="/client/factures" key={inv.id} onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 transition hover:bg-white/[0.04]">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-red-500/15">
+                        <AlertTriangle size={10} className="text-red-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium text-white/80">
+                          {inv.client_nom || inv.numero || "Facture"}
+                        </p>
+                        <p className="text-[0.65rem] text-red-400/70">
+                          {new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(inv.total_ttc ?? 0)}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                  <div className="mx-4 my-2 border-t border-white/[0.07]" />
                 </div>
-              ) : (
+              )}
+              {/* Upcoming events */}
+              {events.length === 0 && overdue.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <Bell size={20} className="mx-auto mb-2 text-white/20" />
+                  <p className="text-xs text-white/40">Aucune notification</p>
+                </div>
+              ) : events.length > 0 && (
                 <div className="py-1">
+                  <p className="px-4 pb-1 pt-2 text-[0.6rem] font-bold uppercase tracking-wider text-white/30">Agenda</p>
                   {[
                     { label: "Aujourd'hui",   evts: todayEvts,    showDate: false },
                     { label: "Demain",        evts: tomorrowEvts, showDate: false },
                     { label: "Cette semaine", evts: laterEvts,    showDate: true  },
                   ].map(({ label, evts, showDate }) => evts.length === 0 ? null : (
                     <div key={label}>
-                      <p className="px-4 pb-1 pt-3 text-[0.6rem] font-bold uppercase tracking-wider text-white/30">{label}</p>
+                      <p className="px-4 pb-1 pt-2 text-[0.6rem] font-semibold uppercase tracking-wider text-white/20">{label}</p>
                       {evts.map(ev => (
                         <Link href="/client/planning" key={ev.id} onClick={() => setOpen(false)}
                           className="flex items-center gap-3 px-4 py-2 transition hover:bg-white/[0.04]">
@@ -494,12 +530,284 @@ function PremiumGate() {
   );
 }
 
+/* ─────────── GLOBAL SEARCH MODAL ─────────── */
+type SearchResult = {
+  id: string;
+  type: "document" | "event";
+  title: string;
+  subtitle: string;
+  href: string;
+};
+
+function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [query,     setQuery]     = useState("");
+  const [results,   setResults]   = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const close = useCallback(() => {
+    setQuery(""); setResults([]); onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    if (open) { setTimeout(() => inputRef.current?.focus(), 80); }
+    else { setQuery(""); setResults([]); }
+  }, [open]);
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); return; }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || cancelled) return;
+        const q = query.trim();
+        const [docsRes, eventsRes] = await Promise.all([
+          supabase.from("documents")
+            .select("id, numero, client_nom, type, total_ttc")
+            .or(`numero.ilike.%${q}%,client_nom.ilike.%${q}%`)
+            .eq("user_id", user.id)
+            .limit(6),
+          supabase.from("agenda_events")
+            .select("id, title, event_date")
+            .ilike("title", `%${q}%`)
+            .eq("user_id", user.id)
+            .limit(4),
+        ]);
+        if (cancelled) return;
+        const res: SearchResult[] = [];
+        (docsRes.data ?? []).forEach(d => {
+          const typ = (d.type as string) || "document";
+          res.push({
+            id: d.id as string, type: "document",
+            title: `${d.numero || "—"} · ${d.client_nom || "Client"}`,
+            subtitle: `${typ.charAt(0).toUpperCase() + typ.slice(1)} · ${
+              new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })
+                .format((d.total_ttc as number) ?? 0)
+            }`,
+            href: "/client/factures",
+          });
+        });
+        (eventsRes.data ?? []).forEach(e => {
+          res.push({
+            id: e.id as string, type: "event",
+            title: e.title as string,
+            subtitle: new Date((e.event_date as string) + "T12:00:00").toLocaleDateString("fr-FR", {
+              weekday: "long", day: "numeric", month: "long",
+            }),
+            href: "/client/planning",
+          });
+        });
+        setResults(res);
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [query]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") close();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [close]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[60] bg-black/55 backdrop-blur-sm"
+            onClick={close}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: -14 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -10 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed left-1/2 top-[10vh] z-[61] w-full max-w-lg -translate-x-1/2 px-4"
+          >
+            <div
+              className="overflow-hidden rounded-2xl"
+              style={{
+                background: "#0f1117",
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 32px 80px rgba(0,0,0,0.75)",
+              }}
+            >
+              {/* Input */}
+              <div className="flex items-center gap-3 px-4 py-3.5"
+                style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                <Search size={14} className="shrink-0 text-white/30" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Rechercher factures, événements, clients…"
+                  className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                {searching ? (
+                  <div className="relative h-4 w-4 shrink-0">
+                    <div className="absolute inset-0 rounded-full" style={{ border: "1.5px solid rgba(201,165,90,0.18)" }} />
+                    <motion.div className="absolute inset-0 rounded-full"
+                      style={{ border: "1.5px solid transparent", borderTopColor: GOLD }}
+                      animate={{ rotate: 360 }} transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }} />
+                  </div>
+                ) : (
+                  <kbd className="rounded px-1.5 py-0.5 text-[0.52rem] text-white/20 hidden sm:block"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    ESC
+                  </kbd>
+                )}
+              </div>
+
+              {/* Results */}
+              {results.length > 0 && (
+                <div className="max-h-[52vh] overflow-y-auto py-1.5" style={{ scrollbarWidth: "none" }}>
+                  {results.map((r) => {
+                    const Icon = r.type === "event" ? Calendar : ReceiptText;
+                    return (
+                      <Link key={r.id} href={r.href} onClick={close}
+                        className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-white/[0.05]">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                          style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}18` }}>
+                          <Icon size={12} style={{ color: GOLD }} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-white/80">{r.title}</p>
+                          <p className="truncate text-[0.65rem] text-white/35">{r.subtitle}</p>
+                        </div>
+                        <ArrowRight size={12} className="shrink-0 text-white/20" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* No results */}
+              {query.trim() && !searching && results.length === 0 && (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-sm text-white/30">Aucun résultat pour &ldquo;{query}&rdquo;</p>
+                  <p className="mt-1 text-[0.65rem] text-white/20">Numéro de facture, nom de client, événement…</p>
+                </div>
+              )}
+
+              {/* Hints (empty state) */}
+              {!query && (
+                <div className="px-4 py-4">
+                  <p className="mb-3 text-[0.58rem] font-bold uppercase tracking-wider text-white/20">Rechercher dans</p>
+                  <div className="space-y-1.5">
+                    {[
+                      { icon: ReceiptText, label: "Factures & devis", desc: "Numéro, nom du client" },
+                      { icon: Calendar,    label: "Agenda",            desc: "Titre de l'événement"  },
+                    ].map(({ icon: Icon, label, desc }) => (
+                      <div key={label} className="flex items-center gap-3">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
+                          style={{ background: "rgba(255,255,255,0.05)" }}>
+                          <Icon size={11} className="text-white/30" />
+                        </div>
+                        <span className="text-xs text-white/35">{label}</span>
+                        <span className="text-[0.62rem] text-white/20">— {desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex items-center gap-2">
+                    <kbd className="rounded px-1.5 py-0.5 text-[0.55rem] text-white/25"
+                      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                      ⌘K
+                    </kbd>
+                    <span className="text-[0.6rem] text-white/20">pour ouvrir la recherche depuis n'importe où</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ─────────── BOTTOM NAV (mobile only) ─────────── */
+function BottomNav({ pathname }: { pathname: string }) {
+  const items = [
+    { href: "/client",          label: "Accueil",  icon: Home,        exact: true  },
+    { href: "/client/factures", label: "Factures", icon: ReceiptText, exact: false },
+    { href: "/client/planning", label: "Planning", icon: Calendar,    exact: false },
+    { href: "/client/profil",   label: "Profil",   icon: User,        exact: false },
+  ] as const;
+
+  return (
+    <nav
+      className="fixed bottom-0 inset-x-0 z-30 lg:hidden"
+      style={{
+        background: "#fff",
+        borderTop: "1px solid rgba(0,0,0,0.07)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        boxShadow: "0 -4px 20px rgba(0,0,0,0.06)",
+      }}
+    >
+      <div className="flex">
+        {items.map(({ href, label, icon: Icon, exact }) => {
+          const active = exact ? pathname === href : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="flex flex-1 flex-col items-center gap-1 py-2.5 transition-opacity active:opacity-70"
+            >
+              <motion.div
+                animate={{ scale: active ? 1.15 : 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 22 }}
+              >
+                <Icon
+                  size={22}
+                  strokeWidth={active ? 2.2 : 1.7}
+                  style={{ color: active ? GOLD : "#9ca3af" }}
+                />
+              </motion.div>
+              <span
+                className="text-[9.5px] font-semibold"
+                style={{ color: active ? GOLD : "#9ca3af" }}
+              >
+                {label}
+              </span>
+              {active && (
+                <motion.div
+                  layoutId="bottomNavDot"
+                  className="absolute bottom-1 h-1 w-1 rounded-full"
+                  style={{ background: GOLD }}
+                />
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 /* ─────────── LAYOUT ─────────── */
+/* Pages that carry their own dark background */
+const DARK_PAGES = ["/client/dashboard", "/client/abonnements"];
+
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname     = usePathname();
   const subscription = useSubscription();
   const [sidebarOpen,  setSidebarOpen]  = useState(false);
   const [proModalOpen, setProModalOpen] = useState(false);
+  const [searchOpen,   setSearchOpen]   = useState(false);
+
+  /* ── #2: detect dark pages for consistent background ── */
+  const isDarkPage = DARK_PAGES.some(p => pathname === p || pathname.startsWith(p + "/"));
 
   const { level, isPremium, name, email } = subscription;
   const userInitial = (name?.[0] ?? email?.[0] ?? "U").toUpperCase();
@@ -507,7 +815,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const isReady     = level !== "loading" && level !== "unauthenticated";
 
   /* Block premium pages for free users — gate replaces content */
-  const isGated = level === "free" && getToolTier(pathname) === "premium";
+  // const isGated = level === "free" && getToolTier(pathname) === "premium";
+  const isGated = false; // TEMPORAIREMENT DÉSACTIVÉ
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
@@ -515,6 +824,18 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
+
+  /* ── #8: ⌘K / Ctrl+K opens global search ── */
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(v => !v);
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   /* ── Loading ── */
   if (level === "loading") {
@@ -560,7 +881,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   if (level === "unauthenticated") return null;
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: "#f6f7f9" }}>
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ background: isDarkPage ? "#07090e" : "#f6f7f9", transition: "background 0.3s ease" }}
+    >
+      {/* Global search */}
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* PRO discovery modal */}
       <ProToolsModal open={proModalOpen} onClose={() => setProModalOpen(false)} />
@@ -689,13 +1015,50 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* ── MAIN CONTENT ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
 
-        {/* Topbar */}
-        <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-gray-100 bg-white px-4"
-          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+        {/* Topbar — adapts to dark/light page (#2) */}
+        <header
+          className="flex h-[52px] shrink-0 items-center gap-3 px-4"
+          style={
+            isDarkPage
+              ? { background: "#111318", borderBottom: "1px solid rgba(255,255,255,0.07)" }
+              : { background: "#fff", borderBottom: "1px solid #f0f0f0", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }
+          }
+        >
           <button onClick={() => setSidebarOpen(true)} aria-label="Ouvrir le menu"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600 lg:hidden">
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition lg:hidden ${
+              isDarkPage ? "text-white/40 hover:bg-white/[0.07] hover:text-white/70" : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+            }`}>
             <Menu size={16} />
           </button>
+
+          {/* Search bar (#8) */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            className={`hidden sm:flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
+              isDarkPage
+                ? "bg-white/[0.05] text-white/30 hover:bg-white/[0.08] hover:text-white/50 border border-white/[0.07]"
+                : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-500"
+            }`}
+            style={{ minWidth: 200 }}
+          >
+            <Search size={13} />
+            <span className="flex-1 text-left text-[0.78rem]">Rechercher…</span>
+            <kbd className={`rounded px-1.5 py-0.5 text-[0.52rem] ${
+              isDarkPage ? "bg-white/[0.06] border border-white/[0.08] text-white/20" : "bg-white border border-gray-200 text-gray-400"
+            }`}>⌘K</kbd>
+          </button>
+
+          {/* Mobile search icon */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            aria-label="Rechercher"
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition sm:hidden ${
+              isDarkPage ? "text-white/40 hover:bg-white/[0.07] hover:text-white/70" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            }`}
+          >
+            <Search size={16} />
+          </button>
+
           <div className="flex-1" />
           <div className="flex items-center gap-2">
             {!isPremium && (
@@ -716,10 +1079,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </header>
 
         {/* Page — gated for free users on premium routes */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto pb-16 lg:pb-0">
           {isGated ? <PremiumGate /> : children}
         </main>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <BottomNav pathname={pathname} />
     </div>
   );
 }
