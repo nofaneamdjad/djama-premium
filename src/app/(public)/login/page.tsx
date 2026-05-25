@@ -9,7 +9,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Eye, EyeOff, Lock, Mail, AlertCircle,
   ArrowRight, RefreshCw, CheckCircle2,
-  ShieldCheck, Zap, Cloud,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -388,12 +387,13 @@ function LoginPageInner() {
           {/* Badges de réassurance */}
           <div className="mt-5 flex items-center justify-center gap-4">
             {[
-              { Icon: ShieldCheck, label: "Données sécurisées", color: "#4ade80" },
-              { Icon: Zap,         label: "Accès instantané",   color: GOLD       },
-              { Icon: Cloud,       label: "Sauvegarde auto",    color: "#60a5fa"  },
-            ].map(({ Icon, label, color }) => (
-              <div key={label} className="flex items-center gap-1">
-                <Icon size={11} style={{ color }} strokeWidth={2} />
+              { src: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f512.svg", label: "Données sécurisées" },
+              { src: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/26a1.svg",  label: "Accès instantané"   },
+              { src: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2601.svg",  label: "Sauvegarde auto"    },
+            ].map(({ src, label }) => (
+              <div key={label} className="flex items-center gap-1.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={src} alt="" width={13} height={13} />
                 <span className="text-[0.6rem] text-white/25">{label}</span>
               </div>
             ))}
