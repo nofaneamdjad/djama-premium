@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Briefcase, ToggleLeft, ToggleRight, Plus, Pencil, Trash2, X, Loader2, Check } from "lucide-react";
+import { Briefcase, ToggleLeft, ToggleRight, Plus, Pencil, Trash2, X, Loader2, Check, RefreshCw } from "lucide-react";
 import type { ServiceRow, ServiceCategory } from "@/types/db";
 
 // ── Appels via routes serveur (lues au runtime, pas au build) ──────────────────
@@ -85,6 +85,7 @@ export default function AdminServices() {
   const [editing, setEditing]     = useState<ServiceRow | null>(null);
   const [form, setForm]           = useState(EMPTY_FORM);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const [toggling,   setToggling]   = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -152,12 +153,15 @@ export default function AdminServices() {
   }
 
   async function toggleActive(s: ServiceRow) {
+    setToggling(s.id);
     try {
       const updated = await apiUpdateService(s.id, { active: !s.active });
       setServices(prev => prev.map(x => x.id === s.id ? updated : x));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast(`Erreur toggle : ${msg.slice(0, 80)}`, false);
+    } finally {
+      setToggling(null);
     }
   }
 
@@ -253,10 +257,12 @@ export default function AdminServices() {
                 >
                   <Trash2 size={13} />
                 </button>
-                <button onClick={() => toggleActive(s)} className="ml-1 transition-opacity hover:opacity-70">
-                  {s.active
-                    ? <ToggleRight size={26} className="text-[#4ade80]" />
-                    : <ToggleLeft  size={26} className="text-white/20" />
+                <button onClick={() => toggleActive(s)} disabled={toggling === s.id} className="ml-1 transition-opacity hover:opacity-70 disabled:opacity-50">
+                  {toggling === s.id
+                    ? <RefreshCw size={18} className="animate-spin text-white/30" />
+                    : s.active
+                      ? <ToggleRight size={26} className="text-[#4ade80]" />
+                      : <ToggleLeft  size={26} className="text-white/20" />
                   }
                 </button>
               </div>

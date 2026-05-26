@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  Users, CreditCard, FileText, Calendar, Shield, TrendingUp,
+  Users, CreditCard, FileText, Calendar, Shield,
   ArrowUpRight, ArrowRight, Clock, MessageSquare, Loader2,
 } from "lucide-react";
 import Link from "next/link";
@@ -241,9 +241,9 @@ export default function AdminDashboard() {
       label: "Messages non lus",
       value: statsData.messagesNonLus,
       sub: "À traiter",
-      icon: TrendingUp,
-      color: "#4ade80",
-      bg: "rgba(74,222,128,0.09)",
+      icon: MessageSquare,
+      color: "#60a5fa",
+      bg: "rgba(96,165,250,0.09)",
       href: "/admin/messages",
     },
   ];
@@ -374,13 +374,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Loading indicator full page */}
-      {loading && (
-        <div className="flex items-center gap-2 text-[0.78rem] text-white/25">
-          <Loader2 size={12} className="animate-spin" />
-          Chargement des données en temps réel…
-        </div>
-      )}
     </div>
   );
 }

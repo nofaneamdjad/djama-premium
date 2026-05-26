@@ -9,7 +9,7 @@ import NextImage from "next/image";
 import { getSupabase } from "@/lib/supabase";
 import type { VisualRow, VisualCategory, VisualStatus } from "@/types/db";
 
-const ACCENT = "#f43f5e";
+const ACCENT = "#c9a55a";
 const BUCKET  = "visuals"; // Supabase Storage bucket name
 
 type Toast = { id: number; msg: string; ok: boolean };
@@ -196,7 +196,7 @@ export default function AdminVisuels() {
         </div>
         <button onClick={openAdd}
           className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all hover:scale-[1.02]"
-          style={{ background: `linear-gradient(135deg,#e11d48,${ACCENT})` }}>
+          style={{ background: `linear-gradient(135deg,#b08d45,${ACCENT})` }}>
           <Plus size={15} /> Ajouter un visuel
         </button>
       </div>
@@ -212,7 +212,7 @@ export default function AdminVisuels() {
           <p className="text-white/40 text-sm">Aucun visuel pour l&apos;instant.</p>
           <button onClick={openAdd}
             className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white"
-            style={{ background: `linear-gradient(135deg,#e11d48,${ACCENT})` }}>
+            style={{ background: `linear-gradient(135deg,#b08d45,${ACCENT})` }}>
             <Plus size={14} /> Ajouter le premier visuel
           </button>
         </div>
@@ -248,8 +248,8 @@ export default function AdminVisuels() {
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <span className="text-[.65rem] font-bold px-2 py-1 rounded-full capitalize"
                       style={{
-                        background: item.category === "digital" ? "rgba(244,63,94,.1)" : "rgba(192,38,211,.1)",
-                        color:      item.category === "digital" ? ACCENT               : "#c026d3",
+                        background: item.category === "digital" ? "rgba(201,165,90,.1)" : "rgba(96,165,250,.1)",
+                        color:      item.category === "digital" ? ACCENT               : "#60a5fa",
                       }}>
                       {item.category}
                     </span>
@@ -339,7 +339,7 @@ export default function AdminVisuels() {
                   value={form.image_url}
                   onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
                   placeholder="https://..."
-                  className="mt-1 w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-[rgba(244,63,94,.4)] transition-colors"
+                  className="mt-1 w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-[rgba(201,165,90,.4)] transition-colors"
                 />
               </div>
 
@@ -350,7 +350,7 @@ export default function AdminVisuels() {
                   value={form.title}
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="Ex: Campagne Instagram printemps 2025"
-                  className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-[rgba(244,63,94,.4)] transition-colors"
+                  className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-[rgba(201,165,90,.4)] transition-colors"
                 />
               </div>
 
@@ -361,7 +361,7 @@ export default function AdminVisuels() {
                   <select
                     value={form.category}
                     onChange={e => setForm(f => ({ ...f, category: e.target.value as VisualCategory }))}
-                    className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(244,63,94,.4)] transition-colors [&>option]:bg-[#0f0f14]">
+                    className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(201,165,90,.4)] transition-colors [&>option]:bg-[#0f0f14]">
                     <option value="digital">Digital</option>
                     <option value="print">Print</option>
                   </select>
@@ -371,7 +371,7 @@ export default function AdminVisuels() {
                   <select
                     value={form.sub_category}
                     onChange={e => setForm(f => ({ ...f, sub_category: e.target.value }))}
-                    className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(244,63,94,.4)] transition-colors [&>option]:bg-[#0f0f14]">
+                    className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(201,165,90,.4)] transition-colors [&>option]:bg-[#0f0f14]">
                     <option value="">— Choisir —</option>
                     {SUB_CATEGORIES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -386,7 +386,7 @@ export default function AdminVisuels() {
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   rows={2}
                   placeholder="Brève description du visuel…"
-                  className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none resize-none focus:border-[rgba(244,63,94,.4)] transition-colors"
+                  className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none resize-none focus:border-[rgba(201,165,90,.4)] transition-colors"
                 />
               </div>
 
@@ -398,7 +398,7 @@ export default function AdminVisuels() {
                     type="number"
                     value={form.sort_order}
                     onChange={e => setForm(f => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))}
-                    className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(244,63,94,.4)] transition-colors"
+                    className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(201,165,90,.4)] transition-colors"
                   />
                 </div>
                 <div>
@@ -406,7 +406,7 @@ export default function AdminVisuels() {
                   <select
                     value={form.status}
                     onChange={e => setForm(f => ({ ...f, status: e.target.value as VisualStatus }))}
-                    className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(244,63,94,.4)] transition-colors [&>option]:bg-[#0f0f14]">
+                    className="w-full rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(201,165,90,.4)] transition-colors [&>option]:bg-[#0f0f14]">
                     <option value="published">Publié</option>
                     <option value="draft">Brouillon</option>
                   </select>
@@ -423,7 +423,7 @@ export default function AdminVisuels() {
               </button>
               <button onClick={handleSave} disabled={saving || !form.title || !form.image_url}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: `linear-gradient(135deg,#e11d48,${ACCENT})` }}>
+                style={{ background: `linear-gradient(135deg,#b08d45,${ACCENT})` }}>
                 {saving ? <><Loader2 size={14} className="animate-spin" /> Sauvegarde…</> : <><Check size={14} /> Sauvegarder</>}
               </button>
             </div>

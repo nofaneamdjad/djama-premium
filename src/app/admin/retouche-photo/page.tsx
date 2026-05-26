@@ -11,7 +11,7 @@ import NextImage from "next/image";
 import { getSupabase } from "@/lib/supabase";
 import type { PhotoRetouchRow, PhotoRetouchCategory, PhotoRetouchStatus } from "@/types/db";
 
-const ACCENT = "#ec4899";
+const ACCENT = "#c9a55a";
 const BUCKET = "photo-retouches";
 
 const CATEGORY_OPTIONS: { value: PhotoRetouchCategory; label: string }[] = [
@@ -240,7 +240,7 @@ export default function AdminRetouchePhotoPage() {
         </div>
         <button onClick={openAdd}
           className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all hover:scale-[1.02]"
-          style={{ background: `linear-gradient(135deg,#be185d,${ACCENT})` }}>
+          style={{ background: `linear-gradient(135deg,#b08d45,${ACCENT})` }}>
           <Plus size={15} /> Ajouter un projet
         </button>
       </div>
@@ -272,11 +272,11 @@ export default function AdminRetouchePhotoPage() {
               className="flex items-center gap-4 rounded-xl border border-white/[.07] bg-white/[.04] px-4 py-3 transition-all hover:bg-white/[.07]">
               {/* Thumbnail après */}
               <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg"
-                style={{ background: "rgba(236,72,153,.08)", border: "1px solid rgba(255,255,255,.06)" }}>
+                style={{ background: "rgba(201,165,90,.08)", border: "1px solid rgba(255,255,255,.06)" }}>
                 <NextImage fill src={p.after_url} alt={p.title} className="object-cover" sizes="64px" />
                 {p.before_url && (
                   <div className="absolute left-0.5 top-0.5 rounded px-1 text-[6px] font-bold text-white"
-                    style={{ background: `rgba(236,72,153,.8)` }}>A/A</div>
+                    style={{ background: `rgba(201,165,90,.8)` }}>A/A</div>
                 )}
               </div>
               {/* Info */}
@@ -284,7 +284,7 @@ export default function AdminRetouchePhotoPage() {
                 <p className="truncate text-sm font-semibold text-white">{p.title}</p>
                 <div className="mt-0.5 flex items-center gap-2">
                   <span className="rounded px-1.5 py-0.5 text-[10px] font-medium capitalize"
-                    style={{ background: "rgba(236,72,153,.15)", color: ACCENT }}>
+                    style={{ background: "rgba(201,165,90,.15)", color: ACCENT }}>
                     {CATEGORY_OPTIONS.find(c => c.value === p.category)?.label ?? p.category}
                   </span>
                   {p.client && <span className="text-[10px] text-white/30">{p.client}</span>}
@@ -347,7 +347,7 @@ export default function AdminRetouchePhotoPage() {
                 <label className="mb-1.5 block text-xs font-medium text-white/60">Titre *</label>
                 <input value={modal.title} onChange={e => setModal(m => m ? { ...m, title: e.target.value } : m)}
                   placeholder="ex. Portrait corporate — Cabinet d'avocats"
-                  className="w-full rounded-xl border border-white/[.1] bg-white/[.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[rgba(236,72,153,.5)]" />
+                  className="w-full rounded-xl border border-white/[.1] bg-white/[.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[rgba(201,165,90,.5)]" />
               </div>
               {/* Category + Client */}
               <div className="grid grid-cols-2 gap-3">
@@ -355,7 +355,7 @@ export default function AdminRetouchePhotoPage() {
                   <label className="mb-1.5 block text-xs font-medium text-white/60">Catégorie *</label>
                   <select value={modal.category}
                     onChange={e => setModal(m => m ? { ...m, category: e.target.value as PhotoRetouchCategory } : m)}
-                    className="w-full rounded-xl border border-white/[.1] bg-[#111115] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(236,72,153,.5)] [&>option]:bg-[#111115]">
+                    className="w-full rounded-xl border border-white/[.1] bg-[#111115] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(201,165,90,.5)] [&>option]:bg-[#111115]">
                     {CATEGORY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
@@ -363,7 +363,7 @@ export default function AdminRetouchePhotoPage() {
                   <label className="mb-1.5 block text-xs font-medium text-white/60">Client (optionnel)</label>
                   <input value={modal.client} onChange={e => setModal(m => m ? { ...m, client: e.target.value } : m)}
                     placeholder="Nom du client"
-                    className="w-full rounded-xl border border-white/[.1] bg-white/[.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[rgba(236,72,153,.5)]" />
+                    className="w-full rounded-xl border border-white/[.1] bg-white/[.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[rgba(201,165,90,.5)]" />
                 </div>
               </div>
               {/* Description */}
@@ -372,7 +372,7 @@ export default function AdminRetouchePhotoPage() {
                 <textarea value={modal.description}
                   onChange={e => setModal(m => m ? { ...m, description: e.target.value } : m)}
                   placeholder="Contexte de la retouche, technique utilisée…" rows={2}
-                  className="w-full resize-none rounded-xl border border-white/[.1] bg-white/[.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[rgba(236,72,153,.5)]" />
+                  className="w-full resize-none rounded-xl border border-white/[.1] bg-white/[.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[rgba(201,165,90,.5)]" />
               </div>
 
               {/* Image APRÈS (obligatoire) */}
@@ -405,7 +405,7 @@ export default function AdminRetouchePhotoPage() {
                   <label className="mb-1.5 block text-xs font-medium text-white/60">Statut</label>
                   <select value={modal.status}
                     onChange={e => setModal(m => m ? { ...m, status: e.target.value as PhotoRetouchStatus } : m)}
-                    className="w-full rounded-xl border border-white/[.1] bg-[#111115] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(236,72,153,.5)] [&>option]:bg-[#111115]">
+                    className="w-full rounded-xl border border-white/[.1] bg-[#111115] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(201,165,90,.5)] [&>option]:bg-[#111115]">
                     <option value="published">Publié</option>
                     <option value="draft">Brouillon</option>
                   </select>
@@ -414,7 +414,7 @@ export default function AdminRetouchePhotoPage() {
                   <label className="mb-1.5 block text-xs font-medium text-white/60">Ordre</label>
                   <input type="number" min={0} value={modal.sort_order}
                     onChange={e => setModal(m => m ? { ...m, sort_order: Number(e.target.value) } : m)}
-                    className="w-full rounded-xl border border-white/[.1] bg-white/[.06] px-4 py-2.5 text-sm text-white outline-none focus:border-[rgba(236,72,153,.5)]" />
+                    className="w-full rounded-xl border border-white/[.1] bg-white/[.06] px-4 py-2.5 text-sm text-white outline-none focus:border-[rgba(201,165,90,.5)]" />
                 </div>
               </div>
             </div>
@@ -426,7 +426,7 @@ export default function AdminRetouchePhotoPage() {
               </button>
               <button onClick={handleSave} disabled={saving || !modal.title || !modal.after_url}
                 className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-50"
-                style={{ background: `linear-gradient(135deg,#be185d,${ACCENT})` }}>
+                style={{ background: `linear-gradient(135deg,#b08d45,${ACCENT})` }}>
                 {saving ? "Enregistrement…" : modal.id ? "Mettre à jour" : "Ajouter"}
               </button>
             </div>
