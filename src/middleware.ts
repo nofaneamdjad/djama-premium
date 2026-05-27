@@ -1,11 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { verifyAdminToken } from "@/lib/admin-token";
+import { createServerClient }            from "@supabase/ssr";
+import { verifyAdminToken }              from "@/lib/admin-token";
 
 /**
  * Middleware — Accès aux outils DJAMA
  *
- * - Client / planning routes: accès libre (protection côté client)
- * - Admin routes: vérifie le cookie httpOnly djama_admin_tok (token HMAC)
+ * - Client routes (/client/*) : vérifie la session Supabase côté serveur
+ *   → redirige vers /login si non connecté
+ * - Admin routes : vérifie le cookie httpOnly djama_admin_tok (token HMAC)
  */
 
 export async function middleware(request: NextRequest) {
@@ -13,19 +15,65 @@ export async function middleware(request: NextRequest) {
 
   // ── Admin protection ──────────────────────────────────────────────────────
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    // Jamais de fallback en clair — ADMIN_PASS doit être défini dans Vercel
     const ADMIN_PASS = process.env.ADMIN_PASS;
-
     const tok = request.cookies.get("djama_admin_tok")?.value;
-
-    // Sans ADMIN_PASS configuré ou sans token valide → login
     const valid =
       ADMIN_PASS && tok ? await verifyAdminToken(tok, ADMIN_PASS) : false;
 
     if (!valid) {
-      const loginUrl = new URL("/admin/login", request.url);
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // ── Client routes — vérification session Supabase ─────────────────────────
+  const clientRoutes = [
+    "/client",
+    "/membre",
+    "/coaching-ia/espace",
+    "/planning-agenda",
+  ];
+
+  const isClientRoute = clientRoutes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
+  );
+
+  if (isClientRoute) {
+    let response = NextResponse.next({ request });
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            response = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
+
+    // getUser() vérifie le token JWT auprès du serveur Supabase Auth
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
+
+    return response;
   }
 
   return NextResponse.next();

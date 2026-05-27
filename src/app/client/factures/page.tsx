@@ -512,7 +512,9 @@ export default function FacturesPage() {
 
   const fetchDocs = useCallback(async () => {
     setLoadingAll(true);
-    const { data, error } = await supabase.from("documents").select("*").order("updated_at", { ascending:false }).limit(300);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoadingAll(false); return; }
+    const { data, error } = await supabase.from("documents").select("*").eq("user_id", user.id).order("updated_at", { ascending:false }).limit(300);
     if (error) showToast("error", `Chargement impossible : ${error.message}`);
     else setDocuments((data as Document[]) ?? []);
     setLoadingAll(false);
@@ -854,15 +856,19 @@ export default function FacturesPage() {
 
   async function openCrmModal() {
     setCrmModal(true); setCrmQuery(""); setCrmLoading(true);
-    const { data } = await supabase.from("clients_crm").select("id,nom,societe,email,telephone,adresse").order("nom").limit(50);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setCrmLoading(false); return; }
+    const { data } = await supabase.from("clients_crm").select("id,nom,societe,email,telephone,adresse").eq("user_id", user.id).order("nom").limit(50);
     setCrmClients((data as CrmClient[]) ?? []);
     setCrmLoading(false);
   }
 
   async function searchCrm(q: string) {
     setCrmQuery(q); setCrmLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setCrmLoading(false); return; }
     const { data } = await supabase.from("clients_crm").select("id,nom,societe,email,telephone,adresse")
-      .or(`nom.ilike.%${q}%,societe.ilike.%${q}%,email.ilike.%${q}%`).limit(20);
+      .eq("user_id", user.id).or(`nom.ilike.%${q}%,societe.ilike.%${q}%,email.ilike.%${q}%`).limit(20);
     setCrmClients((data as CrmClient[]) ?? []);
     setCrmLoading(false);
   }

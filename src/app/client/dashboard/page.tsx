@@ -133,22 +133,22 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadAll() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const name =
-          (user.user_metadata?.full_name as string | undefined) ||
-          (user.user_metadata?.name as string | undefined) ||
-          user.email?.split("@")[0] || "";
-        setUserName(name);
-      }
+      if (!user) { setStatsLoading(false); setChartsLoading(false); return; }
+
+      const name =
+        (user.user_metadata?.full_name as string | undefined) ||
+        (user.user_metadata?.name as string | undefined) ||
+        user.email?.split("@")[0] || "";
+      setUserName(name);
 
       const weekStart  = startOfWeekISO();
       const monthStart = startOfMonthISO();
 
       const [docsRes, timeRes, expRes, crmRes] = await Promise.all([
-        supabase.from("documents").select("total_ttc").eq("type","facture").in("statut",["envoyé","payé"]).gte("created_at", new Date(monthStart+"T00:00:00").toISOString()),
-        supabase.from("time_entries").select("duration_minutes").gte("date", weekStart),
-        supabase.from("expenses").select("amount").gte("date", monthStart),
-        supabase.from("contacts").select("id",{ count:"exact", head:true }).eq("status","actif"),
+        supabase.from("documents").select("total_ttc").eq("user_id", user.id).eq("type","facture").in("statut",["envoyé","payé"]).gte("created_at", new Date(monthStart+"T00:00:00").toISOString()),
+        supabase.from("time_entries").select("duration_minutes").eq("user_id", user.id).gte("date", weekStart),
+        supabase.from("expenses").select("amount").eq("user_id", user.id).gte("date", monthStart),
+        supabase.from("contacts").select("id",{ count:"exact", head:true }).eq("user_id", user.id).eq("status","actif"),
       ]);
 
       setStats({
@@ -165,6 +165,7 @@ export default function DashboardPage() {
       const { data: revRaw } = await supabase
         .from("documents")
         .select("total_ttc, date_document")
+        .eq("user_id", user.id)
         .eq("type", "facture")
         .eq("statut", "payé")
         .gte("date_document", sixMonthsAgo);
@@ -188,13 +189,14 @@ export default function DashboardPage() {
       const { data: recentDocs } = await supabase
         .from("documents")
         .select("id,numero,client_nom,total_ttc,statut,created_at")
+        .eq("user_id", user.id)
         .eq("type", "facture")
         .order("created_at", { ascending: false })
         .limit(6);
       setRecentInvoices((recentDocs ?? []) as RecentInvoice[]);
 
       const threeAgo = new Date(today.getFullYear(), today.getMonth()-3, 1).toISOString().slice(0,10);
-      const { data: paidDocs } = await supabase.from("documents").select("client_nom,total_ttc").eq("type","facture").eq("statut","payé").gte("date_document",threeAgo);
+      const { data: paidDocs } = await supabase.from("documents").select("client_nom,total_ttc").eq("user_id", user.id).eq("type","facture").eq("statut","payé").gte("date_document",threeAgo);
       const clientMap = new Map<string,number>();
       for (const d of (paidDocs ?? [])) {
         const n = (d.client_nom as string) || "Inconnu";
@@ -202,7 +204,7 @@ export default function DashboardPage() {
       }
       setTopClients([...clientMap.entries()].sort((a,b) => b[1]-a[1]).slice(0,5).map(([name,amount]) => ({ name, amount })));
 
-      const { data: overdueDocs } = await supabase.from("documents").select("id,numero,client_nom,total_ttc,date_echeance").eq("type","facture").eq("statut","en_retard").order("date_echeance",{ascending:true}).limit(5);
+      const { data: overdueDocs } = await supabase.from("documents").select("id,numero,client_nom,total_ttc,date_echeance").eq("user_id", user.id).eq("type","facture").eq("statut","en_retard").order("date_echeance",{ascending:true}).limit(5);
       setOverdue((overdueDocs ?? []) as OverdueInvoice[]);
       setChartsLoading(false);
     }

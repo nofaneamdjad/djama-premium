@@ -58,14 +58,14 @@ interface LiveInsights {
   todayEvents:   number;
 }
 
-async function buildContext(prompt: string): Promise<{ ctx: string; modules: string[] }> {
+async function buildContext(prompt: string, userId: string): Promise<{ ctx: string; modules: string[] }> {
   const q = prompt.toLowerCase();
   const parts: string[] = [];
   const used: string[]  = [];
 
   async function get(table: string, sel: string): Promise<Record<string, unknown>[]> {
     try {
-      const { data } = await supabase.from(table).select(sel).limit(80);
+      const { data } = await supabase.from(table).select(sel).eq("user_id", userId).limit(80);
       return (data ?? []) as unknown as Record<string, unknown>[];
     } catch { return []; }
   }
@@ -420,6 +420,7 @@ export default function AssistantPage() {
   const [insights,     setInsights]     = useState<LiveInsights | null>(null);
   const [insLoading,   setInsLoading]   = useState(true);
   const [toastData,    setToastData]    = useState<ToastData | null>(null);
+  const [userId,       setUserId]       = useState<string>("");
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLTextAreaElement>(null);
@@ -455,12 +456,16 @@ export default function AssistantPage() {
   const loadInsights = useCallback(async () => {
     setInsLoading(true);
     try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) { setInsLoading(false); return; }
+      setUserId(authUser.id);
+      const uid = authUser.id;
       const [tasks, inv, st, lv, ev] = await Promise.all([
-        supabase.from("productivity_tasks").select("status,priority,due_date").limit(200),
-        supabase.from("factures").select("statut,montant_ttc").limit(200),
-        supabase.from("stock_products").select("quantity,min_quantity").limit(200),
-        supabase.from("team_leaves").select("status").limit(50),
-        supabase.from("planning_events").select("start_at").limit(50),
+        supabase.from("productivity_tasks").select("status,priority,due_date").eq("user_id", uid).limit(200),
+        supabase.from("factures").select("statut,montant_ttc").eq("user_id", uid).limit(200),
+        supabase.from("stock_products").select("quantity,min_quantity").eq("user_id", uid).limit(200),
+        supabase.from("team_leaves").select("status").eq("user_id", uid).limit(50),
+        supabase.from("planning_events").select("start_at").eq("user_id", uid).limit(50),
       ]);
 
       const todayStr = new Date().toDateString();
@@ -532,7 +537,8 @@ export default function AssistantPage() {
     });
 
     setConsulting(["…"]);
-    const { ctx, modules } = await buildContext(trimmed);
+    const uid = userId || (await supabase.auth.getUser()).data.user?.id || "";
+    const { ctx, modules } = await buildContext(trimmed, uid);
     setConsulting(modules.length > 0 ? modules : []);
 
     const aId = crypto.randomUUID();
