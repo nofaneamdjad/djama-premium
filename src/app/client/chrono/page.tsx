@@ -227,10 +227,13 @@ export default function ChronoPage() {
 
     const fetchAll = useCallback(async () => {
     setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+    const uid = user.id;
     const [eRes, pRes, gRes] = await Promise.all([
-      supabase.from("time_entries").select("*").order("date",{ascending:false}).order("created_at",{ascending:false}).limit(1000),
-      supabase.from("chrono_projects").select("*").eq("is_active",true).order("name"),
-      supabase.from("chrono_goals").select("*").limit(1),
+      supabase.from("time_entries").select("*").eq("user_id",uid).order("date",{ascending:false}).order("created_at",{ascending:false}).limit(1000),
+      supabase.from("chrono_projects").select("*").eq("user_id",uid).eq("is_active",true).order("name"),
+      supabase.from("chrono_goals").select("*").eq("user_id",uid).limit(1),
     ]);
     if (eRes.data) setEntries(eRes.data as TimeEntry[]);
     if (pRes.data) setProjects(pRes.data as ChronoProject[]);

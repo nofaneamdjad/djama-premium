@@ -342,9 +342,12 @@ export default function BlocNotesPage() {
 
     const fetchAll = useCallback(async () => {
     setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+    const uid = user.id;
     const [nRes, fRes] = await Promise.all([
-      supabase.from("notes").select("*").order("updated_at",{ascending:false}).limit(500),
-      supabase.from("note_folders").select("*").order("name"),
+      supabase.from("notes").select("*").eq("user_id",uid).order("updated_at",{ascending:false}).limit(500),
+      supabase.from("note_folders").select("*").eq("user_id",uid).order("name"),
     ]);
     if (nRes.data) setNotes(nRes.data as Note[]);
     if (fRes.data) setFolders(fRes.data as NoteFolder[]);

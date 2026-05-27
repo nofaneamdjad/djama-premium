@@ -362,6 +362,7 @@ export default function ProductivitePage() {
   const [newSub,     setNewSub]     = useState("");
   const [newTag,     setNewTag]     = useState("");
   const [newAssignee,setNewAssignee]= useState("");
+  const [userId,     setUserId]     = useState<string | null>(null);
 
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
@@ -373,19 +374,30 @@ export default function ProductivitePage() {
     setTimeout(() => setToastData(null), 3500);
   }, []);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (uid?: string | null) => {
+    const resolvedUid = uid ?? userId;
+    if (!resolvedUid) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("productivity_tasks")
       .select("*")
+      .eq("user_id", resolvedUid)
       .order("created_at", { ascending: false });
     if (error) toast(error.message, "error");
     else setTasks((data ?? []).map((r: Record<string, unknown>) => parseTask(r)));
     setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserId(user.id);
+      await load(user.id);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   const openNew = (defaultStatus?: Status) => {
     setForm({ ...BLANK, status: defaultStatus ?? "todo" });
@@ -431,7 +443,7 @@ export default function ProductivitePage() {
       if (error) toast(error.message, "error");
       else { toast("Tâche mise à jour"); await load(); }
     } else {
-      const { error } = await supabase.from("productivity_tasks").insert(payload);
+      const { error } = await supabase.from("productivity_tasks").insert({ ...payload, user_id: userId });
       if (error) toast(error.message, "error");
       else { toast("Tâche créée"); setShowModal(false); await load(); }
     }
@@ -462,10 +474,10 @@ export default function ProductivitePage() {
 
   const quickAddTask = async (status: Status) => {
     const title = (quickAdd[status] ?? "").trim();
-    if (!title) return;
+    if (!title || !userId) return;
     const { data, error } = await supabase
       .from("productivity_tasks")
-      .insert({ title, status, priority: "normal", subtasks: "[]" })
+      .insert({ title, status, priority: "normal", subtasks: "[]", user_id: userId })
       .select().single();
     if (error) toast(error.message, "error");
     else if (data) setTasks(ts => [parseTask(data as Record<string, unknown>), ...ts]);
