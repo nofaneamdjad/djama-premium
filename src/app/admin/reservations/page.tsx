@@ -34,8 +34,8 @@ function statusStyle(s: string) {
   if (s === "confirmé")   return "text-[#4ade80] bg-[rgba(74,222,128,0.10)]";
   if (s === "en attente") return "text-[#fbbf24] bg-[rgba(251,191,36,0.10)]";
   if (s === "annulé")     return "text-[#f87171] bg-[rgba(248,113,113,0.10)]";
-  if (s === "terminé")    return "text-gray-400 bg-gray-100";
-  return "text-gray-500 bg-gray-100";
+  if (s === "terminé")    return "text-white/35 bg-white/[0.07]";
+  return "text-white/25 bg-white/[0.05]";
 }
 
 function serviceColor(t: string) {
@@ -79,11 +79,10 @@ function CalendarView({
 }) {
   const year = month.getFullYear();
   const mon  = month.getMonth();
-  const firstDay = new Date(year, mon, 1).getDay(); // 0=Sun
+  const firstDay = new Date(year, mon, 1).getDay();
   const daysInMonth = new Date(year, mon + 1, 0).getDate();
   const today = new Date();
 
-  // Group reservations by date
   const byDate: Record<string, Reservation[]> = {};
   for (const r of reservations) {
     if (!r.scheduled_at) continue;
@@ -96,42 +95,40 @@ function CalendarView({
   }
 
   const days: (number | null)[] = [];
-  // Start from Monday: convert getDay() (0=Sun) to Monday-first
   const startOffset = (firstDay + 6) % 7;
   for (let i = 0; i < startOffset; i++) days.push(null);
   for (let i = 1; i <= daysInMonth; i++) days.push(i);
-  // Pad to complete last week
   while (days.length % 7 !== 0) days.push(null);
 
   const monthLabel = month.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   const isToday = (d: number) => today.getFullYear() === year && today.getMonth() === mon && today.getDate() === d;
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "#18181c" }}>
       {/* Calendar header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-        <button onClick={() => onMonthChange(new Date(year, mon - 1, 1))} className="flex h-8 w-8 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.07]">
+        <button onClick={() => onMonthChange(new Date(year, mon - 1, 1))} className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 hover:bg-white/[0.06] hover:text-white/70 transition-colors">
           <ChevronLeft size={16} />
         </button>
-        <p className="text-[0.92rem] font-black text-gray-900 capitalize">{monthLabel}</p>
-        <button onClick={() => onMonthChange(new Date(year, mon + 1, 1))} className="flex h-8 w-8 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+        <p className="text-[0.92rem] font-black text-white capitalize">{monthLabel}</p>
+        <button onClick={() => onMonthChange(new Date(year, mon + 1, 1))} className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 hover:bg-white/[0.06] hover:text-white/70 transition-colors">
           <ChevronRight size={16} />
         </button>
       </div>
       {/* Day labels */}
-      <div className="grid grid-cols-7 border-b border-gray-100">
+      <div className="grid grid-cols-7 border-b border-white/[0.05]">
         {["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"].map(d => (
-          <div key={d} className="py-2.5 text-center text-[0.66rem] font-bold uppercase tracking-[0.08em] text-gray-400">{d}</div>
+          <div key={d} className="py-2.5 text-center text-[0.66rem] font-bold uppercase tracking-[0.08em] text-white/25">{d}</div>
         ))}
       </div>
       {/* Days grid */}
       <div className="grid grid-cols-7">
         {days.map((d, i) => {
-          if (!d) return <div key={i} className="min-h-[80px] border-b border-r border-gray-100" />;
+          if (!d) return <div key={i} className="min-h-[80px] border-b border-r border-white/[0.05]" />;
           const dayReservations = byDate[d.toString()] ?? [];
           return (
-            <div key={i} className={`min-h-[80px] border-b border-r border-gray-100 p-2 transition-colors hover:bg-gray-50 ${isToday(d) ? "bg-[rgba(201,165,90,0.04)]" : ""}`}>
-              <div className={`mb-1.5 flex h-6 w-6 items-center justify-center rounded-full text-[0.75rem] font-bold ${isToday(d) ? "bg-[#c9a55a] text-[#09090b]" : "text-gray-400"}`}>
+            <div key={i} className={`min-h-[80px] border-b border-r border-white/[0.05] p-2 transition-colors hover:bg-white/[0.03] ${isToday(d) ? "bg-[rgba(201,165,90,0.04)]" : ""}`}>
+              <div className={`mb-1.5 flex h-6 w-6 items-center justify-center rounded-full text-[0.75rem] font-bold ${isToday(d) ? "bg-[#c9a55a] text-[#09090b]" : "text-white/30"}`}>
                 {d}
               </div>
               <div className="space-y-0.5">
@@ -140,13 +137,13 @@ function CalendarView({
                     r.status === "confirmé"   ? "bg-[rgba(74,222,128,0.12)] text-[#4ade80]" :
                     r.status === "en attente" ? "bg-[rgba(251,191,36,0.12)] text-[#fbbf24]" :
                     r.status === "annulé"     ? "bg-[rgba(248,113,113,0.10)] text-[#f87171]" :
-                    "bg-gray-100 text-gray-400"
+                    "bg-white/[0.06] text-white/30"
                   }`}>
                     {new Date(r.scheduled_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} {r.client_name}
                   </div>
                 ))}
                 {dayReservations.length > 3 && (
-                  <div className="text-[0.58rem] text-gray-400">+{dayReservations.length - 3} autres</div>
+                  <div className="text-[0.58rem] text-white/25">+{dayReservations.length - 3} autres</div>
                 )}
               </div>
             </div>
@@ -172,8 +169,6 @@ export default function AdminReservations() {
   const [calMonth,     setCalMonth]     = useState(() => new Date());
 
   const loadRef = useRef(false);
-
-  // ── Fetch ────────────────────────────────────────────────────────────────
 
   async function fetchReservations(silent = false) {
     if (!silent) setLoading(true);
@@ -202,8 +197,6 @@ export default function AdminReservations() {
     fetchReservations();
   }, []);
 
-  // ── Update status ────────────────────────────────────────────────────────
-
   async function updateStatus(id: string, status: string) {
     setUpdating(id);
     const { error } = await supabase
@@ -219,8 +212,6 @@ export default function AdminReservations() {
     setUpdating(null);
   }
 
-  // ── Filtered ─────────────────────────────────────────────────────────────
-
   const filtered = reservations.filter(r => {
     const matchStatus = filterStatus === "tous" || r.status === filterStatus;
     const matchSearch = !search ||
@@ -230,13 +221,10 @@ export default function AdminReservations() {
     return matchStatus && matchSearch;
   });
 
-  // ── Stats ─────────────────────────────────────────────────────────────────
-
   const confirmed  = reservations.filter(r => r.status === "confirmé").length;
   const pending    = reservations.filter(r => r.status === "en attente").length;
   const cancelled  = reservations.filter(r => r.status === "annulé").length;
   const upcoming   = reservations.filter(r => r.status === "confirmé" && isUpcoming(r.scheduled_at)).length;
-
   const terminated = reservations.filter(r => r.status === "terminé").length;
 
   const tabs: { key: FilterStatus; label: string; count: number }[] = [
@@ -253,15 +241,15 @@ export default function AdminReservations() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-[1.3rem] font-black text-gray-900">Réservations</h1>
-          <p className="mt-1 text-[0.8rem] text-gray-500">
+          <h1 className="text-[1.3rem] font-black text-white">Réservations</h1>
+          <p className="mt-1 text-[0.8rem] text-white/35">
             {loading ? "Chargement…" : `${confirmed} confirmée${confirmed !== 1 ? "s" : ""} · ${pending} en attente · ${upcoming} à venir`}
           </p>
         </div>
         <button
           onClick={() => fetchReservations(false)}
           disabled={loading}
-          className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-[0.8rem] text-gray-500 hover:text-gray-700 disabled:opacity-40 transition-colors"
+          className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-[0.8rem] text-white/40 hover:text-white/65 disabled:opacity-40 transition-colors"
         >
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           Actualiser
@@ -271,15 +259,15 @@ export default function AdminReservations() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Total",       value: reservations.length, color: "rgba(0,0,0,0.5)" },
+          { label: "Total",       value: reservations.length, color: "rgba(255,255,255,0.5)" },
           { label: "Confirmés",   value: confirmed,           color: "#4ade80" },
           { label: "En attente",  value: pending,             color: "#fbbf24" },
           { label: "À venir",     value: upcoming,            color: "#a78bfa" },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
-            <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-gray-400 mb-1.5">{s.label}</p>
+          <div key={s.label} className="rounded-2xl border border-white/[0.07] px-4 py-4" style={{ background: "#18181c" }}>
+            <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/30 mb-1.5">{s.label}</p>
             {loading ? (
-              <div className="h-7 w-10 rounded-lg bg-gray-100 animate-pulse" />
+              <div className="h-7 w-10 rounded-lg bg-white/[0.06] animate-pulse" />
             ) : (
               <p className="text-[1.6rem] font-black" style={{ color: s.color }}>{s.value}</p>
             )}
@@ -303,32 +291,32 @@ export default function AdminReservations() {
             className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.8rem] font-semibold transition-all ${
               filterStatus === t.key
                 ? "bg-[rgba(201,165,90,0.13)] text-[#c9a55a] border border-[rgba(201,165,90,0.25)]"
-                : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 border border-transparent"
+                : "text-white/35 hover:bg-white/[0.05] hover:text-white/60 border border-transparent"
             }`}
           >
             {t.label}
             <span className={`rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold ${
-              filterStatus === t.key ? "bg-[rgba(201,165,90,0.2)] text-[#c9a55a]" : "bg-gray-100 text-gray-400"
+              filterStatus === t.key ? "bg-[rgba(201,165,90,0.2)] text-[#c9a55a]" : "bg-white/[0.07] text-white/30"
             }`}>
               {loading ? "·" : t.count}
             </span>
           </button>
         ))}
         <div className="relative ml-auto">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher…"
-            className="w-48 rounded-xl border border-gray-200 bg-white py-2 pl-8 pr-3 text-[0.8rem] text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.35)]"
+            className="w-48 rounded-xl border border-white/[0.07] bg-white/[0.04] py-2 pl-8 pr-3 text-[0.8rem] text-white/75 placeholder-white/25 outline-none transition-colors focus:border-[rgba(201,165,90,0.35)]"
           />
         </div>
         {/* View toggle */}
-        <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white p-1">
-          <button onClick={() => setView("cards")} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-semibold transition-all ${view === "cards" ? "bg-[rgba(201,165,90,0.13)] text-[#c9a55a]" : "text-gray-400 hover:text-gray-600"}`}>
+        <div className="flex items-center gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
+          <button onClick={() => setView("cards")} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-semibold transition-all ${view === "cards" ? "bg-[rgba(201,165,90,0.13)] text-[#c9a55a]" : "text-white/30 hover:text-white/60"}`}>
             <LayoutGrid size={13} /> Cartes
           </button>
-          <button onClick={() => setView("calendar")} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-semibold transition-all ${view === "calendar" ? "bg-[rgba(201,165,90,0.13)] text-[#c9a55a]" : "text-gray-400 hover:text-gray-600"}`}>
+          <button onClick={() => setView("calendar")} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-semibold transition-all ${view === "calendar" ? "bg-[rgba(201,165,90,0.13)] text-[#c9a55a]" : "text-white/30 hover:text-white/60"}`}>
             <CalendarDays size={13} /> Calendrier
           </button>
         </div>
@@ -346,9 +334,9 @@ export default function AdminReservations() {
           onMonthChange={setCalMonth}
         />
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white py-16">
-          <Calendar size={32} className="text-gray-300" />
-          <p className="text-[0.88rem] text-gray-400">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.07] py-16" style={{ background: "#18181c" }}>
+          <Calendar size={32} className="text-white/15" />
+          <p className="text-[0.88rem] text-white/35">
             {search || filterStatus !== "tous"
               ? "Aucune réservation pour ces filtres"
               : "Aucune réservation pour le moment"}
@@ -365,9 +353,10 @@ export default function AdminReservations() {
             return (
               <div
                 key={r.id}
-                className={`rounded-2xl border bg-white p-5 transition-all ${
-                  soon ? "border-[rgba(74,222,128,0.15)]" : "border-gray-200"
+                className={`rounded-2xl border p-5 transition-all ${
+                  soon ? "border-[rgba(74,222,128,0.15)]" : "border-white/[0.07]"
                 }`}
+                style={{ background: "#18181c" }}
               >
                 {/* Header */}
                 <div className="mb-4 flex items-start justify-between gap-3">
@@ -379,7 +368,7 @@ export default function AdminReservations() {
                       <Calendar size={15} style={{ color }} />
                     </div>
                     <div>
-                      <p className="text-[0.84rem] font-bold text-gray-800">{r.client_name}</p>
+                      <p className="text-[0.84rem] font-bold text-white/85">{r.client_name}</p>
                       <p className="text-[0.72rem] truncate max-w-[140px]" style={{ color }}>{r.service}</p>
                     </div>
                   </div>
@@ -394,20 +383,20 @@ export default function AdminReservations() {
                 </div>
 
                 {/* Date / heure */}
-                <div className="mb-3 flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2">
-                  <Clock size={13} className="text-gray-400 shrink-0" />
-                  <span className="text-[0.8rem] text-gray-500">
+                <div className="mb-3 flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2">
+                  <Clock size={13} className="text-white/30 shrink-0" />
+                  <span className="text-[0.8rem] text-white/45">
                     {date}{time ? ` à ${time}` : ""}
                     {r.duration_min ? ` · ${r.duration_min} min` : ""}
                   </span>
                 </div>
 
                 {/* Email */}
-                <p className="mb-1 text-[0.73rem] text-gray-400 truncate">{r.client_email}</p>
+                <p className="mb-1 text-[0.73rem] text-white/30 truncate">{r.client_email}</p>
 
                 {/* Notes */}
                 {r.notes && (
-                  <p className="mb-3 text-[0.7rem] text-gray-400 line-clamp-2">{r.notes}</p>
+                  <p className="mb-3 text-[0.7rem] text-white/30 line-clamp-2">{r.notes}</p>
                 )}
 
                 {/* Actions */}
@@ -436,7 +425,7 @@ export default function AdminReservations() {
                     <button
                       onClick={() => updateStatus(r.id, "terminé")}
                       disabled={isUpdating}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2 text-[0.76rem] font-semibold text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700 disabled:opacity-50"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-white/[0.06] py-2 text-[0.76rem] font-semibold text-white/40 transition-colors hover:bg-white/[0.09] hover:text-white/65 disabled:opacity-50"
                     >
                       {isUpdating ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
                       Marquer terminé

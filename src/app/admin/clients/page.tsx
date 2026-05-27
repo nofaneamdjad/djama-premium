@@ -23,7 +23,7 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
       <button
         onClick={() => onChange(page - 1)}
         disabled={page === 1}
-        className="flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200 text-[0.8rem] text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700 disabled:opacity-30"
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.07] text-[0.8rem] text-white/30 transition-colors hover:border-white/[0.15] hover:text-white/60 disabled:opacity-30"
       >
         ←
       </button>
@@ -31,13 +31,13 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
         const prev = pageNums[i - 1];
         return (
           <div key={p} className="flex items-center gap-1.5">
-            {prev && p - prev > 1 && <span className="text-[0.75rem] text-gray-300">…</span>}
+            {prev && p - prev > 1 && <span className="text-[0.75rem] text-white/20">…</span>}
             <button
               onClick={() => onChange(p)}
               className={`flex h-8 min-w-[2rem] items-center justify-center rounded-xl px-2 text-[0.8rem] font-semibold transition-all ${
                 p === page
                   ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a] border border-[rgba(201,165,90,0.3)]"
-                  : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border border-white/[0.07] text-white/30 hover:border-white/[0.15] hover:text-white/60"
               }`}
             >
               {p}
@@ -48,11 +48,11 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
       <button
         onClick={() => onChange(page + 1)}
         disabled={page === totalPages}
-        className="flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200 text-[0.8rem] text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700 disabled:opacity-30"
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.07] text-[0.8rem] text-white/30 transition-colors hover:border-white/[0.15] hover:text-white/60 disabled:opacity-30"
       >
         →
       </button>
-      <span className="ml-2 text-[0.73rem] text-gray-300">{total} total · page {page}/{totalPages}</span>
+      <span className="ml-2 text-[0.73rem] text-white/20">{total} total · page {page}/{totalPages}</span>
     </div>
   );
 }
@@ -84,7 +84,6 @@ type UserAccess = {
   created_at: string;
 };
 
-// Unified view for display
 type DisplayClient = {
   id: string;
   name: string;
@@ -98,18 +97,16 @@ type DisplayClient = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function statusStyle(s: string) {
-  if (s === "actif" || s === "active")   return "text-[#4ade80] bg-[rgba(74,222,128,0.10)]";
+  if (s === "actif" || s === "active")     return "text-[#4ade80] bg-[rgba(74,222,128,0.10)]";
   if (s === "inactif" || s === "inactive") return "text-[#f87171] bg-[rgba(248,113,113,0.10)]";
-  if (s === "en attente")                return "text-[#fbbf24] bg-[rgba(251,191,36,0.10)]";
-  return "text-gray-500 bg-gray-100";
+  if (s === "en attente")                  return "text-[#fbbf24] bg-[rgba(251,191,36,0.10)]";
+  return "text-white/30 bg-white/[0.06]";
 }
 
 function formatDate(iso: string) {
   try {
     return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
-  } catch {
-    return iso;
-  }
+  } catch { return iso; }
 }
 
 function initials(name: string) {
@@ -184,37 +181,37 @@ function CreateClientModal({ onClose, onCreated }: { onClose: () => void; onCrea
     }
   }
 
-  const inp = "w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[0.84rem] text-gray-700 placeholder:text-gray-400 outline-none focus:border-[rgba(201,165,90,0.4)] transition-colors";
-  const chk = "flex items-center gap-2.5 text-[0.82rem] text-gray-600 cursor-pointer";
+  const inp = "w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-2.5 text-[0.84rem] text-white/80 placeholder:text-white/25 outline-none focus:border-[rgba(201,165,90,0.4)] transition-colors";
+  const chk = "flex items-center gap-2.5 text-[0.82rem] text-white/50 cursor-pointer";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
-          <h2 className="text-[0.98rem] font-black text-gray-900">Ajouter un client</h2>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden" style={{ background: "#111318" }}>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.07]">
+          <h2 className="text-[0.98rem] font-black text-white">Ajouter un client</h2>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.05] text-white/40 hover:bg-white/[0.09] hover:text-white/70 transition-colors">
             <X size={15} />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Nom *</label>
+              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Nom *</label>
               <input className={inp} placeholder="Jean Dupont" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             </div>
             <div>
-              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Email *</label>
+              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Email *</label>
               <input type="email" className={inp} placeholder="jean@email.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Téléphone</label>
+              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Téléphone</label>
               <input className={inp} placeholder="+33 6 …" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
             </div>
             <div>
-              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Source</label>
+              <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Source</label>
               <select className={inp} value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value }))}>
                 <option value="manual">Manuel</option>
                 <option value="contact">Contact</option>
@@ -225,7 +222,7 @@ function CreateClientModal({ onClose, onCreated }: { onClose: () => void; onCrea
             </div>
           </div>
           <div>
-            <p className="mb-2.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Accès</p>
+            <p className="mb-2.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Accès</p>
             <div className="grid grid-cols-2 gap-2.5">
               {([
                 ["espace_premium",   "Espace premium"  ],
@@ -246,14 +243,14 @@ function CreateClientModal({ onClose, onCreated }: { onClose: () => void; onCrea
             </div>
           </div>
           <div>
-            <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Notes</label>
+            <label className="block mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Notes</label>
             <textarea rows={2} className={inp} placeholder="Notes internes…" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
           </div>
           {error && (
             <p className="rounded-xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-3 py-2 text-[0.78rem] text-[#f87171]">{error}</p>
           )}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[0.83rem] font-semibold text-gray-500 hover:text-gray-700 transition-colors">
+            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.83rem] font-semibold text-white/40 hover:text-white/70 transition-colors">
               Annuler
             </button>
             <button type="submit" disabled={saving} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#c9a55a] py-2.5 text-[0.83rem] font-bold text-[#1a1308] transition-opacity hover:opacity-90 disabled:opacity-50">
@@ -290,7 +287,6 @@ export default function AdminClients() {
       const clientsData: Client[] = clientsRes.data ?? [];
       const accessData: UserAccess[] = accessRes.data ?? [];
 
-      // Merge: clients table first, then user_access that aren't in clients
       const merged: DisplayClient[] = [];
       const seenEmails = new Set<string>();
 
@@ -348,12 +344,11 @@ export default function AdminClients() {
     return matchSearch && matchFilter;
   });
 
-  // Reset page when filters change
   useEffect(() => setPage(1), [search, filterStatus]);
 
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const actifCount  = clients.filter(c => c.status === "actif").length;
+  const actifCount   = clients.filter(c => c.status === "actif").length;
   const inactifCount = clients.filter(c => c.status === "inactif").length;
 
   return (
@@ -362,8 +357,8 @@ export default function AdminClients() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-[1.3rem] font-black text-gray-900">Clients</h1>
-          <p className="mt-1 text-[0.8rem] text-gray-500">
+          <h1 className="text-[1.3rem] font-black text-white">Clients</h1>
+          <p className="mt-1 text-[0.8rem] text-white/35">
             {loading ? "Chargement…" : `${clients.length} client${clients.length !== 1 ? "s" : ""} enregistrés`}
           </p>
         </div>
@@ -372,7 +367,7 @@ export default function AdminClients() {
             onClick={() => exportCSV(filtered)}
             disabled={loading || filtered.length === 0}
             title="Exporter en CSV"
-            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-[0.8rem] text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
+            className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-[0.8rem] text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/65 disabled:opacity-40"
           >
             <Download size={13} />
             CSV
@@ -380,7 +375,7 @@ export default function AdminClients() {
           <button
             onClick={() => fetchClients(true)}
             disabled={loading}
-            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-[0.8rem] text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
+            className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-[0.8rem] text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/65 disabled:opacity-40"
           >
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
             Actualiser
@@ -397,14 +392,14 @@ export default function AdminClients() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Total",    value: clients.length, color: "rgba(0,0,0,0.5)", icon: Users },
-          { label: "Actifs",   value: actifCount,     color: "#4ade80",         icon: Shield },
-          { label: "Inactifs", value: inactifCount,   color: "#f87171",         icon: Users },
+          { label: "Total",    value: clients.length, color: "rgba(255,255,255,0.5)", icon: Users },
+          { label: "Actifs",   value: actifCount,     color: "#4ade80",               icon: Shield },
+          { label: "Inactifs", value: inactifCount,   color: "#f87171",               icon: Users },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
-            <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-gray-400 mb-1.5">{s.label}</p>
+          <div key={s.label} className="rounded-2xl border border-white/[0.07] px-4 py-4" style={{ background: "#18181c" }}>
+            <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/30 mb-1.5">{s.label}</p>
             {loading ? (
-              <div className="h-7 w-12 rounded-lg bg-gray-100 animate-pulse" />
+              <div className="h-7 w-12 rounded-lg bg-white/[0.06] animate-pulse" />
             ) : (
               <p className="text-[1.6rem] font-black" style={{ color: s.color }}>{s.value}</p>
             )}
@@ -421,36 +416,36 @@ export default function AdminClients() {
             className={`rounded-xl px-3.5 py-2 text-[0.8rem] font-semibold transition-all ${
               filterStatus === f
                 ? "bg-[rgba(201,165,90,0.13)] text-[#c9a55a] border border-[rgba(201,165,90,0.25)]"
-                : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 border border-transparent"
+                : "text-white/35 hover:bg-white/[0.05] hover:text-white/60 border border-transparent"
             }`}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher un client…"
-            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-[0.84rem] text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.35)]"
+            className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] py-2.5 pl-10 pr-4 text-[0.84rem] text-white/80 placeholder-white/25 outline-none transition-colors focus:border-[rgba(201,165,90,0.35)]"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "#18181c" }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 size={22} className="animate-spin text-[#c9a55a]" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 mb-3">
-              <Users size={20} className="text-gray-400" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.05] mb-3">
+              <Users size={20} className="text-white/25" />
             </div>
-            <p className="text-[0.88rem] font-semibold text-gray-500">Aucun client trouvé</p>
-            <p className="text-[0.75rem] text-gray-400 mt-1">
+            <p className="text-[0.88rem] font-semibold text-white/40">Aucun client trouvé</p>
+            <p className="text-[0.75rem] text-white/25 mt-1">
               {search ? "Essayez un autre terme de recherche." : "Aucun client enregistré pour l'instant."}
             </p>
           </div>
@@ -458,38 +453,37 @@ export default function AdminClients() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+                <tr className="border-b border-white/[0.07] bg-white/[0.03]">
                   {["Nom", "Email", "Source", "Accès / Offre", "Statut", "Date", ""].map(h => (
-                    <th key={h} className="px-5 py-3.5 text-[0.71rem] font-bold uppercase tracking-[0.08em] text-gray-400">{h}</th>
+                    <th key={h} className="px-5 py-3.5 text-[0.71rem] font-bold uppercase tracking-[0.08em] text-white/25">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-white/[0.05]">
                 {paginated.map(c => (
-                  <tr key={c.id} className="group transition-colors hover:bg-gray-50">
+                  <tr key={c.id} className="group transition-colors hover:bg-white/[0.03]">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(201,165,90,0.12)] text-[0.65rem] font-black text-[#c9a55a]">
                           {initials(c.name)}
                         </div>
-                        <span className="text-[0.84rem] font-semibold text-gray-800">{c.name}</span>
+                        <span className="text-[0.84rem] font-semibold text-white/80">{c.name}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-[0.82rem] text-gray-500">{c.email}</td>
+                    <td className="px-5 py-4 text-[0.82rem] text-white/40">{c.email}</td>
                     <td className="px-5 py-4">
                       <span className={`inline-block rounded-lg px-2 py-0.5 text-[0.72rem] font-medium ${
                         c.source === "stripe"   ? "text-[#60a5fa] bg-[rgba(96,165,250,0.09)]" :
                         c.source === "manual"   ? "text-[#a78bfa] bg-[rgba(167,139,250,0.09)]" :
-                        c.source === "migrated" ? "text-gray-400 bg-gray-100" :
-                        "text-gray-400 bg-gray-100"
+                        "text-white/30 bg-white/[0.06]"
                       }`}>{c.source}</span>
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap gap-1">
                         {c.badges.length > 0 ? c.badges.map(b => (
-                          <span key={b} className="inline-block rounded-lg bg-gray-100 px-2 py-0.5 text-[0.71rem] font-medium text-gray-600">{b}</span>
+                          <span key={b} className="inline-block rounded-lg bg-white/[0.06] px-2 py-0.5 text-[0.71rem] font-medium text-white/50">{b}</span>
                         )) : (
-                          <span className="text-[0.78rem] text-gray-300">—</span>
+                          <span className="text-[0.78rem] text-white/20">—</span>
                         )}
                       </div>
                     </td>
@@ -498,19 +492,19 @@ export default function AdminClients() {
                         {c.status}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-[0.8rem] text-gray-400">{formatDate(c.createdAt)}</td>
+                    <td className="px-5 py-4 text-[0.8rem] text-white/30">{formatDate(c.createdAt)}</td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <a
                           href={`mailto:${c.email}`}
                           title="Envoyer un email"
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-gray-500 transition-all hover:bg-gray-200 hover:text-gray-700"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-white/35 transition-all hover:bg-white/[0.10] hover:text-white/70"
                         >
                           <Mail size={12} />
                         </a>
                         <button
                           title="Plus d'actions"
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-gray-500 transition-all hover:bg-gray-200 hover:text-gray-700"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-white/35 transition-all hover:bg-white/[0.10] hover:text-white/70"
                         >
                           <MoreHorizontal size={12} />
                         </button>

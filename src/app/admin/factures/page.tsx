@@ -21,7 +21,7 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
       <button
         onClick={() => onChange(page - 1)}
         disabled={page === 1}
-        className="flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200 text-[0.8rem] text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700 disabled:opacity-30"
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.07] text-[0.8rem] text-white/30 transition-colors hover:border-white/[0.15] hover:text-white/60 disabled:opacity-30"
       >
         ←
       </button>
@@ -29,13 +29,13 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
         const prev = pageNums[i - 1];
         return (
           <div key={p} className="flex items-center gap-1.5">
-            {prev && p - prev > 1 && <span className="text-[0.75rem] text-gray-300">…</span>}
+            {prev && p - prev > 1 && <span className="text-[0.75rem] text-white/20">…</span>}
             <button
               onClick={() => onChange(p)}
               className={`flex h-8 min-w-[2rem] items-center justify-center rounded-xl px-2 text-[0.8rem] font-semibold transition-all ${
                 p === page
                   ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a] border border-[rgba(201,165,90,0.3)]"
-                  : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border border-white/[0.07] text-white/30 hover:border-white/[0.15] hover:text-white/60"
               }`}
             >
               {p}
@@ -46,14 +46,15 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
       <button
         onClick={() => onChange(page + 1)}
         disabled={page === totalPages}
-        className="flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200 text-[0.8rem] text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700 disabled:opacity-30"
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.07] text-[0.8rem] text-white/30 transition-colors hover:border-white/[0.15] hover:text-white/60 disabled:opacity-30"
       >
         →
       </button>
-      <span className="ml-2 text-[0.73rem] text-gray-300">{total} total · page {page}/{totalPages}</span>
+      <span className="ml-2 text-[0.73rem] text-white/20">{total} total · page {page}/{totalPages}</span>
     </div>
   );
 }
+
 import {
   Receipt, Plus, Pencil, Trash2, X, Loader2, Download,
   RefreshCw, Check, CreditCard, FileDown,
@@ -72,11 +73,11 @@ const TODAY = () => new Date().toISOString().split("T")[0];
 const YEAR  = () => new Date().getFullYear();
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
-  brouillon:   { label: "Brouillon",  cls: "text-gray-500 bg-gray-50"              },
-  "envoyée":   { label: "Envoyée",    cls: "text-[#60a5fa] bg-[rgba(96,165,250,0.1)]"   },
-  "payée":     { label: "Payée",      cls: "text-[#4ade80] bg-[rgba(74,222,128,0.1)]"   },
-  "en retard": { label: "En retard",  cls: "text-[#f87171] bg-[rgba(248,113,113,0.1)]"  },
-  "annulée":   { label: "Annulée",    cls: "text-gray-400 bg-gray-50"              },
+  brouillon:   { label: "Brouillon",  cls: "text-white/30 bg-white/[0.06]"               },
+  "envoyée":   { label: "Envoyée",    cls: "text-[#60a5fa] bg-[rgba(96,165,250,0.1)]"    },
+  "payée":     { label: "Payée",      cls: "text-[#4ade80] bg-[rgba(74,222,128,0.1)]"    },
+  "en retard": { label: "En retard",  cls: "text-[#f87171] bg-[rgba(248,113,113,0.1)]"   },
+  "annulée":   { label: "Annulée",    cls: "text-white/25 bg-white/[0.04]"               },
 };
 const PAY_CFG: Record<string, { label: string; cls: string }> = {
   "non payée": { label: "Non payée", cls: "text-[#f87171] bg-[rgba(248,113,113,0.08)]" },
@@ -86,7 +87,7 @@ const PAY_CFG: Record<string, { label: string; cls: string }> = {
 const ALL_STATUSES: InvoiceStatus[] = ["brouillon","envoyée","payée","en retard","annulée"];
 
 function Badge({ s, cfg }: { s: string; cfg: Record<string, { label: string; cls: string }> }) {
-  const c = cfg[s] ?? cfg.brouillon ?? { label: s, cls: "text-gray-400 bg-gray-50" };
+  const c = cfg[s] ?? cfg.brouillon ?? { label: s, cls: "text-white/25 bg-white/[0.05]" };
   return (
     <span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold ${c.cls}`}>
       {c.label}
@@ -99,7 +100,6 @@ function fmtDate(d?: string | null) {
   const [y, m, day] = d.split("-");
   return `${day}/${m}/${y}`;
 }
-
 
 // ─────────────────────────────────────────────────────────────
 // Types formulaire
@@ -203,7 +203,6 @@ export default function AdminFactures() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  // ── Référence auto ──────────────────────────────────────────
   async function nextRef(): Promise<string> {
     const yr = YEAR();
     const { count } = await supabase
@@ -214,7 +213,6 @@ export default function AdminFactures() {
     return `FAC-${yr}-${n}`;
   }
 
-  // ── Modals ──────────────────────────────────────────────────
   function openAdd() {
     setForm({ ...EMPTY, items: [newItem()] });
     setEditId(null);
@@ -257,7 +255,6 @@ export default function AdminFactures() {
     setSaveErr(null);
   }
 
-  // ── Items ───────────────────────────────────────────────────
   function setItem(key: string, field: keyof FormItem, val: string | number) {
     setForm(prev => ({
       ...prev,
@@ -276,7 +273,6 @@ export default function AdminFactures() {
   const tax_amount = subtotal * form.tax_rate / 100;
   const total      = subtotal + tax_amount;
 
-  // ── Sauvegarde ──────────────────────────────────────────────
   async function save() {
     if (!form.client_name.trim() || !form.subject.trim()) {
       setSaveErr("Nom client et sujet requis.");
@@ -352,7 +348,6 @@ export default function AdminFactures() {
     }
   }
 
-  // ── Suppression ─────────────────────────────────────────────
   async function deleteInvoice(id: string) {
     const { error } = await supabase.from("invoices").delete().eq("id", id);
     if (error) { console.error("[AdminFactures] delete error:", error); return; }
@@ -361,15 +356,13 @@ export default function AdminFactures() {
     load();
   }
 
-  // ── Paiement rapide ─────────────────────────────────────────
   async function togglePaid(inv: InvoiceRow) {
     const payment_status: InvoicePaymentStatus = inv.payment_status === "payée" ? "non payée" : "payée";
-    const status: InvoiceStatus                = payment_status === "payée" ? "payée" : inv.status === "payée" ? "envoyée" : inv.status;
+    const status: InvoiceStatus = payment_status === "payée" ? "payée" : inv.status === "payée" ? "envoyée" : inv.status;
     await supabase.from("invoices").update({ payment_status, status, updated_at: new Date().toISOString() }).eq("id", inv.id);
     load();
   }
 
-  // ── PDF ─────────────────────────────────────────────────────
   async function downloadPdf(inv: InvoiceRow) {
     const company = await fetchCompanySettings();
     await generatePdf({
@@ -400,7 +393,6 @@ export default function AdminFactures() {
 
   const displayed = filter === "tous" ? invoices : invoices.filter(i => i.status === filter);
 
-  // Reset page when filter changes
   useEffect(() => setPage(1), [filter]);
 
   const paginated = displayed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -419,8 +411,8 @@ export default function AdminFactures() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[1.3rem] font-black text-gray-900">Factures</h1>
-          <p className="mt-0.5 text-[0.78rem] text-gray-400">
+          <h1 className="text-[1.3rem] font-black text-white">Factures</h1>
+          <p className="mt-0.5 text-[0.78rem] text-white/35">
             {invoices.length} facture{invoices.length !== 1 ? "s" : ""} ·{" "}
             <span className="text-[#c9a55a]">
               {fmtEur(invoices.filter(i => i.payment_status === "payée").reduce((s, i) => s + i.total, 0))}
@@ -433,7 +425,7 @@ export default function AdminFactures() {
             onClick={() => exportCSV(displayed)}
             disabled={loading || displayed.length === 0}
             title="Exporter en CSV"
-            className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-[0.83rem] text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
+            className="flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-[0.83rem] text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/65 disabled:opacity-40"
           >
             <FileDown size={14} />
             CSV
@@ -456,12 +448,12 @@ export default function AdminFactures() {
             className={`rounded-full px-3 py-1 text-[0.74rem] font-bold transition-all ${
               filter === s
                 ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a]"
-                : "bg-gray-50 text-gray-400 hover:text-gray-600"
+                : "bg-white/[0.04] text-white/35 hover:text-white/60"
             }`}
           >
             {s === "tous" ? "Toutes" : STATUS_CFG[s]?.label}
             {s !== "tous" && (
-              <span className="ml-1.5 text-gray-300">
+              <span className="ml-1.5 text-white/20">
                 {invoices.filter(i => i.status === s).length}
               </span>
             )}
@@ -470,20 +462,20 @@ export default function AdminFactures() {
         <button
           onClick={() => { loadedRef.current = false; load(); }}
           aria-label="Rafraîchir les factures"
-          className="ml-auto text-gray-300 hover:text-gray-500 transition-colors"
+          className="ml-auto text-white/20 hover:text-white/50 transition-colors"
         >
           <RefreshCw size={13} />
         </button>
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "#18181c" }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 size={20} className="animate-spin text-gray-300" />
+            <Loader2 size={20} className="animate-spin text-[#c9a55a]" />
           </div>
         ) : displayed.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-16 text-gray-300">
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-white/20">
             <Receipt size={28} />
             <p className="text-[0.83rem]">Aucune facture</p>
           </div>
@@ -491,41 +483,41 @@ export default function AdminFactures() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+                <tr className="border-b border-white/[0.07] bg-white/[0.03]">
                   {["Référence", "Client", "Sujet", "Total", "Échéance", "Statut", "Paiement", "Actions"].map(h => (
-                    <th key={h} className="px-5 py-3.5 text-[0.7rem] font-bold uppercase tracking-[0.08em] text-gray-400">{h}</th>
+                    <th key={h} className="px-5 py-3.5 text-[0.7rem] font-bold uppercase tracking-[0.08em] text-white/25">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-white/[0.05]">
                 {paginated.map(inv => (
-                  <tr key={inv.id} className="group transition-colors hover:bg-gray-50">
+                  <tr key={inv.id} className="group transition-colors hover:bg-white/[0.03]">
                     <td className="px-5 py-4 font-mono text-[0.74rem] text-[#c9a55a]">{inv.reference}</td>
                     <td className="px-5 py-4">
-                      <p className="text-[0.83rem] font-semibold text-gray-700">{inv.client_name}</p>
-                      <p className="text-[0.7rem] text-gray-400">{inv.client_email}</p>
+                      <p className="text-[0.83rem] font-semibold text-white/80">{inv.client_name}</p>
+                      <p className="text-[0.7rem] text-white/35">{inv.client_email}</p>
                     </td>
-                    <td className="px-5 py-4 text-[0.81rem] text-gray-600">{inv.subject}</td>
-                    <td className="px-5 py-4 text-[0.81rem] font-semibold text-gray-700">{fmtEur(inv.total)}</td>
-                    <td className="px-5 py-4 text-[0.78rem] text-gray-400">{fmtDate(inv.due_date)}</td>
+                    <td className="px-5 py-4 text-[0.81rem] text-white/55">{inv.subject}</td>
+                    <td className="px-5 py-4 text-[0.81rem] font-semibold text-white/75">{fmtEur(inv.total)}</td>
+                    <td className="px-5 py-4 text-[0.78rem] text-white/35">{fmtDate(inv.due_date)}</td>
                     <td className="px-5 py-4"><Badge s={inv.status} cfg={STATUS_CFG} /></td>
                     <td className="px-5 py-4"><Badge s={inv.payment_status} cfg={PAY_CFG} /></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
-                        <button onClick={() => openEdit(inv)} title="Modifier" className="text-gray-400 hover:text-[#60a5fa] transition-colors">
+                        <button onClick={() => openEdit(inv)} title="Modifier" className="text-white/30 hover:text-[#60a5fa] transition-colors">
                           <Pencil size={13} />
                         </button>
-                        <button onClick={() => downloadPdf(inv)} title="Télécharger PDF" className="text-gray-400 hover:text-[#c9a55a] transition-colors">
+                        <button onClick={() => downloadPdf(inv)} title="Télécharger PDF" className="text-white/30 hover:text-[#c9a55a] transition-colors">
                           <Download size={13} />
                         </button>
                         <button
                           onClick={() => togglePaid(inv)}
                           title={inv.payment_status === "payée" ? "Marquer non payée" : "Marquer payée"}
-                          className="text-gray-400 hover:text-[#4ade80] transition-colors"
+                          className="text-white/30 hover:text-[#4ade80] transition-colors"
                         >
                           <CreditCard size={13} />
                         </button>
-                        <button onClick={() => setConfirmDel(inv.id)} title="Supprimer" className="text-gray-400 hover:text-[#f87171] transition-colors">
+                        <button onClick={() => setConfirmDel(inv.id)} title="Supprimer" className="text-white/30 hover:text-[#f87171] transition-colors">
                           <Trash2 size={13} />
                         </button>
                       </div>
@@ -542,15 +534,15 @@ export default function AdminFactures() {
       {/* ── Modal Add / Edit ──────────────────────────────────── */}
       {modal && (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-black/30 px-4 py-8 backdrop-blur-sm"
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm"
           onClick={e => { if (e.target === e.currentTarget) setModal(null); }}
         >
-          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-white/[0.08] p-6 shadow-2xl" style={{ background: "#111318" }}>
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-[1rem] font-black text-gray-900">
+              <h2 className="text-[1rem] font-black text-white">
                 {modal === "add" ? "Nouvelle facture" : "Modifier la facture"}
               </h2>
-              <button onClick={() => setModal(null)} aria-label="Fermer" className="text-gray-400 hover:text-gray-700">
+              <button onClick={() => setModal(null)} aria-label="Fermer" className="text-white/30 hover:text-white/70">
                 <X size={18} />
               </button>
             </div>
@@ -578,16 +570,16 @@ export default function AdminFactures() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Statut</label>
+                    <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Statut</label>
                     <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as InvoiceStatus }))}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]">
+                      className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2.5 text-[0.84rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.4)]">
                       {ALL_STATUSES.map(s => <option key={s} value={s}>{STATUS_CFG[s].label}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Paiement</label>
+                    <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Paiement</label>
                     <select value={form.payment_status} onChange={e => setForm(f => ({ ...f, payment_status: e.target.value as InvoicePaymentStatus }))}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]">
+                      className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2.5 text-[0.84rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.4)]">
                       {(["non payée","payée","partielle"] as const).map(s => <option key={s} value={s}>{PAY_CFG[s].label}</option>)}
                     </select>
                   </div>
@@ -604,36 +596,36 @@ export default function AdminFactures() {
                     <Plus size={11} /> Ajouter une ligne
                   </button>
                 </div>
-                <div className="overflow-hidden rounded-2xl border border-gray-200">
+                <div className="overflow-hidden rounded-2xl border border-white/[0.07]">
                   <table className="w-full text-left">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-white/[0.03]">
                       <tr>
                         {["Description", "Qté", "Prix U. (€)", "Total", ""].map(h => (
-                          <th key={h} className="px-3 py-2.5 text-[0.67rem] font-bold uppercase tracking-[0.07em] text-gray-400">{h}</th>
+                          <th key={h} className="px-3 py-2.5 text-[0.67rem] font-bold uppercase tracking-[0.07em] text-white/25">{h}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-white/[0.05]">
                       {form.items.map(item => (
                         <tr key={item._key}>
                           <td className="px-2 py-2">
                             <input value={item.description} onChange={e => setItem(item._key, "description", e.target.value)}
-                              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-[0.82rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.3)]"
+                              className="w-full rounded-lg border border-white/[0.07] bg-white/[0.04] px-2.5 py-1.5 text-[0.82rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.3)] placeholder:text-white/20"
                               placeholder="Description de la prestation" />
                           </td>
                           <td className="w-16 px-2 py-2">
                             <input type="number" min="1" step="0.5" value={item.quantity} onChange={e => setItem(item._key, "quantity", parseFloat(e.target.value) || 0)}
-                              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-[0.82rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.3)]" />
+                              className="w-full rounded-lg border border-white/[0.07] bg-white/[0.04] px-2 py-1.5 text-center text-[0.82rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.3)]" />
                           </td>
                           <td className="w-28 px-2 py-2">
                             <input type="number" min="0" step="0.01" value={item.unit_price} onChange={e => setItem(item._key, "unit_price", parseFloat(e.target.value) || 0)}
-                              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-right text-[0.82rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.3)]" />
+                              className="w-full rounded-lg border border-white/[0.07] bg-white/[0.04] px-2 py-1.5 text-right text-[0.82rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.3)]" />
                           </td>
-                          <td className="w-24 px-2 py-2 text-right text-[0.82rem] font-semibold text-gray-600">{fmtEur(item.total)}</td>
+                          <td className="w-24 px-2 py-2 text-right text-[0.82rem] font-semibold text-white/55">{fmtEur(item.total)}</td>
                           <td className="w-8 px-2 py-2 text-center">
                             <button type="button" onClick={() => setForm(f => ({ ...f, items: f.items.filter(i => i._key !== item._key) }))}
                               aria-label="Supprimer la ligne"
-                              className="text-gray-300 hover:text-[#f87171] transition-colors"><X size={12} /></button>
+                              className="text-white/20 hover:text-[#f87171] transition-colors"><X size={12} /></button>
                           </td>
                         </tr>
                       ))}
@@ -642,21 +634,21 @@ export default function AdminFactures() {
                 </div>
 
                 {/* Totaux */}
-                <div className="mt-3 space-y-1.5 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.83rem]">
-                  <div className="flex justify-between text-gray-500">
+                <div className="mt-3 space-y-1.5 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-[0.83rem]">
+                  <div className="flex justify-between text-white/40">
                     <span>Sous-total HT</span><span>{fmtEur(subtotal)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-gray-500">
+                  <div className="flex items-center justify-between text-white/40">
                     <div className="flex items-center gap-2">
                       <span>TVA</span>
                       <input type="number" min="0" max="100" step="1" value={form.tax_rate}
                         onChange={e => setForm(f => ({ ...f, tax_rate: parseFloat(e.target.value) || 0 }))}
-                        className="w-14 rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-center text-[0.8rem] text-gray-700 outline-none" />
+                        className="w-14 rounded-lg border border-white/[0.07] bg-white/[0.04] px-2 py-0.5 text-center text-[0.8rem] text-white/70 outline-none" />
                       <span>%</span>
                     </div>
                     <span>{fmtEur(tax_amount)}</span>
                   </div>
-                  <div className="flex justify-between border-t border-gray-200 pt-1.5 text-[0.88rem] font-black text-gray-900">
+                  <div className="flex justify-between border-t border-white/[0.07] pt-1.5 text-[0.88rem] font-black text-white">
                     <span>Total TTC</span>
                     <span className="text-[#c9a55a]">{fmtEur(total)}</span>
                   </div>
@@ -682,25 +674,25 @@ export default function AdminFactures() {
                     unit_price:  Number(i.unit_price),
                     total:       Number(i.total),
                   })),
-                  subtotal:   subtotal,
+                  subtotal,
                   tax_rate:   form.tax_rate,
-                  tax_amount: tax_amount,
-                  total:      total,
+                  tax_amount,
+                  total,
                 }}
               />
 
               {/* Notes + footer */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Notes</label>
+                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Notes</label>
                   <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                    className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[0.84rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.4)] placeholder:text-white/20"
                     placeholder="Conditions de paiement…" />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Pied de page PDF</label>
+                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Pied de page PDF</label>
                   <textarea value={form.footer_text} onChange={e => setForm(f => ({ ...f, footer_text: e.target.value }))} rows={3}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                    className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[0.84rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.4)] placeholder:text-white/20"
                     placeholder="IBAN, mentions légales…" />
                 </div>
               </div>
@@ -710,7 +702,7 @@ export default function AdminFactures() {
               )}
               <div className="flex gap-3 pt-1">
                 <button onClick={() => setModal(null)}
-                  className="flex-1 rounded-2xl border border-gray-200 py-2.5 text-[0.83rem] font-bold text-gray-500 hover:text-gray-700 transition-colors">
+                  className="flex-1 rounded-2xl border border-white/[0.08] py-2.5 text-[0.83rem] font-bold text-white/40 hover:text-white/70 transition-colors">
                   Annuler
                 </button>
                 <button onClick={save} disabled={saving}
@@ -726,13 +718,13 @@ export default function AdminFactures() {
 
       {/* Confirmation suppression */}
       {confirmDel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-          <div className="w-full max-w-sm rounded-3xl border border-gray-200 bg-white p-6 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-sm rounded-3xl border border-white/[0.08] p-6 text-center shadow-2xl" style={{ background: "#111318" }}>
             <Trash2 size={24} className="mx-auto mb-3 text-[#f87171]" />
-            <p className="mb-1 font-bold text-gray-900">Supprimer cette facture ?</p>
-            <p className="mb-5 text-[0.8rem] text-gray-500">Les lignes associées seront également supprimées.</p>
+            <p className="mb-1 font-bold text-white">Supprimer cette facture ?</p>
+            <p className="mb-5 text-[0.8rem] text-white/40">Les lignes associées seront également supprimées.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDel(null)} className="flex-1 rounded-2xl border border-gray-200 py-2.5 text-[0.83rem] font-bold text-gray-500 hover:text-gray-700 transition-colors">Annuler</button>
+              <button onClick={() => setConfirmDel(null)} className="flex-1 rounded-2xl border border-white/[0.08] py-2.5 text-[0.83rem] font-bold text-white/40 hover:text-white/70 transition-colors">Annuler</button>
               <button onClick={() => deleteInvoice(confirmDel)} className="flex-1 rounded-2xl bg-[rgba(248,113,113,0.15)] py-2.5 text-[0.83rem] font-bold text-[#f87171] hover:bg-[rgba(248,113,113,0.25)] transition-colors">Supprimer</button>
             </div>
           </div>
@@ -751,9 +743,9 @@ function Field({ label, value, onChange, placeholder, type = "text" }: {
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">{label}</label>
+      <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[0.84rem] text-gray-700 placeholder:text-gray-400 outline-none focus:border-[rgba(201,165,90,0.4)]" />
+        className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-2.5 text-[0.84rem] text-white/75 placeholder:text-white/20 outline-none focus:border-[rgba(201,165,90,0.4)]" />
     </div>
   );
 }

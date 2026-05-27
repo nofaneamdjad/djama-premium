@@ -20,12 +20,12 @@ const YEAR  = () => new Date().getFullYear();
 
 type StatusCfg = { label: string; cls: string };
 const STATUS_CFG: Record<string, StatusCfg> = {
-  brouillon: { label: "Brouillon",  cls: "text-gray-500 bg-gray-100"           },
-  "envoyé":  { label: "Envoyé",     cls: "text-[#60a5fa] bg-[rgba(96,165,250,0.1)]"  },
-  accepté:   { label: "Accepté",    cls: "text-[#4ade80] bg-[rgba(74,222,128,0.1)]"  },
-  refusé:    { label: "Refusé",     cls: "text-[#f87171] bg-[rgba(248,113,113,0.1)]" },
-  converti:  { label: "Converti",   cls: "text-[#c9a55a] bg-[rgba(201,165,90,0.1)]"  },
-  expiré:    { label: "Expiré",     cls: "text-gray-400 bg-gray-50"             },
+  brouillon: { label: "Brouillon",  cls: "text-white/30 bg-white/[0.06]"              },
+  "envoyé":  { label: "Envoyé",     cls: "text-[#60a5fa] bg-[rgba(96,165,250,0.1)]"   },
+  accepté:   { label: "Accepté",    cls: "text-[#4ade80] bg-[rgba(74,222,128,0.1)]"   },
+  refusé:    { label: "Refusé",     cls: "text-[#f87171] bg-[rgba(248,113,113,0.1)]"  },
+  converti:  { label: "Converti",   cls: "text-[#c9a55a] bg-[rgba(201,165,90,0.1)]"   },
+  expiré:    { label: "Expiré",     cls: "text-white/25 bg-white/[0.04]"              },
 };
 const ALL_STATUSES = Object.keys(STATUS_CFG) as QuoteStatus[];
 
@@ -44,17 +44,16 @@ function fmtDate(d: string | null | undefined) {
   return `${day}/${m}/${y}`;
 }
 
-
 // ─────────────────────────────────────────────────────────────
 // Types formulaire
 // ─────────────────────────────────────────────────────────────
 type FormItem = {
-  _key:       string;
-  id?:        string;
+  _key:        string;
+  id?:         string;
   description: string;
-  quantity:   number;
-  unit_price: number;
-  total:      number;
+  quantity:    number;
+  unit_price:  number;
+  total:       number;
 };
 
 type QuoteForm = {
@@ -90,19 +89,18 @@ function newItem(): FormItem {
 // Composant
 // ─────────────────────────────────────────────────────────────
 export default function AdminDevis() {
-  const [quotes,    setQuotes]    = useState<QuoteRow[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [filter,    setFilter]    = useState<QuoteStatus | "tous">("tous");
-  const [modal,     setModal]     = useState<"add" | "edit" | null>(null);
-  const [editId,    setEditId]    = useState<string | null>(null);
-  const [form,      setForm]      = useState<QuoteForm>(EMPTY_FORM);
-  const [saving,    setSaving]    = useState(false);
-  const [saveErr,   setSaveErr]   = useState<string | null>(null);
+  const [quotes,     setQuotes]     = useState<QuoteRow[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [filter,     setFilter]     = useState<QuoteStatus | "tous">("tous");
+  const [modal,      setModal]      = useState<"add" | "edit" | null>(null);
+  const [editId,     setEditId]     = useState<string | null>(null);
+  const [form,       setForm]       = useState<QuoteForm>(EMPTY_FORM);
+  const [saving,     setSaving]     = useState(false);
+  const [saveErr,    setSaveErr]    = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
-  const [toast,     setToast]     = useState<string | null>(null);
+  const [toast,      setToast]      = useState<string | null>(null);
   const loadedRef = useRef(false);
 
-  // ── Chargement ──────────────────────────────────────────────
   useEffect(() => {
     if (loadedRef.current) return;
     loadedRef.current = true;
@@ -125,7 +123,6 @@ export default function AdminDevis() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  // ── Référence auto ─────────────────────────────────────────
   async function nextRef(): Promise<string> {
     const yr = YEAR();
     const { count } = await supabase
@@ -136,7 +133,6 @@ export default function AdminDevis() {
     return `DEV-${yr}-${n}`;
   }
 
-  // ── Ouvrir modal ───────────────────────────────────────────
   function openAdd() {
     setForm({ ...EMPTY_FORM, items: [newItem()] });
     setEditId(null);
@@ -177,7 +173,6 @@ export default function AdminDevis() {
     setSaveErr(null);
   }
 
-  // ── Items helpers ──────────────────────────────────────────
   function setItem(key: string, field: keyof FormItem, val: string | number) {
     setForm(prev => ({
       ...prev,
@@ -196,7 +191,6 @@ export default function AdminDevis() {
   const tax_amount = subtotal * form.tax_rate / 100;
   const total      = subtotal + tax_amount;
 
-  // ── Sauvegarde ─────────────────────────────────────────────
   async function save() {
     if (!form.client_name.trim() || !form.subject.trim()) {
       setSaveErr("Nom client et sujet requis.");
@@ -242,11 +236,9 @@ export default function AdminDevis() {
           .update(payload)
           .eq("id", editId!);
         if (error) throw error;
-        // Supprimer les anciens items
         await supabase.from("quote_items").delete().eq("quote_id", editId!);
       }
 
-      // Insérer les items
       if (form.items.length > 0 && quoteId) {
         const itemsPayload = form.items
           .filter(i => i.description.trim())
@@ -275,7 +267,6 @@ export default function AdminDevis() {
     }
   }
 
-  // ── Suppression ────────────────────────────────────────────
   async function deleteQuote(id: string) {
     const { error } = await supabase.from("quotes").delete().eq("id", id);
     if (error) { console.error("[AdminDevis] delete error:", error); return; }
@@ -284,13 +275,11 @@ export default function AdminDevis() {
     load();
   }
 
-  // ── Changement statut rapide ───────────────────────────────
   async function setStatus(id: string, status: QuoteStatus) {
     await supabase.from("quotes").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
     load();
   }
 
-  // ── Télécharger PDF ────────────────────────────────────────
   async function downloadPdf(q: QuoteRow) {
     const [company, items] = await Promise.all([
       fetchCompanySettings(),
@@ -323,10 +312,8 @@ export default function AdminDevis() {
     });
   }
 
-  // ── Convertir en facture ───────────────────────────────────
   async function convertToInvoice(q: QuoteRow) {
     try {
-      // Référence facture
       const yr = YEAR();
       const { count } = await supabase
         .from("invoices")
@@ -335,7 +322,6 @@ export default function AdminDevis() {
       const n   = String((count ?? 0) + 1).padStart(4, "0");
       const ref = `FAC-${yr}-${n}`;
 
-      // Créer facture
       const { data: inv, error: invErr } = await supabase
         .from("invoices")
         .insert([{
@@ -360,7 +346,6 @@ export default function AdminDevis() {
         .single();
       if (invErr) throw invErr;
 
-      // Copier les items
       const items = (q.quote_items ?? []).map((i, idx) => ({
         invoice_id:  inv.id,
         description: i.description,
@@ -373,7 +358,6 @@ export default function AdminDevis() {
         await supabase.from("invoice_items").insert(items);
       }
 
-      // Marquer devis converti
       await supabase.from("quotes").update({ status: "converti", updated_at: new Date().toISOString() }).eq("id", q.id);
 
       showToast(`Facture ${ref} créée ✓`);
@@ -384,7 +368,6 @@ export default function AdminDevis() {
     }
   }
 
-  // ── Filtrage ───────────────────────────────────────────────
   const displayed = filter === "tous" ? quotes : quotes.filter(q => q.status === filter);
 
   // ─────────────────────────────────────────────────────────────
@@ -402,8 +385,8 @@ export default function AdminDevis() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[1.3rem] font-black text-gray-900">Devis</h1>
-          <p className="mt-0.5 text-[0.78rem] text-gray-400">{quotes.length} devis total</p>
+          <h1 className="text-[1.3rem] font-black text-white">Devis</h1>
+          <p className="mt-0.5 text-[0.78rem] text-white/35">{quotes.length} devis total</p>
         </div>
         <button
           onClick={openAdd}
@@ -422,30 +405,30 @@ export default function AdminDevis() {
             className={`rounded-full px-3 py-1 text-[0.74rem] font-bold transition-all ${
               filter === s
                 ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a]"
-                : "bg-gray-50 text-gray-400 hover:text-gray-600"
+                : "bg-white/[0.04] text-white/35 hover:text-white/60"
             }`}
           >
             {s === "tous" ? "Tous" : STATUS_CFG[s]?.label}
             {s !== "tous" && (
-              <span className="ml-1.5 text-gray-300">
+              <span className="ml-1.5 text-white/20">
                 {quotes.filter(q => q.status === s).length}
               </span>
             )}
           </button>
         ))}
-        <button onClick={() => { loadedRef.current = false; load(); }} className="ml-auto text-gray-300 hover:text-gray-500 transition-colors">
+        <button onClick={() => { loadedRef.current = false; load(); }} className="ml-auto text-white/20 hover:text-white/50 transition-colors">
           <RefreshCw size={13} />
         </button>
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "#18181c" }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 size={20} className="animate-spin text-gray-300" />
+            <Loader2 size={20} className="animate-spin text-[#c9a55a]" />
           </div>
         ) : displayed.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-16 text-gray-300">
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-white/20">
             <FileText size={28} />
             <p className="text-[0.83rem]">Aucun devis</p>
           </div>
@@ -453,38 +436,38 @@ export default function AdminDevis() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+                <tr className="border-b border-white/[0.07] bg-white/[0.03]">
                   {["Référence", "Client", "Sujet", "Total", "Date", "Statut", "Actions"].map(h => (
-                    <th key={h} className="px-5 py-3.5 text-[0.7rem] font-bold uppercase tracking-[0.08em] text-gray-400">{h}</th>
+                    <th key={h} className="px-5 py-3.5 text-[0.7rem] font-bold uppercase tracking-[0.08em] text-white/25">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-white/[0.05]">
                 {displayed.map(q => (
-                  <tr key={q.id} className="group transition-colors hover:bg-gray-50">
+                  <tr key={q.id} className="group transition-colors hover:bg-white/[0.03]">
                     <td className="px-5 py-4 font-mono text-[0.74rem] text-[#c9a55a]">{q.reference}</td>
                     <td className="px-5 py-4">
-                      <p className="text-[0.83rem] font-semibold text-gray-700">{q.client_name}</p>
-                      <p className="text-[0.7rem] text-gray-400">{q.client_email}</p>
+                      <p className="text-[0.83rem] font-semibold text-white/80">{q.client_name}</p>
+                      <p className="text-[0.7rem] text-white/35">{q.client_email}</p>
                     </td>
-                    <td className="px-5 py-4 text-[0.81rem] text-gray-600">{q.subject}</td>
-                    <td className="px-5 py-4 text-[0.81rem] font-semibold text-gray-700">{fmtEur(q.total)}</td>
-                    <td className="px-5 py-4 text-[0.78rem] text-gray-400">{fmtDate(q.issue_date)}</td>
+                    <td className="px-5 py-4 text-[0.81rem] text-white/55">{q.subject}</td>
+                    <td className="px-5 py-4 text-[0.81rem] font-semibold text-white/75">{fmtEur(q.total)}</td>
+                    <td className="px-5 py-4 text-[0.78rem] text-white/35">{fmtDate(q.issue_date)}</td>
                     <td className="px-5 py-4"><Badge s={q.status} /></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
-                        <button onClick={() => openEdit(q)} title="Modifier" className="text-gray-400 hover:text-[#60a5fa] transition-colors">
+                        <button onClick={() => openEdit(q)} title="Modifier" className="text-white/30 hover:text-[#60a5fa] transition-colors">
                           <Pencil size={13} />
                         </button>
-                        <button onClick={() => downloadPdf(q)} title="PDF" className="text-gray-400 hover:text-[#c9a55a] transition-colors">
+                        <button onClick={() => downloadPdf(q)} title="PDF" className="text-white/30 hover:text-[#c9a55a] transition-colors">
                           <Download size={13} />
                         </button>
                         {q.status !== "converti" && (
-                          <button onClick={() => convertToInvoice(q)} title="Convertir en facture" className="text-gray-400 hover:text-[#4ade80] transition-colors">
+                          <button onClick={() => convertToInvoice(q)} title="Convertir en facture" className="text-white/30 hover:text-[#4ade80] transition-colors">
                             <ArrowRight size={13} />
                           </button>
                         )}
-                        <button onClick={() => setConfirmDel(q.id)} title="Supprimer" className="text-gray-400 hover:text-[#f87171] transition-colors">
+                        <button onClick={() => setConfirmDel(q.id)} title="Supprimer" className="text-white/30 hover:text-[#f87171] transition-colors">
                           <Trash2 size={13} />
                         </button>
                       </div>
@@ -500,16 +483,16 @@ export default function AdminDevis() {
       {/* ── Modal Add / Edit ─────────────────────────────────────── */}
       {modal && (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-black/30 px-4 py-8 backdrop-blur-sm"
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm"
           onClick={e => { if (e.target === e.currentTarget) setModal(null); }}
         >
-          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-white/[0.08] p-6 shadow-2xl" style={{ background: "#111318" }}>
             {/* Header modal */}
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-[1rem] font-black text-gray-900">
+              <h2 className="text-[1rem] font-black text-white">
                 {modal === "add" ? "Nouveau devis" : "Modifier le devis"}
               </h2>
-              <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-700">
+              <button onClick={() => setModal(null)} className="text-white/30 hover:text-white/70">
                 <X size={18} />
               </button>
             </div>
@@ -532,14 +515,14 @@ export default function AdminDevis() {
                 <legend className="mb-2 text-[0.72rem] font-black uppercase tracking-[0.1em] text-[#c9a55a]">Devis</legend>
                 <Field label="Sujet *" value={form.subject} onChange={v => setForm(f => ({ ...f, subject: v }))} placeholder="Création site web premium" />
                 <div className="grid grid-cols-3 gap-3">
-                  <Field label="Date d'émission" value={form.issue_date}  onChange={v => setForm(f => ({ ...f, issue_date: v }))}  type="date" />
-                  <Field label="Valable jusqu'au" value={form.valid_until} onChange={v => setForm(f => ({ ...f, valid_until: v }))} type="date" />
+                  <Field label="Date d'émission"  value={form.issue_date}   onChange={v => setForm(f => ({ ...f, issue_date: v }))}   type="date" />
+                  <Field label="Valable jusqu'au" value={form.valid_until}  onChange={v => setForm(f => ({ ...f, valid_until: v }))}  type="date" />
                   <div>
-                    <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Statut</label>
+                    <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Statut</label>
                     <select
                       value={form.status}
                       onChange={e => setForm(f => ({ ...f, status: e.target.value as QuoteStatus }))}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                      className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2.5 text-[0.84rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.4)]"
                     >
                       {ALL_STATUSES.map(s => (
                         <option key={s} value={s}>{STATUS_CFG[s].label}</option>
@@ -562,23 +545,23 @@ export default function AdminDevis() {
                   </button>
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-gray-200">
+                <div className="overflow-hidden rounded-2xl border border-white/[0.07]">
                   <table className="w-full text-left">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-white/[0.03]">
                       <tr>
                         {["Description", "Qté", "Prix U. (€)", "Total", ""].map(h => (
-                          <th key={h} className="px-3 py-2.5 text-[0.67rem] font-bold uppercase tracking-[0.07em] text-gray-400">{h}</th>
+                          <th key={h} className="px-3 py-2.5 text-[0.67rem] font-bold uppercase tracking-[0.07em] text-white/25">{h}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-white/[0.05]">
                       {form.items.map(item => (
                         <tr key={item._key}>
                           <td className="px-2 py-2">
                             <input
                               value={item.description}
                               onChange={e => setItem(item._key, "description", e.target.value)}
-                              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-[0.82rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.3)]"
+                              className="w-full rounded-lg border border-white/[0.07] bg-white/[0.04] px-2.5 py-1.5 text-[0.82rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.3)] placeholder:text-white/20"
                               placeholder="Description de la prestation"
                             />
                           </td>
@@ -587,7 +570,7 @@ export default function AdminDevis() {
                               type="number" min="1" step="0.5"
                               value={item.quantity}
                               onChange={e => setItem(item._key, "quantity", parseFloat(e.target.value) || 0)}
-                              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-[0.82rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.3)]"
+                              className="w-full rounded-lg border border-white/[0.07] bg-white/[0.04] px-2 py-1.5 text-center text-[0.82rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.3)]"
                             />
                           </td>
                           <td className="px-2 py-2 w-28">
@@ -595,17 +578,17 @@ export default function AdminDevis() {
                               type="number" min="0" step="0.01"
                               value={item.unit_price}
                               onChange={e => setItem(item._key, "unit_price", parseFloat(e.target.value) || 0)}
-                              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-right text-[0.82rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.3)]"
+                              className="w-full rounded-lg border border-white/[0.07] bg-white/[0.04] px-2 py-1.5 text-right text-[0.82rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.3)]"
                             />
                           </td>
-                          <td className="px-2 py-2 w-24 text-right text-[0.82rem] font-semibold text-gray-600">
+                          <td className="px-2 py-2 w-24 text-right text-[0.82rem] font-semibold text-white/55">
                             {fmtEur(item.total)}
                           </td>
                           <td className="px-2 py-2 w-8 text-center">
                             <button
                               type="button"
                               onClick={() => setForm(f => ({ ...f, items: f.items.filter(i => i._key !== item._key) }))}
-                              className="text-gray-300 hover:text-[#f87171] transition-colors"
+                              className="text-white/20 hover:text-[#f87171] transition-colors"
                             >
                               <X size={12} />
                             </button>
@@ -617,25 +600,25 @@ export default function AdminDevis() {
                 </div>
 
                 {/* Totaux */}
-                <div className="mt-3 space-y-1.5 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.83rem]">
-                  <div className="flex justify-between text-gray-500">
+                <div className="mt-3 space-y-1.5 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-[0.83rem]">
+                  <div className="flex justify-between text-white/40">
                     <span>Sous-total HT</span>
                     <span>{fmtEur(subtotal)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-gray-500">
+                  <div className="flex items-center justify-between text-white/40">
                     <div className="flex items-center gap-2">
                       <span>TVA</span>
                       <input
                         type="number" min="0" max="100" step="1"
                         value={form.tax_rate}
                         onChange={e => setForm(f => ({ ...f, tax_rate: parseFloat(e.target.value) || 0 }))}
-                        className="w-14 rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-center text-[0.8rem] text-gray-700 outline-none"
+                        className="w-14 rounded-lg border border-white/[0.07] bg-white/[0.04] px-2 py-0.5 text-center text-[0.8rem] text-white/70 outline-none"
                       />
                       <span>%</span>
                     </div>
                     <span>{fmtEur(tax_amount)}</span>
                   </div>
-                  <div className="flex justify-between border-t border-gray-200 pt-1.5 text-[0.88rem] font-black text-gray-900">
+                  <div className="flex justify-between border-t border-white/[0.07] pt-1.5 text-[0.88rem] font-black text-white">
                     <span>Total TTC</span>
                     <span className="text-[#c9a55a]">{fmtEur(total)}</span>
                   </div>
@@ -661,26 +644,25 @@ export default function AdminDevis() {
                     unit_price:  Number(i.unit_price),
                     total:       Number(i.total),
                   })),
-                  subtotal:   subtotal,
+                  subtotal,
                   tax_rate:   form.tax_rate,
-                  tax_amount: tax_amount,
-                  total:      total,
+                  tax_amount,
+                  total,
                 }}
               />
 
               {/* Notes */}
               <div>
-                <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Notes (optionnel)</label>
+                <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Notes (optionnel)</label>
                 <textarea
                   value={form.notes}
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                   rows={3}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                  className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[0.84rem] text-white/75 outline-none focus:border-[rgba(201,165,90,0.4)] placeholder:text-white/20"
                   placeholder="Conditions de paiement, remarques…"
                 />
               </div>
 
-              {/* Erreur + Boutons */}
               {saveErr && (
                 <p className="rounded-xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-3 py-2 text-[0.78rem] text-[#f87171]">
                   {saveErr}
@@ -689,7 +671,7 @@ export default function AdminDevis() {
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => setModal(null)}
-                  className="flex-1 rounded-2xl border border-gray-200 py-2.5 text-[0.83rem] font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                  className="flex-1 rounded-2xl border border-white/[0.08] py-2.5 text-[0.83rem] font-bold text-white/40 hover:text-white/70 transition-colors"
                 >
                   Annuler
                 </button>
@@ -709,13 +691,13 @@ export default function AdminDevis() {
 
       {/* ── Confirmation suppression ─── */}
       {confirmDel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-          <div className="w-full max-w-sm rounded-3xl border border-gray-200 bg-white p-6 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-sm rounded-3xl border border-white/[0.08] p-6 text-center shadow-2xl" style={{ background: "#111318" }}>
             <Trash2 size={24} className="mx-auto mb-3 text-[#f87171]" />
-            <p className="mb-1 font-bold text-gray-900">Supprimer ce devis ?</p>
-            <p className="mb-5 text-[0.8rem] text-gray-500">Les lignes associées seront également supprimées.</p>
+            <p className="mb-1 font-bold text-white">Supprimer ce devis ?</p>
+            <p className="mb-5 text-[0.8rem] text-white/40">Les lignes associées seront également supprimées.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDel(null)} className="flex-1 rounded-2xl border border-gray-200 py-2.5 text-[0.83rem] font-bold text-gray-500 hover:text-gray-700 transition-colors">Annuler</button>
+              <button onClick={() => setConfirmDel(null)} className="flex-1 rounded-2xl border border-white/[0.08] py-2.5 text-[0.83rem] font-bold text-white/40 hover:text-white/70 transition-colors">Annuler</button>
               <button onClick={() => deleteQuote(confirmDel)} className="flex-1 rounded-2xl bg-[rgba(248,113,113,0.15)] py-2.5 text-[0.83rem] font-bold text-[#f87171] hover:bg-[rgba(248,113,113,0.25)] transition-colors">Supprimer</button>
             </div>
           </div>
@@ -736,12 +718,12 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">{label}</label>
+      <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">{label}</label>
       <input
         type={type} value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[0.84rem] text-gray-700 placeholder:text-gray-400 outline-none focus:border-[rgba(201,165,90,0.4)]"
+        className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-2.5 text-[0.84rem] text-white/75 placeholder:text-white/20 outline-none focus:border-[rgba(201,165,90,0.4)]"
       />
     </div>
   );

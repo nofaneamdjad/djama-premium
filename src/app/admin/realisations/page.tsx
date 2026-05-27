@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Star, Plus, Pencil, Trash2, X, Loader2, Check, ToggleLeft, ToggleRight, Image, Video } from "lucide-react";
-// Toutes les opérations passent par les routes serveur (lues au runtime, pas au build)
 import type { RealisationRow, RealisationStatus, RealisationMediaType } from "@/types/db";
 import { MediaUploader } from "@/components/admin/MediaUploader";
 
@@ -26,7 +25,6 @@ const EMPTY_FORM = {
   url:           "",
   accent_color:  "#c9a55a",
   highlights:    [] as string[],
-  // Médias
   media_type:    null as RealisationMediaType,
   image_url:     "",
   video_url:     "",
@@ -36,7 +34,7 @@ const EMPTY_FORM = {
 function statusStyle(s: string) {
   if (s === "publié")    return "text-[#4ade80] bg-[rgba(74,222,128,0.10)]";
   if (s === "brouillon") return "text-[#fbbf24] bg-[rgba(251,191,36,0.10)]";
-  return "text-gray-500 bg-gray-100";
+  return "text-white/25 bg-white/[0.06]";
 }
 
 export default function AdminRealisations() {
@@ -191,8 +189,8 @@ export default function AdminRealisations() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[1.3rem] font-black text-gray-900">Réalisations</h1>
-          <p className="mt-1 text-[0.8rem] text-gray-500">
+          <h1 className="text-[1.3rem] font-black text-white">Réalisations</h1>
+          <p className="mt-1 text-[0.8rem] text-white/35">
             {loading ? "Chargement…" : `${projects.length} projet${projects.length !== 1 ? "s" : ""} · ${projects.filter(p => p.status === "publié").length} publiés`}
           </p>
         </div>
@@ -209,19 +207,19 @@ export default function AdminRealisations() {
           <Loader2 size={22} className="animate-spin text-[#c9a55a]" />
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "#18181c" }}>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+                <tr className="border-b border-white/[0.07] bg-white/[0.03]">
                   {["Projet", "Catégorie", "Tag", "Année", "Statut", "Actions"].map(h => (
-                    <th key={h} className="px-5 py-3.5 text-[0.71rem] font-bold uppercase tracking-[0.08em] text-gray-400">{h}</th>
+                    <th key={h} className="px-5 py-3.5 text-[0.71rem] font-bold uppercase tracking-[0.08em] text-white/25">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-white/[0.05]">
                 {projects.map(p => (
-                  <tr key={p.id} className="transition-colors hover:bg-gray-50">
+                  <tr key={p.id} className="transition-colors hover:bg-white/[0.03]">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div
@@ -230,10 +228,10 @@ export default function AdminRealisations() {
                         >
                           <Star size={13} style={{ color: p.accent_color }} />
                         </div>
-                        <span className="text-[0.85rem] font-bold text-gray-800">{p.name}</span>
+                        <span className="text-[0.85rem] font-bold text-white/85">{p.name}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-[0.81rem] text-gray-500">{p.category}</td>
+                    <td className="px-5 py-4 text-[0.81rem] text-white/40">{p.category}</td>
                     <td className="px-5 py-4">
                       <span
                         className="inline-block rounded-full px-2.5 py-0.5 text-[0.71rem] font-bold"
@@ -245,7 +243,7 @@ export default function AdminRealisations() {
                         {p.tag}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-[0.82rem] text-gray-400">{p.year}</td>
+                    <td className="px-5 py-4 text-[0.82rem] text-white/35">{p.year}</td>
                     <td className="px-5 py-4">
                       <button
                         onClick={() => toggleStatus(p)}
@@ -256,10 +254,10 @@ export default function AdminRealisations() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <button onClick={() => openEdit(p)} aria-label="Modifier le projet" className="text-gray-400 transition-colors hover:text-[#60a5fa]">
+                        <button onClick={() => openEdit(p)} aria-label="Modifier le projet" className="text-white/30 transition-colors hover:text-[#60a5fa]">
                           <Pencil size={14} />
                         </button>
-                        <button onClick={() => setConfirmDel(p.id)} aria-label="Supprimer le projet" className="text-gray-400 transition-colors hover:text-[#f87171]">
+                        <button onClick={() => setConfirmDel(p.id)} aria-label="Supprimer le projet" className="text-white/30 transition-colors hover:text-[#f87171]">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -270,7 +268,7 @@ export default function AdminRealisations() {
             </table>
           </div>
           {projects.length === 0 && (
-            <div className="py-12 text-center text-[0.85rem] text-gray-400">Aucun projet</div>
+            <div className="py-12 text-center text-[0.85rem] text-white/25">Aucun projet</div>
           )}
         </div>
       )}
@@ -278,15 +276,15 @@ export default function AdminRealisations() {
       {/* Add / Edit Modal */}
       {modal && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 px-4 py-8 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm"
           onClick={e => { if (e.target === e.currentTarget) setModal(null); }}
         >
-          <div className="w-full max-w-lg rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+          <div className="w-full max-w-lg rounded-3xl border border-white/[0.08] p-6 shadow-2xl" style={{ background: "#111318" }}>
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-[1rem] font-black text-gray-900">
+              <h2 className="text-[1rem] font-black text-white">
                 {modal === "add" ? "Nouveau projet" : "Modifier le projet"}
               </h2>
-              <button onClick={() => setModal(null)} aria-label="Fermer" className="text-gray-400 hover:text-gray-700">
+              <button onClick={() => setModal(null)} aria-label="Fermer" className="text-white/30 hover:text-white/70">
                 <X size={18} />
               </button>
             </div>
@@ -294,69 +292,69 @@ export default function AdminRealisations() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Nom *</label>
+                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Nom *</label>
                   <input
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                    className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[0.84rem] text-white/80 outline-none focus:border-[rgba(201,165,90,0.4)] placeholder:text-white/20"
                     placeholder="MONDOUKA"
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Année</label>
+                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Année</label>
                   <input
                     type="number"
                     value={form.year}
                     onChange={e => setForm(f => ({ ...f, year: parseInt(e.target.value) || 2024 }))}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                    className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[0.84rem] text-white/80 outline-none focus:border-[rgba(201,165,90,0.4)]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Catégorie</label>
+                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Catégorie</label>
                   <input
                     value={form.category}
                     onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                    className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[0.84rem] text-white/80 outline-none focus:border-[rgba(201,165,90,0.4)] placeholder:text-white/20"
                     placeholder="E-commerce & Sourcing"
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Tag</label>
+                  <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Tag</label>
                   <input
                     value={form.tag}
                     onChange={e => setForm(f => ({ ...f, tag: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                    className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[0.84rem] text-white/80 outline-none focus:border-[rgba(201,165,90,0.4)] placeholder:text-white/20"
                     placeholder="E-commerce"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Description</label>
+                <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Description</label>
                 <textarea
                   rows={2}
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                  className="w-full resize-none rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[0.84rem] text-white/80 outline-none focus:border-[rgba(201,165,90,0.4)]"
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">URL du projet (optionnel)</label>
+                <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">URL du projet (optionnel)</label>
                 <input
                   value={form.url}
                   onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                  className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[0.84rem] text-white/80 outline-none focus:border-[rgba(201,165,90,0.4)] placeholder:text-white/20"
                   placeholder="https://…"
                 />
               </div>
 
               {/* ── Média ── */}
               <div>
-                <label className="mb-2 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Type de média</label>
+                <label className="mb-2 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Type de média</label>
                 <div className="flex gap-2">
                   {([null, "image", "video"] as const).map(t => (
                     <button
@@ -365,9 +363,9 @@ export default function AdminRealisations() {
                       onClick={() => setForm(f => ({ ...f, media_type: t }))}
                       className="flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[0.78rem] font-bold transition-colors"
                       style={{
-                        borderColor: form.media_type === t ? "rgba(201,165,90,0.5)" : "rgba(0,0,0,0.1)",
-                        background:  form.media_type === t ? "rgba(201,165,90,0.12)" : "rgba(0,0,0,0.03)",
-                        color:       form.media_type === t ? "#c9a55a" : "rgba(0,0,0,0.4)",
+                        borderColor: form.media_type === t ? "rgba(201,165,90,0.5)" : "rgba(255,255,255,0.08)",
+                        background:  form.media_type === t ? "rgba(201,165,90,0.12)" : "rgba(255,255,255,0.03)",
+                        color:       form.media_type === t ? "#c9a55a" : "rgba(255,255,255,0.35)",
                       }}
                     >
                       {t === null  && "Aucun (mockup)"}
@@ -411,7 +409,7 @@ export default function AdminRealisations() {
               )}
 
               <div>
-                <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Couleur accent</label>
+                <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Couleur accent</label>
                 <div className="flex items-center gap-2">
                   {ACCENT_PRESETS.map(c => (
                     <button
@@ -429,15 +427,15 @@ export default function AdminRealisations() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-gray-400">Points forts</label>
+                <label className="mb-1.5 block text-[0.72rem] font-bold uppercase tracking-[0.07em] text-white/30">Points forts</label>
                 <div className="mb-2 flex flex-wrap gap-1.5">
                   {form.highlights.map((h, i) => (
                     <span
                       key={i}
-                      className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-[0.75rem] text-gray-600"
+                      className="flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1 text-[0.75rem] text-white/55"
                     >
                       {h}
-                      <button onClick={() => removeHighlight(i)} aria-label="Retirer ce point fort" className="text-gray-400 hover:text-gray-700">
+                      <button onClick={() => removeHighlight(i)} aria-label="Retirer ce point fort" className="text-white/30 hover:text-white/70">
                         <X size={10} />
                       </button>
                     </span>
@@ -448,12 +446,12 @@ export default function AdminRealisations() {
                     value={hlInput}
                     onChange={e => setHlInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addHighlight(); } }}
-                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[0.82rem] text-gray-700 outline-none focus:border-[rgba(201,165,90,0.4)]"
+                    className="flex-1 rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-2.5 text-[0.82rem] text-white/80 outline-none focus:border-[rgba(201,165,90,0.4)] placeholder:text-white/20"
                     placeholder="Ex: SEO optimisé"
                   />
                   <button
                     onClick={addHighlight}
-                    className="rounded-xl bg-gray-100 px-3 text-gray-500 hover:text-gray-700"
+                    className="rounded-xl bg-white/[0.07] px-3 text-white/40 hover:text-white/70"
                   >
                     <Plus size={14} />
                   </button>
@@ -467,10 +465,10 @@ export default function AdminRealisations() {
                 >
                   {form.status === "publié"
                     ? <ToggleRight size={28} className="text-[#4ade80]" />
-                    : <ToggleLeft  size={28} className="text-gray-300" />
+                    : <ToggleLeft  size={28} className="text-white/20" />
                   }
                 </button>
-                <span className="text-[0.82rem] text-gray-500">
+                <span className="text-[0.82rem] text-white/40">
                   {form.status === "publié" ? "Publié (visible sur le site)" : "Brouillon (masqué)"}
                 </span>
               </div>
@@ -479,7 +477,7 @@ export default function AdminRealisations() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setModal(null)}
-                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[0.82rem] font-semibold text-gray-500 hover:text-gray-700"
+                className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.82rem] font-semibold text-white/40 hover:text-white/70 transition-colors"
               >
                 Annuler
               </button>
@@ -498,20 +496,20 @@ export default function AdminRealisations() {
 
       {/* Delete Confirm */}
       {confirmDel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
-            <h2 className="text-[1rem] font-black text-gray-900">Supprimer ce projet ?</h2>
-            <p className="mt-2 text-[0.82rem] text-gray-500">Cette action est irréversible.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl border border-white/[0.08] p-6 shadow-2xl" style={{ background: "#111318" }}>
+            <h2 className="text-[1rem] font-black text-white">Supprimer ce projet ?</h2>
+            <p className="mt-2 text-[0.82rem] text-white/40">Cette action est irréversible.</p>
             <div className="mt-5 flex gap-3">
               <button
                 onClick={() => setConfirmDel(null)}
-                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[0.82rem] font-semibold text-gray-500 hover:text-gray-700"
+                className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.82rem] font-semibold text-white/40 hover:text-white/70 transition-colors"
               >
                 Annuler
               </button>
               <button
                 onClick={() => handleDelete(confirmDel)}
-                className="flex-1 rounded-xl bg-[rgba(248,113,113,0.15)] py-2.5 text-[0.82rem] font-bold text-[#f87171] hover:bg-[rgba(248,113,113,0.22)]"
+                className="flex-1 rounded-xl bg-[rgba(248,113,113,0.15)] py-2.5 text-[0.82rem] font-bold text-[#f87171] hover:bg-[rgba(248,113,113,0.22)] transition-colors"
               >
                 Supprimer
               </button>
