@@ -208,82 +208,113 @@ END $$;
 
 
 -- ────────────────────────────────────────────────────────────────────
--- 9. DOCUMENTS — vérifier/renforcer l'isolation (déjà correcte)
+-- 9. DOCUMENTS — s'assurer que user_id existe, puis fixer RLS
 -- ────────────────────────────────────────────────────────────────────
-ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  -- Vérifier que la table documents existe
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'documents'
+  ) THEN
+    RAISE NOTICE 'Table documents inexistante — section ignorée';
+    RETURN;
+  END IF;
 
-DROP POLICY IF EXISTS "docs_select_own" ON documents;
-DROP POLICY IF EXISTS "docs_insert_own" ON documents;
-DROP POLICY IF EXISTS "docs_update_own" ON documents;
-DROP POLICY IF EXISTS "docs_delete_own" ON documents;
+  -- Ajouter user_id si absent
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'documents'
+      AND column_name  = 'user_id'
+  ) THEN
+    ALTER TABLE documents ADD COLUMN user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE;
+    CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id);
+    RAISE NOTICE 'Colonne user_id ajoutée à documents';
+  END IF;
 
-CREATE POLICY "docs_select_own"
-  ON documents FOR SELECT
-  USING (auth.uid() = user_id);
+  -- Activer RLS
+  ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "docs_insert_own"
-  ON documents FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  -- Recréer les policies
+  DROP POLICY IF EXISTS "docs_select_own" ON documents;
+  DROP POLICY IF EXISTS "docs_insert_own" ON documents;
+  DROP POLICY IF EXISTS "docs_update_own" ON documents;
+  DROP POLICY IF EXISTS "docs_delete_own" ON documents;
 
-CREATE POLICY "docs_update_own"
-  ON documents FOR UPDATE
-  USING  (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  EXECUTE 'CREATE POLICY "docs_select_own" ON documents FOR SELECT USING (auth.uid() = user_id)';
+  EXECUTE 'CREATE POLICY "docs_insert_own" ON documents FOR INSERT WITH CHECK (auth.uid() = user_id)';
+  EXECUTE 'CREATE POLICY "docs_update_own" ON documents FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)';
+  EXECUTE 'CREATE POLICY "docs_delete_own" ON documents FOR DELETE USING (auth.uid() = user_id)';
 
-CREATE POLICY "docs_delete_own"
-  ON documents FOR DELETE
-  USING (auth.uid() = user_id);
+  RAISE NOTICE 'RLS documents configuré';
+END $$;
 
 
 -- ────────────────────────────────────────────────────────────────────
 -- 10. DOCUMENT_ITEMS — accès via jointure sur documents
 -- ────────────────────────────────────────────────────────────────────
-ALTER TABLE document_items ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  -- Vérifier que les deux tables existent et ont les bonnes colonnes
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'document_items'
+  ) THEN
+    RAISE NOTICE 'Table document_items inexistante — section ignorée';
+    RETURN;
+  END IF;
 
-DROP POLICY IF EXISTS "ditems_select_own" ON document_items;
-DROP POLICY IF EXISTS "ditems_insert_own" ON document_items;
-DROP POLICY IF EXISTS "ditems_update_own" ON document_items;
-DROP POLICY IF EXISTS "ditems_delete_own" ON document_items;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'documents'
+      AND column_name  = 'user_id'
+  ) THEN
+    RAISE NOTICE 'documents.user_id absent — document_items RLS ignoré';
+    RETURN;
+  END IF;
 
-CREATE POLICY "ditems_select_own"
-  ON document_items FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM documents d
-      WHERE d.id = document_items.document_id
-        AND d.user_id = auth.uid()
-    )
-  );
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'document_items'
+      AND column_name  = 'document_id'
+  ) THEN
+    RAISE NOTICE 'document_items.document_id absent — section ignorée';
+    RETURN;
+  END IF;
 
-CREATE POLICY "ditems_insert_own"
-  ON document_items FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM documents d
-      WHERE d.id = document_items.document_id
-        AND d.user_id = auth.uid()
-    )
-  );
+  -- Activer RLS
+  ALTER TABLE document_items ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "ditems_update_own"
-  ON document_items FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM documents d
-      WHERE d.id = document_items.document_id
-        AND d.user_id = auth.uid()
-    )
-  );
+  DROP POLICY IF EXISTS "ditems_select_own" ON document_items;
+  DROP POLICY IF EXISTS "ditems_insert_own" ON document_items;
+  DROP POLICY IF EXISTS "ditems_update_own" ON document_items;
+  DROP POLICY IF EXISTS "ditems_delete_own" ON document_items;
 
-CREATE POLICY "ditems_delete_own"
-  ON document_items FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM documents d
-      WHERE d.id = document_items.document_id
-        AND d.user_id = auth.uid()
-    )
-  );
+  EXECUTE $pol$
+    CREATE POLICY "ditems_select_own" ON document_items FOR SELECT
+    USING (EXISTS (SELECT 1 FROM documents d WHERE d.id = document_items.document_id AND d.user_id = auth.uid()))
+  $pol$;
+
+  EXECUTE $pol$
+    CREATE POLICY "ditems_insert_own" ON document_items FOR INSERT
+    WITH CHECK (EXISTS (SELECT 1 FROM documents d WHERE d.id = document_items.document_id AND d.user_id = auth.uid()))
+  $pol$;
+
+  EXECUTE $pol$
+    CREATE POLICY "ditems_update_own" ON document_items FOR UPDATE
+    USING (EXISTS (SELECT 1 FROM documents d WHERE d.id = document_items.document_id AND d.user_id = auth.uid()))
+  $pol$;
+
+  EXECUTE $pol$
+    CREATE POLICY "ditems_delete_own" ON document_items FOR DELETE
+    USING (EXISTS (SELECT 1 FROM documents d WHERE d.id = document_items.document_id AND d.user_id = auth.uid()))
+  $pol$;
+
+  RAISE NOTICE 'RLS document_items configuré';
+END $$;
 
 
 -- ════════════════════════════════════════════════════════════════════
