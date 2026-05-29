@@ -93,90 +93,99 @@ export default function EspaceClientPage() {
 
       {/* ── HERO ── */}
       <section
-        className="relative overflow-hidden pt-[100px] pb-16 sm:pt-[130px] sm:pb-24"
-        style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e1b4b 55%,#1e1035 100%)" }}
+        className="relative overflow-hidden pt-[110px] pb-20 sm:pt-[150px] sm:pb-28"
+        style={{ background: "linear-gradient(160deg,#080c18 0%,#0f172a 40%,#130d2a 100%)" }}
       >
-        {/* Déco */}
-        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#c9a55a]/80 to-transparent" />
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[600px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(201,165,90,0.06)] blur-[140px]" />
+        {/* Déco fond */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c9a55a]/50 to-transparent" />
+        <div className="pointer-events-none absolute -top-40 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#c9a55a]/[0.07] blur-[120px]" />
+        <div className="pointer-events-none absolute bottom-0 left-1/4 h-[300px] w-[300px] rounded-full bg-[#8b5cf6]/[0.05] blur-[100px]" />
+        <div className="pointer-events-none absolute bottom-0 right-1/4 h-[300px] w-[300px] rounded-full bg-[#06b6d4]/[0.05] blur-[100px]" />
 
-        <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
-          {/* Badge */}
+        <div className="relative z-10 mx-auto max-w-2xl px-6 text-center">
+
+          {/* Badge pill */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease }}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.30)] bg-[rgba(201,165,90,0.10)] px-5 py-2 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]"
+            className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 backdrop-blur-sm"
           >
-            <Sparkles size={9} /> Espace Client DJAMA
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#c9a55a]/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
+            </span>
+            <span className="text-[0.7rem] font-medium text-white/50 tracking-wide">Espace Client DJAMA</span>
+            <span className="rounded-full bg-[#c9a55a]/15 px-2 py-0.5 text-[0.6rem] font-bold text-[#c9a55a]">18 outils</span>
           </motion.div>
 
           {/* Titre */}
           <motion.h1
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease, delay: 0.1 }}
-            className="text-[2.4rem] font-black leading-[1.1] tracking-tight text-white sm:text-[3.6rem]"
+            className="text-[2.6rem] font-black leading-[1.08] tracking-tight text-white sm:text-[4rem]"
           >
-            Gérez votre activité.{" "}
-            <span className="bg-gradient-to-r from-[#c9a55a] via-[#e8c97a] to-[#c9a55a] bg-clip-text text-transparent">
-              Tout en un.
-            </span>
+            Gérez votre activité.
+            <br />
+            <span className="text-[#c9a55a]">Tout en un.</span>
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease, delay: 0.3 }}
-            className="mx-auto mt-5 max-w-md text-sm leading-[1.8] text-white/55 sm:text-base"
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease, delay: 0.25 }}
+            className="mx-auto mt-5 max-w-sm text-[0.95rem] leading-relaxed text-white/40"
           >
-            18 outils professionnels réunis dans un seul abonnement à <strong className="text-white/80">11,90€/mois</strong>.
+            Factures, CRM, trésorerie, IA — tout ce dont un entrepreneur a besoin, à <strong className="font-semibold text-white/70">11,90€/mois</strong>.
           </motion.p>
+
+          {/* Social proof */}
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+            className="mt-6 flex items-center justify-center gap-3"
+          >
+            <div className="flex -space-x-2">
+              {["#c9a55a","#8b5cf6","#10b981","#f43f5e"].map((c, i) => (
+                <div key={i} className="h-7 w-7 rounded-full border-2 border-[#0f172a] flex items-center justify-center text-[0.5rem] font-black text-white" style={{ background: c }}>
+                  {["S","M","L","K"][i]}
+                </div>
+              ))}
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-0.5">
+                {Array.from({length:5}).map((_,i)=>(
+                  <Star key={i} size={10} className="fill-[#c9a55a] text-[#c9a55a]" />
+                ))}
+                <span className="ml-1 text-[0.7rem] font-bold text-white/70">4,9/5</span>
+              </div>
+              <p className="text-[0.62rem] text-white/30">+50 entrepreneurs actifs</p>
+            </div>
+          </motion.div>
 
           {/* CTAs */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease, delay: 0.45 }}
-            className="mt-10 flex flex-col items-center gap-4"
+            className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
           >
-            {/* Bouton principal premium */}
-            <Link href="#abonnement" className="group relative">
-              {/* Glow */}
-              <div className="absolute -inset-1 rounded-[20px] bg-gradient-to-r from-[#c9a55a] via-[#e8c97a] to-[#c9a55a] opacity-40 blur-lg transition-opacity duration-300 group-hover:opacity-70" />
-              <div className="relative flex items-center gap-4 rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#d9b56a] px-6 py-4 shadow-[0_8px_40px_rgba(201,165,90,0.4)] transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-[0_12px_48px_rgba(201,165,90,0.55)]">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                  <Zap size={20} className="text-white" />
-                </div>
-                <div className="text-left">
-                  <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-white/70">Commencer maintenant</p>
-                  <p className="text-base font-black text-white">S&apos;abonner — 11,90€<span className="text-sm font-semibold text-white/80">/mois</span></p>
-                </div>
-                <div className="ml-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 transition-transform duration-200 group-hover:translate-x-1">
-                  <ChevronRight size={16} className="text-white" />
-                </div>
-              </div>
+            <Link href="#abonnement"
+              className="group flex items-center gap-2.5 rounded-xl bg-[#c9a55a] px-7 py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(201,165,90,0.35)] transition-all hover:bg-[#d4aa60] hover:shadow-[0_6px_32px_rgba(201,165,90,0.5)]">
+              Commencer — 11,90€/mois
+              <ChevronRight size={15} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
-
-            {/* Lien secondaire */}
             <Link href="/login"
-              className="flex items-center gap-2 text-[0.8rem] font-semibold text-white/45 transition hover:text-white/75">
-              <LogIn size={13} />
-              Déjà abonné ? Se connecter
+              className="flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.06] px-7 py-3.5 text-sm font-medium text-white/55 backdrop-blur-sm transition hover:bg-white/10 hover:text-white/80">
+              <LogIn size={14} /> Se connecter
             </Link>
           </motion.div>
 
-          {/* Trust badges */}
+          {/* Trust */}
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-            className="mt-7 flex flex-wrap items-center justify-center gap-x-1 gap-y-2"
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="mt-6 flex flex-wrap items-center justify-center gap-4"
           >
-            {[
-              { icon: CheckCircle2, text: "Accès immédiat" },
-              { icon: Lock,         text: "Paiement Stripe sécurisé" },
-              { icon: BadgeCheck,   text: "Sans engagement" },
-            ].map(({ icon: Icon, text }, i) => (
-              <span key={text} className="flex items-center gap-1.5">
-                {i > 0 && <span className="mx-2 text-white/15">·</span>}
-                <Icon size={11} className="text-[#c9a55a]" />
-                <span className="text-[0.68rem] text-white/40">{text}</span>
+            {["Sans engagement","Stripe sécurisé","Accès immédiat"].map((t) => (
+              <span key={t} className="flex items-center gap-1.5 text-[0.65rem] text-white/25">
+                <CheckCircle2 size={10} className="text-[#c9a55a]/50" /> {t}
               </span>
             ))}
           </motion.div>
