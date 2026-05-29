@@ -136,30 +136,6 @@ export default function EspaceClientPage() {
             Factures, CRM, trésorerie, IA — tout ce dont un entrepreneur a besoin, à <strong className="font-semibold text-white/70">11,90€/mois</strong>.
           </motion.p>
 
-          {/* Social proof */}
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-            className="mt-6 flex items-center justify-center gap-3"
-          >
-            <div className="flex -space-x-2">
-              {["#c9a55a","#8b5cf6","#10b981","#f43f5e"].map((c, i) => (
-                <div key={i} className="h-7 w-7 rounded-full border-2 border-[#0f172a] flex items-center justify-center text-[0.5rem] font-black text-white" style={{ background: c }}>
-                  {["S","M","L","K"][i]}
-                </div>
-              ))}
-            </div>
-            <div className="text-left">
-              <div className="flex items-center gap-0.5">
-                {Array.from({length:5}).map((_,i)=>(
-                  <Star key={i} size={10} className="fill-[#c9a55a] text-[#c9a55a]" />
-                ))}
-                <span className="ml-1 text-[0.7rem] font-bold text-white/70">4,9/5</span>
-              </div>
-              <p className="text-[0.62rem] text-white/30">+50 entrepreneurs actifs</p>
-            </div>
-          </motion.div>
-
           {/* CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
