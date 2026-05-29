@@ -9,7 +9,8 @@ import {
   FileText, CalendarRange, StickyNote, Brain, Timer, CreditCard,
   Globe, Shield, Wallet, Users, LogIn, Sparkles, Zap, Lock,
   BadgeCheck, ChevronRight, CheckCircle2, AlertTriangle,
-  Truck, Package, ListTodo, Star, Share2, Mic, Search, BarChart2,
+  Truck, Package, ListTodo, Star, Mic, Search, BarChart2,
+  LayoutDashboard, BrainCircuit, Rocket,
 } from "lucide-react";
 import StripeButton from "@/components/ui/StripeButton";
 import { viewport } from "@/lib/animations";
@@ -201,39 +202,45 @@ export default function EspaceClientPage() {
           >
             {[
               {
-                emoji: "⚡",
+                icon: LayoutDashboard,
                 title: "Tout en un seul endroit",
                 desc: "Plus besoin de jongler entre 10 outils différents. Factures, CRM, trésorerie, planning — tout est centralisé.",
-                color: "#c9a55a",
+                g1: "#f59e0b", g2: "#f97316",
               },
               {
-                emoji: "🤖",
+                icon: BrainCircuit,
                 title: "Intelligence artificielle intégrée",
                 desc: "Coach business IA, contrats générés en 1 clic, notes vocales transcrites automatiquement. L'IA travaille pour vous.",
-                color: "#8b5cf6",
+                g1: "#8b5cf6", g2: "#7c3aed",
               },
               {
-                emoji: "🚀",
+                icon: Rocket,
                 title: "Opérationnel en 2 minutes",
                 desc: "Interface claire, prise en main immédiate. Pas de formation, pas de configuration complexe. Vous êtes productif dès le premier jour.",
-                color: "#10b981",
+                g1: "#10b981", g2: "#059669",
               },
-            ].map((item) => (
-              <motion.div
-                key={item.title}
-                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
-                className="rounded-2xl border border-gray-100 bg-gray-50 p-6"
-              >
-                <div
-                  className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-xl"
-                  style={{ background: `${item.color}18` }}
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <motion.div
+                  key={item.title}
+                  variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
+                  className="rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
                 >
-                  {item.emoji}
-                </div>
-                <h3 className="mb-2 text-[0.95rem] font-black text-gray-900">{item.title}</h3>
-                <p className="text-[0.8rem] leading-relaxed text-gray-400">{item.desc}</p>
-              </motion.div>
-            ))}
+                  <div
+                    className="mb-4 flex h-14 w-14 items-center justify-center rounded-[18px] shadow-md"
+                    style={{
+                      background: `linear-gradient(145deg, ${item.g1}, ${item.g2})`,
+                      boxShadow: `0 6px 16px ${item.g2}40`,
+                    }}
+                  >
+                    <Icon size={26} color="white" strokeWidth={1.8} />
+                  </div>
+                  <h3 className="mb-2 text-[0.95rem] font-black text-gray-900">{item.title}</h3>
+                  <p className="text-[0.8rem] leading-relaxed text-gray-400">{item.desc}</p>
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </section>
