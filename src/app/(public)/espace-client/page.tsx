@@ -168,7 +168,77 @@ export default function EspaceClientPage() {
         </div>
       </section>
 
-      {/* ── MOCKUP DASHBOARD ── */}
+      {/* ── STATS STRIP ── */}
+      <section className="border-y border-gray-100 bg-gray-50 py-8">
+        <div className="mx-auto max-w-4xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.5, ease }}
+            className="grid grid-cols-2 gap-4 sm:grid-cols-4"
+          >
+            {[
+              { value: "18",       label: "Outils professionnels", color: "#c9a55a" },
+              { value: "11,90€",   label: "Par mois tout inclus",  color: "#8b5cf6" },
+              { value: "+50",      label: "Entrepreneurs actifs",  color: "#10b981" },
+              { value: "100%",     label: "Accès immédiat",        color: "#06b6d4" },
+            ].map((s) => (
+              <div key={s.label} className="flex flex-col items-center gap-1 text-center">
+                <span className="text-3xl font-black" style={{ color: s.color }}>{s.value}</span>
+                <span className="text-[0.7rem] font-medium text-gray-400">{s.label}</span>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── AVANTAGES ── */}
+      <section className="bg-white py-12">
+        <div className="mx-auto max-w-5xl px-6">
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
+            className="grid gap-5 sm:grid-cols-3"
+          >
+            {[
+              {
+                emoji: "⚡",
+                title: "Tout en un seul endroit",
+                desc: "Plus besoin de jongler entre 10 outils différents. Factures, CRM, trésorerie, planning — tout est centralisé.",
+                color: "#c9a55a",
+              },
+              {
+                emoji: "🤖",
+                title: "Intelligence artificielle intégrée",
+                desc: "Coach business IA, contrats générés en 1 clic, notes vocales transcrites automatiquement. L'IA travaille pour vous.",
+                color: "#8b5cf6",
+              },
+              {
+                emoji: "🚀",
+                title: "Opérationnel en 2 minutes",
+                desc: "Interface claire, prise en main immédiate. Pas de formation, pas de configuration complexe. Vous êtes productif dès le premier jour.",
+                color: "#10b981",
+              },
+            ].map((item) => (
+              <motion.div
+                key={item.title}
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
+                className="rounded-2xl border border-gray-100 bg-gray-50 p-6"
+              >
+                <div
+                  className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-xl"
+                  style={{ background: `${item.color}18` }}
+                >
+                  {item.emoji}
+                </div>
+                <h3 className="mb-2 text-[0.95rem] font-black text-gray-900">{item.title}</h3>
+                <p className="text-[0.8rem] leading-relaxed text-gray-400">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── OUTILS ── */}
       <section id="outils" className="bg-white py-14 sm:py-20 overflow-hidden">
         <div className="mx-auto max-w-6xl px-6">
           <motion.div
