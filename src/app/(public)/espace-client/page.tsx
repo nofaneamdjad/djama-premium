@@ -9,6 +9,7 @@ import {
   FileText, CalendarRange, StickyNote, Brain, Timer, CreditCard,
   Globe, Shield, Wallet, Users, LogIn, Sparkles, Zap, Lock,
   BadgeCheck, ChevronRight, CheckCircle2, AlertTriangle,
+  Truck, Package, ListTodo, Star, Share2, Mic, Search, BarChart2,
 } from "lucide-react";
 import StripeButton from "@/components/ui/StripeButton";
 import { viewport } from "@/lib/animations";
@@ -59,15 +60,23 @@ function AlreadySubscribedRedirect() {
 /* ── Outils ── */
 const TOOLS = [
   { icon: FileText,      title: "Factures & Devis",  color: "#c9a55a", rgb: "201,165,90"  },
+  { icon: BarChart2,     title: "Tableau de bord",   color: "#60a5fa", rgb: "96,165,250"  },
   { icon: Users,         title: "CRM Client",         color: "#22d3ee", rgb: "34,211,238"  },
   { icon: Brain,         title: "Coach Business IA",  color: "#a78bfa", rgb: "167,139,250" },
   { icon: Wallet,        title: "Trésorerie",         color: "#34d399", rgb: "52,211,153"  },
-  { icon: CalendarRange, title: "Agenda & Planning",  color: "#60a5fa", rgb: "96,165,250"  },
-  { icon: Timer,         title: "Chrono Pro",         color: "#fb923c", rgb: "251,146,60"  },
   { icon: CreditCard,    title: "Dépenses Pro",       color: "#f43f5e", rgb: "244,63,94"   },
   { icon: Shield,        title: "Contrats IA",        color: "#eab308", rgb: "234,179,8"   },
-  { icon: Globe,         title: "Sourcing IA",        color: "#f59e0b", rgb: "245,158,11"  },
-  { icon: StickyNote,    title: "Bloc-notes Pro",     color: "#4ade80", rgb: "74,222,128"  },
+  { icon: Truck,         title: "Fournisseurs",       color: "#f97316", rgb: "249,115,22"  },
+  { icon: Package,       title: "Stocks",             color: "#10b981", rgb: "16,185,129"  },
+  { icon: ListTodo,      title: "Tâches & Projets",   color: "#8b5cf6", rgb: "139,92,246"  },
+  { icon: CalendarRange, title: "Équipe & Planning",  color: "#06b6d4", rgb: "6,182,212"   },
+  { icon: Timer,         title: "Chrono Pro",         color: "#fb923c", rgb: "251,146,60"  },
+  { icon: StickyNote,    title: "Notes IA",           color: "#4ade80", rgb: "74,222,128"  },
+  { icon: Mic,           title: "Bloc-note Vocal",    color: "#e879f9", rgb: "232,121,249" },
+  { icon: Search,        title: "Sourcing IA",        color: "#f59e0b", rgb: "245,158,11"  },
+  { icon: Globe,         title: "Réseaux Sociaux",    color: "#38bdf8", rgb: "56,189,248"  },
+  { icon: Star,          title: "Réputation",         color: "#facc15", rgb: "250,204,21"  },
+  { icon: Zap,           title: "Assistant IA",       color: "#c084fc", rgb: "192,132,252" },
 ] as const;
 
 /* ══════════════════════════════════════════════════════
@@ -117,7 +126,7 @@ export default function EspaceClientPage() {
             transition={{ duration: 0.6, ease, delay: 0.3 }}
             className="mx-auto mt-5 max-w-md text-sm leading-[1.8] text-white/55 sm:text-base"
           >
-            10 outils professionnels réunis dans un seul abonnement à <strong className="text-white/80">11,90€/mois</strong>.
+            18 outils professionnels réunis dans un seul abonnement à <strong className="text-white/80">11,90€/mois</strong>.
           </motion.p>
 
           {/* CTAs */}
@@ -171,7 +180,7 @@ export default function EspaceClientPage() {
               Ce qui est inclus
             </p>
             <h2 className="text-xl font-black text-gray-900 sm:text-3xl">
-              10 outils,{" "}
+              18 outils,{" "}
               <span className="text-[#c9a55a]">un seul abonnement.</span>
             </h2>
           </motion.div>
@@ -179,7 +188,7 @@ export default function EspaceClientPage() {
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.05 } } }}
-            className="grid grid-cols-2 gap-2.5 sm:grid-cols-5"
+            className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6"
           >
             {TOOLS.map((tool) => {
               const Icon = tool.icon;
@@ -232,11 +241,15 @@ export default function EspaceClientPage() {
               {/* Liste courte */}
               <ul className="mb-7 grid grid-cols-2 gap-y-2 gap-x-3">
                 {[
-                  "10 outils inclus",
+                  "18 outils inclus",
                   "Coach Business IA",
                   "Factures illimitées",
                   "CRM & contacts",
                   "Trésorerie & dépenses",
+                  "Stocks & fournisseurs",
+                  "Équipe & planning",
+                  "Notes IA & bloc-note",
+                  "Sourcing & réputation",
                   "Mises à jour incluses",
                   "Support réactif",
                   "Sans engagement",
