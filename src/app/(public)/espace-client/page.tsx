@@ -227,7 +227,7 @@ export default function EspaceClientPage() {
               {
                 icon: LayoutDashboard,
                 title: "Tout en un seul endroit",
-                desc: "Plus besoin de jongler entre 10 outils différents. Factures, CRM, trésorerie, planning — tout est centralisé.",
+                desc: "Plus besoin de jongler entre 18 outils différents. Factures, CRM, trésorerie, planning — tout est centralisé.",
                 g1: "#f59e0b", g2: "#f97316",
               },
               {
