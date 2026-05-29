@@ -59,25 +59,25 @@ function AlreadySubscribedRedirect() {
 
 /* ── Outils ── */
 const TOOLS = [
-  { icon: FileText,      title: "Factures & Devis",  color: "#c9a55a", rgb: "201,165,90"  },
-  { icon: BarChart2,     title: "Tableau de bord",   color: "#60a5fa", rgb: "96,165,250"  },
-  { icon: Users,         title: "CRM Client",         color: "#22d3ee", rgb: "34,211,238"  },
-  { icon: Brain,         title: "Coach Business IA",  color: "#a78bfa", rgb: "167,139,250" },
-  { icon: Wallet,        title: "Trésorerie",         color: "#34d399", rgb: "52,211,153"  },
-  { icon: CreditCard,    title: "Dépenses Pro",       color: "#f43f5e", rgb: "244,63,94"   },
-  { icon: Shield,        title: "Contrats IA",        color: "#eab308", rgb: "234,179,8"   },
-  { icon: Truck,         title: "Fournisseurs",       color: "#f97316", rgb: "249,115,22"  },
-  { icon: Package,       title: "Stocks",             color: "#10b981", rgb: "16,185,129"  },
-  { icon: ListTodo,      title: "Tâches & Projets",   color: "#8b5cf6", rgb: "139,92,246"  },
-  { icon: CalendarRange, title: "Équipe & Planning",  color: "#06b6d4", rgb: "6,182,212"   },
-  { icon: Timer,         title: "Chrono Pro",         color: "#fb923c", rgb: "251,146,60"  },
-  { icon: StickyNote,    title: "Notes IA",           color: "#4ade80", rgb: "74,222,128"  },
-  { icon: Mic,           title: "Bloc-note Vocal",    color: "#e879f9", rgb: "232,121,249" },
-  { icon: Search,        title: "Sourcing IA",        color: "#f59e0b", rgb: "245,158,11"  },
-  { icon: Globe,         title: "Réseaux Sociaux",    color: "#38bdf8", rgb: "56,189,248"  },
-  { icon: Star,          title: "Réputation",         color: "#facc15", rgb: "250,204,21"  },
-  { icon: Zap,           title: "Assistant IA",       color: "#c084fc", rgb: "192,132,252" },
-] as const;
+  { icon: FileText,      title: "Factures & devis",      g1: "#f59e0b", g2: "#f97316" },
+  { icon: CalendarRange, title: "Agenda & Planification", g1: "#3b82f6", g2: "#6366f1" },
+  { icon: StickyNote,    title: "Bloc-notes pro",         g1: "#10b981", g2: "#059669" },
+  { icon: Brain,         title: "Coach Business IA",      g1: "#8b5cf6", g2: "#7c3aed" },
+  { icon: Users,         title: "CRM Client",             g1: "#06b6d4", g2: "#0284c7" },
+  { icon: Timer,         title: "Chrono Pro",             g1: "#f97316", g2: "#ef4444" },
+  { icon: CreditCard,    title: "Dépenses Pro",           g1: "#ef4444", g2: "#be123c" },
+  { icon: Wallet,        title: "Trésorerie",             g1: "#10b981", g2: "#0891b2" },
+  { icon: Shield,        title: "Contrats IA",            g1: "#eab308", g2: "#ca8a04" },
+  { icon: Search,        title: "Sourcing IA",            g1: "#f59e0b", g2: "#b45309" },
+  { icon: Truck,         title: "Fournisseurs",           g1: "#22c55e", g2: "#16a34a" },
+  { icon: Package,       title: "Stocks",                 g1: "#0ea5e9", g2: "#0369a1" },
+  { icon: ListTodo,      title: "Tâches & Projets",       g1: "#a855f7", g2: "#7c3aed" },
+  { icon: Mic,           title: "Bloc-note Vocal",        g1: "#ec4899", g2: "#be185d" },
+  { icon: Globe,         title: "Réseaux Sociaux",        g1: "#38bdf8", g2: "#0284c7" },
+  { icon: Star,          title: "Réputation",             g1: "#facc15", g2: "#f59e0b" },
+  { icon: BarChart2,     title: "Tableau de bord",        g1: "#60a5fa", g2: "#3b82f6" },
+  { icon: Zap,           title: "Assistant IA",           g1: "#c084fc", g2: "#a855f7" },
+];
 
 /* ══════════════════════════════════════════════════════
    PAGE
@@ -347,24 +347,30 @@ export default function EspaceClientPage() {
             </div>
           </motion.div>
 
-          {/* Grille outils compacte SOUS le mockup */}
+          {/* Grille outils style app icons */}
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
-            className="mt-16 grid grid-cols-3 gap-2 sm:grid-cols-6 lg:grid-cols-9"
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.05 } } }}
+            className="mt-16 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
           >
             {TOOLS.map((tool) => {
               const Icon = tool.icon;
               return (
                 <motion.div key={tool.title}
-                  variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1, transition: { duration: 0.3, ease } } }}
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-gray-100 bg-gray-50 p-3 text-center"
+                  variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease } } }}
+                  className="flex flex-col items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg border"
-                    style={{ background: `rgba(${tool.rgb},0.1)`, borderColor: `rgba(${tool.rgb},0.2)` }}>
-                    <Icon size={14} style={{ color: tool.color }} />
+                  {/* Icône style iOS */}
+                  <div
+                    className="flex h-[60px] w-[60px] items-center justify-center rounded-[18px] shadow-md"
+                    style={{
+                      background: `linear-gradient(145deg, ${tool.g1}, ${tool.g2})`,
+                      boxShadow: `0 6px 16px ${tool.g2}40`,
+                    }}
+                  >
+                    <Icon size={26} color="white" strokeWidth={1.8} />
                   </div>
-                  <p className="text-[0.62rem] font-bold leading-tight text-gray-600">{tool.title}</p>
+                  <p className="text-[0.72rem] font-bold leading-tight text-gray-700">{tool.title}</p>
                 </motion.div>
               );
             })}
