@@ -132,37 +132,51 @@ export default function EspaceClientPage() {
 
           {/* CTAs */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease, delay: 0.45 }}
-            className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
+            className="mt-10 flex flex-col items-center gap-4"
           >
-            <Link href="#abonnement"
-              className="group flex items-center gap-2.5 rounded-2xl bg-[#c9a55a] px-8 py-3.5 text-sm font-bold text-white shadow-[0_8px_32px_rgba(201,165,90,0.35)] transition-all hover:bg-[#d9b56a]">
-              <Wallet size={15} />
-              S&apos;abonner — 11,90€/mois
-              <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+            {/* Bouton principal premium */}
+            <Link href="#abonnement" className="group relative">
+              {/* Glow */}
+              <div className="absolute -inset-1 rounded-[20px] bg-gradient-to-r from-[#c9a55a] via-[#e8c97a] to-[#c9a55a] opacity-40 blur-lg transition-opacity duration-300 group-hover:opacity-70" />
+              <div className="relative flex items-center gap-4 rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#d9b56a] px-6 py-4 shadow-[0_8px_40px_rgba(201,165,90,0.4)] transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-[0_12px_48px_rgba(201,165,90,0.55)]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                  <Zap size={20} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-white/70">Commencer maintenant</p>
+                  <p className="text-base font-black text-white">S&apos;abonner — 11,90€<span className="text-sm font-semibold text-white/80">/mois</span></p>
+                </div>
+                <div className="ml-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 transition-transform duration-200 group-hover:translate-x-1">
+                  <ChevronRight size={16} className="text-white" />
+                </div>
+              </div>
             </Link>
+
+            {/* Lien secondaire */}
             <Link href="/login"
-              className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-7 py-3.5 text-sm font-semibold text-white/75 transition hover:bg-white/15 hover:text-white">
-              <LogIn size={14} /> Déjà abonné ? Se connecter
+              className="flex items-center gap-2 text-[0.8rem] font-semibold text-white/45 transition hover:text-white/75">
+              <LogIn size={13} />
+              Déjà abonné ? Se connecter
             </Link>
           </motion.div>
 
-          {/* Micro-trust */}
+          {/* Trust badges */}
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.65 }}
-            className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className="mt-7 flex flex-wrap items-center justify-center gap-x-1 gap-y-2"
           >
             {[
-              { icon: Zap,        text: "Accès immédiat" },
-              { icon: Lock,       text: "Stripe SSL"     },
-              { icon: BadgeCheck, text: "Sans engagement"},
-              { icon: Users,      text: "+50 abonnés"   },
-            ].map(({ icon: Icon, text }) => (
-              <span key={text} className="flex items-center gap-1.5 text-[0.7rem] text-white/35">
-                <Icon size={10} className="text-[#c9a55a]" />
-                {text}
+              { icon: CheckCircle2, text: "Accès immédiat" },
+              { icon: Lock,         text: "Paiement Stripe sécurisé" },
+              { icon: BadgeCheck,   text: "Sans engagement" },
+            ].map(({ icon: Icon, text }, i) => (
+              <span key={text} className="flex items-center gap-1.5">
+                {i > 0 && <span className="mx-2 text-white/15">·</span>}
+                <Icon size={11} className="text-[#c9a55a]" />
+                <span className="text-[0.68rem] text-white/40">{text}</span>
               </span>
             ))}
           </motion.div>
