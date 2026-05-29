@@ -14,7 +14,7 @@ import {
   Globe, Brain,
   Code2, BarChart3, Briefcase,
   Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem, Star,
-  Truck, Package, ListTodo, Zap,
+  Truck, Package, ListTodo, Zap, Wallet,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import {
@@ -80,8 +80,8 @@ const ESPACE_TOOLS = [
   { icon: Users2,        color: "#22d3ee",  title: "CRM Client",              desc: "Contacts, prospects et historique." },
   { icon: Timer,         color: "#fb923c",  title: "Chrono Pro",              desc: "Temps par projet et rentabilité." },
   { icon: CreditCard,    color: "#f43f5e",  title: "Dépenses Pro",            desc: "Frais pro par catégorie." },
-  { icon: Shield,        color: "#34d399",  title: "Trésorerie",              desc: "Flux, solde et finances." },
-  { icon: Shield,        color: "#eab308",  title: "Contrats IA",             desc: "Contrats personnalisés en secondes." },
+  { icon: Wallet,        color: "#34d399",  title: "Trésorerie",              desc: "Flux, solde et finances." },
+  { icon: ShieldCheck,   color: "#eab308",  title: "Contrats IA",             desc: "Contrats personnalisés en secondes." },
   { icon: Globe,         color: "#f59e0b",  title: "Sourcing IA",             desc: "Fournisseurs et marchés publics." },
   { icon: Truck,         color: "#16a34a",  title: "Fournisseurs",            desc: "Catalogue et commandes." },
   { icon: Package,       color: "#0d9488",  title: "Stocks",                  desc: "Inventaire en temps réel." },
@@ -561,7 +561,7 @@ function HomeContent() {
             {([
               { val: "18",     label: "outils inclus",  color: "#6366f1" },
               { val: "11,90€", label: "/ mois",         color: "#c9a55a" },
-              { val: "0",      label: "engagement",     color: "#10b981" },
+              { val: "Sans",   label: "engagement",     color: "#10b981" },
               { val: "✓",      label: "accès immédiat", color: "#f59e0b" },
             ] as const).map(({ val, label, color }) => (
               <div key={label} className="flex items-center gap-1.5">
@@ -1023,7 +1023,7 @@ function HomeContent() {
                     <span className="font-bold" style={{ color: GOLD }}>11,90€/mois</span>
                   </p>
                   <p className="mt-1 text-[0.68rem] text-gray-400">
-                    + 10 outils pros inclus · Sans engagement · Résiliable à tout moment
+                    + 18 outils pros inclus · Sans engagement · Résiliable à tout moment
                   </p>
 
                   <Link
