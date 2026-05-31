@@ -56,7 +56,7 @@ function Field({
   );
 }
 
-export default function ProfilPage() {
+function ProfilPage() {
   const sub = useSubscription();
   const { level, isPremium, name, email, userId } = sub;
   const searchParams = useSearchParams();
