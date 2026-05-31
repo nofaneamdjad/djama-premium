@@ -397,6 +397,40 @@ const APP_ICONS: Record<string, React.ReactElement> = {
       <path d="M12 38 Q12 30 24 30 Q36 30 36 38" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity="0.7"/>
     </svg>
   ),
+  "/client/portail": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <defs><linearGradient id="ig18" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#60a5fa"/><stop offset="1" stopColor="#7c3aed"/></linearGradient></defs>
+      <rect width="48" height="48" rx="14" fill="url(#ig18)"/>
+      {/* Building */}
+      <rect x="11" y="16" width="26" height="22" rx="3" fill="white" opacity="0.18"/>
+      <rect x="11" y="16" width="26" height="22" rx="3" stroke="white" strokeWidth="1.5" opacity="0.5"/>
+      {/* Roof triangle */}
+      <path d="M8 18 L24 8 L40 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.75"/>
+      {/* Door */}
+      <rect x="20" y="27" width="8" height="11" rx="2" fill="white" opacity="0.85"/>
+      {/* Windows */}
+      <rect x="14" y="21" width="6" height="5" rx="1.5" fill="white" opacity="0.6"/>
+      <rect x="28" y="21" width="6" height="5" rx="1.5" fill="white" opacity="0.6"/>
+    </svg>
+  ),
+  "/client/paie": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <defs><linearGradient id="ig19" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#34d399"/><stop offset="1" stopColor="#065f46"/></linearGradient></defs>
+      <rect width="48" height="48" rx="14" fill="url(#ig19)"/>
+      {/* Card */}
+      <rect x="7" y="14" width="34" height="22" rx="4" fill="white" opacity="0.18"/>
+      <rect x="7" y="14" width="34" height="22" rx="4" stroke="white" strokeWidth="1.5" opacity="0.5"/>
+      <rect x="7" y="19" width="34" height="6" fill="white" opacity="0.12"/>
+      {/* Euro symbol */}
+      <text x="18" y="32" fontSize="14" fontWeight="bold" fill="white" opacity="0.9" fontFamily="Arial">€</text>
+      {/* People icons */}
+      <circle cx="34" cy="30" r="3" fill="white" opacity="0.8"/>
+      <path d="M28 38c0-3.314 2.686-4 6-4s6 .686 6 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.6"/>
+      {/* Salary bars */}
+      <rect x="9" y="28" width="4" height="5" rx="1" fill="white" opacity="0.7"/>
+      <rect x="14" y="25" width="4" height="8" rx="1" fill="white" opacity="0.7"/>
+    </svg>
+  ),
 };
 
 /* ── App icon renderer ── */
