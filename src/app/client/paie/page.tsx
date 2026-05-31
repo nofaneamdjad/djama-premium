@@ -39,7 +39,7 @@ export default function PaieRHPage() {
   const [search,  setSearch]      = useState("");
   const [showForm, setShowForm]   = useState(false);
   const [userId, setUserId]       = useState<string | null>(null);
-  const { toasts, push, remove }  = useToastStack();
+  const { toasts, add, remove }   = useToastStack();
 
   const [form, setForm] = useState({
     nom: "", poste: "", salaire_brut: "",
@@ -71,7 +71,7 @@ export default function PaieRHPage() {
   async function addEmploye() {
     if (!userId || !form.nom.trim() || !form.salaire_brut) return;
     const brut = parseFloat(form.salaire_brut);
-    if (isNaN(brut) || brut <= 0) { push({ type: "error", message: "Salaire invalide" }); return; }
+    if (isNaN(brut) || brut <= 0) { add("Salaire invalide", "error"); return; }
     const { error } = await supabase.from("employes").insert({
       user_id:      userId,
       nom:          form.nom.trim(),
@@ -81,8 +81,8 @@ export default function PaieRHPage() {
       type_contrat: form.type_contrat,
       actif:        true,
     });
-    if (error) { push({ type: "error", message: "Erreur lors de l'ajout" }); return; }
-    push({ type: "success", message: `${form.nom} ajouté` });
+    if (error) { add("Erreur lors de l'ajout", "error"); return; }
+    add(`${form.nom} ajouté`, "success");
     setForm({ nom: "", poste: "", salaire_brut: "", date_embauche: "", type_contrat: "CDI" });
     setShowForm(false);
     await load();
@@ -91,7 +91,7 @@ export default function PaieRHPage() {
   async function deleteEmploye(id: string, nom: string) {
     if (!confirm(`Supprimer ${nom} ?`)) return;
     await supabase.from("employes").delete().eq("id", id);
-    push({ type: "success", message: "Employé supprimé" });
+    add("Employé supprimé", "success");
     await load();
   }
 
@@ -114,7 +114,7 @@ export default function PaieRHPage() {
 
   return (
     <div className="min-h-full bg-[#f6f7f9]">
-      <ToastStack toasts={toasts} onClose={remove} />
+      <ToastStack toasts={toasts} remove={remove} />
 
       {/* Header */}
       <div className="border-b border-gray-200 bg-white px-5 py-4 sm:px-6">

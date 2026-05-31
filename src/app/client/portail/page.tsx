@@ -31,7 +31,7 @@ export default function PortailClientPage() {
   const [search,  setSearch]      = useState("");
   const [showForm, setShowForm]   = useState(false);
   const [userId, setUserId]       = useState<string | null>(null);
-  const { toasts, push, remove }  = useToastStack();
+  const { toasts, add, remove }   = useToastStack();
 
   const [form, setForm] = useState({
     nom: "", email: "", phone: "", entreprise: "",
@@ -69,8 +69,8 @@ export default function PortailClientPage() {
       entreprise: form.entreprise.trim() || null,
       acces_actif: true,
     });
-    if (error) { push({ type: "error", message: "Erreur lors de l'invitation" }); return; }
-    push({ type: "success", message: `${form.nom} invité avec succès` });
+    if (error) { add("Erreur lors de l'invitation", "error"); return; }
+    add(`${form.nom} invité avec succès`, "success");
     setForm({ nom: "", email: "", phone: "", entreprise: "" });
     setShowForm(false);
     await load();
@@ -78,14 +78,14 @@ export default function PortailClientPage() {
 
   async function toggleAccess(id: string, current: boolean) {
     await supabase.from("portail_clients").update({ acces_actif: !current }).eq("id", id);
-    push({ type: "success", message: current ? "Accès désactivé" : "Accès activé" });
+    add(current ? "Accès désactivé" : "Accès activé", "success");
     await load();
   }
 
   async function deleteClient(id: string, nom: string) {
     if (!confirm(`Supprimer ${nom} du portail ?`)) return;
     await supabase.from("portail_clients").delete().eq("id", id);
-    push({ type: "success", message: "Client supprimé" });
+    add("Client supprimé", "success");
     await load();
   }
 
@@ -100,7 +100,7 @@ export default function PortailClientPage() {
 
   return (
     <div className="min-h-full bg-[#f6f7f9]">
-      <ToastStack toasts={toasts} onClose={remove} />
+      <ToastStack toasts={toasts} remove={remove} />
 
       {/* Header */}
       <div className="border-b border-gray-200 bg-white px-5 py-4 sm:px-6">
