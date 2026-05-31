@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, CreditCard, Shield, FileText,
   Calendar, Briefcase, Star, Edit3, Settings, LogOut,
   Menu, X, ChevronRight, MessageSquare, Award, Receipt, Building2,
-  BarChart3, Camera, Film, Palette, Brain,
+  BarChart3, Camera, Film, Palette, Brain, Banknote,
 } from "lucide-react";
 
 const GOLD = "#c9a55a";
@@ -29,6 +29,7 @@ const NAV_GROUPS = [
       { href: "/admin/clients",      label: "Clients",      icon: Users            },
       { href: "/admin/paiements",    label: "Paiements",    icon: CreditCard       },
       { href: "/admin/acces",        label: "Accès",        icon: Shield           },
+      { href: "/admin/virements",    label: "Virements",    icon: Banknote         },
     ],
   },
   {
