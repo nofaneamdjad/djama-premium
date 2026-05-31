@@ -14,7 +14,7 @@ import {
   Globe, Brain,
   Code2, BarChart3, Briefcase,
   Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem, Star,
-  Truck, Package, ListTodo, Zap, Wallet,
+  Truck, Package, ListTodo, Zap, Wallet, Building2, Banknote,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import {
@@ -91,6 +91,8 @@ const ESPACE_TOOLS = [
   { icon: Zap,           color: "#0369a1",  title: "Assistant IA",            desc: "Relances auto et conseils." },
   { icon: Star,          color: "#b91c1c",  title: "Réputation",              desc: "Avis et e-réputation." },
   { icon: Zap,           color: "#e1306c",  title: "Réseaux Sociaux IA",      desc: "Planifiez et créez du contenu." },
+  { icon: Building2,     color: "#3b82f6",  title: "Portail Client",           desc: "Espace dédié à chaque client." },
+  { icon: Banknote,      color: "#10b981",  title: "Paie & RH",                desc: "Fiches de paie et cotisations." },
 ] as const;
 
 const PUBLIC_APP_ICONS = [
@@ -323,6 +325,50 @@ const PUBLIC_APP_ICONS = [
     <circle cx="37" cy="35" r="7" fill="#e1306c"/>
     <path d="M37 40 C34 37 31 34.5 31 32 C31 30.3 32.3 29 34 29 C35.2 29 36.3 29.8 37 31 C37.7 29.8 38.8 29 40 29 C41.7 29 43 30.3 43 32 C43 34.5 40 37 37 40Z" fill="white" fillOpacity="0.95"/>
   </svg>,
+
+  /* 18 – Portail Client */
+  <svg key="p18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub18" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#3b82f6"/><stop offset="1" stopColor="#7c3aed"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub18)"/>
+    {/* Bâtiment */}
+    <rect x="10" y="17" width="26" height="22" rx="2" fill="white" fillOpacity="0.92"/>
+    {/* Toit */}
+    <path d="M7 19 L23 8 L39 19" fill="white" fillOpacity="0.55"/>
+    {/* Fenêtres */}
+    <rect x="14" y="22" width="6" height="5" rx="1" fill="#3b82f6" fillOpacity="0.45"/>
+    <rect x="27" y="22" width="6" height="5" rx="1" fill="#3b82f6" fillOpacity="0.45"/>
+    {/* Porte */}
+    <rect x="19" y="29" width="9" height="10" rx="2" fill="#7c3aed" fillOpacity="0.55"/>
+    {/* Badge personne */}
+    <circle cx="37" cy="13" r="7" fill="#7c3aed"/>
+    <circle cx="37" cy="11" r="2.5" fill="white" fillOpacity="0.9"/>
+    <path d="M32.5 18 C32.5 15.5 34.6 14 37 14 C39.4 14 41.5 15.5 41.5 18" fill="white" fillOpacity="0.9"/>
+  </svg>,
+
+  /* 19 – Paie & RH */
+  <svg key="p19" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+    <defs><linearGradient id="pub19" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#10b981"/><stop offset="1" stopColor="#065f46"/></linearGradient></defs>
+    <rect width="48" height="48" rx="12" fill="url(#pub19)"/>
+    {/* Billet */}
+    <rect x="6" y="14" width="32" height="20" rx="4" fill="white" fillOpacity="0.92"/>
+    {/* Bande centrale */}
+    <rect x="6" y="21" width="32" height="6" fill="white" fillOpacity="0.22"/>
+    {/* Cercle valeur */}
+    <circle cx="22" cy="24" r="5.5" fill="#10b981" fillOpacity="0.18"/>
+    <circle cx="22" cy="24" r="3.5" fill="#10b981" fillOpacity="0.35"/>
+    {/* Barre € */}
+    <rect x="21" y="20" width="2" height="8" rx="1" fill="#065f46" fillOpacity="0.6"/>
+    <rect x="18.5" y="22.5" width="7" height="1.5" rx="0.75" fill="#065f46" fillOpacity="0.6"/>
+    <rect x="18.5" y="25" width="7" height="1.5" rx="0.75" fill="#065f46" fillOpacity="0.5"/>
+    {/* Points coins */}
+    <circle cx="10" cy="24" r="2" fill="#10b981" fillOpacity="0.4"/>
+    <circle cx="34" cy="24" r="2" fill="#10b981" fillOpacity="0.4"/>
+    {/* Badge personne + check */}
+    <circle cx="37" cy="13" r="7" fill="#065f46"/>
+    <circle cx="37" cy="11" r="2.5" fill="white" fillOpacity="0.85"/>
+    <path d="M32.5 18 C32.5 15.5 34.6 14 37 14 C39.4 14 41.5 15.5 41.5 18" fill="white" fillOpacity="0.85"/>
+    <path d="M34.5 11.5 L36.5 13.5 L40 10" stroke="#10b981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>,
 ];
 
 export default function Page() {
@@ -505,7 +551,7 @@ function HomeContent() {
               variants={fadeIn}
               className="text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]"
             >
-              18 outils pros,{" "}
+              20 outils pros,{" "}
               <span style={{ color: "#6366f1" }}>1 abonnement</span>.
             </motion.h2>
 
@@ -559,7 +605,7 @@ function HomeContent() {
             className="mt-5 flex flex-wrap items-center justify-center gap-5 rounded-2xl bg-white px-6 py-4 shadow-[0_2px_12px_rgba(0,0,0,.06)] sm:gap-10"
           >
             {([
-              { val: "18",     label: "outils inclus",  color: "#6366f1" },
+              { val: "20",     label: "outils inclus",  color: "#6366f1" },
               { val: "11,90€", label: "/ mois",         color: "#c9a55a" },
               { val: "Sans",   label: "engagement",     color: "#10b981" },
               { val: "✓",      label: "accès immédiat", color: "#f59e0b" },
@@ -1023,7 +1069,7 @@ function HomeContent() {
                     <span className="font-bold" style={{ color: GOLD }}>11,90€/mois</span>
                   </p>
                   <p className="mt-1 text-[0.68rem] text-gray-400">
-                    + 18 outils pros inclus · Sans engagement · Résiliable à tout moment
+                    + 20 outils pros inclus · Sans engagement · Résiliable à tout moment
                   </p>
 
                   <Link

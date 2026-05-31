@@ -10,7 +10,7 @@ import {
   Globe, Shield, Wallet, Users, LogIn, Sparkles, Zap, Lock,
   BadgeCheck, ChevronRight, CheckCircle2, AlertTriangle,
   Truck, Package, ListTodo, Star, Mic, Search, BarChart2,
-  LayoutDashboard, BrainCircuit, Rocket,
+  LayoutDashboard, BrainCircuit, Rocket, Building2, Banknote,
 } from "lucide-react";
 import StripeButton from "@/components/ui/StripeButton";
 import { viewport } from "@/lib/animations";
@@ -78,6 +78,8 @@ const TOOLS = [
   { icon: Star,          title: "Réputation",             g1: "#facc15", g2: "#f59e0b" },
   { icon: BarChart2,     title: "Tableau de bord",        g1: "#60a5fa", g2: "#3b82f6" },
   { icon: Zap,           title: "Assistant IA",           g1: "#c084fc", g2: "#a855f7" },
+  { icon: Building2,     title: "Portail Client",          g1: "#3b82f6", g2: "#7c3aed" },
+  { icon: Banknote,      title: "Paie & RH",               g1: "#10b981", g2: "#065f46" },
 ];
 
 /* ══════════════════════════════════════════════════════
@@ -114,7 +116,7 @@ export default function EspaceClientPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
             </span>
             <span className="text-[0.7rem] font-medium text-white/50 tracking-wide">Espace Client DJAMA</span>
-            <span className="rounded-full bg-[#c9a55a]/15 px-2 py-0.5 text-[0.6rem] font-bold text-[#c9a55a]">18 outils</span>
+            <span className="rounded-full bg-[#c9a55a]/15 px-2 py-0.5 text-[0.6rem] font-bold text-[#c9a55a]">20 outils</span>
           </motion.div>
 
           {/* Titre */}
@@ -203,7 +205,7 @@ export default function EspaceClientPage() {
               {
                 icon: LayoutDashboard,
                 title: "Tout en un seul endroit",
-                desc: "Plus besoin de jongler entre 18 outils différents. Factures, CRM, trésorerie, planning — tout est centralisé.",
+                desc: "Plus besoin de jongler entre 20 outils différents. Factures, CRM, trésorerie, planning — tout est centralisé.",
                 g1: "#f59e0b", g2: "#f97316",
               },
               {
@@ -256,7 +258,7 @@ export default function EspaceClientPage() {
               Ce qui est inclus
             </p>
             <h2 className="text-xl font-black text-gray-900 sm:text-3xl">
-              18 outils,{" "}
+              20 outils,{" "}
               <span className="text-[#c9a55a]">un seul abonnement.</span>
             </h2>
             <p className="mx-auto mt-3 max-w-sm text-sm text-gray-400">
@@ -324,7 +326,7 @@ export default function EspaceClientPage() {
               {/* Liste courte */}
               <ul className="mb-7 grid grid-cols-2 gap-y-2 gap-x-3">
                 {[
-                  "18 outils inclus",
+                  "20 outils inclus",
                   "Coach Business IA",
                   "Factures illimitées",
                   "CRM & contacts",

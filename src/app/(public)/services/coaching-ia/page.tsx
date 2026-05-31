@@ -151,7 +151,7 @@ export default function CoachingIAPage() {
             "Quiz et fiches PDF",
             "Bibliothèque 200+ prompts",
             "Mises à jour à vie",
-            "10 outils pros inclus",
+            "20 outils pros inclus",
           ],
           hot: true,
         },
