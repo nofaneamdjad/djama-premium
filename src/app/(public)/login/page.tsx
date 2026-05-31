@@ -110,14 +110,14 @@ function LoginPageInner() {
   const [errorType,     setErrorType]     = useState<"credentials"|"other"|null>(null);
   const [resendOk,      setResendOk]      = useState(false);
 
-  useEffect(() => { supabase.auth.signOut(); }, []);
+  // Pas de signOut automatique — cela détruisait les sessions OAuth
 
   async function handleGoogleAuth() {
     setError(""); setGoogleLoading(true); setShowSplash(true);
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/client`,
+        redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: { access_type: "offline", prompt: "select_account" },
       },
     });
