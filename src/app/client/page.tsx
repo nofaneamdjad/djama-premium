@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ReceiptText, Users, Timer, CreditCard, FileText, Search,
   Wallet, StickyNote, Calendar, CalendarRange, Brain, Zap, Star, Mic,
-  Truck, Package, Bell, BarChart2,
+  Truck, Package, Bell, BarChart2, Building2, Banknote,
   ChevronRight, LogOut, Settings, LayoutGrid, ListTodo,
   Sparkles, TrendingUp, TrendingDown, Send, Share2,
   Lock, Crown,
@@ -73,6 +73,15 @@ const MODULE_GROUPS = [
       { href: "/client/reputation",        label: "Réputation",         sub: "Avis, e-réputation, veille",     icon: Star,   color: "#b91c1c", bg: "#fee2e2" },
       { href: "/client/reseaux-sociaux",   label: "Réseaux Sociaux IA", sub: "Planifier et créer du contenu",  icon: Share2, color: "#e1306c", bg: "#fce7f3" },
       { href: "/coaching-ia/espace",       label: "Coaching IA",        sub: "Accompagnement personnalisé",    icon: Brain,  color: "#9d174d", bg: "#fdf2f8" },
+    ],
+  },
+  {
+    label: "Gestion",
+    icon: Building2,
+    color: "#3b82f6",
+    modules: [
+      { href: "/client/portail", label: "Portail Client", sub: "Espace dédié à vos clients",          icon: Building2, color: "#3b82f6", bg: "#dbeafe" },
+      { href: "/client/paie",    label: "Paie & RH",      sub: "Salaires, contrats, effectif",        icon: Banknote,  color: "#10b981", bg: "#d1fae5" },
     ],
   },
 ] as const;
