@@ -10,6 +10,7 @@ import {
   CalendarRange, Timer, StickyNote, Mic, Search, Zap, Star, Brain,
   Crown, Sparkles, Lock, ChevronRight, X, Menu,
   LogOut, Bell, ArrowRight, CheckCircle2, Share2, User, AlertTriangle,
+  Building2, Banknote,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSubscription } from "@/lib/use-require-subscription";
@@ -44,6 +45,8 @@ const PRO_TOOLS = [
   { href: "/client/reputation",      label: "Réputation",        icon: Star         },
   { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux",   icon: Share2       },
   { href: "/coaching-ia/espace",     label: "Coaching IA",       icon: Brain        },
+  { href: "/client/portail",         label: "Portail Client",    icon: Building2    },
+  { href: "/client/paie",            label: "Paie & RH",         icon: Banknote     },
 ] as const;
 
 /* ─────────── PREMIUM GROUPED NAV ─────────── */
@@ -91,6 +94,13 @@ const PREMIUM_GROUPS = [
       { href: "/client/reputation",      label: "Réputation",     icon: Star,       exact: false },
       { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux",icon: Share2,     exact: false },
       { href: "/coaching-ia/espace",     label: "Coaching IA",    icon: Brain,      exact: false },
+    ],
+  },
+  {
+    label: "Gestion",
+    items: [
+      { href: "/client/portail", label: "Portail Client", icon: Building2, exact: false },
+      { href: "/client/paie",    label: "Paie & RH",      icon: Banknote,  exact: false },
     ],
   },
 ] as const;
@@ -460,7 +470,7 @@ function PremiumGate() {
               </div>
               <h2 className="mt-2 text-xl font-extrabold text-gray-900">Outil PRO requis</h2>
               <p className="mt-1.5 text-sm leading-relaxed text-gray-400">
-                Passez à PRO pour débloquer cet outil<br />et les 15+ autres modules avancés.
+                Passez à PRO pour débloquer cet outil<br />et les 19 autres modules avancés.
               </p>
             </motion.div>
 
@@ -471,7 +481,7 @@ function PremiumGate() {
               transition={{ duration: 0.3, delay: 0.28 }}
               className="mt-5 flex flex-wrap justify-center gap-1.5"
             >
-              {["CRM", "Trésorerie", "Contrats IA", "Assistant IA", "Stocks", "+ 11 autres"].map(f => (
+              {["CRM", "Trésorerie", "Contrats IA", "Assistant IA", "Portail Client", "Paie & RH", "+ 13 autres"].map(f => (
                 <span key={f} className="rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold"
                   style={{ background: `${GOLD}0d`, color: `${GOLD}cc`, border: `1px solid ${GOLD}1a` }}>
                   {f}
