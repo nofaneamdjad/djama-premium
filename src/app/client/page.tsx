@@ -583,109 +583,79 @@ export default function CockpitPage() {
       <OnboardingModal name={firstName} />
 
       {/* ══════════════════════════════════════════════
-          HEADER — Revolut / banking style
+          HEADER — Premium dashboard
       ══════════════════════════════════════════════ */}
       <div
         className="relative overflow-hidden"
-        style={{ background: "linear-gradient(160deg,#0c1222 0%,#111827 50%,#0d1320 100%)" }}
+        style={{ background: "linear-gradient(145deg,#0a0f1e 0%,#0f1729 55%,#0c1220 100%)" }}
       >
-        {/* Animated gold top line */}
+        {/* Gold shimmer top */}
         <motion.div
           initial={{ scaleX: 0, opacity: 0 }}
           animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute inset-x-0 top-0 h-[1.5px] origin-left bg-gradient-to-r from-transparent via-[#c9a55a]/60 to-transparent"
+          transition={{ duration: 1.1, ease }}
+          className="absolute inset-x-0 top-0 h-[1px] origin-left"
+          style={{ background: "linear-gradient(90deg, transparent 0%, rgba(201,165,90,0.7) 40%, rgba(201,165,90,0.3) 70%, transparent 100%)" }}
         />
-        {/* Floating orbs */}
+        {/* Orb ambiance */}
         <motion.div
-          animate={{ y: [0, -18, 0], opacity: [0.06, 0.13, 0.06] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="pointer-events-none absolute -top-10 left-1/2 h-[320px] w-[600px] -translate-x-1/2 rounded-full blur-[100px]"
-          style={{ background: "rgba(201,165,90,0.12)" }}
-        />
-        <motion.div
-          animate={{ y: [0, 14, 0], x: [0, -10, 0], opacity: [0.04, 0.09, 0.04] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-          className="pointer-events-none absolute -bottom-10 -left-10 h-[220px] w-[320px] rounded-full blur-[80px]"
-          style={{ background: "rgba(99,102,241,0.10)" }}
+          animate={{ scale: [1, 1.15, 1], opacity: [0.07, 0.14, 0.07] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+          className="pointer-events-none absolute -top-16 left-1/2 h-[280px] w-[500px] -translate-x-1/2 rounded-full blur-[90px]"
+          style={{ background: "rgba(201,165,90,0.18)" }}
         />
         <motion.div
-          animate={{ y: [0, -12, 0], x: [0, 8, 0], opacity: [0.03, 0.08, 0.03] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-          className="pointer-events-none absolute right-0 top-1/3 h-[180px] w-[260px] rounded-full blur-[70px]"
-          style={{ background: "rgba(52,211,153,0.08)" }}
+          animate={{ y: [0, 16, 0], opacity: [0.04, 0.1, 0.04] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="pointer-events-none absolute bottom-0 right-0 h-[200px] w-[300px] rounded-full blur-[80px]"
+          style={{ background: "rgba(96,165,250,0.08)" }}
         />
 
-        <div className="relative mx-auto max-w-4xl px-6">
+        <div className="relative mx-auto max-w-4xl px-5 pt-4 pb-5">
 
-          {/* ── Top bar: greeting + avatar ── */}
+          {/* ── Top bar ── */}
           <motion.div
-            initial={{ opacity: 0, y: -6 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.32, ease }}
-            className="flex items-center justify-between pt-5 pb-4"
+            transition={{ duration: 0.35, ease }}
+            className="flex items-center justify-between mb-5"
           >
+            {/* Greeting */}
             <div>
-              <motion.p
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.35, delay: 0.05, ease }}
-                className="text-[0.65rem] font-medium capitalize tracking-wide text-white/35"
-              >
-                {getDay()}
-              </motion.p>
-              <motion.p
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.38, delay: 0.13, ease }}
-                className="mt-0.5 text-[13px] font-medium text-white/60"
-              >
-                {getGreeting()}
-                {firstName && (
-                  <motion.span
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.26, ease }}
-                    className="font-semibold text-white/85"
-                  >
-                    {`, ${firstName}`}
-                  </motion.span>
-                )}
-              </motion.p>
+              <p className="text-[0.62rem] font-medium capitalize tracking-widest text-white/30">{getDay()}</p>
+              <p className="mt-0.5 text-[13px] font-semibold text-white/70">
+                {getGreeting()}{firstName && <span className="text-white">, {firstName}</span>}
+              </p>
             </div>
-
+            {/* Actions */}
             <div className="flex items-center gap-2">
               <Link href="/client/dashboard" className="relative">
-                <motion.div whileTap={{ scale: 0.9 }}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.07] text-white/50 transition hover:bg-white/[0.12]"
-                  style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
-                  <Bell size={14} />
+                <motion.div whileTap={{ scale: 0.88 }}
+                  className="flex h-8 w-8 items-center justify-center rounded-full"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
+                  <Bell size={13} className="text-white/50" />
                   {nbFactures > 0 && <NotifBadge count={nbFactures} />}
                 </motion.div>
               </Link>
-
               <div className="relative" ref={menuRef}>
-                <motion.button
-                  whileTap={{ scale: 0.92 }}
+                <motion.button whileTap={{ scale: 0.9 }}
                   onClick={() => setMenuOpen(o => !o)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-[#0a0a0a] shadow-[0_2px_12px_rgba(201,165,90,0.35)]"
-                  style={{ background: "linear-gradient(135deg,#c9a55a,#b8923f)" }}
-                >
-                  {initial}
-                </motion.button>
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-black text-black shadow-[0_0_16px_rgba(201,165,90,0.4)]"
+                  style={{ background: "linear-gradient(135deg,#d4aa5f,#b08d45)" }}
+                >{initial}</motion.button>
                 <AnimatePresence>
                   {menuOpen && (
                     <motion.div
-                      initial={{ opacity:0, scale:0.92, y:-8 }}
+                      initial={{ opacity:0, scale:0.92, y:-6 }}
                       animate={{ opacity:1, scale:1, y:0 }}
-                      exit={{ opacity:0, scale:0.92, y:-8 }}
-                      transition={{ duration:0.18, ease }}
-                      className="absolute right-0 top-10 z-50 w-52 overflow-hidden rounded-2xl bg-white shadow-[0_8px_32px_rgba(0,0,0,0.18)]"
-                      style={{ border:"1px solid rgba(0,0,0,0.06)" }}
+                      exit={{ opacity:0, scale:0.92, y:-6 }}
+                      transition={{ duration:0.16, ease }}
+                      className="absolute right-0 top-10 z-50 w-52 overflow-hidden rounded-2xl bg-white shadow-[0_12px_40px_rgba(0,0,0,0.22)]"
+                      style={{ border:"1px solid rgba(0,0,0,0.07)" }}
                     >
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-[12px] font-semibold text-gray-900">{firstName}</p>
-                        <p className="text-[11px] text-gray-400">{isPremium ? "DJAMA PRO" : "Plan Gratuit"}</p>
+                        <p className="text-[12px] font-bold text-gray-900">{firstName}</p>
+                        <p className="text-[10.5px] text-gray-400">{isPremium ? "DJAMA PRO ✦" : "Plan Gratuit"}</p>
                       </div>
                       {[
                         { icon:LayoutGrid, label:"Dashboard",  href:"/client/dashboard"  },
@@ -695,9 +665,9 @@ export default function CockpitPage() {
                         return (
                           <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
                             className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50">
-                            <Icon size={14} className="text-gray-500" />
-                            <span className="flex-1 text-[13px] font-medium text-gray-700">{item.label}</span>
-                            <ChevronRight size={12} className="text-gray-300" />
+                            <Icon size={13} className="text-gray-400" />
+                            <span className="flex-1 text-[12.5px] font-medium text-gray-700">{item.label}</span>
+                            <ChevronRight size={11} className="text-gray-300" />
                           </Link>
                         );
                       })}
@@ -705,8 +675,8 @@ export default function CockpitPage() {
                         onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
                         className="flex w-full items-center gap-3 px-4 py-2.5 transition-colors hover:bg-red-50 border-t border-gray-100"
                       >
-                        <LogOut size={14} className="text-red-400" />
-                        <span className="text-[13px] font-medium text-red-400">Se déconnecter</span>
+                        <LogOut size={13} className="text-red-400" />
+                        <span className="text-[12.5px] font-medium text-red-400">Se déconnecter</span>
                       </button>
                     </motion.div>
                   )}
@@ -715,77 +685,123 @@ export default function CockpitPage() {
             </div>
           </motion.div>
 
-          {/* ── Balance / CA card ── */}
+          {/* ── CA Card glassmorphism ── */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.38, delay: 0.06, ease }}
-            className="mb-7"
+            transition={{ duration: 0.42, delay: 0.08, ease }}
+            className="mb-4 rounded-2xl p-4"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px)",
+            }}
           >
-            <p className="mb-1 text-[11px] font-medium uppercase tracking-widest text-white/35">
-              Chiffre d&apos;affaires
-            </p>
+            {/* CA + évolution */}
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30 mb-1">
+                  Chiffre d&apos;affaires · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+                </p>
+                {kpiLoading ? (
+                  <div className="h-9 w-32 animate-pulse rounded-xl" style={{ background:"rgba(255,255,255,0.08)" }}/>
+                ) : (
+                  <motion.p
+                    initial={{ opacity:0, y:6 }}
+                    animate={{ opacity:1, y:0 }}
+                    transition={{ duration:0.3, delay:0.18, ease }}
+                    className="text-[2.4rem] font-black leading-none tracking-tight text-white"
+                  >
+                    {fmtEurInt(caMonth)}
+                  </motion.p>
+                )}
+              </div>
 
-            <div className="flex items-end gap-3">
-              {kpiLoading ? (
-                <div className="h-10 w-36 animate-pulse rounded-xl" style={{ background:"rgba(255,255,255,0.1)" }}/>
-              ) : (
-                <motion.p
-                  initial={{ opacity:0, scale:0.94 }}
-                  animate={{ opacity:1, scale:1 }}
-                  transition={{ duration:0.3, delay:0.15, ease }}
-                  className="text-[2.6rem] font-black leading-none tracking-tight text-white"
-                >
-                  {fmtEurInt(caMonth)}
-                </motion.p>
-              )}
-
-              {!kpiLoading && caEvo !== null && (
+              {!kpiLoading && caEvo !== null ? (
                 <motion.div
-                  initial={{ opacity:0, x:8 }}
-                  animate={{ opacity:1, x:0 }}
-                  transition={{ duration:0.3, delay:0.22, ease }}
-                  className="mb-1 flex items-center gap-1 rounded-full px-2.5 py-1"
-                  style={{
-                    background: caEvo >= 0 ? "rgba(74,222,128,0.15)" : "rgba(248,113,113,0.15)",
-                    border: `1px solid ${caEvo >= 0 ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`,
-                  }}>
-                  {caEvo >= 0
-                    ? <TrendingUp size={11} color="#4ade80"/>
-                    : <TrendingDown size={11} color="#f87171"/>
-                  }
-                  <span className="text-[11px] font-bold" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
-                    {caEvo >= 0 ? "+" : ""}{caEvo}%
-                  </span>
+                  initial={{ opacity:0, scale:0.85 }}
+                  animate={{ opacity:1, scale:1 }}
+                  transition={{ duration:0.28, delay:0.25, ease }}
+                  className="flex flex-col items-end gap-1"
+                >
+                  <div className="flex items-center gap-1 rounded-xl px-2.5 py-1.5"
+                    style={{
+                      background: caEvo >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)",
+                      border: `1px solid ${caEvo >= 0 ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}`,
+                    }}>
+                    {caEvo >= 0
+                      ? <TrendingUp size={12} color="#4ade80"/>
+                      : <TrendingDown size={12} color="#f87171"/>
+                    }
+                    <span className="text-[12px] font-black" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
+                      {caEvo >= 0 ? "+" : ""}{caEvo}%
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-white/20">vs mois préc.</span>
                 </motion.div>
+              ) : (
+                <div className="flex h-6 w-6 items-center justify-center rounded-full"
+                  style={{ background: "rgba(201,165,90,0.12)", border: "1px solid rgba(201,165,90,0.2)" }}>
+                  <BarChart2 size={11} style={{ color: GOLD }} />
+                </div>
               )}
             </div>
 
-            <p className="mt-1 text-[11px] text-white/25">
-              {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-            </p>
+            {/* Mini stats row */}
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {[
+                { label: "Contacts CRM",    val: kpiLoading ? "…" : String(nbContacts), color: "#60a5fa" },
+                { label: "Factures en att.", val: kpiLoading ? "…" : String(nbFactures), color: nbFactures > 0 ? "#f87171" : "#4ade80" },
+                { label: "Évolution",        val: kpiLoading ? "…" : caEvo !== null ? `${caEvo >= 0 ? "+" : ""}${caEvo}%` : "—", color: caEvo === null ? "#a78bfa" : caEvo >= 0 ? "#4ade80" : "#f87171" },
+              ].map(s => (
+                <div key={s.label}
+                  className="flex flex-col items-center justify-center rounded-xl py-2"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+                >
+                  <span className="text-[14px] font-black" style={{ color: s.color }}>{s.val}</span>
+                  <span className="mt-0.5 text-[9px] text-white/25 text-center leading-tight">{s.label}</span>
+                </div>
+              ))}
+            </div>
           </motion.div>
 
-          {/* ── Quick action buttons (Revolut row) — 4 max ── */}
-          <div className="mb-7 flex items-start justify-around gap-2">
-            <QuickAction href="/client/factures"   icon={ReceiptText} label="Facture"  color="#c9a55a" bg="rgba(201,165,90,0.18)"  delay={0.14}/>
-            <QuickAction href="/client/factures"   icon={Send}        label="Devis"    color="#60a5fa" bg="rgba(59,130,246,0.15)"  delay={0.20}/>
-            <QuickAction href="/client/depenses"   icon={CreditCard}  label="Dépense"  color="#f97316" bg="rgba(249,115,22,0.15)"  delay={0.26} locked={isFree}/>
-            <QuickAction href="/client/crm"        icon={Users}       label="Clients"  color="#a78bfa" bg="rgba(167,139,250,0.15)" delay={0.32} locked={isFree}/>
-          </div>
-
-          {/* ── Stats row ── */}
-          <div className="flex gap-2.5 pb-6">
-            <StatPill label="Contacts CRM"  value={String(nbContacts)}   color="#60a5fa" loading={kpiLoading} delay={0.38}/>
-            <StatPill label="En attente"    value={String(nbFactures)}   color={nbFactures > 0 ? "#f87171" : "#4ade80"} loading={kpiLoading} delay={0.46}/>
-            <StatPill
-              label="vs mois dernier"
-              value={caEvo !== null ? `${caEvo >= 0 ? "+" : ""}${caEvo}%` : "—"}
-              color={caEvo === null ? "#a78bfa" : caEvo >= 0 ? "#4ade80" : "#f87171"}
-              loading={kpiLoading}
-              delay={0.54}
-            />
-          </div>
+          {/* ── Quick actions ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.38, delay: 0.18, ease }}
+            className="grid grid-cols-4 gap-2"
+          >
+            {[
+              { href:"/client/factures", icon:ReceiptText, label:"Facture",  color:"#c9a55a", bg:"rgba(201,165,90,0.14)",  locked:false },
+              { href:"/client/factures", icon:Send,        label:"Devis",    color:"#60a5fa", bg:"rgba(59,130,246,0.12)",  locked:false },
+              { href:"/client/depenses", icon:CreditCard,  label:"Dépense",  color:"#f97316", bg:"rgba(249,115,22,0.12)",  locked:isFree },
+              { href:"/client/crm",      icon:Users,        label:"Clients",  color:"#a78bfa", bg:"rgba(167,139,250,0.12)", locked:isFree },
+            ].map((a, i) => {
+              const AIcon = a.icon;
+              return (
+                <motion.div key={a.label}
+                  initial={{ opacity:0, y:10, scale:0.9 }}
+                  animate={{ opacity:1, y:0, scale:1 }}
+                  transition={{ type:"spring", stiffness:380, damping:22, delay: 0.22 + i * 0.06 }}
+                >
+                  <Link href={a.href}
+                    className="relative flex flex-col items-center gap-1.5 rounded-2xl py-3 transition active:scale-95"
+                    style={{ background: a.bg, border: `1px solid ${a.color}22` }}
+                  >
+                    <AIcon size={18} style={{ color: a.color }} strokeWidth={1.8} />
+                    <span className="text-[10px] font-semibold" style={{ color: a.color }}>{a.label}</span>
+                    {a.locked && (
+                      <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full shadow-sm"
+                        style={{ background: GOLD }}>
+                        <Lock size={6} color="black" strokeWidth={3} />
+                      </div>
+                    )}
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </motion.div>
 
         </div>
       </div>
@@ -816,7 +832,7 @@ export default function CockpitPage() {
               </div>
               <div>
                 <p className="text-[12px] font-bold text-gray-800">Débloquez tous les modules</p>
-                <p className="text-[10.5px] text-gray-400">15 outils PRO · 11,90€/mois · Sans engagement</p>
+                <p className="text-[10.5px] text-gray-400">17 outils PRO · 11,90€/mois · Sans engagement</p>
               </div>
             </div>
             <Link
