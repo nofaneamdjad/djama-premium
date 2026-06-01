@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { sendPaymentReceivedEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendPaymentReceivedEmail } from "@/lib/email";
 import { createLogger } from "@/lib/logger";
 import { syncSubscriptionAccess } from "@/lib/subscription-helpers";
 
@@ -244,6 +244,7 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
 
 /* ─────────────────────────────────────────────────────────────
    checkout.session.completed — abonnement outils
+   → Active immédiatement l'accès + envoie l'email de bienvenue
 ───────────────────────────────────────────────────────────── */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const email            = session.customer_details?.email ?? null;
@@ -257,7 +258,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  log.info("checkout.session.completed reçu");
+  log.info("checkout.session.completed reçu pour " + email);
 
   const supabase   = getSupabaseAdmin();
   let   isNewUser  = false;
@@ -269,14 +270,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     : await findUserByEmail(email);
 
   if (!existingUser) {
-    /* Nouveau client → créer le compte */
+    /* Nouveau client → créer le compte directement actif */
     const { data, error } = await supabase.auth.admin.createUser({
       email,
-      email_confirm: true,          // email déjà vérifié via Stripe
+      email_confirm: true,
       user_metadata: {
-        full_name:             fullName,
-        subscription_active:   false,   // pas encore activé — l'admin décide
-        stripe_customer_id:    stripeCustomerId,
+        full_name:              fullName,
+        subscription_active:    true,
+        abonnement:             "outils_djama",
+        statut:                 "actif",
+        stripe_customer_id:     stripeCustomerId,
         stripe_subscription_id: stripeSubId,
       },
     });
@@ -289,46 +292,65 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     existingUser = data.user;
     userId       = data.user.id;
     isNewUser    = true;
-    log.info("Nouveau compte créé");
+    log.info("Nouveau compte Stripe créé");
 
   } else {
-    /* Client existant → mettre à jour ses metadata */
     userId = userId ?? existingUser.id;
-
     await supabase.auth.admin.updateUserById(existingUser.id, {
       user_metadata: {
         ...existingUser.user_metadata,
-        full_name:             fullName ?? existingUser.user_metadata?.full_name,
-        subscription_active:   false,   // pas encore activé — l'admin décide
-        stripe_customer_id:    stripeCustomerId,
+        full_name:              fullName ?? existingUser.user_metadata?.full_name,
+        subscription_active:    true,
+        abonnement:             "outils_djama",
+        statut:                 "actif",
+        stripe_customer_id:     stripeCustomerId,
         stripe_subscription_id: stripeSubId,
       },
     });
     log.info("Compte existant mis à jour");
   }
 
-  /* ── 2. Upsert table clients ─────────────────────────────── */
+  /* ── 2. Upsert clients + activer user_access ─────────────── */
   await upsertClientRecord({
     userId:               userId!,
     email,
     fullName,
     stripeCustomerId,
     stripeSubscriptionId: stripeSubId,
-    subscriptionActive:   false,   // pas encore activé — l'admin décide
+    subscriptionActive:   true,
   });
 
-  /* ── 3. Enregistrer dans user_access (sans débloquer) ───── */
-  await upsertUserAccess({
+  /* Activer directement outils_saas + espace_premium */
+  await syncSubscriptionAccess({
     email,
-    name:   fullName,
-    source: "stripe",
-    // tous les booleans restent false par défaut (voir upsertUserAccess)
+    userId:         userId!,
+    active:         true,
+    provider:       "stripe",
+    subscriptionId: stripeSubId,
+    userData:       existingUser?.user_metadata ?? {},
   });
 
-  /* ── 4. Envoyer email "paiement reçu, en attente d'activation" ── */
-  await sendPaymentReceivedEmail({ email, fullName, service: "espace_client" });
+  /* ── 3. Générer le lien d'accès (magic link ou invite) ───── */
+  let accessLink = `${SITE_URL}/client`;
+  try {
+    const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
+      type:    isNewUser ? "invite" : "magiclink",
+      email,
+      options: { redirectTo: `${SITE_URL}/client` },
+    });
+    if (linkErr) {
+      log.warn("generateLink error: " + linkErr.message);
+    } else if (linkData?.properties?.action_link) {
+      accessLink = linkData.properties.action_link;
+    }
+  } catch (e) {
+    log.warn("generateLink exception: " + String(e));
+  }
 
-  log.info(`Paiement enregistré — ${isNewUser ? "nouveau client" : "existant"} — en attente activation`);
+  /* ── 4. Envoyer l'email de bienvenue avec lien d'accès ───── */
+  await sendWelcomeEmail({ email, fullName, accessLink, isNewUser });
+
+  log.info(`✅ Abonnement Stripe activé — ${isNewUser ? "nouveau client" : "existant"} → ${email}`);
 }
 
 /* ─────────────────────────────────────────────────────────────
