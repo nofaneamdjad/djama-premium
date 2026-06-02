@@ -10,11 +10,16 @@ import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import webpush from "web-push";
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+function getWebPush() {
+  const subject = process.env.VAPID_EMAIL;
+  const pubKey  = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privKey = process.env.VAPID_PRIVATE_KEY;
+  if (!subject || !pubKey || !privKey) {
+    throw new Error("VAPID keys not configured (VAPID_EMAIL / NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)");
+  }
+  webpush.setVapidDetails(subject, pubKey, privKey);
+  return webpush;
+}
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
@@ -77,7 +82,7 @@ export async function POST(req: NextRequest) {
 
   for (const sub of subs) {
     try {
-      await webpush.sendNotification(
+      await getWebPush().sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
         payload
       );

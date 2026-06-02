@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // ── Turbopack — évite l'avertissement de workspace root ─────────
+  turbopack: {
+    root: __dirname,
+  },
+
   // ── Images externes — Supabase Storage + éventuels CDN ──────────
   images: {
     remotePatterns: [

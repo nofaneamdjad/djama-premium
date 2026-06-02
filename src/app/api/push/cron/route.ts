@@ -14,11 +14,14 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("push/cron");
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+function getWebPush() {
+  const subject = process.env.VAPID_EMAIL;
+  const pubKey  = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privKey = process.env.VAPID_PRIVATE_KEY;
+  if (!subject || !pubKey || !privKey) return null;
+  webpush.setVapidDetails(subject, pubKey, privKey);
+  return webpush;
+}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,7 +45,9 @@ async function pushToUser(
 
   for (const sub of subs) {
     try {
-      await webpush.sendNotification(
+      const wp = getWebPush();
+      if (!wp) { log.warn("VAPID non configuré — push ignoré"); break; }
+      await wp.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
         payloadStr
       );

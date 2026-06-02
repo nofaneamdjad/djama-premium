@@ -26,9 +26,12 @@ const log = createLogger("webhook/stripe");
      RESEND_API_KEY  (optionnel — email non envoyé si absent)
 ─────────────────────────────────────────────────────────────── */
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-03-25.dahlia",
-});
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2026-03-25.dahlia",
+  });
+}
+const stripe = getStripe();
 
 /* ── Supabase Admin (service role — serveur uniquement) ────── */
 function getSupabaseAdmin() {
