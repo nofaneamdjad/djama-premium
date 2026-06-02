@@ -154,11 +154,16 @@ export async function POST(req: Request) {
         { auth: { autoRefreshToken: false, persistSession: false } }
       );
 
+      const grantsPremium = outils_saas === true || espace_premium === true;
+      const premiumMeta = grantsPremium
+        ? { subscription_active: true, abonnement: "outils_djama", statut: "actif" }
+        : {};
+
       const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
         email:         normalizedEmail,
         password:      accessCode,
         email_confirm: true,
-        user_metadata: { needs_password_reset: true },
+        user_metadata: { needs_password_reset: true, ...premiumMeta },
       });
 
       if (authErr) {
@@ -179,7 +184,7 @@ export async function POST(req: Request) {
                 const { error: updErr } = await adminClient.auth.admin.updateUserById(authUser.id, {
                   password:      accessCode,
                   email_confirm: true,
-                  user_metadata: { needs_password_reset: true },
+                  user_metadata: { ...authUser.user_metadata, needs_password_reset: true, ...premiumMeta },
                 });
                 if (updErr) {
                   log.warn("updateUserById échoué: " + updErr.message);

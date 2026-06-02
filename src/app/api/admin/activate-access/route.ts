@@ -95,24 +95,55 @@ export async function POST(req: Request) {
 
     const resolvedName = name?.trim() || (existing?.name as string | null) || null;
 
-    // ── 2. Mise à jour dans user_access ──────────────────────────
+    // ── 2. Mise à jour dans user_access (upsert pour créer si absent) ──
     const { error: updateError } = await supabase
       .from("user_access")
-      .update({
+      .upsert({
+        email:      normalizedEmail,
+        name:       resolvedName ?? existing?.name ?? "",
         [col]:      activate,
         updated_at: new Date().toISOString(),
         ...(activate ? { notes: (existing?.notes ?? "") + ` | Activé le ${new Date().toLocaleDateString("fr-FR")}` } : {}),
-      })
-      .eq("email", normalizedEmail);
+      }, { onConflict: "email" });
 
     if (updateError) {
-      log.error("update error", updateError.message);
+      log.error("upsert error", updateError.message);
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
     log.info(`${activate ? "Activé" : "Désactivé"} ${col} → ${normalizedEmail}`);
 
-    // ── 3. Envoi de l'email si activation (pas pour désactivation) ──
+    // ── 3. Synchroniser user_metadata.subscription_active ────────
+    const isPremiumCol = col === "outils_saas" || col === "espace_premium";
+    if (isPremiumCol) {
+      try {
+        const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+        if (svcKey && !svcKey.startsWith("COLLER_")) {
+          const adminClient = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            svcKey,
+            { auth: { autoRefreshToken: false, persistSession: false } }
+          );
+          const { data: { users } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+          const authUser = users?.find(u => u.email?.toLowerCase() === normalizedEmail);
+          if (authUser) {
+            await adminClient.auth.admin.updateUserById(authUser.id, {
+              user_metadata: {
+                ...authUser.user_metadata,
+                subscription_active: activate,
+                abonnement:          activate ? "outils_djama" : null,
+                statut:              activate ? "actif" : "inactif",
+              },
+            });
+            log.info(`user_metadata.subscription_active → ${activate} pour ${normalizedEmail}`);
+          }
+        }
+      } catch (e) {
+        log.warn("sync user_metadata failed (non bloquant): " + String(e));
+      }
+    }
+
+    // ── 4. Envoi de l'email si activation (pas pour désactivation) ──
     if (!activate) {
       return NextResponse.json({ success: true });
     }
