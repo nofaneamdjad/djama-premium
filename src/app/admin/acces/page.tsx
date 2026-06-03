@@ -18,7 +18,6 @@ import {
   RefreshCw, Search, Pencil, CreditCard, User,
   Clock, Zap, AlertCircle, Mail, CheckCircle2, SendHorizonal, KeyRound,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import type { UserAccessRow } from "@/types/db";
 
 // ─────────────────────────────────────────────────────────────
@@ -109,15 +108,17 @@ export default function AdminAcces() {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("user_access")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("[AdminAcces] fetch error:", error);
-    } else {
-      setUsers((data ?? []) as UserAccessRow[]);
+    try {
+      // Utilise l'API service_role — le client browser (anon) est bloqué par RLS
+      const res = await fetch("/api/admin/user-access");
+      const json = await res.json() as { data?: UserAccessRow[]; error?: string };
+      if (!res.ok || json.error) {
+        console.error("[AdminAcces] fetch error:", json.error);
+      } else {
+        setUsers(json.data ?? []);
+      }
+    } catch (err) {
+      console.error("[AdminAcces] fetch exception:", err);
     }
     setLoading(false);
   }
@@ -280,9 +281,12 @@ export default function AdminAcces() {
         );
 
       } else {
-        const { error } = await supabase
-          .from("user_access")
-          .update({
+        // Mise à jour via API service_role (le client browser est bloqué par RLS)
+        const res = await fetch("/api/admin/user-access", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: editId!,
             email: form.email.trim().toLowerCase(),
             name: form.name.trim(),
             espace_premium: form.espace_premium,
@@ -291,11 +295,10 @@ export default function AdminAcces() {
             outils_saas: form.outils_saas,
             notes: form.notes.trim() || null,
             source: "manual",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", editId!);
-
-        if (error) throw error;
+          }),
+        });
+        const json = await res.json() as { success?: boolean; error?: string };
+        if (!res.ok || !json.success) throw new Error(json.error ?? "Erreur serveur.");
         setModal(null);
         showToast("Accès mis à jour ✓");
       }
@@ -310,8 +313,23 @@ export default function AdminAcces() {
 
   // ── Suppression ────────────────────────────────────────────
   async function deleteUser(id: string) {
-    const { error } = await supabase.from("user_access").delete().eq("id", id);
-    if (error) { console.error("[AdminAcces] delete error:", error); return; }
+    try {
+      const res = await fetch("/api/admin/user-access", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const json = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok || !json.success) {
+        console.error("[AdminAcces] delete error:", json.error);
+        showToast("Erreur lors de la suppression.", false);
+        return;
+      }
+    } catch (err) {
+      console.error("[AdminAcces] delete exception:", err);
+      showToast("Erreur lors de la suppression.", false);
+      return;
+    }
     setConfirmDel(null);
     showToast("Accès supprimé");
     load();
