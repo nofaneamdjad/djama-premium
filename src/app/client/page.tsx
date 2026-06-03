@@ -364,6 +364,67 @@ const APP_ICONS: Record<string, React.ReactElement> = {
       <rect x="14" y="25" width="4" height="8" rx="1" fill="white" opacity="0.7"/>
     </svg>
   ),
+
+  /* ── Icônes Quick Actions ── */
+  "qa/devis": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <defs><linearGradient id="qa0" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#6366f1"/><stop offset="1" stopColor="#0ea5e9"/></linearGradient></defs>
+      <rect width="48" height="48" rx="14" fill="url(#qa0)"/>
+      <rect x="12" y="8" width="18" height="24" rx="3" fill="white" opacity="0.18"/>
+      <rect x="12" y="8" width="18" height="24" rx="3" stroke="white" strokeWidth="1.5" opacity="0.5"/>
+      <rect x="16" y="15" width="10" height="1.8" rx="0.9" fill="white"/>
+      <rect x="16" y="19" width="7" height="1.5" rx="0.75" fill="white" opacity="0.65"/>
+      <rect x="16" y="23" width="8.5" height="1.5" rx="0.75" fill="white" opacity="0.65"/>
+      <rect x="26" y="29" width="11" height="3" rx="1.5" fill="white" opacity="0.15"/>
+      <path d="M27 37 L35 29 L38.5 32.5 L30.5 40.5 L27 40.5 Z" fill="white" opacity="0.9"/>
+      <path d="M33 31 L36.5 34.5" stroke="rgba(99,102,241,0.4)" strokeWidth="1.2"/>
+    </svg>
+  ),
+  "qa/contact": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <defs><linearGradient id="qa1" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#a855f7"/><stop offset="1" stopColor="#6d28d9"/></linearGradient></defs>
+      <rect width="48" height="48" rx="14" fill="url(#qa1)"/>
+      <circle cx="24" cy="16" r="7.5" fill="white" opacity="0.22"/>
+      <circle cx="24" cy="16" r="5.5" fill="white" opacity="0.75"/>
+      <path d="M10 38 C10 29.163 16.268 24 24 24 C31.732 24 38 29.163 38 38" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity="0.6"/>
+      <path d="M10 38 C10 31 16.268 27 24 27 C31.732 27 38 31 38 38" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.88"/>
+      <circle cx="35" cy="34" r="6" fill="white"/>
+      <path d="M32.5 34 L34.5 36 L38 32" stroke="#6d28d9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  "qa/note": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <defs><linearGradient id="qa2" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#f59e0b"/><stop offset="1" stopColor="#b45309"/></linearGradient></defs>
+      <rect width="48" height="48" rx="14" fill="url(#qa2)"/>
+      <rect x="10" y="9" width="24" height="30" rx="4" fill="white" opacity="0.18"/>
+      <rect x="10" y="9" width="24" height="30" rx="4" stroke="white" strokeWidth="1.5" opacity="0.5"/>
+      <rect x="10" y="9" width="5" height="30" rx="4" fill="white" opacity="0.22"/>
+      <rect x="10" y="9" width="5" height="30" rx="0" fill="white" opacity="0.08"/>
+      <rect x="17" y="16" width="13" height="2" rx="1" fill="white"/>
+      <rect x="17" y="21" width="9.5" height="1.6" rx="0.8" fill="white" opacity="0.7"/>
+      <rect x="17" y="26" width="11" height="1.6" rx="0.8" fill="white" opacity="0.7"/>
+      <rect x="17" y="31" width="7.5" height="1.6" rx="0.8" fill="white" opacity="0.5"/>
+      <circle cx="36" cy="36" r="7" fill="white"/>
+      <path d="M33 36 L35.5 38.5 L39 34" stroke="#b45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  "qa/timer": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <defs><linearGradient id="qa3" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#0891b2"/><stop offset="1" stopColor="#7c3aed"/></linearGradient></defs>
+      <rect width="48" height="48" rx="14" fill="url(#qa3)"/>
+      <circle cx="24" cy="28" r="14" fill="white" opacity="0.12"/>
+      <circle cx="24" cy="28" r="14" stroke="white" strokeWidth="1.8" opacity="0.45"/>
+      <circle cx="24" cy="28" r="10" fill="white" opacity="0.08"/>
+      <circle cx="24" cy="28" r="2.5" fill="white"/>
+      <line x1="24" y1="28" x2="24" y2="19" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+      <line x1="24" y1="28" x2="30" y2="32" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+      <rect x="20" y="9" width="8" height="3.5" rx="1.75" fill="white" opacity="0.85"/>
+      <path d="M36 12 L39.5 9" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.8"/>
+      <path d="M12 12 L8.5 9" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.8"/>
+      <circle cx="24" cy="19" r="1.2" fill="white" opacity="0.6"/>
+      <circle cx="34" cy="28" r="1" fill="white" opacity="0.5"/>
+    </svg>
+  ),
 };
 
 function AppModuleIcon({ href, locked = false }: { href: string; locked?: boolean }) {
@@ -787,36 +848,37 @@ export default function CockpitPage() {
             </div>
           </motion.div>
 
-          {/* ── Quick Actions × 6 — style Qonto ── */}
+          {/* ── Quick Actions × 6 — vraies icônes SVG style app ── */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.38, delay: 0.18, ease }}
             className="grid grid-cols-6 gap-2"
           >
-            {[
-              { href:"/client/factures", emoji:"🧾", label:"Facture",  bg:"linear-gradient(145deg,#1e3a8a,#2563eb)",     locked:false },
-              { href:"/client/factures", emoji:"📋", label:"Devis",    bg:"linear-gradient(145deg,#0369a1,#0ea5e9)",     locked:false },
-              { href:"/client/depenses", emoji:"💳", label:"Dépense",  bg:"linear-gradient(145deg,#c2410c,#f97316)",     locked:isFree },
-              { href:"/client/crm",      emoji:"👤", label:"Contact",  bg:"linear-gradient(145deg,#5b21b6,#8b5cf6)",     locked:isFree },
-              { href:"/client/notes",    emoji:"📝", label:"Note",     bg:"linear-gradient(145deg,#92400e,#d97706)",     locked:false },
-              { href:"/client/chrono",   emoji:"⏱️", label:"Timer",    bg:"linear-gradient(145deg,#0e7490,#06b6d4)",     locked:isFree },
-            ].map((a, i) => (
+            {([
+              { href:"/client/factures", iconKey:"/client/factures", label:"Facture",  locked:false },
+              { href:"/client/factures", iconKey:"qa/devis",         label:"Devis",    locked:false },
+              { href:"/client/depenses", iconKey:"/client/depenses", label:"Dépense",  locked:isFree },
+              { href:"/client/crm",      iconKey:"qa/contact",       label:"Contact",  locked:isFree },
+              { href:"/client/notes",    iconKey:"qa/note",          label:"Note",     locked:false },
+              { href:"/client/chrono",   iconKey:"qa/timer",         label:"Timer",    locked:isFree },
+            ] as { href:string; iconKey:string; label:string; locked:boolean }[]).map((a, i) => (
               <motion.div key={a.label}
-                initial={{ opacity:0, y:10, scale:0.88 }}
+                initial={{ opacity:0, y:12, scale:0.85 }}
                 animate={{ opacity:1, y:0, scale:1 }}
-                transition={{ type:"spring", stiffness:400, damping:22, delay: 0.22 + i * 0.045 }}
+                transition={{ type:"spring", stiffness:420, damping:22, delay: 0.22 + i * 0.045 }}
               >
-                <Link href={a.href}
-                  className="relative flex flex-col items-center gap-1 rounded-2xl pb-2 pt-2.5 transition active:scale-95"
-                  style={{ background: a.bg, boxShadow: "0 4px 12px rgba(0,0,0,0.25)" }}
-                >
-                  <span className="text-[20px] leading-none select-none">{a.emoji}</span>
-                  <span className="text-[9px] font-bold text-white/90 tracking-wide">{a.label}</span>
+                <Link href={a.href} className="relative flex flex-col items-center gap-1.5 transition active:scale-95">
+                  {/* Icône SVG app-style */}
+                  <div className="relative h-[52px] w-[52px] overflow-hidden rounded-[14px] shadow-[0_5px_16px_rgba(0,0,0,0.28)]"
+                    style={{ opacity: a.locked ? 0.72 : 1 }}>
+                    {APP_ICONS[a.iconKey]}
+                  </div>
+                  <span className="text-[9.5px] font-semibold text-white/80 tracking-wide leading-none">{a.label}</span>
                   {a.locked && (
-                    <div className="absolute -bottom-1 -right-1 flex h-[15px] w-[15px] items-center justify-center rounded-full shadow-sm"
-                      style={{ background: GOLD, border: "1.5px solid rgba(255,255,255,0.4)" }}>
-                      <Lock size={6} color="white" strokeWidth={3} />
+                    <div className="absolute -bottom-0.5 right-0.5 flex h-[16px] w-[16px] items-center justify-center rounded-full shadow-sm"
+                      style={{ background: GOLD, border: "1.5px solid rgba(255,255,255,0.5)" }}>
+                      <Lock size={7} color="white" strokeWidth={3} />
                     </div>
                   )}
                 </Link>
