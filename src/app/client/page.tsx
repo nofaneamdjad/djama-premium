@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,8 +8,9 @@ import {
   Wallet, StickyNote, Calendar, CalendarRange, Brain, Zap, Star, Mic,
   Truck, Package, Bell, BarChart2, Building2, Banknote,
   ChevronRight, LogOut, Settings, LayoutGrid, ListTodo,
-  Sparkles, TrendingUp, TrendingDown, Send, Share2,
-  Lock, Crown,
+  TrendingUp, TrendingDown, Send, Share2,
+  Lock, Crown, AlertCircle, CheckCircle2, X,
+  Clock, ArrowRight, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
@@ -20,7 +21,11 @@ import OnboardingModal from "@/components/OnboardingModal";
 const ease = [0.22, 1, 0.36, 1] as const;
 const GOLD = "#c9a55a";
 
-/* ── Module groups (mirror sidebar) ── */
+/* ── Types ── */
+interface TodayTask  { id: string; title: string; priority: string; due_date: string }
+interface NextEvent  { id: string; title: string; start_at: string; event_type: string }
+
+/* ── Module groups ── */
 const MODULE_GROUPS = [
   {
     label: "Finance",
@@ -68,11 +73,11 @@ const MODULE_GROUPS = [
     icon: Brain,
     color: "#6d28d9",
     modules: [
-      { href: "/client/sourcing",          label: "Sourcing IA",        sub: "Trouver clients et partenaires", icon: Search, color: "#6d28d9", bg: "#ede9fe" },
-      { href: "/client/assistant",         label: "Assistant IA",       sub: "Relances auto et questions",     icon: Zap,    color: "#0369a1", bg: "#e0f2fe" },
-      { href: "/client/reputation",        label: "Réputation",         sub: "Avis, e-réputation, veille",     icon: Star,   color: "#b91c1c", bg: "#fee2e2" },
-      { href: "/client/reseaux-sociaux",   label: "Réseaux Sociaux IA", sub: "Planifier et créer du contenu",  icon: Share2, color: "#e1306c", bg: "#fce7f3" },
-      { href: "/coaching-ia/espace",       label: "Coaching IA",        sub: "Accompagnement personnalisé",    icon: Brain,  color: "#9d174d", bg: "#fdf2f8" },
+      { href: "/client/sourcing",        label: "Sourcing IA",        sub: "Trouver clients et partenaires", icon: Search, color: "#6d28d9", bg: "#ede9fe" },
+      { href: "/client/assistant",       label: "Assistant IA",       sub: "Relances auto et questions",     icon: Zap,    color: "#0369a1", bg: "#e0f2fe" },
+      { href: "/client/reputation",      label: "Réputation",         sub: "Avis, e-réputation, veille",     icon: Star,   color: "#b91c1c", bg: "#fee2e2" },
+      { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux IA", sub: "Planifier et créer du contenu",  icon: Share2, color: "#e1306c", bg: "#fce7f3" },
+      { href: "/coaching-ia/espace",     label: "Coaching IA",        sub: "Accompagnement personnalisé",    icon: Brain,  color: "#9d174d", bg: "#fdf2f8" },
     ],
   },
   {
@@ -80,109 +85,45 @@ const MODULE_GROUPS = [
     icon: Building2,
     color: "#3b82f6",
     modules: [
-      { href: "/client/portail", label: "Portail Client", sub: "Espace dédié à vos clients",          icon: Building2, color: "#3b82f6", bg: "#dbeafe" },
-      { href: "/client/paie",    label: "Paie & RH",      sub: "Salaires, contrats, effectif",        icon: Banknote,  color: "#10b981", bg: "#d1fae5" },
+      { href: "/client/portail", label: "Portail Client", sub: "Espace dédié à vos clients",    icon: Building2, color: "#3b82f6", bg: "#dbeafe" },
+      { href: "/client/paie",    label: "Paie & RH",      sub: "Salaires, contrats, effectif",  icon: Banknote,  color: "#10b981", bg: "#d1fae5" },
     ],
   },
 ] as const;
 
+/* ── Helpers ── */
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Bonjour";
   if (h < 18) return "Bon après-midi";
   return "Bonsoir";
 }
-
 function getDay() {
-  return new Date().toLocaleDateString("fr-FR", {
-    weekday: "long", day: "numeric", month: "long",
-  });
+  return new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+}
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+function fmtEventTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+function fmtEventDate(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = d.getDate() - now.getDate();
+  if (d.toDateString() === now.toDateString()) return "Aujourd'hui";
+  if (diff === 1 && d.getMonth() === now.getMonth()) return "Demain";
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+function priorityColor(p: string) {
+  if (p === "urgent") return "#ef4444";
+  if (p === "high")   return "#f97316";
+  if (p === "low")    return "#94a3b8";
+  return "#a78bfa";
 }
 
-/* ── Quick Action Button (Revolut style) ── */
-function QuickAction({ href, icon: Icon, label, color, bg, delay = 0, locked = false }: {
-  href: string; icon: React.ElementType; label: string; color: string; bg: string;
-  delay?: number; locked?: boolean;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 28, scale: 0.65 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: "spring", stiffness: 340, damping: 22, delay }}
-    >
-      <Link href={href} className="flex flex-col items-center gap-1.5 group">
-        <motion.div
-          whileTap={{ scale: 0.80 }}
-          whileHover={{ scale: 1.13, y: -5, boxShadow: `0 12px 30px ${locked ? "rgba(201,165,90,0.4)" : color + "55"}` }}
-          transition={{ type: "spring", stiffness: 500, damping: 16 }}
-          className="relative flex h-12 w-12 items-center justify-center rounded-2xl"
-          style={{ background: bg, opacity: locked ? 0.7 : 1 }}
-        >
-          <Icon size={20} style={{ color }} strokeWidth={1.8} />
-          {locked && (
-            <div
-              className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full shadow-sm"
-              style={{ background: GOLD }}
-            >
-              <Lock size={6} color="white" strokeWidth={3} />
-            </div>
-          )}
-        </motion.div>
-        <span className="text-[10px] font-medium text-white/50 group-hover:text-white/85 transition-colors">{label}</span>
-      </Link>
-    </motion.div>
-  );
-}
-
-/* ── Stat pill ── */
-function StatPill({ label, value, color, loading, delay = 0 }: {
-  label: string; value: string; color: string; loading: boolean; delay?: number;
-}) {
-  const num   = parseInt(value, 10);
-  const isNum = !isNaN(num);
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    if (loading || !isNum) { setCount(0); return; }
-    if (num === 0) { setCount(0); return; }
-    const steps  = 32;
-    const stepMs = 700 / steps;
-    let i = 0;
-    const id = setInterval(() => {
-      i++;
-      setCount(Math.min(Math.round((num / steps) * i), num));
-      if (i >= steps) clearInterval(id);
-    }, stepMs);
-    return () => clearInterval(id);
-  }, [value, loading, num, isNum]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.85, y: 8 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 320, damping: 24, delay }}
-      className="flex flex-1 flex-col items-center gap-0.5 rounded-2xl py-3"
-      style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.09)" }}
-    >
-      {loading
-        ? <div className="h-4 w-10 animate-pulse rounded-md" style={{ background: "rgba(255,255,255,0.13)" }} />
-        : <motion.p
-            key={value}
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", stiffness: 400, damping: 18 }}
-            className="text-[15px] font-bold leading-none"
-            style={{ color }}
-          >
-            {isNum ? count : value}
-          </motion.p>
-      }
-      <p className="text-[9.5px] text-white/35">{label}</p>
-    </motion.div>
-  );
-}
-
-/* ── Custom app icons (Odoo / iOS style) ── */
+/* ── Custom app icons ── */
 const APP_ICONS: Record<string, React.ReactElement> = {
   "/client/factures": (
     <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
@@ -401,14 +342,10 @@ const APP_ICONS: Record<string, React.ReactElement> = {
     <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
       <defs><linearGradient id="ig18" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#60a5fa"/><stop offset="1" stopColor="#7c3aed"/></linearGradient></defs>
       <rect width="48" height="48" rx="14" fill="url(#ig18)"/>
-      {/* Building */}
       <rect x="11" y="16" width="26" height="22" rx="3" fill="white" opacity="0.18"/>
       <rect x="11" y="16" width="26" height="22" rx="3" stroke="white" strokeWidth="1.5" opacity="0.5"/>
-      {/* Roof triangle */}
       <path d="M8 18 L24 8 L40 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.75"/>
-      {/* Door */}
       <rect x="20" y="27" width="8" height="11" rx="2" fill="white" opacity="0.85"/>
-      {/* Windows */}
       <rect x="14" y="21" width="6" height="5" rx="1.5" fill="white" opacity="0.6"/>
       <rect x="28" y="21" width="6" height="5" rx="1.5" fill="white" opacity="0.6"/>
     </svg>
@@ -417,37 +354,29 @@ const APP_ICONS: Record<string, React.ReactElement> = {
     <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
       <defs><linearGradient id="ig19" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#34d399"/><stop offset="1" stopColor="#065f46"/></linearGradient></defs>
       <rect width="48" height="48" rx="14" fill="url(#ig19)"/>
-      {/* Card */}
       <rect x="7" y="14" width="34" height="22" rx="4" fill="white" opacity="0.18"/>
       <rect x="7" y="14" width="34" height="22" rx="4" stroke="white" strokeWidth="1.5" opacity="0.5"/>
       <rect x="7" y="19" width="34" height="6" fill="white" opacity="0.12"/>
-      {/* Euro symbol */}
       <text x="18" y="32" fontSize="14" fontWeight="bold" fill="white" opacity="0.9" fontFamily="Arial">€</text>
-      {/* People icons */}
       <circle cx="34" cy="30" r="3" fill="white" opacity="0.8"/>
       <path d="M28 38c0-3.314 2.686-4 6-4s6 .686 6 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.6"/>
-      {/* Salary bars */}
       <rect x="9" y="28" width="4" height="5" rx="1" fill="white" opacity="0.7"/>
       <rect x="14" y="25" width="4" height="8" rx="1" fill="white" opacity="0.7"/>
     </svg>
   ),
 };
 
-/* ── App icon renderer ── */
 function AppModuleIcon({ href, locked = false }: { href: string; locked?: boolean }) {
   const icon = APP_ICONS[href];
   if (!icon) return null;
   return (
-    <div
-      className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.18)] transition-opacity duration-200"
-      style={{ opacity: locked ? 0.5 : 1 }}
-    >
+    <div className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.18)] transition-opacity duration-200"
+      style={{ opacity: locked ? 0.5 : 1 }}>
       {icon}
     </div>
   );
 }
 
-/* ── Module Row (Revolut/Odoo style) — tier-aware ── */
 type AnyModule = { href: string; label: string; icon: React.ElementType; color: string; bg: string; sub?: string };
 
 function ModuleRow({ mod, index, last, isPremium }: {
@@ -466,25 +395,18 @@ function ModuleRow({ mod, index, last, isPremium }: {
         <motion.div
           whileTap={{ scale: 0.985 }}
           className={`flex items-center gap-3.5 px-4 py-3 transition-colors
-            ${isLocked
-              ? "hover:bg-amber-50/70 active:bg-amber-50"
-              : "hover:bg-gray-50 active:bg-gray-100"}
+            ${isLocked ? "hover:bg-amber-50/70 active:bg-amber-50" : "hover:bg-gray-50 active:bg-gray-100"}
             ${!last ? "border-b border-gray-100" : ""}`}
         >
-          {/* Icon with lock badge overlay */}
           <div className="relative shrink-0">
             <AppModuleIcon href={mod.href} locked={isLocked} />
             {isLocked && (
-              <div
-                className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full shadow-md"
-                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", border: "1.5px solid #fff" }}
-              >
+              <div className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full shadow-md"
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", border: "1.5px solid #fff" }}>
                 <Lock size={8} color="white" strokeWidth={2.5} />
               </div>
             )}
           </div>
-
-          {/* Label + sub */}
           <div className="flex-1 min-w-0">
             <p className={`text-[13.5px] font-semibold leading-tight ${isLocked ? "text-gray-500" : "text-gray-800"}`}>
               {mod.label}
@@ -495,29 +417,14 @@ function ModuleRow({ mod, index, last, isPremium }: {
               </p>
             )}
           </div>
-
-          {/* Right badge */}
           {isLocked ? (
-            <div
-              className="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
-              style={{
-                background: "rgba(201,165,90,0.10)",
-                border: "1px solid rgba(201,165,90,0.30)",
-                color: GOLD,
-              }}
-            >
-              <Crown size={7} />
-              PRO
+            <div className="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
+              style={{ background: "rgba(201,165,90,0.10)", border: "1px solid rgba(201,165,90,0.30)", color: GOLD }}>
+              <Crown size={7} /> PRO
             </div>
           ) : tier === "free" ? (
-            <div
-              className="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
-              style={{
-                background: "rgba(34,197,94,0.10)",
-                border: "1px solid rgba(34,197,94,0.22)",
-                color: "#16a34a",
-              }}
-            >
+            <div className="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
+              style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.22)", color: "#16a34a" }}>
               Gratuit
             </div>
           ) : (
@@ -529,7 +436,6 @@ function ModuleRow({ mod, index, last, isPremium }: {
   );
 }
 
-/* ── Notif badge ── */
 function NotifBadge({ count }: { count: number }) {
   if (count === 0) return null;
   return (
@@ -540,21 +446,34 @@ function NotifBadge({ count }: { count: number }) {
 }
 
 /* ─────────────────────────────────────────────────
-   PAGE
+   PAGE PRINCIPALE
 ───────────────────────────────────────────────── */
 export default function CockpitPage() {
   const { isPremium, isFree } = useSubscription();
 
-  const [firstName,  setFirstName]  = useState("");
-  const [initial,    setInitial]    = useState("?");
-  const [kpiLoading, setKpiLoading] = useState(true);
-  const [caMonth,    setCaMonth]    = useState(0);
-  const [nbContacts, setNbContacts] = useState(0);
-  const [nbFactures, setNbFactures] = useState(0);
-  const [caEvo,      setCaEvo]      = useState<number | null>(null);
-  const [menuOpen,   setMenuOpen]   = useState(false);
+  /* ── État KPIs ── */
+  const [firstName,      setFirstName]      = useState("");
+  const [initial,        setInitial]        = useState("?");
+  const [kpiLoading,     setKpiLoading]     = useState(true);
+  const [caMonth,        setCaMonth]        = useState(0);
+  const [depensesMonth,  setDepensesMonth]  = useState(0);
+  const [nbContacts,     setNbContacts]     = useState(0);
+  const [nbFactures,     setNbFactures]     = useState(0);
+  const [caEvo,          setCaEvo]          = useState<number | null>(null);
+
+  /* ── État "Aujourd'hui" ── */
+  const [todayTasks,   setTodayTasks]   = useState<TodayTask[]>([]);
+  const [nextEvent,    setNextEvent]    = useState<NextEvent | null>(null);
+  const [overdueCount, setOverdueCount] = useState(0);
+  const [todayLoading, setTodayLoading] = useState(true);
+
+  /* ── UI ── */
+  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [search,    setSearch]    = useState("");
+  const [showAlert, setShowAlert] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  /* ── Chargement données ── */
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -571,59 +490,110 @@ export default function CockpitPage() {
       setFirstName(fn);
       setInitial(fn.charAt(0).toUpperCase());
 
-      const now    = new Date();
-      const y      = now.getFullYear();
-      const m      = String(now.getMonth() + 1).padStart(2, "0");
-      const start  = `${y}-${m}-01`;
-      const end    = `${y}-${m}-31`;
-      const prevM  = now.getMonth() === 0 ? 12 : now.getMonth();
-      const prevY  = now.getMonth() === 0 ? y - 1 : y;
-      const pStart = `${prevY}-${String(prevM).padStart(2, "0")}-01`;
-      const pEnd   = `${prevY}-${String(prevM).padStart(2, "0")}-31`;
+      const now   = new Date();
+      const y     = now.getFullYear();
+      const m     = String(now.getMonth() + 1).padStart(2, "0");
+      const start = `${y}-${m}-01`;
+      const end   = `${y}-${m}-31`;
+      const prevM = now.getMonth() === 0 ? 12 : now.getMonth();
+      const prevY = now.getMonth() === 0 ? y - 1 : y;
+      const pS    = `${prevY}-${String(prevM).padStart(2, "0")}-01`;
+      const pE    = `${prevY}-${String(prevM).padStart(2, "0")}-31`;
+      const today = todayStr();
 
-      const [facRes, prevRes, crmRes, pendRes] = await Promise.all([
+      const [facRes, prevRes, crmRes, pendRes, expRes] = await Promise.all([
         supabase.from("factures").select("montant_ttc").eq("user_id", user.id).gte("date_emission", start).lte("date_emission", end),
-        supabase.from("factures").select("montant_ttc").eq("user_id", user.id).gte("date_emission", pStart).lte("date_emission", pEnd),
+        supabase.from("factures").select("montant_ttc").eq("user_id", user.id).gte("date_emission", pS).lte("date_emission", pE),
         supabase.from("clients_crm").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("factures").select("id", { count: "exact", head: true }).eq("user_id", user.id).in("statut", ["envoyée", "en_attente"]),
+        supabase.from("expenses").select("amount").eq("user_id", user.id).gte("date", start).lte("date", end),
       ]);
 
       const ca     = (facRes.data  ?? []).reduce((s, f) => s + (f.montant_ttc ?? 0), 0);
       const caPrev = (prevRes.data ?? []).reduce((s, f) => s + (f.montant_ttc ?? 0), 0);
+      const exp    = (expRes.data  ?? []).reduce((s, e) => s + (e.amount ?? 0), 0);
+
       setCaMonth(ca);
+      setDepensesMonth(exp);
       setNbContacts(crmRes.count ?? 0);
       setNbFactures(pendRes.count ?? 0);
       if (caPrev > 0) setCaEvo(Math.round(((ca - caPrev) / caPrev) * 100));
       setKpiLoading(false);
+
+      /* ── Données "Aujourd'hui" ── */
+      const [taskRes, eventRes, overdueRes] = await Promise.all([
+        supabase
+          .from("productivity_tasks")
+          .select("id, title, priority, due_date")
+          .eq("user_id", user.id)
+          .neq("status", "done")
+          .lte("due_date", today)
+          .order("due_date", { ascending: true })
+          .limit(3),
+        supabase
+          .from("planning_events")
+          .select("id, title, start_at, event_type")
+          .eq("user_id", user.id)
+          .gte("start_at", new Date().toISOString())
+          .order("start_at", { ascending: true })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("documents")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("type", "facture")
+          .eq("statut", "envoyée")
+          .lt("due_date", today),
+      ]);
+
+      setTodayTasks((taskRes.data ?? []) as TodayTask[]);
+      setNextEvent(eventRes.data as NextEvent | null);
+      setOverdueCount(overdueRes.count ?? 0);
+      setTodayLoading(false);
     })();
   }, []);
 
   useEffect(() => {
     function handle(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     }
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
   }, []);
 
-  const totalModules = MODULE_GROUPS.reduce((n, g) => n + g.modules.length, 0);
+  /* ── Recherche modules ── */
+  const allModules = useMemo(
+    () => MODULE_GROUPS.flatMap(g => g.modules.map(m => ({ ...m, group: g.label }))),
+    []
+  );
+  const filteredGroups = useMemo(() => {
+    if (!search.trim()) return MODULE_GROUPS;
+    const q = search.toLowerCase();
+    return MODULE_GROUPS
+      .map(g => ({ ...g, modules: g.modules.filter(m => m.label.toLowerCase().includes(q) || m.sub.toLowerCase().includes(q)) }))
+      .filter(g => g.modules.length > 0);
+  }, [search]);
 
+  const totalModules = allModules.length;
+  const netMonth = caMonth - depensesMonth;
+
+  /* ─────────────────────────────────────────────────
+     RENDU
+  ───────────────────────────────────────────────── */
   return (
-    <div className="min-h-full overflow-x-hidden" style={{ background: "#f8f9fa" }}>
+    <div className="min-h-full overflow-x-hidden" style={{ background: "#f2f4f7" }}>
 
-      {/* Onboarding modal — shown once after first login */}
       <OnboardingModal name={firstName} />
 
-      {/* ══════════════════════════════════════════════
-          HEADER — Premium dashboard
-      ══════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════
+          HEADER SOMBRE
+      ══════════════════════════════════════════ */}
       <div
         className="relative overflow-hidden"
         style={{ background: "linear-gradient(145deg,#0a0f1e 0%,#0f1729 55%,#0c1220 100%)" }}
       >
-        {/* Gold shimmer top */}
+        {/* Shimmer gold top */}
         <motion.div
           initial={{ scaleX: 0, opacity: 0 }}
           animate={{ scaleX: 1, opacity: 1 }}
@@ -633,19 +603,19 @@ export default function CockpitPage() {
         />
         {/* Orb ambiance */}
         <motion.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.07, 0.14, 0.07] }}
+          animate={{ scale: [1, 1.15, 1], opacity: [0.06, 0.13, 0.06] }}
           transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-          className="pointer-events-none absolute -top-16 left-1/2 h-[280px] w-[500px] -translate-x-1/2 rounded-full blur-[90px]"
-          style={{ background: "rgba(201,165,90,0.18)" }}
+          className="pointer-events-none absolute -top-20 left-1/2 h-[300px] w-[500px] -translate-x-1/2 rounded-full blur-[90px]"
+          style={{ background: "rgba(201,165,90,0.2)" }}
         />
         <motion.div
-          animate={{ y: [0, 16, 0], opacity: [0.04, 0.1, 0.04] }}
+          animate={{ y: [0, 16, 0], opacity: [0.03, 0.09, 0.03] }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 2 }}
           className="pointer-events-none absolute bottom-0 right-0 h-[200px] w-[300px] rounded-full blur-[80px]"
           style={{ background: "rgba(96,165,250,0.08)" }}
         />
 
-        <div className="relative mx-auto max-w-4xl px-5 pt-4 pb-5">
+        <div className="relative mx-auto max-w-4xl px-5 pt-4 pb-6">
 
           {/* ── Top bar ── */}
           <motion.div
@@ -654,23 +624,22 @@ export default function CockpitPage() {
             transition={{ duration: 0.35, ease }}
             className="flex items-center justify-between mb-5"
           >
-            {/* Greeting */}
             <div>
               <p className="text-[0.62rem] font-medium capitalize tracking-widest text-white/30">{getDay()}</p>
               <p className="mt-0.5 text-[13px] font-semibold text-white/70">
                 {getGreeting()}{firstName && <span className="text-white">, {firstName}</span>}
               </p>
             </div>
-            {/* Actions */}
             <div className="flex items-center gap-2">
-              <Link href="/client/dashboard" className="relative">
-                <motion.div whileTap={{ scale: 0.88 }}
-                  className="flex h-8 w-8 items-center justify-center rounded-full"
+              {/* Notifications */}
+              <Link href="/client/factures">
+                <motion.div whileTap={{ scale: 0.88 }} className="relative flex h-8 w-8 items-center justify-center rounded-full"
                   style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
                   <Bell size={13} className="text-white/50" />
-                  {nbFactures > 0 && <NotifBadge count={nbFactures} />}
+                  {(nbFactures + overdueCount) > 0 && <NotifBadge count={nbFactures + overdueCount} />}
                 </motion.div>
               </Link>
+              {/* Avatar menu */}
               <div className="relative" ref={menuRef}>
                 <motion.button whileTap={{ scale: 0.9 }}
                   onClick={() => setMenuOpen(o => !o)}
@@ -689,10 +658,19 @@ export default function CockpitPage() {
                     >
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-[12px] font-bold text-gray-900">{firstName}</p>
-                        <p className="text-[10.5px] text-gray-400">{isPremium ? "DJAMA PRO ✦" : "Plan Gratuit"}</p>
+                        <div className="mt-1 flex items-center gap-1.5">
+                          {isPremium ? (
+                            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold"
+                              style={{ background: "rgba(201,165,90,0.12)", color: GOLD }}>
+                              <Crown size={7}/> DJAMA PRO
+                            </span>
+                          ) : (
+                            <span className="text-[10.5px] text-gray-400">Plan Gratuit</span>
+                          )}
+                        </div>
                       </div>
                       {[
-                        { icon:LayoutGrid, label:"Dashboard",  href:"/client/dashboard"  },
+                        { icon:LayoutGrid, label:"Dashboard",  href:"/client/abonnements" },
                         { icon:Settings,   label:"Abonnement", href:"/client/abonnements" },
                       ].map(item => {
                         const Icon = item.icon;
@@ -719,112 +697,123 @@ export default function CockpitPage() {
             </div>
           </motion.div>
 
-          {/* ── CA Card glassmorphism ── */}
+          {/* ── KPI Card enrichi ── */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.42, delay: 0.08, ease }}
             className="mb-4 rounded-2xl p-4"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px)",
-            }}
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}
           >
-            {/* CA + évolution */}
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30 mb-1">
-                  Chiffre d&apos;affaires · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+                  CA · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
                 </p>
                 {kpiLoading ? (
                   <div className="h-9 w-32 animate-pulse rounded-xl" style={{ background:"rgba(255,255,255,0.08)" }}/>
                 ) : (
                   <motion.p
-                    initial={{ opacity:0, y:6 }}
-                    animate={{ opacity:1, y:0 }}
+                    initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
                     transition={{ duration:0.3, delay:0.18, ease }}
-                    className="text-[2.4rem] font-black leading-none tracking-tight text-white"
+                    className="text-[2.2rem] font-black leading-none tracking-tight text-white"
                   >
                     {fmtEurInt(caMonth)}
                   </motion.p>
                 )}
               </div>
 
-              {!kpiLoading && caEvo !== null ? (
-                <motion.div
-                  initial={{ opacity:0, scale:0.85 }}
-                  animate={{ opacity:1, scale:1 }}
-                  transition={{ duration:0.28, delay:0.25, ease }}
-                  className="flex flex-col items-end gap-1"
-                >
+              {/* Évolution + Net */}
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                {!kpiLoading && caEvo !== null && (
                   <div className="flex items-center gap-1 rounded-xl px-2.5 py-1.5"
                     style={{
                       background: caEvo >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)",
                       border: `1px solid ${caEvo >= 0 ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}`,
                     }}>
-                    {caEvo >= 0
-                      ? <TrendingUp size={12} color="#4ade80"/>
-                      : <TrendingDown size={12} color="#f87171"/>
-                    }
+                    {caEvo >= 0 ? <TrendingUp size={12} color="#4ade80"/> : <TrendingDown size={12} color="#f87171"/>}
                     <span className="text-[12px] font-black" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
                       {caEvo >= 0 ? "+" : ""}{caEvo}%
                     </span>
                   </div>
-                  <span className="text-[9px] text-white/20">vs mois préc.</span>
-                </motion.div>
-              ) : (
-                <div className="flex h-6 w-6 items-center justify-center rounded-full"
-                  style={{ background: "rgba(201,165,90,0.12)", border: "1px solid rgba(201,165,90,0.2)" }}>
-                  <BarChart2 size={11} style={{ color: GOLD }} />
-                </div>
-              )}
+                )}
+                {!kpiLoading && (
+                  <div className="flex items-center gap-1 rounded-lg px-2 py-1"
+                    style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <span className="text-[9px] text-white/25 uppercase tracking-wide">Net</span>
+                    <span className="text-[11px] font-black" style={{ color: netMonth >= 0 ? "#4ade80" : "#f87171" }}>
+                      {netMonth >= 0 ? "+" : ""}{fmtEurInt(netMonth)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Mini stats row */}
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            {/* Barre CA / Dépenses */}
+            {!kpiLoading && (caMonth > 0 || depensesMonth > 0) && (
+              <div className="mt-3 mb-3">
+                <div className="flex justify-between text-[9px] text-white/30 mb-1">
+                  <span>Dépenses {fmtEurInt(depensesMonth)}</span>
+                  <span>{caMonth > 0 ? Math.round((depensesMonth / caMonth) * 100) : 0}% du CA</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${caMonth > 0 ? Math.min((depensesMonth / caMonth) * 100, 100) : 0}%` }}
+                    transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="h-full rounded-full"
+                    style={{ background: depensesMonth / caMonth > 0.7 ? "#f87171" : depensesMonth / caMonth > 0.4 ? "#fbbf24" : "#4ade80" }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Mini stats */}
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "Contacts CRM",    val: kpiLoading ? "…" : String(nbContacts), color: "#60a5fa" },
-                { label: "Factures en att.", val: kpiLoading ? "…" : String(nbFactures), color: nbFactures > 0 ? "#f87171" : "#4ade80" },
-                { label: "Évolution",        val: kpiLoading ? "…" : caEvo !== null ? `${caEvo >= 0 ? "+" : ""}${caEvo}%` : "—", color: caEvo === null ? "#a78bfa" : caEvo >= 0 ? "#4ade80" : "#f87171" },
+                { label: "Contacts",      val: kpiLoading ? "…" : String(nbContacts),  color: "#60a5fa" },
+                { label: "En attente",    val: kpiLoading ? "…" : String(nbFactures),  color: nbFactures > 0 ? "#f87171" : "#4ade80" },
+                { label: "Dépenses",      val: kpiLoading ? "…" : fmtEurInt(depensesMonth), color: "#fb923c" },
               ].map(s => (
                 <div key={s.label}
                   className="flex flex-col items-center justify-center rounded-xl py-2"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
                 >
-                  <span className="text-[14px] font-black" style={{ color: s.color }}>{s.val}</span>
+                  <span className="text-[13px] font-black" style={{ color: s.color }}>{s.val}</span>
                   <span className="mt-0.5 text-[9px] text-white/25 text-center leading-tight">{s.label}</span>
                 </div>
               ))}
             </div>
           </motion.div>
 
-          {/* ── Quick actions ── */}
+          {/* ── Quick Actions × 6 ── */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.38, delay: 0.18, ease }}
-            className="grid grid-cols-4 gap-2"
+            className="grid grid-cols-6 gap-2"
           >
             {[
-              { href:"/client/factures", icon:ReceiptText, label:"Facture",  color:"#c9a55a", bg:"rgba(201,165,90,0.14)",  locked:false },
-              { href:"/client/factures", icon:Send,        label:"Devis",    color:"#60a5fa", bg:"rgba(59,130,246,0.12)",  locked:false },
-              { href:"/client/depenses", icon:CreditCard,  label:"Dépense",  color:"#f97316", bg:"rgba(249,115,22,0.12)",  locked:isFree },
-              { href:"/client/crm",      icon:Users,        label:"Clients",  color:"#a78bfa", bg:"rgba(167,139,250,0.12)", locked:isFree },
+              { href:"/client/factures",   icon:ReceiptText, label:"Facture",  color:"#c9a55a", bg:"rgba(201,165,90,0.14)",  locked:false },
+              { href:"/client/factures",   icon:Send,        label:"Devis",    color:"#60a5fa", bg:"rgba(59,130,246,0.12)",  locked:false },
+              { href:"/client/depenses",   icon:CreditCard,  label:"Dépense",  color:"#f97316", bg:"rgba(249,115,22,0.12)",  locked:isFree },
+              { href:"/client/crm",        icon:Users,       label:"Contact",  color:"#a78bfa", bg:"rgba(167,139,250,0.12)", locked:isFree },
+              { href:"/client/notes",      icon:StickyNote,  label:"Note",     color:"#fbbf24", bg:"rgba(251,191,36,0.12)",  locked:false },
+              { href:"/client/chrono",     icon:Timer,       label:"Timer",    color:"#c084fc", bg:"rgba(192,132,252,0.12)", locked:isFree },
             ].map((a, i) => {
               const AIcon = a.icon;
               return (
                 <motion.div key={a.label}
                   initial={{ opacity:0, y:10, scale:0.9 }}
                   animate={{ opacity:1, y:0, scale:1 }}
-                  transition={{ type:"spring", stiffness:380, damping:22, delay: 0.22 + i * 0.06 }}
+                  transition={{ type:"spring", stiffness:380, damping:22, delay: 0.22 + i * 0.04 }}
                 >
                   <Link href={a.href}
-                    className="relative flex flex-col items-center gap-1.5 rounded-2xl py-3 transition active:scale-95"
+                    className="relative flex flex-col items-center gap-1.5 rounded-2xl py-2.5 transition active:scale-95"
                     style={{ background: a.bg, border: `1px solid ${a.color}22` }}
                   >
-                    <AIcon size={18} style={{ color: a.color }} strokeWidth={1.8} />
-                    <span className="text-[10px] font-semibold" style={{ color: a.color }}>{a.label}</span>
+                    <AIcon size={17} style={{ color: a.color }} strokeWidth={1.8} />
+                    <span className="text-[9.5px] font-semibold" style={{ color: a.color }}>{a.label}</span>
                     {a.locked && (
                       <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full shadow-sm"
                         style={{ background: GOLD }}>
@@ -838,117 +827,332 @@ export default function CockpitPage() {
           </motion.div>
 
         </div>
+
+        {/* ── Wave transition sombre → clair ── */}
+        <svg viewBox="0 0 1440 48" fill="none" preserveAspectRatio="none"
+          className="w-full block" style={{ marginBottom: "-1px", height: "48px" }}>
+          <path d="M0,20 C200,48 500,4 720,24 C940,44 1240,8 1440,28 L1440,48 L0,48 Z" fill="#f2f4f7"/>
+        </svg>
       </div>
 
-      {/* ══════════════════════════════════════════════
-          MAIN CONTENT — Module groups
-      ══════════════════════════════════════════════ */}
-      <div className="mx-auto max-w-4xl px-4 pb-12 pt-5 sm:px-6">
+      {/* ══════════════════════════════════════════
+          CONTENU CLAIR
+      ══════════════════════════════════════════ */}
+      <div className="mx-auto max-w-4xl px-4 pb-14 pt-4 sm:px-6">
 
-        {/* Free-tier upgrade nudge banner */}
+        {/* ── Alerte factures en retard ── */}
+        <AnimatePresence>
+          {overdueCount > 0 && showAlert && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -6, height: 0 }}
+              transition={{ duration: 0.28, ease }}
+              className="mb-3 overflow-hidden"
+            >
+              <Link href="/client/factures">
+                <div className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
+                  style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.18)" }}>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(239,68,68,0.12)" }}>
+                      <AlertCircle size={14} color="#ef4444" />
+                    </div>
+                    <div>
+                      <p className="text-[12.5px] font-bold text-red-600">
+                        {overdueCount} facture{overdueCount > 1 ? "s" : ""} en retard de paiement
+                      </p>
+                      <p className="text-[10.5px] text-red-400">Relancer vos clients →</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={e => { e.preventDefault(); setShowAlert(false); }}
+                    className="text-red-300 hover:text-red-500 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Banner upgrade PRO ── */}
         {isFree && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2, ease }}
+            transition={{ duration: 0.4, delay: 0.1, ease }}
             className="mb-4 flex items-center justify-between gap-3 overflow-hidden rounded-2xl px-4 py-3"
             style={{
-              background: "linear-gradient(135deg, rgba(201,165,90,0.08), rgba(176,141,69,0.05))",
+              background: "linear-gradient(135deg, rgba(201,165,90,0.10), rgba(176,141,69,0.06))",
               border: "1px solid rgba(201,165,90,0.22)",
             }}
           >
             <div className="flex items-center gap-2.5">
-              <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl"
-                style={{ background: "rgba(201,165,90,0.15)" }}
-              >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl"
+                style={{ background: "rgba(201,165,90,0.15)" }}>
                 <Crown size={13} style={{ color: GOLD }} />
               </div>
               <div>
                 <p className="text-[12px] font-bold text-gray-800">Débloquez tous les modules</p>
-                <p className="text-[10.5px] text-gray-400">17 outils PRO · 11,90€/mois · Sans engagement</p>
+                <p className="text-[10.5px] text-gray-400">{totalModules} outils PRO · 11,90€/mois · Sans engagement</p>
               </div>
             </div>
             <Link
               href="/client/abonnements"
-              className="shrink-0 rounded-xl px-3 py-1.5 text-[11px] font-bold text-white transition hover:opacity-90"
+              className="shrink-0 flex items-center gap-1 rounded-xl px-3 py-1.5 text-[11px] font-bold text-white transition hover:opacity-90"
               style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}
             >
-              Voir PRO
+              <Sparkles size={10} /> Voir PRO
             </Link>
           </motion.div>
         )}
 
-        {/* Module groups */}
-        <div className="space-y-3">
-          {MODULE_GROUPS.map((group, gi) => {
-            const GroupIcon = group.icon;
-            // Check if ALL modules in this group are premium (for group-level PRO badge)
-            const allPremium = group.modules.every(m => getToolTier(m.href) === "premium");
-            const groupIsLocked = allPremium && isFree;
-
-            return (
-              <motion.div
-                key={group.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 + gi * 0.05, ease }}
-                className="overflow-hidden rounded-2xl bg-white"
-                style={{
-                  boxShadow: groupIsLocked
-                    ? "0 2px 12px rgba(201,165,90,0.08), 0 8px 24px rgba(0,0,0,0.04)"
-                    : "0 2px 12px rgba(0,0,0,0.07), 0 8px 24px rgba(0,0,0,0.04)",
-                  border: groupIsLocked
-                    ? "1px solid rgba(201,165,90,0.18)"
-                    : "1px solid rgba(0,0,0,0.05)",
-                }}
-              >
-                {/* Section header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="flex h-6 w-6 items-center justify-center rounded-lg"
-                      style={{ background: `${group.color}18` }}
-                    >
-                      <GroupIcon size={13} style={{ color: group.color }} strokeWidth={2}/>
-                    </div>
-                    <span className="text-[12px] font-bold text-gray-700 tracking-wide">{group.label}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {groupIsLocked && (
-                      <div
-                        className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
-                        style={{
-                          background: "rgba(201,165,90,0.10)",
-                          border: "1px solid rgba(201,165,90,0.25)",
-                          color: GOLD,
-                        }}
-                      >
-                        <Crown size={7} /> PRO
+        {/* ── Section "Aujourd'hui" ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.15, ease }}
+          className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
+        >
+          {/* Tâches */}
+          <div className="rounded-2xl bg-white p-4 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: "rgba(190,24,93,0.08)" }}>
+                  <ListTodo size={13} style={{ color: "#be185d" }} strokeWidth={2.2} />
+                </div>
+                <span className="text-[12px] font-bold text-gray-700">Tâches à faire</span>
+              </div>
+              <Link href="/client/productivite" className="text-[10.5px] font-semibold text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-0.5">
+                Tout voir <ArrowRight size={10} />
+              </Link>
+            </div>
+            {todayLoading ? (
+              <div className="space-y-2">
+                {[1,2].map(i => <div key={i} className="h-8 rounded-xl animate-pulse" style={{ background: "#f3f4f6" }}/>)}
+              </div>
+            ) : todayTasks.length === 0 ? (
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "#f8faf8" }}>
+                <CheckCircle2 size={14} color="#4ade80" />
+                <span className="text-[11.5px] text-gray-500">Rien en retard — beau travail ! 🎉</span>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {todayTasks.map(task => {
+                  const isOverdue = task.due_date && new Date(task.due_date) < new Date();
+                  return (
+                    <Link key={task.id} href="/client/productivite">
+                      <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-gray-50 transition-colors cursor-pointer">
+                        <div className="h-2 w-2 rounded-full shrink-0" style={{ background: priorityColor(task.priority) }} />
+                        <span className="flex-1 text-[12px] font-medium text-gray-700 truncate">{task.title}</span>
+                        {task.due_date && (
+                          <span className={`text-[9.5px] shrink-0 font-semibold ${isOverdue ? "text-red-500" : "text-gray-400"}`}>
+                            {isOverdue ? "⚠ retard" : "aujourd'hui"}
+                          </span>
+                        )}
                       </div>
-                    )}
-                    <span className="text-[10px] font-semibold text-gray-300 tabular-nums">{group.modules.length}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Prochain RDV + indicateur mensuel */}
+          <div className="space-y-3">
+            {/* Prochain événement */}
+            <div className="rounded-2xl bg-white p-4 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: "rgba(79,70,229,0.08)" }}>
+                    <Calendar size={13} style={{ color: "#4f46e5" }} strokeWidth={2.2} />
+                  </div>
+                  <span className="text-[12px] font-bold text-gray-700">Prochain RDV</span>
+                </div>
+                <Link href="/client/planning" className="text-[10.5px] font-semibold text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-0.5">
+                  Planning <ArrowRight size={10} />
+                </Link>
+              </div>
+              {todayLoading ? (
+                <div className="h-12 rounded-xl animate-pulse" style={{ background: "#f3f4f6" }}/>
+              ) : nextEvent ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 text-center w-10 rounded-xl py-1.5"
+                    style={{ background: "rgba(79,70,229,0.06)", border: "1px solid rgba(79,70,229,0.1)" }}>
+                    <div className="text-[18px] font-black leading-none text-indigo-600">
+                      {new Date(nextEvent.start_at).getDate()}
+                    </div>
+                    <div className="text-[8px] uppercase tracking-wide text-indigo-400 font-semibold">
+                      {new Date(nextEvent.start_at).toLocaleDateString("fr-FR", { month: "short" })}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12.5px] font-semibold text-gray-800 truncate">{nextEvent.title}</p>
+                    <p className="text-[10.5px] text-gray-400">
+                      {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
+                    </p>
                   </div>
                 </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Clock size={13} className="text-gray-300" />
+                  <span className="text-[11.5px] text-gray-400">Aucun événement à venir</span>
+                </div>
+              )}
+            </div>
 
-                {/* Module rows */}
-                {group.modules.map((mod, mi) => (
-                  <ModuleRow
-                    key={mod.href}
-                    mod={mod as AnyModule}
-                    index={gi * 6 + mi}
-                    last={mi === group.modules.length - 1}
-                    isPremium={isPremium}
-                  />
-                ))}
-              </motion.div>
-            );
-          })}
+            {/* Compteur mensuel */}
+            <div className="rounded-2xl px-4 py-3 flex items-center justify-between"
+              style={{ background: "rgba(201,165,90,0.06)", border: "1px solid rgba(201,165,90,0.14)" }}>
+              <div className="flex items-center gap-2">
+                <BarChart2 size={14} style={{ color: GOLD }} />
+                <span className="text-[11.5px] font-semibold text-gray-600">
+                  {new Date().toLocaleDateString("fr-FR", { month: "long" })} en cours
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[12px] font-black" style={{ color: GOLD }}>
+                  {kpiLoading ? "…" : fmtEurInt(caMonth)}
+                </span>
+                {!kpiLoading && caEvo !== null && (
+                  <span className="text-[9.5px] font-bold" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
+                    {caEvo >= 0 ? "↑" : "↓"}{Math.abs(caEvo)}%
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── Barre de recherche modules ── */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.25, ease }}
+          className="relative mb-4"
+        >
+          <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher un module…"
+            className="w-full rounded-2xl bg-white py-3 pl-11 pr-4 text-[13px] text-gray-700 placeholder:text-gray-400 shadow-sm outline-none transition focus:ring-2"
+            style={{
+              border: "1px solid rgba(0,0,0,0.07)",
+              boxShadow: search ? `0 0 0 2px rgba(201,165,90,0.2), 0 2px 8px rgba(0,0,0,0.06)` : "0 2px 8px rgba(0,0,0,0.04)",
+            }}
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+              <X size={14} />
+            </button>
+          )}
+        </motion.div>
+
+        {/* ── Résultats de recherche ── */}
+        {search.trim() && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease }}
+            className="mb-4 overflow-hidden rounded-2xl bg-white shadow-sm"
+            style={{ border: "1px solid rgba(0,0,0,0.05)" }}
+          >
+            {filteredGroups.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-8 text-gray-400">
+                <Search size={20} className="text-gray-300" />
+                <p className="text-[12px]">Aucun module trouvé pour &ldquo;{search}&rdquo;</p>
+              </div>
+            ) : (
+              filteredGroups.flatMap(g => g.modules).map((mod, mi, arr) => (
+                <ModuleRow
+                  key={mod.href + mi}
+                  mod={mod as AnyModule}
+                  index={mi}
+                  last={mi === arr.length - 1}
+                  isPremium={isPremium}
+                />
+              ))
+            )}
+          </motion.div>
+        )}
+
+        {/* ── Module groups ── */}
+        {!search.trim() && (
+          <div className="space-y-3">
+            {MODULE_GROUPS.map((group, gi) => {
+              const GroupIcon = group.icon;
+              const allPremium = group.modules.every(m => getToolTier(m.href) === "premium");
+              const groupIsLocked = allPremium && isFree;
+
+              return (
+                <motion.div
+                  key={group.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 + gi * 0.05, ease }}
+                  className="overflow-hidden rounded-2xl bg-white"
+                  style={{
+                    boxShadow: groupIsLocked
+                      ? "0 2px 12px rgba(201,165,90,0.08), 0 8px 24px rgba(0,0,0,0.03)"
+                      : "0 2px 12px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.03)",
+                    border: groupIsLocked
+                      ? "1px solid rgba(201,165,90,0.18)"
+                      : "1px solid rgba(0,0,0,0.05)",
+                  }}
+                >
+                  {/* Header groupe */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: `${group.color}18` }}>
+                        <GroupIcon size={13} style={{ color: group.color }} strokeWidth={2}/>
+                      </div>
+                      <span className="text-[12px] font-bold text-gray-700 tracking-wide">{group.label}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {groupIsLocked && (
+                        <div className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                          style={{ background: "rgba(201,165,90,0.10)", border: "1px solid rgba(201,165,90,0.25)", color: GOLD }}>
+                          <Crown size={7} /> PRO
+                        </div>
+                      )}
+                      <span className="text-[10px] font-semibold text-gray-300 tabular-nums">{group.modules.length}</span>
+                    </div>
+                  </div>
+
+                  {/* Lignes modules */}
+                  {group.modules.map((mod, mi) => (
+                    <ModuleRow
+                      key={mod.href}
+                      mod={mod as AnyModule}
+                      index={gi * 6 + mi}
+                      last={mi === group.modules.length - 1}
+                      isPremium={isPremium}
+                    />
+                  ))}
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Footer ── */}
+        <div className="mt-8 flex flex-col items-center gap-3">
+          {isFree && (
+            <Link
+              href="/client/abonnements"
+              className="flex items-center gap-2 rounded-2xl px-5 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90"
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}
+            >
+              <Crown size={12} /> Passer à DJAMA PRO — 11,90€/mois
+            </Link>
+          )}
+          <p className="text-[10.5px] text-gray-400">
+            DJAMA PRO · {totalModules} modules · Données en temps réel
+          </p>
         </div>
-
-        <p className="mt-6 text-center text-[11px] text-gray-300">
-          DJAMA PRO · {totalModules} modules · Données en temps réel
-        </p>
       </div>
     </div>
   );
