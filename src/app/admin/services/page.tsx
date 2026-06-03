@@ -274,10 +274,10 @@ export default function AdminServices() {
       {/* Add / Edit Modal */}
       {modal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm"
           onClick={e => { if (e.target === e.currentTarget) setModal(null); }}
         >
-          <div className="w-full max-w-md rounded-3xl border border-white/[0.08] bg-[#0f0f12] p-6 shadow-2xl">
+          <div className="w-full max-w-md overflow-y-auto max-h-[90vh] rounded-3xl border border-white/[0.08] bg-[#0f0f12] p-6 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-[1rem] font-black text-white">
                 {modal === "add" ? "Nouveau service" : "Modifier le service"}

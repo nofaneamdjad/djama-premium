@@ -399,10 +399,10 @@ export default function AdminVirementsPage() {
       {/* ── Modal Ajouter ──────────────────────────────────────── */}
       {showForm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 py-6 backdrop-blur-sm"
           onClick={e => { if (e.target === e.currentTarget) setShowForm(false); }}
         >
-          <div className="w-full max-w-md rounded-3xl border border-white/[0.08] bg-[#0f0f12] p-6 shadow-2xl">
+          <div className="w-full max-w-md overflow-y-auto max-h-[90vh] rounded-3xl border border-white/[0.08] bg-[#0f0f12] p-6 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[rgba(74,222,128,0.1)]">
