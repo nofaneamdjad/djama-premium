@@ -995,7 +995,7 @@ export default function CockpitPage() {
             ) : todayTasks.length === 0 ? (
               <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "#f8faf8" }}>
                 <CheckCircle2 size={14} color="#4ade80" />
-                <span className="text-[11.5px] text-gray-500">Rien en retard — beau travail ! 🎉</span>
+                <span className="text-[11.5px] text-gray-500">Rien en retard — beau travail !</span>
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -1008,7 +1008,9 @@ export default function CockpitPage() {
                         <span className="flex-1 text-[12px] font-medium text-gray-700 truncate">{task.title}</span>
                         {task.due_date && (
                           <span className={`text-[9.5px] shrink-0 font-semibold ${isOverdue ? "text-red-500" : "text-gray-400"}`}>
-                            {isOverdue ? "⚠ retard" : "aujourd'hui"}
+                            {isOverdue
+                              ? <span className="flex items-center gap-0.5"><AlertCircle size={9} className="inline shrink-0" style={{color:"#ef4444"}}/> retard</span>
+                              : "aujourd'hui"}
                           </span>
                         )}
                       </div>
@@ -1077,7 +1079,10 @@ export default function CockpitPage() {
                 </span>
                 {!kpiLoading && caEvo !== null && (
                   <span className="text-[9.5px] font-bold" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
-                    {caEvo >= 0 ? "↑" : "↓"}{Math.abs(caEvo)}%
+                    {caEvo >= 0
+                      ? <TrendingUp size={10} className="inline" style={{color:"#4ade80"}}/>
+                      : <TrendingDown size={10} className="inline" style={{color:"#f87171"}}/>
+                    }{Math.abs(caEvo)}%
                   </span>
                 )}
               </div>
