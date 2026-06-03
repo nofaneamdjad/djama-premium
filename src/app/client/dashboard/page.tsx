@@ -88,7 +88,7 @@ type Rapport = {
 const SHORT_MONTHS = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 
 function ToolCard({ item, delay = 0 }: { item: typeof TOOLS[number]; delay?: number }) {
-  const appIcon = APP_ICONS[item.href];
+  const appIcon = APP_ICONS[item.href] ?? null;
   const Icon = item.icon;
   return (
     <motion.div
@@ -101,25 +101,25 @@ function ToolCard({ item, delay = 0 }: { item: typeof TOOLS[number]; delay?: num
           whileHover={{ scale: 1.02, y: -2 }}
           whileTap={{ scale: 0.97 }}
           transition={{ type: "spring", stiffness: 420, damping: 20 }}
-          className="flex items-center gap-3.5 rounded-2xl px-3.5 py-3.5"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
+          className="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 bg-white transition-shadow hover:shadow-md"
+          style={{ border: "1px solid rgba(0,0,0,0.07)" }}
         >
-          {/* Icône SVG app-style si disponible, sinon fallback Lucide */}
-          {appIcon ? (
-            <div className="h-[44px] w-[44px] shrink-0 overflow-hidden rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
+          {/* Icône SVG app-style 44px */}
+          {appIcon !== null ? (
+            <div className="h-[44px] w-[44px] shrink-0 overflow-hidden rounded-[12px] shadow-[0_3px_10px_rgba(0,0,0,0.18)]">
               {appIcon}
             </div>
           ) : (
             <div className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[12px]"
-              style={{ background: `${item.hue}22`, border: `1px solid ${item.hue}30` }}>
+              style={{ background: `${item.hue}18`, border: `1px solid ${item.hue}28` }}>
               <Icon size={18} style={{ color: item.hue }} strokeWidth={1.8} />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[0.82rem] font-semibold text-white/80 group-hover:text-white transition-colors">{item.label}</p>
-            <p className="truncate text-[0.67rem] text-white/35 mt-0.5">{item.desc}</p>
+            <p className="truncate text-[0.82rem] font-semibold text-gray-800 group-hover:text-gray-900 transition-colors">{item.label}</p>
+            <p className="truncate text-[0.67rem] text-gray-400 mt-0.5">{item.desc}</p>
           </div>
-          <ChevronRight size={13} className="shrink-0 text-white/20 group-hover:text-white/50 transition-colors" />
+          <ChevronRight size={13} className="shrink-0 text-gray-300 group-hover:text-gray-500 transition-colors" />
         </motion.div>
       </Link>
     </motion.div>
@@ -691,7 +691,7 @@ export default function DashboardPage() {
 
         {/* Tools */}
         <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.52 }}>
-          <p className="mb-3 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-white/25">Accès rapides</p>
+          <p className="mb-3 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-white/50">Accès rapides</p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {TOOLS.map((item,i)=><ToolCard key={item.href} item={item} delay={0.54+i*0.035}/>)}
           </div>

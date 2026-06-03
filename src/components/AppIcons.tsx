@@ -252,8 +252,17 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
       <rect x="14" y="25" width="4" height="8" rx="1" fill="white" opacity="0.7"/>
     </svg>
   ),
-  /* ── Alias ── */
-  "/client/bloc-notes":    null as unknown as React.ReactElement,   // résolu ci-dessous
+  "/client/bloc-notes": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <defs><linearGradient id="ai12b" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#fb7185"/><stop offset="1" stopColor="#9d174d"/></linearGradient></defs>
+      <rect width="48" height="48" rx="14" fill="url(#ai12b)"/>
+      <rect x="19" y="9" width="10" height="18" rx="5" fill="white" opacity="0.25"/>
+      <rect x="19" y="9" width="10" height="18" rx="5" stroke="white" strokeWidth="1.5" opacity="0.65"/>
+      <path d="M14 24c0 5.523 4.477 10 10 10s10-4.477 10-10" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.8"/>
+      <line x1="24" y1="34" x2="24" y2="40" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.7"/>
+      <line x1="18" y1="40" x2="30" y2="40" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.7"/>
+    </svg>
+  ),
   /* ── Quick actions ── */
   "qa/devis": (
     <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
@@ -309,8 +318,6 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 };
 
-// Alias : bloc-notes = bloc-note
-APP_ICONS["/client/bloc-notes"] = APP_ICONS["/client/bloc-note"];
 
 /** Icône app-style 52×52 avec verrouillage optionnel */
 export function AppModuleIcon({
