@@ -12,6 +12,7 @@ import {
   Plus, CheckCircle2, CircleDot, Send,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { APP_ICONS } from "@/components/AppIcons";
 import { fmtEurInt, fmtDuration } from "@/lib/format";
 
 const GOLD = "#c9a55a";
@@ -87,30 +88,38 @@ type Rapport = {
 const SHORT_MONTHS = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 
 function ToolCard({ item, delay = 0 }: { item: typeof TOOLS[number]; delay?: number }) {
+  const appIcon = APP_ICONS[item.href];
   const Icon = item.icon;
   return (
     <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, delay }}
+      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.28, delay }}
     >
       <Link href={item.href} className="group block">
         <motion.div
-          whileHover={{ scale: 1.02, x: 4 }}
+          whileHover={{ scale: 1.02, y: -2 }}
           whileTap={{ scale: 0.97 }}
           transition={{ type: "spring", stiffness: 420, damping: 20 }}
-          className="flex items-center gap-3 rounded-2xl px-3.5 py-3"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+          className="flex items-center gap-3.5 rounded-2xl px-3.5 py-3.5"
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-            style={{ background: `${item.hue}22`, border: `1px solid ${item.hue}30` }}>
-            <Icon size={14} style={{ color: item.hue }} strokeWidth={1.8} />
-          </div>
+          {/* Icône SVG app-style si disponible, sinon fallback Lucide */}
+          {appIcon ? (
+            <div className="h-[44px] w-[44px] shrink-0 overflow-hidden rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
+              {appIcon}
+            </div>
+          ) : (
+            <div className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[12px]"
+              style={{ background: `${item.hue}22`, border: `1px solid ${item.hue}30` }}>
+              <Icon size={18} style={{ color: item.hue }} strokeWidth={1.8} />
+            </div>
+          )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[0.78rem] font-semibold text-white/70 group-hover:text-white transition-colors">{item.label}</p>
-            <p className="truncate text-[0.64rem] text-white/30">{item.desc}</p>
+            <p className="truncate text-[0.82rem] font-semibold text-white/80 group-hover:text-white transition-colors">{item.label}</p>
+            <p className="truncate text-[0.67rem] text-white/35 mt-0.5">{item.desc}</p>
           </div>
-          <ChevronRight size={12} className="shrink-0 text-white/15 group-hover:text-white/45 transition-colors" />
+          <ChevronRight size={13} className="shrink-0 text-white/20 group-hover:text-white/50 transition-colors" />
         </motion.div>
       </Link>
     </motion.div>
