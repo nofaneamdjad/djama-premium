@@ -705,48 +705,49 @@ export default function CockpitPage() {
             className="mb-4 rounded-2xl p-4"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30 mb-1">
-                  CA · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-                </p>
-                {kpiLoading ? (
-                  <div className="h-9 w-32 animate-pulse rounded-xl" style={{ background:"rgba(255,255,255,0.08)" }}/>
-                ) : (
-                  <motion.p
-                    initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
-                    transition={{ duration:0.3, delay:0.18, ease }}
-                    className="text-[2.2rem] font-black leading-none tracking-tight text-white"
-                  >
-                    {fmtEurInt(caMonth)}
-                  </motion.p>
-                )}
-              </div>
-
-              {/* Évolution + Net */}
-              <div className="flex flex-col items-end gap-1.5 shrink-0">
+            {/* ── Ligne 1 : label + badges ── */}
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30">
+                CA · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+              </p>
+              <div className="flex items-center gap-1.5">
                 {!kpiLoading && caEvo !== null && (
-                  <div className="flex items-center gap-1 rounded-xl px-2.5 py-1.5"
+                  <div className="flex items-center gap-1 rounded-xl px-2 py-1"
                     style={{
                       background: caEvo >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)",
                       border: `1px solid ${caEvo >= 0 ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}`,
                     }}>
-                    {caEvo >= 0 ? <TrendingUp size={12} color="#4ade80"/> : <TrendingDown size={12} color="#f87171"/>}
-                    <span className="text-[12px] font-black" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
+                    {caEvo >= 0 ? <TrendingUp size={11} color="#4ade80"/> : <TrendingDown size={11} color="#f87171"/>}
+                    <span className="text-[11px] font-black" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
                       {caEvo >= 0 ? "+" : ""}{caEvo}%
                     </span>
                   </div>
                 )}
                 {!kpiLoading && (
                   <div className="flex items-center gap-1 rounded-lg px-2 py-1"
-                    style={{ background: "rgba(255,255,255,0.05)" }}>
-                    <span className="text-[9px] text-white/25 uppercase tracking-wide">Net</span>
-                    <span className="text-[11px] font-black" style={{ color: netMonth >= 0 ? "#4ade80" : "#f87171" }}>
+                    style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <span className="text-[9px] text-white/30 uppercase tracking-wide">Net</span>
+                    <span className="text-[11px] font-black ml-0.5" style={{ color: netMonth >= 0 ? "#4ade80" : "#f87171" }}>
                       {netMonth >= 0 ? "+" : ""}{fmtEurInt(netMonth)}
                     </span>
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* ── Ligne 2 : grand nombre CA ── */}
+            <div className="mb-3">
+              {kpiLoading ? (
+                <div className="h-12 w-36 animate-pulse rounded-xl" style={{ background:"rgba(255,255,255,0.08)" }}/>
+              ) : (
+                <motion.p
+                  initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+                  transition={{ duration:0.3, delay:0.18, ease }}
+                  className="text-[3.2rem] font-black leading-none tracking-tight text-white"
+                >
+                  {fmtEurInt(caMonth)}
+                </motion.p>
+              )}
             </div>
 
             {/* Barre CA / Dépenses */}
@@ -786,7 +787,7 @@ export default function CockpitPage() {
             </div>
           </motion.div>
 
-          {/* ── Quick Actions × 6 ── */}
+          {/* ── Quick Actions × 6 — style Qonto ── */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -794,36 +795,33 @@ export default function CockpitPage() {
             className="grid grid-cols-6 gap-2"
           >
             {[
-              { href:"/client/factures",   icon:ReceiptText, label:"Facture",  color:"#c9a55a", bg:"rgba(201,165,90,0.14)",  locked:false },
-              { href:"/client/factures",   icon:Send,        label:"Devis",    color:"#60a5fa", bg:"rgba(59,130,246,0.12)",  locked:false },
-              { href:"/client/depenses",   icon:CreditCard,  label:"Dépense",  color:"#f97316", bg:"rgba(249,115,22,0.12)",  locked:isFree },
-              { href:"/client/crm",        icon:Users,       label:"Contact",  color:"#a78bfa", bg:"rgba(167,139,250,0.12)", locked:isFree },
-              { href:"/client/notes",      icon:StickyNote,  label:"Note",     color:"#fbbf24", bg:"rgba(251,191,36,0.12)",  locked:false },
-              { href:"/client/chrono",     icon:Timer,       label:"Timer",    color:"#c084fc", bg:"rgba(192,132,252,0.12)", locked:isFree },
-            ].map((a, i) => {
-              const AIcon = a.icon;
-              return (
-                <motion.div key={a.label}
-                  initial={{ opacity:0, y:10, scale:0.9 }}
-                  animate={{ opacity:1, y:0, scale:1 }}
-                  transition={{ type:"spring", stiffness:380, damping:22, delay: 0.22 + i * 0.04 }}
+              { href:"/client/factures", emoji:"🧾", label:"Facture",  bg:"linear-gradient(145deg,#1e3a8a,#2563eb)",     locked:false },
+              { href:"/client/factures", emoji:"📋", label:"Devis",    bg:"linear-gradient(145deg,#0369a1,#0ea5e9)",     locked:false },
+              { href:"/client/depenses", emoji:"💳", label:"Dépense",  bg:"linear-gradient(145deg,#c2410c,#f97316)",     locked:isFree },
+              { href:"/client/crm",      emoji:"👤", label:"Contact",  bg:"linear-gradient(145deg,#5b21b6,#8b5cf6)",     locked:isFree },
+              { href:"/client/notes",    emoji:"📝", label:"Note",     bg:"linear-gradient(145deg,#92400e,#d97706)",     locked:false },
+              { href:"/client/chrono",   emoji:"⏱️", label:"Timer",    bg:"linear-gradient(145deg,#0e7490,#06b6d4)",     locked:isFree },
+            ].map((a, i) => (
+              <motion.div key={a.label}
+                initial={{ opacity:0, y:10, scale:0.88 }}
+                animate={{ opacity:1, y:0, scale:1 }}
+                transition={{ type:"spring", stiffness:400, damping:22, delay: 0.22 + i * 0.045 }}
+              >
+                <Link href={a.href}
+                  className="relative flex flex-col items-center gap-1 rounded-2xl pb-2 pt-2.5 transition active:scale-95"
+                  style={{ background: a.bg, boxShadow: "0 4px 12px rgba(0,0,0,0.25)" }}
                 >
-                  <Link href={a.href}
-                    className="relative flex flex-col items-center gap-1.5 rounded-2xl py-2.5 transition active:scale-95"
-                    style={{ background: a.bg, border: `1px solid ${a.color}22` }}
-                  >
-                    <AIcon size={17} style={{ color: a.color }} strokeWidth={1.8} />
-                    <span className="text-[9.5px] font-semibold" style={{ color: a.color }}>{a.label}</span>
-                    {a.locked && (
-                      <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full shadow-sm"
-                        style={{ background: GOLD }}>
-                        <Lock size={6} color="black" strokeWidth={3} />
-                      </div>
-                    )}
-                  </Link>
-                </motion.div>
-              );
-            })}
+                  <span className="text-[20px] leading-none select-none">{a.emoji}</span>
+                  <span className="text-[9px] font-bold text-white/90 tracking-wide">{a.label}</span>
+                  {a.locked && (
+                    <div className="absolute -bottom-1 -right-1 flex h-[15px] w-[15px] items-center justify-center rounded-full shadow-sm"
+                      style={{ background: GOLD, border: "1.5px solid rgba(255,255,255,0.4)" }}>
+                      <Lock size={6} color="white" strokeWidth={3} />
+                    </div>
+                  )}
+                </Link>
+              </motion.div>
+            ))}
           </motion.div>
 
         </div>
