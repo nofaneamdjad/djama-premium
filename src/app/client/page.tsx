@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Users, Timer, FileText, Search,
+  ReceiptText, Users, Timer, CreditCard, FileText, Search,
   Wallet, StickyNote, Calendar, CalendarRange, Brain, Zap, Star, Mic,
   Truck, Package, Bell, BarChart2, Building2, Banknote,
   ChevronRight, LogOut, LayoutGrid, ListTodo,
