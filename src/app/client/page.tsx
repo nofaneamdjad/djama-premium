@@ -4,13 +4,13 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ReceiptText, Users, Timer, CreditCard, FileText, Search,
+  Users, Timer, FileText, Search,
   Wallet, StickyNote, Calendar, CalendarRange, Brain, Zap, Star, Mic,
   Truck, Package, Bell, BarChart2, Building2, Banknote,
-  ChevronRight, LogOut, Settings, LayoutGrid, ListTodo,
-  TrendingUp, TrendingDown, Send, Share2,
+  ChevronRight, LogOut, LayoutGrid, ListTodo,
+  TrendingUp, TrendingDown, Share2,
   Lock, Crown, AlertCircle, CheckCircle2, X,
-  Clock, ArrowRight, Sparkles,
+  Clock, ArrowRight, Sparkles, Activity,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
@@ -111,9 +111,11 @@ function fmtEventTime(iso: string) {
 function fmtEventDate(iso: string) {
   const d = new Date(iso);
   const now = new Date();
-  const diff = d.getDate() - now.getDate();
-  if (d.toDateString() === now.toDateString()) return "Aujourd'hui";
-  if (diff === 1 && d.getMonth() === now.getMonth()) return "Demain";
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dMidnight     = new Date(d.getFullYear(),   d.getMonth(),   d.getDate());
+  const diffDays = Math.round((dMidnight.getTime() - todayMidnight.getTime()) / 86_400_000);
+  if (diffDays === 0) return "Aujourd'hui";
+  if (diffDays === 1) return "Demain";
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 function priorityColor(p: string) {
@@ -526,6 +528,8 @@ export default function CockpitPage() {
   const [todayTasks,   setTodayTasks]   = useState<TodayTask[]>([]);
   const [nextEvent,    setNextEvent]    = useState<NextEvent | null>(null);
   const [overdueCount, setOverdueCount] = useState(0);
+  const [nbTasks,      setNbTasks]      = useState(0);
+  const [lastFac,      setLastFac]      = useState<{ numero: string; montant_ttc: number; date_emission: string; client_nom: string } | null>(null);
   const [todayLoading, setTodayLoading] = useState(true);
 
   /* ── UI ── */
@@ -607,7 +611,7 @@ export default function CockpitPage() {
       setKpiLoading(false);
 
       /* ── Données "Aujourd'hui" ── */
-      const [taskRes, eventRes, overdueRes] = await Promise.all([
+      const [taskRes, eventRes, overdueRes, allTasksRes, lastFacRes] = await Promise.all([
         supabase
           .from("productivity_tasks")
           .select("id, title, priority, due_date")
@@ -631,11 +635,25 @@ export default function CockpitPage() {
           .eq("type", "facture")
           .eq("statut", "envoyée")
           .lt("due_date", today),
+        supabase
+          .from("productivity_tasks")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .neq("status", "done"),
+        supabase
+          .from("factures")
+          .select("numero, montant_ttc, date_emission, client_nom")
+          .eq("user_id", user.id)
+          .order("date_emission", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       setTodayTasks((taskRes.data ?? []) as TodayTask[]);
       setNextEvent(eventRes.data as NextEvent | null);
       setOverdueCount(overdueRes.count ?? 0);
+      setNbTasks(allTasksRes.count ?? 0);
+      setLastFac(lastFacRes.data as typeof lastFac ?? null);
       setTodayLoading(false);
     })();
   }, []);
@@ -718,7 +736,7 @@ export default function CockpitPage() {
             </div>
             <div className="flex items-center gap-2">
               {/* Notifications */}
-              <Link href="/client/factures">
+              <Link href={overdueCount > 0 ? "/client/factures?statut=retard" : "/client/factures"}>
                 <motion.div whileTap={{ scale: 0.88 }} className="relative flex h-8 w-8 items-center justify-center rounded-full"
                   style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
                   <Bell size={13} className="text-white/50" />
@@ -756,8 +774,8 @@ export default function CockpitPage() {
                         </div>
                       </div>
                       {[
-                        { icon:LayoutGrid, label:"Dashboard",  href:"/client/abonnements" },
-                        { icon:Settings,   label:"Abonnement", href:"/client/abonnements" },
+                        { icon:LayoutGrid, label:"Dashboard",   href:"/client" },
+                        { icon:Crown,      label:"Abonnement",  href:"/client/abonnements" },
                       ].map(item => {
                         const Icon = item.icon;
                         return (
@@ -797,17 +815,24 @@ export default function CockpitPage() {
                 CA · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
               </p>
               <div className="flex items-center gap-1.5">
-                {!kpiLoading && caEvo !== null && (
-                  <div className="flex items-center gap-1 rounded-xl px-2 py-1"
-                    style={{
-                      background: caEvo >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)",
-                      border: `1px solid ${caEvo >= 0 ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}`,
-                    }}>
-                    {caEvo >= 0 ? <TrendingUp size={11} color="#4ade80"/> : <TrendingDown size={11} color="#f87171"/>}
-                    <span className="text-[11px] font-black" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
-                      {caEvo >= 0 ? "+" : ""}{caEvo}%
-                    </span>
-                  </div>
+                {!kpiLoading && (
+                  caEvo !== null ? (
+                    <div className="flex items-center gap-1 rounded-xl px-2 py-1"
+                      style={{
+                        background: caEvo >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)",
+                        border: `1px solid ${caEvo >= 0 ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}`,
+                      }}>
+                      {caEvo >= 0 ? <TrendingUp size={11} color="#4ade80"/> : <TrendingDown size={11} color="#f87171"/>}
+                      <span className="text-[11px] font-black" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
+                        {caEvo >= 0 ? "+" : ""}{caEvo}%
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 rounded-xl px-2 py-1"
+                      style={{ background: "rgba(201,165,90,0.10)", border: "1px solid rgba(201,165,90,0.18)" }}>
+                      <span className="text-[10px] font-bold" style={{ color: GOLD }}>Premier mois</span>
+                    </div>
+                  )
                 )}
                 {!kpiLoading && (
                   <div className="flex items-center gap-1 rounded-lg px-2 py-1"
@@ -856,21 +881,37 @@ export default function CockpitPage() {
             )}
 
             {/* Mini stats */}
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: "Contacts",      val: kpiLoading ? "…" : String(nbContacts),  color: "#60a5fa" },
-                { label: "En attente",    val: kpiLoading ? "…" : String(nbFactures),  color: nbFactures > 0 ? "#f87171" : "#4ade80" },
-                { label: "Dépenses",      val: kpiLoading ? "…" : fmtEurInt(depensesMonth), color: "#fb923c" },
-              ].map(s => (
-                <div key={s.label}
-                  className="flex flex-col items-center justify-center rounded-xl py-2"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
-                >
-                  <span className="text-[13px] font-black" style={{ color: s.color }}>{s.val}</span>
-                  <span className="mt-0.5 text-[9px] text-white/25 text-center leading-tight">{s.label}</span>
+            {caMonth === 0 && !kpiLoading ? (
+              <Link href="/client/factures">
+                <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-white/5"
+                  style={{ background: "rgba(201,165,90,0.06)", border: "1px solid rgba(201,165,90,0.14)" }}>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: "rgba(201,165,90,0.15)" }}>
+                    <ArrowRight size={14} style={{ color: GOLD }} />
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-bold text-white/80">Créez votre première facture</p>
+                    <p className="text-[10px] text-white/30">Commencez à suivre votre activité →</p>
+                  </div>
                 </div>
-              ))}
-            </div>
+              </Link>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "Contacts",   val: kpiLoading ? "…" : String(nbContacts), color: "#60a5fa" },
+                  { label: "En attente", val: kpiLoading ? "…" : String(nbFactures), color: nbFactures > 0 ? "#f87171" : "#4ade80" },
+                  { label: "Tâches",     val: kpiLoading ? "…" : String(nbTasks),    color: nbTasks > 0 ? "#fbbf24" : "#4ade80" },
+                ].map(s => (
+                  <div key={s.label}
+                    className="flex flex-col items-center justify-center rounded-xl py-2"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+                  >
+                    <span className="text-[13px] font-black" style={{ color: s.color }}>{s.val}</span>
+                    <span className="mt-0.5 text-[9px] text-white/25 text-center leading-tight">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
 
           {/* ── Quick Actions × 6 — vraies icônes SVG style app ── */}
@@ -878,15 +919,15 @@ export default function CockpitPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.38, delay: 0.18, ease }}
-            className="grid grid-cols-6 gap-2"
+            className="grid grid-cols-3 gap-3 sm:grid-cols-6"
           >
             {([
-              { href:"/client/factures", iconKey:"/client/factures", label:"Facture",  locked:false },
-              { href:"/client/factures", iconKey:"qa/devis",         label:"Devis",    locked:false },
-              { href:"/client/depenses", iconKey:"/client/depenses", label:"Dépense",  locked:isFree },
-              { href:"/client/crm",      iconKey:"qa/contact",       label:"Contact",  locked:isFree },
-              { href:"/client/notes",    iconKey:"qa/note",          label:"Note",     locked:false },
-              { href:"/client/chrono",   iconKey:"qa/timer",         label:"Timer",    locked:isFree },
+              { href:"/client/factures?create=facture", iconKey:"/client/factures", label:"Facture",  locked:false },
+              { href:"/client/factures?create=devis",   iconKey:"qa/devis",         label:"Devis",    locked:false },
+              { href:"/client/depenses",                iconKey:"/client/depenses", label:"Dépense",  locked:isFree },
+              { href:"/client/crm",                     iconKey:"qa/contact",       label:"Contact",  locked:isFree },
+              { href:"/client/notes",                   iconKey:"qa/note",          label:"Note",     locked:false },
+              { href:"/client/chrono",                  iconKey:"qa/timer",         label:"Timer",    locked:isFree },
             ] as { href:string; iconKey:string; label:string; locked:boolean }[]).map((a, i) => (
               <motion.div key={a.label}
                 initial={{ opacity:0, y:12, scale:0.85 }}
@@ -894,14 +935,13 @@ export default function CockpitPage() {
                 transition={{ type:"spring", stiffness:420, damping:22, delay: 0.22 + i * 0.045 }}
               >
                 <Link href={a.href} className="relative flex flex-col items-center gap-1.5 transition active:scale-95">
-                  {/* Icône SVG app-style */}
                   <div className="relative h-[52px] w-[52px] overflow-hidden rounded-[14px] shadow-[0_5px_16px_rgba(0,0,0,0.28)]"
                     style={{ opacity: a.locked ? 0.72 : 1 }}>
                     {APP_ICONS[a.iconKey]}
                   </div>
                   <span className="text-[9.5px] font-semibold text-white/80 tracking-wide leading-none">{a.label}</span>
                   {a.locked && (
-                    <div className="absolute -bottom-0.5 right-0.5 flex h-[16px] w-[16px] items-center justify-center rounded-full shadow-sm"
+                    <div className="absolute top-0 right-0 flex h-[16px] w-[16px] items-center justify-center rounded-full shadow-sm"
                       style={{ background: GOLD, border: "1.5px solid rgba(255,255,255,0.5)" }}>
                       <Lock size={7} color="white" strokeWidth={3} />
                     </div>
@@ -1000,6 +1040,7 @@ export default function CockpitPage() {
           transition={{ duration: 0.35, delay: 0.15, ease }}
           className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
         >
+
           {/* Tâches */}
           <div className="rounded-2xl bg-white p-4 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
             <div className="flex items-center justify-between mb-3">
@@ -1046,74 +1087,109 @@ export default function CockpitPage() {
             )}
           </div>
 
-          {/* Prochain RDV + indicateur mensuel */}
-          <div className="space-y-3">
-            {/* Prochain événement */}
-            <div className="rounded-2xl bg-white p-4 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: "rgba(79,70,229,0.08)" }}>
-                    <Calendar size={13} style={{ color: "#4f46e5" }} strokeWidth={2.2} />
-                  </div>
-                  <span className="text-[12px] font-bold text-gray-700">Prochain RDV</span>
-                </div>
-                <Link href="/client/planning" className="text-[10.5px] font-semibold text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-0.5">
-                  Planning <ArrowRight size={10} />
-                </Link>
-              </div>
-              {todayLoading ? (
-                <div className="h-12 rounded-xl animate-pulse" style={{ background: "#f3f4f6" }}/>
-              ) : nextEvent ? (
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 text-center w-10 rounded-xl py-1.5"
-                    style={{ background: "rgba(79,70,229,0.06)", border: "1px solid rgba(79,70,229,0.1)" }}>
-                    <div className="text-[18px] font-black leading-none text-indigo-600">
-                      {new Date(nextEvent.start_at).getDate()}
-                    </div>
-                    <div className="text-[8px] uppercase tracking-wide text-indigo-400 font-semibold">
-                      {new Date(nextEvent.start_at).toLocaleDateString("fr-FR", { month: "short" })}
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12.5px] font-semibold text-gray-800 truncate">{nextEvent.title}</p>
-                    <p className="text-[10.5px] text-gray-400">
-                      {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Clock size={13} className="text-gray-300" />
-                  <span className="text-[11.5px] text-gray-400">Aucun événement à venir</span>
-                </div>
-              )}
-            </div>
-
-            {/* Compteur mensuel */}
-            <div className="rounded-2xl px-4 py-3 flex items-center justify-between"
-              style={{ background: "rgba(201,165,90,0.06)", border: "1px solid rgba(201,165,90,0.14)" }}>
+          {/* Prochain RDV */}
+          <div className="rounded-2xl bg-white p-4 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <BarChart2 size={14} style={{ color: GOLD }} />
-                <span className="text-[11.5px] font-semibold text-gray-600">
-                  {new Date().toLocaleDateString("fr-FR", { month: "long" })} en cours
-                </span>
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: "rgba(79,70,229,0.08)" }}>
+                  <Calendar size={13} style={{ color: "#4f46e5" }} strokeWidth={2.2} />
+                </div>
+                <span className="text-[12px] font-bold text-gray-700">Prochain RDV</span>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-[12px] font-black" style={{ color: GOLD }}>
-                  {kpiLoading ? "…" : fmtEurInt(caMonth)}
-                </span>
-                {!kpiLoading && caEvo !== null && (
-                  <span className="text-[9.5px] font-bold" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
-                    {caEvo >= 0
-                      ? <TrendingUp size={10} className="inline" style={{color:"#4ade80"}}/>
-                      : <TrendingDown size={10} className="inline" style={{color:"#f87171"}}/>
-                    }{Math.abs(caEvo)}%
-                  </span>
-                )}
-              </div>
+              <Link href="/client/planning" className="text-[10.5px] font-semibold text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-0.5">
+                Planning <ArrowRight size={10} />
+              </Link>
             </div>
+            {todayLoading ? (
+              <div className="h-12 rounded-xl animate-pulse" style={{ background: "#f3f4f6" }}/>
+            ) : nextEvent ? (
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 text-center w-10 rounded-xl py-1.5"
+                  style={{ background: "rgba(79,70,229,0.06)", border: "1px solid rgba(79,70,229,0.1)" }}>
+                  <div className="text-[18px] font-black leading-none text-indigo-600">
+                    {new Date(nextEvent.start_at).getDate()}
+                  </div>
+                  <div className="text-[8px] uppercase tracking-wide text-indigo-400 font-semibold">
+                    {new Date(nextEvent.start_at).toLocaleDateString("fr-FR", { month: "short" })}
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12.5px] font-semibold text-gray-800 truncate">{nextEvent.title}</p>
+                  <p className="text-[10.5px] text-gray-400">
+                    {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Clock size={13} className="text-gray-300" />
+                <span className="text-[11.5px] text-gray-400">Aucun événement à venir</span>
+              </div>
+            )}
           </div>
         </motion.div>
+
+        {/* ── Bande mensuelle (pleine largeur, visible mobile) ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2, ease }}
+          className="mb-4 rounded-2xl px-4 py-3 flex items-center justify-between"
+          style={{ background: "rgba(201,165,90,0.06)", border: "1px solid rgba(201,165,90,0.14)" }}
+        >
+          <div className="flex items-center gap-2">
+            <BarChart2 size={14} style={{ color: GOLD }} />
+            <span className="text-[11.5px] font-semibold text-gray-600">
+              {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] font-black" style={{ color: GOLD }}>
+              {kpiLoading ? "…" : fmtEurInt(caMonth)}
+            </span>
+            {!kpiLoading && caEvo !== null && (
+              <div className="flex items-center gap-0.5">
+                {caEvo >= 0
+                  ? <TrendingUp size={11} style={{color:"#4ade80"}}/>
+                  : <TrendingDown size={11} style={{color:"#f87171"}}/>
+                }
+                <span className="text-[10px] font-bold" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
+                  {Math.abs(caEvo)}%
+                </span>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* ── Activité récente ── */}
+        {!todayLoading && lastFac && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.22, ease }}
+            className="mb-4"
+          >
+            <Link href="/client/factures">
+              <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm transition-colors hover:bg-gray-50"
+                style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: "rgba(37,99,235,0.08)" }}>
+                  <Activity size={15} style={{ color: "#2563eb" }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-bold text-gray-700 truncate">
+                    Dernière facture — {lastFac.client_nom || "client"}
+                  </p>
+                  <p className="text-[10.5px] text-gray-400">
+                    {lastFac.numero} · {new Date(lastFac.date_emission).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                  </p>
+                </div>
+                <span className="shrink-0 text-[13px] font-black text-gray-800">{fmtEurInt(lastFac.montant_ttc)}</span>
+                <ChevronRight size={14} className="shrink-0 text-gray-300" />
+              </div>
+            </Link>
+          </motion.div>
+        )}
 
         {/* ── Barre de recherche modules ── */}
         <motion.div
