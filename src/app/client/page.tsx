@@ -540,16 +540,41 @@ export default function CockpitPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const fullName = (
+      /* ── Nom / Société ── */
+      const metaCompany = (
+        (user.user_metadata?.company_name as string | undefined)
+        || (user.user_metadata?.company as string | undefined)
+        || (user.user_metadata?.organization as string | undefined)
+        || ""
+      ).trim();
+
+      const metaFullName = (
         (user.user_metadata?.full_name as string | undefined)
         || (user.user_metadata?.name as string | undefined)
         || ""
       ).trim();
-      const emailFallback = user.email?.split("@")[0] ?? "";
-      const name = fullName || (emailFallback.charAt(0).toUpperCase() + emailFallback.slice(1));
-      const fn = fullName ? fullName.split(" ")[0] : name;
-      setFirstName(fn);
-      setInitial(fn.charAt(0).toUpperCase());
+
+      // Cherche le nom dans user_access (défini par l'admin)
+      const { data: uaRow } = await supabase
+        .from("user_access")
+        .select("name")
+        .eq("email", user.email!)
+        .maybeSingle();
+      const accessName = ((uaRow as { name?: string } | null)?.name ?? "").trim();
+
+      // Email → "nofane.soufie" devient "Nofane Soufie"
+      const emailSlug = user.email?.split("@")[0] ?? "";
+      const emailFormatted = emailSlug
+        .replace(/[._-]/g, " ")
+        .split(" ")
+        .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+        .join(" ");
+
+      // Priorité : société > user_access > Google > email formaté
+      const displayName = metaCompany || accessName || metaFullName || emailFormatted;
+
+      setFirstName(displayName);
+      setInitial(displayName.charAt(0).toUpperCase());
 
       const now   = new Date();
       const y     = now.getFullYear();
