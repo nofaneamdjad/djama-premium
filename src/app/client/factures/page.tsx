@@ -228,6 +228,7 @@ async function exportPDFWithTemplate(
   await generatePdf({
     type:        draft.type === "facture" ? "invoice" : "quote",
     template:    draft.template ?? "modern",
+    accentColor: draft.couleur || "#c9a55a",
     reference:   draft.numero || (draft.type === "facture" ? "FACTURE" : "DEVIS"),
     issue_date:  draft.date_document,
     due_date:    draft.type === "facture" ? (draft.date_echeance || null) : null,
