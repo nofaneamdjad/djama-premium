@@ -17,6 +17,8 @@ import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
 import { TemplateSelector } from "@/components/invoice/TemplateSelector";
 import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
+import { fetchCompanySettings } from "@/lib/pdf/companySettings";
+import type { CompanySettings } from "@/lib/pdf/companySettings";
 
 type DocType   = "facture" | "devis";
 type DocStatut = "brouillon" | "envoyé" | "payé" | "en_retard";
@@ -498,6 +500,9 @@ export default function FacturesPage() {
   const [crmClients,    setCrmClients]    = useState<CrmClient[]>([]);
   const [crmLoading,    setCrmLoading]    = useState(false);
 
+  // ── Paramètres entreprise (pré-remplissage) ───────────────────────────────
+  const [companyDefaults, setCompanyDefaults] = useState<CompanySettings | null>(null);
+
   const totals = useMemo(
     () => calcTotals(items, draft?.remise_pct ?? 0, draft?.acompte ?? 0),
     [items, draft?.remise_pct, draft?.acompte]
@@ -522,6 +527,17 @@ export default function FacturesPage() {
   }, []);
 
   useEffect(() => { fetchDocs(); }, [fetchDocs]);
+
+  // Charger les paramètres entreprise pour pré-remplissage
+  useEffect(() => { fetchCompanySettings().then(setCompanyDefaults); }, []);
+
+  // Avertir si l'utilisateur quitte la page avec des modifications non sauvegardées
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
 
   function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
 
@@ -565,8 +581,23 @@ export default function FacturesPage() {
   }
 
   function newDoc(type: DocType = "facture") {
+    const co = companyDefaults;
     setSelected(null);
-    setDraft({ ...EMPTY_DRAFT(), type, numero: newNumero(type, documents) });
+    setDraft({
+      ...EMPTY_DRAFT(),
+      type,
+      numero: newNumero(type, documents),
+      // Pré-remplissage depuis les paramètres entreprise
+      emetteur_nom:     co?.name        || "",
+      emetteur_email:   co?.email       || "",
+      emetteur_adresse: co ? [co.address, co.city, co.country].filter(Boolean).join(", ") : "",
+      emetteur_siret:   co?.siret       || "",
+      emetteur_tva:     co?.vat_number  || "",
+      emetteur_logo:    co?.logoUrl     || "",
+      rib_iban:         co?.iban        || "",
+      rib_bic:          co?.bic         || "",
+      rib_titulaire:    co?.name        || "",
+    });
     setItems([EMPTY_ITEM()]);
     setDirty(true);
     setMobileView("editor");
@@ -813,7 +844,7 @@ export default function FacturesPage() {
     try {
       const res = await fetch("/api/stripe/payment-link", {
         method:"POST", headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ amount:totals.ttc, description:draft.sujet||`${draft.type === "facture" ? "Facture":"Devis"} ${draft.numero}`, document_id:selected.id, reference:draft.numero, client_email:draft.client_email }),
+        body: JSON.stringify({ amount:totals.ttc, description:draft.sujet||`${draft.type === "facture" ? "Facture":"Devis"} ${draft.numero}`, document_id:selected.id, reference:draft.numero, client_email:draft.client_email, currency:(draft.devise||"EUR").toLowerCase() }),
       });
       const data = await res.json() as { url?:string; error?:string };
       if (!res.ok || data.error) throw new Error(data.error || "Erreur Stripe");
@@ -1380,7 +1411,7 @@ export default function FacturesPage() {
                           </div>
                         ))
                       }
-                      {totals.tvaByRate.size === 0 || !Array.from(totals.tvaByRate.keys()).some(r => r > 0) && (
+                      {(totals.tvaByRate.size === 0 || !Array.from(totals.tvaByRate.keys()).some(r => r > 0)) && (
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-white/40">TVA</span>
                           <span className="text-sm font-semibold text-white/70">{fmt(totals.tva)}</span>
@@ -1461,6 +1492,24 @@ export default function FacturesPage() {
                       className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70">
                       <FileDown size={13}/> PDF
                     </button>
+                    {selected && (
+                      <button onClick={openEmailModal}
+                        className="flex items-center gap-1.5 rounded-xl border border-sky-400/20 px-3 py-2 text-xs font-semibold text-sky-400/70 transition hover:border-sky-400/40 hover:text-sky-400">
+                        <Mail size={13}/> Email
+                      </button>
+                    )}
+                    {selected && draft.type === "facture" && (
+                      <button onClick={handlePaymentLink} disabled={payLinkLoading}
+                        className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#a78bfa]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#a78bfa] disabled:opacity-40">
+                        {payLinkLoading ? <Loader2 size={13} className="animate-spin"/> : <Link2 size={13}/>} Paiement
+                      </button>
+                    )}
+                    {selected && draft.client_nom && (
+                      <button onClick={handlePortalLink} disabled={portalLoading}
+                        className="flex items-center gap-1.5 rounded-xl border border-[rgba(34,211,238,0.2)] px-3 py-2 text-xs font-semibold text-[#22d3ee]/70 transition hover:border-[rgba(34,211,238,0.4)] hover:text-[#22d3ee] disabled:opacity-40">
+                        {portalLoading ? <Loader2 size={13} className="animate-spin"/> : <Globe size={13}/>} Portail
+                      </button>
+                    )}
                   </div>
 
                 </div>

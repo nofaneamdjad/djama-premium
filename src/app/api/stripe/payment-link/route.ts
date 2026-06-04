@@ -23,13 +23,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Stripe non configuré (STRIPE_SECRET_KEY manquant)" }, { status: 500 });
   }
 
+  // Devises supportées par Stripe (MAD, XOF, DZD non supportés → fallback EUR)
+  const STRIPE_SUPPORTED = new Set(["eur","usd","gbp","chf","cad","dkk","nok","sek","jpy","aud","sgd","hkd"]);
+
   const body = await req.json() as {
-    amount:        number;     // en euros (ex: 450.00)
+    amount:        number;     // ex: 450.00
     description:   string;
     document_id?:  string;
     reference?:    string;
     client_email?: string;
+    currency?:     string;     // code devise ISO 4217 lowercase
   };
+  const currency = STRIPE_SUPPORTED.has(body.currency?.toLowerCase() ?? "")
+    ? body.currency!.toLowerCase()
+    : "eur";
 
   if (!body.amount || body.amount <= 0) {
     return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
@@ -42,7 +49,7 @@ export async function POST(req: NextRequest) {
     /* ── Créer un prix dynamique ── */
     const price = await stripe.prices.create({
       unit_amount: Math.round(body.amount * 100), // centimes
-      currency:    "eur",
+      currency,
       product_data: {
         name: body.description,
         metadata: {
