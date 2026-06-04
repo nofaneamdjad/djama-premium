@@ -120,5 +120,10 @@ export interface PdfTheme {
   footerText:        RGB;
 
   // Variante de rendu
-  variant: "standard" | "minimal" | "dark";
+  variant: "standard" | "minimal" | "dark" | "accent-bar";
+
+  /** Couleur de la barre d'accent latérale (variant "accent-bar" uniquement) */
+  accentBarColor?: RGB;
+  /** Largeur de la barre d'accent en mm (défaut 4.5) */
+  accentBarW?: number;
 }

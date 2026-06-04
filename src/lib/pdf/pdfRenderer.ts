@@ -96,6 +96,15 @@ function hLine(doc: jsPDF, y: number, color: RGB, lw = 0.25) {
   doc.line(ML, y, PW - MR, y);
 }
 
+/** Dessine la barre d'accent verticale gauche (variant "accent-bar") sur la page courante */
+function drawAccentBar(doc: jsPDF, theme: PdfTheme) {
+  if (theme.variant !== "accent-bar") return;
+  const barW     = theme.accentBarW    ?? 4.5;
+  const barColor = theme.accentBarColor ?? theme.tableHeaderBg;
+  setFill(doc, barColor);
+  doc.rect(0, 0, barW, PH, "F");
+}
+
 // ─── Gestion de page ─────────────────────────────────────────────────────────
 function maybePageBreak(doc: jsPDF, y: number, needed: number, theme: PdfTheme): number {
   if (y + needed <= FY - 4) return y;
@@ -104,9 +113,14 @@ function maybePageBreak(doc: jsPDF, y: number, needed: number, theme: PdfTheme):
     setFill(doc, theme.bodyBg);
     doc.rect(0, 0, PW, PH, "F");
   }
-  // Bande colorée en haut de la nouvelle page
-  setFill(doc, theme.tableHeaderBg);
-  doc.rect(0, 0, PW, 3, "F");
+  if (theme.variant === "accent-bar") {
+    // Barre dorée sur la nouvelle page
+    drawAccentBar(doc, theme);
+  } else {
+    // Bande colorée en haut de la nouvelle page (autres variants)
+    setFill(doc, theme.tableHeaderBg);
+    doc.rect(0, 0, PW, 3, "F");
+  }
   return 12;
 }
 
@@ -119,29 +133,108 @@ function drawHeader(
   logoImg: LogoImg,
 ): number {
   const { headerBg, headerH, variant } = theme;
+  const RX = PW - MR;
 
-  // Fond header
-  if (variant !== "minimal") {
-    setFill(doc, headerBg);
+  // ── Variant : accent-bar (Modern épuré — style Qonto) ──────────────────────
+  if (variant === "accent-bar") {
+    // Fond blanc (déjà blanc par défaut, on s'assure juste)
+    setFill(doc, [255, 255, 255]);
     doc.rect(0, 0, PW, headerH, "F");
-    // Liseré décoratif en bas
-    setFill(doc, theme.tableHeaderBg);
-    doc.rect(0, headerH - 3.5, PW, 3.5, "F");
-  } else {
-    // Minimal : simple trait bas
+
+    // Ligne séparatrice fine en bas du header
+    setDraw(doc, theme.tableBorder ?? [215, 215, 225]);
+    doc.setLineWidth(0.5);
+    doc.line(0, headerH, PW, headerH);
+
+    // ── Logo ou nom entreprise (gauche) ──────────────────────────────────────
+    const SIZE_MAP = {
+      sm: { h: 11, w: 38 },
+      md: { h: 20, w: 68 },
+      lg: { h: 28, w: 88 },
+    };
+    const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_MAP[co.logoSize ?? "md"];
+
+    if (logoImg) {
+      const ratio = logoImg.naturalW / logoImg.naturalH;
+      let lH = LOGO_MAX_H;
+      let lW = lH * ratio;
+      if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
+      const logoY = Math.max(3, (headerH - lH) / 2);
+      doc.addImage(logoImg.dataUri, ML, logoY, lW, lH, "", "FAST");
+    } else if (co.name) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      setTxt(doc, theme.headerNameColor);
+      doc.text(co.name, ML, headerH / 2 + 4);
+    }
+
+    // ── Référence (droite, bien visible) ─────────────────────────────────────
+    // Type document en petit, en or
+    const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    setTxt(doc, theme.labelColor);
+    doc.text(docLabel, RX, headerH / 2 - 4, { align: "right" });
+
+    // Référence en grand
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    setTxt(doc, theme.headerRefColor);
+    doc.text(data.reference, RX, headerH / 2 + 6, { align: "right" });
+
+    // Date d'émission
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    setTxt(doc, theme.headerDateColor);
+    doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, headerH / 2 + 14, { align: "right" });
+
+    return headerH + 10;
+  }
+
+  // ── Variant : minimal ──────────────────────────────────────────────────────
+  if (variant === "minimal") {
+    // Simple trait bas
     setDraw(doc, theme.tableBorder ?? [210, 210, 215]);
     doc.setLineWidth(0.5);
     doc.line(ML, headerH, PW - MR, headerH);
+
+    const SIZE_MAP = {
+      sm: { h: 10, w: 36 },
+      md: { h: 18, w: 60 },
+      lg: { h: 26, w: 80 },
+    };
+    const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_MAP[co.logoSize ?? "md"];
+
+    if (logoImg) {
+      const ratio = logoImg.naturalW / logoImg.naturalH;
+      let lH = LOGO_MAX_H;
+      let lW = lH * ratio;
+      if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
+      const logoY = Math.max(4, (headerH - lH) / 2);
+      doc.addImage(logoImg.dataUri, ML, logoY, lW, lH, "", "FAST");
+    } else if (co.name) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      setTxt(doc, theme.headerNameColor);
+      doc.text(co.name, ML, headerH / 2 + 5);
+    }
+
+    return headerH + 8;
   }
 
-  // ── Gauche : logo ou nom entreprise ────────────────────────────────────────
-  // Dimensions selon la taille choisie (sm/md/lg)
-  const SIZE_MAP = {
-    sm: { h: variant === "minimal" ? 10 : 14, w: variant === "minimal" ? 36 : 46 },
-    md: { h: variant === "minimal" ? 18 : 24, w: variant === "minimal" ? 60 : 70 },
-    lg: { h: variant === "minimal" ? 26 : 32, w: variant === "minimal" ? 80 : 90 },
+  // ── Variant : standard / dark (classic, premium, colorful…) ───────────────
+  setFill(doc, headerBg);
+  doc.rect(0, 0, PW, headerH, "F");
+  // Liseré décoratif en bas
+  setFill(doc, theme.tableHeaderBg);
+  doc.rect(0, headerH - 3.5, PW, 3.5, "F");
+
+  const SIZE_MAP_STD = {
+    sm: { h: 14, w: 46 },
+    md: { h: 24, w: 70 },
+    lg: { h: 32, w: 90 },
   };
-  const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_MAP[co.logoSize ?? "md"];
+  const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_MAP_STD[co.logoSize ?? "md"];
 
   if (logoImg) {
     const ratio = logoImg.naturalW / logoImg.naturalH;
@@ -151,35 +244,28 @@ function drawHeader(
     const logoY = Math.max(4, (headerH - lH) / 2);
     doc.addImage(logoImg.dataUri, ML, logoY, lW, lH, "", "FAST");
   } else if (co.name) {
-    // Nom entreprise uniquement si pas de logo ET nom renseigné
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(variant === "minimal" ? 18 : 22);
+    doc.setFontSize(22);
     setTxt(doc, theme.headerNameColor);
-    const nameY = variant === "minimal" ? headerH / 2 + 5 : headerH / 2 + 6;
-    doc.text(co.name, ML, nameY);
+    doc.text(co.name, ML, headerH / 2 + 6);
   }
 
-  // Label type document (FACTURE / DEVIS) — côté gauche, en bas du header
-  if (variant !== "minimal") {
-    const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    setTxt(doc, theme.headerSubColor);
-    doc.text(docLabel, ML, headerH - 6);
-  }
+  // Label type document
+  const docLabel2 = data.type === "invoice" ? "FACTURE" : "DEVIS";
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  setTxt(doc, theme.headerSubColor);
+  doc.text(docLabel2, ML, headerH - 6);
 
-  // ── Droite : référence (petite, discrète dans le header) ────────────────────
-  if (variant !== "minimal") {
-    const RX = PW - MR;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    setTxt(doc, theme.headerRefColor);
-    doc.text(data.reference, RX, headerH / 2 + 3, { align: "right" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    setTxt(doc, theme.headerDateColor);
-    doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, headerH / 2 + 11, { align: "right" });
-  }
+  // Référence
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  setTxt(doc, theme.headerRefColor);
+  doc.text(data.reference, RX, headerH / 2 + 3, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  setTxt(doc, theme.headerDateColor);
+  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, headerH / 2 + 11, { align: "right" });
 
   return headerH + 8;
 }
@@ -694,6 +780,10 @@ export async function renderPdfWithTheme(
 ): Promise<void> {
   if (theme.variant === "dark") {
     applyDarkBackground(doc, theme);
+  }
+  // Barre d'accent latérale gauche (Modern épuré)
+  if (theme.variant === "accent-bar") {
+    drawAccentBar(doc, theme);
   }
 
   let y = drawHeader(doc, data, co, theme, logoImg);

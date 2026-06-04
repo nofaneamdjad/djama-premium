@@ -7,41 +7,43 @@
 import type { PdfTheme, TemplateType } from "./types";
 
 // ── Modern ────────────────────────────────────────────────────────────────────
-// Header sombre, accents dorés, corps blanc. Design actuel DJAMA.
+// Header blanc épuré, barre dorée à gauche (style Qonto), typographie propre.
 const modernTheme: PdfTheme = {
   id: "modern",
 
-  headerBg:         [15, 15, 18],
-  headerH:          46,
-  headerNameColor:  [201, 165, 90],
-  headerSubColor:   [160, 160, 175],
-  headerRefColor:   [255, 255, 255],
-  headerDateColor:  [160, 160, 175],
+  headerBg:         [255, 255, 255],   // blanc
+  headerH:          44,
+  headerNameColor:  [12, 12, 18],
+  headerSubColor:   [150, 150, 160],
+  headerRefColor:   [12, 12, 18],
+  headerDateColor:  [130, 130, 142],
 
   bodyBg:           [255, 255, 255],
-  bodyText:         [15, 15, 18],
-  mutedText:        [90, 90, 100],
+  bodyText:         [12, 12, 18],
+  mutedText:        [108, 108, 120],
 
-  labelColor:       [201, 165, 90],
-  sectionNameColor: [15, 15, 18],
+  labelColor:       [175, 138, 62],    // or légèrement foncé pour les labels
+  sectionNameColor: [12, 12, 18],
 
-  subjectBg:        [240, 240, 244],
-  subjectText:      [15, 15, 18],
+  subjectBg:        [246, 246, 250],
+  subjectText:      [12, 12, 18],
 
-  tableHeaderBg:    [201, 165, 90],
-  tableHeaderText:  [15, 15, 18],
-  tableRowAlt:      [247, 247, 251],
-  tableBorder:      null,
-  tableText:        [15, 15, 18],
+  tableHeaderBg:    [244, 244, 248],   // gris très clair pour en-tête tableau
+  tableHeaderText:  [38, 38, 50],
+  tableRowAlt:      [251, 251, 254],
+  tableBorder:      [222, 222, 232],
+  tableText:        [20, 20, 30],
 
   totalLineBg:      null,
-  totalBoxBg:       [201, 165, 90],
-  totalBoxText:     [15, 15, 18],
+  totalBoxBg:       [12, 12, 18],      // boîte total : presque noir
+  totalBoxText:     [255, 255, 255],
 
-  footerBg:         [15, 15, 18],
-  footerText:       [130, 130, 145],
+  footerBg:         [247, 247, 251],
+  footerText:       [138, 138, 150],
 
-  variant: "standard",
+  variant:          "accent-bar",
+  accentBarColor:   [201, 165, 90],    // or DJAMA
+  accentBarW:       4.5,
 };
 
 // ── Minimal ───────────────────────────────────────────────────────────────────
@@ -231,8 +233,8 @@ export const TEMPLATE_INFO: TemplateInfo[] = [
   {
     id:          "modern",
     label:       "Modern",
-    description: "Header sombre & accents dorés, le design signature DJAMA.",
-    headerColor: "#0f0f12",
+    description: "Header épuré, barre dorée, style Qonto. Le design signature DJAMA.",
+    headerColor: "#ffffff",
     badge: {
       label:     "Populaire",
       textColor: "#c9a55a",
