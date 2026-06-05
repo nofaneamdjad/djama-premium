@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, FileText, Copy, Check, Plus, Trash2, X, RefreshCw,
@@ -1173,6 +1174,7 @@ function CreateModal({
 
 export default function ContratsPage() {
   const { toasts, add: toast, remove: removeToast } = useToastStack();
+  const router = useRouter();
 
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1207,7 +1209,7 @@ export default function ContratsPage() {
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { router.replace("/login"); return; }
       setUserId(user.id);
       setUserEmail(user.email ?? undefined);
       const meta = user.user_metadata as Record<string, string> | undefined;
@@ -1218,7 +1220,7 @@ export default function ContratsPage() {
       if (!error && data) setContracts(data as Contract[]);
       setLoading(false);
     })();
-  }, []);
+  }, [router]);
 
   // Load detail data when contract selected
   useEffect(() => {
@@ -1235,6 +1237,8 @@ export default function ContratsPage() {
       if (!sigRes.error && sigRes.data) setSigners(sigRes.data as Signer[]);
       if (!actRes.error && actRes.data) setActivities(actRes.data as CActivity[]);
       if (!comRes.error && comRes.data) setComments(comRes.data as CComment[]);
+    }).catch(() => {
+      // Erreur réseau — silencieux
     });
   }, [selected?.id, userId]);
 
@@ -1389,9 +1393,10 @@ export default function ContratsPage() {
   }, [selected, userId, signers.length, toast, logActivity]);
 
   const handleDeleteSigner = useCallback(async (id: string) => {
-    await supabase.from("contract_signatures").delete().eq("id", id);
+    const { error } = await supabase.from("contract_signatures").delete().eq("id", id);
+    if (error) { toast("Erreur suppression signataire", "error"); return; }
     setSigners((prev) => prev.filter((s) => s.id !== id));
-  }, []);
+  }, [toast]);
 
   const handleSignContract = useCallback(async (sigData: string, cert: string) => {
     if (!signerToSign || !selected) return;
