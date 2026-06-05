@@ -3,6 +3,7 @@
 import React, {
   useState, useEffect, useCallback, useMemo, useRef,
 } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -16,7 +17,7 @@ import {
   Key, Copy, ShieldCheck, ShieldOff,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import Toast, { type ToastData } from "@/components/ui/Toast";
+import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 
 type MemberRole   = "admin"|"manager"|"employee"|"accountant"|"extern";
 type MemberStatus = "active"|"away"|"leave"|"inactive";
@@ -173,6 +174,7 @@ function Avatar({ name, color, size=36 }: { name:string; color:string; size?:num
 }
 
 export default function EquipePage() {
+  const router = useRouter();
     const [tab,      setTab]      = useState<AppTab>("members");
   const [members,  setMembers]  = useState<TeamMember[]>([]);
   const [tasks,    setTasks]    = useState<TeamTask[]>([]);
@@ -181,7 +183,7 @@ export default function EquipePage() {
   const [meetings, setMeetings] = useState<TeamMeeting[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [search,   setSearch]   = useState("");
-  const [toastData,setToastData]= useState<ToastData|null>(null);
+  const { toasts, add: toast, remove: removeToast } = useToastStack();
 
     const [showMemberModal, setShowMemberModal] = useState(false);
   const [editMember,      setEditMember]      = useState<TeamMember|null>(null);
@@ -244,34 +246,39 @@ export default function EquipePage() {
         body:JSON.stringify({ memberId:credTarget.id, name:credTarget.name, email:credEmail.trim(), password:credPwd.trim(), chefId }),
       });
       const data = await res.json();
-      if (!res.ok) { setToastData({type:"error",msg:data.error??"Erreur création compte"}); }
+      if (!res.ok) { toast(data.error ?? "Erreur création compte", "error"); }
       else {
         setCredResult({ email:credEmail.trim(), password:credPwd.trim(), needsConfirmation:!!data.needs_confirmation });
         setMembers(p=>p.map(m=>m.id===credTarget.id ? {...m,auth_user_id:data.auth_user_id} : m));
-        setToastData({type:"success",msg:"Compte créé avec succès !"});
+        toast("Compte créé avec succès !", "success");
       }
-    } catch { setToastData({type:"error",msg:"Erreur réseau"}); }
+    } catch { toast("Erreur réseau", "error"); }
     finally { setCreatingCred(false); }
   }
 
     const load = useCallback(async () => {
-    const { data:{ user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
-    const uid = user.id;
-    const [mR,tkR,msgR,lR,mrR] = await Promise.all([
-      supabase.from("team_members").select("*").eq("user_id",uid).order("name"),
-      supabase.from("team_tasks").select("*").eq("user_id",uid).order("created_at",{ascending:false}),
-      supabase.from("team_messages").select("*").eq("user_id",uid).order("created_at").limit(200),
-      supabase.from("team_leaves").select("*").eq("user_id",uid).order("start_date",{ascending:false}),
-      supabase.from("team_meetings").select("*").eq("user_id",uid).order("date_at"),
-    ]);
-    setMembers((mR.data??[]).map(r=>parseMember(r as Record<string,unknown>)));
-    setTasks((tkR.data??[]).map(r=>parseTask(r as Record<string,unknown>)));
-    setMessages((msgR.data??[]) as TeamMessage[]);
-    setLeaves((lR.data??[]) as TeamLeave[]);
-    setMeetings((mrR.data??[]) as TeamMeeting[]);
-    setLoading(false);
-
+    try {
+      const { data:{ user } } = await supabase.auth.getUser();
+      if (!user) { router.replace("/login"); return; }
+      const uid = user.id;
+      const [mR,tkR,msgR,lR,mrR] = await Promise.all([
+        supabase.from("team_members").select("*").eq("user_id",uid).order("name"),
+        supabase.from("team_tasks").select("*").eq("user_id",uid).order("created_at",{ascending:false}),
+        supabase.from("team_messages").select("*").eq("user_id",uid).order("created_at").limit(200),
+        supabase.from("team_leaves").select("*").eq("user_id",uid).order("start_date",{ascending:false}),
+        supabase.from("team_meetings").select("*").eq("user_id",uid).order("date_at"),
+      ]);
+      setMembers((mR.data??[]).map(r=>parseMember(r as Record<string,unknown>)));
+      setTasks((tkR.data??[]).map(r=>parseTask(r as Record<string,unknown>)));
+      setMessages((msgR.data??[]) as TeamMessage[]);
+      setLeaves((lR.data??[]) as TeamLeave[]);
+      setMeetings((mrR.data??[]) as TeamMeeting[]);
+    } catch {
+      // erreur réseau
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(()=>{ load(); },[load]);
@@ -319,13 +326,14 @@ export default function EquipePage() {
       if (data) setMembers(p=>[parseMember(data as Record<string,unknown>),...p]);
     }
     setSavingM(false); setShowMemberModal(false); setMFormError(null);
-    setToastData({type:"success",msg:editMember?"Membre mis à jour":"Membre ajouté"});
+    toast(editMember ? "Membre mis à jour" : "Membre ajouté", "success");
   }
   async function deleteMember(id:string) {
-    await supabase.from("team_members").delete().eq("id",id);
+    const { error } = await supabase.from("team_members").delete().eq("id",id);
+    if (error) { toast("Erreur lors de la suppression", "error"); return; }
     setMembers(p=>p.filter(m=>m.id!==id));
     setShowMemberModal(false);
-    setToastData({type:"success",msg:"Membre supprimé"});
+    toast("Membre supprimé", "success");
   }
 
     function openNewTask(col:TaskStatus="todo") {
@@ -342,21 +350,25 @@ export default function EquipePage() {
     const assignedMember = members.find(m=>m.id===tForm.assigned_to);
     const payload = {...tForm, assigned_name: assignedMember?.name ?? tForm.assigned_name ?? ""};
     if (editTask) {
-      const { data } = await supabase.from("team_tasks").update(payload).eq("id",editTask.id).select().single();
+      const { data, error } = await supabase.from("team_tasks").update(payload).eq("id",editTask.id).select().single();
+      if (error) { toast("Erreur lors de la mise à jour", "error"); setSavingT(false); return; }
       if (data) setTasks(p=>p.map(t=>t.id===editTask.id?parseTask(data as Record<string,unknown>):t));
     } else {
-      const { data } = await supabase.from("team_tasks").insert({...payload,user_id:user.id}).select().single();
+      const { data, error } = await supabase.from("team_tasks").insert({...payload,user_id:user.id}).select().single();
+      if (error) { toast("Erreur lors de la création", "error"); setSavingT(false); return; }
       if (data) setTasks(p=>[parseTask(data as Record<string,unknown>),...p]);
     }
     setSavingT(false); setShowTaskModal(false);
-    setToastData({type:"success",msg:editTask?"Tâche mise à jour":"Tâche créée"});
+    toast(editTask ? "Tâche mise à jour" : "Tâche créée", "success");
   }
   async function deleteTask(id:string) {
-    await supabase.from("team_tasks").delete().eq("id",id);
+    const { error } = await supabase.from("team_tasks").delete().eq("id",id);
+    if (error) { toast("Erreur lors de la suppression", "error"); return; }
     setTasks(p=>p.filter(t=>t.id!==id));
   }
   async function changeTaskStatus(id:string, status:TaskStatus) {
-    await supabase.from("team_tasks").update({status}).eq("id",id);
+    const { error } = await supabase.from("team_tasks").update({status}).eq("id",id);
+    if (error) { toast("Erreur lors du changement de statut", "error"); return; }
     setTasks(p=>p.map(t=>t.id===id?{...t,status}:t));
   }
   async function quickAddTask() {
@@ -376,10 +388,11 @@ export default function EquipePage() {
     setSendingMsg(true);
     const { data:{ user } } = await supabase.auth.getUser();
     if (!user) { setSendingMsg(false); return; }
-    const { data } = await supabase.from("team_messages").insert({
+    const { data, error } = await supabase.from("team_messages").insert({
       user_id:user.id, sender_name:mySenderName.trim(),
       content:chatMsg.trim(), channel:chatChannel,
     }).select().single();
+    if (error) { toast("Erreur lors de l'envoi", "error"); setSendingMsg(false); return; }
     if (data) setMessages(p=>[...p, data as TeamMessage]);
     setChatMsg(""); setSendingMsg(false);
   }
@@ -390,12 +403,13 @@ export default function EquipePage() {
     const { data:{ user } } = await supabase.auth.getUser();
     if (!user) { setSavingL(false); return; }
     const mem = members.find(m=>m.id===lForm.member_id);
-    const { data } = await supabase.from("team_leaves").insert({
+    const { data, error } = await supabase.from("team_leaves").insert({
       ...lForm, user_id:user.id, member_name: mem?.name ?? lForm.member_name ?? "", status:"pending",
     }).select().single();
+    if (error) { toast("Erreur lors de la demande de congé", "error"); setSavingL(false); return; }
     if (data) setLeaves(p=>[data as TeamLeave,...p]);
     setSavingL(false); setShowLeaveModal(false);
-    setToastData({type:"success",msg:"Demande de congé envoyée"});
+    toast("Demande de congé envoyée", "success");
   }
   async function updateLeaveStatus(id:string, status:LeaveStatus) {
     await supabase.from("team_leaves").update({status}).eq("id",id);
@@ -407,14 +421,15 @@ export default function EquipePage() {
     setSavingMeet(true);
     const { data:{ user } } = await supabase.auth.getUser();
     if (!user) { setSavingMeet(false); return; }
-    const { data } = await supabase.from("team_meetings").insert({
+    const { data, error } = await supabase.from("team_meetings").insert({
       ...meetForm, user_id:user.id,
       duration_minutes: meetForm.duration_minutes ?? 60,
       participants: meetForm.participants ?? [],
     }).select().single();
+    if (error) { toast("Erreur lors de la création de la réunion", "error"); setSavingMeet(false); return; }
     if (data) setMeetings(p=>[data as TeamMeeting,...p]);
     setSavingMeet(false); setShowMeetModal(false);
-    setToastData({type:"success",msg:"Réunion créée"});
+    toast("Réunion créée", "success");
   }
 
     async function runAI(prompt:string) {
@@ -841,9 +856,7 @@ export default function EquipePage() {
 
     return (
     <div className="flex flex-col h-[calc(100vh-56px)] bg-[#0a0f1e] text-white overflow-hidden">
-      <AnimatePresence>
-        {toastData && <Toast toast={toastData} onClose={()=>setToastData(null)}/>}
-      </AnimatePresence>
+      <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* Animated header */}
       <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
@@ -1389,7 +1402,7 @@ export default function EquipePage() {
                           <button onClick={()=>{
                             try { navigator.clipboard.writeText(row.v); }
                             catch { const el=document.createElement("textarea"); el.value=row.v; document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el); }
-                            setToastData({type:"success",msg:"Copié !"});
+                            toast("Copié !", "success");
                           }} className="text-white/25 hover:text-[#c9a55a] transition-all shrink-0">
                             <Copy size={13}/>
                           </button>
