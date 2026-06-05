@@ -140,7 +140,46 @@ const STATUS_CFG: Record<ContractStatus, { label: string; text: string; bg: stri
 
 const STATUS_FLOW: ContractStatus[] = ["brouillon", "validation", "envoyé", "vu", "signé", "actif"];
 
-const JURISDICTIONS = ["France", "Belgique", "Suisse", "Luxembourg", "Canada", "Maroc", "International"];
+const JURISDICTIONS = [
+  // Favoris (en tête)
+  "France", "Belgique", "Suisse", "Luxembourg", "Canada", "Maroc", "International",
+  // Europe
+  "Allemagne", "Autriche", "Espagne", "Italie", "Portugal", "Pays-Bas", "Pologne",
+  "Suède", "Norvège", "Danemark", "Finlande", "Irlande", "Royaume-Uni", "Grèce",
+  "Turquie", "Ukraine", "Russie", "République Tchèque", "Hongrie", "Roumanie",
+  "Bulgarie", "Croatie", "Serbie", "Slovaquie", "Slovénie", "Lituanie", "Lettonie",
+  "Estonie", "Chypre", "Malte", "Islande", "Albanie", "Macédoine du Nord",
+  "Bosnie-Herzégovine", "Monténégro", "Kosovo", "Moldova", "Biélorussie",
+  // Afrique
+  "Algérie", "Tunisie", "Égypte", "Sénégal", "Côte d'Ivoire", "Mali",
+  "Burkina Faso", "Niger", "Guinée", "Cameroun", "Congo", "RD Congo",
+  "Madagascar", "Mozambique", "Tanzanie", "Kenya", "Éthiopie", "Nigeria",
+  "Ghana", "Afrique du Sud", "Angola", "Zambie", "Zimbabwe", "Namibie",
+  "Botswana", "Rwanda", "Ouganda", "Tchad", "Soudan", "Libye",
+  "Mauritanie", "Togo", "Bénin", "Gabon", "Centrafrique", "Djibouti",
+  "Somalie", "Érythrée", "Malawi", "Lesotho", "Eswatini", "Burundi",
+  "Guinée-Bissau", "Guinée équatoriale", "Comores", "Cap-Vert",
+  "São Tomé-et-Príncipe", "Seychelles", "Maurice",
+  // Amérique
+  "États-Unis", "Mexique", "Brésil", "Argentine", "Chili", "Colombie",
+  "Pérou", "Venezuela", "Équateur", "Bolivie", "Paraguay", "Uruguay",
+  "Cuba", "Haïti", "République Dominicaine", "Panama", "Costa Rica",
+  "Guatemala", "Honduras", "Salvador", "Nicaragua", "Jamaïque",
+  "Trinidad-et-Tobago", "Barbade", "Guyana", "Suriname",
+  // Asie
+  "Chine", "Japon", "Inde", "Corée du Sud", "Corée du Nord",
+  "Indonésie", "Philippines", "Viêt Nam", "Thaïlande", "Malaisie",
+  "Singapour", "Myanmar", "Cambodge", "Laos", "Bangladesh", "Pakistan",
+  "Sri Lanka", "Népal", "Afghanistan", "Iran", "Irak", "Syrie",
+  "Arabie Saoudite", "Émirats Arabes Unis", "Qatar", "Koweït",
+  "Bahreïn", "Oman", "Yémen", "Jordanie", "Liban", "Israël",
+  "Palestine", "Kazakhstan", "Ouzbékistan", "Turkménistan",
+  "Kirghizistan", "Tadjikistan", "Azerbaïdjan", "Arménie", "Géorgie",
+  "Mongolie", "Taïwan", "Hong Kong", "Macao",
+  // Océanie
+  "Australie", "Nouvelle-Zélande", "Papouasie-Nouvelle-Guinée",
+  "Fidji", "Samoa", "Tonga", "Vanuatu",
+];
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "MAD", "CAD"];
 
 const SUGGESTED_CLAUSES: Record<ContractType, string[]> = {
