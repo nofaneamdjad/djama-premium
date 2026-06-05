@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Receipt, FileText, BarChart2, PiggyBank, Plus, X, Edit2, Trash2,
@@ -146,10 +147,11 @@ function ExpenseModal({
 }) {
   const supabase = supabaseClient;
   const fileRef  = useRef<HTMLInputElement>(null);
-  const [form,     setForm]     = useState<Partial<Expense>>(expense ?? { ...BLANK });
-  const [uploading,setUploading]= useState(false);
-  const [saving,   setSaving]   = useState(false);
-  const [ocrHint,  setOcrHint]  = useState(false);
+  const [form,      setForm]      = useState<Partial<Expense>>(expense ?? { ...BLANK });
+  const [uploading, setUploading] = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [ocrHint,   setOcrHint]   = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const set = (k: keyof Expense, v: unknown) => setForm(f => ({ ...f, [k]: v }));
 
@@ -169,6 +171,7 @@ function ExpenseModal({
   async function handleSave() {
     if (!form.description?.trim() || !form.amount) return;
     setSaving(true);
+    setSaveError("");
     const payload = {
       ...form, user_id: userId,
       amount:     Number(form.amount),
@@ -176,10 +179,12 @@ function ExpenseModal({
     };
     if (expense?.id) {
       const { data, error } = await supabase.from("expenses").update(payload).eq("id", expense.id).select().single();
-      if (!error && data) onSave(data as Expense);
+      if (error) { setSaveError(error.message); setSaving(false); return; }
+      if (data) onSave(data as Expense);
     } else {
       const { data, error } = await supabase.from("expenses").insert(payload).select().single();
-      if (!error && data) onSave(data as Expense);
+      if (error) { setSaveError(error.message); setSaving(false); return; }
+      if (data) onSave(data as Expense);
     }
     setSaving(false);
   }
@@ -358,6 +363,13 @@ function ExpenseModal({
             </label>
           )}
         </div>
+
+        {saveError && (
+          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[0.7rem] text-red-400">
+            <AlertTriangle size={13} className="shrink-0" />
+            {saveError}
+          </div>
+        )}
 
                 <div className="flex gap-2 pt-1">
           <button type="button" onClick={onClose}
@@ -635,7 +647,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
               <div key={key} className="flex flex-1 flex-col items-center gap-1.5">
                 {total > 0 && (
                   <span className="text-[0.5rem] text-white/30">
-                    {(total / 1000).toFixed(0)}k
+                    {total >= 1000 ? `${(total / 1000).toFixed(0)}k` : `${Math.round(total)}`}
                   </span>
                 )}
                 <div className="w-full rounded-t-md transition-all duration-500"
@@ -736,6 +748,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
 
 export default function DepensesPage() {
   const supabase = supabaseClient;
+  const router   = useRouter();
   const [userId,  setUserId]  = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast,   setToast]   = useState<ToastData | null>(null);
@@ -756,12 +769,17 @@ export default function DepensesPage() {
   const [filterMonth, setFilterMonth] = useState("");
   const [filterPay,   setFilterPay]   = useState("");
 
+  const [confirmDeleteExpenseId, setConfirmDeleteExpenseId] = useState<string | null>(null);
+  const [confirmDeleteReportId,  setConfirmDeleteReportId]  = useState<string | null>(null);
+
   const toast$ = (msg: string, type: "success"|"error" = "success") => setToast({ msg, type });
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => { if (data.user) setUserId(data.user.id); });
-
-  }, []);
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUserId(data.user.id);
+      else router.replace("/login");
+    });
+  }, [router]);
 
   const loadAll = useCallback(async () => {
     if (!userId) return;
@@ -797,10 +815,10 @@ export default function DepensesPage() {
   const hasFilters    = !!(search || filterCat || filterSt || filterMonth || filterPay);
 
     async function deleteExpense(id: string) {
-    if (!confirm("Supprimer cette dépense ?")) return;
     const { error } = await supabase.from("expenses").delete().eq("id", id);
     if (error) return toast$("Erreur de suppression", "error");
     setExpenses(es => es.filter(e => e.id !== id));
+    setConfirmDeleteExpenseId(null);
     toast$("Dépense supprimée");
   }
 
@@ -829,11 +847,11 @@ export default function DepensesPage() {
   }
 
   async function deleteReport(id: string) {
-    if (!confirm("Supprimer cette note de frais ?")) return;
     const { error } = await supabase.from("expense_reports").delete().eq("id", id);
     if (error) return toast$("Erreur", "error");
     setReports(rs => rs.filter(r => r.id !== id));
     setExpenses(es => es.map(e => e.expense_report_id === id ? { ...e, expense_report_id: null } : e));
+    setConfirmDeleteReportId(null);
     toast$("Note supprimée");
   }
 
@@ -1069,14 +1087,29 @@ export default function DepensesPage() {
                             </div>
 
                             <div className="shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => { setEditExpense(e); setShowModal(true); }}
-                                className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white transition-all">
-                                <Edit2 size={12} />
-                              </button>
-                              <button onClick={() => deleteExpense(e.id)}
-                                className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400 transition-all">
-                                <Trash2 size={12} />
-                              </button>
+                              {confirmDeleteExpenseId === e.id ? (
+                                <>
+                                  <button onClick={() => deleteExpense(e.id)}
+                                    className="h-7 px-2 rounded-lg flex items-center gap-1 text-[0.6rem] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
+                                    <Trash2 size={10} /> Oui
+                                  </button>
+                                  <button onClick={() => setConfirmDeleteExpenseId(null)}
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white/60 transition-all">
+                                    <X size={10} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button onClick={() => { setEditExpense(e); setShowModal(true); }}
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white transition-all">
+                                    <Edit2 size={12} />
+                                  </button>
+                                  <button onClick={() => setConfirmDeleteExpenseId(e.id)}
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400 transition-all">
+                                    <Trash2 size={12} />
+                                  </button>
+                                </>
+                              )}
                             </div>
 
                             <select value={e.status} onChange={ev => updateStatus(e.id, ev.target.value as ExpStatus)}
@@ -1150,14 +1183,29 @@ export default function DepensesPage() {
                               {vatRec > 0 && <p className="text-[0.6rem] text-green-400/60">TVA {fmtCur(vatRec)}</p>}
                             </div>
                             <div className="shrink-0 flex gap-1">
-                              <button onClick={() => { setEditReport(r); setShowReportModal(true); }}
-                                className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white transition-all">
-                                <Edit2 size={12} />
-                              </button>
-                              <button onClick={() => deleteReport(r.id)}
-                                className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400 transition-all">
-                                <Trash2 size={12} />
-                              </button>
+                              {confirmDeleteReportId === r.id ? (
+                                <>
+                                  <button onClick={() => deleteReport(r.id)}
+                                    className="h-7 px-2 rounded-lg flex items-center gap-1 text-[0.6rem] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
+                                    <Trash2 size={10} /> Oui
+                                  </button>
+                                  <button onClick={() => setConfirmDeleteReportId(null)}
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white/60 transition-all">
+                                    <X size={10} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button onClick={() => { setEditReport(r); setShowReportModal(true); }}
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white transition-all">
+                                    <Edit2 size={12} />
+                                  </button>
+                                  <button onClick={() => setConfirmDeleteReportId(r.id)}
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400 transition-all">
+                                    <Trash2 size={12} />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
 

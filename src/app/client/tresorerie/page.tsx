@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Wallet, AlertTriangle, CheckCircle2,
@@ -11,7 +12,7 @@ import {
   ChevronDown, Receipt, RefreshCw, Banknote, Target,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { fmtEur, fmtDate } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
 type TxType   = "income" | "expense";
@@ -148,8 +149,9 @@ function TransactionModal({
   onSave: (t: Transaction) => void;
   onClose: () => void;
 }) {
-  const [form, setForm] = useState<Partial<Transaction>>(tx ?? { ...BLANK_TX });
-  const [saving, setSaving] = useState(false);
+  const [form,      setForm]      = useState<Partial<Transaction>>(tx ?? { ...BLANK_TX });
+  const [saving,    setSaving]    = useState(false);
+  const [saveError, setSaveError] = useState("");
   const set = (k: keyof Transaction, v: unknown) => setForm(f => ({ ...f, [k]: v }));
 
   const cats = form.type === "income" ? INCOME_CATS : EXPENSE_CATS;
@@ -157,13 +159,16 @@ function TransactionModal({
   async function save() {
     if (!form.label?.trim() || !form.amount) return;
     setSaving(true);
+    setSaveError("");
     const payload = { ...form, user_id: userId, amount: Number(form.amount) };
     if (tx?.id) {
       const { data, error } = await supabase.from("treasury_transactions").update(payload).eq("id", tx.id).select().single();
-      if (!error && data) onSave(data as Transaction);
+      if (error) { setSaveError(error.message); setSaving(false); return; }
+      if (data) onSave(data as Transaction);
     } else {
       const { data, error } = await supabase.from("treasury_transactions").insert(payload).select().single();
-      if (!error && data) onSave(data as Transaction);
+      if (error) { setSaveError(error.message); setSaving(false); return; }
+      if (data) onSave(data as Transaction);
     }
     setSaving(false);
   }
@@ -285,6 +290,12 @@ function TransactionModal({
             value={form.notes ?? ""} onChange={e => set("notes", e.target.value)} />
         </Field>
 
+        {saveError && (
+          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[0.7rem] text-red-400">
+            <AlertTriangle size={13} className="shrink-0" />
+            {saveError}
+          </div>
+        )}
         <div className="flex gap-2 pt-1">
           <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40 hover:text-white/60 transition-colors">Annuler</button>
           <button onClick={save} disabled={saving}
@@ -306,22 +317,26 @@ function AccountModal({
   onSave: (a: TAccount) => void;
   onClose: () => void;
 }) {
-  const [form, setForm] = useState<Partial<TAccount>>(account ?? {
+  const [form,      setForm]      = useState<Partial<TAccount>>(account ?? {
     name: "", bank: "", iban: "", balance: 0, currency: "EUR", color: "#3b82f6", is_default: false,
   });
-  const [saving, setSaving] = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [saveError, setSaveError] = useState("");
   const set = (k: keyof TAccount, v: unknown) => setForm(f => ({ ...f, [k]: v }));
 
   async function save() {
     if (!form.name?.trim()) return;
     setSaving(true);
+    setSaveError("");
     const payload = { ...form, user_id: userId, balance: Number(form.balance ?? 0) };
     if (account) {
       const { data, error } = await supabase.from("treasury_accounts").update(payload).eq("id", account.id).select().single();
-      if (!error && data) onSave(data as TAccount);
+      if (error) { setSaveError(error.message); setSaving(false); return; }
+      if (data) onSave(data as TAccount);
     } else {
       const { data, error } = await supabase.from("treasury_accounts").insert(payload).select().single();
-      if (!error && data) onSave(data as TAccount);
+      if (error) { setSaveError(error.message); setSaving(false); return; }
+      if (data) onSave(data as TAccount);
     }
     setSaving(false);
   }
@@ -362,6 +377,12 @@ function AccountModal({
             ))}
           </div>
         </Field>
+        {saveError && (
+          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[0.7rem] text-red-400">
+            <AlertTriangle size={13} className="shrink-0" />
+            {saveError}
+          </div>
+        )}
         <div className="flex gap-2">
           <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40 hover:text-white/60 transition-colors">Annuler</button>
           <button onClick={save} disabled={saving}
@@ -383,23 +404,27 @@ function RecurringModal({
   onSave: (r: Recurring) => void;
   onClose: () => void;
 }) {
-  const [form, setForm] = useState<Partial<Recurring>>(item ?? {
+  const [form,      setForm]      = useState<Partial<Recurring>>(item ?? {
     type: "expense", label: "", amount: 0, frequency: "monthly", category: "autre", active: true,
   });
-  const [saving, setSaving] = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [saveError, setSaveError] = useState("");
   const set = (k: keyof Recurring, v: unknown) => setForm(f => ({ ...f, [k]: v }));
   const cats = form.type === "income" ? INCOME_CATS : EXPENSE_CATS;
 
   async function save() {
     if (!form.label?.trim() || !form.amount) return;
     setSaving(true);
+    setSaveError("");
     const payload = { ...form, user_id: userId, amount: Number(form.amount) };
     if (item) {
       const { data, error } = await supabase.from("treasury_recurring").update(payload).eq("id", item.id).select().single();
-      if (!error && data) onSave(data as Recurring);
+      if (error) { setSaveError(error.message); setSaving(false); return; }
+      if (data) onSave(data as Recurring);
     } else {
       const { data, error } = await supabase.from("treasury_recurring").insert(payload).select().single();
-      if (!error && data) onSave(data as Recurring);
+      if (error) { setSaveError(error.message); setSaving(false); return; }
+      if (data) onSave(data as Recurring);
     }
     setSaving(false);
   }
@@ -465,6 +490,12 @@ function RecurringModal({
         <Field label="Prochain prélèvement">
           <input type="date" className={`${inp} [color-scheme:dark]`} value={form.next_date ?? ""} onChange={e => set("next_date", e.target.value || null)} />
         </Field>
+        {saveError && (
+          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[0.7rem] text-red-400">
+            <AlertTriangle size={13} className="shrink-0" />
+            {saveError}
+          </div>
+        )}
         <div className="flex gap-2">
           <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40 hover:text-white/60 transition-colors">Annuler</button>
           <button onClick={save} disabled={saving}
@@ -525,12 +556,12 @@ function DashboardView({
   const recent5 = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 
   const KPI = [
-    { l: "Solde total",          v: totalBalance,  c: "#c9a55a", sub: `${accounts.length} compte${accounts.length !== 1 ? "s" : ""}`, I: Wallet,       delta: null },
-    { l: "Encaissements",        v: thisIncome,    c: "#10b981", sub: fmtPct(incomePct) + " vs mois dernier",  I: ArrowUpRight,  delta: incomePct  },
-    { l: "Dépenses",             v: thisExpense,   c: "#ef4444", sub: fmtPct(expensePct) + " vs mois dernier", I: ArrowDownRight,delta: -expensePct },
-    { l: "Résultat net",         v: netMonth,      c: netMonth >= 0 ? "#10b981" : "#ef4444", sub: "Ce mois", I: BarChart2, delta: null },
-    { l: "En attente",           v: Math.abs(pending), c: "#f59e0b", sub: pending >= 0 ? "à encaisser" : "à payer", I: Clock,  delta: null },
-    { l: "Prévision 30 jours",   v: forecast30,    c: "#8b5cf6", sub: "Basé sur récurrents", I: Target, delta: null },
+    { l: "Solde total",          v: totalBalance,      c: "#c9a55a", sub: `${accounts.length} compte${accounts.length !== 1 ? "s" : ""}`, I: Wallet,        delta: null,      subColor: null },
+    { l: "Encaissements",        v: thisIncome,        c: "#10b981", sub: fmtPct(incomePct)  + " vs mois dernier", I: ArrowUpRight,  delta: incomePct,   subColor: incomePct  > 0 ? "#10b981" : incomePct  < 0 ? "#ef4444" : "#6b7280" },
+    { l: "Dépenses",             v: thisExpense,       c: "#ef4444", sub: fmtPct(expensePct) + " vs mois dernier", I: ArrowDownRight,delta: -expensePct, subColor: expensePct > 0 ? "#ef4444" : expensePct < 0 ? "#10b981" : "#6b7280" },
+    { l: "Résultat net",         v: netMonth,          c: netMonth >= 0 ? "#10b981" : "#ef4444", sub: "Ce mois", I: BarChart2,    delta: null,      subColor: null },
+    { l: "En attente",           v: Math.abs(pending), c: "#f59e0b", sub: pending >= 0 ? "à encaisser" : "à payer", I: Clock,    delta: null,      subColor: null },
+    { l: "Prévision 30 jours",   v: forecast30,        c: "#8b5cf6", sub: "Basé sur récurrents", I: Target,        delta: null,      subColor: null },
   ];
 
   return (
@@ -558,7 +589,7 @@ function DashboardView({
       )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {KPI.map(({ l, v, c, sub, I, delta }) => (
+        {KPI.map(({ l, v, c, sub, I, delta, subColor }) => (
           <div key={l} className="rounded-2xl p-4 space-y-2"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
             <div className="flex items-center justify-between">
@@ -577,7 +608,7 @@ function DashboardView({
                   ? <TrendingUp size={10} className="text-green-400" />
                   : <TrendingDown size={10} className="text-red-400" />
               )}
-              <p className="text-[0.62rem]" style={{ color: c + "bb" }}>{sub}</p>
+              <p className="text-[0.62rem]" style={{ color: (subColor ?? c) + "bb" }}>{sub}</p>
             </div>
           </div>
         ))}
@@ -678,12 +709,13 @@ function TransactionsView({
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: TxStatus) => void;
 }) {
-  const [search,      setSearch]      = useState("");
-  const [filterType,  setFilterType]  = useState<"" | TxType>("");
-  const [filterSt,    setFilterSt]    = useState("");
-  const [filterMonth, setFilterMonth] = useState("");
-  const [showModal,   setShowModal]   = useState(false);
-  const [editTx,      setEditTx]      = useState<Transaction | null>(null);
+  const [search,            setSearch]            = useState("");
+  const [filterType,        setFilterType]        = useState<"" | TxType>("");
+  const [filterSt,          setFilterSt]          = useState("");
+  const [filterMonth,       setFilterMonth]       = useState("");
+  const [showModal,         setShowModal]         = useState(false);
+  const [editTx,            setEditTx]            = useState<Transaction | null>(null);
+  const [confirmDeleteTxId, setConfirmDeleteTxId] = useState<string | null>(null);
 
   const filtered = useMemo(() => transactions.filter(t => {
     if (search && !t.label.toLowerCase().includes(search.toLowerCase()) &&
@@ -786,14 +818,29 @@ function TransactionsView({
                     <p className="text-[0.6rem] text-white/25">{PAY_METHODS.find(m => m.v === t.payment_method)?.l}</p>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <button onClick={() => { setEditTx(t); setShowModal(true); }}
-                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-white/[0.08] hover:text-white">
-                      <Edit2 size={12} />
-                    </button>
-                    <button onClick={() => onDelete(t.id)}
-                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-red-500/10 hover:text-red-400">
-                      <Trash2 size={12} />
-                    </button>
+                    {confirmDeleteTxId === t.id ? (
+                      <>
+                        <button onClick={() => { onDelete(t.id); setConfirmDeleteTxId(null); }}
+                          className="h-7 px-2 rounded-lg flex items-center gap-1 text-[0.6rem] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
+                          <Trash2 size={10} /> Oui
+                        </button>
+                        <button onClick={() => setConfirmDeleteTxId(null)}
+                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white/60 transition-all">
+                          <X size={10} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => { setEditTx(t); setShowModal(true); }}
+                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-white/[0.08] hover:text-white">
+                          <Edit2 size={12} />
+                        </button>
+                        <button onClick={() => setConfirmDeleteTxId(t.id)}
+                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-red-500/10 hover:text-red-400">
+                          <Trash2 size={12} />
+                        </button>
+                      </>
+                    )}
                   </div>
                   <select value={t.status} onChange={e => onStatusChange(t.id, e.target.value as TxStatus)}
                     className="shrink-0 cursor-pointer rounded-lg border border-white/[0.08] bg-[#131c30] px-2 py-1 text-[0.6rem] text-white/40 outline-none opacity-0 group-hover:opacity-100 transition-all appearance-none [color-scheme:dark]"
@@ -833,9 +880,10 @@ function PrevisionsView({
   onRecurringEdit: (r: Recurring) => void;
   onRecurringDelete: (id: string) => void;
 }) {
-  const [horizon, setHorizon] = useState<30 | 90 | 365>(30);
-  const [showModal, setShowModal] = useState(false);
-  const [editItem, setEditItem] = useState<Recurring | null>(null);
+  const [horizon,            setHorizon]            = useState<30 | 90 | 365>(30);
+  const [showModal,          setShowModal]          = useState(false);
+  const [editItem,           setEditItem]           = useState<Recurring | null>(null);
+  const [confirmDeleteRecId, setConfirmDeleteRecId] = useState<string | null>(null);
 
   const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
 
@@ -986,20 +1034,35 @@ function PrevisionsView({
                           {r.type === "income" ? "+" : "-"}{fmtC(r.amount)}
                         </span>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                          <button onClick={async () => {
-                            const { error } = await supabase.from("treasury_recurring").update({ active: !r.active }).eq("id", r.id);
-                            if (!error) onRecurringEdit({ ...r, active: !r.active });
-                          }} className="h-6 w-6 rounded-md flex items-center justify-center text-white/35 hover:text-white hover:bg-white/[0.08] transition-all text-[0.6rem]" title={r.active ? "Désactiver" : "Activer"}>
-                            {r.active ? "⏸" : "▶"}
-                          </button>
-                          <button onClick={() => { setEditItem(r); setShowModal(true); }}
-                            className="h-6 w-6 rounded-md flex items-center justify-center text-white/35 hover:text-white hover:bg-white/[0.08]">
-                            <Edit2 size={11} />
-                          </button>
-                          <button onClick={() => onRecurringDelete(r.id)}
-                            className="h-6 w-6 rounded-md flex items-center justify-center text-white/35 hover:text-red-400 hover:bg-red-500/10">
-                            <Trash2 size={11} />
-                          </button>
+                          {confirmDeleteRecId === r.id ? (
+                            <>
+                              <button onClick={() => { onRecurringDelete(r.id); setConfirmDeleteRecId(null); }}
+                                className="h-6 px-1.5 rounded-md flex items-center gap-1 text-[0.58rem] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
+                                <Trash2 size={9} /> Oui
+                              </button>
+                              <button onClick={() => setConfirmDeleteRecId(null)}
+                                className="h-6 w-6 rounded-md flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white/60 transition-all">
+                                <X size={9} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button onClick={async () => {
+                                const { error } = await supabase.from("treasury_recurring").update({ active: !r.active }).eq("id", r.id);
+                                if (!error) onRecurringEdit({ ...r, active: !r.active });
+                              }} className="h-6 w-6 rounded-md flex items-center justify-center text-white/35 hover:text-white hover:bg-white/[0.08] transition-all text-[0.6rem]" title={r.active ? "Désactiver" : "Activer"}>
+                                {r.active ? "⏸" : "▶"}
+                              </button>
+                              <button onClick={() => { setEditItem(r); setShowModal(true); }}
+                                className="h-6 w-6 rounded-md flex items-center justify-center text-white/35 hover:text-white hover:bg-white/[0.08]">
+                                <Edit2 size={11} />
+                              </button>
+                              <button onClick={() => setConfirmDeleteRecId(r.id)}
+                                className="h-6 w-6 rounded-md flex items-center justify-center text-white/35 hover:text-red-400 hover:bg-red-500/10">
+                                <Trash2 size={11} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     );
@@ -1037,11 +1100,39 @@ function ComptesView({
   onAccountDelete: (id: string) => void;
   onTxImported: (txs: Transaction[]) => void;
 }) {
-  const [showModal,    setShowModal]    = useState(false);
-  const [editAccount,  setEditAccount]  = useState<TAccount | null>(null);
-  const [csvDraft,     setCsvDraft]     = useState<Partial<Transaction>[]>([]);
-  const [csvImporting, setCsvImporting] = useState(false);
+  const [showModal,          setShowModal]          = useState(false);
+  const [editAccount,        setEditAccount]        = useState<TAccount | null>(null);
+  const [csvDraft,           setCsvDraft]           = useState<Partial<Transaction>[]>([]);
+  const [csvImporting,       setCsvImporting]       = useState(false);
+  const [confirmDeleteAccId, setConfirmDeleteAccId] = useState<string | null>(null);
+  const [pdfFile,            setPdfFile]            = useState<File | null>(null);
+  const [pdfAnalyzing,       setPdfAnalyzing]       = useState(false);
+  const [pdfError,           setPdfError]           = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  async function analyzePdf() {
+    if (!pdfFile || pdfAnalyzing) return;
+    setPdfAnalyzing(true);
+    setPdfError("");
+    try {
+      const form = new FormData();
+      form.append("file", pdfFile);
+      const res  = await fetch("/api/tresorerie/parse-pdf", { method: "POST", body: form });
+      const data = await res.json() as { transactions?: Partial<Transaction>[]; total?: number; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Erreur serveur");
+      if (!data.transactions?.length) throw new Error("Aucune transaction trouvée dans le relevé");
+      setCsvDraft(data.transactions.map(t => ({
+        ...t,
+        user_id: userId,
+      })));
+      setPdfFile(null);
+      if (fileRef.current) fileRef.current.value = "";
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : "Erreur lors de l'analyse IA");
+    } finally {
+      setPdfAnalyzing(false);
+    }
+  }
 
   const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
 
@@ -1117,14 +1208,29 @@ function ComptesView({
                     </div>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => { setEditAccount(a); setShowModal(true); }}
-                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-white/[0.08] hover:text-white">
-                      <Edit2 size={12} />
-                    </button>
-                    <button onClick={() => onAccountDelete(a.id)}
-                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-red-500/10 hover:text-red-400">
-                      <Trash2 size={12} />
-                    </button>
+                    {confirmDeleteAccId === a.id ? (
+                      <>
+                        <button onClick={() => { onAccountDelete(a.id); setConfirmDeleteAccId(null); }}
+                          className="h-7 px-2 rounded-lg flex items-center gap-1 text-[0.6rem] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
+                          <Trash2 size={10} /> Oui
+                        </button>
+                        <button onClick={() => setConfirmDeleteAccId(null)}
+                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white/60 transition-all">
+                          <X size={10} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => { setEditAccount(a); setShowModal(true); }}
+                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-white/[0.08] hover:text-white">
+                          <Edit2 size={12} />
+                        </button>
+                        <button onClick={() => setConfirmDeleteAccId(a.id)}
+                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-red-500/10 hover:text-red-400">
+                          <Trash2 size={12} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -1143,19 +1249,80 @@ function ComptesView({
         <div className="flex items-center gap-3">
           <Download size={15} className="text-white/35" />
           <div>
-            <h3 className="text-[0.78rem] font-semibold text-white/70">Import CSV relevé bancaire</h3>
-            <p className="text-[0.62rem] text-white/35">Format : date, libellé, montant, type (income/expense), catégorie</p>
+            <h3 className="text-[0.78rem] font-semibold text-white/70">Import relevé bancaire</h3>
+            <p className="text-[0.62rem] text-white/35">CSV : date, libellé, montant, type, catégorie · PDF : analyse IA (bientôt)</p>
           </div>
         </div>
 
-        {csvDraft.length === 0 ? (
+        {pdfFile ? (
+          <div className="space-y-3">
+            {/* Erreur IA */}
+            {pdfError && (
+              <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-[0.7rem] text-red-400">
+                <AlertTriangle size={13} className="shrink-0" />
+                <span>{pdfError}</span>
+              </div>
+            )}
+
+            {/* Fichier sélectionné */}
+            <div className="flex items-center gap-3 rounded-xl border border-purple-500/20 bg-purple-500/10 px-4 py-3">
+              <FileText size={16} className="shrink-0 text-purple-400" />
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-[0.78rem] font-semibold text-purple-200">{pdfFile.name}</p>
+                <p className="text-[0.62rem] text-purple-300/50">{(pdfFile.size / 1024).toFixed(0)} Ko · Relevé bancaire PDF</p>
+              </div>
+            </div>
+
+            {/* Aperçu pendant l'analyse */}
+            {pdfAnalyzing && (
+              <div className="flex items-center gap-3 rounded-xl border border-purple-500/10 bg-white/[0.02] px-4 py-3">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500/20 border-t-purple-400 shrink-0" />
+                <div>
+                  <p className="text-[0.72rem] font-medium text-white/60">Analyse en cours…</p>
+                  <p className="text-[0.62rem] text-white/30">Claude lit votre relevé et identifie les transactions</p>
+                </div>
+              </div>
+            )}
+
+            {/* Boutons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setPdfFile(null); setPdfError(""); if (fileRef.current) fileRef.current.value = ""; }}
+                disabled={pdfAnalyzing}
+                className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.72rem] text-white/40 hover:text-white/60 disabled:opacity-40 transition-colors">
+                Annuler
+              </button>
+              <button
+                onClick={analyzePdf}
+                disabled={pdfAnalyzing}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.72rem] font-bold disabled:opacity-50 transition-all hover:brightness-110"
+                style={{ background: "linear-gradient(135deg,#8b5cf6,#6d28d9)", color: "white" }}>
+                {pdfAnalyzing ? (
+                  <>
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                    Analyse en cours…
+                  </>
+                ) : (
+                  <>
+                    <Zap size={13} /> Analyser avec Claude IA
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        ) : csvDraft.length === 0 ? (
           <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.025] py-6 hover:border-white/[0.15] hover:bg-white/[0.06] transition-all">
             <Upload size={18} className="text-white/25" />
-            <span className="text-[0.68rem] text-white/35">Cliquez pour importer un fichier CSV</span>
-            <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden"
+            <span className="text-[0.68rem] text-white/35">Cliquez pour importer · CSV ou PDF</span>
+            <input ref={fileRef} type="file" accept=".csv,.txt,.pdf,application/pdf" className="hidden"
               onChange={e => {
                 const f = e.target.files?.[0];
                 if (!f) return;
+                if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
+                  setPdfFile(f);
+                  setCsvDraft([]);
+                  return;
+                }
                 const reader = new FileReader();
                 reader.onload = ev => {
                   const text = ev.target?.result as string;
@@ -1182,7 +1349,7 @@ function ComptesView({
               {csvDraft.length > 10 && <p className="text-center text-[0.65rem] text-white/25">+ {csvDraft.length - 10} autres…</p>}
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { setCsvDraft([]); if (fileRef.current) fileRef.current.value = ""; }}
+              <button onClick={() => { setCsvDraft([]); setPdfFile(null); setPdfError(""); if (fileRef.current) fileRef.current.value = ""; }}
                 className="flex-1 rounded-xl border border-white/[0.08] py-2 text-[0.72rem] text-white/40 hover:text-white/60 transition-colors">
                 Annuler
               </button>
@@ -1322,6 +1489,7 @@ function RapportView({ transactions, recurring, accounts }: {
 }
 
 export default function TresoreriePage() {
+  const router = useRouter();
   const [userId,       setUserId]       = useState<string | null>(null);
   const [loading,      setLoading]      = useState(true);
   const [toast,        setToast]        = useState<ToastData | null>(null);
@@ -1336,8 +1504,11 @@ export default function TresoreriePage() {
   const toast$ = (msg: string, type: "success"|"error" = "success") => setToast({ msg, type });
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => { if (data.user) setUserId(data.user.id); });
-  }, []);
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUserId(data.user.id);
+      else router.replace("/login");
+    });
+  }, [router]);
 
   const loadAll = useCallback(async () => {
     if (!userId) return;
@@ -1358,7 +1529,6 @@ export default function TresoreriePage() {
   useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
 
     async function deleteTx(id: string) {
-    if (!confirm("Supprimer cette transaction ?")) return;
     const { error } = await supabase.from("treasury_transactions").delete().eq("id", id);
     if (error) return toast$("Erreur", "error");
     setTransactions(ts => ts.filter(t => t.id !== id));
@@ -1372,7 +1542,6 @@ export default function TresoreriePage() {
   }
 
     async function deleteAccount(id: string) {
-    if (!confirm("Supprimer ce compte ?")) return;
     const { error } = await supabase.from("treasury_accounts").delete().eq("id", id);
     if (error) return toast$("Erreur", "error");
     setAccounts(as => as.filter(a => a.id !== id));
@@ -1380,7 +1549,6 @@ export default function TresoreriePage() {
   }
 
     async function deleteRecurring(id: string) {
-    if (!confirm("Supprimer cet élément récurrent ?")) return;
     const { error } = await supabase.from("treasury_recurring").delete().eq("id", id);
     if (error) return toast$("Erreur", "error");
     setRecurring(rs => rs.filter(r => r.id !== id));

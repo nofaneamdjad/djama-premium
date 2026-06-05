@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Plus, Search, Trash2, Pencil, X, Loader2, Mail, Phone,
   Building2, Download, Upload, UserCheck, ChevronRight, ChevronDown,
   Calendar, Clock, FileText, MessageSquare, Video, PhoneCall,
   Star, Tag, Globe, Linkedin, MapPin, Briefcase, TrendingUp,
-  CheckSquare, Square, AlertCircle, Ticket, BarChart2, Filter,
+  CheckSquare, Square, AlertCircle, AlertTriangle, Ticket, BarChart2, Filter,
   ArrowUpRight, DollarSign, Target, Activity, Check, SlidersHorizontal,
   Zap, Award, Flag, MoreVertical, Send, Link2, ChevronLeft,
   RefreshCw, PieChart, Layers, Bell, Hash,
@@ -1262,7 +1263,9 @@ function ContactDetail({
 }
 
 export default function CRMPage() {
-    const [contacts,      setContacts]      = useState<Contact[]>([]);
+  const router = useRouter();
+
+  const [contacts,      setContacts]      = useState<Contact[]>([]);
   const [activities,    setActivities]    = useState<Activity[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [tasks,         setTasks]         = useState<CrmTask[]>([]);
@@ -1280,61 +1283,91 @@ export default function CRMPage() {
   const [editContact,   setEditContact]   = useState<Contact | null>(null);
   const [form,          setForm]          = useState<Partial<Contact>>({ status: "prospect", type: "prospect" });
   const [formErrors,    setFormErrors]    = useState<Record<string, string>>({});
+  const [saveError,     setSaveError]     = useState("");
   const [userId,        setUserId]        = useState<string | null>(null);
   const { toasts, add: toast, remove: removeToast } = useToastStack();
 
-    useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => { if (data.user) setUserId(data.user.id); });
-  }, []);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUserId(data.user.id);
+      else router.replace("/login");
+    });
+  }, [router]);
 
     const loadAll = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const [ctRes, acRes, opRes, tkRes, tiRes] = await Promise.all([
-      supabase.from("contacts").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(500),
-      supabase.from("contact_activities").select("*").eq("user_id", userId).order("activity_date", { ascending: false }).limit(500),
-      supabase.from("opportunities").select("*, contacts(name,company)").eq("user_id", userId).order("updated_at", { ascending: false }).limit(200),
-      supabase.from("crm_tasks").select("*, contacts(name,company)").eq("user_id", userId).order("due_date", { ascending: true }).limit(200),
-      supabase.from("tickets").select("*, contacts(name,company)").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
-    ]);
-    if (ctRes.error) toast("Impossible de charger les contacts", "error");
-    else if (ctRes.data) setContacts(ctRes.data as Contact[]);
-    if (acRes.error) toast("Impossible de charger les activités", "error");
-    else if (acRes.data) setActivities(acRes.data as Activity[]);
-    if (opRes.error) toast("Impossible de charger les opportunités", "error");
-    else if (opRes.data) setOpportunities(opRes.data.map((o: Record<string, unknown>) => ({
-      ...o, contact: o.contacts as Pick<Contact, "name"|"company"> | undefined,
-    })) as Opportunity[]);
-    if (tkRes.error) toast("Impossible de charger les tâches", "error");
-    else if (tkRes.data) setTasks(tkRes.data.map((t: Record<string, unknown>) => ({
-      ...t, contact: t.contacts as Pick<Contact, "name"|"company"> | undefined,
-    })) as CrmTask[]);
-    if (tiRes.error) toast("Impossible de charger les tickets", "error");
-    else if (tiRes.data) setTickets(tiRes.data.map((t: Record<string, unknown>) => ({
-      ...t, contact: t.contacts as Pick<Contact, "name"|"company"> | undefined,
-    })) as SupportTicket[]);
-    setLoading(false);
+    try {
+      // ⚠️ On évite les jointures FK (*, contacts(name,company)) qui dépendent
+      // du cache schema PostgREST — on résout les noms de contacts localement.
+      const [ctRes, acRes, opRes, tkRes, tiRes] = await Promise.all([
+        supabase.from("contacts").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(500),
+        supabase.from("contact_activities").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(500),
+        supabase.from("opportunities").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
+        supabase.from("crm_tasks").select("*").eq("user_id", userId).order("due_date", { ascending: true }).limit(200),
+        supabase.from("tickets").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
+      ]);
+
+      const contactsList = (ctRes.data ?? []) as Contact[];
+      const lookupContact = (contactId: unknown): Pick<Contact, "name"|"company"> | undefined => {
+        const c = contactsList.find(x => x.id === contactId);
+        return c ? { name: c.name, company: c.company } : undefined;
+      };
+
+      if (ctRes.error) toast("Impossible de charger les contacts", "error");
+      else setContacts(contactsList);
+
+      if (acRes.error) {
+        console.error("[CRM] activities error:", acRes.error);
+        if (acRes.error.code !== "42P01") toast(`Activités — ${acRes.error.code ?? "?"}: ${acRes.error.message}`, "error");
+      } else if (acRes.data) setActivities(acRes.data as Activity[]);
+
+      if (opRes.error) {
+        console.error("[CRM] opportunities error:", opRes.error);
+        if (opRes.error.code !== "42P01") toast(`Opportunités — ${opRes.error.code ?? "?"}: ${opRes.error.message}`, "error");
+      } else if (opRes.data) setOpportunities(opRes.data.map((o: Record<string, unknown>) => ({
+        ...o, contact: lookupContact(o.contact_id),
+      })) as Opportunity[]);
+
+      if (tkRes.error) {
+        if (tkRes.error.code !== "42P01") toast("Impossible de charger les tâches", "error");
+      } else if (tkRes.data) setTasks(tkRes.data.map((t: Record<string, unknown>) => ({
+        ...t, contact: lookupContact(t.contact_id),
+      })) as CrmTask[]);
+
+      if (tiRes.error) {
+        if (tiRes.error.code !== "42P01") toast("Impossible de charger les tickets", "error");
+      } else if (tiRes.data) setTickets(tiRes.data.map((t: Record<string, unknown>) => ({
+        ...t, contact: lookupContact(t.contact_id),
+      })) as SupportTicket[]);
+
+    } catch {
+      // Erreur réseau — silencieux pour éviter les rejections non-gérées
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
   useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
 
     async function saveContact() {
     if (!userId) return;
+    setSaveError("");
     const errors = validate(ContactSchema, form);
     if (errors !== null) { setFormErrors(errors); return; }
     if (editContact) {
       const { error } = await supabase.from("contacts").update({ ...form, updated_at: new Date().toISOString() }).eq("id", editContact.id);
-      if (error) { toast("Erreur de mise à jour", "error"); return; }
+      if (error) { setSaveError(error.message); return; }
       setContacts(cs => cs.map(c => c.id === editContact.id ? { ...c, ...form } as Contact : c));
       if (selected?.id === editContact.id) setSelected(s => s ? { ...s, ...form } as Contact : s);
       toast("Contact mis à jour", "success");
     } else {
       const { data, error } = await supabase.from("contacts").insert({ ...form, user_id: userId }).select().single();
-      if (error || !data) { toast("Erreur de création", "error"); return; }
+      if (error || !data) { setSaveError(error?.message ?? "Erreur de création"); return; }
       setContacts(cs => [data as Contact, ...cs]);
       toast("Contact créé", "success");
     }
-    setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); setFormErrors({});
+    setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); setFormErrors({}); setSaveError("");
   }
 
   async function deleteContact(id: string) {
@@ -1363,7 +1396,8 @@ export default function CRMPage() {
   }
 
   async function deleteActivity(id: string) {
-    await supabase.from("contact_activities").delete().eq("id", id);
+    const { error } = await supabase.from("contact_activities").delete().eq("id", id);
+    if (error) { toast("Erreur lors de la suppression", "error"); return; }
     setActivities(a => a.filter(x => x.id !== id));
   }
 
@@ -1390,7 +1424,8 @@ export default function CRMPage() {
   }
 
   async function deleteOpportunity(id: string) {
-    await supabase.from("opportunities").delete().eq("id", id);
+    const { error } = await supabase.from("opportunities").delete().eq("id", id);
+    if (error) { toast("Erreur lors de la suppression", "error"); return; }
     setOpportunities(o => o.filter(op => op.id !== id));
   }
 
@@ -1415,7 +1450,8 @@ export default function CRMPage() {
   }
 
   async function deleteTask(id: string) {
-    await supabase.from("crm_tasks").delete().eq("id", id);
+    const { error } = await supabase.from("crm_tasks").delete().eq("id", id);
+    if (error) { toast("Erreur lors de la suppression", "error"); return; }
     setTasks(t => t.filter(task => task.id !== id));
   }
 
@@ -1441,7 +1477,8 @@ export default function CRMPage() {
   }
 
   async function deleteTicket(id: string) {
-    await supabase.from("tickets").delete().eq("id", id);
+    const { error } = await supabase.from("tickets").delete().eq("id", id);
+    if (error) { toast("Erreur lors de la suppression", "error"); return; }
     setTickets(t => t.filter(tk => tk.id !== id));
   }
 
@@ -1806,7 +1843,7 @@ export default function CRMPage() {
         {addModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-            onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); }}>
+            onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); setSaveError(""); }}>
             <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="w-full max-w-lg rounded-3xl border border-white/[0.08] p-6 space-y-4 max-h-[90vh] overflow-y-auto"
@@ -1814,7 +1851,7 @@ export default function CRMPage() {
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-white">{editContact ? "Modifier le contact" : "Nouveau contact"}</h3>
-                <button onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); }}
+                <button onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); setSaveError(""); }}
                   className="text-white/30 hover:text-white"><X size={16}/></button>
               </div>
 
@@ -1880,8 +1917,14 @@ export default function CRMPage() {
                 <p className="text-[0.58rem] text-white/20">Entrée ou virgule pour ajouter</p>
               </div>
 
+              {saveError && (
+                <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[0.7rem] text-red-400">
+                  <AlertTriangle size={13} className="shrink-0"/>{saveError}
+                </div>
+              )}
+
               <div className="flex gap-2 pt-1">
-                <button onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); }}
+                <button onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); setSaveError(""); }}
                   className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white transition-colors">Annuler</button>
                 <button onClick={saveContact} disabled={!form.name}
                   className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
