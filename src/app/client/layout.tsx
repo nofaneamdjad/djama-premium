@@ -807,8 +807,24 @@ function BottomNav({ pathname }: { pathname: string }) {
 }
 
 /* ─────────── LAYOUT ─────────── */
-/* Pages that carry their own dark background */
-const DARK_PAGES = ["/client/dashboard", "/client/abonnements"];
+/* Pages that carry their own dark background — topbar adapts accordingly */
+const DARK_PAGES = [
+  "/client/dashboard",
+  "/client/abonnements",
+  "/client/equipe",
+  "/client/planning",
+  "/client/productivite",
+  "/client/contrats",
+  "/client/assistant",
+  "/client/reseaux-sociaux",
+  "/client/bloc-note",
+  "/client/bloc-notes",
+  "/client/chrono",
+  "/client/sourcing",
+  "/client/notes",
+  "/client/reputation",
+  "/client/coaching-ia",
+];
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname     = usePathname();
