@@ -3,6 +3,7 @@
 import React, {
   useState, useEffect, useCallback, useMemo,
 } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -197,6 +198,7 @@ function TaskRow({ task, onToggle, onDelete }: {
 }
 
 export default function PlanningPage() {
+  const router = useRouter();
     const [view,          setView]          = useState<CalView>("week");
   const [current,       setCurrent]       = useState(new Date());
   const [events,        setEvents]        = useState<PlanEvent[]>([]);
@@ -225,17 +227,23 @@ export default function PlanningPage() {
   const [showAI,     setShowAI]     = useState(false);
 
     const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
-    const [evR, tkR, goR] = await Promise.all([
-      supabase.from("planning_events").select("*").eq("user_id", user.id).order("start_at"),
-      supabase.from("planning_tasks").select("*").eq("user_id", user.id).order("due_date").order("created_at"),
-      supabase.from("planning_goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-    ]);
-    setEvents((evR.data ?? []).map(r => parseEvent(r as Record<string,unknown>)));
-    setTasks((tkR.data ?? []).map(r => parseTask(r as Record<string,unknown>)));
-    setGoals((goR.data ?? []) as PlanGoal[]);
-    setLoading(false);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.replace("/login"); return; }
+      const [evR, tkR, goR] = await Promise.all([
+        supabase.from("planning_events").select("*").eq("user_id", user.id).order("start_at"),
+        supabase.from("planning_tasks").select("*").eq("user_id", user.id).order("due_date").order("created_at"),
+        supabase.from("planning_goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      ]);
+      setEvents((evR.data ?? []).map(r => parseEvent(r as Record<string,unknown>)));
+      setTasks((tkR.data ?? []).map(r => parseTask(r as Record<string,unknown>)));
+      setGoals((goR.data ?? []) as PlanGoal[]);
+    } catch {
+      // erreur réseau — l'UI reste utilisable
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -305,28 +313,30 @@ export default function PlanningPage() {
     if (editEvent) {
       const { data, error } = await supabase
         .from("planning_events").update(payload).eq("id", editEvent.id).select().single();
-      if (!error && data) {
+      if (error) { addToast("Erreur lors de la mise à jour", "error"); }
+      else if (data) {
         setEvents(p => p.map(e => e.id === editEvent.id ? parseEvent(data as Record<string,unknown>) : e));
         addToast("Événement mis à jour", "success");
       }
     } else {
       const { data, error } = await supabase
         .from("planning_events").insert(payload).select().single();
-      if (!error && data) {
+      if (error) { addToast("Erreur de sauvegarde", "error"); }
+      else if (data) {
         setEvents(p => [parseEvent(data as Record<string,unknown>), ...p]);
         addToast("Événement créé", "success");
       }
-      if (error) addToast("Erreur de sauvegarde", "error");
     }
     setSaving(false);
     setShowModal(false);
   }
 
   async function deleteEvent(id: string) {
-    await supabase.from("planning_events").delete().eq("id", id);
+    const { error } = await supabase.from("planning_events").delete().eq("id", id);
+    if (error) { addToast("Erreur lors de la suppression", "error"); return; }
     setEvents(p => p.filter(e => e.id !== id));
     setShowModal(false);
-    addToast("Supprimé", "success");
+    addToast("Événement supprimé", "success");
   }
 
     async function createTask() {
@@ -335,10 +345,11 @@ export default function PlanningPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setAddingTask(false); return; }
     const today = fmtDate(new Date());
-    const { data } = await supabase.from("planning_tasks").insert({
+    const { data, error } = await supabase.from("planning_tasks").insert({
       user_id: user.id, title: newTask.trim(),
       due_date: today, priority: "normal", status: "todo",
     }).select().single();
+    if (error) { addToast("Erreur lors de la création de la tâche", "error"); setAddingTask(false); return; }
     if (data) setTasks(p => [parseTask(data as Record<string,unknown>), ...p]);
     setNewTask(""); setAddingTask(false);
   }
