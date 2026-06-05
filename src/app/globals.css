@@ -278,6 +278,29 @@ select:focus {
 button:focus:not(:focus-visible) { outline: none; }
 a:focus:not(:focus-visible)      { outline: none; }
 
+/* ── DARK SELECT — pages client (.client-app) ───
+   color-scheme:dark sur le div racine → tous les native controls héritent.
+   Les règles option ci-dessous renforcent sur Chrome Windows qui ne colore
+   pas le dropdown natif via color-scheme seul.
+──────────────────────────────────────────────── */
+.client-app {
+  color-scheme: dark;
+}
+.client-app select {
+  color-scheme: dark;
+  background-color: #111827;
+  color: #ffffff;
+}
+.client-app select option {
+  background-color: #111827;
+  color: #ffffff;
+}
+.client-app select option:hover,
+.client-app select option:checked {
+  background-color: #1f2937;
+  color: #ffffff;
+}
+
 /* ── SCROLLBAR THIN ─────────────────────────── */
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }

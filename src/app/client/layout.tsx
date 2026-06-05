@@ -892,8 +892,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <div
-      className="flex h-screen overflow-hidden"
-      style={{ background: isDarkPage ? "#07090e" : "#f6f7f9", transition: "background 0.3s ease" }}
+      className="client-app flex h-screen overflow-hidden"
+      style={{ background: isDarkPage ? "#07090e" : "#f6f7f9", transition: "background 0.3s ease", colorScheme: "dark" }}
     >
       {/* Global search */}
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
