@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Truck, Plus, Search, X, RefreshCw, Trash2, Edit2, Check,
@@ -93,6 +94,33 @@ const INV_STATUS: Record<InvoiceStatus, { label: string; color: string; bg: stri
 
 const PAYMENT_METHODS = ["virement", "chèque", "prélèvement", "carte", "PayPal", "autre"];
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "MAD", "CAD"];
+const COUNTRIES = [
+  "France", "Belgique", "Suisse", "Luxembourg", "Canada", "Maroc", "International",
+  "Allemagne", "Autriche", "Espagne", "Italie", "Portugal", "Pays-Bas", "Pologne",
+  "Suède", "Norvège", "Danemark", "Finlande", "Irlande", "Royaume-Uni", "Grèce",
+  "Turquie", "Ukraine", "Russie", "République Tchèque", "Hongrie", "Roumanie",
+  "Bulgarie", "Croatie", "Serbie", "Slovaquie", "Slovénie", "Lituanie", "Lettonie",
+  "Estonie", "Chypre", "Malte", "Islande", "Albanie", "Macédoine du Nord",
+  "Bosnie-Herzégovine", "Monténégro", "Kosovo", "Moldova", "Biélorussie",
+  "Algérie", "Tunisie", "Égypte", "Sénégal", "Côte d'Ivoire", "Mali",
+  "Burkina Faso", "Niger", "Guinée", "Cameroun", "Congo", "RD Congo",
+  "Madagascar", "Mozambique", "Tanzanie", "Kenya", "Éthiopie", "Nigeria",
+  "Ghana", "Afrique du Sud", "Angola", "Zambie", "Zimbabwe", "Namibie",
+  "Botswana", "Rwanda", "Ouganda", "Tchad", "Soudan", "Libye",
+  "Mauritanie", "Togo", "Bénin", "Gabon", "Centrafrique", "Djibouti",
+  "États-Unis", "Mexique", "Brésil", "Argentine", "Chili", "Colombie",
+  "Pérou", "Venezuela", "Équateur", "Bolivie", "Paraguay", "Uruguay",
+  "Cuba", "Haïti", "République Dominicaine", "Panama", "Costa Rica",
+  "Guatemala", "Honduras", "Salvador", "Nicaragua", "Jamaïque",
+  "Chine", "Japon", "Inde", "Corée du Sud", "Indonésie", "Philippines",
+  "Viêt Nam", "Thaïlande", "Malaisie", "Singapour", "Myanmar", "Cambodge",
+  "Bangladesh", "Pakistan", "Sri Lanka", "Népal", "Iran", "Irak",
+  "Arabie Saoudite", "Émirats Arabes Unis", "Qatar", "Koweït", "Bahreïn",
+  "Oman", "Yémen", "Jordanie", "Liban", "Israël", "Palestine",
+  "Kazakhstan", "Ouzbékistan", "Azerbaïdjan", "Arménie", "Géorgie",
+  "Mongolie", "Taïwan", "Hong Kong",
+  "Australie", "Nouvelle-Zélande", "Papouasie-Nouvelle-Guinée", "Fidji",
+];
 const UNITS = ["pièce", "kg", "g", "litre", "ml", "m²", "m", "boîte", "palette", "heure", "jour"];
 
 const EMPTY_FOURN = (): Partial<Fournisseur> => ({
@@ -197,11 +225,14 @@ function FournModal({ data, onSave, onClose }: {
                 <div><Lbl>Adresse</Lbl>
                   <input value={form.address ?? ""} onChange={(e) => set("address", e.target.value)} placeholder="123 rue de la Paix" className={inp()}/>
                 </div>
-                <div><Lbl>Ville / Pays</Lbl>
-                  <div className="flex gap-2">
-                    <input value={form.city ?? ""} onChange={(e) => set("city", e.target.value)} placeholder="Paris" className={inp()}/>
-                  </div>
+                <div><Lbl>Ville</Lbl>
+                  <input value={form.city ?? ""} onChange={(e) => set("city", e.target.value)} placeholder="Paris" className={inp()}/>
                 </div>
+              </div>
+              <div><Lbl>Pays</Lbl>
+                <select value={form.country ?? "France"} onChange={(e) => set("country", e.target.value)} className={inp("appearance-none")}>
+                  {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
               <div><Lbl>Site web</Lbl>
                 <input value={form.website ?? ""} onChange={(e) => set("website", e.target.value)} placeholder="https://fournisseur.com" className={inp()}/>
@@ -907,6 +938,7 @@ function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }: {
 
 export default function FournisseursPage() {
   const { toasts, add: toast, remove: removeToast } = useToastStack();
+  const router = useRouter();
 
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -929,20 +961,25 @@ export default function FournisseursPage() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
-      const [fRes, oRes, iRes] = await Promise.all([
-        supabase.from("fournisseurs").select("*").eq("user_id", user.id).order("company_name"),
-        supabase.from("fournisseur_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
-        supabase.from("fournisseur_invoices").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
-      ]);
-      if (!fRes.error && fRes.data) setFournisseurs(fRes.data as Fournisseur[]);
-      if (!oRes.error && oRes.data) setOrders(oRes.data as FOrder[]);
-      if (!iRes.error && iRes.data) setInvoices(iRes.data as FInvoice[]);
-      setLoading(false);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { router.replace("/login"); return; }
+        setUserId(user.id);
+        const [fRes, oRes, iRes] = await Promise.all([
+          supabase.from("fournisseurs").select("*").eq("user_id", user.id).order("company_name"),
+          supabase.from("fournisseur_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
+          supabase.from("fournisseur_invoices").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
+        ]);
+        if (!fRes.error && fRes.data) setFournisseurs(fRes.data as Fournisseur[]);
+        if (!oRes.error && oRes.data) setOrders(oRes.data as FOrder[]);
+        if (!iRes.error && iRes.data) setInvoices(iRes.data as FInvoice[]);
+      } catch {
+        // Erreur réseau — silencieux
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, []);
+  }, [router]);
 
   const saveFourn = useCallback(async (form: Partial<Fournisseur>) => {
     if (!userId) return;
@@ -1002,7 +1039,8 @@ export default function FournisseursPage() {
 
   const saveRating = useCallback(async (r: { reliability: number; quality: number; price: number; delays: number; comment: string }) => {
     if (!userId || !ratingFourn) return;
-    await supabase.from("fournisseur_ratings").insert({ ...r, user_id: userId, fournisseur_id: ratingFourn.id });
+    const { error: insErr } = await supabase.from("fournisseur_ratings").insert({ ...r, user_id: userId, fournisseur_id: ratingFourn.id });
+    if (insErr) { toast("Erreur enregistrement évaluation", "error"); return; }
     // Update average scores on fournisseur
     const { data: ratings } = await supabase.from("fournisseur_ratings").select("reliability,quality,price,delays").eq("fournisseur_id", ratingFourn.id);
     if (ratings && ratings.length > 0) {
