@@ -1259,7 +1259,8 @@ export default function ContratsPage() {
       if (!error && data) setContracts(data as Contract[]);
       setLoading(false);
     })();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load detail data when contract selected
   useEffect(() => {

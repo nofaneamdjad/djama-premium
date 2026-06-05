@@ -779,7 +779,8 @@ export default function DepensesPage() {
       if (data.user) setUserId(data.user.id);
       else router.replace("/login");
     });
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadAll = useCallback(async () => {
     if (!userId) return;

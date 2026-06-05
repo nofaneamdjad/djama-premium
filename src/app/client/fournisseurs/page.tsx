@@ -979,7 +979,8 @@ export default function FournisseursPage() {
         setLoading(false);
       }
     })();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const saveFourn = useCallback(async (form: Partial<Fournisseur>) => {
     if (!userId) return;

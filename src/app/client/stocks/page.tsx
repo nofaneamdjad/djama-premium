@@ -1096,7 +1096,8 @@ export default function StocksPage() {
         setLoading(false);
       }
     })();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSaveProduct = useCallback(async (form: Partial<Product>) => {
     if (!userId) return;

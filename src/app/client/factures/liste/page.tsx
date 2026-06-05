@@ -79,7 +79,8 @@ export default function ListeDocuments() {
       setLoading(false);
     }
     load();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <main className="min-h-screen bg-[var(--surface)]">
