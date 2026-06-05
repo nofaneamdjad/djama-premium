@@ -1,12 +1,14 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, ListChecks, Activity, Target, ArrowRight, Loader2, Plus,
   Play, Square, CornerDownLeft, AlertTriangle, Sparkles, FileText,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import Toast, { type ToastData } from "@/components/ui/Toast";
+import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 const VIOLET = "#8b5cf6";
 
@@ -340,39 +342,39 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
 }
 
 export default function ProductivitePage() {
-  const [tasks,      setTasks]      = useState<Task[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [view,       setView]       = useState<View>("kanban");
-  const [listTab,    setListTab]    = useState<LTab>("today");
-  const [search,     setSearch]     = useState("");
-  const [fprio,      setFprio]      = useState("");
-  const [fcat,       setFcat]       = useState("");
-  const [fstat,      setFstat]      = useState("");
-  const [showAI,     setShowAI]     = useState(false);
-  const [showModal,  setShowModal]  = useState(false);
-  const [editId,     setEditId]     = useState<string | null>(null);
-  const [form,       setForm]       = useState<Form>(BLANK);
-  const [saving,     setSaving]     = useState(false);
-  const [toastData,  setToastData]  = useState<ToastData | null>(null);
-  const [comments,   setComments]   = useState<Cmt[]>([]);
-  const [cmt,        setCmt]        = useState("");
-  const [cmtAuthor,  setCmtAuthor]  = useState("Moi");
-  const [quickAdd,   setQuickAdd]   = useState<Record<string, string>>({});
-  const [now,        setNow]        = useState(Date.now());
-  const [newSub,     setNewSub]     = useState("");
-  const [newTag,     setNewTag]     = useState("");
-  const [newAssignee,setNewAssignee]= useState("");
-  const [userId,     setUserId]     = useState<string | null>(null);
+  const { toasts, add: toast, remove: removeToast } = useToastStack();
+  const router = useRouter();
+
+  const [tasks,           setTasks]           = useState<Task[]>([]);
+  const [loading,         setLoading]         = useState(true);
+  const [view,            setView]            = useState<View>("kanban");
+  const [listTab,         setListTab]         = useState<LTab>("today");
+  const [search,          setSearch]          = useState("");
+  const [fprio,           setFprio]           = useState("");
+  const [fcat,            setFcat]            = useState("");
+  const [fstat,           setFstat]           = useState("");
+  const [showAI,          setShowAI]          = useState(false);
+  const [showModal,       setShowModal]       = useState(false);
+  const [editId,          setEditId]          = useState<string | null>(null);
+  const [form,            setForm]            = useState<Form>(BLANK);
+  const [saving,          setSaving]          = useState(false);
+  const [comments,        setComments]        = useState<Cmt[]>([]);
+  const [cmt,             setCmt]             = useState("");
+  const [cmtAuthor,       setCmtAuthor]       = useState("Moi");
+  const [quickAdd,        setQuickAdd]        = useState<Record<string, string>>({});
+  const [now,             setNow]             = useState(Date.now());
+  const [newSub,          setNewSub]          = useState("");
+  const [newTag,          setNewTag]          = useState("");
+  const [newAssignee,     setNewAssignee]     = useState("");
+  const [userId,          setUserId]          = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting,        setDeleting]        = useState(false);
 
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(iv);
   }, []);
 
-  const toast = useCallback((msg: string, type: ToastData["type"] = "success") => {
-    setToastData({ msg, type });
-    setTimeout(() => setToastData(null), 3500);
-  }, []);
 
   const load = useCallback(async (uid?: string | null) => {
     const resolvedUid = uid ?? userId;
@@ -391,10 +393,16 @@ export default function ProductivitePage() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
-      await load(user.id);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { router.replace("/login"); return; }
+        setUserId(user.id);
+        await load(user.id);
+      } catch {
+        // Erreur réseau — silencieux
+      } finally {
+        setLoading(false);
+      }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -450,16 +458,31 @@ export default function ProductivitePage() {
     setSaving(false);
   };
 
-  const del = async () => {
-    if (!editId || !confirm("Supprimer cette tâche ?")) return;
-    const { error } = await supabase.from("productivity_tasks").delete().eq("id", editId);
-    if (error) toast(error.message, "error");
-    else { toast("Tâche supprimée", "info"); setShowModal(false); await load(); }
+  const del = () => {
+    if (!editId) return;
+    setConfirmDeleteId(editId);
   };
+
+  const confirmDel = useCallback(async () => {
+    if (!confirmDeleteId) return;
+    setDeleting(true);
+    const { error } = await supabase.from("productivity_tasks").delete().eq("id", confirmDeleteId);
+    setDeleting(false);
+    setConfirmDeleteId(null);
+    if (error) { toast(error.message, "error"); return; }
+    toast("Tâche supprimée", "info");
+    setShowModal(false);
+    await load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmDeleteId, toast, load]);
 
   const changeStatus = async (id: string, status: Status) => {
     setTasks(ts => ts.map(t => t.id === id ? { ...t, status } : t));
-    await supabase.from("productivity_tasks").update({ status }).eq("id", id);
+    const { error } = await supabase.from("productivity_tasks").update({ status }).eq("id", id);
+    if (error) {
+      setTasks(ts => ts.map(t => t.id === id ? { ...t } : t));
+      toast("Erreur mise à jour statut", "error");
+    }
   };
 
   const toggleTimer = async (id: string) => {
@@ -469,7 +492,8 @@ export default function ProductivitePage() {
       ? { timer_started_at: null, time_spent: t.time_spent + Math.floor((Date.now() - new Date(t.timer_started_at).getTime()) / 1000) }
       : { timer_started_at: new Date().toISOString(), time_spent: t.time_spent };
     setTasks(ts => ts.map(x => x.id === id ? { ...x, ...update } : x));
-    await supabase.from("productivity_tasks").update(update).eq("id", id);
+    const { error } = await supabase.from("productivity_tasks").update(update).eq("id", id);
+    if (error) toast("Erreur timer", "error");
   };
 
   const quickAddTask = async (status: Status) => {
@@ -1082,9 +1106,17 @@ export default function ProductivitePage() {
         {showAI && <AiPanel tasks={tasks} onClose={() => setShowAI(false)} />}
       </AnimatePresence>
 
-            <AnimatePresence>
-        {toastData && <Toast toast={toastData} onClose={() => setToastData(null)} />}
-      </AnimatePresence>
+      <ToastStack toasts={toasts} remove={removeToast} />
+
+      <ConfirmModal
+        open={confirmDeleteId !== null}
+        title="Supprimer cette tâche ?"
+        description="Cette action est irréversible."
+        confirmLabel="Supprimer"
+        loading={deleting}
+        onConfirm={confirmDel}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }
