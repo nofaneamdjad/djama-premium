@@ -9,9 +9,6 @@ ALTER TABLE contracts ADD COLUMN IF NOT EXISTS contract_type text DEFAULT 'prest
 ALTER TABLE contracts ADD COLUMN IF NOT EXISTS logo_url      text DEFAULT '';
 ALTER TABLE contracts ADD COLUMN IF NOT EXISTS currency      text DEFAULT 'EUR';
 
--- Recopier les valeurs existantes de "type" → "contract_type"
-UPDATE contracts SET contract_type = type WHERE (contract_type IS NULL OR contract_type = 'prestation') AND type IS NOT NULL;
-
 -- ── 2. Colonnes supplémentaires du upgrade (si pas encore fait) ───────────────
 ALTER TABLE contracts ADD COLUMN IF NOT EXISTS client_email        text        DEFAULT '';
 ALTER TABLE contracts ADD COLUMN IF NOT EXISTS client_company      text        DEFAULT '';
