@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plus, Search, X, RefreshCw, Trash2, Edit2,
@@ -1046,6 +1047,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
 
 export default function StocksPage() {
   const { toasts, add: toast, remove: removeToast } = useToastStack();
+  const router = useRouter();
 
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1070,26 +1072,31 @@ export default function StocksPage() {
   // Load all data
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { router.replace("/login"); return; }
+        setUserId(user.id);
 
-      const [prodRes, movRes, supRes, whRes, ordRes] = await Promise.all([
-        supabase.from("stock_products").select("*").eq("user_id", user.id).order("name"),
-        supabase.from("stock_movements").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
-        supabase.from("stock_suppliers").select("*").eq("user_id", user.id).order("name"),
-        supabase.from("stock_warehouses").select("*").eq("user_id", user.id).order("name"),
-        supabase.from("stock_supplier_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
-      ]);
+        const [prodRes, movRes, supRes, whRes, ordRes] = await Promise.all([
+          supabase.from("stock_products").select("*").eq("user_id", user.id).order("name"),
+          supabase.from("stock_movements").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
+          supabase.from("stock_suppliers").select("*").eq("user_id", user.id).order("name"),
+          supabase.from("stock_warehouses").select("*").eq("user_id", user.id).order("name"),
+          supabase.from("stock_supplier_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
+        ]);
 
-      if (!prodRes.error && prodRes.data) setProducts(prodRes.data as Product[]);
-      if (!movRes.error && movRes.data) setMovements(movRes.data as Movement[]);
-      if (!supRes.error && supRes.data) setSuppliers(supRes.data as Supplier[]);
-      if (!whRes.error && whRes.data) setWarehouses(whRes.data as Warehouse[]);
-      if (!ordRes.error && ordRes.data) setOrders(ordRes.data as SupplierOrder[]);
-      setLoading(false);
+        if (!prodRes.error && prodRes.data) setProducts(prodRes.data as Product[]);
+        if (!movRes.error && movRes.data) setMovements(movRes.data as Movement[]);
+        if (!supRes.error && supRes.data) setSuppliers(supRes.data as Supplier[]);
+        if (!whRes.error && whRes.data) setWarehouses(whRes.data as Warehouse[]);
+        if (!ordRes.error && ordRes.data) setOrders(ordRes.data as SupplierOrder[]);
+      } catch {
+        // Erreur réseau — silencieux
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, []);
+  }, [router]);
 
   const handleSaveProduct = useCallback(async (form: Partial<Product>) => {
     if (!userId) return;
