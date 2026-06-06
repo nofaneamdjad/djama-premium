@@ -826,6 +826,7 @@ const DARK_PAGES = [
   "/client/notes",
   "/client/reputation",
   "/client/coaching-ia",
+  "/client/stocks",
 ];
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {

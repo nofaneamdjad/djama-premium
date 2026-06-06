@@ -10,6 +10,8 @@ import {
   Truck, Download, Eye, Check, ChevronDown, Filter,
   DollarSign, ShoppingCart, Zap, Activity, Star,
   Camera, ScanLine, Image as ImageIcon, Upload,
+  Users, MapPin, Phone, Mail, CalendarDays,
+  ShieldAlert,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -50,6 +52,19 @@ interface SupplierOrder {
   total_amount: number; notes: string; created_at: string;
 }
 
+interface LoyalClient {
+  id: string; user_id: string; name: string; email: string; phone: string;
+  address: string; notes: string; created_at: string;
+}
+
+interface ClientDelivery {
+  id: string; user_id: string; client_id: string | null; client_name: string;
+  product_id: string | null; product_name: string;
+  quantity: number; unit: string; delivery_date: string; notes: string; created_at: string;
+}
+
+type StockState = "rupture" | "critique" | "faible" | "normal" | "surstock";
+
 const gold = "#c9a55a";
 const green = "#10b981";
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -82,6 +97,30 @@ const EMPTY_PRODUCT = (): Partial<Product> => ({
 const EMPTY_SUPPLIER = (): Partial<Supplier> => ({
   name: "", contact: "", email: "", phone: "", address: "", payment_terms: "30 jours", lead_time_days: 7, notes: "",
 });
+const EMPTY_CLIENT = (): Partial<LoyalClient> => ({
+  name: "", email: "", phone: "", address: "", notes: "",
+});
+const EMPTY_DELIVERY = (): Partial<ClientDelivery> => ({
+  client_id: null, client_name: "", product_id: null, product_name: "",
+  quantity: 1, unit: "pièce", delivery_date: new Date().toISOString().split("T")[0], notes: "",
+});
+
+/* ── État de stock ─────────────────────────────────────────────────── */
+const STOCK_STATES: Record<StockState, { label: string; color: string; bg: string; border: string }> = {
+  rupture:  { label: "RUPTURE",  color: "#ef4444", bg: "rgba(239,68,68,0.12)",  border: "rgba(239,68,68,0.25)" },
+  critique: { label: "CRITIQUE", color: "#f97316", bg: "rgba(249,115,22,0.12)", border: "rgba(249,115,22,0.25)" },
+  faible:   { label: "FAIBLE",   color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.25)" },
+  normal:   { label: "NORMAL",   color: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.25)" },
+  surstock: { label: "SURSTOCK", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", border: "rgba(96,165,250,0.25)" },
+};
+
+function getStockState(p: Product): StockState {
+  if (p.stock_current <= 0) return "rupture";
+  if (p.stock_minimum > 0 && p.stock_current <= p.stock_minimum * 0.5) return "critique";
+  if (p.stock_minimum > 0 && p.stock_current <= p.stock_minimum) return "faible";
+  if (p.stock_minimum > 0 && p.stock_current > p.stock_minimum * 4) return "surstock";
+  return "normal";
+}
 
 function inp(extra = "") {
   return `w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors ${extra}`;
@@ -581,10 +620,13 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
   const todayOut = movements.filter((m) => m.date === today && (m.type === "sortie" || m.type === "perte" || m.type === "casse")).reduce((s, m) => s + m.quantity, 0);
   const totalProducts = products.filter((p) => p.is_active).length;
 
+  const criticalStock = products.filter((p) => getStockState(p) === "critique");
+  const overStock     = products.filter((p) => getStockState(p) === "surstock");
+
   const kpis = [
     { label: "Produits actifs",    value: totalProducts,         icon: Package,       color: "#10b981", bg: "bg-emerald-500/10" },
     { label: "Valeur totale stock",value: fmtEur(totalValue),   icon: DollarSign,    color: gold,      bg: "bg-amber-500/10", isStr: true },
-    { label: "Stock faible",       value: lowStock.length,      icon: AlertTriangle, color: "#f97316", bg: "bg-orange-500/10" },
+    { label: "Stock critique",     value: criticalStock.length, icon: ShieldAlert,   color: "#f97316", bg: "bg-orange-500/10" },
     { label: "Ruptures de stock",  value: outOfStock.length,    icon: AlertOctagon,  color: "#ef4444", bg: "bg-red-500/10" },
     { label: "Entrées aujourd'hui",value: todayIn,              icon: ArrowUpCircle, color: "#10b981", bg: "bg-emerald-500/10" },
     { label: "Sorties aujourd'hui",value: todayOut,             icon: ArrowDownCircle,color: "#ef4444",bg: "bg-red-500/10" },
@@ -615,7 +657,7 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
       </div>
 
       {/* Alerts */}
-      {(lowStock.length > 0 || outOfStock.length > 0) && (
+      {(criticalStock.length > 0 || lowStock.length > 0 || outOfStock.length > 0) && (
         <div className="space-y-2">
           <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 flex items-center gap-1.5"><AlertTriangle size={12} className="text-orange-400"/> Alertes stock</h3>
           <div className="space-y-1.5">
@@ -625,15 +667,29 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
                   <span className="text-sm text-white/80">{p.name}</span>
                   <span className="text-xs text-red-400">{p.sku && `· ${p.sku}`}</span>
                 </div>
-                <span className="text-xs font-bold text-red-400">RUPTURE</span>
+                <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full" style={{ color:"#ef4444",background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)" }}>RUPTURE</span>
               </div>
             ))}
-            {lowStock.slice(0, 3).map((p) => (
-              <div key={p.id} className="flex items-center justify-between bg-orange-500/5 border border-orange-500/15 rounded-xl px-4 py-2.5">
-                <div className="flex items-center gap-2"><AlertTriangle size={13} className="text-orange-400 shrink-0"/>
+            {criticalStock.slice(0, 3).map((p) => (
+              <div key={p.id} className="flex items-center justify-between bg-orange-500/5 border border-orange-500/20 rounded-xl px-4 py-2.5">
+                <div className="flex items-center gap-2"><ShieldAlert size={13} className="text-orange-400 shrink-0"/>
                   <span className="text-sm text-white/80">{p.name}</span>
                 </div>
-                <span className="text-xs font-bold text-orange-400">{p.stock_current} / min. {p.stock_minimum} {p.unit}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-white/40">{p.stock_current} / min. {p.stock_minimum} {p.unit}</span>
+                  <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full" style={{ color:"#f97316",background:"rgba(249,115,22,0.12)",border:"1px solid rgba(249,115,22,0.25)" }}>CRITIQUE</span>
+                </div>
+              </div>
+            ))}
+            {lowStock.filter(p => getStockState(p) === "faible").slice(0, 3).map((p) => (
+              <div key={p.id} className="flex items-center justify-between bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-2.5">
+                <div className="flex items-center gap-2"><AlertTriangle size={13} className="text-amber-400 shrink-0"/>
+                  <span className="text-sm text-white/80">{p.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-white/40">{p.stock_current} / min. {p.stock_minimum} {p.unit}</span>
+                  <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full" style={{ color:"#f59e0b",background:"rgba(245,158,11,0.12)",border:"1px solid rgba(245,158,11,0.25)" }}>FAIBLE</span>
+                </div>
               </div>
             ))}
           </div>
@@ -721,21 +777,14 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
 }) {
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
-  const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
+  const [stockFilter, setStockFilter] = useState<"all" | StockState>("all");
 
   const filtered = products.filter((p) => {
     if (catFilter !== "all" && p.category !== catFilter) return false;
-    if (stockFilter === "low" && !(p.stock_current > 0 && p.stock_current <= p.stock_minimum)) return false;
-    if (stockFilter === "out" && p.stock_current > 0) return false;
+    if (stockFilter !== "all" && getStockState(p) !== stockFilter) return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.sku.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
-
-  const getStockColor = (p: Product) => {
-    if (p.stock_current <= 0) return "text-red-400";
-    if (p.stock_current <= p.stock_minimum) return "text-orange-400";
-    return "text-emerald-400";
-  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -753,9 +802,12 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
         </select>
         <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
           className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
-          <option value="all">Tout le stock</option>
-          <option value="low">Stock faible</option>
-          <option value="out">Ruptures</option>
+          <option value="all">Tous états</option>
+          <option value="rupture">🔴 Rupture</option>
+          <option value="critique">🟠 Critique</option>
+          <option value="faible">🟡 Faible</option>
+          <option value="normal">🟢 Normal</option>
+          <option value="surstock">🔵 Surstock</option>
         </select>
         <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
           style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -807,7 +859,15 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
                   </div>
                   <div className="col-span-2 flex items-center justify-end gap-2">
                     <div className="text-right">
-                      <p className={`text-sm font-bold ${getStockColor(p)}`}>{p.stock_current}</p>
+                      <div className="flex items-center justify-end gap-1.5 mb-0.5">
+                        <p className="text-sm font-bold text-white/85">{p.stock_current}</p>
+                        {(() => { const s = STOCK_STATES[getStockState(p)]; return (
+                          <span className="text-[0.58rem] font-bold px-1.5 py-0.5 rounded-full"
+                            style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
+                            {s.label}
+                          </span>
+                        ); })()}
+                      </div>
                       <p className="text-[10px] text-white/25">{p.unit} · min {p.stock_minimum}</p>
                     </div>
                     {/* Actions */}
@@ -1043,6 +1103,325 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
   );
 }
 
+// ─────────────────────────── CLIENT MODALS ───────────────────────────
+
+function ClientModal({ client, onSave, onClose }: {
+  client: Partial<LoyalClient>; onSave: (c: Partial<LoyalClient>) => Promise<void>; onClose: () => void;
+}) {
+  const [form, setForm] = useState<Partial<LoyalClient>>(client);
+  const [saving, setSaving] = useState(false);
+  const set = (k: keyof LoyalClient, v: string) => setForm((p) => ({ ...p, [k]: v }));
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
+        transition={{ duration: 0.35, ease }}
+        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: "#6366f120", border: "1px solid #6366f130" }}>
+              <Users size={14} style={{ color: "#818cf8" }}/>
+            </div>
+            <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier le client" : "Nouveau client fidèle"}</h3>
+          </div>
+          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
+        </div>
+        <div className="p-6 space-y-3 overflow-y-auto max-h-[65vh]">
+          <div><Label>Nom *</Label><input value={form.name ?? ""} onChange={(e) => set("name", e.target.value)} placeholder="Nom du client" className={inp()}/></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Email</Label><input type="email" value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} placeholder="client@mail.com" className={inp()}/></div>
+            <div><Label>Téléphone</Label><input value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} placeholder="+33 6 00 00 00 00" className={inp()}/></div>
+          </div>
+          <div><Label>Adresse / Lieu de livraison</Label><input value={form.address ?? ""} onChange={(e) => set("address", e.target.value)} placeholder="12 rue des lilas, 75001 Paris" className={inp()}/></div>
+          <div><Label>Notes</Label><textarea value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} rows={2} className={inp("resize-none")}/></div>
+        </div>
+        <div className="flex gap-3 px-6 pb-6">
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
+          <button onClick={async () => { if (!form.name) return; setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.name}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
+            style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", color: "#fff" }}>
+            {saving ? <RefreshCw size={13} className="animate-spin inline"/> : form.id ? "Enregistrer" : "Créer le client"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function DeliveryModal({ delivery, clients, products, onSave, onClose }: {
+  delivery: Partial<ClientDelivery>; clients: LoyalClient[]; products: Product[];
+  onSave: (d: Partial<ClientDelivery>) => Promise<void>; onClose: () => void;
+}) {
+  const [form, setForm] = useState<Partial<ClientDelivery>>(delivery);
+  const [saving, setSaving] = useState(false);
+  const set = <K extends keyof ClientDelivery>(k: K, v: ClientDelivery[K]) => setForm((p) => ({ ...p, [k]: v }));
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
+        transition={{ duration: 0.35, ease }}
+        className="w-full max-w-md bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: "#10b98120", border: "1px solid #10b98130" }}>
+              <Truck size={14} style={{ color: green }}/>
+            </div>
+            <h3 className="text-sm font-semibold text-white/90">Enregistrer une livraison</h3>
+          </div>
+          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
+        </div>
+        <div className="p-6 space-y-3">
+          <div>
+            <Label>Client *</Label>
+            <select value={form.client_id ?? ""} onChange={(e) => {
+              const c = clients.find(c => c.id === e.target.value);
+              set("client_id", e.target.value || null as unknown as string);
+              if (c) set("client_name", c.name);
+            }} className={inp() + " [color-scheme:dark]"}>
+              <option value="">— Choisir un client —</option>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label>Produit livré *</Label>
+            <select value={form.product_id ?? ""} onChange={(e) => {
+              const p = products.find(p => p.id === e.target.value);
+              set("product_id", e.target.value || null as unknown as string);
+              if (p) { set("product_name", p.name); set("unit", p.unit); }
+            }} className={inp() + " [color-scheme:dark]"}>
+              <option value="">— Choisir un produit —</option>
+              {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.stock_current} {p.unit})</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Quantité *</Label>
+              <input type="number" min={1} value={form.quantity ?? 1} onChange={(e) => set("quantity", parseFloat(e.target.value))} className={inp()}/>
+            </div>
+            <div><Label>Date de livraison</Label>
+              <input type="date" value={form.delivery_date ?? ""} onChange={(e) => set("delivery_date", e.target.value)} className={inp() + " [color-scheme:dark]"}/>
+            </div>
+          </div>
+          <div><Label>Notes</Label><input value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} placeholder="Référence commande…" className={inp()}/></div>
+        </div>
+        <div className="flex gap-3 px-6 pb-6">
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
+          <button onClick={async () => { if (!form.client_id || !form.product_id) return; setSaving(true); await onSave(form); setSaving(false); }}
+            disabled={saving || !form.client_id || !form.product_id}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
+            style={{ background: `linear-gradient(135deg,${green},#059669)`, color: "#fff" }}>
+            {saving ? <RefreshCw size={13} className="animate-spin inline"/> : "Enregistrer la livraison"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────── CLIENTS VIEW ───────────────────────────
+
+function ClientsView({ clients, deliveries, products, onNewClient, onEditClient, onDeleteClient, onNewDelivery }: {
+  clients: LoyalClient[]; deliveries: ClientDelivery[]; products: Product[];
+  onNewClient: () => void; onEditClient: (c: LoyalClient) => void;
+  onDeleteClient: (id: string) => void; onNewDelivery: (c?: LoyalClient) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const filtered = clients.filter(c =>
+    !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const getClientDeliveries = (clientId: string) =>
+    deliveries.filter(d => d.client_id === clientId).sort((a,b) => b.delivery_date.localeCompare(a.delivery_date));
+
+  const getLastDelivery = (clientId: string) => getClientDeliveries(clientId)[0];
+  const getTotalDeliveries = (clientId: string) => getClientDeliveries(clientId).length;
+
+  const selectedClient = clients.find(c => c.id === selected);
+  const selectedDeliveries = selected ? getClientDeliveries(selected) : [];
+
+  return (
+    <div className="flex-1 flex overflow-hidden">
+      {/* Left — client list */}
+      <div className="w-72 xl:w-80 shrink-0 flex flex-col border-r border-white/[0.06]">
+        <div className="p-4 border-b border-white/[0.06] space-y-3">
+          <div className="relative">
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un client…"
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none pl-8"/>
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"/>
+          </div>
+          <button onClick={onNewClient}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
+            style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", color: "#fff" }}>
+            <Plus size={13}/> Nouveau client
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-center px-4">
+              <Users size={24} className="text-white/20"/>
+              <p className="text-white/30 text-sm">Aucun client fidèle</p>
+              <p className="text-white/20 text-xs">Ajoutez vos clients réguliers pour suivre leurs livraisons</p>
+            </div>
+          ) : filtered.map(c => {
+            const last = getLastDelivery(c.id);
+            const total = getTotalDeliveries(c.id);
+            const isSelected = selected === c.id;
+            return (
+              <button key={c.id} onClick={() => setSelected(isSelected ? null : c.id)}
+                className={`w-full text-left p-3 rounded-xl border transition-all ${isSelected ? "border-indigo-500/40" : "border-white/[0.05] hover:border-white/10"}`}
+                style={isSelected ? { background: "rgba(99,102,241,0.1)" } : { background: "rgba(255,255,255,0.02)" }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded-xl text-xs font-bold"
+                    style={{ background: "#6366f118", color: "#818cf8", border: "1px solid #6366f128" }}>
+                    {c.name.slice(0,2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white/85 truncate">{c.name}</p>
+                    <p className="text-[10px] text-white/35 truncate">{c.email || c.phone || "Sans contact"}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[10px] font-bold text-white/50">{total} livr.</p>
+                    {last && <p className="text-[9px] text-white/25">{new Date(last.delivery_date).toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</p>}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Right — detail panel */}
+      <div className="flex-1 overflow-y-auto p-5">
+        {!selectedClient ? (
+          <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+            <div className="h-14 w-14 flex items-center justify-center rounded-2xl" style={{ background: "#6366f112", border: "1px solid #6366f122" }}>
+              <Users size={24} style={{ color: "#818cf8" }}/>
+            </div>
+            <div>
+              <p className="text-white/50 text-sm font-medium">Sélectionnez un client</p>
+              <p className="text-white/25 text-xs mt-1">pour voir son historique de livraisons</p>
+            </div>
+            {clients.length === 0 && (
+              <button onClick={onNewClient}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold mt-2"
+                style={{ background: "#6366f120", color: "#818cf8", border: "1px solid #6366f130" }}>
+                <Plus size={13}/> Ajouter votre premier client
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {/* Client header */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 flex items-center justify-center rounded-2xl text-base font-bold"
+                  style={{ background: "#6366f118", color: "#818cf8", border: "1px solid #6366f128" }}>
+                  {selectedClient.name.slice(0,2).toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">{selectedClient.name}</h2>
+                  <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                    {selectedClient.email && <span className="flex items-center gap-1 text-xs text-white/40"><Mail size={10}/>{selectedClient.email}</span>}
+                    {selectedClient.phone && <span className="flex items-center gap-1 text-xs text-white/40"><Phone size={10}/>{selectedClient.phone}</span>}
+                    {selectedClient.address && <span className="flex items-center gap-1 text-xs text-white/40"><MapPin size={10}/>{selectedClient.address}</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => onNewDelivery(selectedClient)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                  style={{ background: `${green}18`, color: green, border: `1px solid ${green}30` }}>
+                  <Truck size={11}/> Livraison
+                </button>
+                <button onClick={() => onEditClient(selectedClient)}
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors">
+                  <Edit2 size={11}/>
+                </button>
+                <button onClick={() => { onDeleteClient(selectedClient.id); setSelected(null); }}
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/30 hover:text-red-400 hover:border-red-500/20 transition-colors">
+                  <Trash2 size={11}/>
+                </button>
+              </div>
+            </div>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Livraisons", value: selectedDeliveries.length, icon: Truck, color: green },
+                { label: "Produits différents", value: new Set(selectedDeliveries.map(d => d.product_id)).size, icon: Package, color: gold },
+                { label: "Dernière livraison", value: selectedDeliveries[0] ? new Date(selectedDeliveries[0].delivery_date).toLocaleDateString("fr-FR",{day:"numeric",month:"short"}) : "—", icon: CalendarDays, color: "#818cf8" },
+              ].map(kpi => {
+                const KpiIcon = kpi.icon;
+                return (
+                  <div key={kpi.label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+                    <KpiIcon size={13} style={{ color: kpi.color }} className="mb-2"/>
+                    <p className="text-sm font-bold text-white/85">{kpi.value}</p>
+                    <p className="text-[10px] text-white/30 mt-0.5">{kpi.label}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Deliveries list */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 flex items-center gap-1.5">
+                  <Truck size={11} style={{ color: green }}/> Historique des livraisons
+                </h3>
+                <button onClick={() => onNewDelivery(selectedClient)}
+                  className="flex items-center gap-1 text-xs font-semibold transition-all hover:opacity-75"
+                  style={{ color: green }}>
+                  <Plus size={11}/> Ajouter
+                </button>
+              </div>
+              {selectedDeliveries.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-10 text-center rounded-2xl border border-dashed border-white/[0.08]">
+                  <Truck size={20} className="text-white/20"/>
+                  <p className="text-white/30 text-sm">Aucune livraison enregistrée</p>
+                  <button onClick={() => onNewDelivery(selectedClient)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"
+                    style={{ background: `${green}18`, color: green, border: `1px solid ${green}30` }}>
+                    <Plus size={11}/> Enregistrer une livraison
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {selectedDeliveries.map(d => (
+                    <div key={d.id} className="flex items-center gap-3 bg-white/[0.025] border border-white/[0.05] rounded-xl px-4 py-3">
+                      <div className="h-8 w-8 flex items-center justify-center rounded-xl shrink-0" style={{ background: `${green}18` }}>
+                        <Package size={13} style={{ color: green }}/>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white/80 truncate">{d.product_name}</p>
+                        {d.notes && <p className="text-[10px] text-white/35 truncate">{d.notes}</p>}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-bold" style={{ color: green }}>{d.quantity} {d.unit}</p>
+                        <p className="text-[10px] text-white/30">{new Date(d.delivery_date).toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {selectedClient.notes && (
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <p className="text-[10px] text-white/30 uppercase tracking-wide mb-1">Notes</p>
+                <p className="text-sm text-white/60 leading-relaxed">{selectedClient.notes}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────── MAIN PAGE ───────────────────────────
 
 export default function StocksPage() {
@@ -1051,13 +1430,20 @@ export default function StocksPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"dashboard" | "products" | "movements" | "suppliers" | "report">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "products" | "movements" | "suppliers" | "report" | "clients">("dashboard");
 
   const [products, setProducts] = useState<Product[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [orders, setOrders] = useState<SupplierOrder[]>([]);
+  const [clients, setClients] = useState<LoyalClient[]>([]);
+  const [deliveries, setDeliveries] = useState<ClientDelivery[]>([]);
+
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [editClientForm, setEditClientForm] = useState<Partial<LoyalClient>>(EMPTY_CLIENT());
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [deliveryPresetClient, setDeliveryPresetClient] = useState<LoyalClient | null>(null);
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [editProduct, setEditProduct] = useState<Partial<Product>>(EMPTY_PRODUCT());
@@ -1077,12 +1463,14 @@ export default function StocksPage() {
         if (!user) { router.replace("/login"); return; }
         setUserId(user.id);
 
-        const [prodRes, movRes, supRes, whRes, ordRes] = await Promise.all([
+        const [prodRes, movRes, supRes, whRes, ordRes, cliRes, delRes] = await Promise.all([
           supabase.from("stock_products").select("*").eq("user_id", user.id).order("name"),
           supabase.from("stock_movements").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
           supabase.from("stock_suppliers").select("*").eq("user_id", user.id).order("name"),
           supabase.from("stock_warehouses").select("*").eq("user_id", user.id).order("name"),
           supabase.from("stock_supplier_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
+          supabase.from("stock_loyal_clients").select("*").eq("user_id", user.id).order("name"),
+          supabase.from("stock_client_deliveries").select("*").eq("user_id", user.id).order("delivery_date", { ascending: false }).limit(500),
         ]);
 
         if (!prodRes.error && prodRes.data) setProducts(prodRes.data as Product[]);
@@ -1090,6 +1478,8 @@ export default function StocksPage() {
         if (!supRes.error && supRes.data) setSuppliers(supRes.data as Supplier[]);
         if (!whRes.error && whRes.data) setWarehouses(whRes.data as Warehouse[]);
         if (!ordRes.error && ordRes.data) setOrders(ordRes.data as SupplierOrder[]);
+        if (!cliRes.error && cliRes.data) setClients(cliRes.data as LoyalClient[]);
+        if (!delRes.error && delRes.data) setDeliveries(delRes.data as ClientDelivery[]);
       } catch {
         // Erreur réseau — silencieux
       } finally {
@@ -1179,6 +1569,41 @@ export default function StocksPage() {
     toast("Supprimé", "info");
   }, [confirmDeleteId, deleteType, toast]);
 
+  const handleSaveClient = useCallback(async (form: Partial<LoyalClient>) => {
+    if (!userId) return;
+    if (form.id) {
+      const { data, error } = await supabase.from("stock_loyal_clients").update(form).eq("id", form.id).select().single();
+      if (error) { toast(error.message, "error"); return; }
+      setClients(p => p.map(c => c.id === form.id ? data as LoyalClient : c));
+      toast("Client mis à jour", "success");
+    } else {
+      const { data, error } = await supabase.from("stock_loyal_clients").insert({ ...form, user_id: userId }).select().single();
+      if (error) { toast(error.message, "error"); return; }
+      setClients(p => [data as LoyalClient, ...p]);
+      toast("Client ajouté", "success");
+    }
+    setShowClientModal(false);
+    setEditClientForm(EMPTY_CLIENT());
+  }, [userId, toast]);
+
+  const handleDeleteClient = useCallback(async (id: string) => {
+    const { error } = await supabase.from("stock_loyal_clients").delete().eq("id", id);
+    if (error) { toast(error.message, "error"); return; }
+    setClients(p => p.filter(c => c.id !== id));
+    toast("Client supprimé", "info");
+  }, [toast]);
+
+  const handleSaveDelivery = useCallback(async (form: Partial<ClientDelivery>) => {
+    if (!userId || !form.client_id || !form.product_id) return;
+    const { data, error } = await supabase.from("stock_client_deliveries")
+      .insert({ ...form, user_id: userId }).select().single();
+    if (error) { toast(error.message, "error"); return; }
+    setDeliveries(p => [data as ClientDelivery, ...p]);
+    toast("Livraison enregistrée", "success");
+    setShowDeliveryModal(false);
+    setDeliveryPresetClient(null);
+  }, [userId, toast]);
+
   const exportCSV = useCallback(() => {
     const rows = [
       ["Nom","SKU","Catégorie","Stock actuel","Stock min","Prix achat","Prix vente","Fournisseur","Entrepôt"].join(";"),
@@ -1195,6 +1620,7 @@ export default function StocksPage() {
     { key: "products",   label: "Produits",      icon: Package },
     { key: "movements",  label: "Mouvements",    icon: Activity },
     { key: "suppliers",  label: "Fournisseurs",  icon: Truck },
+    { key: "clients",    label: "Clients",       icon: Users },
     { key: "report",     label: "Rapport",       icon: TrendingUp },
   ] as const;
 
@@ -1290,6 +1716,11 @@ export default function StocksPage() {
           {tab === "products" && <ProductsView products={products} onNew={() => { setEditProduct(EMPTY_PRODUCT()); setShowProductModal(true); }} onEdit={(p) => { setEditProduct(p); setShowProductModal(true); }} onDelete={(id) => { setDeleteType("product"); setConfirmDeleteId(id); }} onAddMovement={(p) => { setMovProductPreset(p); setShowMovModal(true); }}/>}
           {tab === "movements" && <MovementsView movements={movements} products={products} warehouses={warehouses} onNew={() => setShowMovModal(true)}/>}
           {tab === "suppliers" && <SuppliersView suppliers={suppliers} products={products} orders={orders} onNew={() => { setEditSupplier(EMPTY_SUPPLIER()); setShowSupplierModal(true); }} onEdit={(s) => { setEditSupplier(s); setShowSupplierModal(true); }} onDelete={(id) => { setDeleteType("supplier"); setConfirmDeleteId(id); }}/>}
+          {tab === "clients" && <ClientsView clients={clients} deliveries={deliveries} products={products}
+            onNewClient={() => { setEditClientForm(EMPTY_CLIENT()); setShowClientModal(true); }}
+            onEditClient={(c) => { setEditClientForm(c); setShowClientModal(true); }}
+            onDeleteClient={handleDeleteClient}
+            onNewDelivery={(c) => { setDeliveryPresetClient(c ?? null); setShowDeliveryModal(true); }}/>}
           {tab === "report" && <ReportView products={products} movements={movements}/>}
         </div>
       )}
@@ -1309,6 +1740,17 @@ export default function StocksPage() {
         {showSupplierModal && (
           <SupplierModal supplier={editSupplier} onSave={handleSaveSupplier}
             onClose={() => { setShowSupplierModal(false); setEditSupplier(EMPTY_SUPPLIER()); }}/>
+        )}
+        {showClientModal && (
+          <ClientModal client={editClientForm} onSave={handleSaveClient}
+            onClose={() => { setShowClientModal(false); setEditClientForm(EMPTY_CLIENT()); }}/>
+        )}
+        {showDeliveryModal && (
+          <DeliveryModal
+            delivery={deliveryPresetClient ? { ...EMPTY_DELIVERY(), client_id: deliveryPresetClient.id, client_name: deliveryPresetClient.name } : EMPTY_DELIVERY()}
+            clients={clients} products={products}
+            onSave={handleSaveDelivery}
+            onClose={() => { setShowDeliveryModal(false); setDeliveryPresetClient(null); }}/>
         )}
       </AnimatePresence>
 
