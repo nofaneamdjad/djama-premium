@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ReceiptText, Users, FileText, Search,
   TrendingUp,
-  AlertTriangle, BarChart2,
+  AlertTriangle,
   FileBarChart2, X, ShieldCheck, Lightbulb,
   CheckCircle2, CircleDot, Send, Lock,
 } from "lucide-react";
@@ -76,6 +76,27 @@ type Rapport = {
 
 const SHORT_MONTHS = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 
+/* ── Sparkline SVG ── */
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  if (data.length < 2) return null;
+  const allZero = data.every(v => v === 0);
+  if (allZero) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = (max - min) || 1;
+  const W = 56, H = 22;
+  const pts = data.map((v, i) => {
+    const x = ((i / (data.length - 1)) * W).toFixed(1);
+    const y = (H - ((v - min) / range) * (H - 4) - 2).toFixed(1);
+    return `${x},${y}`;
+  }).join(" ");
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none" className="shrink-0">
+      <polyline points={pts} stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.75"/>
+    </svg>
+  );
+}
+
 
 /* ─────────────────────────────────────────────────
    PAGE
@@ -87,6 +108,7 @@ export default function DashboardPage() {
   const [stats,         setStats]         = useState<Stats | null>(null);
   const [statsLoading,  setStatsLoading]  = useState(true);
   const [revenues,      setRevenues]      = useState<MonthRevenue[]>([]);
+  const [monthlyExp,    setMonthlyExp]    = useState<MonthRevenue[]>([]);
   const [topClients,    setTopClients]    = useState<TopClient[]>([]);
   const [overdue,       setOverdue]       = useState<OverdueInvoice[]>([]);
   const [chartsLoading, setChartsLoading] = useState(true);
@@ -144,21 +166,30 @@ export default function DashboardPage() {
 
       const today = new Date();
       const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1).toISOString().slice(0, 10);
-      const { data: revRaw } = await supabase
-        .from("documents").select("total_ttc, date_document")
-        .eq("user_id", user.id).eq("type","facture").eq("statut","payé")
-        .gte("date_document", sixMonthsAgo);
+      const [{ data: revRaw }, { data: expRaw6 }] = await Promise.all([
+        supabase.from("documents").select("total_ttc, date_document")
+          .eq("user_id", user.id).eq("type","facture").eq("statut","payé")
+          .gte("date_document", sixMonthsAgo),
+        supabase.from("expenses").select("amount, date")
+          .eq("user_id", user.id).gte("date", sixMonthsAgo),
+      ]);
 
       const monthData: MonthRevenue[] = [];
+      const expMonthData: MonthRevenue[] = [];
       for (let i = 5; i >= 0; i--) {
         const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
         const yr = d.getFullYear(); const mo = d.getMonth();
-        const amount = (revRaw ?? [])
+        const rev = (revRaw ?? [])
           .filter(r => { const rd = new Date((r.date_document as string) + "T12:00:00"); return rd.getFullYear()===yr && rd.getMonth()===mo; })
           .reduce((s,r) => s+((r.total_ttc as number) ?? 0), 0);
-        monthData.push({ label: SHORT_MONTHS[mo], amount });
+        const exp = (expRaw6 ?? [])
+          .filter(e => { const ed = new Date((e.date as string) + "T12:00:00"); return ed.getFullYear()===yr && ed.getMonth()===mo; })
+          .reduce((s,e) => s+((e.amount as number) ?? 0), 0);
+        monthData.push({ label: SHORT_MONTHS[mo], amount: rev });
+        expMonthData.push({ label: SHORT_MONTHS[mo], amount: exp });
       }
       setRevenues(monthData);
+      setMonthlyExp(expMonthData);
 
       const { data: recentDocs } = await supabase
         .from("documents").select("id,numero,client_nom,total_ttc,statut,created_at")
@@ -277,122 +308,68 @@ export default function DashboardPage() {
             </motion.button>
           </motion.div>
 
-          {/* ── KPI card ── */}
+          {/* ── 4 metric cards (style tableau de bord bancaire) ── */}
           <motion.div
             initial={{ opacity:0, y:18 }} animate={{ opacity:1, y:0 }}
             transition={{ duration:0.45, delay:0.07, ease }}
-            className="rounded-3xl p-5 mb-4"
-            style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", backdropFilter:"blur(16px)" }}
+            className="grid grid-cols-2 gap-3 mb-4"
           >
-            {/* Label */}
-            <div className="flex items-center gap-2 mb-1">
-              <BarChart2 size={12} style={{ color: GOLD }} />
-              <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/30">
-                CA facturé · {new Date().toLocaleDateString("fr-FR", { month:"long", year:"numeric" })}
-              </span>
-            </div>
-
-            {/* Big number */}
-            <div className="mb-4">
-              {statsLoading ? (
-                <div className="h-[52px] w-44 rounded-xl animate-pulse mt-2" style={{ background:"rgba(255,255,255,0.07)" }}/>
-              ) : (
-                <motion.p
-                  initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
-                  transition={{ duration:0.32, delay:0.2, ease }}
-                  className="text-[3.4rem] font-black leading-none tracking-tight text-white mt-1"
-                >
-                  {fmtEurInt(ca)}
-                </motion.p>
-              )}
-            </div>
-
-            {/* Progress bar dépenses */}
-            {!statsLoading && (ca > 0 || dep > 0) && (
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-[9px] text-white/25 font-medium">
-                    Dépenses {fmtEurInt(dep)}
-                  </span>
-                  <span className="text-[9px] font-semibold" style={{
-                    color: ca > 0 && dep/ca > 0.7 ? "#f87171" : "rgba(255,255,255,0.3)"
-                  }}>
-                    {ca > 0 ? Math.round((dep/ca)*100) : 0}% du CA
-                  </span>
+            {([
+              {
+                label: "Entrées",
+                sub: new Date().toLocaleDateString("fr-FR",{month:"short",year:"numeric"}),
+                value: statsLoading ? null : fmtEurInt(ca),
+                valueColor: "white",
+                sparkData: revenues.map(r => r.amount),
+                sparkColor: "#4ade80",
+              },
+              {
+                label: "Sorties",
+                sub: "Dépenses · ce mois",
+                value: statsLoading ? null : fmtEurInt(dep),
+                valueColor: dep > 0 ? "#f87171" : "white",
+                sparkData: monthlyExp.map(e => e.amount),
+                sparkColor: "#f87171",
+              },
+              {
+                label: "Résultat net",
+                sub: "Entrées − Sorties",
+                value: statsLoading ? null : ((netMois >= 0 ? "+" : "") + fmtEurInt(netMois)),
+                valueColor: netMois >= 0 ? "#4ade80" : "#f87171",
+                sparkData: revenues.map((r,i) => r.amount - (monthlyExp[i]?.amount ?? 0)),
+                sparkColor: netMois >= 0 ? "#4ade80" : "#f87171",
+              },
+              {
+                label: "Heures · sem.",
+                sub: "Time tracking",
+                value: statsLoading ? null : (stats?.heuresSemaine ? fmtDuration(stats.heuresSemaine) : "0h"),
+                valueColor: "#60a5fa",
+                sparkData: [] as number[],
+                sparkColor: "#60a5fa",
+              },
+            ] as const).map((card, i) => (
+              <motion.div
+                key={card.label}
+                initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+                transition={{ duration:0.3, delay:0.12+i*0.07, ease }}
+                className="rounded-2xl p-4"
+                style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", backdropFilter:"blur(12px)" }}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-white/30">{card.label}</p>
+                  <Sparkline data={card.sparkData as number[]} color={card.sparkColor} />
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background:"rgba(255,255,255,0.07)" }}>
-                  <motion.div
-                    initial={{ width:0 }}
-                    animate={{ width:`${ca > 0 ? Math.min((dep/ca)*100,100) : 0}%` }}
-                    transition={{ duration:0.9, delay:0.35, ease:[0.22,1,0.36,1] }}
-                    className="h-full rounded-full"
-                    style={{
-                      background: ca > 0 && dep/ca > 0.7
-                        ? "linear-gradient(90deg,#f87171,#ef4444)"
-                        : ca > 0 && dep/ca > 0.4
-                          ? "linear-gradient(90deg,#fbbf24,#f59e0b)"
-                          : "linear-gradient(90deg,#4ade80,#22c55e)",
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Mini stats */}
-            {ca === 0 && !statsLoading ? (
-              <Link href="/client/factures">
-                <div className="flex items-center gap-3 rounded-xl px-3.5 py-3 transition hover:opacity-90"
-                  style={{ background:"rgba(201,165,90,0.07)", border:"1px solid rgba(201,165,90,0.15)" }}>
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-                    style={{ background:"rgba(201,165,90,0.15)" }}>
-                    <ReceiptText size={14} style={{ color:GOLD }}/>
-                  </div>
-                  <div>
-                    <p className="text-[12px] font-bold text-white/80">Créez votre première facture</p>
-                    <p className="text-[10px] text-white/30">Commencez à suivre votre activité</p>
-                  </div>
-                </div>
-              </Link>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label:"Heures sem.", val: statsLoading ? "—" : (stats?.heuresSemaine ? fmtDuration(stats.heuresSemaine) : "0h"), color:"#60a5fa" },
-                  { label:"Dépenses",    val: statsLoading ? "—" : fmtEurInt(dep), color: dep > 0 ? "#f87171" : "#4ade80" },
-                  { label:"Contacts",    val: statsLoading ? "—" : String(stats?.contactsActifs ?? 0), color:"#a78bfa" },
-                ].map(s => (
-                  <div key={s.label}
-                    className="flex flex-col items-center justify-center rounded-xl py-2.5"
-                    style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.06)" }}
-                  >
-                    <span className="text-[15px] font-black tabular-nums" style={{ color:s.color }}>{s.val}</span>
-                    <span className="mt-0.5 text-[8.5px] text-white/25 text-center">{s.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+                {card.value === null ? (
+                  <div className="h-7 w-20 rounded-lg animate-pulse" style={{ background:"rgba(255,255,255,0.08)" }}/>
+                ) : (
+                  <p className="text-[1.35rem] font-black leading-tight tabular-nums" style={{ color: card.valueColor }}>
+                    {card.value}
+                  </p>
+                )}
+                <p className="text-[9px] text-white/20 mt-1">{card.sub}</p>
+              </motion.div>
+            ))}
           </motion.div>
-
-          {/* ── Net badge ── */}
-          {!statsLoading && ca > 0 && (
-            <motion.div
-              initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
-              transition={{ duration:0.3, delay:0.25, ease }}
-              className="flex items-center gap-2 mb-4"
-            >
-              <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5"
-                style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.07)" }}>
-                <span className="text-[9px] uppercase tracking-wide text-white/30 font-semibold">Net</span>
-                <span className="text-[13px] font-black" style={{ color: netMois >= 0 ? "#4ade80" : "#f87171" }}>
-                  {netMois >= 0 ? "+" : ""}{fmtEurInt(netMois)}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5"
-                style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.07)" }}>
-                <span className="text-[9px] uppercase tracking-wide text-white/30 font-semibold">Dép.</span>
-                <span className="text-[13px] font-black text-red-400">{fmtEurInt(dep)}</span>
-              </div>
-            </motion.div>
-          )}
 
           {/* ── Quick actions ── */}
           <motion.div
@@ -588,58 +565,73 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ── Revenus + Top clients ── */}
+        {/* ── Flux de trésorerie ── */}
         <motion.div
           initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
           transition={{ duration:0.38, delay:0.15, ease }}
-          className="grid gap-3 mb-4 lg:grid-cols-[1fr_260px]"
+          className="mb-4"
         >
-          {/* Revenue chart */}
           <div className="rounded-2xl bg-white p-5"
             style={{ border:"1px solid rgba(0,0,0,0.05)", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-[13px] font-bold text-gray-800">Revenus encaissés</p>
+                <p className="text-[13px] font-bold text-gray-800">Flux de trésorerie</p>
                 <p className="text-[11px] text-gray-400">6 derniers mois</p>
               </div>
-              {!chartsLoading && revenues.length > 0 && (
-                <p className="text-[13px] font-black" style={{ color:GOLD }}>
-                  {fmtEurInt(revenues.reduce((s,r)=>s+r.amount,0))}
-                </p>
-              )}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-2 rounded-full bg-emerald-400"/>
+                  <span className="text-[10px] text-gray-400">Entrées</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-2 rounded-full bg-red-400"/>
+                  <span className="text-[10px] text-gray-400">Sorties</span>
+                </div>
+              </div>
             </div>
             {chartsLoading ? (
-              <div className="flex items-end gap-2 h-28">
+              <div className="flex items-end gap-2 h-32">
                 {[1,2,3,4,5,6].map(i=>(
-                  <div key={i} className="flex-1 animate-pulse rounded-xl" style={{ height:`${32+i*11}%`, background:"rgba(0,0,0,0.05)" }}/>
+                  <div key={i} className="flex flex-1 items-end gap-0.5">
+                    <div className="flex-1 animate-pulse rounded-t-md" style={{ height:`${28+i*9}%`, background:"rgba(74,222,128,0.18)" }}/>
+                    <div className="flex-1 animate-pulse rounded-t-md" style={{ height:`${18+i*7}%`, background:"rgba(248,113,113,0.18)" }}/>
+                  </div>
                 ))}
               </div>
             ) : (
               <div className="flex items-end gap-2 h-32">
                 {(()=>{
-                  const max = Math.max(...revenues.map(r=>r.amount),1);
+                  const max = Math.max(
+                    ...revenues.map(r=>r.amount),
+                    ...monthlyExp.map(e=>e.amount),
+                    1
+                  );
                   return revenues.map((r,i)=>{
-                    const pct  = Math.max((r.amount/max)*100, r.amount>0?8:3);
+                    const expAmt = monthlyExp[i]?.amount ?? 0;
+                    const revPct = Math.max((r.amount/max)*100, r.amount>0?5:0);
+                    const expPct = Math.max((expAmt/max)*100, expAmt>0?5:0);
                     const isLast = i===revenues.length-1;
                     return (
-                      <div key={r.label} className="group flex flex-1 flex-col items-center gap-1.5">
-                        <div className="relative flex w-full items-end" style={{ height:"96px" }}>
+                      <div key={r.label} className="group flex flex-1 flex-col items-center gap-1">
+                        <div className="flex w-full items-end gap-0.5" style={{ height:"96px" }}>
+                          {/* Barre Entrées (verte) */}
                           <motion.div
-                            initial={{ height:0 }} animate={{ height:`${pct}%` }}
+                            initial={{ height:0 }} animate={{ height:`${revPct}%` }}
                             transition={{ duration:0.7, delay:0.3+i*0.07, ease }}
-                            className="w-full rounded-xl"
-                            style={{
-                              background: isLast ? `linear-gradient(180deg,${GOLD},${GOLD}88)` : "rgba(0,0,0,0.07)",
-                              boxShadow: isLast ? `0 6px 24px ${GOLD}30` : "none",
-                            }}
+                            className="flex-1 rounded-t-md"
+                            style={{ background: isLast ? "linear-gradient(180deg,#4ade80,#16a34a)" : "rgba(74,222,128,0.35)" }}
                           />
-                          {r.amount>0 && (
-                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-gray-100 bg-white px-2 py-1 text-[0.6rem] font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-sm">
-                              {fmtEurInt(r.amount)}
-                            </div>
-                          )}
+                          {/* Barre Sorties (rouge) */}
+                          <motion.div
+                            initial={{ height:0 }} animate={{ height:`${expPct}%` }}
+                            transition={{ duration:0.7, delay:0.33+i*0.07, ease }}
+                            className="flex-1 rounded-t-md"
+                            style={{ background: isLast ? "linear-gradient(180deg,#f87171,#dc2626)" : "rgba(248,113,113,0.35)" }}
+                          />
                         </div>
-                        <span className="text-[0.58rem] font-medium" style={{ color: isLast ? GOLD : "rgba(0,0,0,0.3)" }}>{r.label}</span>
+                        <span className="text-[0.58rem] font-medium" style={{ color: isLast ? GOLD : "rgba(0,0,0,0.3)" }}>
+                          {r.label}
+                        </span>
                       </div>
                     );
                   });
@@ -647,13 +639,26 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
+        </motion.div>
 
-          {/* Top clients */}
+        {/* ── Meilleurs clients ── */}
+        <motion.div
+          initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
+          transition={{ duration:0.38, delay:0.18, ease }}
+          className="mb-4"
+        >
           <div className="rounded-2xl bg-white p-5"
             style={{ border:"1px solid rgba(0,0,0,0.05)", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
-            <div className="mb-4">
-              <p className="text-[13px] font-bold text-gray-800">Meilleurs clients</p>
-              <p className="text-[11px] text-gray-400">3 mois glissants</p>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-bold text-gray-800">Meilleurs clients</p>
+                <p className="text-[11px] text-gray-400">3 mois glissants</p>
+              </div>
+              {!chartsLoading && topClients.length > 0 && (
+                <p className="text-[12px] font-black" style={{ color:GOLD }}>
+                  {fmtEurInt(topClients.reduce((s,c)=>s+c.amount,0))}
+                </p>
+              )}
             </div>
             {chartsLoading ? (
               <div className="space-y-3">{[1,2,3].map(i=><div key={i} className="h-8 animate-pulse rounded-xl" style={{ background:"rgba(0,0,0,0.05)" }}/>)}</div>
@@ -669,8 +674,11 @@ export default function DashboardPage() {
                   return (
                     <div key={c.name} className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[0.72rem] font-medium text-gray-500 truncate max-w-[120px]">{c.name}</span>
-                        <span className="text-[0.72rem] font-bold" style={{ color:GOLD }}>{fmtEurInt(c.amount)}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full shrink-0" style={{ background: i===0 ? GOLD : `${GOLD}66` }}/>
+                          <span className="text-[0.72rem] font-medium text-gray-600 truncate max-w-[150px]">{c.name}</span>
+                        </div>
+                        <span className="text-[0.72rem] font-bold ml-2" style={{ color:GOLD }}>{fmtEurInt(c.amount)}</span>
                       </div>
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
                         <motion.div
