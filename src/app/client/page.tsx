@@ -429,12 +429,15 @@ const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 };
 
-function AppModuleIcon({ href, locked = false }: { href: string; locked?: boolean }) {
+/* ── AppModuleIcon ── */
+function AppModuleIcon({ href, size = 52, locked = false }: { href: string; size?: number; locked?: boolean }) {
   const icon = APP_ICONS[href];
   if (!icon) return null;
   return (
-    <div className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.18)] transition-opacity duration-200"
-      style={{ opacity: locked ? 0.5 : 1 }}>
+    <div
+      className="shrink-0 overflow-hidden rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-opacity duration-200"
+      style={{ width: size, height: size, opacity: locked ? 0.45 : 1 }}
+    >
       {icon}
     </div>
   );
@@ -442,57 +445,63 @@ function AppModuleIcon({ href, locked = false }: { href: string; locked?: boolea
 
 type AnyModule = { href: string; label: string; icon: React.ElementType; color: string; bg: string; sub?: string };
 
-function ModuleRow({ mod, index, last, isPremium }: {
-  mod: AnyModule; index: number; last: boolean; isPremium: boolean;
-}) {
+/* ── ModuleCard — belle carte 2-col ── */
+function ModuleCard({ mod, index, isPremium }: { mod: AnyModule; index: number; isPremium: boolean }) {
   const tier = getToolTier(mod.href);
   const isLocked = tier === "premium" && !isPremium;
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.24, delay: 0.04 + index * 0.025, ease }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, delay: 0.04 + index * 0.035, ease }}
     >
-      <Link href={mod.href} className="group block">
+      <Link href={isLocked ? "/client/abonnements" : mod.href} className="group block">
         <motion.div
-          whileTap={{ scale: 0.985 }}
-          className={`flex items-center gap-3.5 px-4 py-3 transition-colors
-            ${isLocked ? "hover:bg-amber-50/70 active:bg-amber-50" : "hover:bg-gray-50 active:bg-gray-100"}
-            ${!last ? "border-b border-gray-100" : ""}`}
+          whileTap={{ scale: 0.96 }}
+          className="relative flex flex-col gap-2.5 rounded-2xl bg-white p-3.5 transition-all"
+          style={{
+            border: isLocked ? "1px solid rgba(201,165,90,0.2)" : "1px solid rgba(0,0,0,0.05)",
+            boxShadow: isLocked
+              ? "0 2px 12px rgba(201,165,90,0.07)"
+              : "0 2px 10px rgba(0,0,0,0.05)",
+          }}
         >
-          <div className="relative shrink-0">
-            <AppModuleIcon href={mod.href} locked={isLocked} />
+          {/* Icon + lock badge */}
+          <div className="relative self-start">
+            <AppModuleIcon href={mod.href} size={48} locked={isLocked} />
             {isLocked && (
-              <div className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full shadow-md"
+              <div className="absolute -bottom-0.5 -right-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full shadow"
                 style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", border: "1.5px solid #fff" }}>
                 <Lock size={8} color="white" strokeWidth={2.5} />
               </div>
             )}
           </div>
+
+          {/* Text */}
           <div className="flex-1 min-w-0">
-            <p className={`text-[13.5px] font-semibold leading-tight ${isLocked ? "text-gray-500" : "text-gray-800"}`}>
+            <p className={`text-[12.5px] font-bold leading-tight ${isLocked ? "text-gray-400" : "text-gray-800"}`}>
               {mod.label}
             </p>
             {mod.sub && (
-              <p className={`text-[11px] mt-0.5 truncate ${isLocked ? "text-gray-350" : "text-gray-400"}`}>
+              <p className="mt-0.5 text-[10.5px] leading-snug text-gray-400 line-clamp-2">
                 {isLocked ? "Accès PRO requis" : mod.sub}
               </p>
             )}
           </div>
+
+          {/* PRO badge or free badge */}
           {isLocked ? (
-            <div className="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
-              style={{ background: "rgba(201,165,90,0.10)", border: "1px solid rgba(201,165,90,0.30)", color: GOLD }}>
-              <Crown size={7} /> PRO
+            <div className="self-start flex items-center gap-1 rounded-full px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-wide"
+              style={{ background: "rgba(201,165,90,0.10)", border: "1px solid rgba(201,165,90,0.25)", color: GOLD }}>
+              <Crown size={6} /> PRO
             </div>
           ) : tier === "free" ? (
-            <div className="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
-              style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.22)", color: "#16a34a" }}>
+            <div className="self-start flex items-center gap-1 rounded-full px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-wide"
+              style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", color: "#16a34a" }}>
               Gratuit
             </div>
-          ) : (
-            <ChevronRight size={15} className="shrink-0 text-gray-300 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-gray-400" />
-          )}
+          ) : null}
         </motion.div>
       </Link>
     </motion.div>
@@ -558,7 +567,6 @@ export default function CockpitPage() {
         || ""
       ).trim();
 
-      // Cherche le nom dans user_access (défini par l'admin)
       const { data: uaRow } = await supabase
         .from("user_access")
         .select("name")
@@ -566,7 +574,6 @@ export default function CockpitPage() {
         .maybeSingle();
       const accessName = ((uaRow as { name?: string } | null)?.name ?? "").trim();
 
-      // Email → "nofane.soufie" devient "Nofane Soufie"
       const emailSlug = user.email?.split("@")[0] ?? "";
       const emailFormatted = emailSlug
         .replace(/[._-]/g, " ")
@@ -574,7 +581,6 @@ export default function CockpitPage() {
         .map(p => p.charAt(0).toUpperCase() + p.slice(1))
         .join(" ");
 
-      // Priorité : société > user_access > Google > email formaté
       const displayName = metaCompany || accessName || metaFullName || emailFormatted;
 
       setFirstName(displayName);
@@ -686,60 +692,67 @@ export default function CockpitPage() {
      RENDU
   ───────────────────────────────────────────────── */
   return (
-    <div className="min-h-full overflow-x-hidden" style={{ background: "#f2f4f7" }}>
+    <div className="min-h-full overflow-x-hidden" style={{ background: "#eef0f5" }}>
 
       <OnboardingModal name={firstName} />
 
       {/* ══════════════════════════════════════════
-          HEADER SOMBRE
+          HERO SOMBRE
       ══════════════════════════════════════════ */}
       <div
         className="relative overflow-hidden"
-        style={{ background: "linear-gradient(145deg,#0a0f1e 0%,#0f1729 55%,#0c1220 100%)" }}
+        style={{ background: "linear-gradient(155deg,#07090f 0%,#0c1526 50%,#070c18 100%)" }}
       >
-        {/* Shimmer gold top */}
+        {/* Shimmer gold line */}
         <motion.div
           initial={{ scaleX: 0, opacity: 0 }}
           animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 1.1, ease }}
-          className="absolute inset-x-0 top-0 h-[1px] origin-left"
-          style={{ background: "linear-gradient(90deg, transparent 0%, rgba(201,165,90,0.7) 40%, rgba(201,165,90,0.3) 70%, transparent 100%)" }}
-        />
-        {/* Orb ambiance */}
-        <motion.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.06, 0.13, 0.06] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-          className="pointer-events-none absolute -top-20 left-1/2 h-[300px] w-[500px] -translate-x-1/2 rounded-full blur-[90px]"
-          style={{ background: "rgba(201,165,90,0.2)" }}
-        />
-        <motion.div
-          animate={{ y: [0, 16, 0], opacity: [0.03, 0.09, 0.03] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="pointer-events-none absolute bottom-0 right-0 h-[200px] w-[300px] rounded-full blur-[80px]"
-          style={{ background: "rgba(96,165,250,0.08)" }}
+          transition={{ duration: 1.2, ease }}
+          className="absolute inset-x-0 top-0 h-[1.5px] origin-left"
+          style={{ background: "linear-gradient(90deg, transparent 0%, rgba(201,165,90,0.8) 35%, rgba(201,165,90,0.4) 65%, transparent 100%)" }}
         />
 
-        <div className="relative mx-auto max-w-4xl px-5 pt-4 pb-6">
+        {/* Orb ambiance */}
+        <motion.div
+          animate={{ scale: [1, 1.18, 1], opacity: [0.07, 0.15, 0.07] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="pointer-events-none absolute -top-24 left-1/2 h-[360px] w-[560px] -translate-x-1/2 rounded-full blur-[100px]"
+          style={{ background: "rgba(201,165,90,0.22)" }}
+        />
+        <motion.div
+          animate={{ y: [0, 20, 0], opacity: [0.04, 0.1, 0.04] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+          className="pointer-events-none absolute bottom-10 right-0 h-[220px] w-[320px] rounded-full blur-[80px]"
+          style={{ background: "rgba(99,102,241,0.1)" }}
+        />
+
+        <div className="relative mx-auto max-w-4xl px-4 pt-5 pb-8">
 
           {/* ── Top bar ── */}
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease }}
-            className="flex items-center justify-between mb-5"
+            transition={{ duration: 0.38, ease }}
+            className="flex items-start justify-between mb-6"
           >
             <div>
-              <p className="text-[0.62rem] font-medium capitalize tracking-widest text-white/30">{getDay()}</p>
-              <p className="mt-0.5 text-[13px] font-semibold text-white/70">
-                {getGreeting()}{firstName && <span className="text-white">, {firstName}</span>}
+              <p className="text-[9.5px] font-semibold uppercase tracking-[0.2em] text-white/25 capitalize">
+                {getDay()}
+              </p>
+              <p className="mt-1 text-[22px] font-black text-white leading-tight tracking-tight">
+                {getGreeting()}
+                {firstName && (
+                  <span style={{ color: GOLD }}>{`, ${firstName.split(" ")[0]}`}</span>
+                )}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Notifications */}
+            <div className="flex items-center gap-2 mt-1">
+              {/* Bell */}
               <Link href={overdueCount > 0 ? "/client/factures?statut=retard" : "/client/factures"}>
-                <motion.div whileTap={{ scale: 0.88 }} className="relative flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
-                  <Bell size={13} className="text-white/50" />
+                <motion.div whileTap={{ scale: 0.88 }}
+                  className="relative flex h-9 w-9 items-center justify-center rounded-full"
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <Bell size={14} className="text-white/50" />
                   {(nbFactures + overdueCount) > 0 && <NotifBadge count={nbFactures + overdueCount} />}
                 </motion.div>
               </Link>
@@ -747,26 +760,27 @@ export default function CockpitPage() {
               <div className="relative" ref={menuRef}>
                 <motion.button whileTap={{ scale: 0.9 }}
                   onClick={() => setMenuOpen(o => !o)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-black text-black shadow-[0_0_16px_rgba(201,165,90,0.4)]"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-black text-black shadow-[0_0_18px_rgba(201,165,90,0.45)]"
                   style={{ background: "linear-gradient(135deg,#d4aa5f,#b08d45)" }}
                 >{initial}</motion.button>
+
                 <AnimatePresence>
                   {menuOpen && (
                     <motion.div
-                      initial={{ opacity:0, scale:0.92, y:-6 }}
-                      animate={{ opacity:1, scale:1, y:0 }}
-                      exit={{ opacity:0, scale:0.92, y:-6 }}
-                      transition={{ duration:0.16, ease }}
-                      className="absolute right-0 top-10 z-50 w-52 overflow-hidden rounded-2xl bg-white shadow-[0_12px_40px_rgba(0,0,0,0.22)]"
-                      style={{ border:"1px solid rgba(0,0,0,0.07)" }}
+                      initial={{ opacity: 0, scale: 0.92, y: -6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.92, y: -6 }}
+                      transition={{ duration: 0.16, ease }}
+                      className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-2xl bg-white shadow-[0_16px_48px_rgba(0,0,0,0.24)]"
+                      style={{ border: "1px solid rgba(0,0,0,0.07)" }}
                     >
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-[12px] font-bold text-gray-900">{firstName}</p>
-                        <div className="mt-1 flex items-center gap-1.5">
+                        <p className="text-[12px] font-bold text-gray-900 truncate">{firstName}</p>
+                        <div className="mt-1">
                           {isPremium ? (
-                            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold"
+                            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold w-fit"
                               style={{ background: "rgba(201,165,90,0.12)", color: GOLD }}>
-                              <Crown size={7}/> DJAMA PRO
+                              <Crown size={7} /> DJAMA PRO
                             </span>
                           ) : (
                             <span className="text-[10.5px] text-gray-400">Plan Gratuit</span>
@@ -774,8 +788,8 @@ export default function CockpitPage() {
                         </div>
                       </div>
                       {[
-                        { icon:LayoutGrid, label:"Dashboard",   href:"/client" },
-                        { icon:Crown,      label:"Abonnement",  href:"/client/abonnements" },
+                        { icon: LayoutGrid, label: "Dashboard",  href: "/client" },
+                        { icon: Crown,      label: "Abonnement", href: "/client/abonnements" },
                       ].map(item => {
                         const Icon = item.icon;
                         return (
@@ -801,147 +815,181 @@ export default function CockpitPage() {
             </div>
           </motion.div>
 
-          {/* ── KPI Card enrichi ── */}
+          {/* ── KPI Hero card ── */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.42, delay: 0.08, ease }}
-            className="mb-4 rounded-2xl p-4"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}
+            transition={{ duration: 0.45, delay: 0.07, ease }}
+            className="rounded-3xl p-5 mb-4"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              backdropFilter: "blur(16px)",
+            }}
           >
-            {/* ── Ligne 1 : label + badges ── */}
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30">
-                CA · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-              </p>
-              <div className="flex items-center gap-1.5">
-                {!kpiLoading && (
-                  caEvo !== null ? (
-                    <div className="flex items-center gap-1 rounded-xl px-2 py-1"
-                      style={{
-                        background: caEvo >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)",
-                        border: `1px solid ${caEvo >= 0 ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}`,
-                      }}>
-                      {caEvo >= 0 ? <TrendingUp size={11} color="#4ade80"/> : <TrendingDown size={11} color="#f87171"/>}
-                      <span className="text-[11px] font-black" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
-                        {caEvo >= 0 ? "+" : ""}{caEvo}%
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1 rounded-xl px-2 py-1"
-                      style={{ background: "rgba(201,165,90,0.10)", border: "1px solid rgba(201,165,90,0.18)" }}>
-                      <span className="text-[10px] font-bold" style={{ color: GOLD }}>Premier mois</span>
-                    </div>
-                  )
-                )}
-                {!kpiLoading && (
-                  <div className="flex items-center gap-1 rounded-lg px-2 py-1"
-                    style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <span className="text-[9px] text-white/30 uppercase tracking-wide">Net</span>
-                    <span className="text-[11px] font-black ml-0.5" style={{ color: netMonth >= 0 ? "#4ade80" : "#f87171" }}>
-                      {netMonth >= 0 ? "+" : ""}{fmtEurInt(netMonth)}
-                    </span>
-                  </div>
-                )}
+            {/* Header */}
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <BarChart2 size={12} style={{ color: GOLD }} />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/30">
+                  CA · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+                </span>
               </div>
+              {!kpiLoading && caEvo !== null && (
+                <div className="flex items-center gap-1 rounded-xl px-2.5 py-1"
+                  style={{
+                    background: caEvo >= 0 ? "rgba(74,222,128,0.1)" : "rgba(248,113,113,0.1)",
+                    border: `1px solid ${caEvo >= 0 ? "rgba(74,222,128,0.18)" : "rgba(248,113,113,0.18)"}`,
+                  }}>
+                  {caEvo >= 0
+                    ? <TrendingUp size={10} color="#4ade80" />
+                    : <TrendingDown size={10} color="#f87171" />}
+                  <span className="text-[11px] font-black ml-0.5" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
+                    {caEvo >= 0 ? "+" : ""}{caEvo}%
+                  </span>
+                </div>
+              )}
+              {!kpiLoading && caEvo === null && (
+                <div className="flex items-center gap-1 rounded-xl px-2.5 py-1"
+                  style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.16)" }}>
+                  <Sparkles size={9} style={{ color: GOLD }} />
+                  <span className="text-[10px] font-bold" style={{ color: GOLD }}>Premier mois</span>
+                </div>
+              )}
             </div>
 
-            {/* ── Ligne 2 : grand nombre CA ── */}
-            <div className="mb-3">
+            {/* Grand nombre */}
+            <div className="mb-4">
               {kpiLoading ? (
-                <div className="h-12 w-36 animate-pulse rounded-xl" style={{ background:"rgba(255,255,255,0.08)" }}/>
+                <div className="h-[52px] w-44 rounded-xl animate-pulse mt-2" style={{ background: "rgba(255,255,255,0.07)" }} />
               ) : (
                 <motion.p
-                  initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
-                  transition={{ duration:0.3, delay:0.18, ease }}
-                  className="text-[3.2rem] font-black leading-none tracking-tight text-white"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.32, delay: 0.2, ease }}
+                  className="text-[3.4rem] font-black leading-none tracking-tight text-white mt-1"
                 >
                   {fmtEurInt(caMonth)}
                 </motion.p>
               )}
             </div>
 
-            {/* Barre CA / Dépenses */}
+            {/* Barre dépenses */}
             {!kpiLoading && (caMonth > 0 || depensesMonth > 0) && (
-              <div className="mt-3 mb-3">
-                <div className="flex justify-between text-[9px] text-white/30 mb-1">
-                  <span>Dépenses {fmtEurInt(depensesMonth)}</span>
-                  <span>{caMonth > 0 ? Math.round((depensesMonth / caMonth) * 100) : 0}% du CA</span>
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-[9px] text-white/25 font-medium">
+                    Dépenses {fmtEurInt(depensesMonth)}
+                  </span>
+                  <span className="text-[9px] font-semibold" style={{
+                    color: caMonth > 0 && depensesMonth / caMonth > 0.7 ? "#f87171" : "rgba(255,255,255,0.3)"
+                  }}>
+                    {caMonth > 0 ? Math.round((depensesMonth / caMonth) * 100) : 0}% du CA
+                  </span>
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${caMonth > 0 ? Math.min((depensesMonth / caMonth) * 100, 100) : 0}%` }}
-                    transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
                     className="h-full rounded-full"
-                    style={{ background: depensesMonth / caMonth > 0.7 ? "#f87171" : depensesMonth / caMonth > 0.4 ? "#fbbf24" : "#4ade80" }}
+                    style={{
+                      background: caMonth > 0 && depensesMonth / caMonth > 0.7
+                        ? "linear-gradient(90deg,#f87171,#ef4444)"
+                        : caMonth > 0 && depensesMonth / caMonth > 0.4
+                          ? "linear-gradient(90deg,#fbbf24,#f59e0b)"
+                          : "linear-gradient(90deg,#4ade80,#22c55e)",
+                    }}
                   />
                 </div>
               </div>
             )}
 
-            {/* Mini stats */}
+            {/* Mini stats ou CTA premier mois */}
             {caMonth === 0 && !kpiLoading ? (
               <Link href="/client/factures">
-                <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-white/5"
-                  style={{ background: "rgba(201,165,90,0.06)", border: "1px solid rgba(201,165,90,0.14)" }}>
+                <div className="flex items-center gap-3 rounded-xl px-3.5 py-3 transition hover:opacity-90"
+                  style={{ background: "rgba(201,165,90,0.07)", border: "1px solid rgba(201,165,90,0.15)" }}>
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
                     style={{ background: "rgba(201,165,90,0.15)" }}>
                     <ArrowRight size={14} style={{ color: GOLD }} />
                   </div>
                   <div>
                     <p className="text-[12px] font-bold text-white/80">Créez votre première facture</p>
-                    <p className="text-[10px] text-white/30">Commencez à suivre votre activité →</p>
+                    <p className="text-[10px] text-white/30">Commencez à suivre votre activité</p>
                   </div>
                 </div>
               </Link>
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { label: "Contacts",   val: kpiLoading ? "…" : String(nbContacts), color: "#60a5fa" },
-                  { label: "En attente", val: kpiLoading ? "…" : String(nbFactures), color: nbFactures > 0 ? "#f87171" : "#4ade80" },
-                  { label: "Tâches",     val: kpiLoading ? "…" : String(nbTasks),    color: nbTasks > 0 ? "#fbbf24" : "#4ade80" },
+                  { label: "Contacts",   val: kpiLoading ? "—" : String(nbContacts), color: "#60a5fa", sub: "CRM" },
+                  { label: "En attente", val: kpiLoading ? "—" : String(nbFactures), color: nbFactures > 0 ? "#f87171" : "#4ade80", sub: "Factures" },
+                  { label: "Tâches",     val: kpiLoading ? "—" : String(nbTasks),    color: nbTasks > 0 ? "#fbbf24" : "#4ade80",   sub: "Actives" },
                 ].map(s => (
                   <div key={s.label}
-                    className="flex flex-col items-center justify-center rounded-xl py-2"
+                    className="flex flex-col items-center justify-center rounded-xl py-2.5"
                     style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
                   >
-                    <span className="text-[13px] font-black" style={{ color: s.color }}>{s.val}</span>
-                    <span className="mt-0.5 text-[9px] text-white/25 text-center leading-tight">{s.label}</span>
+                    <span className="text-[15px] font-black tabular-nums" style={{ color: s.color }}>{s.val}</span>
+                    <span className="mt-0.5 text-[8.5px] text-white/25 text-center">{s.label}</span>
                   </div>
                 ))}
               </div>
             )}
           </motion.div>
 
-          {/* ── Quick Actions × 6 — vraies icônes SVG style app ── */}
+          {/* ── Net badge row ── */}
+          {!kpiLoading && caMonth > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.25, ease }}
+              className="flex items-center gap-2 mb-4"
+            >
+              <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <span className="text-[9px] uppercase tracking-wide text-white/30 font-semibold">Net</span>
+                <span className="text-[13px] font-black" style={{ color: netMonth >= 0 ? "#4ade80" : "#f87171" }}>
+                  {netMonth >= 0 ? "+" : ""}{fmtEurInt(netMonth)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <span className="text-[9px] uppercase tracking-wide text-white/30 font-semibold">Dép.</span>
+                <span className="text-[13px] font-black text-red-400">{fmtEurInt(depensesMonth)}</span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Quick Actions ── */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.38, delay: 0.18, ease }}
+            transition={{ duration: 0.4, delay: 0.2, ease }}
             className="grid grid-cols-3 gap-3 sm:grid-cols-6"
           >
             {([
-              { href:"/client/factures?create=facture", iconKey:"/client/factures", label:"Facture",  locked:false },
-              { href:"/client/factures?create=devis",   iconKey:"qa/devis",         label:"Devis",    locked:false },
-              { href:"/client/depenses",                iconKey:"/client/depenses", label:"Dépense",  locked:isFree },
-              { href:"/client/crm",                     iconKey:"qa/contact",       label:"Contact",  locked:isFree },
-              { href:"/client/notes",                   iconKey:"qa/note",          label:"Note",     locked:false },
-              { href:"/client/chrono",                  iconKey:"qa/timer",         label:"Timer",    locked:isFree },
-            ] as { href:string; iconKey:string; label:string; locked:boolean }[]).map((a, i) => (
+              { href: "/client/factures?create=facture", iconKey: "/client/factures", label: "Facture",  locked: false },
+              { href: "/client/factures?create=devis",   iconKey: "qa/devis",         label: "Devis",    locked: false },
+              { href: "/client/depenses",                iconKey: "/client/depenses", label: "Dépense",  locked: isFree },
+              { href: "/client/crm",                     iconKey: "qa/contact",       label: "Contact",  locked: isFree },
+              { href: "/client/notes",                   iconKey: "qa/note",          label: "Note",     locked: false },
+              { href: "/client/chrono",                  iconKey: "qa/timer",         label: "Timer",    locked: isFree },
+            ] as { href: string; iconKey: string; label: string; locked: boolean }[]).map((a, i) => (
               <motion.div key={a.label}
-                initial={{ opacity:0, y:12, scale:0.85 }}
-                animate={{ opacity:1, y:0, scale:1 }}
-                transition={{ type:"spring", stiffness:420, damping:22, delay: 0.22 + i * 0.045 }}
+                initial={{ opacity: 0, y: 14, scale: 0.82 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 22, delay: 0.26 + i * 0.05 }}
               >
                 <Link href={a.href} className="relative flex flex-col items-center gap-1.5 transition active:scale-95">
-                  <div className="relative h-[52px] w-[52px] overflow-hidden rounded-[14px] shadow-[0_5px_16px_rgba(0,0,0,0.28)]"
-                    style={{ opacity: a.locked ? 0.72 : 1 }}>
+                  <div className="relative h-[52px] w-[52px] overflow-hidden rounded-[15px] shadow-[0_6px_18px_rgba(0,0,0,0.32)]"
+                    style={{ opacity: a.locked ? 0.68 : 1 }}>
                     {APP_ICONS[a.iconKey]}
                   </div>
-                  <span className="text-[9.5px] font-semibold text-white/80 tracking-wide leading-none">{a.label}</span>
+                  <span className="text-[10px] font-semibold text-white/70 tracking-wide">{a.label}</span>
                   {a.locked && (
-                    <div className="absolute top-0 right-0 flex h-[16px] w-[16px] items-center justify-center rounded-full shadow-sm"
+                    <div className="absolute -top-0.5 -right-0.5 flex h-[16px] w-[16px] items-center justify-center rounded-full shadow"
                       style={{ background: GOLD, border: "1.5px solid rgba(255,255,255,0.5)" }}>
                       <Lock size={7} color="white" strokeWidth={3} />
                     </div>
@@ -953,250 +1001,206 @@ export default function CockpitPage() {
 
         </div>
 
-        {/* ── Wave transition sombre → clair ── */}
-        <svg viewBox="0 0 1440 48" fill="none" preserveAspectRatio="none"
-          className="w-full block" style={{ marginBottom: "-1px", height: "48px" }}>
-          <path d="M0,20 C200,48 500,4 720,24 C940,44 1240,8 1440,28 L1440,48 L0,48 Z" fill="#f2f4f7"/>
+        {/* ── Wave ── */}
+        <svg viewBox="0 0 1440 56" fill="none" preserveAspectRatio="none"
+          className="w-full block" style={{ marginBottom: "-1px", height: "56px" }}>
+          <path d="M0,24 C180,56 420,6 720,28 C1020,50 1260,10 1440,32 L1440,56 L0,56 Z" fill="#eef0f5"/>
         </svg>
       </div>
 
       {/* ══════════════════════════════════════════
           CONTENU CLAIR
       ══════════════════════════════════════════ */}
-      <div className="mx-auto max-w-4xl px-4 pb-14 pt-4 sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 pb-14 pt-3 sm:px-6">
 
         {/* ── Alerte factures en retard ── */}
         <AnimatePresence>
           {overdueCount > 0 && showAlert && (
             <motion.div
-              initial={{ opacity: 0, y: -6, height: 0 }}
+              initial={{ opacity: 0, y: -8, height: 0 }}
               animate={{ opacity: 1, y: 0, height: "auto" }}
-              exit={{ opacity: 0, y: -6, height: 0 }}
+              exit={{ opacity: 0, y: -8, height: 0 }}
               transition={{ duration: 0.28, ease }}
-              className="mb-3 overflow-hidden"
+              className="overflow-hidden mb-4"
             >
-              <Link href="/client/factures">
-                <div className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
-                  style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.18)" }}>
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(239,68,68,0.12)" }}>
-                      <AlertCircle size={14} color="#ef4444" />
-                    </div>
-                    <div>
-                      <p className="text-[12.5px] font-bold text-red-600">
-                        {overdueCount} facture{overdueCount > 1 ? "s" : ""} en retard de paiement
-                      </p>
-                      <p className="text-[10.5px] text-red-400">Relancer vos clients →</p>
-                    </div>
+              <div className="flex items-center gap-3 rounded-2xl px-4 py-3"
+                style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.18)" }}>
+                <AlertCircle size={15} className="shrink-0 text-red-500" />
+                <p className="flex-1 text-[12px] font-semibold text-red-700">
+                  {overdueCount} facture{overdueCount > 1 ? "s" : ""} en retard de paiement
+                </p>
+                <Link href="/client/factures?statut=retard"
+                  className="shrink-0 text-[11px] font-bold text-red-600 underline underline-offset-2">
+                  Voir
+                </Link>
+                <button onClick={() => setShowAlert(false)} className="shrink-0 text-red-400 hover:text-red-600 transition-colors ml-1">
+                  <X size={13} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── PRO banner (free) ── */}
+        <AnimatePresence>
+          {isFree && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1, ease }}
+              className="mb-4"
+            >
+              <Link href="/client/abonnements">
+                <div className="flex items-center gap-3 rounded-2xl px-4 py-3 transition hover:opacity-95"
+                  style={{ background: "linear-gradient(135deg,rgba(201,165,90,0.12) 0%,rgba(180,143,69,0.08) 100%)", border: "1px solid rgba(201,165,90,0.22)" }}>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
+                    <Crown size={14} color="white" />
                   </div>
-                  <button
-                    onClick={e => { e.preventDefault(); setShowAlert(false); }}
-                    className="text-red-300 hover:text-red-500 transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12.5px] font-bold" style={{ color: "#92681e" }}>Passez à DJAMA PRO</p>
+                    <p className="text-[10.5px] text-amber-700/60">Débloquez tous les modules · 11,90€/mois</p>
+                  </div>
+                  <ChevronRight size={14} style={{ color: GOLD }} />
                 </div>
               </Link>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── Banner upgrade PRO ── */}
-        {isFree && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1, ease }}
-            className="mb-4 flex items-center justify-between gap-3 overflow-hidden rounded-2xl px-4 py-3"
-            style={{
-              background: "linear-gradient(135deg, rgba(201,165,90,0.10), rgba(176,141,69,0.06))",
-              border: "1px solid rgba(201,165,90,0.22)",
-            }}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl"
-                style={{ background: "rgba(201,165,90,0.15)" }}>
-                <Crown size={13} style={{ color: GOLD }} />
-              </div>
-              <div>
-                <p className="text-[12px] font-bold text-gray-800">Débloquez tous les modules</p>
-                <p className="text-[10.5px] text-gray-400">{totalModules} outils PRO · 11,90€/mois · Sans engagement</p>
-              </div>
-            </div>
-            <Link
-              href="/client/abonnements"
-              className="shrink-0 flex items-center gap-1 rounded-xl px-3 py-1.5 text-[11px] font-bold text-white transition hover:opacity-90"
-              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}
-            >
-              <Sparkles size={10} /> Voir PRO
-            </Link>
-          </motion.div>
-        )}
-
         {/* ── Section "Aujourd'hui" ── */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.15, ease }}
-          className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
+          transition={{ duration: 0.35, delay: 0.12, ease }}
+          className="mb-5"
         >
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-1 w-1 rounded-full" style={{ background: GOLD }} />
+            <h2 className="text-[12px] font-black uppercase tracking-[0.15em] text-gray-500">Aujourd&apos;hui</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
 
-          {/* Tâches */}
-          <div className="rounded-2xl bg-white p-4 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: "rgba(190,24,93,0.08)" }}>
-                  <ListTodo size={13} style={{ color: "#be185d" }} strokeWidth={2.2} />
+            {/* Card Tâches */}
+            <Link href="/client/productivite">
+              <motion.div whileTap={{ scale: 0.97 }}
+                className="rounded-2xl bg-white p-4 transition-all"
+                style={{ border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl"
+                    style={{ background: "rgba(190,24,93,0.08)" }}>
+                    <ListTodo size={14} style={{ color: "#be185d" }} />
+                  </div>
+                  {!todayLoading && (
+                    <span className="text-[11px] font-black tabular-nums" style={{ color: nbTasks > 0 ? "#be185d" : "#10b981" }}>
+                      {nbTasks}
+                    </span>
+                  )}
                 </div>
-                <span className="text-[12px] font-bold text-gray-700">Tâches à faire</span>
-              </div>
-              <Link href="/client/productivite" className="text-[10.5px] font-semibold text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-0.5">
-                Tout voir <ArrowRight size={10} />
-              </Link>
-            </div>
-            {todayLoading ? (
-              <div className="space-y-2">
-                {[1,2].map(i => <div key={i} className="h-8 rounded-xl animate-pulse" style={{ background: "#f3f4f6" }}/>)}
-              </div>
-            ) : todayTasks.length === 0 ? (
-              <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "#f8faf8" }}>
-                <CheckCircle2 size={14} color="#4ade80" />
-                <span className="text-[11.5px] text-gray-500">Rien en retard — beau travail !</span>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                {todayTasks.map(task => {
-                  const isOverdue = task.due_date && new Date(task.due_date) < new Date();
-                  return (
-                    <Link key={task.id} href="/client/productivite">
-                      <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-gray-50 transition-colors cursor-pointer">
-                        <div className="h-2 w-2 rounded-full shrink-0" style={{ background: priorityColor(task.priority) }} />
-                        <span className="flex-1 text-[12px] font-medium text-gray-700 truncate">{task.title}</span>
-                        {task.due_date && (
-                          <span className={`text-[9.5px] shrink-0 font-semibold ${isOverdue ? "text-red-500" : "text-gray-400"}`}>
-                            {isOverdue
-                              ? <span className="flex items-center gap-0.5"><AlertCircle size={9} className="inline shrink-0" style={{color:"#ef4444"}}/> retard</span>
-                              : "aujourd'hui"}
-                          </span>
-                        )}
+                <p className="text-[11.5px] font-bold text-gray-700 mb-0.5">Tâches</p>
+                {todayLoading ? (
+                  <div className="space-y-1.5 mt-2">
+                    {[0, 1].map(i => (
+                      <div key={i} className="h-2 rounded animate-pulse" style={{ background: "#f3f4f6", width: i === 0 ? "80%" : "60%" }} />
+                    ))}
+                  </div>
+                ) : todayTasks.length > 0 ? (
+                  <div className="space-y-1.5 mt-1">
+                    {todayTasks.slice(0, 2).map(t => (
+                      <div key={t.id} className="flex items-center gap-1.5">
+                        <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: priorityColor(t.priority) }} />
+                        <p className="text-[10.5px] text-gray-500 truncate leading-tight">{t.title}</p>
                       </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                    ))}
+                    {todayTasks.length > 2 && (
+                      <p className="text-[9.5px] text-gray-400">+{todayTasks.length - 2} de plus</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <CheckCircle2 size={11} className="text-emerald-400 shrink-0" />
+                    <span className="text-[10.5px] text-gray-400">Tout est fait !</span>
+                  </div>
+                )}
+              </motion.div>
+            </Link>
 
-          {/* Prochain RDV */}
-          <div className="rounded-2xl bg-white p-4 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: "rgba(79,70,229,0.08)" }}>
-                  <Calendar size={13} style={{ color: "#4f46e5" }} strokeWidth={2.2} />
-                </div>
-                <span className="text-[12px] font-bold text-gray-700">Prochain RDV</span>
-              </div>
-              <Link href="/client/planning" className="text-[10.5px] font-semibold text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-0.5">
-                Planning <ArrowRight size={10} />
-              </Link>
-            </div>
-            {todayLoading ? (
-              <div className="h-12 rounded-xl animate-pulse" style={{ background: "#f3f4f6" }}/>
-            ) : nextEvent ? (
-              <div className="flex items-center gap-3">
-                <div className="flex-shrink-0 text-center w-10 rounded-xl py-1.5"
-                  style={{ background: "rgba(79,70,229,0.06)", border: "1px solid rgba(79,70,229,0.1)" }}>
-                  <div className="text-[18px] font-black leading-none text-indigo-600">
-                    {new Date(nextEvent.start_at).getDate()}
+            {/* Card Événement */}
+            <Link href="/client/planning">
+              <motion.div whileTap={{ scale: 0.97 }}
+                className="rounded-2xl bg-white p-4 transition-all"
+                style={{ border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl"
+                    style={{ background: "rgba(79,70,229,0.08)" }}>
+                    <Calendar size={14} style={{ color: "#4f46e5" }} />
                   </div>
-                  <div className="text-[8px] uppercase tracking-wide text-indigo-400 font-semibold">
-                    {new Date(nextEvent.start_at).toLocaleDateString("fr-FR", { month: "short" })}
+                  {!todayLoading && nextEvent && (
+                    <span className="text-[11px] font-black tabular-nums text-indigo-600">
+                      {new Date(nextEvent.start_at).getDate()}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11.5px] font-bold text-gray-700 mb-0.5">Agenda</p>
+                {todayLoading ? (
+                  <div className="space-y-1.5 mt-2">
+                    <div className="h-2 rounded animate-pulse" style={{ background: "#f3f4f6", width: "75%" }} />
+                    <div className="h-2 rounded animate-pulse" style={{ background: "#f3f4f6", width: "50%" }} />
                   </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12.5px] font-semibold text-gray-800 truncate">{nextEvent.title}</p>
-                  <p className="text-[10.5px] text-gray-400">
-                    {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Clock size={13} className="text-gray-300" />
-                <span className="text-[11.5px] text-gray-400">Aucun événement à venir</span>
-              </div>
-            )}
+                ) : nextEvent ? (
+                  <div className="mt-1">
+                    <p className="text-[10.5px] text-gray-700 font-semibold truncate leading-tight">{nextEvent.title}</p>
+                    <p className="text-[9.5px] text-gray-400 mt-0.5">
+                      {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <Clock size={11} className="text-gray-300 shrink-0" />
+                    <span className="text-[10.5px] text-gray-400">Aucun événement</span>
+                  </div>
+                )}
+              </motion.div>
+            </Link>
           </div>
         </motion.div>
 
-        {/* ── Bande mensuelle (pleine largeur, visible mobile) ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2, ease }}
-          className="mb-4 rounded-2xl px-4 py-3 flex items-center justify-between"
-          style={{ background: "rgba(201,165,90,0.06)", border: "1px solid rgba(201,165,90,0.14)" }}
-        >
-          <div className="flex items-center gap-2">
-            <BarChart2 size={14} style={{ color: GOLD }} />
-            <span className="text-[11.5px] font-semibold text-gray-600">
-              {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] font-black" style={{ color: GOLD }}>
-              {kpiLoading ? "…" : fmtEurInt(caMonth)}
-            </span>
-            {!kpiLoading && caEvo !== null && (
-              <div className="flex items-center gap-0.5">
-                {caEvo >= 0
-                  ? <TrendingUp size={11} style={{color:"#4ade80"}}/>
-                  : <TrendingDown size={11} style={{color:"#f87171"}}/>
-                }
-                <span className="text-[10px] font-bold" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
-                  {Math.abs(caEvo)}%
-                </span>
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* ── Activité récente ── */}
+        {/* ── Dernière facture (activité récente) ── */}
         {!todayLoading && lastFac && (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.22, ease }}
-            className="mb-4"
+            transition={{ duration: 0.28, delay: 0.18, ease }}
+            className="mb-5"
           >
             <Link href="/client/factures">
-              <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm transition-colors hover:bg-gray-50"
-                style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+              <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 transition-colors hover:bg-gray-50"
+                style={{ border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: "rgba(37,99,235,0.08)" }}>
                   <Activity size={15} style={{ color: "#2563eb" }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[12px] font-bold text-gray-700 truncate">
-                    Dernière facture — {lastFac.client_nom || "client"}
+                    Dernière facture — <span className="text-gray-500">{lastFac.client_nom || "client"}</span>
                   </p>
                   <p className="text-[10.5px] text-gray-400">
                     {lastFac.numero} · {new Date(lastFac.date_emission).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                   </p>
                 </div>
                 <span className="shrink-0 text-[13px] font-black text-gray-800">{fmtEurInt(lastFac.montant_ttc)}</span>
-                <ChevronRight size={14} className="shrink-0 text-gray-300" />
+                <ChevronRight size={13} className="shrink-0 text-gray-300" />
               </div>
             </Link>
           </motion.div>
         )}
 
-        {/* ── Barre de recherche modules ── */}
+        {/* ── Barre de recherche ── */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.25, ease }}
-          className="relative mb-4"
+          transition={{ duration: 0.3, delay: 0.22, ease }}
+          className="relative mb-5"
         >
           <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -1204,118 +1208,117 @@ export default function CockpitPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher un module…"
-            className="w-full rounded-2xl bg-white py-3 pl-11 pr-4 text-[13px] text-gray-700 placeholder:text-gray-400 shadow-sm outline-none transition focus:ring-2"
+            className="w-full rounded-2xl bg-white py-3 pl-11 pr-10 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none transition"
             style={{
-              border: "1px solid rgba(0,0,0,0.07)",
-              boxShadow: search ? `0 0 0 2px rgba(201,165,90,0.2), 0 2px 8px rgba(0,0,0,0.06)` : "0 2px 8px rgba(0,0,0,0.04)",
+              border: search ? `1px solid rgba(201,165,90,0.4)` : "1px solid rgba(0,0,0,0.07)",
+              boxShadow: search
+                ? `0 0 0 3px rgba(201,165,90,0.1), 0 2px 12px rgba(0,0,0,0.06)`
+                : "0 2px 10px rgba(0,0,0,0.04)",
             }}
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={() => setSearch("")}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
               <X size={14} />
             </button>
           )}
         </motion.div>
 
-        {/* ── Résultats de recherche ── */}
+        {/* ── Résultats recherche ── */}
         {search.trim() && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, ease }}
-            className="mb-4 overflow-hidden rounded-2xl bg-white shadow-sm"
-            style={{ border: "1px solid rgba(0,0,0,0.05)" }}
+            className="mb-5"
           >
             {filteredGroups.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-8 text-gray-400">
-                <Search size={20} className="text-gray-300" />
-                <p className="text-[12px]">Aucun module trouvé pour &ldquo;{search}&rdquo;</p>
+              <div className="flex flex-col items-center gap-2 py-10 rounded-2xl bg-white"
+                style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+                <Search size={22} className="text-gray-300" />
+                <p className="text-[12px] text-gray-400">Aucun module pour &ldquo;{search}&rdquo;</p>
               </div>
             ) : (
-              filteredGroups.flatMap(g => g.modules).map((mod, mi, arr) => (
-                <ModuleRow
-                  key={mod.href + mi}
-                  mod={mod as AnyModule}
-                  index={mi}
-                  last={mi === arr.length - 1}
-                  isPremium={isPremium}
-                />
-              ))
+              <div className="grid grid-cols-2 gap-3">
+                {filteredGroups.flatMap(g => g.modules).map((mod, mi) => (
+                  <ModuleCard
+                    key={mod.href + mi}
+                    mod={mod as AnyModule}
+                    index={mi}
+                    isPremium={isPremium}
+                  />
+                ))}
+              </div>
             )}
           </motion.div>
         )}
 
         {/* ── Module groups ── */}
         {!search.trim() && (
-          <div className="space-y-3">
+          <div className="space-y-6">
             {MODULE_GROUPS.map((group, gi) => {
               const GroupIcon = group.icon;
               const allPremium = group.modules.every(m => getToolTier(m.href) === "premium");
               const groupIsLocked = allPremium && isFree;
 
               return (
-                <motion.div
+                <motion.section
                   key={group.label}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 + gi * 0.05, ease }}
-                  className="overflow-hidden rounded-2xl bg-white"
-                  style={{
-                    boxShadow: groupIsLocked
-                      ? "0 2px 12px rgba(201,165,90,0.08), 0 8px 24px rgba(0,0,0,0.03)"
-                      : "0 2px 12px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.03)",
-                    border: groupIsLocked
-                      ? "1px solid rgba(201,165,90,0.18)"
-                      : "1px solid rgba(0,0,0,0.05)",
-                  }}
+                  transition={{ duration: 0.32, delay: 0.1 + gi * 0.06, ease }}
                 >
-                  {/* Header groupe */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                  {/* Group header */}
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: `${group.color}18` }}>
-                        <GroupIcon size={13} style={{ color: group.color }} strokeWidth={2}/>
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg"
+                        style={{ background: `${group.color}18` }}>
+                        <GroupIcon size={13} style={{ color: group.color }} strokeWidth={2} />
                       </div>
-                      <span className="text-[12px] font-bold text-gray-700 tracking-wide">{group.label}</span>
+                      <h3 className="text-[12.5px] font-black text-gray-700 tracking-wide">{group.label}</h3>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       {groupIsLocked && (
                         <div className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
-                          style={{ background: "rgba(201,165,90,0.10)", border: "1px solid rgba(201,165,90,0.25)", color: GOLD }}>
+                          style={{ background: "rgba(201,165,90,0.1)", border: "1px solid rgba(201,165,90,0.22)", color: GOLD }}>
                           <Crown size={7} /> PRO
                         </div>
                       )}
-                      <span className="text-[10px] font-semibold text-gray-300 tabular-nums">{group.modules.length}</span>
+                      <span className="text-[10px] font-bold text-gray-300 tabular-nums">
+                        {group.modules.length}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Lignes modules */}
-                  {group.modules.map((mod, mi) => (
-                    <ModuleRow
-                      key={mod.href}
-                      mod={mod as AnyModule}
-                      index={gi * 6 + mi}
-                      last={mi === group.modules.length - 1}
-                      isPremium={isPremium}
-                    />
-                  ))}
-                </motion.div>
+                  {/* 2-col module grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {group.modules.map((mod, mi) => (
+                      <ModuleCard
+                        key={mod.href}
+                        mod={mod as AnyModule}
+                        index={gi * 6 + mi}
+                        isPremium={isPremium}
+                      />
+                    ))}
+                  </div>
+                </motion.section>
               );
             })}
           </div>
         )}
 
         {/* ── Footer ── */}
-        <div className="mt-8 flex flex-col items-center gap-3">
+        <div className="mt-10 flex flex-col items-center gap-3">
           {isFree && (
             <Link
               href="/client/abonnements"
-              className="flex items-center gap-2 rounded-2xl px-5 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90"
+              className="flex items-center gap-2 rounded-2xl px-5 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90 shadow-[0_4px_14px_rgba(201,165,90,0.3)]"
               style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}
             >
               <Crown size={12} /> Passer à DJAMA PRO — 11,90€/mois
             </Link>
           )}
-          <p className="text-[10.5px] text-gray-400">
+          <p className="text-[10px] text-gray-400">
             DJAMA PRO · {totalModules} modules · Données en temps réel
           </p>
         </div>
