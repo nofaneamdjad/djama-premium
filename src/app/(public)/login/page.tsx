@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Eye, EyeOff, AlertCircle, RefreshCw, CheckCircle2,
@@ -411,13 +411,13 @@ function LoginPageInner() {
           className="mt-5 text-center text-[0.68rem] leading-relaxed text-gray-400"
         >
           En continuant, vous reconnaissez avoir compris et accepté les{" "}
-          <a href="#" className="underline hover:text-gray-600">
+          <Link href="/legal/cgu" className="underline hover:text-gray-600">
             Conditions générales
-          </a>{" "}
+          </Link>{" "}
           et la{" "}
-          <a href="#" className="underline hover:text-gray-600">
+          <Link href="/legal/confidentialite" className="underline hover:text-gray-600">
             Politique de confidentialité
-          </a>
+          </Link>
         </motion.p>
       </motion.div>
 
@@ -426,13 +426,13 @@ function LoginPageInner() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.5 }}
-        className="absolute bottom-6 flex gap-4 text-xs text-gray-400"
+        className="mt-auto flex flex-wrap justify-center gap-4 text-xs text-gray-400"
       >
-        <a href="#" className="hover:text-gray-600">Confidentialité</a>
+        <Link href="/legal/confidentialite" className="hover:text-gray-600">Confidentialité</Link>
         <span>·</span>
-        <a href="#" className="hover:text-gray-600">Conditions</a>
+        <Link href="/legal/cgu" className="hover:text-gray-600">Conditions</Link>
         <span>·</span>
-        <a href="#" className="hover:text-gray-600">Besoin d&apos;aide ?</a>
+        <Link href="/contact" className="hover:text-gray-600">Besoin d&apos;aide ?</Link>
       </motion.div>
     </div>
   );

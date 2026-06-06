@@ -385,9 +385,8 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
 }
 
 /* ─────────── PREMIUM GATE — blur + cadenas + popup ─────────── */
-function PremiumGate() {
-  /* Fake blurred rows to simulate content behind the gate */
-  const MockRows = () => (
+function PremiumGateMockRows() {
+  return (
     <div className="pointer-events-none select-none overflow-hidden" aria-hidden>
       {/* mock header */}
       <div className="flex items-center gap-3 border-b border-gray-200/60 bg-white px-5 py-4">
@@ -411,13 +410,15 @@ function PremiumGate() {
       ))}
     </div>
   );
+}
 
+function PremiumGate() {
   return (
     <div className="relative min-h-full overflow-hidden" style={{ background: "#f6f7f9" }}>
 
       {/* Blurred mock content */}
       <div className="absolute inset-0" style={{ filter: "blur(3px)", transform: "scale(1.02)", transformOrigin: "top" }}>
-        <MockRows />
+        <PremiumGateMockRows />
       </div>
 
       {/* Dark overlay */}
@@ -735,7 +736,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
                       style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
                       ⌘K
                     </kbd>
-                    <span className="text-[0.6rem] text-white/20">pour ouvrir la recherche depuis n'importe où</span>
+                    <span className="text-[0.6rem] text-white/20">pour ouvrir la recherche depuis n&apos;importe où</span>
                   </div>
                 </div>
               )}
@@ -748,7 +749,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
 }
 
 /* ─────────── BOTTOM NAV (mobile only) ─────────── */
-function BottomNav({ pathname }: { pathname: string }) {
+function BottomNav({ pathname, dark = false }: { pathname: string; dark?: boolean }) {
   const items = [
     { href: "/client",          label: "Accueil",  icon: Home,        exact: true  },
     { href: "/client/factures", label: "Factures", icon: ReceiptText, exact: false },
@@ -760,10 +761,10 @@ function BottomNav({ pathname }: { pathname: string }) {
     <nav
       className="fixed bottom-0 inset-x-0 z-30 lg:hidden"
       style={{
-        background: "#fff",
-        borderTop: "1px solid rgba(0,0,0,0.07)",
+        background: dark ? "#111318" : "#fff",
+        borderTop: dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.07)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        boxShadow: "0 -4px 20px rgba(0,0,0,0.06)",
+        boxShadow: dark ? "0 -4px 20px rgba(0,0,0,0.24)" : "0 -4px 20px rgba(0,0,0,0.06)",
       }}
     >
       <div className="flex">
@@ -782,12 +783,12 @@ function BottomNav({ pathname }: { pathname: string }) {
                 <Icon
                   size={22}
                   strokeWidth={active ? 2.2 : 1.7}
-                  style={{ color: active ? GOLD : "#9ca3af" }}
+                  style={{ color: active ? GOLD : dark ? "rgba(255,255,255,0.5)" : "#6b7280" }}
                 />
               </motion.div>
               <span
                 className="text-[9.5px] font-semibold"
-                style={{ color: active ? GOLD : "#9ca3af" }}
+                style={{ color: active ? GOLD : dark ? "rgba(255,255,255,0.5)" : "#6b7280" }}
               >
                 {label}
               </span>
@@ -811,6 +812,7 @@ function BottomNav({ pathname }: { pathname: string }) {
 const DARK_PAGES = [
   "/client/dashboard",
   "/client/abonnements",
+  "/client/tresorerie",
   "/client/equipe",
   "/client/planning",
   "/client/productivite",
@@ -843,8 +845,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   /* Block premium pages for free users — gate replaces content */
   const isGated = level === "free" && getToolTier(pathname) === "premium";
-
-  useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -1111,7 +1111,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       </div>
 
       {/* Mobile bottom navigation */}
-      <BottomNav pathname={pathname} />
+      <BottomNav pathname={pathname} dark={isDarkPage} />
     </div>
   );
 }

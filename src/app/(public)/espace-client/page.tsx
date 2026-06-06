@@ -7,8 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import {
   FileText, CalendarRange, StickyNote, Brain, Timer, CreditCard,
-  Globe, Shield, Wallet, Users, LogIn, Sparkles, Zap, Lock,
-  BadgeCheck, ChevronRight, CheckCircle2, AlertTriangle,
+  Globe, Shield, Wallet, Users, LogIn, Sparkles, Zap,
+  ChevronRight, CheckCircle2, AlertTriangle,
   Truck, Package, ListTodo, Star, Mic, Search, BarChart2,
   LayoutDashboard, BrainCircuit, Rocket, Building2, Banknote,
 } from "lucide-react";
@@ -81,6 +81,7 @@ const TOOLS = [
   { icon: Building2,     title: "Portail Client",          g1: "#3b82f6", g2: "#7c3aed" },
   { icon: Banknote,      title: "Paie & RH",               g1: "#10b981", g2: "#065f46" },
 ];
+const TOOL_COUNT = TOOLS.length;
 
 /* ══════════════════════════════════════════════════════
    PAGE
@@ -115,8 +116,8 @@ export default function EspaceClientPage() {
             <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#c9a55a]/20">
               <span className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
             </span>
-            <span className="text-[0.7rem] font-medium text-white/50 tracking-wide">Espace Client DJAMA</span>
-            <span className="rounded-full bg-[#c9a55a]/15 px-2 py-0.5 text-[0.6rem] font-bold text-[#c9a55a]">20 outils</span>
+            <span className="text-[0.72rem] font-medium text-white/65 tracking-wide">Espace Client DJAMA</span>
+            <span className="rounded-full bg-[#c9a55a]/15 px-2 py-0.5 text-[0.68rem] font-bold text-[#c9a55a]">{TOOL_COUNT} outils</span>
           </motion.div>
 
           {/* Titre */}
@@ -133,7 +134,7 @@ export default function EspaceClientPage() {
           <motion.p
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease, delay: 0.25 }}
-            className="mx-auto mt-5 max-w-sm text-[0.95rem] leading-relaxed text-white/40"
+            className="mx-auto mt-5 max-w-sm text-[0.95rem] leading-relaxed text-white/60"
           >
             Factures, CRM, trésorerie, IA — tout ce dont un entrepreneur a besoin, à <strong className="font-semibold text-white/70">11,90€/mois</strong>.
           </motion.p>
@@ -162,7 +163,7 @@ export default function EspaceClientPage() {
             className="mt-6 flex flex-wrap items-center justify-center gap-4"
           >
             {["Sans engagement","Stripe sécurisé","Accès immédiat"].map((t) => (
-              <span key={t} className="flex items-center gap-1.5 text-[0.65rem] text-white/25">
+              <span key={t} className="flex items-center gap-1.5 text-[0.72rem] text-white/50">
                 <CheckCircle2 size={10} className="text-[#c9a55a]/50" /> {t}
               </span>
             ))}
@@ -179,7 +180,7 @@ export default function EspaceClientPage() {
             className="grid grid-cols-2 gap-4 sm:grid-cols-4"
           >
             {[
-              { value: "18",       label: "Outils professionnels", color: "#c9a55a" },
+              { value: String(TOOL_COUNT), label: "Outils professionnels", color: "#c9a55a" },
               { value: "11,90€",   label: "Par mois tout inclus",  color: "#8b5cf6" },
               { value: "+50",      label: "Entrepreneurs actifs",  color: "#10b981" },
               { value: "100%",     label: "Accès immédiat",        color: "#06b6d4" },
@@ -205,7 +206,7 @@ export default function EspaceClientPage() {
               {
                 icon: LayoutDashboard,
                 title: "Tout en un seul endroit",
-                desc: "Plus besoin de jongler entre 20 outils différents. Factures, CRM, trésorerie, planning — tout est centralisé.",
+                desc: `Plus besoin de jongler entre ${TOOL_COUNT} outils différents. Factures, CRM, trésorerie, planning — tout est centralisé.`,
                 g1: "#f59e0b", g2: "#f97316",
               },
               {
@@ -258,7 +259,7 @@ export default function EspaceClientPage() {
               Ce qui est inclus
             </p>
             <h2 className="text-xl font-black text-gray-900 sm:text-3xl">
-              20 outils,{" "}
+              {TOOL_COUNT} outils,{" "}
               <span className="text-[#c9a55a]">un seul abonnement.</span>
             </h2>
             <p className="mx-auto mt-3 max-w-sm text-sm text-gray-400">
@@ -326,7 +327,7 @@ export default function EspaceClientPage() {
               {/* Liste courte */}
               <ul className="mb-7 grid grid-cols-2 gap-y-2 gap-x-3">
                 {[
-                  "20 outils inclus",
+                  `${TOOL_COUNT} outils inclus`,
                   "Coach Business IA",
                   "Factures illimitées",
                   "CRM & contacts",

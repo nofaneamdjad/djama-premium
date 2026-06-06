@@ -6,10 +6,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ReceiptText, Users, Timer, Receipt, FileText, Search,
   TrendingUp, StickyNote, Star, Zap, CalendarRange,
-  Clock, Euro, UserCheck, TrendingDown, ArrowUpRight,
+  Clock, Euro, UserCheck, TrendingDown,
   AlertTriangle, ChevronRight,
-  FileBarChart2, Loader2, X, ShieldCheck, Lightbulb,
-  Plus, CheckCircle2, CircleDot, Send,
+  FileBarChart2, X, ShieldCheck, Lightbulb,
+  CheckCircle2, CircleDot, Send,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { APP_ICONS } from "@/components/AppIcons";
@@ -25,7 +25,7 @@ const TOOLS = [
   { href: "/client/contrats",    label: "Contrats IA",       desc: "Générez des contrats en secondes",   icon: FileText,     hue: GOLD      },
   { href: "/client/sourcing",    label: "Sourcing IA",       desc: "Trouvez les meilleurs fournisseurs", icon: Search,       hue: "#818cf8" },
   { href: "/client/tresorerie",  label: "Trésorerie",        desc: "Pilotez votre cash-flow",            icon: TrendingUp,   hue: "#10b981" },
-  { href: "/client/bloc-notes",  label: "Bloc-notes",        desc: "Capturez vos idées rapidement",      icon: StickyNote,   hue: "#fbbf24" },
+  { href: "/client/bloc-note",   label: "Bloc-notes",        desc: "Capturez vos idées rapidement",      icon: StickyNote,   hue: "#fbbf24" },
   { href: "/client/reputation",  label: "Réputation",        desc: "Collectez et gérez vos avis",        icon: Star,         hue: "#f59e0b" },
   { href: "/client/assistant",   label: "Assistant IA",      desc: "Relances et actions intelligentes",  icon: Zap,          hue: "#22d3ee" },
   { href: "/client/planification",label: "Planification",    desc: "Organisez l'agenda de l'équipe",     icon: CalendarRange,hue: "#0ea5e9" },
@@ -272,7 +272,7 @@ export default function DashboardPage() {
           {/* Greeting row */}
           <div className="mb-6 flex items-start justify-between gap-3">
             <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.35, ease }}>
-              <p className="text-[0.6rem] capitalize tracking-[0.18em] text-white/30">{fmtFullDate()}</p>
+              <p className="text-[0.68rem] capitalize tracking-[0.16em] text-white/55">{fmtFullDate()}</p>
               <h1 className="mt-1 text-[1.5rem] font-black leading-tight text-white">
                 {getGreeting()}
                 {userName && (
@@ -284,7 +284,7 @@ export default function DashboardPage() {
                 )}
               </h1>
               <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.4, delay:0.3 }}
-                className="mt-0.5 text-[0.75rem] text-white/35"
+                className="mt-0.5 text-[0.78rem] text-white/55"
               >Voici un résumé de votre activité DJAMA PRO.</motion.p>
             </motion.div>
 
@@ -323,7 +323,7 @@ export default function DashboardPage() {
                       style={{ background:`${kpiColors[i]}20` }}>
                       <Icon size={16} style={{ color:kpiColors[i] }}/>
                     </div>
-                    <p className="text-[0.58rem] font-medium uppercase tracking-wider text-white/30">{label}</p>
+                    <p className="text-[0.68rem] font-medium uppercase tracking-wide text-white/55">{label}</p>
                     {statsLoading
                       ? <div className="mt-1.5 h-5 w-14 animate-pulse rounded-lg" style={{ background:"rgba(255,255,255,0.10)" }}/>
                       : <motion.p
@@ -377,7 +377,7 @@ export default function DashboardPage() {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-[0.8rem] font-bold text-white">Revenus encaissés</p>
-                <p className="text-[0.6rem] text-white/30">6 derniers mois</p>
+                <p className="text-[0.68rem] text-white/50">6 derniers mois</p>
               </div>
               {!chartsLoading && revenues.length > 0 && (
                 <p className="text-[0.82rem] font-black" style={{ color:GOLD }}>
@@ -432,7 +432,7 @@ export default function DashboardPage() {
           >
             <div className="mb-4">
               <p className="text-[0.8rem] font-bold text-white">Meilleurs clients</p>
-              <p className="text-[0.6rem] text-white/30">3 mois glissants</p>
+              <p className="text-[0.68rem] text-white/50">3 mois glissants</p>
             </div>
             {chartsLoading ? (
               <div className="space-y-3">{[1,2,3].map(i=><div key={i} className="h-8 animate-pulse rounded-xl" style={{ background:"rgba(255,255,255,0.07)" }}/>)}</div>
@@ -596,7 +596,7 @@ export default function DashboardPage() {
               style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)" }}>
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-110"
                 style={{ background:`${color}20` }}>
-                <Plus size={11} style={{ color }} strokeWidth={2.5}/>
+                <Icon size={11} style={{ color }} strokeWidth={2.5}/>
               </div>
               <span className="text-[0.72rem] font-medium text-white/55 group-hover:text-white/80 transition-colors leading-tight">{label}</span>
             </a>
