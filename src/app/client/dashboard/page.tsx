@@ -4,33 +4,22 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ReceiptText, Users, Timer, Receipt, FileText, Search,
-  TrendingUp, StickyNote, Star, Zap, CalendarRange,
-  Clock, Euro, UserCheck, TrendingDown,
-  AlertTriangle, ChevronRight, BarChart2,
+  ReceiptText, Users, FileText, Search,
+  TrendingUp,
+  AlertTriangle, BarChart2,
   FileBarChart2, X, ShieldCheck, Lightbulb,
-  CheckCircle2, CircleDot, Send, Activity, Lock,
+  CheckCircle2, CircleDot, Send, Lock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { APP_ICONS } from "@/components/AppIcons";
 import { fmtEurInt, fmtDuration } from "@/lib/format";
+import { useSubscription } from "@/lib/use-require-subscription";
+import { MODULE_GROUPS } from "@/lib/module-groups";
+import { ModuleCard, ModuleGroupSection } from "@/components/ModuleCard";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const GOLD = "#c9a55a";
 
-const TOOLS = [
-  { href: "/client/factures",     label: "Factures",    icon: ReceiptText,   hue: "#3b82f6" },
-  { href: "/client/crm",          label: "CRM",         icon: Users,         hue: "#6366f1" },
-  { href: "/client/chrono",       label: "Chrono",      icon: Timer,         hue: "#a78bfa" },
-  { href: "/client/depenses",     label: "Dépenses",    icon: Receipt,       hue: "#f97316" },
-  { href: "/client/contrats",     label: "Contrats",    icon: FileText,      hue: GOLD      },
-  { href: "/client/sourcing",     label: "Sourcing",    icon: Search,        hue: "#818cf8" },
-  { href: "/client/tresorerie",   label: "Trésorerie",  icon: TrendingUp,    hue: "#10b981" },
-  { href: "/client/bloc-note",    label: "Bloc-notes",  icon: StickyNote,    hue: "#fbbf24" },
-  { href: "/client/reputation",   label: "Réputation",  icon: Star,          hue: "#f59e0b" },
-  { href: "/client/assistant",    label: "Assistant IA",icon: Zap,           hue: "#22d3ee" },
-  { href: "/client/equipe",       label: "Équipe",      icon: CalendarRange, hue: "#0ea5e9" },
-] as const;
 
 const QUICK_ACTIONS = [
   { href: "/client/factures",           iconKey: "/client/factures",    label: "Facture"  },
@@ -87,45 +76,13 @@ type Rapport = {
 
 const SHORT_MONTHS = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 
-/* ── Module icon compact ── */
-function ModuleIcon({ item, delay = 0 }: { item: typeof TOOLS[number]; delay?: number }) {
-  const appIcon = (APP_ICONS as Record<string, React.ReactElement | undefined>)[item.href] ?? null;
-  const Icon = item.icon;
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.82 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: "spring", stiffness: 380, damping: 22, delay }}
-    >
-      <Link href={item.href} className="group block">
-        <motion.div
-          whileTap={{ scale: 0.90 }}
-          className="flex flex-col items-center gap-2 rounded-2xl px-2 py-3.5 text-center transition-colors"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        >
-          {appIcon !== null ? (
-            <div className="h-[46px] w-[46px] overflow-hidden rounded-[13px] shadow-[0_4px_14px_rgba(0,0,0,0.14)]">
-              {appIcon}
-            </div>
-          ) : (
-            <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px]"
-              style={{ background: `${item.hue}18`, border: `1px solid ${item.hue}28` }}>
-              <Icon size={20} style={{ color: item.hue }} strokeWidth={1.8} />
-            </div>
-          )}
-          <p className="w-full truncate text-[0.67rem] font-semibold leading-tight text-gray-500 group-hover:text-gray-700 transition-colors">
-            {item.label}
-          </p>
-        </motion.div>
-      </Link>
-    </motion.div>
-  );
-}
 
 /* ─────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────── */
 export default function DashboardPage() {
+  const { isPremium, isFree } = useSubscription();
+  const [search,         setSearch]         = useState("");
   const [userName,      setUserName]      = useState("");
   const [stats,         setStats]         = useState<Stats | null>(null);
   const [statsLoading,  setStatsLoading]  = useState(true);
@@ -827,13 +784,75 @@ export default function DashboardPage() {
           transition={{ duration:0.38, delay:0.28, ease }}
           className="mb-6"
         >
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-4">
             <div className="h-1 w-1 rounded-full" style={{ background:GOLD }}/>
             <h2 className="text-[12px] font-black uppercase tracking-[0.15em] text-gray-500">Modules</h2>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-            {TOOLS.map((item,i) => <ModuleIcon key={item.href} item={item} delay={0.3+i*0.04}/>)}
+
+          {/* Barre de recherche */}
+          <div className="relative mb-5">
+            <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher un module…"
+              className="w-full rounded-2xl bg-white py-3 pl-11 pr-10 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none transition"
+              style={{
+                border: search ? `1px solid rgba(201,165,90,0.4)` : "1px solid rgba(0,0,0,0.07)",
+                boxShadow: search
+                  ? `0 0 0 3px rgba(201,165,90,0.1), 0 2px 12px rgba(0,0,0,0.06)`
+                  : "0 2px 10px rgba(0,0,0,0.04)",
+              }}
+            />
+            {search && (
+              <button onClick={() => setSearch("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={14} />
+              </button>
+            )}
           </div>
+
+          {/* Résultats recherche */}
+          {search.trim() ? (
+            (() => {
+              const q = search.toLowerCase();
+              const results = MODULE_GROUPS
+                .flatMap(g => g.modules)
+                .filter(m => m.label.toLowerCase().includes(q) || m.sub.toLowerCase().includes(q));
+              return results.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-10 rounded-2xl bg-white"
+                  style={{ border:"1px solid rgba(0,0,0,0.05)" }}>
+                  <Search size={22} className="text-gray-300"/>
+                  <p className="text-[12px] text-gray-400">Aucun module pour &ldquo;{search}&rdquo;</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {results.map((mod, mi) => (
+                    <ModuleCard
+                      key={mod.href + mi}
+                      mod={mod}
+                      index={mi}
+                      isPremium={isPremium}
+                    />
+                  ))}
+                </div>
+              );
+            })()
+          ) : (
+            /* Groupes complets */
+            <div className="space-y-6">
+              {MODULE_GROUPS.map((group, gi) => (
+                <ModuleGroupSection
+                  key={group.label}
+                  group={group}
+                  groupIndex={gi}
+                  isPremium={isPremium}
+                  isFree={isFree}
+                />
+              ))}
+            </div>
+          )}
         </motion.div>
 
         {/* ── Footer ── */}
