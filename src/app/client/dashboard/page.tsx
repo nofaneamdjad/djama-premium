@@ -139,11 +139,36 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setStatsLoading(false); setChartsLoading(false); return; }
 
-      const name =
-        (user.user_metadata?.full_name as string | undefined) ||
-        (user.user_metadata?.name as string | undefined) ||
-        user.email?.split("@")[0] || "";
-      setUserName(name);
+      /* ── Nom : société > user_access > Google > email formaté ── */
+      const metaCompany = (
+        (user.user_metadata?.company_name as string | undefined)
+        || (user.user_metadata?.company as string | undefined)
+        || (user.user_metadata?.organization as string | undefined)
+        || ""
+      ).trim();
+
+      const metaFullName = (
+        (user.user_metadata?.full_name as string | undefined)
+        || (user.user_metadata?.name as string | undefined)
+        || ""
+      ).trim();
+
+      const { data: uaRow } = await supabase
+        .from("user_access")
+        .select("name")
+        .eq("email", user.email!)
+        .maybeSingle();
+      const accessName = ((uaRow as { name?: string } | null)?.name ?? "").trim();
+
+      const emailSlug = user.email?.split("@")[0] ?? "";
+      const emailFormatted = emailSlug
+        .replace(/[._-]/g, " ")
+        .split(" ")
+        .map((p: string) => p.charAt(0).toUpperCase() + p.slice(1))
+        .join(" ");
+
+      const displayName = metaCompany || accessName || metaFullName || emailFormatted;
+      setUserName(displayName);
 
       const weekStart  = startOfWeekISO();
       const monthStart = startOfMonthISO();
@@ -267,20 +292,26 @@ export default function DashboardPage() {
           {/* Greeting row */}
           <div className="mb-6 flex items-start justify-between gap-3">
             <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.35, ease }}>
-              <p className="text-[0.68rem] capitalize tracking-[0.16em] text-white/55">{fmtFullDate()}</p>
-              <h1 className="mt-1 text-[1.5rem] font-black leading-tight text-white">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/30 capitalize">
+                {fmtFullDate()}
+              </p>
+              <h1 className="mt-1.5 text-[1.6rem] font-black leading-tight text-white">
                 {getGreeting()}
                 {userName && (
                   <motion.span
-                    initial={{ opacity:0, y:5 }} animate={{ opacity:1, y:0 }}
-                    transition={{ duration:0.4, delay:0.22, ease }}
-                    className="ml-1.5 font-black text-white/75"
-                  >{userName.split(" ")[0]}</motion.span>
+                    initial={{ opacity:0, x:6 }} animate={{ opacity:1, x:0 }}
+                    transition={{ duration:0.4, delay:0.2, ease }}
+                    style={{ color: GOLD }}
+                  >{" "}{userName.split(" ").slice(0, 2).join(" ")}</motion.span>
                 )}
               </h1>
-              <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.4, delay:0.3 }}
-                className="mt-0.5 text-[0.78rem] text-white/55"
-              >Voici un résumé de votre activité DJAMA PRO.</motion.p>
+              <motion.p
+                initial={{ opacity:0 }} animate={{ opacity:1 }}
+                transition={{ duration:0.4, delay:0.32 }}
+                className="mt-1 text-[0.75rem] text-white/35 font-medium"
+              >
+                Tableau de bord · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+              </motion.p>
             </motion.div>
 
             <motion.button
