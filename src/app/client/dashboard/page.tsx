@@ -87,39 +87,34 @@ type Rapport = {
 
 const SHORT_MONTHS = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 
-function ToolCard({ item, delay = 0 }: { item: typeof TOOLS[number]; delay?: number }) {
+function ModuleIcon({ item, delay = 0 }: { item: typeof TOOLS[number]; delay?: number }) {
   const appIcon = APP_ICONS[item.href] ?? null;
   const Icon = item.icon;
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.28, delay }}
+      initial={{ opacity: 0, scale: 0.82 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", stiffness: 380, damping: 22, delay }}
     >
       <Link href={item.href} className="group block">
         <motion.div
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ type: "spring", stiffness: 420, damping: 20 }}
-          className="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 bg-white transition-shadow hover:shadow-md"
-          style={{ border: "1px solid rgba(0,0,0,0.07)" }}
+          whileTap={{ scale: 0.90 }}
+          className="flex flex-col items-center gap-2 rounded-2xl px-2 py-3.5 text-center transition-colors"
+          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
         >
-          {/* Icône SVG app-style 44px */}
           {appIcon !== null ? (
-            <div className="h-[44px] w-[44px] shrink-0 overflow-hidden rounded-[12px] shadow-[0_3px_10px_rgba(0,0,0,0.18)]">
+            <div className="h-[46px] w-[46px] overflow-hidden rounded-[13px] shadow-[0_4px_14px_rgba(0,0,0,0.28)]">
               {appIcon}
             </div>
           ) : (
-            <div className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[12px]"
+            <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px]"
               style={{ background: `${item.hue}18`, border: `1px solid ${item.hue}28` }}>
-              <Icon size={18} style={{ color: item.hue }} strokeWidth={1.8} />
+              <Icon size={20} style={{ color: item.hue }} strokeWidth={1.8} />
             </div>
           )}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[0.82rem] font-semibold text-gray-800 group-hover:text-gray-900 transition-colors">{item.label}</p>
-            <p className="truncate text-[0.67rem] text-gray-400 mt-0.5">{item.desc}</p>
-          </div>
-          <ChevronRight size={13} className="shrink-0 text-gray-300 group-hover:text-gray-500 transition-colors" />
+          <p className="w-full truncate text-[0.65rem] font-semibold leading-tight text-white/45 group-hover:text-white/70 transition-colors">
+            {item.label}
+          </p>
         </motion.div>
       </Link>
     </motion.div>
@@ -689,11 +684,11 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Tools */}
+        {/* Modules — grille compacte icônes */}
         <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.52 }}>
-          <p className="mb-3 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-white/50">Accès rapides</p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {TOOLS.map((item,i)=><ToolCard key={item.href} item={item} delay={0.54+i*0.035}/>)}
+          <p className="mb-3 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-white/25">Modules</p>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+            {TOOLS.map((item,i) => <ModuleIcon key={item.href} item={item} delay={0.54 + i * 0.04} />)}
           </div>
         </motion.div>
 
