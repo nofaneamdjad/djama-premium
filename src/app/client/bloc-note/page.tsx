@@ -375,14 +375,14 @@ export default function BlocNotePage() {
     setTranscribing(true);
     try {
       const { data: authData } = await supabase.auth.getUser();
-      const userId = authData.user?.id ?? "anon";
-      const ext = blob.type.includes("mp4") ? "m4a" : blob.type.includes("ogg") ? "ogg" : "webm";
-      const filename = `${userId}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("audio-notes").upload(filename, blob, { contentType: blob.type });
-      if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage.from("audio-notes").getPublicUrl(filename);
-      if (forDraft) setDContent(publicUrl);
-      else setEDraft(p => ({ ...p, content: publicUrl }));
+      const form = new FormData();
+      form.append("audio", blob, "audio.webm");
+      form.append("userId", authData.user?.id ?? "anon");
+      const res = await fetch("/api/notes/audio", { method: "POST", body: form });
+      const { url, error } = await res.json() as { url?: string; error?: string };
+      if (error || !url) throw new Error(error);
+      if (forDraft) setDContent(url);
+      else setEDraft(p => ({ ...p, content: url }));
     } catch {
       setToastData({ type: "error", msg: "Impossible de sauvegarder l'enregistrement" });
     } finally {
