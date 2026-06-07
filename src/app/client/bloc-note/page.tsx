@@ -141,13 +141,20 @@ function NoteCard({
             {note.items.length > 4 && <span className="text-[10px] text-white/25">+{note.items.length - 4} autres</span>}
           </div>
         ) : note.type === "voice" ? (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: `${ac}20` }}>
-              <Mic size={13} style={{ color: ac }} />
+          note.content?.startsWith("http") ? (
+            <div onClick={e => e.stopPropagation()}>
+              <audio src={note.content} controls className="w-full rounded-lg"
+                style={{ accentColor: ac, height: "32px" }} />
             </div>
-            <p className="text-xs text-white/55 line-clamp-3 flex-1">{note.content || "Note vocale"}</p>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: `${ac}20` }}>
+                <Mic size={13} style={{ color: ac }} />
+              </div>
+              <p className="text-xs text-white/55 line-clamp-3 flex-1">{note.content || "Note vocale"}</p>
+            </div>
+          )
         ) : (
           <p className="text-xs text-white/60 line-clamp-5 whitespace-pre-line leading-relaxed">{note.content}</p>
         )}
@@ -356,7 +363,7 @@ export default function BlocNotePage() {
       mr.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: mime ?? "audio/webm" });
         stream.getTracks().forEach(t => t.stop());
-        transcribeBlob(blob, forDraft);
+        saveAudioNote(blob, forDraft);
       };
       mr.start(); mediaRef.current = mr; setRecording(true);
     } catch { /* microphone unavailable or permission denied — button stays visible */ }
@@ -364,17 +371,23 @@ export default function BlocNotePage() {
 
   function stopRec() { mediaRef.current?.stop(); setRecording(false); }
 
-  async function transcribeBlob(blob: Blob, forDraft: boolean) {
+  async function saveAudioNote(blob: Blob, forDraft: boolean) {
     setTranscribing(true);
     try {
-      const form = new FormData();
-      form.append("audio", blob, "audio.webm");
-      const res = await fetch("/api/transcribe", { method: "POST", body: form });
-      const { text = "" } = await res.json() as { text?: string };
-      if (forDraft) setDContent(p => (p ? `${p}\n${text}` : text).trim());
-      else setEDraft(p => ({ ...p, content: (`${p.content ?? editNote?.content ?? ""}\n${text}`).trim() }));
-    } catch { setToastData({ type: "error", msg: "Transcription échouée" }); }
-    finally { setTranscribing(false); }
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData.user?.id ?? "anon";
+      const ext = blob.type.includes("mp4") ? "m4a" : blob.type.includes("ogg") ? "ogg" : "webm";
+      const filename = `${userId}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("audio-notes").upload(filename, blob, { contentType: blob.type });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from("audio-notes").getPublicUrl(filename);
+      if (forDraft) setDContent(publicUrl);
+      else setEDraft(p => ({ ...p, content: publicUrl }));
+    } catch {
+      setToastData({ type: "error", msg: "Impossible de sauvegarder l'enregistrement" });
+    } finally {
+      setTranscribing(false);
+    }
   }
 
     async function callAI(action: string, content: string) {
@@ -544,7 +557,7 @@ export default function BlocNotePage() {
                     </button>
                   ) : transcribing ? (
                     <span className="flex items-center gap-2 text-sm text-white/40">
-                      <Loader2 size={13} className="animate-spin" />Transcription en cours…
+                      <Loader2 size={13} className="animate-spin" />Sauvegarde…
                     </span>
                   ) : (
                     <button onClick={() => startRec(true)}
@@ -554,9 +567,14 @@ export default function BlocNotePage() {
                     </button>
                   )}
                   {dContent && (
-                    <p className="text-xs text-white/55 bg-white/5 rounded-xl p-3 whitespace-pre-line leading-relaxed">
-                      {dContent}
-                    </p>
+                    dContent.startsWith("http") ? (
+                      <audio src={dContent} controls className="w-full rounded-xl mt-1"
+                        style={{ accentColor: acOf(dColor) }} />
+                    ) : (
+                      <p className="text-xs text-white/55 bg-white/5 rounded-xl p-3 whitespace-pre-line leading-relaxed">
+                        {dContent}
+                      </p>
+                    )
                   )}
                 </div>
               )}
@@ -778,20 +796,25 @@ export default function BlocNotePage() {
                         </button>
                       ) : transcribing ? (
                         <span className="flex items-center gap-2 text-xs text-white/35">
-                          <Loader2 size={12} className="animate-spin" />Transcription…
+                          <Loader2 size={12} className="animate-spin" />Sauvegarde…
                         </span>
                       ) : (
                         <button onClick={() => startRec(false)}
                           className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs"
                           style={{ background:`${editAc}12`, border:`1px solid ${editAc}30`, color:editAc }}>
-                          <Mic size={13} />Ajouter vocal
+                          <Mic size={13} />Enregistrer
                         </button>
                       )}
                     </div>
-                    <textarea value={eDraft.content ?? ""}
-                      onChange={e => setEDraft(p => ({ ...p, content: e.target.value }))}
-                      placeholder="Transcription…"
-                      className="w-full bg-white/5 rounded-xl p-3 text-sm text-white/70 placeholder:text-white/18 focus:outline-none resize-none leading-relaxed min-h-[120px] border border-white/10" />
+                    {(eDraft.content ?? editNote.content)?.startsWith("http") ? (
+                      <audio src={eDraft.content ?? editNote.content} controls className="w-full rounded-xl"
+                        style={{ accentColor: editAc }} />
+                    ) : (
+                      <textarea value={eDraft.content ?? ""}
+                        onChange={e => setEDraft(p => ({ ...p, content: e.target.value }))}
+                        placeholder="Note vocale…"
+                        className="w-full bg-white/5 rounded-xl p-3 text-sm text-white/70 placeholder:text-white/18 focus:outline-none resize-none leading-relaxed min-h-[80px] border border-white/10" />
+                    )}
                   </div>
                 )}
 
