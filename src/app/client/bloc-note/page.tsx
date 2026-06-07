@@ -249,8 +249,14 @@ export default function BlocNotePage() {
 
     const [recording,    setRecording]    = useState(false);
   const [transcribing, setTranscribing] = useState(false);
-  const mediaRef  = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const [recSecs,      setRecSecs]      = useState(0);
+  const mediaRef       = useRef<MediaRecorder | null>(null);
+  const chunksRef      = useRef<Blob[]>([]);
+  const analyserRef    = useRef<AnalyserNode | null>(null);
+  const audioCtxRef    = useRef<AudioContext | null>(null);
+  const waveCanvasRef  = useRef<HTMLCanvasElement | null>(null);
+  const animFrameRef   = useRef<number>(0);
+  const recIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -349,7 +355,32 @@ export default function BlocNotePage() {
     setToastData({ type: "success", msg: "Supprimée" });
   }
 
-    async function startRec(forDraft = false) {
+  function startWave() {
+    const analyser = analyserRef.current;
+    const canvas   = waveCanvasRef.current;
+    if (!analyser || !canvas) return;
+    const ctx  = canvas.getContext("2d");
+    if (!ctx) return;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    function frame() {
+      animFrameRef.current = requestAnimationFrame(frame);
+      analyser!.getByteFrequencyData(data);
+      ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
+      const bw = canvas!.width / data.length;
+      const cy = canvas!.height / 2;
+      data.forEach((v, i) => {
+        const h = Math.max(2, (v / 255) * cy * 1.8);
+        const alpha = 0.3 + (v / 255) * 0.7;
+        ctx!.fillStyle = `rgba(167,139,250,${alpha})`;
+        ctx!.beginPath();
+        ctx!.roundRect(i * bw + 1, cy - h / 2, Math.max(1, bw - 2), h, 2);
+        ctx!.fill();
+      });
+    }
+    frame();
+  }
+
+  async function startRec(forDraft = false) {
     if (!navigator.mediaDevices?.getUserMedia) {
       setToastData({ type: "error", msg: "Votre navigateur ne supporte pas l'enregistrement audio" });
       return;
@@ -366,10 +397,33 @@ export default function BlocNotePage() {
         saveAudioNote(blob, forDraft);
       };
       mr.start(); mediaRef.current = mr; setRecording(true);
+      /* Timer */
+      setRecSecs(0);
+      recIntervalRef.current = setInterval(() => setRecSecs(p => p + 1), 1000);
+      /* Waveform */
+      try {
+        const AC = (window.AudioContext ?? (window as unknown as Record<string, typeof AudioContext>).webkitAudioContext);
+        const audioCtx = new AC();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 128;
+        audioCtx.createMediaStreamSource(stream).connect(analyser);
+        analyserRef.current = analyser;
+        audioCtxRef.current = audioCtx;
+        setTimeout(startWave, 50);
+      } catch { /* visualizer optional */ }
     } catch { /* microphone unavailable or permission denied — button stays visible */ }
   }
 
-  function stopRec() { mediaRef.current?.stop(); setRecording(false); }
+  function stopRec() {
+    mediaRef.current?.stop();
+    setRecording(false);
+    setRecSecs(0);
+    if (recIntervalRef.current) { clearInterval(recIntervalRef.current); recIntervalRef.current = null; }
+    cancelAnimationFrame(animFrameRef.current);
+    audioCtxRef.current?.close().catch(() => {});
+    analyserRef.current = null;
+    audioCtxRef.current = null;
+  }
 
   async function saveAudioNote(blob: Blob, forDraft: boolean) {
     setTranscribing(true);
@@ -551,10 +605,20 @@ export default function BlocNotePage() {
               {dType === "voice" && (
                 <div className="px-4 py-2 space-y-2">
                   {recording ? (
-                    <button onClick={stopRec}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm animate-pulse">
-                      <StopCircle size={14} />Arrêter l&apos;enregistrement
-                    </button>
+                    <div className="relative rounded-xl overflow-hidden" style={{ background: `${acOf(dColor)}0a`, height: 52 }}>
+                      <canvas ref={waveCanvasRef} width={600} height={52} className="absolute inset-0 w-full h-full" />
+                      <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse block" />
+                          <span className="text-xs text-white/45 tabular-nums">
+                            {String(Math.floor(recSecs / 60)).padStart(2, "0")}:{String(recSecs % 60).padStart(2, "0")}
+                          </span>
+                        </div>
+                        <button onClick={stopRec} className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-xs">
+                          <StopCircle size={12} />Arrêter
+                        </button>
+                      </div>
+                    </div>
                   ) : transcribing ? (
                     <span className="flex items-center gap-2 text-sm text-white/40">
                       <Loader2 size={13} className="animate-spin" />Sauvegarde…
@@ -790,10 +854,20 @@ export default function BlocNotePage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       {recording ? (
-                        <button onClick={stopRec}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-xs animate-pulse">
-                          <StopCircle size={13} />Arrêter
-                        </button>
+                        <div className="relative w-full rounded-xl overflow-hidden" style={{ background: `${editAc}0a`, height: 44 }}>
+                          <canvas ref={waveCanvasRef} width={600} height={44} className="absolute inset-0 w-full h-full" />
+                          <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse block" />
+                              <span className="text-[11px] text-white/40 tabular-nums">
+                                {String(Math.floor(recSecs / 60)).padStart(2, "0")}:{String(recSecs % 60).padStart(2, "0")}
+                              </span>
+                            </div>
+                            <button onClick={stopRec} className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-xs">
+                              <StopCircle size={11} />Arrêter
+                            </button>
+                          </div>
+                        </div>
                       ) : transcribing ? (
                         <span className="flex items-center gap-2 text-xs text-white/35">
                           <Loader2 size={12} className="animate-spin" />Sauvegarde…
