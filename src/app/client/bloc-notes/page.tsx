@@ -942,7 +942,10 @@ export default function BlocNotesPage() {
         </div>
       </div>
 
-            <div className={`flex flex-col border-r border-white/[0.06] bg-white/[0.025] ${view==="editor"&&selected&&nbMode==="notes"?"hidden lg:flex":""} ${nbMode==="cahiers"&&activeNb?"hidden lg:flex":""} w-full lg:w-80 shrink-0`}>
+            <div className={`flex flex-col border-r border-white/[0.06] bg-white/[0.025] w-full lg:w-80 shrink-0
+        ${view==="editor"&&selected&&nbMode==="notes"?"hidden lg:flex":""}
+        ${nbMode==="cahiers"&&activeNb?"hidden lg:flex":""}
+      `}>
 
         {/* ═══ CAHIERS CENTER PANEL ═══ */}
         {nbMode==="cahiers" && !activeNb && (
@@ -1063,6 +1066,17 @@ export default function BlocNotesPage() {
 
         {/* ═══ NOTES: existing list (hidden when in cahiers mode) ═══ */}
         {nbMode==="notes" && (<>
+
+                {/* ── Mobile mode toggle (Notes / Cahiers) — hidden on desktop ── */}
+          <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-3 py-2 lg:hidden">
+            {([{v:"notes" as const,icon:StickyNote,label:"Notes"},{v:"cahiers" as const,icon:Book,label:"Cahiers"}]).map(m=>(
+              <button key={m.v} onClick={()=>setNbMode(m.v)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.72rem] font-bold transition-all ${nbMode===m.v?"bg-white/[0.1] text-white":"text-white/35 hover:text-white/55"}`}
+                style={nbMode===m.v?{border:`1px solid ${amber}30`}:{border:"1px solid transparent"}}>
+                <m.icon size={12}/>{m.label}
+              </button>
+            ))}
+          </div>
 
                 {/* ── List header: title + action icons ── */}
           <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
@@ -1268,7 +1282,10 @@ export default function BlocNotesPage() {
       </div>
 
       {/* ═══ RIGHT PANEL ═══ */}
-            <div className={`flex flex-1 flex-col overflow-hidden ${view==="list"&&!selected&&nbMode==="notes"?"hidden lg:flex":nbMode==="cahiers"&&!activeNb?"hidden lg:flex":""}`}>
+      <div className={`flex flex-1 flex-col overflow-hidden
+        ${view==="list"&&!selected&&nbMode==="notes"?"hidden lg:flex":""}
+        ${nbMode==="cahiers"&&!activeNb?"hidden lg:flex":""}
+      `}>
 
         {/* ═══ CANVAS EDITOR (cahiers mode) ═══ */}
         {nbMode==="cahiers" && activeNb && (
