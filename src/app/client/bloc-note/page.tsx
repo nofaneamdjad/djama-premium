@@ -247,12 +247,13 @@ export default function BlocNotePage() {
   const [aiResult,  setAiResult]  = useState("");
   const [aiAction,  setAiAction]  = useState("");
 
-    const [recording,    setRecording]    = useState(false);
-  const [transcribing, setTranscribing] = useState(false);
-  const [micBlocked,   setMicBlocked]   = useState(false);
-  const [recSecs,      setRecSecs]      = useState(0);
-  const mediaRef       = useRef<MediaRecorder | null>(null);
-  const chunksRef      = useRef<Blob[]>([]);
+    const [recording,   setRecording]   = useState(false);
+  const [micBlocked,  setMicBlocked]  = useState(false);
+  const [recSecs,     setRecSecs]     = useState(0);
+  const [liveText,    setLiveText]    = useState("");
+  const speechRef     = useRef<{ start:()=>void; stop:()=>void; onresult: unknown; onerror: unknown; onend: unknown; lang: string; continuous: boolean; interimResults: boolean } | null>(null);
+  const isRecRef      = useRef(false);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const analyserRef    = useRef<AnalyserNode | null>(null);
   const audioCtxRef    = useRef<AudioContext | null>(null);
   const waveCanvasRef  = useRef<HTMLCanvasElement | null>(null);
@@ -360,7 +361,7 @@ export default function BlocNotePage() {
     const analyser = analyserRef.current;
     const canvas   = waveCanvasRef.current;
     if (!analyser || !canvas) return;
-    const ctx  = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const data = new Uint8Array(analyser.frequencyBinCount);
     function frame() {
@@ -371,37 +372,28 @@ export default function BlocNotePage() {
       const cy = canvas!.height / 2;
       data.forEach((v, i) => {
         const h = Math.max(2, (v / 255) * cy * 1.8);
-        const alpha = 0.3 + (v / 255) * 0.7;
-        ctx!.fillStyle = `rgba(167,139,250,${alpha})`;
+        ctx!.fillStyle = `rgba(167,139,250,${0.3 + (v / 255) * 0.7})`;
         ctx!.beginPath();
-        ctx!.roundRect(i * bw + 1, cy - h / 2, Math.max(1, bw - 2), h, 2);
+        if ((ctx as unknown as Record<string,unknown>).roundRect) (ctx as unknown as {roundRect:(x:number,y:number,w:number,h:number,r:number)=>void}).roundRect(i * bw + 1, cy - h / 2, Math.max(1, bw - 2), h, 2);
+        else ctx!.rect(i * bw + 1, cy - h / 2, Math.max(1, bw - 2), h);
         ctx!.fill();
       });
     }
     frame();
   }
 
-  async function startRec(forDraft = false) {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setToastData({ type: "error", msg: "Votre navigateur ne supporte pas l'enregistrement audio" });
+  function startRec(forDraft = false) {
+    const w = window as unknown as Record<string, unknown>;
+    const SpeechRec = (w.SpeechRecognition ?? w.webkitSpeechRecognition) as (new() => { start:()=>void; stop:()=>void; lang:string; continuous:boolean; interimResults:boolean; onresult:(e:{ resultIndex:number; results:{ isFinal:boolean; 0:{transcript:string} }[] })=>void; onerror:(e:{ error:string })=>void; onend:()=>void }) | undefined;
+    if (!SpeechRec) {
+      setToastData({ type: "error", msg: "Reconnaissance vocale non disponible sur ce navigateur" });
       return;
     }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      chunksRef.current = [];
-      const mime = ["audio/webm","audio/ogg","audio/mp4"].find(m => MediaRecorder.isTypeSupported(m));
-      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      mr.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mime ?? "audio/webm" });
-        stream.getTracks().forEach(t => t.stop());
-        saveAudioNote(blob, forDraft);
-      };
-      mr.start(); mediaRef.current = mr; setRecording(true);
-      /* Timer */
-      setRecSecs(0);
-      recIntervalRef.current = setInterval(() => setRecSecs(p => p + 1), 1000);
-      /* Waveform */
+    setMicBlocked(false);
+
+    /* Waveform via getUserMedia (visual only) */
+    navigator.mediaDevices?.getUserMedia({ audio: true }).then(stream => {
+      mediaStreamRef.current = stream;
       try {
         const AC = (window.AudioContext ?? (window as unknown as Record<string, typeof AudioContext>).webkitAudioContext);
         const audioCtx = new AC();
@@ -411,44 +403,65 @@ export default function BlocNotePage() {
         analyserRef.current = analyser;
         audioCtxRef.current = audioCtx;
         setTimeout(startWave, 50);
-      } catch { /* visualizer optional */ }
-    } catch (err) {
-      const name = (err as DOMException).name ?? "";
-      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-        setMicBlocked(true);
-      } else {
-        setToastData({ type: "error", msg: "Microphone non accessible" });
+      } catch { /* waveform optional */ }
+    }).catch(() => { /* waveform optional */ });
+
+    /* Web Speech API — real-time transcription */
+    const recognition = new SpeechRec();
+    recognition.lang = "fr-FR";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    let accumulated = "";
+
+    recognition.onresult = (event: { resultIndex:number; results:{ isFinal:boolean; 0:{transcript:string} }[] }) => {
+      let finalPart = "";
+      let interim   = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) finalPart += event.results[i][0].transcript;
+        else interim += event.results[i][0].transcript;
       }
-    }
+      if (finalPart) {
+        accumulated = accumulated ? `${accumulated} ${finalPart}`.trim() : finalPart.trim();
+        if (forDraft) setDContent(accumulated);
+        else setEDraft(p => ({ ...p, content: accumulated }));
+      }
+      setLiveText(interim);
+    };
+
+    recognition.onerror = (event: { error: string }) => {
+      if (event.error === "not-allowed") setMicBlocked(true);
+      stopRec();
+    };
+
+    /* Auto-restart on silence (browser stops after ~5s silence) */
+    recognition.onend = () => {
+      if (isRecRef.current) {
+        try { recognition.start(); } catch { stopRec(); }
+      }
+    };
+
+    recognition.start();
+    speechRef.current = recognition;
+    isRecRef.current  = true;
+    setRecording(true);
+    setRecSecs(0);
+    recIntervalRef.current = setInterval(() => setRecSecs(p => p + 1), 1000);
   }
 
   function stopRec() {
-    mediaRef.current?.stop();
+    isRecRef.current = false;
+    speechRef.current?.stop();
+    speechRef.current = null;
     setRecording(false);
+    setLiveText("");
     setRecSecs(0);
     if (recIntervalRef.current) { clearInterval(recIntervalRef.current); recIntervalRef.current = null; }
     cancelAnimationFrame(animFrameRef.current);
     audioCtxRef.current?.close().catch(() => {});
     analyserRef.current = null;
     audioCtxRef.current = null;
-  }
-
-  async function saveAudioNote(blob: Blob, forDraft: boolean) {
-    setTranscribing(true);
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload  = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-      if (forDraft) setDContent(dataUrl);
-      else setEDraft(p => ({ ...p, content: dataUrl }));
-    } catch {
-      setToastData({ type: "error", msg: "Impossible de sauvegarder l'enregistrement" });
-    } finally {
-      setTranscribing(false);
-    }
+    mediaStreamRef.current?.getTracks().forEach(t => t.stop());
+    mediaStreamRef.current = null;
   }
 
     async function callAI(action: string, content: string) {
@@ -612,24 +625,23 @@ export default function BlocNotePage() {
               {dType === "voice" && (
                 <div className="px-4 py-2 space-y-2">
                   {recording ? (
-                    <div className="relative rounded-xl overflow-hidden" style={{ background: `${acOf(dColor)}0a`, height: 52 }}>
-                      <canvas ref={waveCanvasRef} width={600} height={52} className="absolute inset-0 w-full h-full" />
-                      <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse block" />
-                          <span className="text-xs text-white/45 tabular-nums">
-                            {String(Math.floor(recSecs / 60)).padStart(2, "0")}:{String(recSecs % 60).padStart(2, "0")}
-                          </span>
+                    <div className="space-y-1.5">
+                      <div className="relative rounded-xl overflow-hidden" style={{ background: `${acOf(dColor)}0a`, height: 48 }}>
+                        <canvas ref={waveCanvasRef} width={600} height={48} className="absolute inset-0 w-full h-full" />
+                        <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse block" />
+                            <span className="text-xs text-white/45 tabular-nums">
+                              {String(Math.floor(recSecs / 60)).padStart(2, "0")}:{String(recSecs % 60).padStart(2, "0")}
+                            </span>
+                          </div>
+                          <button onClick={stopRec} className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-xs">
+                            <StopCircle size={12} />Terminer
+                          </button>
                         </div>
-                        <button onClick={stopRec} className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-xs">
-                          <StopCircle size={12} />Arrêter
-                        </button>
                       </div>
+                      {liveText && <p className="text-xs text-white/35 italic px-1 truncate">{liveText}</p>}
                     </div>
-                  ) : transcribing ? (
-                    <span className="flex items-center gap-2 text-sm text-white/40">
-                      <Loader2 size={13} className="animate-spin" />Sauvegarde…
-                    </span>
                   ) : micBlocked ? (
                     <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3 space-y-2.5">
                       <p className="text-xs text-white/50 leading-relaxed">
@@ -648,15 +660,10 @@ export default function BlocNotePage() {
                       <Mic size={14} />Enregistrer
                     </button>
                   )}
-                  {dContent && (
-                    dContent.startsWith("http") || dContent.startsWith("data:audio") ? (
-                      <audio src={dContent} controls className="w-full rounded-xl mt-1"
-                        style={{ accentColor: acOf(dColor) }} />
-                    ) : (
-                      <p className="text-xs text-white/55 bg-white/5 rounded-xl p-3 whitespace-pre-line leading-relaxed">
-                        {dContent}
-                      </p>
-                    )
+                  {dContent && !recording && (
+                    <p className="text-xs text-white/55 bg-white/5 rounded-xl p-3 whitespace-pre-line leading-relaxed">
+                      {dContent}
+                    </p>
                   )}
                 </div>
               )}
@@ -870,7 +877,7 @@ export default function BlocNotePage() {
 
                 {(eDraft.type ?? editNote.type) === "voice" && (
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="space-y-1.5">
                       {recording ? (
                         <div className="relative w-full rounded-xl overflow-hidden" style={{ background: `${editAc}0a`, height: 44 }}>
                           <canvas ref={waveCanvasRef} width={600} height={44} className="absolute inset-0 w-full h-full" />
@@ -882,18 +889,14 @@ export default function BlocNotePage() {
                               </span>
                             </div>
                             <button onClick={stopRec} className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-xs">
-                              <StopCircle size={11} />Arrêter
+                              <StopCircle size={11} />Terminer
                             </button>
                           </div>
                         </div>
-                      ) : transcribing ? (
-                        <span className="flex items-center gap-2 text-xs text-white/35">
-                          <Loader2 size={12} className="animate-spin" />Sauvegarde…
-                        </span>
                       ) : micBlocked ? (
                         <div className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 space-y-2">
                           <p className="text-xs text-white/45 leading-relaxed">Accès microphone refusé — autorisez dans les réglages du navigateur.</p>
-                          <button onClick={() => { setMicBlocked(false); void startRec(false); }}
+                          <button onClick={() => { setMicBlocked(false); startRec(false); }}
                             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all"
                             style={{ background:`${editAc}18`, border:`1px solid ${editAc}35`, color:editAc }}>
                             <Mic size={11} />Réessayer
@@ -906,16 +909,12 @@ export default function BlocNotePage() {
                           <Mic size={13} />Enregistrer
                         </button>
                       )}
+                      {liveText && recording && <p className="text-xs text-white/35 italic px-1 truncate">{liveText}</p>}
                     </div>
-                    {((eDraft.content ?? editNote?.content)?.startsWith("http") || (eDraft.content ?? editNote?.content)?.startsWith("data:audio")) ? (
-                      <audio src={eDraft.content ?? editNote?.content} controls className="w-full rounded-xl"
-                        style={{ accentColor: editAc }} />
-                    ) : (
-                      <textarea value={eDraft.content ?? ""}
-                        onChange={e => setEDraft(p => ({ ...p, content: e.target.value }))}
-                        placeholder="Note vocale…"
-                        className="w-full bg-white/5 rounded-xl p-3 text-sm text-white/70 placeholder:text-white/18 focus:outline-none resize-none leading-relaxed min-h-[80px] border border-white/10" />
-                    )}
+                    <textarea value={eDraft.content ?? ""}
+                      onChange={e => setEDraft(p => ({ ...p, content: e.target.value }))}
+                      placeholder="Transcription vocale…"
+                      className="w-full bg-white/5 rounded-xl p-3 text-sm text-white/70 placeholder:text-white/18 focus:outline-none resize-none leading-relaxed min-h-[80px] border border-white/10" />
                   </div>
                 )}
 
