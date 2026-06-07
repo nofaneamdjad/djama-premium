@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Home, BarChart2, ReceiptText, CreditCard, Wallet,
   Users, FileText, Truck, Package, ListTodo, Calendar,
-  CalendarRange, Timer, StickyNote, Mic, Search, Zap, Star, Brain,
+  CalendarRange, Timer, StickyNote, Search, Zap, Star, Brain,
   Crown, Sparkles, Lock, ChevronRight, X, Menu,
   LogOut, Bell, ArrowRight, CheckCircle2, Share2, User, AlertTriangle,
   Building2, Banknote,
@@ -25,7 +25,7 @@ const FREE_NAV = [
   { href: "/client",           label: "Accueil",          icon: Home,        exact: true  },
   { href: "/client/factures",  label: "Factures & Devis", icon: ReceiptText, exact: false },
   { href: "/client/planning",  label: "Planning",         icon: Calendar,    exact: false },
-  { href: "/client/bloc-note", label: "Bloc-note",        icon: Mic,         exact: false },
+  { href: "/client/bloc-notes", label: "Notes",            icon: StickyNote,  exact: false },
 ] as const;
 
 /* ─────────── ALL PRO TOOLS (for popup) ─────────── */
@@ -41,7 +41,7 @@ const PRO_TOOLS = [
   { href: "/client/productivite",    label: "Tâches",            icon: ListTodo     },
   { href: "/client/equipe",          label: "Équipe",            icon: CalendarRange},
   { href: "/client/chrono",          label: "Chrono",            icon: Timer        },
-  { href: "/client/notes",           label: "Notes IA",          icon: StickyNote   },
+  { href: "/client/bloc-notes",      label: "Notes",             icon: StickyNote   },
   { href: "/client/sourcing",        label: "Sourcing IA",       icon: Search       },
   { href: "/client/reputation",      label: "Réputation",        icon: Star         },
   { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux",   icon: Share2       },
@@ -88,8 +88,7 @@ const PREMIUM_GROUPS = [
   {
     label: "Notes & IA",
     items: [
-      { href: "/client/notes",           label: "Notes IA",       icon: StickyNote, exact: false },
-      { href: "/client/bloc-note",       label: "Bloc-note",      icon: Mic,        exact: false },
+      { href: "/client/bloc-notes",       label: "Notes",          icon: StickyNote, exact: false },
       { href: "/client/sourcing",        label: "Sourcing IA",    icon: Search,     exact: false },
       { href: "/client/assistant",       label: "Assistant IA",   icon: Zap,        exact: false },
       { href: "/client/reputation",      label: "Réputation",     icon: Star,       exact: false },

@@ -7,7 +7,7 @@ import {
   ReceiptText, CreditCard, Wallet,
   Users, FileText, Truck, Package,
   ListTodo, Calendar, CalendarRange, Timer,
-  StickyNote, Mic,
+  StickyNote,
   Search, Zap, Star, Share2, Brain,
   Building2, Banknote,
 } from "lucide-react";
@@ -67,8 +67,7 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
     icon:  StickyNote,
     color: "#92400e",
     modules: [
-      { href: "/client/notes",     label: "Notes IA",  sub: "Prise de notes intelligente", icon: StickyNote, color: "#92400e", bg: "#fef9c3" },
-      { href: "/client/bloc-note", label: "Bloc-note", sub: "Dictée vocale et mémos",      icon: Mic,        color: "#9d174d", bg: "#fce7f3" },
+      { href: "/client/bloc-notes", label: "Notes", sub: "Notes, cahiers, IA, vocal & canvas", icon: StickyNote, color: "#92400e", bg: "#fef9c3" },
     ],
   },
   {

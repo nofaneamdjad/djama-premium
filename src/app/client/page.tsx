@@ -527,7 +527,7 @@ export default function CockpitPage() {
               { href: "/client/factures?create=devis",   iconKey: "qa/devis",         label: "Devis",    locked: false },
               { href: "/client/depenses",                iconKey: "/client/depenses", label: "Dépense",  locked: isFree },
               { href: "/client/crm",                     iconKey: "qa/contact",       label: "Contact",  locked: isFree },
-              { href: "/client/notes",                   iconKey: "qa/note",          label: "Note",     locked: false },
+              { href: "/client/bloc-notes",              iconKey: "qa/note",          label: "Note",     locked: false },
               { href: "/client/chrono",                  iconKey: "qa/timer",         label: "Timer",    locked: isFree },
             ] as { href: string; iconKey: string; label: string; locked: boolean }[]).map((a, i) => (
               <motion.div key={a.label}
