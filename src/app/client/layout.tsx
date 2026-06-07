@@ -15,6 +15,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useSubscription } from "@/lib/use-require-subscription";
 import { getToolTier } from "@/lib/plans";
+import FloatingAIAssistant from "@/components/FloatingAIAssistant";
 
 const GOLD = "#c9a55a";
 const DARK = "#111318";
@@ -827,6 +828,12 @@ const DARK_PAGES = [
   "/client/reputation",
   "/client/coaching-ia",
   "/client/stocks",
+  "/client/fournisseurs",
+  "/client/crm",
+  "/client/depenses",
+  "/client/factures",
+  "/client/paie",
+  "/client/portail",
 ];
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -1095,6 +1102,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 <Crown size={11} /> Voir DJAMA PRO
               </button>
             )}
+            {!isGated && <FloatingAIAssistant isDark={isDarkPage} />}
             <NotifBell ready={isReady} />
             <Link href="/client/profil"
               className="flex h-7 w-7 items-center justify-center rounded-lg text-[0.65rem] font-bold transition hover:opacity-75"

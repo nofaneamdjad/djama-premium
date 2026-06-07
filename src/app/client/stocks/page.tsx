@@ -1014,19 +1014,33 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
 
 // ─────────────────────────── REPORT VIEW ───────────────────────────
 
-function ReportView({ products, movements }: { products: Product[]; movements: Movement[] }) {
-  const totalProducts = products.filter((p) => p.is_active).length;
-  const totalValue = products.reduce((s, p) => s + p.stock_current * p.purchase_price, 0);
-  const totalSaleValue = products.reduce((s, p) => s + p.stock_current * p.sale_price, 0);
-  const potentialMargin = totalSaleValue - totalValue;
-  const outOfStock = products.filter((p) => p.stock_current <= 0).length;
-  const lowStock = products.filter((p) => p.stock_current > 0 && p.stock_current <= p.stock_minimum).length;
+type StocksRapport = {
+  score_sante:          number;
+  resume_executif:      string;
+  points_forts:         string[];
+  alertes:              string[];
+  recommandations:      string[];
+  produits_prioritaires: { nom: string; sku: string; etat: string; action: string }[];
+  objectif_semaine:     string;
+};
 
-  // Total entrées / sorties
-  const totalIn = movements.filter((m) => m.type === "entree" || m.type === "retour").reduce((s, m) => s + m.quantity, 0);
+function ReportView({ products, movements }: { products: Product[]; movements: Movement[] }) {
+  const [rapport, setRapport]               = useState<StocksRapport | null>(null);
+  const [rapportLoading, setRapportLoading] = useState(false);
+  const [rapportOpen, setRapportOpen]       = useState(false);
+
+  const totalProducts   = products.filter((p) => p.is_active).length;
+  const totalValue      = products.reduce((s, p) => s + p.stock_current * p.purchase_price, 0);
+  const totalSaleValue  = products.reduce((s, p) => s + p.stock_current * p.sale_price, 0);
+  const potentialMargin = totalSaleValue - totalValue;
+  const marginRate      = totalValue > 0 ? Math.round((potentialMargin / totalValue) * 100) : 0;
+  const outOfStock      = products.filter((p) => p.stock_current <= 0).length;
+  const lowStock        = products.filter((p) => p.stock_current > 0 && p.stock_minimum > 0 && p.stock_current <= p.stock_minimum).length;
+  const criticalStock   = products.filter((p) => p.stock_current > 0 && p.stock_minimum > 0 && p.stock_current <= p.stock_minimum * 0.5).length;
+
+  const totalIn  = movements.filter((m) => m.type === "entree" || m.type === "retour").reduce((s, m) => s + m.quantity, 0);
   const totalOut = movements.filter((m) => m.type === "sortie" || m.type === "perte" || m.type === "casse").reduce((s, m) => s + m.quantity, 0);
 
-  // Rotation par catégorie
   const cats = [...new Set(products.map((p) => p.category))];
   const catStats = cats.map((cat) => {
     const catProds = products.filter((p) => p.category === cat);
@@ -1035,17 +1049,209 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
   }).sort((a, b) => b.val - a.val);
   const totalCatVal = catStats.reduce((s, c) => s + c.val, 0);
 
+  async function runRapportIA() {
+    setRapportLoading(true);
+    setRapportOpen(false);
+    try {
+      const ruptures  = products.filter(p => p.stock_current <= 0).slice(0, 10)
+        .map(p => ({ name: p.name, sku: p.sku ?? "", supplier: p.supplier_name ?? "" }));
+      const alertsStock = products
+        .filter(p => p.stock_current > 0 && p.stock_minimum > 0 && p.stock_current <= p.stock_minimum)
+        .sort((a, b) => (a.stock_current / Math.max(a.stock_minimum, 1)) - (b.stock_current / Math.max(b.stock_minimum, 1)))
+        .slice(0, 10)
+        .map(p => ({
+          name: p.name, sku: p.sku ?? "",
+          current: p.stock_current, minimum: p.stock_minimum,
+          state: getStockState(p),
+        }));
+
+      const res = await fetch("/api/stocks-rapport", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          totalProducts, outOfStock, lowStock, criticalStock,
+          totalValue, totalSaleValue, potentialMargin, marginRate,
+          totalIn, totalOut,
+          topCategories: catStats.slice(0, 6).map(c => ({ cat: c.cat, count: c.count, val: c.val })),
+          ruptures,
+          alertsStock,
+        }),
+      });
+      if (!res.ok) throw new Error("Erreur serveur");
+      const data = await res.json() as StocksRapport;
+      setRapport(data);
+      setRapportOpen(true);
+    } catch {
+      /* silent */
+    } finally {
+      setRapportLoading(false);
+    }
+  }
+
+  /* score gauge */
+  const score      = rapport?.score_sante ?? 0;
+  const R          = 28;
+  const circ       = 2 * Math.PI * R;
+  const dashOffset = circ * (1 - score / 100);
+  const scoreColor = score >= 70 ? "#10b981" : score >= 45 ? "#f59e0b" : "#ef4444";
+
   const kpis = [
-    { label: "Produits actifs",     value: totalProducts,                   sub: `${outOfStock} ruptures · ${lowStock} faibles` },
-    { label: "Valeur stock achat",  value: fmtEur(totalValue),             sub: "Prix de revient total" },
-    { label: "Valeur stock vente",  value: fmtEur(totalSaleValue),         sub: "Prix de vente total" },
-    { label: "Marge potentielle",   value: fmtEur(potentialMargin),        sub: `${totalValue > 0 ? Math.round((potentialMargin / totalValue) * 100) : 0}% sur le coût` },
-    { label: "Total entrées",       value: totalIn,                         sub: "Toutes périodes" },
-    { label: "Total sorties",       value: totalOut,                        sub: "Toutes périodes" },
+    { label: "Produits actifs",    value: totalProducts,          sub: `${outOfStock} ruptures · ${lowStock} faibles` },
+    { label: "Valeur stock achat", value: fmtEur(totalValue),    sub: "Prix de revient total" },
+    { label: "Valeur stock vente", value: fmtEur(totalSaleValue), sub: "Prix de vente total" },
+    { label: "Marge potentielle",  value: fmtEur(potentialMargin), sub: `${marginRate}% sur le coût` },
+    { label: "Total entrées",      value: totalIn,                sub: "Toutes périodes" },
+    { label: "Total sorties",      value: totalOut,               sub: "Toutes périodes" },
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-5 space-y-6">
+    <div className="flex-1 overflow-y-auto p-5 space-y-5">
+
+      {/* ── Header + bouton Analyse IA ── */}
+      <div className="flex items-center justify-between">
+        <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/30">Rapport inventaire</p>
+        <button
+          onClick={runRapportIA}
+          disabled={rapportLoading}
+          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all disabled:opacity-60 hover:brightness-110 active:scale-95"
+          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}
+        >
+          {rapportLoading
+            ? <RefreshCw size={11} className="animate-spin"/>
+            : <Zap size={11}/>
+          }
+          {rapportLoading ? "Analyse…" : "Analyse IA"}
+        </button>
+      </div>
+
+      {/* ── Panneau IA ── */}
+      <AnimatePresence>
+        {rapportOpen && rapport && (
+          <motion.div
+            key="rapport-ia"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="rounded-2xl p-5 space-y-5"
+            style={{ background: "linear-gradient(135deg,rgba(201,165,90,0.07),rgba(201,165,90,0.03))", border: "1px solid rgba(201,165,90,0.18)" }}
+          >
+            {/* Score + résumé */}
+            <div className="flex items-start gap-5">
+              <div className="shrink-0 flex flex-col items-center gap-1">
+                <svg width={72} height={72} viewBox="0 0 72 72">
+                  <circle cx={36} cy={36} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={5}/>
+                  <circle
+                    cx={36} cy={36} r={R} fill="none"
+                    stroke={scoreColor} strokeWidth={5}
+                    strokeLinecap="round"
+                    strokeDasharray={`${circ}`}
+                    strokeDashoffset={dashOffset}
+                    transform="rotate(-90 36 36)"
+                    style={{ transition: "stroke-dashoffset 0.8s ease" }}
+                  />
+                  <text x={36} y={40} textAnchor="middle" fill={scoreColor} fontSize={15} fontWeight={900} fontFamily="inherit">{score}</text>
+                </svg>
+                <p className="text-[0.55rem] font-bold uppercase tracking-wider text-white/30">Score</p>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[0.65rem] font-black uppercase tracking-widest mb-1.5" style={{ color: "#c9a55a" }}>Résumé exécutif</p>
+                <p className="text-[0.75rem] leading-relaxed text-white/70">{rapport.resume_executif}</p>
+              </div>
+            </div>
+
+            {/* Points forts + Alertes */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              {rapport.points_forts.length > 0 && (
+                <div className="rounded-xl p-4" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
+                  <p className="text-[0.6rem] font-black uppercase tracking-widest text-emerald-400/70 mb-2.5">Points forts</p>
+                  <ul className="space-y-1.5">
+                    {rapport.points_forts.map((pt, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[0.72rem] text-white/65">
+                        <span className="mt-1 shrink-0 h-1.5 w-1.5 rounded-full bg-emerald-400"/>
+                        {pt}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {rapport.alertes.length > 0 && (
+                <div className="rounded-xl p-4" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                  <p className="text-[0.6rem] font-black uppercase tracking-widest text-red-400/70 mb-2.5">Alertes</p>
+                  <ul className="space-y-1.5">
+                    {rapport.alertes.map((al, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[0.72rem] text-white/65">
+                        <AlertTriangle size={10} className="mt-0.5 shrink-0 text-red-400"/>
+                        {al}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Recommandations */}
+            {rapport.recommandations.length > 0 && (
+              <div>
+                <p className="text-[0.6rem] font-black uppercase tracking-widest mb-2.5" style={{ color: "rgba(201,165,90,0.7)" }}>Recommandations</p>
+                <ol className="space-y-2">
+                  {rapport.recommandations.map((r, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-[0.72rem] text-white/65">
+                      <span className="shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-[0.55rem] font-black"
+                        style={{ background: "rgba(201,165,90,0.15)", color: "#c9a55a" }}>{i + 1}</span>
+                      {r}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Produits prioritaires */}
+            {rapport.produits_prioritaires.length > 0 && (
+              <div>
+                <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/30 mb-2.5">Produits prioritaires</p>
+                <div className="space-y-1.5">
+                  {rapport.produits_prioritaires.map((p, i) => {
+                    const stateColor = p.etat === "rupture" ? "#ef4444" : p.etat === "critique" ? "#f97316" : "#f59e0b";
+                    return (
+                      <div key={i} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.04)" }}>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="shrink-0 h-6 w-6 rounded-lg flex items-center justify-center"
+                            style={{ background: `${stateColor}18`, border: `1px solid ${stateColor}30` }}>
+                            <Package size={10} style={{ color: stateColor }}/>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[0.7rem] font-bold text-white/80 truncate">{p.nom}</p>
+                            {p.sku && <p className="text-[0.58rem] text-white/30">{p.sku}</p>}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-[0.6rem] font-black uppercase" style={{ color: stateColor }}>{p.etat}</p>
+                          <p className="text-[0.62rem] text-white/40 max-w-[120px] text-right leading-snug">{p.action}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Objectif semaine */}
+            {rapport.objectif_semaine && (
+              <div className="flex items-start gap-2.5 rounded-xl px-4 py-3"
+                style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
+                <Activity size={12} className="shrink-0 mt-0.5" style={{ color: "#c9a55a" }}/>
+                <div>
+                  <p className="text-[0.55rem] font-black uppercase tracking-widest mb-0.5" style={{ color: "rgba(201,165,90,0.6)" }}>Objectif de la semaine</p>
+                  <p className="text-[0.72rem] font-semibold text-white/70">{rapport.objectif_semaine}</p>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {kpis.map((k, i) => (
           <div key={i} className="bg-white/[0.025] border border-white/[0.06] rounded-2xl p-4">
@@ -1056,9 +1262,12 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
         ))}
       </div>
 
+      {/* ── Valeur par catégorie ── */}
       {catStats.length > 0 && (
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><BarChart2 size={12} style={{ color: green }}/> Valeur stock par catégorie</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5">
+            <BarChart2 size={12} style={{ color: green }}/> Valeur stock par catégorie
+          </h3>
           <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl p-4 space-y-3">
             {catStats.map(({ cat, count, val }) => (
               <div key={cat}>
@@ -1080,9 +1289,12 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
         </div>
       )}
 
+      {/* ── Produits en rupture ── */}
       {products.filter((p) => p.stock_current <= 0).length > 0 && (
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><AlertOctagon size={12} className="text-red-400"/> Produits en rupture</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5">
+            <AlertOctagon size={12} className="text-red-400"/> Produits en rupture
+          </h3>
           <div className="space-y-1.5">
             {products.filter((p) => p.stock_current <= 0).map((p) => (
               <div key={p.id} className="flex items-center justify-between bg-red-500/5 border border-red-500/10 rounded-xl px-4 py-2.5">

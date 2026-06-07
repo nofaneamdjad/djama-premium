@@ -3,14 +3,19 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  StickyNote, Plus, Search, Trash2, X, Loader2, Star, Pin,
-  ChevronDown, Save, Sparkles, Wand2, FileText, ListChecks,
+  StickyNote, Plus, Search, Trash2, X, Loader2, Star,
+  Save, Sparkles, Wand2, FileText, ListChecks,
   MessageSquare, Mic, Square, Pause, Play, RotateCcw, ArrowLeft,
-  Folder, FolderPlus, Tag, CheckSquare, BookOpen, Users, Lightbulb,
-  Code, ClipboardList, Archive, Download, Clock, Brain, RefreshCw,
-  Languages, FileSearch, Zap, Check, MoreHorizontal, Hash, BarChart2,
+  Folder, FolderPlus, CheckSquare, BookOpen, Users, Lightbulb,
+  Code, ClipboardList, Archive, Download, Brain, RefreshCw,
+  Languages, Zap, Check, Hash, BarChart2,
+  Book, Pencil, Eraser, ChevronLeft, ChevronRight,
+  Undo2, AlignLeft, LayoutGrid, CalendarDays,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import NotebookCanvas, {
+  type NbStroke, type NbTool, type NbPageStyle,
+} from "@/components/NotebookCanvas";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 
@@ -211,6 +216,63 @@ Le problème que l'on résout :
 
 const FOLDER_COLORS = ["#a78bfa","#60a5fa","#4ade80","#f59e0b","#f472b6","#38bdf8","#fb923c"];
 
+/* ══════════════════════════════════════════════════════
+   CAHIERS — constantes
+══════════════════════════════════════════════════════ */
+const NB_COVERS = [
+  { id:"midnight", label:"Minuit",   g:"linear-gradient(150deg,#0f0c29,#302b63,#24243e)", s:"#0c0a22" },
+  { id:"ocean",    label:"Océan",    g:"linear-gradient(150deg,#1a5ea0,#0ea5e9)",         s:"#1a4e80" },
+  { id:"forest",   label:"Forêt",    g:"linear-gradient(150deg,#134e5e,#71b280)",         s:"#0d3d4a" },
+  { id:"amber",    label:"Ambre",    g:"linear-gradient(150deg,#f59e0b,#b45309)",         s:"#92400e" },
+  { id:"crimson",  label:"Cramoisi", g:"linear-gradient(150deg,#991b1b,#dc2626)",         s:"#7f1d1d" },
+  { id:"slate",    label:"Ardoise",  g:"linear-gradient(150deg,#0f172a,#334155)",         s:"#0f172a" },
+  { id:"purple",   label:"Violet",   g:"linear-gradient(150deg,#3730a3,#7c3aed)",         s:"#2e1065" },
+  { id:"emerald",  label:"Émeraude", g:"linear-gradient(150deg,#064e3b,#059669)",         s:"#022c22" },
+  { id:"rose",     label:"Rose",     g:"linear-gradient(150deg,#9d174d,#f43f5e)",         s:"#831843" },
+  { id:"copper",   label:"Cuivre",   g:"linear-gradient(150deg,#78350f,#b45309)",         s:"#451a03" },
+] as const;
+type NbCoverId = typeof NB_COVERS[number]["id"];
+
+const NB_PAGE_STYLES: { value: NbPageStyle; label: string; Icon: React.ElementType; desc: string }[] = [
+  { value:"blank",  label:"Blanche",    Icon:Square,       desc:"Page vierge" },
+  { value:"lined",  label:"Lignes",     Icon:AlignLeft,    desc:"Réglure standard" },
+  { value:"grid",   label:"Carreaux",   Icon:LayoutGrid,   desc:"Quadrillage" },
+  { value:"dotted", label:"Pointillés", Icon:Hash,         desc:"Grille de points" },
+  { value:"agenda", label:"Agenda",     Icon:CalendarDays, desc:"Créneaux horaires" },
+];
+
+const NB_COLORS = [
+  "#1e293b","#dc2626","#2563eb","#16a34a",
+  "#d97706","#7c3aed","#db2777","#0891b2",
+];
+
+const NB_WIDTHS: { label: string; v: number }[] = [
+  { label:"S", v:1.5 },
+  { label:"M", v:3   },
+  { label:"L", v:8   },
+  { label:"XL",v:18  },
+];
+
+/* ──── Notebook types ──── */
+interface Notebook {
+  id:         string;
+  user_id:    string;
+  name:       string;
+  cover_id:   NbCoverId | string;
+  page_style: NbPageStyle;
+  created_at: string;
+  updated_at: string;
+}
+interface NotebookPage {
+  id:          string;
+  notebook_id: string;
+  user_id:     string;
+  page_number: number;
+  strokes:     NbStroke[];
+  created_at:  string;
+  updated_at:  string;
+}
+
 const getNoteType = (n: Note): NoteType => {
   if (n.note_type) return n.note_type;
 
@@ -218,9 +280,17 @@ const getNoteType = (n: Note): NoteType => {
   return map[n.category] ?? "texte";
 };
 const getTypeInfo = (t: NoteType) => NOTE_TYPES.find(x => x.value === t) ?? NOTE_TYPES[0];
+const TYPE_DESC: Record<NoteType, string> = {
+  "texte":        "Document libre, prose, essai",
+  "checklist":    "Liste de tâches à cocher",
+  "réunion":      "Ordre du jour, participants",
+  "idée":         "Brainstorming, pistes",
+  "compte-rendu": "Synthèse et décisions",
+  "journal":      "Notes quotidiennes",
+  "code":         "Snippets, documentation",
+  "vocal":        "Transcription dictée",
+};
 const countWords = (t: string) => t.trim() ? t.trim().split(/\s+/).length : 0;
-const fmtDate = (iso: string) =>
-  new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}).format(new Date(iso));
 const fmtDateShort = (iso: string) =>
   new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"short"}).format(new Date(iso));
 
@@ -315,17 +385,37 @@ export default function BlocNotesPage() {
   const [aiResult,      setAiResult]      = useState("");
   const [chatPrompt,    setChatPrompt]    = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
-  const [showVersions,  setShowVersions]  = useState(false);
   const [confirmDel,    setConfirmDel]    = useState(false);
   const [folderModal,   setFolderModal]   = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor,setNewFolderColor]= useState("#a78bfa");
   const [exportMenu,    setExportMenu]    = useState(false);
+  const [searchOpen,    setSearchOpen]    = useState(false);
 
     const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [voiceSec,   setVoiceSec]   = useState(0);
   const [voiceTxt,   setVoiceTxt]   = useState("");
   const [voiceLoad,  setVoiceLoad]  = useState(false);
+
+  /* ── Notebook state ────────────────────────────────── */
+  const [nbMode,        setNbMode]        = useState<"notes"|"cahiers">("notes");
+  const [notebooks,     setNotebooks]     = useState<Notebook[]>([]);
+  const [activeNb,      setActiveNb]      = useState<Notebook|null>(null);
+  const [nbPages,       setNbPages]       = useState<NotebookPage[]>([]);
+  const [activePageIdx, setActivePageIdx] = useState(0);
+  const [nbStrokes,     setNbStrokes]     = useState<NbStroke[]>([]);
+  const [nbHistory,     setNbHistory]     = useState<NbStroke[][]>([]);
+  const [nbTool,        setNbTool]        = useState<NbTool>("pen");
+  const [nbColor,       setNbColor]       = useState("#1e293b");
+  const [nbWidthIdx,    setNbWidthIdx]    = useState(1);
+  const [nbDirty,       setNbDirty]       = useState(false);
+  const [nbSaving,      setNbSaving]      = useState(false);
+  const [createNbOpen,  setCreateNbOpen]  = useState(false);
+  const [nbName,        setNbName]        = useState("");
+  const [nbCoverId,     setNbCoverId]     = useState<string>("midnight");
+  const [nbPageStyleV,  setNbPageStyleV]  = useState<NbPageStyle>("lined");
+  const [nbCreating,    setNbCreating]    = useState(false);
+  const nbSaveTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null);
 
     const textareaRef  = useRef<HTMLTextAreaElement>(null);
   const saveRef      = useRef<(s?: boolean)=>Promise<void>>(async()=>{});
@@ -356,6 +446,122 @@ export default function BlocNotesPage() {
   }, []);
 
   useEffect(() => { void fetchAll() }, [fetchAll]);
+
+  /* ── Notebook CRUD ────────────────────────────────── */
+  const fetchNotebooks = useCallback(async () => {
+    const { data:{ user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("notebooks").select("*")
+      .eq("user_id", user.id).order("created_at", { ascending:false });
+    if (data) setNotebooks(data as Notebook[]);
+  }, []);
+
+  useEffect(() => { void fetchNotebooks(); }, [fetchNotebooks]);
+
+  const fetchNbPages = useCallback(async (nbId: string) => {
+    const { data } = await supabase
+      .from("notebook_pages").select("*")
+      .eq("notebook_id", nbId).order("page_number");
+    if (data) {
+      const pages = (data as NotebookPage[]).map(p => ({
+        ...p,
+        strokes: (Array.isArray(p.strokes) ? p.strokes : []) as NbStroke[],
+      }));
+      setNbPages(pages);
+      setActivePageIdx(0);
+      setNbStrokes(pages[0]?.strokes ?? []);
+      setNbHistory([]);
+      setNbDirty(false);
+    }
+  }, []);
+
+  const openNotebook = useCallback(async (nb: Notebook) => {
+    setActiveNb(nb);
+    await fetchNbPages(nb.id);
+  }, [fetchNbPages]);
+
+  const createNotebook = useCallback(async () => {
+    if (!nbName.trim()) return;
+    setNbCreating(true);
+    const { data:{ user } } = await supabase.auth.getUser();
+    if (!user) { setNbCreating(false); return; }
+    const { data:nb, error } = await supabase
+      .from("notebooks")
+      .insert({ user_id:user.id, name:nbName.trim(), cover_id:nbCoverId, page_style:nbPageStyleV })
+      .select().single();
+    if (error || !nb) { showToast("error","Erreur création cahier"); setNbCreating(false); return; }
+    await supabase.from("notebook_pages").insert({
+      notebook_id:nb.id, user_id:user.id, page_number:1, strokes:[],
+    });
+    setNotebooks(prev => [nb as Notebook, ...prev]);
+    setCreateNbOpen(false);
+    setNbName(""); setNbCoverId("midnight"); setNbPageStyleV("lined");
+    setNbCreating(false);
+    await openNotebook(nb as Notebook);
+    showToast("success","Cahier créé");
+  }, [nbName, nbCoverId, nbPageStyleV, openNotebook]);
+
+  const addNbPage = useCallback(async () => {
+    if (!activeNb) return;
+    const { data:{ user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const nextNum = (nbPages[nbPages.length - 1]?.page_number ?? 0) + 1;
+    const { data:page } = await supabase.from("notebook_pages").insert({
+      notebook_id:activeNb.id, user_id:user.id, page_number:nextNum, strokes:[],
+    }).select().single();
+    if (page) {
+      const np = { ...page as NotebookPage, strokes:[] };
+      setNbPages(prev => [...prev, np]);
+      setActivePageIdx(nbPages.length);
+      setNbStrokes([]); setNbHistory([]); setNbDirty(false);
+    }
+  }, [activeNb, nbPages]);
+
+  const saveNbPage = useCallback(async (strokes: NbStroke[], silent = true) => {
+    const page = nbPages[activePageIdx];
+    if (!page) return;
+    setNbSaving(true);
+    await supabase.from("notebook_pages").update({
+      strokes: strokes as unknown as Record<string,unknown>[],
+      updated_at: new Date().toISOString(),
+    }).eq("id", page.id);
+    setNbPages(prev => prev.map((p, i) => i === activePageIdx ? { ...p, strokes } : p));
+    setNbDirty(false);
+    setNbSaving(false);
+    if (!silent) showToast("success","Page sauvegardée");
+  }, [nbPages, activePageIdx]);
+
+  const handleNbStrokes = useCallback((newStrokes: NbStroke[]) => {
+    setNbStrokes(newStrokes);
+    setNbHistory(h => [...h.slice(-30), newStrokes.slice(0, -1)]);
+    setNbDirty(true);
+    if (nbSaveTimerRef.current) clearTimeout(nbSaveTimerRef.current);
+    nbSaveTimerRef.current = setTimeout(() => { void saveNbPage(newStrokes); }, 1800);
+  }, [saveNbPage]);
+
+  const nbUndo = useCallback(() => {
+    if (!nbHistory.length) return;
+    const prev = nbHistory[nbHistory.length - 1];
+    setNbStrokes(prev);
+    setNbHistory(h => h.slice(0, -1));
+    setNbDirty(true);
+    if (nbSaveTimerRef.current) clearTimeout(nbSaveTimerRef.current);
+    nbSaveTimerRef.current = setTimeout(() => { void saveNbPage(prev); }, 1800);
+  }, [nbHistory, saveNbPage]);
+
+  const selectNbPage = useCallback((idx: number) => {
+    setActivePageIdx(idx);
+    setNbStrokes(nbPages[idx]?.strokes ?? []);
+    setNbHistory([]); setNbDirty(false);
+  }, [nbPages]);
+
+  const deleteNotebook = useCallback(async (nb: Notebook) => {
+    await supabase.from("notebooks").delete().eq("id", nb.id);
+    setNotebooks(prev => prev.filter(n => n.id !== nb.id));
+    if (activeNb?.id === nb.id) { setActiveNb(null); setNbPages([]); }
+    showToast("success","Cahier supprimé");
+  }, [activeNb]);
 
     const openNote = useCallback((n: Note) => {
     setSelected(n);
@@ -585,11 +791,6 @@ export default function BlocNotesPage() {
     } catch { showToast("error","Accès micro refusé.") }
   }
 
-  const flushChunk = useCallback(()=>{
-    const blobs = [...blobsRef.current]; blobsRef.current=[];
-    if (blobs.length) void transcribeBlob(new Blob(blobs,{type:blobs[0].type}), chunkIdxRef.current++);
-  },[]);
-
   const transcribeBlob = useCallback(async(blob: Blob, idx: number)=>{
     setVoiceLoad(true);
     const fd = new FormData();
@@ -604,6 +805,11 @@ export default function BlocNotesPage() {
     }
     setVoiceLoad(false);
   },[]);
+
+  const flushChunk = useCallback(()=>{
+    const blobs = [...blobsRef.current]; blobsRef.current=[];
+    if (blobs.length) void transcribeBlob(new Blob(blobs,{type:blobs[0].type}), chunkIdxRef.current++);
+  },[transcribeBlob]);
 
   function pauseVoice()  { mrRef.current?.pause();  if(timerRef.current) clearInterval(timerRef.current); setVoiceState("paused")  }
   function resumeVoice() { mrRef.current?.resume(); timerRef.current=setInterval(()=>{voiceSecRef.current++;setVoiceSec(voiceSecRef.current)},1000); setVoiceState("recording") }
@@ -650,145 +856,523 @@ export default function BlocNotesPage() {
     archived: notes.filter(n=>n.is_archived??false).length,
   }),[notes,favSet]);
 
-  const currentTypeInfo = getTypeInfo(dType);
   const wordCnt = countWords(dContent);
 
     return (
     <div className="flex h-[calc(100vh-56px)] bg-[#0a0f1e] overflow-hidden">
 
             <div className="hidden w-56 shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.025] lg:flex">
-        <div className="p-4">
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{background:`${amber}18`,border:`1px solid ${amber}30`}}>
-              <StickyNote size={15} style={{color:amber}}/>
-            </div>
-            <span className="text-sm font-extrabold text-white">Notes IA</span>
-          </div>
+        <div className="p-4 flex flex-col h-full">
 
-                    <div className="space-y-0.5 mb-4">
-            {[
-              { key:"all",       label:"Toutes",   count:counts.all,      icon:StickyNote },
-              { key:"favorites", label:"Favoris",  count:counts.favs,     icon:Star },
-              { key:"archived",  label:"Archives", count:counts.archived, icon:Archive },
-            ].map(f=>(
-              <button key={f.key} onClick={()=>setFilter(f.key)}
-                className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition ${filter===f.key?"text-white bg-white/[0.07]":"text-white/40 hover:text-white/60 hover:bg-white/[0.03]"}`}>
-                <f.icon size={12}/>
-                <span className="flex-1 text-left">{f.label}</span>
-                <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px]">{f.count}</span>
+          {/* Mode toggle — Notes / Cahiers */}
+          <div className="flex rounded-xl border border-white/[0.08] bg-white/[0.03] p-0.5 mb-5">
+            {([{v:"notes" as const,icon:StickyNote,label:"Notes"},{v:"cahiers" as const,icon:Book,label:"Cahiers"}]).map(m=>(
+              <button key={m.v} onClick={()=>setNbMode(m.v)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-[10px] py-1.5 text-[0.68rem] font-bold transition-all ${nbMode===m.v?"bg-white/[0.1] text-white shadow-sm":"text-white/35 hover:text-white/55"}`}>
+                <m.icon size={11}/>{m.label}
               </button>
             ))}
           </div>
 
-                    <div className="mb-2 flex items-center justify-between px-1">
-            <span className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Dossiers</span>
-            <button onClick={()=>setFolderModal(true)} className="text-white/25 transition hover:text-white/60"><FolderPlus size={13}/></button>
-          </div>
-          <div className="space-y-0.5 mb-4">
-            {folders.map(f=>(
-              <button key={f.id} onClick={()=>setFilter(f.id)}
-                className={`flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition ${filter===f.id?"text-white bg-white/[0.07]":"text-white/40 hover:text-white/60"}`}>
-                <div className="h-2 w-2 rounded-full" style={{background:f.color}}/>
-                <span className="flex-1 truncate text-left">{f.name}</span>
-              </button>
-            ))}
-            {folders.length===0&&<p className="px-3 text-[0.65rem] text-white/20">Aucun dossier</p>}
-          </div>
+          {nbMode === "notes" ? (
+            /* ── Notes sidebar content ── */
+            <>
+              <div className="space-y-0.5 mb-4">
+                {[
+                  { key:"all",       label:"Toutes",   count:counts.all,      icon:StickyNote },
+                  { key:"favorites", label:"Favoris",  count:counts.favs,     icon:Star },
+                  { key:"archived",  label:"Archives", count:counts.archived, icon:Archive },
+                ].map(f=>(
+                  <button key={f.key} onClick={()=>setFilter(f.key)}
+                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition ${filter===f.key?"text-white bg-white/[0.07]":"text-white/40 hover:text-white/60 hover:bg-white/[0.03]"}`}>
+                    <f.icon size={12}/>
+                    <span className="flex-1 text-left">{f.label}</span>
+                    <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px]">{f.count}</span>
+                  </button>
+                ))}
+              </div>
 
-          <button onClick={()=>{createNote("texte")}}
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
-            style={{background:`linear-gradient(135deg, ${amber}, #d97706)`,boxShadow:`0 4px 16px ${amber}30`}}>
-            <Plus size={13}/> Nouvelle note
-          </button>
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Dossiers</span>
+                <button onClick={()=>setFolderModal(true)} className="text-white/25 transition hover:text-white/60"><FolderPlus size={13}/></button>
+              </div>
+              <div className="space-y-0.5 mb-4 flex-1 overflow-y-auto">
+                {folders.map(f=>(
+                  <button key={f.id} onClick={()=>setFilter(f.id)}
+                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition ${filter===f.id?"text-white bg-white/[0.07]":"text-white/40 hover:text-white/60"}`}>
+                    <div className="h-2 w-2 rounded-full" style={{background:f.color}}/>
+                    <span className="flex-1 truncate text-left">{f.name}</span>
+                  </button>
+                ))}
+                {folders.length===0&&<p className="px-3 text-[0.65rem] text-white/20">Aucun dossier</p>}
+              </div>
+
+              <button onClick={()=>createNote("texte")}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90 mt-auto"
+                style={{background:`linear-gradient(135deg, ${amber}, #d97706)`,boxShadow:`0 4px 16px ${amber}30`}}>
+                <Plus size={13}/> Nouvelle note
+              </button>
+            </>
+          ) : (
+            /* ── Cahiers sidebar content ── */
+            <>
+              <div className="space-y-0.5 mb-4 flex-1 overflow-y-auto" style={{scrollbarWidth:"none"}}>
+                {notebooks.map(nb=>{
+                  const cov = NB_COVERS.find(c=>c.id===nb.cover_id) ?? NB_COVERS[0];
+                  const isActive = activeNb?.id === nb.id;
+                  return (
+                    <button key={nb.id} onClick={()=>void openNotebook(nb)}
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition ${isActive?"text-white bg-white/[0.08]":"text-white/45 hover:text-white/65 hover:bg-white/[0.04]"}`}>
+                      {/* Mini cover dot */}
+                      <div className="h-5 w-3.5 shrink-0 rounded-sm shadow-sm" style={{background:cov.g}}/>
+                      <span className="flex-1 truncate text-left">{nb.name}</span>
+                    </button>
+                  );
+                })}
+                {notebooks.length===0&&<p className="px-3 text-[0.65rem] text-white/20">Aucun cahier</p>}
+              </div>
+
+              <button onClick={()=>setCreateNbOpen(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90 mt-auto"
+                style={{background:`linear-gradient(135deg, ${amber}, #d97706)`,boxShadow:`0 4px 16px ${amber}30`}}>
+                <Plus size={13}/> Nouveau cahier
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-            <div className={`flex flex-col border-r border-white/[0.06] bg-white/[0.025] ${view==="editor"&&selected?"hidden lg:flex":""} w-full lg:w-80 shrink-0`}>
+            <div className={`flex flex-col border-r border-white/[0.06] bg-white/[0.025] ${view==="editor"&&selected&&nbMode==="notes"?"hidden lg:flex":""} ${nbMode==="cahiers"&&activeNb?"hidden lg:flex":""} w-full lg:w-80 shrink-0`}>
 
-                <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl lg:hidden" style={{background:`${amber}18`,border:`1px solid ${amber}30`}}>
-            <StickyNote size={14} style={{color:amber}}/>
-          </div>
-          <div className="relative flex-1">
-            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25"/>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher…"
-              className="w-full rounded-xl border border-white/8 bg-white/[0.04] pl-8 pr-3 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[rgba(245,158,11,0.3)]"/>
-          </div>
-          <button onClick={()=>{createNote("texte")}} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition hover:bg-white/[0.06]" style={{color:amber}}>
-            <Plus size={16}/>
-          </button>
-          <button onClick={()=>setShowTemplates(true)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white/30 transition hover:bg-white/[0.06] hover:text-white/60" title="Templates">
-            <Hash size={14}/>
-          </button>
-        </div>
-
-                <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-2">
-          <select value={sortBy} onChange={e=>setSortBy(e.target.value as SortBy)}
-            className="flex-1 cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.025] py-1 pl-2 pr-1 text-[0.65rem] text-white/55 outline-none appearance-none transition hover:border-white/20">
-            <option value="date" className="bg-white/[0.025] text-white/70">📅 Récentes</option>
-            <option value="alpha" className="bg-white/[0.025] text-white/70">🔤 A–Z</option>
-            <option value="type" className="bg-white/[0.025] text-white/70">🏷 Type</option>
-          </select>
-          <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value as NoteType|"all")}
-            className="flex-1 cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.025] py-1 pl-2 pr-1 text-[0.65rem] text-white/55 outline-none appearance-none transition hover:border-white/20">
-            <option value="all" className="bg-white/[0.025] text-white/70">Tous types</option>
-            {NOTE_TYPES.map(t=><option key={t.value} value={t.value} className="bg-white/[0.025] text-white/70">{t.label}</option>)}
-          </select>
-        </div>
-
-                <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center justify-center py-16"><Loader2 size={20} className="animate-spin text-white/20"/></div>
-          ) : displayNotes.length===0 ? (
-            <div className="flex flex-col items-center gap-3 py-14 text-center px-4">
-              <StickyNote size={28} className="text-white/15"/>
-              <p className="text-sm font-bold text-white/30">{search ? "Aucun résultat" : "Aucune note"}</p>
-              <button onClick={()=>createNote("texte")} className="rounded-xl border border-white/10 px-4 py-2 text-xs font-bold text-white/50 transition hover:text-white/70">
-                + Créer une note
+        {/* ═══ CAHIERS CENTER PANEL ═══ */}
+        {nbMode==="cahiers" && !activeNb && (
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+              <span className="text-[0.85rem] font-black text-white">Cahiers</span>
+              <button onClick={()=>setCreateNbOpen(true)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-white/[0.06]"
+                style={{color:amber}}>
+                <Plus size={15}/>
               </button>
             </div>
+            <div className="flex-1 overflow-y-auto p-4" style={{scrollbarWidth:"none"}}>
+              {notebooks.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 py-16 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl"
+                    style={{background:`${amber}10`,border:`1px solid ${amber}20`}}>
+                    <Book size={26} style={{color:`${amber}90`}}/>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white/55">Aucun cahier</p>
+                    <p className="text-xs text-white/25 mt-1">Créez votre premier cahier numérique</p>
+                  </div>
+                  <button onClick={()=>setCreateNbOpen(true)}
+                    className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-[#080a0f]"
+                    style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>
+                    <Plus size={11}/> Nouveau cahier
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-5">
+                  {notebooks.map(nb=>{
+                    const cov = NB_COVERS.find(c=>c.id===nb.cover_id) ?? NB_COVERS[0];
+                    return (
+                      <motion.div key={nb.id} className="flex flex-col items-center gap-2 group">
+                        <motion.button
+                          onClick={()=>void openNotebook(nb)}
+                          whileHover={{scale:1.04,y:-2}} whileTap={{scale:0.97}}
+                          className="relative w-full"
+                          style={{aspectRatio:"3/4"}}>
+                          {/* Book spine */}
+                          <div className="absolute left-0 inset-y-0 w-[14%] rounded-l-lg"
+                            style={{background:cov.s,boxShadow:"inset -3px 0 8px rgba(0,0,0,0.3)"}}/>
+                          {/* Cover */}
+                          <div className="absolute left-[12%] inset-y-0 right-0 rounded-r-lg overflow-hidden shadow-xl group-hover:shadow-2xl transition-shadow"
+                            style={{background:cov.g}}>
+                            {/* Decoration lines */}
+                            <div className="absolute inset-0 flex flex-col gap-4 pt-6 px-3 opacity-15">
+                              {[0,1,2,3,4].map(i=><div key={i} className="h-px bg-white"/>)}
+                            </div>
+                            {/* Title */}
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent px-3 pt-6 pb-2">
+                              <p className="text-[0.6rem] font-black text-white/90 drop-shadow-sm line-clamp-2 leading-tight">{nb.name}</p>
+                            </div>
+                          </div>
+                        </motion.button>
+                        <span className="text-[0.68rem] font-semibold text-white/50 text-center truncate w-full px-1">{nb.name}</span>
+                      </motion.div>
+                    );
+                  })}
+                  {/* New notebook card */}
+                  <div className="flex flex-col items-center gap-2">
+                    <motion.button
+                      onClick={()=>setCreateNbOpen(true)}
+                      whileHover={{scale:1.04,y:-2}} whileTap={{scale:0.97}}
+                      className="relative w-full flex items-center justify-center rounded-lg border-2 border-dashed border-white/12 transition hover:border-amber-400/25"
+                      style={{aspectRatio:"3/4"}}>
+                      <Plus size={18} className="text-white/20"/>
+                    </motion.button>
+                    <span className="text-[0.68rem] text-white/25">Nouveau</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ CAHIERS: page list ═══ */}
+        {nbMode==="cahiers" && activeNb && (
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-3">
+              <button onClick={()=>setActiveNb(null)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/[0.06] hover:text-white/70">
+                <ChevronLeft size={14}/>
+              </button>
+              <span className="flex-1 truncate text-[0.8rem] font-black text-white">{activeNb.name}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{scrollbarWidth:"none"}}>
+              {nbPages.map((page, idx)=>(
+                <motion.button key={page.id}
+                  onClick={()=>selectNbPage(idx)}
+                  whileHover={{scale:1.01}} whileTap={{scale:0.98}}
+                  className="relative w-full rounded-xl overflow-hidden transition-all"
+                  style={{
+                    aspectRatio:"3/4",
+                    outline: activePageIdx===idx ? `2px solid ${amber}` : "1px solid rgba(255,255,255,0.08)",
+                    outlineOffset: activePageIdx===idx ? "-2px" : "0px",
+                  }}>
+                  <div className="w-full h-full bg-[#f8f7f4] flex items-center justify-center">
+                    <span className="text-[0.65rem] font-bold text-slate-400/60">Page {page.page_number}</span>
+                  </div>
+                  {activePageIdx===idx&&(
+                    <div className="absolute inset-x-0 bottom-0 py-0.5 text-center text-[0.5rem] font-black uppercase tracking-wider"
+                      style={{background:amber,color:"#080a0f"}}>
+                      Active
+                    </div>
+                  )}
+                </motion.button>
+              ))}
+              <motion.button onClick={()=>void addNbPage()}
+                whileHover={{scale:1.01}} whileTap={{scale:0.98}}
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/12 py-4 text-[0.7rem] text-white/25 transition hover:border-amber-400/25 hover:text-amber-400/50">
+                <Plus size={13}/> Page
+              </motion.button>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ NOTES: existing list (hidden when in cahiers mode) ═══ */}
+        {nbMode==="notes" && (<>
+
+                {/* ── List header: title + action icons ── */}
+          <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg lg:hidden" style={{background:`${amber}18`,border:`1px solid ${amber}28`}}>
+                <StickyNote size={13} style={{color:amber}}/>
+              </div>
+              <span className="text-[0.85rem] font-black text-white">Notes IA</span>
+              {displayNotes.length > 0 && (
+                <span className="rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[0.58rem] font-bold text-white/35">
+                  {displayNotes.length}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => { setSearchOpen(v => !v); if (searchOpen) setSearch(""); }}
+                className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${searchOpen ? "bg-amber-400/12 text-amber-300" : "text-white/30 hover:bg-white/[0.06] hover:text-white/60"}`}
+                title="Rechercher">
+                <Search size={13}/>
+              </button>
+              <button
+                onClick={() => setShowTemplates(true)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/[0.06] hover:text-white/60"
+                title="Templates">
+                <Hash size={13}/>
+              </button>
+              <button
+                onClick={() => { createNote("texte"); }}
+                className="flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-white/[0.06]"
+                style={{color:amber}}
+                title="Nouvelle note">
+                <Plus size={15}/>
+              </button>
+            </div>
+          </div>
+
+          {/* ── Collapsible search ── */}
+          <AnimatePresence>
+            {searchOpen && (
+              <motion.div
+                initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}}
+                transition={{duration:0.18,ease}} style={{overflow:"hidden"}}>
+                <div className="px-3 py-2.5 border-b border-white/[0.06]">
+                  <div className="relative">
+                    <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25"/>
+                    <input
+                      autoFocus
+                      value={search}
+                      onChange={e=>setSearch(e.target.value)}
+                      onKeyDown={e=>{ if(e.key==="Escape"){ setSearch(""); setSearchOpen(false); } }}
+                      placeholder="Rechercher une note…"
+                      className="w-full rounded-xl border border-white/10 bg-white/[0.06] pl-9 pr-8 py-2 text-[0.8rem] text-white placeholder:text-white/25 outline-none transition focus:border-amber-400/40"
+                    />
+                    {search && (
+                      <button onClick={()=>setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                        <X size={11}/>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── Sort tabs + type filter ── */}
+          <div className="border-b border-white/[0.06]">
+            {/* Sort row */}
+            <div className="flex items-center gap-0 px-3 pt-2 pb-0">
+              {([{v:"date",l:"Récentes"},{v:"alpha",l:"A–Z"},{v:"type",l:"Type"}] as {v:SortBy;l:string}[]).map(s=>(
+                <button key={s.v} onClick={()=>setSortBy(s.v)}
+                  className="relative shrink-0 px-3 pb-2 text-[0.65rem] font-bold transition-colors"
+                  style={{color:sortBy===s.v?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.28)"}}>
+                  {s.l}
+                  {sortBy===s.v&&(
+                    <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full" style={{background:amber}}/>
+                  )}
+                </button>
+              ))}
+            </div>
+            {/* Type filter — scrollable chips */}
+            <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto" style={{scrollbarWidth:"none"}}>
+              <button onClick={()=>setTypeFilter("all")}
+                className="shrink-0 rounded-full px-2.5 py-0.5 text-[0.62rem] font-bold transition-all"
+                style={typeFilter==="all"
+                  ? {background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.85)"}
+                  : {background:"transparent",color:"rgba(255,255,255,0.28)"}}>
+                Tous
+              </button>
+              {NOTE_TYPES.map(t=>(
+                <button key={t.value} onClick={()=>setTypeFilter(typeFilter===t.value?"all":t.value)}
+                  className="shrink-0 rounded-full px-2.5 py-0.5 text-[0.62rem] font-bold transition-all"
+                  style={typeFilter===t.value
+                    ? {background:`${t.color}18`,color:t.color,border:`1px solid ${t.color}30`}
+                    : {background:"transparent",color:"rgba(255,255,255,0.28)"}}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+                <div className="flex-1 overflow-y-auto" style={{scrollbarWidth:"none"}}>
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 size={18} className="animate-spin text-white/20"/>
+            </div>
+
+          ) : displayNotes.length === 0 ? (
+            /* ── Empty state premium ── */
+            search ? (
+              <div className="flex flex-col items-center gap-3 py-16 px-6 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.04] border border-white/[0.07]">
+                  <Search size={20} className="text-white/20"/>
+                </div>
+                <p className="text-sm font-semibold text-white/40">Aucun résultat pour &ldquo;{search}&rdquo;</p>
+              </div>
+            ) : (
+              <div className="p-4 space-y-4">
+                {/* Header card */}
+                <div className="rounded-2xl px-5 py-4"
+                  style={{background:"linear-gradient(135deg,rgba(245,158,11,0.09),rgba(245,158,11,0.03))",border:"1px solid rgba(245,158,11,0.14)"}}>
+                  <p className="text-[0.72rem] font-black uppercase tracking-widest mb-1" style={{color:"rgba(245,158,11,0.6)"}}>Démarrer</p>
+                  <p className="text-[0.85rem] font-black text-white leading-snug">Choisissez un type de note</p>
+                  <p className="text-[0.7rem] text-white/35 mt-0.5">Idées, réunions, compte-rendus ou checklists</p>
+                </div>
+
+                {/* Type grid */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {NOTE_TYPES.map(t=>(
+                    <motion.button
+                      key={t.value}
+                      onClick={()=>createNote(t.value)}
+                      whileHover={{scale:1.02}} whileTap={{scale:0.97}}
+                      className="flex flex-col items-start gap-3 rounded-2xl p-4 text-left transition-all"
+                      style={{background:"rgba(255,255,255,0.035)",border:"1px solid rgba(255,255,255,0.07)"}}>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl"
+                        style={{background:`${t.color}14`,border:`1px solid ${t.color}22`}}>
+                        <t.Icon size={14} style={{color:t.color}}/>
+                      </div>
+                      <div>
+                        <p className="text-[0.78rem] font-bold text-white/85 leading-tight">{t.label}</p>
+                        <p className="text-[0.62rem] text-white/30 mt-0.5 leading-snug">{TYPE_DESC[t.value]}</p>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            )
+
           ) : (
+            /* ── Note list ── */
             <AnimatePresence initial={false}>
-              {displayNotes.map(n=>{
-                const ti = getTypeInfo(getNoteType(n));
+              {displayNotes.map((n,idx)=>{
+                const ti    = getTypeInfo(getNoteType(n));
                 const isFav = favSet.has(n.id);
-                const tags = n.tags ?? [];
+                const tags  = n.tags ?? [];
                 const {total,done} = getCheckProgress(n.content);
+                const isActive = selected?.id === n.id;
                 return (
-                  <motion.div key={n.id} layout initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+                  <motion.div key={n.id} layout
+                    initial={{opacity:0,y:4}} animate={{opacity:1,y:0}} exit={{opacity:0}}
+                    transition={{duration:0.18,delay:idx*0.025}}
                     onClick={()=>openNote(n)}
-                    className={`cursor-pointer border-b border-white/[0.05] px-4 py-3.5 transition hover:bg-white/[0.04] ${selected?.id===n.id?"bg-white/[0.06]":""}`}>
-                    <div className="mb-1.5 flex items-start justify-between gap-2">
-                      <span className="flex-1 truncate text-sm font-bold text-white/90">{n.title||"Sans titre"}</span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button onClick={e=>{e.stopPropagation();toggleFav(n.id)}} className={`transition ${isFav?"text-amber-400":"text-white/15 hover:text-white/50"}`}>
-                          <Star size={11} className={isFav?"fill-amber-400":""}/>
+                    className="group relative cursor-pointer"
+                    style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                    {/* Type accent bar — always visible, stronger when active */}
+                    <div className="absolute left-0 inset-y-0 w-[3px] rounded-r-sm transition-all duration-200"
+                      style={{background: isActive
+                        ? `linear-gradient(180deg,${ti.color},${ti.color}60)`
+                        : `${ti.color}25`}}/>
+                    <div className={`pl-5 pr-4 py-4 transition-colors duration-150 ${isActive?"bg-white/[0.055]":"hover:bg-white/[0.028]"}`}>
+                      {/* Title + date */}
+                      <div className="flex items-baseline justify-between gap-3 mb-1.5">
+                        <p className={`flex-1 truncate text-[0.875rem] font-semibold leading-snug transition-colors ${isActive?"text-white":"text-white/78 group-hover:text-white/92"}`}>
+                          {n.title || "Sans titre"}
+                        </p>
+                        <span className="shrink-0 text-[0.58rem] tabular-nums text-white/22">{fmtDateShort(n.updated_at)}</span>
+                      </div>
+                      {/* Preview — 2 lines */}
+                      <p className="text-[0.7rem] leading-relaxed text-white/30 line-clamp-2 pr-1">
+                        {n.content.replace(/^#+\s/gm,"").replace(/\[[\sx~]\]\s/g,"").replace(/\*\*/g,"").slice(0,220) || "Note vide"}
+                      </p>
+                      {/* Footer — type label + optional progress + fav */}
+                      <div className="mt-2.5 flex items-center justify-between">
+                        <span className="text-[0.58rem] font-bold uppercase tracking-wider" style={{color:`${ti.color}72`}}>
+                          {ti.label}
+                          {getNoteType(n)==="checklist"&&total>0?` · ${done}/${total}`:""}
+                          {tags[0]?` · #${tags[0]}`:""}
+                        </span>
+                        <button onClick={e=>{e.stopPropagation();toggleFav(n.id)}}
+                          className={`transition-all duration-150 ${isFav?"text-amber-300":"text-transparent group-hover:text-white/18"}`}>
+                          <Star size={10} className={isFav?"fill-amber-300":""}/>
                         </button>
                       </div>
                     </div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6rem] font-bold" style={{color:ti.color,background:ti.bg,border:`1px solid ${ti.border}`}}>
-                        <ti.Icon size={9}/>
-                        {ti.label}
-                      </span>
-                      {getNoteType(n)==="checklist"&&total>0&&(
-                        <span className="text-[0.6rem] text-white/30">{done}/{total}</span>
-                      )}
-                      {tags.slice(0,2).map(t=>(
-                        <span key={t} className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[0.6rem] text-white/35">#{t}</span>
-                      ))}
-                    </div>
-                    <p className="mb-1 line-clamp-2 text-xs text-white/35">{n.content.replace(/^#+\s/gm,"").replace(/\[[\sx~]\]\s/g,"").slice(0,120)}</p>
-                    <p className="text-[0.6rem] text-white/20">{fmtDateShort(n.updated_at)}</p>
                   </motion.div>
                 );
               })}
             </AnimatePresence>
           )}
         </div>
+        </>)}
       </div>
 
-            <div className={`flex flex-1 flex-col overflow-hidden ${view==="list"&&!selected?"hidden lg:flex":""}`}>
+      {/* ═══ RIGHT PANEL ═══ */}
+            <div className={`flex flex-1 flex-col overflow-hidden ${view==="list"&&!selected&&nbMode==="notes"?"hidden lg:flex":nbMode==="cahiers"&&!activeNb?"hidden lg:flex":""}`}>
+
+        {/* ═══ CANVAS EDITOR (cahiers mode) ═══ */}
+        {nbMode==="cahiers" && activeNb && (
+          <div className="flex flex-col h-full overflow-hidden bg-[#0a0f1e]">
+
+            {/* Canvas toolbar */}
+            <div className="flex items-center gap-2 border-b border-white/[0.06] bg-white/[0.025] px-4 py-2.5 flex-wrap">
+              {/* Back button */}
+              <button onClick={()=>setActiveNb(null)}
+                className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.7rem] font-bold text-white/45 transition hover:bg-white/[0.06] hover:text-white/70">
+                <ChevronLeft size={13}/> Cahiers
+              </button>
+              <div className="h-4 w-px bg-white/[0.08] mx-1"/>
+              {/* Notebook name + page */}
+              <span className="text-[0.78rem] font-black text-white/75 truncate max-w-[140px]">{activeNb.name}</span>
+              <span className="text-[0.68rem] text-white/25">— Page {(nbPages[activePageIdx]?.page_number ?? 1)}</span>
+
+              <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+                {/* Undo */}
+                <button onClick={nbUndo} disabled={!nbHistory.length}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-white/35 transition hover:bg-white/[0.06] hover:text-white/70 disabled:opacity-25">
+                  <Undo2 size={13}/>
+                </button>
+                <div className="h-4 w-px bg-white/[0.08]"/>
+                {/* Tools */}
+                {([{t:"pen"as NbTool,I:Pencil},{t:"eraser"as NbTool,I:Eraser}]).map(({t,I})=>(
+                  <button key={t} onClick={()=>setNbTool(t)}
+                    className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${nbTool===t?"text-amber-300 bg-amber-400/12":"text-white/35 hover:bg-white/[0.06] hover:text-white/70"}`}>
+                    <I size={13}/>
+                  </button>
+                ))}
+                <div className="h-4 w-px bg-white/[0.08]"/>
+                {/* Preset colors */}
+                <div className="flex items-center gap-1">
+                  {NB_COLORS.map(c=>(
+                    <button key={c} onClick={()=>setNbColor(c)}
+                      className={`h-5 w-5 rounded-full border-2 transition-transform hover:scale-110 ${nbColor===c?"border-white/70 scale-110":"border-transparent"}`}
+                      style={{background:c}}/>
+                  ))}
+                  <label className="relative flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border border-white/20 overflow-hidden"
+                    title="Couleur personnalisée">
+                    <span className="text-[0.55rem] text-white/40">+</span>
+                    <input type="color" value={nbColor} onChange={e=>setNbColor(e.target.value)}
+                      className="absolute inset-0 cursor-pointer opacity-0"/>
+                  </label>
+                </div>
+                <div className="h-4 w-px bg-white/[0.08]"/>
+                {/* Width presets */}
+                <div className="flex items-center gap-1">
+                  {NB_WIDTHS.map((w,i)=>(
+                    <button key={i} onClick={()=>setNbWidthIdx(i)}
+                      className={`flex h-6 min-w-[22px] items-center justify-center rounded-md text-[0.58rem] font-black transition ${nbWidthIdx===i?"bg-amber-400/15 text-amber-300":"text-white/30 hover:bg-white/[0.05] hover:text-white/60"}`}>
+                      {w.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="h-4 w-px bg-white/[0.08]"/>
+                {/* Save indicator */}
+                {nbSaving ? (
+                  <Loader2 size={12} className="animate-spin text-amber-400/60"/>
+                ) : nbDirty ? (
+                  <span className="text-[0.58rem] text-amber-400/60">Sauvegarde…</span>
+                ) : (
+                  <span className="text-[0.58rem] text-white/20">Sauvegardé</span>
+                )}
+                <button onClick={()=>void saveNbPage(nbStrokes,false)}
+                  className="flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1 text-[0.65rem] font-bold text-white/45 transition hover:border-white/20 hover:text-white/70">
+                  <Save size={10}/> Sauver
+                </button>
+              </div>
+            </div>
+
+            {/* Canvas container — light background, filling all remaining space */}
+            <div className="relative flex-1 overflow-hidden" style={{background:"#e8e6e0"}}>
+              {/* Page shadow frame */}
+              <div className="absolute inset-4 rounded-lg shadow-2xl overflow-hidden">
+                <NotebookCanvas
+                  pageStyle={activeNb.page_style}
+                  strokes={nbStrokes}
+                  onStrokesChange={handleNbStrokes}
+                  tool={nbTool}
+                  penColor={nbColor}
+                  penWidth={NB_WIDTHS[nbWidthIdx]?.v ?? 3}
+                />
+              </div>
+              {/* Page navigation arrows */}
+              {activePageIdx > 0 && (
+                <button onClick={()=>selectNbPage(activePageIdx-1)}
+                  className="absolute left-1 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-white/60 transition hover:bg-black/40">
+                  <ChevronLeft size={16}/>
+                </button>
+              )}
+              {activePageIdx < nbPages.length - 1 && (
+                <button onClick={()=>selectNbPage(activePageIdx+1)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-white/60 transition hover:bg-black/40">
+                  <ChevronRight size={16}/>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ NOTES right panel ═══ */}
+        {nbMode==="notes" && (<>
 
                 {view==="editor"&&(
           <div className="flex items-center gap-3 border-b border-white/[0.06] bg-white/[0.025] px-4 py-2.5 lg:hidden">
@@ -799,23 +1383,46 @@ export default function BlocNotesPage() {
         )}
 
         {(!selected && view==="list") ? (
-                    <div className="flex flex-1 flex-col items-center justify-center gap-5 p-8 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-[rgba(245,158,11,0.2)] bg-[rgba(245,158,11,0.07)]">
-              <StickyNote size={36} style={{color:amber}}/>
+          <div className="flex flex-1 flex-col items-center justify-center gap-9 p-10 text-center">
+            {/* Icon */}
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl"
+              style={{
+                background:"linear-gradient(135deg,rgba(245,158,11,0.1),rgba(245,158,11,0.03))",
+                border:"1px solid rgba(245,158,11,0.18)",
+                boxShadow:"0 0 40px rgba(245,158,11,0.06)"
+              }}>
+              <StickyNote size={30} style={{color:"rgba(245,158,11,0.65)"}}/>
             </div>
-            <div>
-              <p className="text-lg font-extrabold text-white/80">Capturez vos idées</p>
-              <p className="mt-1.5 text-sm text-white/30">Créez une note ou sélectionnez-en une</p>
+
+            {/* Headline */}
+            <div className="space-y-2.5">
+              <p className="text-[1.4rem] font-black tracking-tight text-white/90">Bloc-notes</p>
+              <p className="text-[0.84rem] text-white/32 leading-relaxed max-w-[18rem] mx-auto">
+                Idées, réunions, décisions — capturez tout et laissez l&apos;IA vous aider à aller plus loin.
+              </p>
             </div>
-            <div className="flex flex-wrap justify-center gap-2">
+
+            {/* Quick-create grid */}
+            <div className="grid grid-cols-2 gap-2.5 w-full max-w-[290px]">
               {NOTE_TYPES.slice(0,4).map(t=>(
-                <button key={t.value} onClick={()=>createNote(t.value)}
-                  className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition hover:opacity-80"
-                  style={{color:t.color,borderColor:`${t.color}30`,background:`${t.color}10`}}>
-                  <t.Icon size={12}/>{t.label}
-                </button>
+                <motion.button key={t.value} onClick={()=>createNote(t.value)}
+                  whileHover={{scale:1.025,y:-1}} whileTap={{scale:0.975}}
+                  className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-left"
+                  style={{background:`${t.color}0d`,border:`1px solid ${t.color}1f`}}>
+                  <t.Icon size={15} style={{color:t.color}}/>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-white/72 leading-tight">{t.label}</p>
+                    <p className="text-[0.57rem] mt-0.5 leading-snug truncate" style={{color:`${t.color}65`}}>{TYPE_DESC[t.value]}</p>
+                  </div>
+                </motion.button>
               ))}
             </div>
+
+            {/* Templates link */}
+            <button onClick={()=>setShowTemplates(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-white/[0.06] px-4 py-2 text-[0.72rem] font-semibold text-white/28 transition-all hover:border-white/12 hover:text-white/45">
+              <Hash size={11}/> Voir les templates
+            </button>
           </div>
         ) : (
           <div className="flex flex-1 flex-col overflow-hidden bg-white/[0.025]">
@@ -896,7 +1503,7 @@ export default function BlocNotesPage() {
                 {folders.length>0&&(
                   <select value={dFolderId??""} onChange={e=>{setDFolderId(e.target.value||null);setIsDirty(true)}}
                     className="cursor-pointer rounded-full border border-white/10 bg-white/[0.025] px-2 py-0.5 text-[0.65rem] text-white/40 outline-none appearance-none hover:border-white/20 transition">
-                    <option value="">📂 Dossier</option>
+                    <option value="">Dossier</option>
                     {folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
                   </select>
                 )}
@@ -976,7 +1583,7 @@ export default function BlocNotesPage() {
                         {voiceLoad&&<Loader2 size={11} className="animate-spin text-orange-400"/>}
                         {voiceTxt&&voiceState==="stopped"&&(
                           <><button onClick={useVoiceText} className="text-[0.65rem] font-bold text-green-400">Utiliser</button>
-                          <button onClick={discardVoice} className="text-[0.65rem] text-white/30">✕</button></>
+                          <button onClick={discardVoice} className="flex items-center text-white/30 hover:text-white/60"><X size={10}/></button></>
                         )}
                       </div>
                     )}
@@ -985,7 +1592,7 @@ export default function BlocNotesPage() {
 
                                 <div className="border-t border-white/[0.04] px-5 py-2">
                   <input value={dLinked} onChange={e=>{setDLinked(e.target.value);setIsDirty(true)}}
-                    placeholder="🔗 Lié à : client, projet, contrat… (ex: Client: Ali / Projet: DJAMA)"
+                    placeholder="Lié à : client, projet, contrat… (ex : Client: Ali / Projet: DJAMA)"
                     className="w-full bg-transparent text-[0.65rem] text-white/30 outline-none placeholder:text-white/15"/>
                 </div>
               </div>
@@ -1065,6 +1672,7 @@ export default function BlocNotesPage() {
             </div>
           </div>
         )}
+        </>)}
       </div>
 
             <AnimatePresence>
@@ -1144,6 +1752,110 @@ export default function BlocNotesPage() {
       </AnimatePresence>
 
             <AnimatePresence>{toast&&<Toast toast={toast} onClose={()=>setToast(null)}/>}</AnimatePresence>
+
+      {/* ══════ MODAL — Créer un cahier ══════ */}
+      <AnimatePresence>
+        {createNbOpen&&(
+          <>
+            <motion.div key="nb-backdrop"
+              initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+              onClick={()=>{if(!nbCreating)setCreateNbOpen(false)}}/>
+            <motion.div key="nb-modal"
+              initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
+              transition={{duration:0.28,ease}}
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-lg -translate-y-1/2 rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_40px_100px_rgba(0,0,0,0.8)]">
+
+              {/* Header */}
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{background:`${amber}18`,border:`1px solid ${amber}28`}}>
+                    <Book size={14} style={{color:amber}}/>
+                  </div>
+                  <h2 className="text-base font-black text-white">Nouveau cahier</h2>
+                </div>
+                <button onClick={()=>setCreateNbOpen(false)} className="text-white/30 transition hover:text-white/70">
+                  <X size={16}/>
+                </button>
+              </div>
+
+              {/* Name */}
+              <label className="block mb-4">
+                <span className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30 block mb-2">Nom du cahier</span>
+                <input
+                  autoFocus
+                  value={nbName}
+                  onChange={e=>setNbName(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&nbName.trim()&&void createNotebook()}
+                  placeholder="Ex : Réunions clients Q3…"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none placeholder:text-white/20 transition focus:border-amber-400/40"/>
+              </label>
+
+              {/* Cover picker */}
+              <div className="mb-4">
+                <span className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30 block mb-2.5">Couverture</span>
+                <div className="grid grid-cols-5 gap-2">
+                  {NB_COVERS.map(c=>(
+                    <button key={c.id} onClick={()=>setNbCoverId(c.id)}
+                      className={`relative h-11 rounded-xl overflow-hidden transition-transform hover:scale-105 ${nbCoverId===c.id?"ring-2 ring-amber-400 ring-offset-1 ring-offset-[#0d1120]":"ring-0"}`}
+                      style={{background:c.g}}
+                      title={c.label}>
+                      {nbCoverId===c.id&&(
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Check size={12} className="text-white drop-shadow"/>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Page style picker */}
+              <div className="mb-6">
+                <span className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30 block mb-2.5">Style de page</span>
+                <div className="grid grid-cols-5 gap-2">
+                  {NB_PAGE_STYLES.map(s=>(
+                    <button key={s.value} onClick={()=>setNbPageStyleV(s.value)}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border py-3 text-center transition-all ${nbPageStyleV===s.value?"border-amber-400/40 bg-amber-400/[0.08]":"border-white/[0.07] bg-white/[0.03] hover:border-white/15"}`}>
+                      <s.Icon size={15} className={nbPageStyleV===s.value?"text-amber-300":"text-white/35"}/>
+                      <span className={`text-[0.58rem] font-bold leading-tight ${nbPageStyleV===s.value?"text-amber-300":"text-white/30"}`}>{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Preview mini cover */}
+              <div className="mb-5 flex items-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
+                <div className="relative w-12 h-16 shrink-0">
+                  <div className="absolute left-0 inset-y-0 w-[14%] rounded-l-sm" style={{background:NB_COVERS.find(c=>c.id===nbCoverId)?.s??""}}/>
+                  <div className="absolute left-[12%] inset-y-0 right-0 rounded-r-sm overflow-hidden"
+                    style={{background:NB_COVERS.find(c=>c.id===nbCoverId)?.g??""}}/>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white/80">{nbName||"Mon cahier"}</p>
+                  <p className="text-[0.65rem] text-white/30 mt-0.5">
+                    {NB_PAGE_STYLES.find(s=>s.value===nbPageStyleV)?.label} · {NB_COVERS.find(c=>c.id===nbCoverId)?.label}
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button onClick={()=>setCreateNbOpen(false)} disabled={nbCreating}
+                  className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20 hover:text-white/70">
+                  Annuler
+                </button>
+                <button onClick={()=>void createNotebook()} disabled={!nbName.trim()||nbCreating}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-[#080a0f] transition hover:opacity-90 disabled:opacity-40"
+                  style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>
+                  {nbCreating?<Loader2 size={13} className="animate-spin"/>:<Plus size={13}/>}
+                  Créer le cahier
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

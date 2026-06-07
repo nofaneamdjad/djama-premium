@@ -526,6 +526,16 @@ function TachesView({
   );
 }
 
+type CrmRapport = {
+  score_sante:         number;
+  resume_executif:     string;
+  points_forts:        string[];
+  alertes:             string[];
+  recommandations:     string[];
+  contacts_a_relancer: { nom: string; societe: string; raison: string }[];
+  objectif_semaine:    string;
+};
+
 function RapportView({
   contacts, opportunities, tasks, tickets,
 }: {
@@ -535,6 +545,10 @@ function RapportView({
   tickets: SupportTicket[];
 }) {
   const today = new Date().toISOString().split("T")[0];
+
+  const [rapport, setRapport]             = useState<CrmRapport | null>(null);
+  const [rapportLoading, setRapportLoading] = useState(false);
+  const [rapportOpen, setRapportOpen]     = useState(false);
 
   const stats = useMemo(() => {
     const actifs     = contacts.filter(c => c.status === "actif").length;
@@ -565,6 +579,82 @@ function RapportView({
     return { actifs, prospects, totalOpp, caMtot, convRate, overdueTasks, openTickets, byStage, byType, topSectors, totalContacts: contacts.length };
   }, [contacts, opportunities, tasks, tickets]);
 
+  async function runRapportIA() {
+    setRapportLoading(true);
+    setRapportOpen(false);
+    try {
+      /* top contacts by won CA */
+      const wonMap = new Map<string, { name: string; company: string; amount: number }>();
+      opportunities.filter(o => o.stage === "gagné").forEach(o => {
+        if (o.contact_id && o.contact) {
+          const prev = wonMap.get(o.contact_id);
+          if (prev) prev.amount += o.amount ?? 0;
+          else wonMap.set(o.contact_id, { name: o.contact.name, company: o.contact.company ?? "", amount: o.amount ?? 0 });
+        }
+      });
+      const topContacts = [...wonMap.values()].sort((a, b) => b.amount - a.amount).slice(0, 5);
+
+      /* top open opportunities by amount */
+      const topOpps = opportunities
+        .filter(o => o.stage !== "perdu")
+        .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0))
+        .slice(0, 5)
+        .map(o => ({ title: o.title, amount: o.amount ?? 0, stage: STAGES[o.stage].label }));
+
+      /* stage summary string */
+      const stageSummary = (Object.keys(STAGES) as OppStage[])
+        .map(s => {
+          const { count, amount } = stats.byStage[s];
+          return count > 0 ? `${STAGES[s].label}: ${count} opp. (${fmtEur(amount)})` : null;
+        })
+        .filter(Boolean)
+        .join(", ") || "Aucune opportunité";
+
+      /* upcoming relances */
+      const nextRelances = contacts
+        .filter(c => c.next_relance)
+        .sort((a, b) => (a.next_relance! > b.next_relance! ? 1 : -1))
+        .slice(0, 5)
+        .map(c => ({ name: c.name, company: c.company ?? "", date: c.next_relance! }));
+
+      const res = await fetch("/api/crm-rapport", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          totalContacts: stats.totalContacts,
+          actifs:        stats.actifs,
+          prospects:     stats.prospects,
+          partenaires:   stats.byType["partenaire"]  ?? 0,
+          fournisseurs:  stats.byType["fournisseur"] ?? 0,
+          totalOpp:      stats.totalOpp,
+          caMtot:        stats.caMtot,
+          convRate:      stats.convRate,
+          overdueTasks:  stats.overdueTasks,
+          openTickets:   stats.openTickets,
+          topContacts,
+          topOpps,
+          stageSummary,
+          nextRelances,
+        }),
+      });
+      if (!res.ok) throw new Error("Erreur serveur");
+      const data = await res.json() as CrmRapport;
+      setRapport(data);
+      setRapportOpen(true);
+    } catch {
+      /* silent */
+    } finally {
+      setRapportLoading(false);
+    }
+  }
+
+  /* score gauge constants */
+  const score       = rapport?.score_sante ?? 0;
+  const R           = 28;
+  const circ        = 2 * Math.PI * R;
+  const dashOffset  = circ * (1 - score / 100);
+  const scoreColor  = score >= 70 ? "#34d399" : score >= 45 ? "#f59e0b" : "#f87171";
+
   const kpis = [
     { label: "Contacts total",     value: stats.totalContacts, icon: Users,       color: "#60a5fa" },
     { label: "Clients actifs",     value: stats.actifs,        icon: UserCheck,   color: "#34d399" },
@@ -577,8 +667,151 @@ function RapportView({
   ];
 
   return (
-    <div className="space-y-6">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div className="space-y-5">
+
+      {/* ── Header + bouton Analyse IA ── */}
+      <div className="flex items-center justify-between">
+        <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/30">Synthèse CRM</p>
+        <button
+          onClick={runRapportIA}
+          disabled={rapportLoading}
+          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all disabled:opacity-60 hover:brightness-110 active:scale-95"
+          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}
+        >
+          {rapportLoading
+            ? <Loader2 size={11} className="animate-spin"/>
+            : <Zap size={11}/>
+          }
+          {rapportLoading ? "Analyse…" : "Analyse IA"}
+        </button>
+      </div>
+
+      {/* ── Panneau IA ── */}
+      <AnimatePresence>
+        {rapportOpen && rapport && (
+          <motion.div
+            key="rapport-ia"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="rounded-2xl p-5 space-y-5"
+            style={{ background: "linear-gradient(135deg,rgba(201,165,90,0.07),rgba(201,165,90,0.03))", border: "1px solid rgba(201,165,90,0.18)" }}
+          >
+            {/* Score + résumé */}
+            <div className="flex items-start gap-5">
+              {/* Gauge */}
+              <div className="shrink-0 flex flex-col items-center gap-1">
+                <svg width={72} height={72} viewBox="0 0 72 72">
+                  <circle cx={36} cy={36} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={5}/>
+                  <circle
+                    cx={36} cy={36} r={R} fill="none"
+                    stroke={scoreColor} strokeWidth={5}
+                    strokeLinecap="round"
+                    strokeDasharray={`${circ}`}
+                    strokeDashoffset={dashOffset}
+                    transform="rotate(-90 36 36)"
+                    style={{ transition: "stroke-dashoffset 0.8s ease" }}
+                  />
+                  <text x={36} y={40} textAnchor="middle" fill={scoreColor} fontSize={15} fontWeight={900} fontFamily="inherit">{score}</text>
+                </svg>
+                <p className="text-[0.55rem] font-bold uppercase tracking-wider text-white/30">Score</p>
+              </div>
+
+              {/* Résumé */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[0.65rem] font-black uppercase tracking-widest mb-1.5" style={{ color: "#c9a55a" }}>Résumé exécutif</p>
+                <p className="text-[0.75rem] leading-relaxed text-white/70">{rapport.resume_executif}</p>
+              </div>
+            </div>
+
+            {/* Points forts + Alertes */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              {rapport.points_forts.length > 0 && (
+                <div className="rounded-xl p-4" style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.15)" }}>
+                  <p className="text-[0.6rem] font-black uppercase tracking-widest text-emerald-400/70 mb-2.5">Points forts</p>
+                  <ul className="space-y-1.5">
+                    {rapport.points_forts.map((pt, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[0.72rem] text-white/65">
+                        <span className="mt-1 shrink-0 h-1.5 w-1.5 rounded-full bg-emerald-400"/>
+                        {pt}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {rapport.alertes.length > 0 && (
+                <div className="rounded-xl p-4" style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)" }}>
+                  <p className="text-[0.6rem] font-black uppercase tracking-widest text-red-400/70 mb-2.5">Alertes</p>
+                  <ul className="space-y-1.5">
+                    {rapport.alertes.map((al, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[0.72rem] text-white/65">
+                        <AlertCircle size={10} className="mt-0.5 shrink-0 text-red-400"/>
+                        {al}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Recommandations */}
+            {rapport.recommandations.length > 0 && (
+              <div>
+                <p className="text-[0.6rem] font-black uppercase tracking-widest mb-2.5" style={{ color: "rgba(201,165,90,0.7)" }}>Recommandations</p>
+                <ol className="space-y-2">
+                  {rapport.recommandations.map((r, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-[0.72rem] text-white/65">
+                      <span className="shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-[0.55rem] font-black"
+                        style={{ background: "rgba(201,165,90,0.15)", color: "#c9a55a" }}>{i + 1}</span>
+                      {r}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Contacts à relancer */}
+            {rapport.contacts_a_relancer.length > 0 && (
+              <div>
+                <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/30 mb-2.5">Contacts à relancer</p>
+                <div className="space-y-1.5">
+                  {rapport.contacts_a_relancer.map((c, i) => (
+                    <div key={i} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.04)" }}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-[0.6rem] font-black"
+                          style={{ background: "rgba(201,165,90,0.15)", color: "#c9a55a" }}>
+                          {c.nom.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[0.7rem] font-bold text-white/80 truncate">{c.nom}</p>
+                          {c.societe && <p className="text-[0.6rem] text-white/35 truncate">{c.societe}</p>}
+                        </div>
+                      </div>
+                      <p className="text-[0.65rem] text-white/40 shrink-0 text-right max-w-[45%] leading-snug">{c.raison}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Objectif semaine */}
+            {rapport.objectif_semaine && (
+              <div className="flex items-start gap-2.5 rounded-xl px-4 py-3"
+                style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
+                <Flag size={12} className="shrink-0 mt-0.5" style={{ color: "#c9a55a" }}/>
+                <div>
+                  <p className="text-[0.55rem] font-black uppercase tracking-widest mb-0.5" style={{ color: "rgba(201,165,90,0.6)" }}>Objectif de la semaine</p>
+                  <p className="text-[0.72rem] font-semibold text-white/70">{rapport.objectif_semaine}</p>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── KPI cards ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {kpis.map(k => (
           <div key={k.label} className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-4">
             <div className="flex items-center justify-between mb-2">
@@ -590,8 +823,9 @@ function RapportView({
         ))}
       </div>
 
+      {/* ── Pipeline + répartition contacts ── */}
       <div className="grid sm:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-5">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-5">
           <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-white/40 mb-4">Pipeline commercial</h3>
           <div className="space-y-2.5">
             {(Object.keys(STAGES) as OppStage[]).map(stage => {
@@ -614,7 +848,7 @@ function RapportView({
           </div>
         </div>
 
-                <div className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-5">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-5">
           <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-white/40 mb-4">Répartition contacts</h3>
           <div className="space-y-3">
             {(Object.keys(CONTACT_TYPES) as ContactType[]).map(type => {
