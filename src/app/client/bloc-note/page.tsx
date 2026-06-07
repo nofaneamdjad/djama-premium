@@ -141,7 +141,7 @@ function NoteCard({
             {note.items.length > 4 && <span className="text-[10px] text-white/25">+{note.items.length - 4} autres</span>}
           </div>
         ) : note.type === "voice" ? (
-          note.content?.startsWith("http") ? (
+          note.content?.startsWith("http") || note.content?.startsWith("data:audio") ? (
             <div onClick={e => e.stopPropagation()}>
               <audio src={note.content} controls className="w-full rounded-lg"
                 style={{ accentColor: ac, height: "32px" }} />
@@ -411,7 +411,9 @@ export default function BlocNotePage() {
         audioCtxRef.current = audioCtx;
         setTimeout(startWave, 50);
       } catch { /* visualizer optional */ }
-    } catch { /* microphone unavailable or permission denied — button stays visible */ }
+    } catch {
+      setToastData({ type: "error", msg: "Microphone non accessible" });
+    }
   }
 
   function stopRec() {
@@ -428,15 +430,14 @@ export default function BlocNotePage() {
   async function saveAudioNote(blob: Blob, forDraft: boolean) {
     setTranscribing(true);
     try {
-      const { data: authData } = await supabase.auth.getUser();
-      const form = new FormData();
-      form.append("audio", blob, "audio.webm");
-      form.append("userId", authData.user?.id ?? "anon");
-      const res = await fetch("/api/notes/audio", { method: "POST", body: form });
-      const { url, error } = await res.json() as { url?: string; error?: string };
-      if (error || !url) throw new Error(error);
-      if (forDraft) setDContent(url);
-      else setEDraft(p => ({ ...p, content: url }));
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      if (forDraft) setDContent(dataUrl);
+      else setEDraft(p => ({ ...p, content: dataUrl }));
     } catch {
       setToastData({ type: "error", msg: "Impossible de sauvegarder l'enregistrement" });
     } finally {
@@ -631,7 +632,7 @@ export default function BlocNotePage() {
                     </button>
                   )}
                   {dContent && (
-                    dContent.startsWith("http") ? (
+                    dContent.startsWith("http") || dContent.startsWith("data:audio") ? (
                       <audio src={dContent} controls className="w-full rounded-xl mt-1"
                         style={{ accentColor: acOf(dColor) }} />
                     ) : (
@@ -880,8 +881,8 @@ export default function BlocNotePage() {
                         </button>
                       )}
                     </div>
-                    {(eDraft.content ?? editNote.content)?.startsWith("http") ? (
-                      <audio src={eDraft.content ?? editNote.content} controls className="w-full rounded-xl"
+                    {((eDraft.content ?? editNote?.content)?.startsWith("http") || (eDraft.content ?? editNote?.content)?.startsWith("data:audio")) ? (
+                      <audio src={eDraft.content ?? editNote?.content} controls className="w-full rounded-xl"
                         style={{ accentColor: editAc }} />
                     ) : (
                       <textarea value={eDraft.content ?? ""}
