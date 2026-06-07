@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -866,12 +867,13 @@ export default function BlocNotesPage() {
 
           {/* Mode toggle — Notes / Cahiers */}
           <div className="flex rounded-xl border border-white/[0.08] bg-white/[0.03] p-0.5 mb-5">
-            {([{v:"notes" as const,icon:StickyNote,label:"Notes"},{v:"cahiers" as const,icon:Book,label:"Cahiers"}]).map(m=>(
-              <button key={m.v} onClick={()=>setNbMode(m.v)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-[10px] py-1.5 text-[0.68rem] font-bold transition-all ${nbMode===m.v?"bg-white/[0.1] text-white shadow-sm":"text-white/35 hover:text-white/55"}`}>
-                <m.icon size={11}/>{m.label}
-              </button>
-            ))}
+            <button className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] py-1.5 text-[0.68rem] font-bold bg-white/[0.1] text-white shadow-sm">
+              <StickyNote size={11}/>Notes
+            </button>
+            <Link href="/client/bloc-notes/cahiers"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] py-1.5 text-[0.68rem] font-bold transition-all text-white/35 hover:text-white/55">
+              <Book size={11}/>Cahiers
+            </Link>
           </div>
 
           {nbMode === "notes" ? (
@@ -1069,13 +1071,16 @@ export default function BlocNotesPage() {
 
                 {/* ── Mobile mode toggle (Notes / Cahiers) — hidden on desktop ── */}
           <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-3 py-2 lg:hidden">
-            {([{v:"notes" as const,icon:StickyNote,label:"Notes"},{v:"cahiers" as const,icon:Book,label:"Cahiers"}]).map(m=>(
-              <button key={m.v} onClick={()=>setNbMode(m.v)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.72rem] font-bold transition-all ${nbMode===m.v?"bg-white/[0.1] text-white":"text-white/35 hover:text-white/55"}`}
-                style={nbMode===m.v?{border:`1px solid ${amber}30`}:{border:"1px solid transparent"}}>
-                <m.icon size={12}/>{m.label}
-              </button>
-            ))}
+            <button
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.72rem] font-bold bg-white/[0.1] text-white"
+              style={{border:`1px solid ${amber}30`}}>
+              <StickyNote size={12}/>Notes
+            </button>
+            <Link href="/client/bloc-notes/cahiers"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.72rem] font-bold transition-all text-white/35 hover:text-white/55"
+              style={{border:"1px solid transparent"}}>
+              <Book size={12}/>Cahiers
+            </Link>
           </div>
 
                 {/* ── List header: title + action icons ── */}
