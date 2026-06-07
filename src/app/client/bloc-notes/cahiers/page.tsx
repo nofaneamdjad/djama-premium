@@ -12,7 +12,6 @@ import {
   AlignLeft, LayoutGrid, CalendarDays, Hash, Square, Check,
   Highlighter, Hand, ZoomIn, ZoomOut,
 } from "lucide-react";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import NotebookCanvas, {
   type NbStroke, type NbTool, type NbPageStyle,
@@ -210,10 +209,6 @@ export default function CahiersPage() {
 
       <div className="flex items-center justify-between border-b border-white/[0.06] px-5 sm:px-8 py-4 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <Link href="/client/bloc-notes"
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-white/35 transition hover:bg-white/[0.06] hover:text-white/65">
-            <ChevronLeft size={16}/>
-          </Link>
           <div>
             <h1 className="text-[0.95rem] font-black text-white tracking-tight">Mes cahiers</h1>
             <p className="text-[0.6rem] text-white/25">{books.length} cahier{books.length!==1?"s":""}</p>
