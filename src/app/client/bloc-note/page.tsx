@@ -344,18 +344,32 @@ export default function BlocNotePage() {
   }
 
     async function startRec(forDraft = false) {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setToastData({ type: "error", msg: "Votre navigateur ne supporte pas l'enregistrement audio" });
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       chunksRef.current = [];
-      const mr = new MediaRecorder(stream);
-      mr.ondataavailable = e => chunksRef.current.push(e.data);
+      const mime = ["audio/webm","audio/ogg","audio/mp4"].find(m => MediaRecorder.isTypeSupported(m));
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       mr.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const blob = new Blob(chunksRef.current, { type: mime ?? "audio/webm" });
         stream.getTracks().forEach(t => t.stop());
         transcribeBlob(blob, forDraft);
       };
       mr.start(); mediaRef.current = mr; setRecording(true);
-    } catch { setToastData({ type: "error", msg: "Micro non disponible" }); }
+    } catch (err) {
+      const name = (err as DOMException).name ?? "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        setToastData({ type: "error", msg: "Permission microphone refusée — autorisez l'accès dans les réglages du navigateur" });
+      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        setToastData({ type: "error", msg: "Aucun microphone détecté sur cet appareil" });
+      } else {
+        setToastData({ type: "error", msg: "Impossible d'accéder au microphone" });
+      }
+    }
   }
 
   function stopRec() { mediaRef.current?.stop(); setRecording(false); }

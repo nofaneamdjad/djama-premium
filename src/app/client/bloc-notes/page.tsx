@@ -789,7 +789,16 @@ export default function BlocNotesPage() {
       setVoiceState("recording"); setVoiceSec(0); voiceSecRef.current = 0;
       timerRef.current = setInterval(()=>{ voiceSecRef.current++; setVoiceSec(voiceSecRef.current) },1000);
       chunkRef.current = setInterval(()=>{ if(blobsRef.current.length) flushChunk() }, CHUNK_MS);
-    } catch { showToast("error","Accès micro refusé.") }
+    } catch (err) {
+      const name = (err as DOMException).name ?? "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        showToast("error","Permission microphone refusée — autorisez l'accès dans les réglages du navigateur");
+      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        showToast("error","Aucun microphone détecté sur cet appareil");
+      } else {
+        showToast("error","Impossible d'accéder au microphone");
+      }
+    }
   }
 
   const transcribeBlob = useCallback(async(blob: Blob, idx: number)=>{
