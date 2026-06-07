@@ -242,6 +242,7 @@ export default function BlocNotePage() {
 
     const [recording,    setRecording]    = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [micDenied,    setMicDenied]    = useState(false);
   const mediaRef  = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
@@ -363,7 +364,8 @@ export default function BlocNotePage() {
     } catch (err) {
       const name = (err as DOMException).name ?? "";
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-        setToastData({ type: "error", msg: "Permission microphone refusée — autorisez l'accès dans les réglages du navigateur" });
+        setMicDenied(true);
+        setToastData({ type: "error", msg: "Permission microphone refusée" });
       } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
         setToastData({ type: "error", msg: "Aucun microphone détecté sur cet appareil" });
       } else {
@@ -547,7 +549,17 @@ export default function BlocNotePage() {
 
               {dType === "voice" && (
                 <div className="px-4 py-2 space-y-2">
-                  {recording ? (
+                  {micDenied ? (
+                    <div className="rounded-xl border border-orange-500/25 bg-orange-500/[0.07] p-3 space-y-2">
+                      <p className="text-xs text-orange-300/80 leading-relaxed">
+                        Permission microphone refusée. Autorisez l&apos;accès dans les réglages de votre navigateur, puis réessayez.
+                      </p>
+                      <button onClick={() => { setMicDenied(false); void startRec(true); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/15 border border-orange-500/25 text-orange-300 text-xs font-semibold transition hover:bg-orange-500/25">
+                        <Mic size={12}/> Réessayer
+                      </button>
+                    </div>
+                  ) : recording ? (
                     <button onClick={stopRec}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm animate-pulse">
                       <StopCircle size={14} />Arrêter l&apos;enregistrement
@@ -781,7 +793,15 @@ export default function BlocNotePage() {
                 {(eDraft.type ?? editNote.type) === "voice" && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      {recording ? (
+                      {micDenied ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-orange-300/70">Permission refusée</span>
+                          <button onClick={() => { setMicDenied(false); void startRec(false); }}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-500/12 border border-orange-500/22 text-orange-300 text-xs transition hover:bg-orange-500/22">
+                            <Mic size={11}/> Réessayer
+                          </button>
+                        </div>
+                      ) : recording ? (
                         <button onClick={stopRec}
                           className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-xs animate-pulse">
                           <StopCircle size={13} />Arrêter
