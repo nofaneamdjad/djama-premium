@@ -249,6 +249,7 @@ export default function BlocNotePage() {
 
     const [recording,    setRecording]    = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [micBlocked,   setMicBlocked]   = useState(false);
   const [recSecs,      setRecSecs]      = useState(0);
   const mediaRef       = useRef<MediaRecorder | null>(null);
   const chunksRef      = useRef<Blob[]>([]);
@@ -411,8 +412,13 @@ export default function BlocNotePage() {
         audioCtxRef.current = audioCtx;
         setTimeout(startWave, 50);
       } catch { /* visualizer optional */ }
-    } catch {
-      setToastData({ type: "error", msg: "Microphone non accessible" });
+    } catch (err) {
+      const name = (err as DOMException).name ?? "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        setMicBlocked(true);
+      } else {
+        setToastData({ type: "error", msg: "Microphone non accessible" });
+      }
     }
   }
 
@@ -550,7 +556,7 @@ export default function BlocNotePage() {
 
                             <div className="flex gap-1 px-4 pt-3">
                 {(["text","checklist","voice"] as NoteType[]).map(t => (
-                  <button key={t} onClick={() => setDType(t)}
+                  <button key={t} onClick={() => { setDType(t); setMicBlocked(false); }}
                     className="px-3 py-1 rounded-lg text-xs font-medium transition-all"
                     style={{
                       background: dType === t ? `${acOf(dColor)}30` : "transparent",
@@ -624,6 +630,17 @@ export default function BlocNotePage() {
                     <span className="flex items-center gap-2 text-sm text-white/40">
                       <Loader2 size={13} className="animate-spin" />Sauvegarde…
                     </span>
+                  ) : micBlocked ? (
+                    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3 space-y-2.5">
+                      <p className="text-xs text-white/50 leading-relaxed">
+                        Accès microphone refusé. Dans votre navigateur, autorisez le micro pour ce site puis réessayez.
+                      </p>
+                      <button onClick={() => { setMicBlocked(false); void startRec(true); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                        style={{ background: `${acOf(dColor)}18`, border: `1px solid ${acOf(dColor)}35`, color: acOf(dColor) }}>
+                        <Mic size={12} />Réessayer
+                      </button>
+                    </div>
                   ) : (
                     <button onClick={() => startRec(true)}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
@@ -873,6 +890,15 @@ export default function BlocNotePage() {
                         <span className="flex items-center gap-2 text-xs text-white/35">
                           <Loader2 size={12} className="animate-spin" />Sauvegarde…
                         </span>
+                      ) : micBlocked ? (
+                        <div className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 space-y-2">
+                          <p className="text-xs text-white/45 leading-relaxed">Accès microphone refusé — autorisez dans les réglages du navigateur.</p>
+                          <button onClick={() => { setMicBlocked(false); void startRec(false); }}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all"
+                            style={{ background:`${editAc}18`, border:`1px solid ${editAc}35`, color:editAc }}>
+                            <Mic size={11} />Réessayer
+                          </button>
+                        </div>
                       ) : (
                         <button onClick={() => startRec(false)}
                           className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs"
