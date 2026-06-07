@@ -368,8 +368,8 @@ export default function BlocNotePage() {
     setTranscribing(true);
     try {
       const form = new FormData();
-      form.append("file", blob, "audio.webm");
-      const res = await fetch("/api/notes/transcribe", { method: "POST", body: form });
+      form.append("audio", blob, "audio.webm");
+      const res = await fetch("/api/transcribe", { method: "POST", body: form });
       const { text = "" } = await res.json() as { text?: string };
       if (forDraft) setDContent(p => (p ? `${p}\n${text}` : text).trim());
       else setEDraft(p => ({ ...p, content: (`${p.content ?? editNote?.content ?? ""}\n${text}`).trim() }));
