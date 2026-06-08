@@ -78,29 +78,33 @@ export async function loadLogoImage(url: string): Promise<{
   }
 }
 
-// ─── QR Code EPC (SEPA Credit Transfer) ─────────────────────────────────────
+// ─── QR Code informations facture ────────────────────────────────────────────
 
-async function generateEpcQrUrl(params: {
-  bic: string; name: string; iban: string; amount: number; reference: string;
+async function generateInvoiceQrUrl(params: {
+  type:          string;
+  reference:     string;
+  issue_date:    string;
+  due_date?:     string | null;
+  valid_until?:  string | null;
+  client_name:   string;
+  client_company?: string | null;
+  total:         number;
 }): Promise<string | null> {
   try {
-    const { bic, name, iban, amount, reference } = params;
-    if (!iban) return null;
-    const cleanIban = iban.replace(/\s/g, "").toUpperCase();
-    const amtStr    = amount > 0 ? `EUR${amount.toFixed(2)}` : "EUR";
-    const epcData = [
-      "BCD", "002", "1", "SCT",
-      bic.slice(0, 11),
-      name.slice(0, 70),
-      cleanIban.slice(0, 34),
-      amtStr,
-      "",
-      reference.slice(0, 35),
-      "",
-      "",
-    ].join("\n");
+    const { type, reference, issue_date, due_date, valid_until, client_name, client_company, total } = params;
+    const label  = type === "invoice" ? "FACTURE" : "DEVIS";
+    const lines: string[] = [];
+    lines.push(`${label} : ${reference}`);
+    lines.push(`Date : ${fmtDate(issue_date)}`);
+    if (type === "invoice" && due_date)
+      lines.push(`Echéance : ${fmtDate(due_date)}`);
+    if (type === "quote" && valid_until)
+      lines.push(`Valable jusqu'au : ${fmtDate(valid_until)}`);
+    if (client_name)   lines.push(`Client : ${client_name}`);
+    if (client_company) lines.push(`Société : ${client_company}`);
+    lines.push(`Montant TTC : ${fmtEur(total)}`);
     const QRCode = (await import("qrcode")).default;
-    return await QRCode.toDataURL(epcData, {
+    return await QRCode.toDataURL(lines.join("\n"), {
       errorCorrectionLevel: "M",
       width: 200,
       margin: 1,
@@ -190,9 +194,9 @@ function drawHeader(
       doc.setFontSize(5);
       setTxt(doc, [120, 120, 130]);
       const qrLabelX = qrX + QR_SIZE / 2;
-      doc.text("Scanner le code",          qrLabelX, qrY + QR_SIZE + 3.5,  { align: "center" });
-      doc.text("avec l'application",       qrLabelX, qrY + QR_SIZE + 7,    { align: "center" });
-      doc.text("bancaire",                 qrLabelX, qrY + QR_SIZE + 10.5, { align: "center" });
+      doc.text("Scanner pour",              qrLabelX, qrY + QR_SIZE + 3.5,  { align: "center" });
+      doc.text("les informations",         qrLabelX, qrY + QR_SIZE + 7,    { align: "center" });
+      doc.text("de la facture",            qrLabelX, qrY + QR_SIZE + 10.5, { align: "center" });
     }
 
     // Ligne basse légère
@@ -740,16 +744,19 @@ export async function renderPdfWithTheme(
     doc.rect(0, 0, PW, PH, "F");
   }
 
-  // QR code EPC pour le template clean (accent-bar)
+  // QR code infos facture pour le template clean (accent-bar)
   let qrDataUrl: string | null = null;
   if (theme.variant === "accent-bar") {
-    const iban = data.rib_iban || co.iban;
-    const bic  = data.rib_bic  || co.bic;
-    if (iban) {
-      qrDataUrl = await generateEpcQrUrl({
-        bic, name: co.name, iban, amount: data.total, reference: data.reference,
-      });
-    }
+    qrDataUrl = await generateInvoiceQrUrl({
+      type:           data.type,
+      reference:      data.reference,
+      issue_date:     data.issue_date,
+      due_date:       data.due_date,
+      valid_until:    data.valid_until,
+      client_name:    data.client_name,
+      client_company: data.client_company,
+      total:          data.total,
+    });
   }
 
   let y = drawHeader(doc, data, co, theme, logoImg, qrDataUrl);
