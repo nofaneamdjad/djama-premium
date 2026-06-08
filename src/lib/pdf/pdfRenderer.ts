@@ -308,19 +308,13 @@ function drawAddresses(
     const lines = doc.splitTextToSize(co.address, MID - ML - 4) as string[];
     lines.forEach(l => { doc.text(l, ML, ey); ey += 4.5; });
   }
-  const cityLine = [co.city, co.country].filter(Boolean).join(", ");
-  if (cityLine)      { doc.text(cityLine,                    ML, ey); ey += 4.5; }
-  if (co.phone)      { doc.text(co.phone,                    ML, ey); ey += 4.5; }
-  if (co.email)      { doc.text(co.email,                    ML, ey); ey += 4.5; }
-  if (co.website)    { doc.text(co.website,                  ML, ey); ey += 4.5; }
-  if (co.siret)      { doc.text(`SIRET : ${co.siret}`,       ML, ey); ey += 4.5; }
-  if (co.ape)        { doc.text(`APE : ${co.ape}`,           ML, ey); ey += 4.5; }
-  if (co.vat_number) { doc.text(`Numéro de TVA : ${co.vat_number}`, ML, ey); ey += 4.5; }
-  if (co.iban) {
-    const ibanFmt = co.iban.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
-    doc.text(`IBAN : ${ibanFmt}`, ML, ey); ey += 4.5;
+  if (co.city || co.country) {
+    const cityLine = [co.city, co.country].filter(Boolean).join(", ");
+    doc.text(cityLine, ML, ey); ey += 4.5;
   }
-  if (co.bic) { doc.text(`BIC/SWIFT : ${co.bic}`, ML, ey); ey += 4.5; }
+  if (co.phone)   { doc.text(co.phone,   ML, ey); ey += 4.5; }
+  if (co.email)   { doc.text(co.email,   ML, ey); ey += 4.5; }
+  if (co.website) { doc.text(co.website, ML, ey); ey += 4.5; }
 
   // Client
   doc.setFont("helvetica", "normal");
@@ -708,8 +702,34 @@ function drawFooter(
   doc.setFontSize(6.5);
   setTxt(doc, theme.footerText);
 
-  // Variant accent-bar : footer minimaliste (juste page)
+  // Variant accent-bar : mentions légales + RIB en footer
   if (theme.variant === "accent-bar") {
+    let fy = FY + 6;
+
+    // Ligne 1 : nom société + contact
+    const l0 = [co.name, co.email, co.phone, co.website].filter(Boolean).join("   |   ");
+    if (l0) { doc.text(l0, PW / 2, fy, { align: "center" }); fy += 5; }
+
+    // Ligne 2 : SIRET | APE | TVA
+    const lLegal: string[] = [];
+    if (co.siret)      lLegal.push(`SIRET : ${co.siret}`);
+    if (co.ape)        lLegal.push(`APE : ${co.ape}`);
+    if (co.vat_number) lLegal.push(`TVA : ${co.vat_number}`);
+    if (lLegal.length) { doc.text(lLegal.join("   |   "), PW / 2, fy, { align: "center" }); fy += 5; }
+
+    // Ligne 3 : IBAN | BIC
+    const lRib: string[] = [];
+    if (co.iban) lRib.push(`IBAN : ${co.iban.replace(/\s/g,"").replace(/(.{4})/g,"$1 ").trim()}`);
+    if (co.bic)  lRib.push(`BIC : ${co.bic}`);
+    if (lRib.length) { doc.text(lRib.join("   |   "), PW / 2, fy, { align: "center" }); fy += 5; }
+
+    // Ligne 4 : mentions légales (footer_text)
+    if (data.footer_text) {
+      doc.setFontSize(6);
+      doc.text(data.footer_text, PW / 2, fy, { align: "center", maxWidth: CW });
+    }
+
+    doc.setFontSize(6.5);
     doc.text(`Page 1/1`, PW - MR, PH - 4, { align: "right" });
     return;
   }
