@@ -332,8 +332,9 @@ function drawAddresses(
   if (data.client_email)   { doc.text(data.client_email,   RX, cy); cy += 4.5; }
   if (data.client_phone)   { doc.text(data.client_phone,   RX, cy); cy += 4.5; }
   if (data.client_address) {
-    const lines = doc.splitTextToSize(data.client_address, MID - ML - 4) as string[];
-    lines.forEach(l => { doc.text(l, RX, cy); cy += 4.5; });
+    data.client_address.split("\n").forEach(part => {
+      (doc.splitTextToSize(part, MID - ML - 4) as string[]).forEach(l => { doc.text(l, RX, cy); cy += 4.5; });
+    });
   }
   if (data.client_vat) { doc.text(`Numéro de TVA : ${data.client_vat}`, RX, cy); cy += 4.5; }
 

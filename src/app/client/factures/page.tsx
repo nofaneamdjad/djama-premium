@@ -48,11 +48,15 @@ interface Document {
   emetteur_siret:   string;
   emetteur_tva:     string;
   emetteur_logo:    string;
-  client_nom:       string;
-  client_societe:   string;
-  client_email:     string;
-  client_telephone: string;
-  client_adresse:   string;
+  client_nom:          string;
+  client_societe:      string;
+  client_email:        string;
+  client_telephone:    string;
+  client_adresse:      string;
+  client_ville:        string;
+  client_code_postal:  string;
+  client_pays:         string;
+  client_tva:          string;
   date_document:    string;
   date_echeance:    string;
   remise_pct:       number;
@@ -209,6 +213,7 @@ const EMPTY_DRAFT = (): DraftDoc => ({
   sujet:"",
   emetteur_nom:"", emetteur_email:"", emetteur_adresse:"", emetteur_siret:"", emetteur_tva:"", emetteur_logo:"",
   client_nom:"", client_societe:"", client_email:"", client_telephone:"", client_adresse:"",
+  client_ville:"", client_code_postal:"", client_pays:"", client_tva:"",
   date_document: new Date().toISOString().slice(0,10),
   date_echeance:"",
   remise_pct:0, acompte:0, devise:"EUR",
@@ -240,7 +245,12 @@ async function exportPDFWithTemplate(
     client_company: draft.client_societe || null,
     client_email:   draft.client_email,
     client_phone:   draft.client_telephone || null,
-    client_address: draft.client_adresse   || null,
+    client_address: [
+      draft.client_adresse,
+      [draft.client_code_postal, draft.client_ville].filter(Boolean).join(" "),
+      draft.client_pays,
+    ].filter(Boolean).join("\n") || null,
+    client_vat:     draft.client_tva || null,
     subject:     draft.sujet || draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
     items: items.map(it => {
       const gross  = r2(it.quantity * it.unit_price);
@@ -286,7 +296,11 @@ function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnTyp
     client_name:    draft.client_nom   || "Client",
     client_email:   draft.client_email,
     client_company: draft.client_societe || null,
-    client_address: draft.client_adresse || null,
+    client_address: [
+      draft.client_adresse,
+      [draft.client_code_postal, draft.client_ville].filter(Boolean).join(" "),
+      draft.client_pays,
+    ].filter(Boolean).join("\n") || null,
     subject:        draft.sujet || draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
     items: items.map(it => ({
       description: it.description || "Prestation",
@@ -555,11 +569,15 @@ export default function FacturesPage() {
       emetteur_siret:   doc.emetteur_siret    ?? "",
       emetteur_tva:     doc.emetteur_tva      ?? "",
       emetteur_logo:    doc.emetteur_logo     ?? "",
-      client_nom:       doc.client_nom        ?? "",
-      client_societe:   doc.client_societe    ?? "",
-      client_email:     doc.client_email      ?? "",
-      client_telephone: doc.client_telephone  ?? "",
-      client_adresse:   doc.client_adresse    ?? "",
+      client_nom:          doc.client_nom          ?? "",
+      client_societe:      doc.client_societe      ?? "",
+      client_email:        doc.client_email        ?? "",
+      client_telephone:    doc.client_telephone    ?? "",
+      client_adresse:      doc.client_adresse      ?? "",
+      client_ville:        doc.client_ville        ?? "",
+      client_code_postal:  doc.client_code_postal  ?? "",
+      client_pays:         doc.client_pays         ?? "",
+      client_tva:          doc.client_tva          ?? "",
       date_document:    doc.date_document,
       date_echeance:    doc.date_echeance     ?? "",
       remise_pct:       doc.remise_pct        ?? 0,
@@ -641,11 +659,15 @@ export default function FacturesPage() {
       emetteur_siret:   draft.emetteur_siret,
       emetteur_tva:     draft.emetteur_tva,
       emetteur_logo:    draft.emetteur_logo,
-      client_nom:       draft.client_nom,
-      client_societe:   draft.client_societe,
-      client_email:     draft.client_email,
-      client_telephone: draft.client_telephone,
-      client_adresse:   draft.client_adresse,
+      client_nom:         draft.client_nom,
+      client_societe:     draft.client_societe,
+      client_email:       draft.client_email,
+      client_telephone:   draft.client_telephone,
+      client_adresse:     draft.client_adresse,
+      client_ville:       draft.client_ville,
+      client_code_postal: draft.client_code_postal,
+      client_pays:        draft.client_pays,
+      client_tva:         draft.client_tva,
       date_document:    draft.date_document,
       date_echeance:    draft.date_echeance || null,
       remise_pct:       draft.remise_pct,
@@ -743,9 +765,13 @@ export default function FacturesPage() {
       emetteur_adresse:  selected.emetteur_adresse,  emetteur_siret: selected.emetteur_siret,
       emetteur_tva:      selected.emetteur_tva      ?? "",
       emetteur_logo:     selected.emetteur_logo     ?? "",
-      client_nom:        selected.client_nom,         client_societe: selected.client_societe ?? "",
-      client_email:      selected.client_email,       client_telephone: selected.client_telephone ?? "",
-      client_adresse:    selected.client_adresse,
+      client_nom:         selected.client_nom,        client_societe:     selected.client_societe    ?? "",
+      client_email:       selected.client_email,      client_telephone:   selected.client_telephone  ?? "",
+      client_adresse:     selected.client_adresse,
+      client_ville:       selected.client_ville       ?? "",
+      client_code_postal: selected.client_code_postal ?? "",
+      client_pays:        selected.client_pays        ?? "",
+      client_tva:         selected.client_tva         ?? "",
       date_document:     new Date().toISOString().slice(0,10),
       date_echeance:     selected.date_echeance,
       remise_pct:        selected.remise_pct ?? 0,    acompte:0,
@@ -793,9 +819,13 @@ export default function FacturesPage() {
       emetteur_nom:      draft.emetteur_nom,      emetteur_email:   draft.emetteur_email,
       emetteur_adresse:  draft.emetteur_adresse,  emetteur_siret:   draft.emetteur_siret,
       emetteur_tva:      draft.emetteur_tva,       emetteur_logo:    draft.emetteur_logo,
-      client_nom:        draft.client_nom,          client_societe:   draft.client_societe,
-      client_email:      draft.client_email,        client_telephone: draft.client_telephone,
-      client_adresse:    draft.client_adresse,
+      client_nom:         draft.client_nom,          client_societe:     draft.client_societe,
+      client_email:       draft.client_email,        client_telephone:   draft.client_telephone,
+      client_adresse:     draft.client_adresse,
+      client_ville:       draft.client_ville,
+      client_code_postal: draft.client_code_postal,
+      client_pays:        draft.client_pays,
+      client_tva:         draft.client_tva,
       date_document:     new Date().toISOString().slice(0,10),
       date_echeance:     "",
       remise_pct:        draft.remise_pct,          acompte:          0,
@@ -1278,7 +1308,13 @@ export default function FacturesPage() {
                         <DInput value={draft.client_societe}   onChange={v => updDraft("client_societe", v)}   placeholder="Société / Entreprise"/>
                         <DInput value={draft.client_email}     onChange={v => updDraft("client_email", v)}     placeholder="email@client.com"/>
                         <DInput value={draft.client_telephone} onChange={v => updDraft("client_telephone", v)} placeholder="+33 6 00 00 00 00"/>
-                        <DInput value={draft.client_adresse}   onChange={v => updDraft("client_adresse", v)}   placeholder="Adresse du client"/>
+                        <DInput value={draft.client_adresse}   onChange={v => updDraft("client_adresse", v)}   placeholder="Rue, numéro…"/>
+                        <div className="grid grid-cols-[80px_1fr] gap-2">
+                          <DInput value={draft.client_code_postal} onChange={v => updDraft("client_code_postal", v)} placeholder="75001"/>
+                          <DInput value={draft.client_ville}       onChange={v => updDraft("client_ville", v)}       placeholder="Ville"/>
+                        </div>
+                        <DInput value={draft.client_pays}     onChange={v => updDraft("client_pays", v)}     placeholder="Pays"/>
+                        <DInput value={draft.client_tva}      onChange={v => updDraft("client_tva", v)}      placeholder="N° TVA intracommunautaire"/>
                       </div>
                     </div>
                   </div>

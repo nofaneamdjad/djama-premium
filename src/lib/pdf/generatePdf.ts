@@ -44,6 +44,7 @@ export interface PdfData {
   client_phone?:   string | null;
   client_company?: string | null;
   client_address?: string | null;
+  client_vat?:     string | null;
   subject:         string;
   items:           PdfLineItem[];
   subtotal:        number;
