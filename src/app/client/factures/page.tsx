@@ -245,8 +245,7 @@ async function exportPDFWithTemplate(
       const gross  = r2(it.quantity * it.unit_price);
       const lineRem = r2(gross * (it.remise_pct||0) / 100);
       const lineHT  = r2(gross - lineRem);
-      const desc = [it.unit ? `[${it.unit}]` : "", it.description || "(description)"].filter(Boolean).join(" ");
-      return { description: desc, quantity: it.quantity, unit_price: it.unit_price, total: lineHT, tax_rate: it.vat_rate };
+      return { description: it.description || "(description)", unit: it.unit || "", quantity: it.quantity, unit_price: it.unit_price, total: lineHT, tax_rate: it.vat_rate };
     }),
     subtotal:      totals.subtotal_ht,
     discount_rate: draft.remise_pct > 0 ? draft.remise_pct : null,

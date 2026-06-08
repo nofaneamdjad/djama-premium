@@ -18,6 +18,8 @@ export type TemplateType =
 
 export interface PdfLineItem {
   description: string;
+  /** Unité de mesure (h, j, mois, forfait…) */
+  unit?:       string | null;
   quantity:    number;
   unit_price:  number;
   total:       number;
@@ -44,6 +46,7 @@ export interface PdfTemplateData {
   client_phone?:   string | null;
   client_company?: string | null;
   client_address?: string | null;
+  client_vat?:     string | null;
 
   /* Objet du document */
   subject:         string;
