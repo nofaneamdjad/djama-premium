@@ -24,14 +24,15 @@ type DocType   = "facture" | "devis";
 type DocStatut = "brouillon" | "envoyé" | "payé" | "en_retard";
 
 interface DocItem {
-  id?:         string;
-  position:    number;
-  description: string;
-  unit:        string;
-  quantity:    number;
-  unit_price:  number;
-  vat_rate:    number;
-  remise_pct:  number;
+  id?:             string;
+  position:        number;
+  description:     string;
+  sub_description: string;
+  unit:            string;
+  quantity:        number;
+  unit_price:      number;
+  vat_rate:        number;
+  remise_pct:      number;
 }
 
 interface Document {
@@ -200,7 +201,7 @@ function contrastColor(hex: string): "#0a0a0a"|"#ffffff" {
 }
 
 const EMPTY_ITEM = (): DocItem => ({
-  position:0, description:"", unit:"", quantity:1, unit_price:0, vat_rate:20, remise_pct:0,
+  position:0, description:"", sub_description:"", unit:"", quantity:1, unit_price:0, vat_rate:20, remise_pct:0,
 });
 
 const EMPTY_DRAFT = (): DraftDoc => ({
@@ -245,7 +246,8 @@ async function exportPDFWithTemplate(
       const gross  = r2(it.quantity * it.unit_price);
       const lineRem = r2(gross * (it.remise_pct||0) / 100);
       const lineHT  = r2(gross - lineRem);
-      return { description: it.description || "(description)", unit: it.unit || "", quantity: it.quantity, unit_price: it.unit_price, total: lineHT, tax_rate: it.vat_rate };
+      const fullDesc = [it.description, it.sub_description].filter(Boolean).join("\n") || "(description)";
+      return { description: fullDesc, unit: it.unit || "", quantity: it.quantity, unit_price: it.unit_price, total: lineHT, tax_rate: it.vat_rate };
     }),
     subtotal:      totals.subtotal_ht,
     discount_rate: draft.remise_pct > 0 ? draft.remise_pct : null,
@@ -574,7 +576,12 @@ export default function FacturesPage() {
       template:         (doc.template as TemplateType) ?? "modern",
     });
     const { data } = await supabase.from("document_items").select("*").eq("document_id", doc.id).order("position");
-    setItems((data as DocItem[])?.length ? (data as DocItem[]) : [EMPTY_ITEM()]);
+    setItems((data as DocItem[])?.length
+      ? (data as DocItem[]).map(it => {
+          const [main, ...rest] = (it.description || "").split("\n");
+          return { ...it, description: main || "", sub_description: rest.join("\n") };
+        })
+      : [EMPTY_ITEM()]);
     setDirty(false);
     setMobileView("editor");
   }
@@ -681,7 +688,7 @@ export default function FacturesPage() {
         const rows = items.map((it,i) => ({
           document_id:  docId,
           position:     i,
-          description:  it.description,
+          description:  [it.description, it.sub_description].filter(Boolean).join("\n"),
           unit:         it.unit        || "",
           quantity:     it.quantity,
           unit_price:   it.unit_price,
@@ -754,12 +761,15 @@ export default function FacturesPage() {
     const { data: srcItems } = await supabase.from("document_items").select("*").eq("document_id", selected.id);
     if (srcItems?.length) {
       await supabase.from("document_items").insert(
-        (srcItems as (DocItem & { document_id:string })[]).map((it,i) => ({
-          document_id: (newDoc as Document).id, position:i,
-          description: it.description, unit: it.unit||"",
-          quantity: it.quantity, unit_price: it.unit_price,
-          vat_rate: it.vat_rate, remise_pct: it.remise_pct||0,
-        }))
+        (srcItems as (DocItem & { document_id:string })[]).map((it,i) => {
+          const [main, ...rest] = (it.description || "").split("\n");
+          return {
+            document_id: (newDoc as Document).id, position:i,
+            description: [main, rest.join("\n")].filter(Boolean).join("\n"),
+            unit: it.unit||"", quantity: it.quantity, unit_price: it.unit_price,
+            vat_rate: it.vat_rate, remise_pct: it.remise_pct||0,
+          };
+        })
       );
     }
     setConverting(false);
@@ -803,8 +813,8 @@ export default function FacturesPage() {
       await supabase.from("document_items").insert(
         items.map((it,i) => ({
           document_id: (newDoc as Document).id, position:i,
-          description: it.description, unit: it.unit||"",
-          quantity: it.quantity, unit_price: it.unit_price,
+          description: [it.description, it.sub_description].filter(Boolean).join("\n"),
+          unit: it.unit||"", quantity: it.quantity, unit_price: it.unit_price,
           vat_rate: it.vat_rate, remise_pct: it.remise_pct||0,
         }))
       );
@@ -1301,7 +1311,12 @@ export default function FacturesPage() {
                             <motion.div key={idx} layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
                               transition={{ duration:0.2, ease }}
                               className="group grid grid-cols-1 gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 sm:grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] sm:items-center">
-                              <DInput small value={it.description} onChange={v => updItem(idx,"description",v)} placeholder="Description de la prestation"/>
+                              <div className="flex flex-col gap-1">
+                                <DInput small value={it.description} onChange={v => updItem(idx,"description",v)} placeholder="Description de la prestation"/>
+                                <div className="opacity-60">
+                                  <DInput small value={it.sub_description||""} onChange={v => updItem(idx,"sub_description",v)} placeholder="Sous-description (optionnel)…"/>
+                                </div>
+                              </div>
                               <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
                               <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx,"quantity",   parseFloat(v)||0)} placeholder="1"/>
                               <DInput small type="number" value={String(it.unit_price)} onChange={v => updItem(idx,"unit_price", parseFloat(v)||0)} placeholder="0.00"/>

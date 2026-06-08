@@ -451,9 +451,11 @@ function drawItemsTable(
 
   // Lignes
   data.items.forEach((item, i) => {
-    const descLines = doc.splitTextToSize(
-      item.description || "(description)", COL_DESC - 6
-    ) as string[];
+    const rawParts = (item.description || "(description)").split("\n");
+    const descLines: string[] = [];
+    rawParts.forEach(part => {
+      (doc.splitTextToSize(part || " ", COL_DESC - 6) as string[]).forEach(l => descLines.push(l));
+    });
     const rowH = Math.max(9, descLines.length * 5 + 3.5);
 
     y = maybePageBreak(doc, y, rowH, theme);
