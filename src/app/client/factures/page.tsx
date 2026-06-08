@@ -937,10 +937,10 @@ export default function FacturesPage() {
   const fmt         = (n: number) => fmtAmount(n, devise);
 
   return (
-    <div className="flex flex-col bg-[#0a0f1e]">
+    <div className="flex h-[calc(100vh-56px)] flex-col overflow-hidden bg-[#0a0f1e]">
 
       {/* ── Header ── */}
-      <div className="border-b border-white/[0.07] bg-[rgba(10,11,16,0.95)] px-5 py-4 backdrop-blur-xl sm:px-8">
+      <div className="shrink-0 border-b border-white/[0.07] bg-[rgba(10,11,16,0.95)] px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
@@ -966,10 +966,10 @@ export default function FacturesPage() {
       </div>
 
       {/* ── Body ── */}
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 px-5 py-5 sm:px-5">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 overflow-hidden px-5 py-5 sm:px-5">
 
         {/* ── Sidebar list ── */}
-        <aside className={`flex w-full flex-col border-r border-white/[0.06] sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-white/[0.08] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}
+        <aside className={`flex w-full flex-col overflow-hidden border-r border-white/[0.06] sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-white/[0.08] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}
           style={{ background:"rgba(255,255,255,0.025)" }}>
 
           {/* Stats bar */}
@@ -1215,19 +1215,6 @@ export default function FacturesPage() {
                     <DInput label="Objet / Intitulé *" value={draft.sujet} onChange={v => updDraft("sujet", v)} placeholder="Développement application web, Mission de conseil…"/>
                   </div>
 
-                  {/* ── Apparence ── */}
-                  <div className="space-y-3">
-                    <SectionLabel icon={<Palette size={10}/>} label="Apparence"/>
-                    <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
-                    <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
-                      <TemplateSelector
-                        value={draft.template ?? "modern"}
-                        onChange={v => { setDraft(d => d ? { ...d, template:v } : d); setDirty(true); }}
-                        data={draftToPreviewData(draft, items, totals)}
-                      />
-                    </div>
-                  </div>
-
                   {/* ── Parties ── */}
                   <div className="grid gap-6 sm:grid-cols-2">
                     <div className="space-y-3">
@@ -1284,19 +1271,6 @@ export default function FacturesPage() {
                         <DInput value={draft.client_telephone} onChange={v => updDraft("client_telephone", v)} placeholder="+33 6 00 00 00 00"/>
                         <DInput value={draft.client_adresse}   onChange={v => updDraft("client_adresse", v)}   placeholder="Adresse du client"/>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* ── Coordonnées bancaires ── */}
-                  <div className="space-y-3">
-                    <SectionLabel icon={<Landmark size={10}/>} label="Coordonnées bancaires" hint="optionnel — apparaît dans le PDF"/>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <DInput label="Titulaire du compte" value={draft.rib_titulaire} onChange={v => updDraft("rib_titulaire", v)} placeholder="Prénom NOM"/>
-                      <DInput label="Banque"              value={draft.rib_banque}    onChange={v => updDraft("rib_banque", v)}    placeholder="Nom de la banque"/>
-                      <div className="sm:col-span-2">
-                        <DInput label="IBAN" value={draft.rib_iban} onChange={v => updDraft("rib_iban", v)} placeholder="FR76 3000 6000 0112 3456 7890 189"/>
-                      </div>
-                      <DInput label="BIC / SWIFT" value={draft.rib_bic} onChange={v => updDraft("rib_bic", v)} placeholder="BNPAFRPP"/>
                     </div>
                   </div>
 
@@ -1436,6 +1410,19 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
+                  {/* ── Coordonnées bancaires ── */}
+                  <div className="space-y-3">
+                    <SectionLabel icon={<Landmark size={10}/>} label="Coordonnées bancaires" hint="optionnel — apparaît dans le PDF"/>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <DInput label="Titulaire du compte" value={draft.rib_titulaire} onChange={v => updDraft("rib_titulaire", v)} placeholder="Prénom NOM"/>
+                      <DInput label="Banque"              value={draft.rib_banque}    onChange={v => updDraft("rib_banque", v)}    placeholder="Nom de la banque"/>
+                      <div className="sm:col-span-2">
+                        <DInput label="IBAN" value={draft.rib_iban} onChange={v => updDraft("rib_iban", v)} placeholder="FR76 3000 6000 0112 3456 7890 189"/>
+                      </div>
+                      <DInput label="BIC / SWIFT" value={draft.rib_bic} onChange={v => updDraft("rib_bic", v)} placeholder="BNPAFRPP"/>
+                    </div>
+                  </div>
+
                   {/* ── Notes & conditions ── */}
                   <div className="space-y-3">
                     <SectionLabel icon={<FileText size={10}/>} label="Notes & conditions"/>
@@ -1467,6 +1454,19 @@ export default function FacturesPage() {
                           <Plus size={8}/>{p.label}
                         </button>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* ── Apparence ── */}
+                  <div className="space-y-3">
+                    <SectionLabel icon={<Palette size={10}/>} label="Apparence"/>
+                    <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
+                    <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+                      <TemplateSelector
+                        value={draft.template ?? "modern"}
+                        onChange={v => { setDraft(d => d ? { ...d, template:v } : d); setDirty(true); }}
+                        data={draftToPreviewData(draft, items, totals)}
+                      />
                     </div>
                   </div>
 
