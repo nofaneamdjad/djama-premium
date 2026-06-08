@@ -40,15 +40,24 @@ export function fmtDate(d: string | null | undefined): string {
   return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
 }
 
-/** Formate un montant en "1 234,56 €" — espace ordinaire, symbole €. */
-export function fmtEur(n: number): string {
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: "€", USD: "$", GBP: "£", CHF: "Fr", CAD: "C$",
+  MAD: "DH", XOF: "CFA", DZD: "DA",
+};
+
+/** Formate un montant selon la devise (défaut EUR). */
+export function fmtAmt(n: number, currency = "EUR"): string {
   const sign   = n < 0 ? "-" : "";
   const abs    = Math.abs(n);
   const int    = Math.floor(abs);
   const dec    = Math.round((abs - int) * 100).toString().padStart(2, "0");
   const intStr = int.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  return `${sign}${intStr},${dec} €`;
+  const sym    = CURRENCY_SYMBOLS[currency] ?? currency;
+  return `${sign}${intStr},${dec} ${sym}`;
 }
+
+/** Formate un montant en euros (alias rétrocompat). */
+export function fmtEur(n: number): string { return fmtAmt(n, "EUR"); }
 
 export async function loadLogoImage(url: string): Promise<{
   dataUri: string; naturalW: number; naturalH: number;
@@ -557,12 +566,15 @@ function drawTotals(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
 
+  const cur = data.currency || "EUR";
+  const r2  = (n: number) => Math.round(n * 100) / 100;
+
   // Sous-total HT
   if (data.subtotal !== data.total || (data.tax_amount ?? 0) > 0 || (data.discount ?? 0) > 0) {
     setTxt(doc, theme.mutedText);
     doc.text("Sous-total HT", TX, y);
     setTxt(doc, theme.bodyText);
-    doc.text(fmtEur(data.subtotal), RX, y, { align: "right" });
+    doc.text(fmtAmt(data.subtotal, cur), RX, y, { align: "right" });
     y += 7;
   }
 
@@ -572,17 +584,38 @@ function drawTotals(
     const lbl = data.discount_rate ? `Remise (${data.discount_rate}%)` : "Remise";
     doc.text(lbl, TX, y);
     doc.setTextColor(200, 70, 70);
-    doc.text(`- ${fmtEur(data.discount)}`, RX, y, { align: "right" });
+    doc.text(`- ${fmtAmt(data.discount, cur)}`, RX, y, { align: "right" });
     y += 7;
   }
 
-  // TVA (une ligne par taux, ou résumé)
+  // TVA — une ligne par taux si multi-taux, sinon résumé
   if (data.tax_amount > 0) {
-    setTxt(doc, theme.mutedText);
-    doc.text(`TVA (${data.tax_rate}%)`, TX, y);
-    setTxt(doc, theme.bodyText);
-    doc.text(fmtEur(data.tax_amount), RX, y, { align: "right" });
-    y += 7;
+    // Calcul des taux distincts depuis les lignes
+    const tvaMap = new Map<number, { ht: number; tva: number }>();
+    for (const item of data.items) {
+      const rate = item.tax_rate ?? data.tax_rate;
+      if (rate === 0) continue;
+      const prev = tvaMap.get(rate) ?? { ht: 0, tva: 0 };
+      tvaMap.set(rate, { ht: r2(prev.ht + item.total), tva: r2(prev.tva + item.total * rate / 100) });
+    }
+    if (tvaMap.size > 1) {
+      // Multi-taux : une ligne par taux
+      Array.from(tvaMap.entries()).sort(([a], [b]) => a - b).forEach(([rate, { ht, tva }]) => {
+        setTxt(doc, theme.mutedText);
+        doc.setFontSize(7.5);
+        doc.text(`TVA ${rate}%  (base ${fmtAmt(ht, cur)})`, TX, y);
+        setTxt(doc, theme.bodyText);
+        doc.setFontSize(8.5);
+        doc.text(fmtAmt(tva, cur), RX, y, { align: "right" });
+        y += 6.5;
+      });
+    } else {
+      setTxt(doc, theme.mutedText);
+      doc.text(`TVA (${data.tax_rate}%)`, TX, y);
+      setTxt(doc, theme.bodyText);
+      doc.text(fmtAmt(data.tax_amount, cur), RX, y, { align: "right" });
+      y += 7;
+    }
   }
 
   // Total HT si TVA = 0
@@ -590,7 +623,7 @@ function drawTotals(
     setTxt(doc, theme.mutedText);
     doc.text("Total HT", TX, y);
     setTxt(doc, theme.bodyText);
-    doc.text(fmtEur(data.subtotal), RX, y, { align: "right" });
+    doc.text(fmtAmt(data.subtotal, cur), RX, y, { align: "right" });
     y += 7;
   }
 
@@ -599,7 +632,7 @@ function drawTotals(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   setTxt(doc, theme.totalBoxBg);
-  doc.text(fmtEur(data.total), RX, y + 8, { align: "right" });
+  doc.text(fmtAmt(data.total, cur), RX, y + 8, { align: "right" });
   y += 16;
 
   // Acompte + net à payer
@@ -608,7 +641,7 @@ function drawTotals(
     doc.setFontSize(8.5);
     setTxt(doc, theme.mutedText);
     doc.text(data.deposit_label ?? "Acompte versé", TX, y);
-    doc.text(`- ${fmtEur(data.deposit)}`, RX, y, { align: "right" });
+    doc.text(`- ${fmtAmt(data.deposit, cur)}`, RX, y, { align: "right" });
     y += 8;
 
     y = maybePageBreak(doc, y, 14, theme);
@@ -616,7 +649,7 @@ function drawTotals(
     doc.setFontSize(12);
     setTxt(doc, theme.totalBoxBg);
     doc.text("Net à payer", TX, y + 6);
-    doc.text(fmtEur(data.total - data.deposit), RX, y + 6, { align: "right" });
+    doc.text(fmtAmt(data.total - data.deposit, cur), RX, y + 6, { align: "right" });
     y += 16;
   }
 

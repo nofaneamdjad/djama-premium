@@ -273,6 +273,7 @@ async function exportPDFWithTemplate(
     rib_banque:    draft.rib_banque    || null,
     notes:         draft.notes || null,
     footer_text:   footerParts.join("\n\n") || null,
+    currency:      (draft.devise || "EUR") as string,
     company: {
       logoUrl:      draft.emetteur_logo    || null,
       name:         draft.emetteur_nom     || "",
@@ -302,12 +303,15 @@ function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnTyp
       draft.client_pays,
     ].filter(Boolean).join("\n") || null,
     subject:        draft.sujet || draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
-    items: items.map(it => ({
-      description: it.description || "Prestation",
-      quantity:    it.quantity,
-      unit_price:  it.unit_price,
-      total:       r2(it.quantity * it.unit_price),
-    })),
+    items: items.map(it => {
+      const gross = r2(it.quantity * it.unit_price);
+      return {
+        description: it.description || "Prestation",
+        quantity:    it.quantity,
+        unit_price:  it.unit_price,
+        total:       r2(gross * (1 - (it.remise_pct || 0) / 100)),
+      };
+    }),
     subtotal:    totals.subtotal_ht,
     tax_rate:    items[0]?.vat_rate ?? 20,
     tax_amount:  totals.tva,
@@ -535,9 +539,20 @@ export default function FacturesPage() {
     setLoadingAll(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoadingAll(false); return; }
-    const { data, error } = await supabase.from("documents").select("*").eq("user_id", user.id).order("updated_at", { ascending:false }).limit(300);
-    if (error) showToast("error", `Chargement impossible : ${error.message}`);
-    else setDocuments((data as Document[]) ?? []);
+    const { data, error } = await supabase.from("documents").select("*").eq("user_id", user.id).order("updated_at", { ascending:false }).limit(1000);
+    if (error) { showToast("error", `Chargement impossible : ${error.message}`); setLoadingAll(false); return; }
+    const docs = (data as Document[]) ?? [];
+    // Auto-passage en_retard pour les factures envoyées dont l'échéance est dépassée
+    const today = new Date().toISOString().slice(0, 10);
+    const toOverdue = docs.filter(d =>
+      d.type === "facture" && d.statut === "envoyé" &&
+      d.date_echeance && d.date_echeance < today
+    );
+    if (toOverdue.length) {
+      await supabase.from("documents").update({ statut: "en_retard" }).in("id", toOverdue.map(d => d.id));
+      toOverdue.forEach(d => { d.statut = "en_retard"; });
+    }
+    setDocuments(docs);
     setLoadingAll(false);
   }, []);
 
@@ -553,6 +568,15 @@ export default function FacturesPage() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
+
+  // Auto-save avec debounce 2s (documents existants uniquement)
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!dirty || !selected) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => { handleSave(); }, 2000);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [dirty]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
 
@@ -644,44 +668,64 @@ export default function FacturesPage() {
 
   async function handleSave() {
     if (!draft) { showToast("error", "Aucun document ouvert."); return; }
+    // ── Validation des champs obligatoires ───────────────────────────────────
+    if (!draft.sujet.trim()) { showToast("error", "L'objet / intitulé est requis."); return; }
+    // Auto-génère le numéro si vide
+    let workingDraft = draft;
+    if (!workingDraft.numero.trim()) {
+      const autoNum = newNumero(workingDraft.type, documents);
+      updDraft("numero", autoNum);
+      workingDraft = { ...workingDraft, numero: autoNum };
+    }
     setSaving(true);
     const { data:{ user }, error:authErr } = await supabase.auth.getUser();
     if (authErr || !user) { showToast("error", "Non connecté."); setSaving(false); return; }
+    // Vérification unicité du numéro (nouveau document)
+    if (!selected) {
+      const { data: existing } = await supabase.from("documents")
+        .select("id").eq("user_id", user.id).eq("numero", workingDraft.numero).maybeSingle();
+      if (existing) {
+        const safeNum = workingDraft.numero + "-" + Date.now().toString().slice(-3);
+        updDraft("numero", safeNum);
+        workingDraft = { ...workingDraft, numero: safeNum };
+      }
+    }
+    const sd = workingDraft;  // "save draft" — snapshot validé
 
     const payload = {
-      type:             draft.type,
-      numero:           draft.numero,
-      statut:           draft.statut,
-      sujet:            draft.sujet,
-      emetteur_nom:     draft.emetteur_nom,
-      emetteur_email:   draft.emetteur_email,
-      emetteur_adresse: draft.emetteur_adresse,
-      emetteur_siret:   draft.emetteur_siret,
-      emetteur_tva:     draft.emetteur_tva,
-      emetteur_logo:    draft.emetteur_logo,
-      client_nom:         draft.client_nom,
-      client_societe:     draft.client_societe,
-      client_email:       draft.client_email,
-      client_telephone:   draft.client_telephone,
-      client_adresse:     draft.client_adresse,
-      client_ville:       draft.client_ville,
-      client_code_postal: draft.client_code_postal,
-      client_pays:        draft.client_pays,
-      client_tva:         draft.client_tva,
-      date_document:    draft.date_document,
-      date_echeance:    draft.date_echeance || null,
-      remise_pct:       draft.remise_pct,
-      acompte:          draft.acompte,
-      devise:           draft.devise || "EUR",
-      rib_titulaire:    draft.rib_titulaire,
-      rib_iban:         draft.rib_iban,
-      rib_bic:          draft.rib_bic,
-      rib_banque:       draft.rib_banque,
-      notes:            draft.notes,
-      conditions:       draft.conditions,
-      mentions_legales: draft.mentions_legales,
-      couleur:          draft.couleur,
-      template:         draft.template ?? "modern",
+      type:             sd.type,
+      numero:           sd.numero,
+      statut:           sd.statut,
+      sujet:            sd.sujet,
+      emetteur_nom:     sd.emetteur_nom,
+      emetteur_email:   sd.emetteur_email,
+      emetteur_adresse: sd.emetteur_adresse,
+      emetteur_siret:   sd.emetteur_siret,
+      emetteur_tva:     sd.emetteur_tva,
+      emetteur_logo:    sd.emetteur_logo,
+      client_nom:         sd.client_nom,
+      client_societe:     sd.client_societe,
+      client_email:       sd.client_email,
+      client_telephone:   sd.client_telephone,
+      client_adresse:     sd.client_adresse,
+      client_ville:       sd.client_ville,
+      client_code_postal: sd.client_code_postal,
+      client_pays:        sd.client_pays,
+      client_tva:         sd.client_tva,
+      date_document:    sd.date_document,
+      date_echeance:    sd.date_echeance || null,
+      remise_pct:       sd.remise_pct,
+      acompte:          sd.acompte,
+      devise:           sd.devise || "EUR",
+      rib_titulaire:    sd.rib_titulaire,
+      rib_iban:         sd.rib_iban,
+      rib_bic:          sd.rib_bic,
+      rib_banque:       sd.rib_banque,
+      notes:            sd.notes,
+      conditions:       sd.conditions,
+      mentions_legales: sd.mentions_legales,
+      couleur:          sd.couleur,
+      template:         sd.template ?? "modern",
       total_ht:         totals.ht,
       total_tva:        totals.tva,
       total_ttc:        totals.ttc,
@@ -705,7 +749,10 @@ export default function FacturesPage() {
     }
 
     if (docId) {
-      await supabase.from("document_items").delete().eq("document_id", docId);
+      // Sauvegarde des lignes existantes pour rollback si l'insert échoue
+      const { data: backup } = await supabase.from("document_items").select("*").eq("document_id", docId);
+      const { error: delErr } = await supabase.from("document_items").delete().eq("document_id", docId);
+      if (delErr) { showToast("error", `Suppression lignes : ${delErr.message}`); setSaving(false); return; }
       if (items.length) {
         const rows = items.map((it,i) => ({
           document_id:  docId,
@@ -717,8 +764,12 @@ export default function FacturesPage() {
           vat_rate:     it.vat_rate,
           remise_pct:   it.remise_pct  || 0,
         }));
-        const { error } = await supabase.from("document_items").insert(rows);
-        if (error) { showToast("error", `Lignes : ${error.message}`); setSaving(false); return; }
+        const { error: insErr } = await supabase.from("document_items").insert(rows);
+        if (insErr) {
+          // Rollback : restaurer les anciennes lignes
+          if (backup?.length) await supabase.from("document_items").insert(backup);
+          showToast("error", `Lignes : ${insErr.message}`); setSaving(false); return;
+        }
       }
     }
 
@@ -865,6 +916,9 @@ export default function FacturesPage() {
 
   async function handleSendEmail() {
     if (!selected || !emailTo) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTo)) {
+      showToast("error", "Adresse email invalide."); return;
+    }
     setSendingEmail(true);
     try {
       const res = await fetch("/api/factures/email", {
@@ -944,6 +998,24 @@ export default function FacturesPage() {
     setCrmLoading(false);
   }
 
+  function exportCSV() {
+    const header = ["Numéro","Type","Statut","Client","Société","Date","Échéance","HT","TVA","TTC","Devise"];
+    const rows = documents.map(d => [
+      d.numero, d.type, d.statut,
+      d.client_nom, d.client_societe,
+      fmtDate(d.date_document), fmtDate(d.date_echeance),
+      d.total_ht, d.total_tva, d.total_ttc, d.devise || "EUR",
+    ]);
+    const csv = [header, ...rows]
+      .map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `documents-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
   function applyCrmClient(c: CrmClient) {
     setDraft(d => d ? {
       ...d,
@@ -991,6 +1063,12 @@ export default function FacturesPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {documents.length > 0 && (
+              <button onClick={exportCSV} title="Exporter CSV"
+                className={`hidden items-center gap-1.5 rounded-xl ${B} ${BH} px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70 sm:flex`}>
+                <FileDown size={12}/> CSV
+              </button>
+            )}
             <button onClick={() => newDoc("devis")}
               className={`hidden items-center gap-1.5 rounded-xl ${B} ${BH} px-3 py-2 text-xs font-semibold text-white/50 transition hover:text-white/80 sm:flex`}>
               <Plus size={12}/> Devis
@@ -1344,7 +1422,7 @@ export default function FacturesPage() {
                           const lineRem = r2(gross * (it.remise_pct||0) / 100);
                           const lineHT  = r2(gross - lineRem);
                           return (
-                            <motion.div key={idx} layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
+                            <motion.div key={it.id || `item-${idx}`} layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
                               transition={{ duration:0.2, ease }}
                               className="group grid grid-cols-1 gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 sm:grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] sm:items-center">
                               <div className="flex flex-col gap-1">

@@ -54,6 +54,9 @@ export interface PdfTemplateData {
   /* Lignes */
   items:           PdfLineItem[];
 
+  /* Devise */
+  currency?:       string;   // "EUR" | "USD" | "MAD" …  (défaut EUR)
+
   /* Totaux */
   subtotal:        number;   // HT brut (avant remise)
   discount_rate?:  number | null;  // % remise

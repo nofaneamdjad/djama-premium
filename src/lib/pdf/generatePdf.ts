@@ -61,6 +61,8 @@ export interface PdfData {
   rib_banque?:     string | null;
   notes?:          string | null;
   footer_text?:    string | null;
+  /** Devise : "EUR" | "USD" | "MAD" … (défaut EUR) */
+  currency?:       string;
   /** Surcharge les paramètres entreprise (priorité sur companySettings). */
   company?:        Partial<CompanySettings>;
 }
