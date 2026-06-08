@@ -1,5 +1,5 @@
 /**
- * MODULE_GROUPS — structure partagée entre /client et /client/dashboard
+ * MODULE_GROUPS — structure partagée entre /client et /client/dashboard.
  * Toute modification ici se propage aux deux pages automatiquement.
  */
 
