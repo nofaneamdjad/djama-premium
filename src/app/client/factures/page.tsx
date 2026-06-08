@@ -1545,8 +1545,27 @@ export default function FacturesPage() {
                   </button>
                 </div>
                 <div className="p-5 pb-8">
-                  <div className="overflow-hidden rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+                  <div className="relative overflow-hidden rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                     <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals)}/>
+                    {draft.emetteur_logo && (
+                      <div className="absolute left-2 top-2 flex items-center gap-1 rounded-lg border border-white/10 bg-black/60 p-1 backdrop-blur-md">
+                        {([{val:"sm" as const,label:"S"},{val:"md" as const,label:"M"},{val:"lg" as const,label:"L"}]).map(({ val, label }) => (
+                          <button key={val} type="button"
+                            onClick={() => { setLogoSize(val); localStorage.setItem("pdf.logo_size", val); }}
+                            className={`h-6 w-6 rounded text-[0.62rem] font-extrabold transition-all ${logoSize === val ? "shadow" : "text-white/45 hover:text-white/80"}`}
+                            style={logoSize === val ? { backgroundColor: activeColor, color:"#0a0b10" } : {}}>
+                            {label}
+                          </button>
+                        ))}
+                        <div className="mx-0.5 h-3.5 w-px bg-white/15"/>
+                        <button type="button" title={logoHideName ? "Afficher le nom" : "Masquer le nom"}
+                          onClick={() => { const n = !logoHideName; setLogoHideName(n); localStorage.setItem("pdf.logo_hide_name", String(n)); }}
+                          className={`h-6 w-6 rounded text-[0.55rem] font-bold transition-all ${logoHideName ? "shadow" : "text-white/45 hover:text-white/80"}`}
+                          style={logoHideName ? { backgroundColor: activeColor, color:"#0a0b10" } : {}}>
+                          T
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1582,8 +1601,27 @@ export default function FacturesPage() {
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-8">
               <div className="mx-auto w-full max-w-[620px]">
-                <div className="overflow-hidden rounded-lg shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
+                <div className="relative overflow-hidden rounded-lg shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
                   <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals)}/>
+                  {draft.emetteur_logo && (
+                    <div className="absolute left-2 top-2 flex items-center gap-1 rounded-lg border border-white/10 bg-black/60 p-1 backdrop-blur-md">
+                      {([{val:"sm" as const,label:"S"},{val:"md" as const,label:"M"},{val:"lg" as const,label:"L"}]).map(({ val, label }) => (
+                        <button key={val} type="button"
+                          onClick={() => { setLogoSize(val); localStorage.setItem("pdf.logo_size", val); }}
+                          className={`h-6 w-6 rounded text-[0.62rem] font-extrabold transition-all ${logoSize === val ? "shadow" : "text-white/45 hover:text-white/80"}`}
+                          style={logoSize === val ? { backgroundColor: activeColor, color:"#0a0b10" } : {}}>
+                          {label}
+                        </button>
+                      ))}
+                      <div className="mx-0.5 h-3.5 w-px bg-white/15"/>
+                      <button type="button" title={logoHideName ? "Afficher le nom" : "Masquer le nom"}
+                        onClick={() => { const n = !logoHideName; setLogoHideName(n); localStorage.setItem("pdf.logo_hide_name", String(n)); }}
+                        className={`h-6 w-6 rounded text-[0.55rem] font-bold transition-all ${logoHideName ? "shadow" : "text-white/45 hover:text-white/80"}`}
+                        style={logoHideName ? { backgroundColor: activeColor, color:"#0a0b10" } : {}}>
+                        T
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
