@@ -501,6 +501,77 @@ function DAutoGrow({ value, onChange, placeholder }: {
   );
 }
 
+/** Ligne de prestation — composant séparé pour pouvoir utiliser useState (subs) */
+function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise }: {
+  it: DocItem; idx: number; totalItems: number;
+  updItem: (i: number, k: keyof DocItem, v: string|number) => void;
+  removeItem: (i: number) => void;
+  activeColor: string; devise: string;
+}) {
+  // État local pour les sous-descriptions (évite le bug join [""] = "")
+  const [subs, setSubs] = useState<string[]>(() =>
+    it.sub_description ? it.sub_description.split("\n") : []
+  );
+  // Synchronisation si la fiche change (chargement d'un document)
+  const prevSub = useRef(it.sub_description);
+  useEffect(() => {
+    if (it.sub_description !== prevSub.current) {
+      prevSub.current = it.sub_description;
+      setSubs(it.sub_description ? it.sub_description.split("\n") : []);
+    }
+  }, [it.sub_description]);
+
+  function applySubs(next: string[]) {
+    setSubs(next);
+    updItem(idx, "sub_description", next.join("\n"));
+  }
+
+  const gross   = r2(it.quantity * it.unit_price);
+  const lineRem = r2(gross * (it.remise_pct || 0) / 100);
+  const lineHT  = r2(gross - lineRem);
+
+  return (
+    <motion.div layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
+      transition={{ duration:0.2, ease }}
+      className="group grid grid-cols-1 gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 sm:grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] sm:items-start">
+      <div className="flex flex-col gap-1 pt-[1px]">
+        <DAutoGrow value={it.description} onChange={v => updItem(idx,"description",v)} placeholder="Description de la prestation"/>
+        {subs.map((line, li) => (
+          <div key={li} className="flex items-center gap-1 opacity-60">
+            <DInput small value={line}
+              onChange={v => { const n=[...subs]; n[li]=v; applySubs(n); }}
+              placeholder="Sous-description…"/>
+            <button onClick={() => applySubs(subs.filter((_,i)=>i!==li))}
+              className="shrink-0 text-white/20 transition hover:text-red-400">
+              <X size={9}/>
+            </button>
+          </div>
+        ))}
+        <button onClick={() => applySubs([...subs, ""])}
+          className="flex items-center gap-1 self-start text-[0.6rem] text-white/20 transition hover:text-white/50">
+          <Plus size={8}/> sous-description
+        </button>
+      </div>
+      <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
+      <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx,"quantity",   parseFloat(v)||0)} placeholder="1"/>
+      <DInput small type="number" value={String(it.unit_price)} onChange={v => updItem(idx,"unit_price", parseFloat(v)||0)} placeholder="0.00"/>
+      <div className="relative">
+        <DInput small type="number" value={String(it.remise_pct||"")} onChange={v => updItem(idx,"remise_pct", parseFloat(v)||0)} placeholder="0"/>
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6rem] text-white/30 pointer-events-none">%</span>
+      </div>
+      <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
+        options={VAT_RATES.map(r => ({ val:String(r), label:`${r}%` }))}/>
+      <div className="flex items-center justify-end">
+        <span className="text-xs font-bold" style={{ color:activeColor }}>{fmtAmount(lineHT, devise)}</span>
+      </div>
+      <button onClick={() => removeItem(idx)} disabled={totalItems === 1}
+        className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-500/15 text-red-400/40 transition hover:border-red-500/35 hover:text-red-400 disabled:opacity-20 opacity-0 group-hover:opacity-100">
+        <Trash2 size={11}/>
+      </button>
+    </motion.div>
+  );
+}
+
 function SectionLabel({ icon, label, hint }: { icon?: React.ReactNode; label: string; hint?: string }) {
   return (
     <div className="flex items-center gap-2.5">
@@ -1519,59 +1590,17 @@ export default function FacturesPage() {
                     </div>
                     <div className="space-y-2">
                       <AnimatePresence initial={false}>
-                        {items.map((it, idx) => {
-                          const gross   = r2(it.quantity * it.unit_price);
-                          const lineRem = r2(gross * (it.remise_pct||0) / 100);
-                          const lineHT  = r2(gross - lineRem);
-                          const subLines = it.sub_description ? it.sub_description.split("\n") : [];
-                          return (
-                            <motion.div key={it.id || `item-${idx}`} layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
-                              transition={{ duration:0.2, ease }}
-                              className="group grid grid-cols-1 gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 sm:grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] sm:items-start">
-                              <div className="flex flex-col gap-1 pt-[1px]">
-                                {/* Description principale — grandit avec le texte */}
-                                <DAutoGrow value={it.description} onChange={v => updItem(idx,"description",v)} placeholder="Description de la prestation"/>
-                                {/* Sous-descriptions dynamiques */}
-                                {subLines.map((line, li) => (
-                                  <div key={li} className="flex items-center gap-1 opacity-60">
-                                    <DInput small value={line}
-                                      onChange={v => {
-                                        const next = [...subLines]; next[li] = v;
-                                        updItem(idx, "sub_description", next.join("\n"));
-                                      }}
-                                      placeholder="Sous-description…"/>
-                                    <button
-                                      onClick={() => updItem(idx, "sub_description", subLines.filter((_,i)=>i!==li).join("\n"))}
-                                      className="shrink-0 text-white/20 transition hover:text-red-400">
-                                      <X size={9}/>
-                                    </button>
-                                  </div>
-                                ))}
-                                <button
-                                  onClick={() => updItem(idx, "sub_description", [...subLines, ""].join("\n"))}
-                                  className="flex items-center gap-1 self-start text-[0.6rem] text-white/20 transition hover:text-white/50">
-                                  <Plus size={8}/> sous-description
-                                </button>
-                              </div>
-                              <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
-                              <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx,"quantity",   parseFloat(v)||0)} placeholder="1"/>
-                              <DInput small type="number" value={String(it.unit_price)} onChange={v => updItem(idx,"unit_price", parseFloat(v)||0)} placeholder="0.00"/>
-                              <div className="relative">
-                                <DInput small type="number" value={String(it.remise_pct||"")} onChange={v => updItem(idx,"remise_pct", parseFloat(v)||0)} placeholder="0"/>
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6rem] text-white/30 pointer-events-none">%</span>
-                              </div>
-                              <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
-                                options={VAT_RATES.map(r => ({ val:String(r), label:`${r}%` }))}/>
-                              <div className="flex items-center justify-end">
-                                <span className="text-xs font-bold" style={{ color:activeColor }}>{fmt(lineHT)}</span>
-                              </div>
-                              <button onClick={() => removeItem(idx)} disabled={items.length === 1}
-                                className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-500/15 text-red-400/40 transition hover:border-red-500/35 hover:text-red-400 disabled:opacity-20 opacity-0 group-hover:opacity-100">
-                                <Trash2 size={11}/>
-                              </button>
-                            </motion.div>
-                          );
-                        })}
+                        {items.map((it, idx) => (
+                          <ItemRow
+                            key={it.id || `item-${idx}`}
+                            it={it} idx={idx}
+                            totalItems={items.length}
+                            updItem={updItem}
+                            removeItem={removeItem}
+                            activeColor={activeColor}
+                            devise={draft.devise || "EUR"}
+                          />
+                        ))}
                       </AnimatePresence>
                     </div>
                   </div>
