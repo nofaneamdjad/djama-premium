@@ -534,7 +534,9 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
       transition={{ duration:0.2, ease }}
       className="group grid grid-cols-1 gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 sm:grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] sm:items-start">
       <div className="flex flex-col gap-1 pt-[1px]">
-        <DAutoGrow value={it.description} onChange={v => updItem(idx,"description",v)} placeholder="Description de la prestation"/>
+        {/* Les \n sont interdits dans la description principale : ils servent de séparateur
+            pour stocker les sous-descriptions et corrompent le split au rechargement. */}
+        <DAutoGrow value={it.description} onChange={v => updItem(idx,"description", v.replace(/\n/g, " "))} placeholder="Description de la prestation"/>
         {subs.map((line, li) => (
           <div key={li} className="flex items-center gap-1 opacity-60">
             <DInput small value={line}
@@ -552,10 +554,10 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
         </button>
       </div>
       <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
-      <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx,"quantity",   parseFloat(v)||0)} placeholder="1"/>
-      <DInput small type="number" value={String(it.unit_price)} onChange={v => updItem(idx,"unit_price", parseFloat(v)||0)} placeholder="0.00"/>
+      <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx,"quantity",   v===""?0:isNaN(parseFloat(v))?it.quantity:parseFloat(v))} placeholder="1"/>
+      <DInput small type="number" value={String(it.unit_price)} onChange={v => updItem(idx,"unit_price", v===""?0:isNaN(parseFloat(v))?it.unit_price:parseFloat(v))} placeholder="0.00"/>
       <div className="relative">
-        <DInput small type="number" value={String(it.remise_pct||"")} onChange={v => updItem(idx,"remise_pct", parseFloat(v)||0)} placeholder="0"/>
+        <DInput small type="number" value={String(it.remise_pct||"")} onChange={v => updItem(idx,"remise_pct", v===""?0:isNaN(parseFloat(v))?it.remise_pct:parseFloat(v))} placeholder="0"/>
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6rem] text-white/30 pointer-events-none">%</span>
       </div>
       <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
@@ -689,13 +691,18 @@ export default function FacturesPage() {
   }, [dirty]);
 
   // Auto-save avec debounce 2s (documents existants uniquement)
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // On utilise un ref pour éviter la stale-closure : le timer capture toujours
+  // la dernière version de handleSave (avec le bon `selected` / `draft`).
+  const autoSaveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSaveRef  = useRef(handleSave);
+  useEffect(() => { handleSaveRef.current = handleSave; }); // sync à chaque render
+
   useEffect(() => {
     if (!dirty || !selected) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => { handleSave(); }, 2000);
+    autoSaveTimer.current = setTimeout(() => { handleSaveRef.current(); }, 2000);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [dirty]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dirty, selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
 
@@ -747,6 +754,8 @@ export default function FacturesPage() {
         })
       : [EMPTY_ITEM()]);
     setDirty(false);
+    setConfirmDel(false);   // évite que la modale de suppression reste ouverte sur le mauvais doc
+    setShowPreview(false);  // ferme le panneau aperçu du doc précédent
     setMobileView("editor");
   }
 
@@ -894,8 +903,12 @@ export default function FacturesPage() {
         }));
         const { error: insErr } = await supabase.from("document_items").insert(rows);
         if (insErr) {
-          // Rollback : restaurer les anciennes lignes
-          if (backup?.length) await supabase.from("document_items").insert(backup);
+          // Rollback : restaurer les anciennes lignes en excluant les colonnes
+          // générées côté serveur (id, created_at) pour éviter un conflit de PK.
+          if (backup?.length) {
+            const clean = backup.map(({ id: _id, created_at: _ca, ...rest }) => rest);
+            await supabase.from("document_items").insert(clean);
+          }
           showToast("error", `Lignes : ${insErr.message}`); setSaving(false); return;
         }
       }
@@ -968,7 +981,7 @@ export default function FacturesPage() {
     if (error || !newDoc) { showToast("error", "Erreur lors de la conversion."); setConverting(false); return; }
     const { data: srcItems } = await supabase.from("document_items").select("*").eq("document_id", selected.id);
     if (srcItems?.length) {
-      await supabase.from("document_items").insert(
+      const { error: convItemsErr } = await supabase.from("document_items").insert(
         (srcItems as (DocItem & { document_id:string })[]).map((it,i) => {
           const [main, ...rest] = (it.description || "").split("\n");
           return {
@@ -979,6 +992,7 @@ export default function FacturesPage() {
           };
         })
       );
+      if (convItemsErr) showToast("error", `Lignes copiées avec erreur : ${convItemsErr.message}`);
     }
     setConverting(false);
     showToast("success", `Devis converti → ${newNum}`);
@@ -1026,7 +1040,7 @@ export default function FacturesPage() {
     }).select().single();
     if (error || !newDoc) { showToast("error", "Erreur duplication."); setDuplicating(false); return; }
     if (items.length) {
-      await supabase.from("document_items").insert(
+      const { error: dupItemsErr } = await supabase.from("document_items").insert(
         items.map((it,i) => ({
           document_id: (newDoc as Document).id, position:i,
           description: [it.description, it.sub_description].filter(Boolean).join("\n"),
@@ -1034,6 +1048,7 @@ export default function FacturesPage() {
           vat_rate: it.vat_rate, remise_pct: it.remise_pct||0,
         }))
       );
+      if (dupItemsErr) showToast("error", `Lignes dupliquées avec erreur : ${dupItemsErr.message}`);
     }
     setDuplicating(false);
     showToast("success", `Dupliqué → ${newNum}`);
