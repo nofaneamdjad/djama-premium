@@ -8,7 +8,7 @@ import {
   RefreshCw, Building2, User, FileText, Send, BadgeCheck,
   AlertTriangle, ImagePlus, Palette, Landmark, Eye, Percent,
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
-  TrendingUp, Clock, AlertCircle, DollarSign,
+  TrendingUp, Clock, AlertCircle, DollarSign, Settings2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEur, fmtDate } from "@/lib/format";
@@ -1080,6 +1080,11 @@ export default function FacturesPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Paramètres */}
+            <a href="/client/factures/parametres" title="Paramètres"
+              className={`hidden items-center gap-1.5 rounded-xl ${B} ${BH} px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70 sm:flex`}>
+              <Settings2 size={12}/> Paramètres
+            </a>
             {documents.length > 0 && (
               <button onClick={exportCSV} title="Exporter CSV"
                 className={`hidden items-center gap-1.5 rounded-xl ${B} ${BH} px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70 sm:flex`}>
