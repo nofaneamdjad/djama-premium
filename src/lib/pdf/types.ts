@@ -78,6 +78,12 @@ export interface PdfTemplateData {
   /* Notes et pied de page */
   notes?:          string | null;
   footer_text?:    string | null;
+
+  /**
+   * Position/taille personnalisée du logo (en mm, repère A4 210×297).
+   * Si null, le renderer utilise la position par défaut (SIZE_MAP).
+   */
+  logoTransform?:  { x: number; y: number; w: number; h: number } | null;
 }
 
 // ─── Theme ────────────────────────────────────────────────────────────────────

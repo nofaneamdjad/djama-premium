@@ -65,6 +65,11 @@ export interface PdfData {
   currency?:       string;
   /** Surcharge les paramètres entreprise (priorité sur companySettings). */
   company?:        Partial<CompanySettings>;
+  /**
+   * Position/taille personnalisée du logo (mm, repère A4 210×297).
+   * Si absent, le renderer utilise le placement par défaut (SIZE_MAP).
+   */
+  logoTransform?:  { x: number; y: number; w: number; h: number } | null;
 }
 
 // ─── Génération ───────────────────────────────────────────────────────────────
@@ -112,7 +117,7 @@ export async function generatePdf(data: PdfData, download = true): Promise<void>
   // ── Rendre avec le thème sélectionné ─────────────────────────────────────
   await renderPdfWithTheme(
     doc,
-    { ...data, template },
+    { ...data, template, logoTransform: data.logoTransform ?? null },
     co,
     theme,
     logoImg,

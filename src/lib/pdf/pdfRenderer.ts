@@ -158,6 +158,13 @@ function maybePageBreak(doc: jsPDF, y: number, needed: number, theme: PdfTheme):
 
 // ─── SECTION : HEADER ─────────────────────────────────────────────────────────
 
+/**
+ * drawHeader — Dessine le header du PDF.
+ *
+ * Si `data.logoTransform` est défini, le logo est rendu à la position
+ * exacte (mm) spécifiée par l'utilisateur dans l'éditeur interactif,
+ * et le placement par défaut (SIZE_MAP) est ignoré.
+ */
 function drawHeader(
   doc:       jsPDF,
   data:      PdfTemplateData,
@@ -168,6 +175,7 @@ function drawHeader(
 ): number {
   const { headerBg, headerH, variant } = theme;
   const RX = PW - MR;
+  const lt  = data.logoTransform ?? null;   // transform personnalisé ou null
 
   // ── Template Clean (accent-bar → logo gauche + QR droite) ────────────────
   if (variant === "accent-bar") {
@@ -175,17 +183,23 @@ function drawHeader(
     setFill(doc, [255, 255, 255]);
     doc.rect(0, 0, PW, headerH, "F");
 
-    // Logo / nom gauche
-    const SIZE_MAP = { sm: { h: 12, w: 42 }, md: { h: 22, w: 72 }, lg: { h: 30, w: 92 } };
-    const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_MAP[co.logoSize ?? "md"];
-
-    if (logoImg) {
-      const ratio = logoImg.naturalW / logoImg.naturalH;
-      let lH = LOGO_MAX_H, lW = lH * ratio;
-      if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
-      const logoY = Math.max(4, (headerH - lH) / 2);
-      doc.addImage(logoImg.dataUri, ML, logoY, lW, lH, "", "FAST");
-    } else if (co.name) {
+    // Logo : position par défaut uniquement si pas de logoTransform
+    if (!lt) {
+      const SIZE_MAP = { sm: { h: 12, w: 42 }, md: { h: 22, w: 72 }, lg: { h: 30, w: 92 } };
+      const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_MAP[co.logoSize ?? "md"];
+      if (logoImg) {
+        const ratio = logoImg.naturalW / logoImg.naturalH;
+        let lH = LOGO_MAX_H, lW = lH * ratio;
+        if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
+        doc.addImage(logoImg.dataUri, ML, Math.max(4, (headerH - lH) / 2), lW, lH, "", "FAST");
+      } else if (co.name) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(20);
+        setTxt(doc, theme.headerNameColor);
+        doc.text(co.name, ML, headerH / 2 + 5);
+      }
+    } else if (!logoImg && co.name) {
+      // Pas de logo mais un nom → toujours afficher le nom
       doc.setFont("helvetica", "bold");
       doc.setFontSize(20);
       setTxt(doc, theme.headerNameColor);
@@ -198,20 +212,24 @@ function drawHeader(
       const qrX = RX - QR_SIZE;
       const qrY = (headerH - QR_SIZE) / 2;
       doc.addImage(qrDataUrl, "PNG", qrX, qrY > 0 ? qrY : 2, QR_SIZE, QR_SIZE);
-      // Label sous le QR
       doc.setFont("helvetica", "normal");
       doc.setFontSize(5);
       setTxt(doc, [120, 120, 130]);
       const qrLabelX = qrX + QR_SIZE / 2;
-      doc.text("Scanner pour",              qrLabelX, qrY + QR_SIZE + 3.5,  { align: "center" });
-      doc.text("les informations",         qrLabelX, qrY + QR_SIZE + 7,    { align: "center" });
-      doc.text("de la facture",            qrLabelX, qrY + QR_SIZE + 10.5, { align: "center" });
+      doc.text("Scanner pour",       qrLabelX, qrY + QR_SIZE + 3.5,  { align: "center" });
+      doc.text("les informations",   qrLabelX, qrY + QR_SIZE + 7,    { align: "center" });
+      doc.text("de la facture",      qrLabelX, qrY + QR_SIZE + 10.5, { align: "center" });
     }
 
     // Ligne basse légère
     setDraw(doc, [220, 220, 225]);
     doc.setLineWidth(0.4);
     doc.line(ML, headerH + 2, RX, headerH + 2);
+
+    // ── Logo personnalisé (dessiné EN DERNIER pour passer au-dessus du fond) ──
+    if (lt && logoImg) {
+      doc.addImage(logoImg.dataUri, lt.x, lt.y, lt.w, lt.h, "", "FAST");
+    }
 
     return headerH + 8;
   }
@@ -222,19 +240,30 @@ function drawHeader(
     doc.setLineWidth(0.5);
     doc.line(ML, headerH, RX, headerH);
 
-    const SIZE_MAP = { sm: { h: 10, w: 36 }, md: { h: 18, w: 60 }, lg: { h: 26, w: 80 } };
-    const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_MAP[co.logoSize ?? "md"];
-
-    if (logoImg) {
-      const ratio = logoImg.naturalW / logoImg.naturalH;
-      let lH = LOGO_MAX_H, lW = lH * ratio;
-      if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
-      doc.addImage(logoImg.dataUri, ML, Math.max(4, (headerH - lH) / 2), lW, lH, "", "FAST");
-    } else if (co.name) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      setTxt(doc, theme.headerNameColor);
-      doc.text(co.name, ML, headerH / 2 + 5);
+    if (!lt) {
+      const SIZE_MAP = { sm: { h: 10, w: 36 }, md: { h: 18, w: 60 }, lg: { h: 26, w: 80 } };
+      const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_MAP[co.logoSize ?? "md"];
+      if (logoImg) {
+        const ratio = logoImg.naturalW / logoImg.naturalH;
+        let lH = LOGO_MAX_H, lW = lH * ratio;
+        if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
+        doc.addImage(logoImg.dataUri, ML, Math.max(4, (headerH - lH) / 2), lW, lH, "", "FAST");
+      } else if (co.name) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        setTxt(doc, theme.headerNameColor);
+        doc.text(co.name, ML, headerH / 2 + 5);
+      }
+    } else {
+      if (!logoImg && co.name) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        setTxt(doc, theme.headerNameColor);
+        doc.text(co.name, ML, headerH / 2 + 5);
+      }
+      if (lt && logoImg) {
+        doc.addImage(logoImg.dataUri, lt.x, lt.y, lt.w, lt.h, "", "FAST");
+      }
     }
     return headerH + 8;
   }
@@ -245,19 +274,30 @@ function drawHeader(
   setFill(doc, theme.tableHeaderBg);
   doc.rect(0, headerH - 3.5, PW, 3.5, "F");
 
-  const SIZE_STD = { sm: { h: 14, w: 46 }, md: { h: 24, w: 70 }, lg: { h: 32, w: 90 } };
-  const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_STD[co.logoSize ?? "md"];
-
-  if (logoImg) {
-    const ratio = logoImg.naturalW / logoImg.naturalH;
-    let lH = LOGO_MAX_H, lW = lH * ratio;
-    if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
-    doc.addImage(logoImg.dataUri, ML, Math.max(4, (headerH - lH) / 2), lW, lH, "", "FAST");
-  } else if (co.name) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    setTxt(doc, theme.headerNameColor);
-    doc.text(co.name, ML, headerH / 2 + 6);
+  if (!lt) {
+    const SIZE_STD = { sm: { h: 14, w: 46 }, md: { h: 24, w: 70 }, lg: { h: 32, w: 90 } };
+    const { h: LOGO_MAX_H, w: LOGO_MAX_W } = SIZE_STD[co.logoSize ?? "md"];
+    if (logoImg) {
+      const ratio = logoImg.naturalW / logoImg.naturalH;
+      let lH = LOGO_MAX_H, lW = lH * ratio;
+      if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
+      doc.addImage(logoImg.dataUri, ML, Math.max(4, (headerH - lH) / 2), lW, lH, "", "FAST");
+    } else if (co.name) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      setTxt(doc, theme.headerNameColor);
+      doc.text(co.name, ML, headerH / 2 + 6);
+    }
+  } else {
+    if (!logoImg && co.name) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      setTxt(doc, theme.headerNameColor);
+      doc.text(co.name, ML, headerH / 2 + 6);
+    }
+    if (lt && logoImg) {
+      doc.addImage(logoImg.dataUri, lt.x, lt.y, lt.w, lt.h, "", "FAST");
+    }
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";

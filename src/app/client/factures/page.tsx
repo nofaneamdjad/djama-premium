@@ -17,6 +17,8 @@ import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
 import { TemplateSelector } from "@/components/invoice/TemplateSelector";
 import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
+import { LogoDragResize, DEFAULT_LOGO_TRANSFORM } from "@/components/invoice/LogoDragResize";
+import type { LogoTransform } from "@/components/invoice/LogoDragResize";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
 import type { CompanySettings } from "@/lib/pdf/companySettings";
 
@@ -224,11 +226,12 @@ const EMPTY_DRAFT = (): DraftDoc => ({
 });
 
 async function exportPDFWithTemplate(
-  draft:        DraftDoc,
-  items:        DocItem[],
-  totals:       ReturnType<typeof calcTotals>,
-  logoSize?:    "sm"|"md"|"lg",
-  logoHideName?:boolean,
+  draft:          DraftDoc,
+  items:          DocItem[],
+  totals:         ReturnType<typeof calcTotals>,
+  logoSize?:      "sm"|"md"|"lg",
+  logoHideName?:  boolean,
+  logoTransform?: LogoTransform | null,
 ) {
   const { generatePdf } = await import("@/lib/pdf/generatePdf");
   const mainTaxRate = items[0]?.vat_rate ?? 20;
@@ -274,6 +277,7 @@ async function exportPDFWithTemplate(
     notes:         draft.notes || null,
     footer_text:   footerParts.join("\n\n") || null,
     currency:      (draft.devise || "EUR") as string,
+    logoTransform: logoTransform ?? null,
     company: {
       logoUrl:      draft.emetteur_logo    || null,
       name:         draft.emetteur_nom     || "",
@@ -322,7 +326,8 @@ function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnTyp
     company: {
       name:    draft.emetteur_nom   || "DJAMA",
       email:   draft.emetteur_email,
-      logoUrl: draft.emetteur_logo  || null,
+      // Le logo est géré par l'overlay LogoDragResize — toujours null ici
+      logoUrl: null,
     },
   };
 }
@@ -497,6 +502,18 @@ export default function FacturesPage() {
     typeof window !== "undefined" ? ((localStorage.getItem("pdf.logo_size") as "sm"|"md"|"lg") ?? "md") : "md");
   const [logoHideName, setLogoHideName] = useState<boolean>(() =>
     typeof window !== "undefined" ? localStorage.getItem("pdf.logo_hide_name") === "true" : false);
+  const [logoTransform, setLogoTransform] = useState<LogoTransform | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const s = localStorage.getItem("pdf.logo_transform");
+      return s ? (JSON.parse(s) as LogoTransform) : null;
+    } catch { return null; }
+  });
+  const saveLt = (t: LogoTransform | null) => {
+    setLogoTransform(t);
+    if (t) localStorage.setItem("pdf.logo_transform", JSON.stringify(t));
+    else   localStorage.removeItem("pdf.logo_transform");
+  };
 
   const [emailModal,   setEmailModal]   = useState(false);
   const [emailTo,      setEmailTo]      = useState("");
@@ -1250,7 +1267,7 @@ export default function FacturesPage() {
                     className={`hidden items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/20 hover:text-white/70 sm:flex`}>
                     <Eye size={13}/> Aperçu
                   </button>
-                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
+                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
                     className={`hidden items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/20 hover:text-white/70 sm:flex`}>
                     <FileDown size={13}/> PDF
                   </button>
@@ -1340,12 +1357,38 @@ export default function FacturesPage() {
                         <LogoUploader value={draft.emetteur_logo} onChange={v => updDraft("emetteur_logo", v)}/>
                         {draft.emetteur_logo && (
                           <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 space-y-3">
+                            {/* Drag & resize hint */}
+                            <div className="flex items-start gap-2">
+                              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
+                                style={{ background:`${activeColor}20` }}>
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke={activeColor} strokeWidth="1.5" strokeLinecap="round">
+                                  <path d="M5 1v8M1 5h8M2 2l6 6M8 2L2 8"/>
+                                </svg>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-[0.68rem] font-semibold text-white/60">Drag & resize dans l&apos;aperçu</p>
+                                <p className="text-[0.62rem] text-white/30">Glissez le logo, tirez les poignées pour le redimensionner.</p>
+                              </div>
+                              {logoTransform && (
+                                <button type="button"
+                                  onClick={() => saveLt(null)}
+                                  title="Réinitialiser la position"
+                                  className="shrink-0 rounded-md px-2 py-1 text-[0.6rem] text-white/30 transition hover:text-white/60 border border-white/[0.08]">
+                                  Reset
+                                </button>
+                              )}
+                            </div>
+                            {/* Presets rapides (S / M / L) */}
                             <div>
-                              <p className="mb-1.5 text-[0.65rem] font-medium text-white/35">Taille du logo</p>
+                              <p className="mb-1.5 text-[0.63rem] font-medium text-white/30">Taille rapide</p>
                               <div className="flex gap-1.5">
-                                {([{val:"sm" as const,label:"S"},{val:"md" as const,label:"M"},{val:"lg" as const,label:"L"}]).map(({ val, label }) => (
+                                {([
+                                  { val:"sm" as const, label:"S", t:{ x:18,y:5,w:30,h:11 } },
+                                  { val:"md" as const, label:"M", t:{ x:18,y:5,w:48,h:18 } },
+                                  { val:"lg" as const, label:"L", t:{ x:18,y:5,w:68,h:25 } },
+                                ]).map(({ val, label, t }) => (
                                   <button key={val} type="button"
-                                    onClick={() => { setLogoSize(val); localStorage.setItem("pdf.logo_size", val); }}
+                                    onClick={() => { setLogoSize(val); localStorage.setItem("pdf.logo_size", val); saveLt(t); }}
                                     className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all ${logoSize === val ? "text-[#0a0b10] shadow" : "border border-white/[0.09] bg-transparent text-white/40 hover:text-white/70"}`}
                                     style={logoSize === val ? { backgroundColor:activeColor } : {}}>
                                     {label}
@@ -1353,6 +1396,7 @@ export default function FacturesPage() {
                                 ))}
                               </div>
                             </div>
+                            {/* Logo seul (sans nom entreprise) */}
                             <button type="button"
                               onClick={() => { const next = !logoHideName; setLogoHideName(next); localStorage.setItem("pdf.logo_hide_name", String(next)); }}
                               className="flex w-full items-center justify-between gap-2 text-left">
@@ -1616,7 +1660,7 @@ export default function FacturesPage() {
                       className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70">
                       <Eye size={13}/> Aperçu
                     </button>
-                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
+                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
                       className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70">
                       <FileDown size={13}/> PDF
                     </button>
@@ -1652,7 +1696,7 @@ export default function FacturesPage() {
                     <Eye size={11} style={{ color:activeColor }}/>
                     <span className="text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Aperçu PDF</span>
                   </div>
-                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
+                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.65rem] font-bold transition hover:opacity-90"
                     style={{ background:`${activeColor}22`, color:activeColor, border:`1px solid ${activeColor}33` }}>
                     <FileDown size={10}/> PDF
@@ -1662,23 +1706,12 @@ export default function FacturesPage() {
                   <div className="relative overflow-hidden rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                     <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals)}/>
                     {draft.emetteur_logo && (
-                      <div className="absolute left-2 top-2 flex items-center gap-1 rounded-lg border border-white/10 bg-black/60 p-1 backdrop-blur-md">
-                        {([{val:"sm" as const,label:"S"},{val:"md" as const,label:"M"},{val:"lg" as const,label:"L"}]).map(({ val, label }) => (
-                          <button key={val} type="button"
-                            onClick={() => { setLogoSize(val); localStorage.setItem("pdf.logo_size", val); }}
-                            className={`h-6 w-6 rounded text-[0.62rem] font-extrabold transition-all ${logoSize === val ? "shadow" : "text-white/45 hover:text-white/80"}`}
-                            style={logoSize === val ? { backgroundColor: activeColor, color:"#0a0b10" } : {}}>
-                            {label}
-                          </button>
-                        ))}
-                        <div className="mx-0.5 h-3.5 w-px bg-white/15"/>
-                        <button type="button" title={logoHideName ? "Afficher le nom" : "Masquer le nom"}
-                          onClick={() => { const n = !logoHideName; setLogoHideName(n); localStorage.setItem("pdf.logo_hide_name", String(n)); }}
-                          className={`h-6 w-6 rounded text-[0.55rem] font-bold transition-all ${logoHideName ? "shadow" : "text-white/45 hover:text-white/80"}`}
-                          style={logoHideName ? { backgroundColor: activeColor, color:"#0a0b10" } : {}}>
-                          T
-                        </button>
-                      </div>
+                      <LogoDragResize
+                        src={draft.emetteur_logo}
+                        transform={logoTransform ?? DEFAULT_LOGO_TRANSFORM}
+                        onChange={saveLt}
+                        onReset={() => saveLt(null)}
+                      />
                     )}
                   </div>
                 </div>
@@ -1702,7 +1735,7 @@ export default function FacturesPage() {
                 {draft.sujet && <span className="text-xs text-white/40">{draft.sujet}</span>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName)}
+                <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
                   className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold transition hover:opacity-90"
                   style={{ background:"linear-gradient(135deg,#c9a55a,#b08d45)", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(201,165,90,0.3)" }}>
                   <FileDown size={13}/> Télécharger PDF
@@ -1718,23 +1751,12 @@ export default function FacturesPage() {
                 <div className="relative overflow-hidden rounded-lg shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
                   <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals)}/>
                   {draft.emetteur_logo && (
-                    <div className="absolute left-2 top-2 flex items-center gap-1 rounded-lg border border-white/10 bg-black/60 p-1 backdrop-blur-md">
-                      {([{val:"sm" as const,label:"S"},{val:"md" as const,label:"M"},{val:"lg" as const,label:"L"}]).map(({ val, label }) => (
-                        <button key={val} type="button"
-                          onClick={() => { setLogoSize(val); localStorage.setItem("pdf.logo_size", val); }}
-                          className={`h-6 w-6 rounded text-[0.62rem] font-extrabold transition-all ${logoSize === val ? "shadow" : "text-white/45 hover:text-white/80"}`}
-                          style={logoSize === val ? { backgroundColor: activeColor, color:"#0a0b10" } : {}}>
-                          {label}
-                        </button>
-                      ))}
-                      <div className="mx-0.5 h-3.5 w-px bg-white/15"/>
-                      <button type="button" title={logoHideName ? "Afficher le nom" : "Masquer le nom"}
-                        onClick={() => { const n = !logoHideName; setLogoHideName(n); localStorage.setItem("pdf.logo_hide_name", String(n)); }}
-                        className={`h-6 w-6 rounded text-[0.55rem] font-bold transition-all ${logoHideName ? "shadow" : "text-white/45 hover:text-white/80"}`}
-                        style={logoHideName ? { backgroundColor: activeColor, color:"#0a0b10" } : {}}>
-                        T
-                      </button>
-                    </div>
+                    <LogoDragResize
+                      src={draft.emetteur_logo}
+                      transform={logoTransform ?? DEFAULT_LOGO_TRANSFORM}
+                      onChange={saveLt}
+                      onReset={() => saveLt(null)}
+                    />
                   )}
                 </div>
               </div>
