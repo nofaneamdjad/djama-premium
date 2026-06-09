@@ -10,11 +10,13 @@ import {
   ArrowLeft, Save, Check, Building2, Mail, Phone, Globe,
   ImagePlus, FileText, Landmark, Palette, Settings2,
   Hash, Calendar, Percent, Loader2, ChevronDown, ChevronRight,
-  Shield, CreditCard, X, AlertCircle, DollarSign,
+  Shield, CreditCard, X, AlertCircle, ZoomIn, ZoomOut, Move,
 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
+import { LogoDragResize, DEFAULT_LOGO_TRANSFORM } from "@/components/invoice/LogoDragResize";
+import type { LogoTransform } from "@/components/invoice/LogoDragResize";
 import { DEMO_DATA } from "@/components/invoice/shared";
 import type { PreviewData } from "@/components/invoice/shared";
 import type { TemplateType } from "@/lib/pdf/types";
@@ -236,12 +238,14 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 // ─── Page principale ─────────────────────────────────────────────────────────
 
 export default function ParametresFacturesPage() {
-  const [tab,     setTab]     = useState<TabId>("entetes");
-  const [s,       setS]       = useState<AllSettings>(DEFAULTS);
-  const [loading, setLoading] = useState(true);
-  const [saving,  setSaving]  = useState(false);
-  const [saved,   setSaved]   = useState(false);
-  const [saveErr, setSaveErr] = useState("");
+  const [tab,           setTab]           = useState<TabId>("entetes");
+  const [s,             setS]             = useState<AllSettings>(DEFAULTS);
+  const [loading,       setLoading]       = useState(true);
+  const [saving,        setSaving]        = useState(false);
+  const [saved,         setSaved]         = useState(false);
+  const [saveErr,       setSaveErr]       = useState("");
+  const [logoTransform, setLogoTransform] = useState<LogoTransform>(DEFAULT_LOGO_TRANSFORM);
+  const [headerZoom,    setHeaderZoom]    = useState(1.0);   // 0.7 → 2.0
   const logoRef = useRef<HTMLInputElement>(null);
 
   /** Met à jour un champ */
@@ -265,6 +269,11 @@ export default function ParametresFacturesPage() {
             }
             return next;
           });
+          // Logo transform (JSON séparé)
+          if (map["brand.logo_transform"]) {
+            try { setLogoTransform(JSON.parse(map["brand.logo_transform"])); }
+            catch { /* ignore */ }
+          }
         }
         setLoading(false);
       });
@@ -286,10 +295,13 @@ export default function ParametresFacturesPage() {
     }
 
     // 2. Insérer les nouvelles valeurs
-    const rows = Object.entries(KEY_MAP).map(([local, dbKey]) => ({
-      key:   dbKey,
-      value: s[local as SettingKey] ?? "",
-    }));
+    const rows = [
+      ...Object.entries(KEY_MAP).map(([local, dbKey]) => ({
+        key:   dbKey,
+        value: s[local as SettingKey] ?? "",
+      })),
+      { key: "brand.logo_transform", value: JSON.stringify(logoTransform) },
+    ];
 
     const { error: insErr } = await supabase.from("site_settings").insert(rows);
 
@@ -475,6 +487,57 @@ export default function ParametresFacturesPage() {
                       </div>
                     </div>
                     <input ref={logoRef} type="file" accept="image/*" onChange={handleLogoFile} className="hidden" />
+                  </div>
+
+                  {/* ── Aperçu de l'en-tête zoomable ─────────────────── */}
+                  <div className="overflow-hidden rounded-xl border border-white/[0.07]">
+                    {/* Barre titre + contrôles zoom */}
+                    <div className="flex items-center justify-between border-b border-white/[0.05] bg-white/[0.02] px-3 py-2">
+                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-white/30">
+                        Aperçu de l&apos;en-tête
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => setHeaderZoom(z => Math.max(0.5, parseFloat((z - 0.25).toFixed(2))))}
+                          disabled={headerZoom <= 0.5}
+                          className="flex h-5 w-5 items-center justify-center rounded text-white/40 transition hover:bg-white/[0.07] hover:text-white/70 disabled:opacity-30">
+                          <ZoomOut size={11} />
+                        </button>
+                        <span className="w-9 text-center text-[0.6rem] text-white/25">
+                          {Math.round(headerZoom * 100)}%
+                        </span>
+                        <button onClick={() => setHeaderZoom(z => Math.min(2.5, parseFloat((z + 0.25).toFixed(2))))}
+                          disabled={headerZoom >= 2.5}
+                          className="flex h-5 w-5 items-center justify-center rounded text-white/40 transition hover:bg-white/[0.07] hover:text-white/70 disabled:opacity-30">
+                          <ZoomIn size={11} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Zone de prévisualisation — affiche la partie haute de la facture */}
+                    <div style={{ height: 175, overflow: "hidden", background: "#d4d8e0", position: "relative" }}>
+                      {/* Conteneur à largeur variable = zoom réel (pas CSS transform) */}
+                      <div style={{
+                        position: "absolute",
+                        top: 0, left: 0,
+                        width: `${Math.round(380 * headerZoom)}px`,
+                        minWidth: "100%",
+                      }}>
+                        <InvoiceTemplate
+                          type={(s.template as TemplateType) || "modern"}
+                          data={previewData}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Hint drag → aperçu droite */}
+                    {s.logoUrl && (
+                      <div className="flex items-center gap-2 border-t border-white/[0.05] px-3 py-1.5">
+                        <Move size={10} className="text-[#c9a55a]/60" />
+                        <p className="text-[0.6rem] text-white/25">
+                          Glissez et redimensionnez le logo dans l&apos;aperçu complet →
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -669,13 +732,32 @@ export default function ParametresFacturesPage() {
             Aperçu en direct
           </p>
           <div className="flex flex-1 items-start justify-center overflow-y-auto p-6">
-            <div className="w-full max-w-[400px] overflow-hidden rounded-xl shadow-[0_24px_70px_rgba(0,0,0,0.6)]">
-              <InvoiceTemplate
-                type={(s.template as TemplateType) || "modern"}
-                data={previewData}
-              />
+            {/* wrapper overflow:visible pour que les poignées LogoDragResize ne soient pas clippées */}
+            <div className="relative w-full max-w-[400px]">
+              <div className="overflow-hidden rounded-xl shadow-[0_24px_70px_rgba(0,0,0,0.6)]">
+                <InvoiceTemplate
+                  type={(s.template as TemplateType) || "modern"}
+                  data={previewData}
+                />
+              </div>
+              {/* Overlay logo drag & resize */}
+              {s.logoUrl && (
+                <LogoDragResize
+                  src={s.logoUrl}
+                  transform={logoTransform}
+                  onChange={setLogoTransform}
+                  onReset={() => setLogoTransform(DEFAULT_LOGO_TRANSFORM)}
+                />
+              )}
             </div>
           </div>
+          {/* Hint sous le panneau */}
+          {s.logoUrl && (
+            <p className="shrink-0 pb-4 text-center text-[0.58rem] text-white/18">
+              <Move size={9} className="mr-1 inline" />
+              Glissez · Poignées pour redimensionner · Verrou ratio
+            </p>
+          )}
         </div>
 
       </div>
