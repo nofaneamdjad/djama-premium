@@ -7,43 +7,44 @@
 import type { PdfTheme, TemplateType } from "./types";
 
 // ── Modern ────────────────────────────────────────────────────────────────────
-// Header blanc épuré, barre dorée à gauche (style Qonto), typographie propre.
+// Header blanc épuré, barre dorée à gauche — style Qonto/Stripe.
+// Nouveau rendu premium : header 42mm, boîte total accent, QR dans section paiement.
 const modernTheme: PdfTheme = {
   id: "modern",
 
-  headerBg:         [255, 255, 255],   // blanc
-  headerH:          44,
-  headerNameColor:  [12, 12, 18],
-  headerSubColor:   [150, 150, 160],
-  headerRefColor:   [12, 12, 18],
-  headerDateColor:  [130, 130, 142],
+  headerBg:         [255, 255, 255],
+  headerH:          42,                // réduit pour moins d'espace mort
+  headerNameColor:  [10, 10, 18],
+  headerSubColor:   [148, 148, 162],
+  headerRefColor:   [10, 10, 18],
+  headerDateColor:  [110, 110, 122],
 
   bodyBg:           [255, 255, 255],
-  bodyText:         [12, 12, 18],
-  mutedText:        [108, 108, 120],
+  bodyText:         [10, 10, 18],
+  mutedText:        [105, 105, 118],
 
-  labelColor:       [175, 138, 62],    // or légèrement foncé pour les labels
-  sectionNameColor: [12, 12, 18],
+  labelColor:       [160, 148, 88],    // gold labels
+  sectionNameColor: [10, 10, 18],
 
-  subjectBg:        [246, 246, 250],
-  subjectText:      [12, 12, 18],
+  subjectBg:        [246, 246, 251],
+  subjectText:      [10, 10, 18],
 
-  tableHeaderBg:    [244, 244, 248],   // gris très clair pour en-tête tableau
-  tableHeaderText:  [38, 38, 50],
-  tableRowAlt:      [251, 251, 254],
-  tableBorder:      [222, 222, 232],
-  tableText:        [20, 20, 30],
+  tableHeaderBg:    [242, 242, 248],   // gris très clair
+  tableHeaderText:  [34, 34, 48],
+  tableRowAlt:      [250, 250, 254],
+  tableBorder:      [218, 218, 230],
+  tableText:        [18, 18, 28],
 
   totalLineBg:      null,
-  totalBoxBg:       [12, 12, 18],      // boîte total : presque noir
+  totalBoxBg:       [10, 10, 18],      // fallback (remplacé par accentBarColor)
   totalBoxText:     [255, 255, 255],
 
-  footerBg:         [247, 247, 251],
-  footerText:       [138, 138, 150],
+  footerBg:         [246, 246, 250],
+  footerText:       [135, 135, 148],
 
   variant:          "accent-bar",
-  accentBarColor:   [201, 165, 90],    // or DJAMA
-  accentBarW:       4.5,
+  accentBarColor:   [201, 165, 90],    // or DJAMA signature
+  accentBarW:       5,
 };
 
 // ── Minimal ───────────────────────────────────────────────────────────────────
