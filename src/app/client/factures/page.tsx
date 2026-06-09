@@ -44,12 +44,15 @@ interface Document {
   numero:           string;
   statut:           DocStatut;
   sujet:            string;
-  emetteur_nom:     string;
-  emetteur_email:   string;
-  emetteur_adresse: string;
-  emetteur_siret:   string;
-  emetteur_tva:     string;
-  emetteur_logo:    string;
+  emetteur_nom:          string;
+  emetteur_email:        string;
+  emetteur_adresse:      string;
+  emetteur_ville:        string;
+  emetteur_code_postal:  string;
+  emetteur_pays:         string;
+  emetteur_siret:        string;
+  emetteur_tva:          string;
+  emetteur_logo:         string;
   client_nom:          string;
   client_societe:      string;
   client_email:        string;
@@ -213,7 +216,9 @@ const EMPTY_ITEM = (): DocItem => ({
 const EMPTY_DRAFT = (): DraftDoc => ({
   type:"facture", numero:"", statut:"brouillon",
   sujet:"",
-  emetteur_nom:"", emetteur_email:"", emetteur_adresse:"", emetteur_siret:"", emetteur_tva:"", emetteur_logo:"",
+  emetteur_nom:"", emetteur_email:"", emetteur_adresse:"",
+  emetteur_ville:"", emetteur_code_postal:"", emetteur_pays:"",
+  emetteur_siret:"", emetteur_tva:"", emetteur_logo:"",
   client_nom:"", client_societe:"", client_email:"", client_telephone:"", client_adresse:"",
   client_ville:"", client_code_postal:"", client_pays:"", client_tva:"",
   date_document: new Date().toISOString().slice(0,10),
@@ -282,7 +287,11 @@ async function exportPDFWithTemplate(
       logoUrl:      draft.emetteur_logo    || null,
       name:         draft.emetteur_nom     || "",
       email:        draft.emetteur_email   || "",
-      address:      draft.emetteur_adresse || "",
+      address:      [
+        draft.emetteur_adresse,
+        [draft.emetteur_code_postal, draft.emetteur_ville].filter(Boolean).join(" "),
+        draft.emetteur_pays,
+      ].filter(Boolean).join("\n") || "",
       siret:        draft.emetteur_siret   || "",
       iban:         draft.rib_iban         || "",
       bic:          draft.rib_bic          || "",
@@ -604,10 +613,13 @@ export default function FacturesPage() {
       numero:           doc.numero,
       statut:           doc.statut,
       sujet:            doc.sujet             ?? "",
-      emetteur_nom:     doc.emetteur_nom      ?? "",
-      emetteur_email:   doc.emetteur_email    ?? "",
-      emetteur_adresse: doc.emetteur_adresse  ?? "",
-      emetteur_siret:   doc.emetteur_siret    ?? "",
+      emetteur_nom:          doc.emetteur_nom         ?? "",
+      emetteur_email:        doc.emetteur_email       ?? "",
+      emetteur_adresse:      doc.emetteur_adresse     ?? "",
+      emetteur_ville:        doc.emetteur_ville       ?? "",
+      emetteur_code_postal:  doc.emetteur_code_postal ?? "",
+      emetteur_pays:         doc.emetteur_pays        ?? "",
+      emetteur_siret:        doc.emetteur_siret       ?? "",
       emetteur_tva:     doc.emetteur_tva      ?? "",
       emetteur_logo:    doc.emetteur_logo     ?? "",
       client_nom:          doc.client_nom          ?? "",
@@ -653,10 +665,13 @@ export default function FacturesPage() {
       type,
       numero: newNumero(type, documents),
       // Pré-remplissage depuis les paramètres entreprise
-      emetteur_nom:     co?.name        || "",
-      emetteur_email:   co?.email       || "",
-      emetteur_adresse: co ? [co.address, co.city, co.country].filter(Boolean).join(", ") : "",
-      emetteur_siret:   co?.siret       || "",
+      emetteur_nom:         co?.name        || "",
+      emetteur_email:       co?.email       || "",
+      emetteur_adresse:     co?.address     || "",
+      emetteur_ville:       co?.city        || "",
+      emetteur_code_postal: co?.postal_code || "",
+      emetteur_pays:        co?.country     || "",
+      emetteur_siret:       co?.siret       || "",
       emetteur_tva:     co?.vat_number  || "",
       emetteur_logo:    co?.logoUrl     || "",
       rib_iban:         co?.iban        || "",
@@ -714,12 +729,15 @@ export default function FacturesPage() {
       numero:           sd.numero,
       statut:           sd.statut,
       sujet:            sd.sujet,
-      emetteur_nom:     sd.emetteur_nom,
-      emetteur_email:   sd.emetteur_email,
-      emetteur_adresse: sd.emetteur_adresse,
-      emetteur_siret:   sd.emetteur_siret,
-      emetteur_tva:     sd.emetteur_tva,
-      emetteur_logo:    sd.emetteur_logo,
+      emetteur_nom:          sd.emetteur_nom,
+      emetteur_email:        sd.emetteur_email,
+      emetteur_adresse:      sd.emetteur_adresse,
+      emetteur_ville:        sd.emetteur_ville,
+      emetteur_code_postal:  sd.emetteur_code_postal,
+      emetteur_pays:         sd.emetteur_pays,
+      emetteur_siret:        sd.emetteur_siret,
+      emetteur_tva:          sd.emetteur_tva,
+      emetteur_logo:         sd.emetteur_logo,
       client_nom:         sd.client_nom,
       client_societe:     sd.client_societe,
       client_email:       sd.client_email,
@@ -829,10 +847,13 @@ export default function FacturesPage() {
     const { data: newDoc, error } = await supabase.from("documents").insert({
       user_id: user.id, type:"facture", numero:newNum, statut:"brouillon",
       sujet:             selected.sujet ?? "",
-      emetteur_nom:      selected.emetteur_nom,      emetteur_email: selected.emetteur_email,
-      emetteur_adresse:  selected.emetteur_adresse,  emetteur_siret: selected.emetteur_siret,
-      emetteur_tva:      selected.emetteur_tva      ?? "",
-      emetteur_logo:     selected.emetteur_logo     ?? "",
+      emetteur_nom:         selected.emetteur_nom,         emetteur_email:       selected.emetteur_email,
+      emetteur_adresse:     selected.emetteur_adresse,
+      emetteur_ville:       selected.emetteur_ville       ?? "",
+      emetteur_code_postal: selected.emetteur_code_postal ?? "",
+      emetteur_pays:        selected.emetteur_pays        ?? "",
+      emetteur_siret:       selected.emetteur_siret,      emetteur_tva:         selected.emetteur_tva ?? "",
+      emetteur_logo:        selected.emetteur_logo        ?? "",
       client_nom:         selected.client_nom,        client_societe:     selected.client_societe    ?? "",
       client_email:       selected.client_email,      client_telephone:   selected.client_telephone  ?? "",
       client_adresse:     selected.client_adresse,
@@ -884,9 +905,13 @@ export default function FacturesPage() {
       numero:            newNum,
       statut:            "brouillon",
       sujet:             draft.sujet,
-      emetteur_nom:      draft.emetteur_nom,      emetteur_email:   draft.emetteur_email,
-      emetteur_adresse:  draft.emetteur_adresse,  emetteur_siret:   draft.emetteur_siret,
-      emetteur_tva:      draft.emetteur_tva,       emetteur_logo:    draft.emetteur_logo,
+      emetteur_nom:         draft.emetteur_nom,         emetteur_email:       draft.emetteur_email,
+      emetteur_adresse:     draft.emetteur_adresse,
+      emetteur_ville:       draft.emetteur_ville,
+      emetteur_code_postal: draft.emetteur_code_postal,
+      emetteur_pays:        draft.emetteur_pays,
+      emetteur_siret:       draft.emetteur_siret,       emetteur_tva:         draft.emetteur_tva,
+      emetteur_logo:        draft.emetteur_logo,
       client_nom:         draft.client_nom,          client_societe:     draft.client_societe,
       client_email:       draft.client_email,        client_telephone:   draft.client_telephone,
       client_adresse:     draft.client_adresse,
@@ -1415,7 +1440,12 @@ export default function FacturesPage() {
                         )}
                         <DInput value={draft.emetteur_nom}     onChange={v => updDraft("emetteur_nom", v)}     placeholder="Nom / Société"/>
                         <DInput value={draft.emetteur_email}   onChange={v => updDraft("emetteur_email", v)}   placeholder="email@exemple.com"/>
-                        <DInput value={draft.emetteur_adresse} onChange={v => updDraft("emetteur_adresse", v)} placeholder="Adresse complète"/>
+                        <DInput value={draft.emetteur_adresse} onChange={v => updDraft("emetteur_adresse", v)} placeholder="Rue, numéro…"/>
+                        <div className="grid grid-cols-[80px_1fr] gap-2">
+                          <DInput value={draft.emetteur_code_postal} onChange={v => updDraft("emetteur_code_postal", v)} placeholder="75001"/>
+                          <DInput value={draft.emetteur_ville}       onChange={v => updDraft("emetteur_ville", v)}       placeholder="Ville"/>
+                        </div>
+                        <DInput value={draft.emetteur_pays}    onChange={v => updDraft("emetteur_pays", v)}    placeholder="Pays"/>
                         <DInput value={draft.emetteur_siret}   onChange={v => updDraft("emetteur_siret", v)}   placeholder="SIRET"/>
                         <DInput value={draft.emetteur_tva}     onChange={v => updDraft("emetteur_tva", v)}     placeholder="N° TVA intracommunautaire (FR12345678901)"/>
                       </div>

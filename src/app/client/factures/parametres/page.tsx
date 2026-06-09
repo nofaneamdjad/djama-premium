@@ -33,7 +33,9 @@ const KEY_MAP = {
   phone:            "brand.phone",
   website:          "brand.website",
   address:          "brand.address",
+  postal_code:      "brand.postal_code",
   city:             "brand.city",
+  country:          "brand.country",
   logoUrl:          "brand.logo_url",
   siret:            "brand.siret",
   vat_number:       "brand.vat_number",
@@ -63,7 +65,9 @@ interface AllSettings {
   phone:            string;
   website:          string;
   address:          string;
+  postal_code:      string;
   city:             string;
+  country:          string;
   logoUrl:          string;
   siret:            string;
   vat_number:       string;
@@ -91,7 +95,9 @@ const DEFAULTS: AllSettings = {
   phone:            "",
   website:          "",
   address:          "",
+  postal_code:      "",
   city:             "",
+  country:          "",
   logoUrl:          "",
   siret:            "",
   vat_number:       "",
@@ -451,12 +457,16 @@ export default function ParametresFacturesPage() {
                   <Field label="Site internet" value={s.website} onChange={upd("website")}
                     placeholder="www.masociete.fr" icon={Globe} />
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Adresse" value={s.address} onChange={upd("address")}
-                      placeholder="12 rue des Lilas" icon={Building2} />
+                  <Field label="Adresse (rue)" value={s.address} onChange={upd("address")}
+                    placeholder="12 rue des Lilas" icon={Building2} />
+                  <div className="grid grid-cols-[100px_1fr] gap-3">
+                    <Field label="Code postal" value={s.postal_code} onChange={upd("postal_code")}
+                      placeholder="75001" />
                     <Field label="Ville" value={s.city} onChange={upd("city")}
-                      placeholder="75001 Paris" />
+                      placeholder="Paris" />
                   </div>
+                  <Field label="Pays" value={s.country} onChange={upd("country")}
+                    placeholder="France" />
 
                   {/* Logo */}
                   <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">

@@ -12,6 +12,7 @@ export interface CompanySettings {
   website:      string;
   phone:        string;
   address:      string;
+  postal_code:  string;
   city:         string;
   country:      string;
   siret:        string;
@@ -32,6 +33,7 @@ const DEFAULTS: CompanySettings = {
   website:      "",
   phone:        "",
   address:      "",
+  postal_code:  "",
   city:         "",
   country:      "",
   siret:        "",
@@ -64,9 +66,10 @@ export async function fetchCompanySettings(): Promise<CompanySettings> {
     email:      map["brand.email"]         || DEFAULTS.email,
     website:    map["brand.website"]       || DEFAULTS.website,
     phone:      map["brand.phone"]         || DEFAULTS.phone,
-    address:    map["brand.address"]       || DEFAULTS.address,
-    city:       map["brand.city"]          || DEFAULTS.city,
-    country:    map["brand.country"]       || DEFAULTS.country,
+    address:      map["brand.address"]      || DEFAULTS.address,
+    postal_code:  map["brand.postal_code"] || DEFAULTS.postal_code,
+    city:         map["brand.city"]        || DEFAULTS.city,
+    country:      map["brand.country"]     || DEFAULTS.country,
     siret:      map["brand.siret"]         || DEFAULTS.siret,
     ape:        map["brand.ape"]           || DEFAULTS.ape,
     vat_number:   map["brand.vat_number"]    || DEFAULTS.vat_number,
