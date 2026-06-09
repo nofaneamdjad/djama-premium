@@ -478,6 +478,29 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
   );
 }
 
+/** Textarea qui grandit automatiquement avec son contenu */
+function DAutoGrow({ value, onChange, placeholder }: {
+  value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.style.height = "auto";
+    ref.current.style.height = ref.current.scrollHeight + "px";
+  }, [value]);
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      style={{ resize: "none", overflow: "hidden", minHeight: "28px" }}
+      className={`w-full rounded-lg ${B} ${BH} px-2.5 py-1.5 text-xs text-white placeholder:text-white/20 outline-none transition`}
+    />
+  );
+}
+
 function SectionLabel({ icon, label, hint }: { icon?: React.ReactNode; label: string; hint?: string }) {
   return (
     <div className="flex items-center gap-2.5">
@@ -1500,15 +1523,35 @@ export default function FacturesPage() {
                           const gross   = r2(it.quantity * it.unit_price);
                           const lineRem = r2(gross * (it.remise_pct||0) / 100);
                           const lineHT  = r2(gross - lineRem);
+                          const subLines = it.sub_description ? it.sub_description.split("\n") : [];
                           return (
                             <motion.div key={it.id || `item-${idx}`} layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
                               transition={{ duration:0.2, ease }}
-                              className="group grid grid-cols-1 gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 sm:grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] sm:items-center">
-                              <div className="flex flex-col gap-1">
-                                <DInput small value={it.description} onChange={v => updItem(idx,"description",v)} placeholder="Description de la prestation"/>
-                                <div className="opacity-60">
-                                  <DInput small value={it.sub_description||""} onChange={v => updItem(idx,"sub_description",v)} placeholder="Sous-description (optionnel)…"/>
-                                </div>
+                              className="group grid grid-cols-1 gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 sm:grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] sm:items-start">
+                              <div className="flex flex-col gap-1 pt-[1px]">
+                                {/* Description principale — grandit avec le texte */}
+                                <DAutoGrow value={it.description} onChange={v => updItem(idx,"description",v)} placeholder="Description de la prestation"/>
+                                {/* Sous-descriptions dynamiques */}
+                                {subLines.map((line, li) => (
+                                  <div key={li} className="flex items-center gap-1 opacity-60">
+                                    <DInput small value={line}
+                                      onChange={v => {
+                                        const next = [...subLines]; next[li] = v;
+                                        updItem(idx, "sub_description", next.join("\n"));
+                                      }}
+                                      placeholder="Sous-description…"/>
+                                    <button
+                                      onClick={() => updItem(idx, "sub_description", subLines.filter((_,i)=>i!==li).join("\n"))}
+                                      className="shrink-0 text-white/20 transition hover:text-red-400">
+                                      <X size={9}/>
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={() => updItem(idx, "sub_description", [...subLines, ""].join("\n"))}
+                                  className="flex items-center gap-1 self-start text-[0.6rem] text-white/20 transition hover:text-white/50">
+                                  <Plus size={8}/> sous-description
+                                </button>
                               </div>
                               <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
                               <DInput small type="number" value={String(it.quantity)}   onChange={v => updItem(idx,"quantity",   parseFloat(v)||0)} placeholder="1"/>
