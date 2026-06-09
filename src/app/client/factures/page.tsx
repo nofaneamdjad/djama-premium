@@ -300,7 +300,7 @@ async function exportPDFWithTemplate(
   });
 }
 
-function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnType<typeof calcTotals>): PreviewData {
+function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnType<typeof calcTotals>, lSize: "sm"|"md"|"lg" = "md"): PreviewData {
   return {
     type:           draft.type === "facture" ? "invoice" : "quote",
     reference:      draft.numero || (draft.type === "facture" ? "FAC-2026-001" : "DEV-2026-001"),
@@ -332,9 +332,10 @@ function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnTyp
     color:       draft.couleur || "#c9a55a",
     valid_until: draft.type !== "facture" ? (draft.date_echeance || null) : null,
     company: {
-      name:    draft.emetteur_nom   || "DJAMA",
-      email:   draft.emetteur_email,
-      logoUrl: draft.emetteur_logo || null,
+      name:     draft.emetteur_nom   || "DJAMA",
+      email:    draft.emetteur_email,
+      logoUrl:  draft.emetteur_logo || null,
+      logoSize: lSize,
     },
   };
 }
@@ -1742,7 +1743,7 @@ export default function FacturesPage() {
                       <TemplateSelector
                         value={draft.template ?? "modern"}
                         onChange={v => { setDraft(d => d ? { ...d, template:v } : d); setDirty(true); }}
-                        data={draftToPreviewData(draft, items, totals)}
+                        data={draftToPreviewData(draft, items, totals, logoSize)}
                       />
                     </div>
                   </div>
@@ -1809,7 +1810,7 @@ export default function FacturesPage() {
                 </div>
                 <div className="p-5 pb-8">
                   <div className="relative overflow-hidden rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-                    <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals)}/>
+                    <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals, logoSize)}/>
                   </div>
                 </div>
               </div>
@@ -1846,7 +1847,7 @@ export default function FacturesPage() {
             <div className="flex-1 overflow-y-auto px-4 py-8">
               <div className="mx-auto w-full max-w-[620px]">
                 <div className="relative overflow-hidden rounded-lg shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
-                  <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals)}/>
+                  <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals, logoSize)}/>
                 </div>
               </div>
             </div>

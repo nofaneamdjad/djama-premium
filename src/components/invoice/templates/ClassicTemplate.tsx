@@ -38,7 +38,7 @@ export function ClassicTemplate({ data }: { data: PreviewData }) {
         <div style={{ flex: 1, padding: "13px 16px 11px", backgroundColor: "#ffffff" }}>
           {co.logoUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={co.logoUrl} alt="logo" style={{ height: 28, maxWidth: 90, objectFit: "contain", display: "block", marginBottom: 3 }} />
+            <img src={co.logoUrl} alt="logo" style={{ height: co.logoSize==="sm"?24:co.logoSize==="lg"?62:44, maxWidth: co.logoSize==="sm"?90:co.logoSize==="lg"?200:150, objectFit: "contain", display: "block", marginBottom: 3 }} />
           ) : (
             <div style={{ color: C, fontWeight: 900, fontSize: 12, letterSpacing: "-0.5px" }}>
               {co.name ?? "DJAMA"}

@@ -59,7 +59,7 @@ export function ColorfulTemplate({ data }: { data: PreviewData }) {
         <div>
           {co.logoUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={co.logoUrl} alt="logo" style={{ height: 26, maxWidth: 88, objectFit: "contain", display: "block", marginBottom: 3 }} />
+            <img src={co.logoUrl} alt="logo" style={{ height: co.logoSize==="sm"?24:co.logoSize==="lg"?62:44, maxWidth: co.logoSize==="sm"?90:co.logoSize==="lg"?200:150, objectFit: "contain", display: "block", marginBottom: 3 }} />
           ) : (
             <div style={{ color: CT, fontWeight: 900, fontSize: 12, letterSpacing: "-0.4px" }}>
               {co.name ?? "DJAMA"}

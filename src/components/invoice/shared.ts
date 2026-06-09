@@ -29,10 +29,12 @@ export interface PreviewData {
   /** Couleur d'accent choisie par l'utilisateur — appliquée à TOUS les templates */
   color?:          string;
   company?: {
-    name?:    string;
-    email?:   string;
-    website?: string;
-    logoUrl?: string | null;
+    name?:      string;
+    email?:     string;
+    website?:   string;
+    logoUrl?:   string | null;
+    /** Taille d'affichage du logo : sm=30px, md=48px, lg=70px */
+    logoSize?:  "sm" | "md" | "lg";
   };
 }
 

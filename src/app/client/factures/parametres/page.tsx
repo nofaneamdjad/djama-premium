@@ -350,10 +350,11 @@ export default function ParametresFacturesPage() {
     tax_amount:     840,
     total:          5040,
     company: {
-      name:    s.name    || "Mon Entreprise",
-      email:   s.email   || "",
-      website: s.website || "",
-      logoUrl: null,
+      name:     s.name    || "Mon Entreprise",
+      email:    s.email   || "",
+      website:  s.website || "",
+      logoUrl:  s.logoUrl || null,
+      logoSize: "md",
     },
   };
 
