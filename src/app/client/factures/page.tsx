@@ -17,7 +17,6 @@ import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
 import { TemplateSelector } from "@/components/invoice/TemplateSelector";
 import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
-import { LogoDragResize, DEFAULT_LOGO_TRANSFORM } from "@/components/invoice/LogoDragResize";
 import type { LogoTransform } from "@/components/invoice/LogoDragResize";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
 import type { CompanySettings } from "@/lib/pdf/companySettings";
@@ -335,8 +334,7 @@ function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnTyp
     company: {
       name:    draft.emetteur_nom   || "DJAMA",
       email:   draft.emetteur_email,
-      // Le logo est géré par l'overlay LogoDragResize — toujours null ici
-      logoUrl: null,
+      logoUrl: draft.emetteur_logo || null,
     },
   };
 }
@@ -1812,14 +1810,6 @@ export default function FacturesPage() {
                 <div className="p-5 pb-8">
                   <div className="relative overflow-hidden rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                     <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals)}/>
-                    {draft.emetteur_logo && (
-                      <LogoDragResize
-                        src={draft.emetteur_logo}
-                        transform={logoTransform ?? DEFAULT_LOGO_TRANSFORM}
-                        onChange={saveLt}
-                        onReset={() => saveLt(null)}
-                      />
-                    )}
                   </div>
                 </div>
               </div>
@@ -1857,14 +1847,6 @@ export default function FacturesPage() {
               <div className="mx-auto w-full max-w-[620px]">
                 <div className="relative overflow-hidden rounded-lg shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
                   <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals)}/>
-                  {draft.emetteur_logo && (
-                    <LogoDragResize
-                      src={draft.emetteur_logo}
-                      transform={logoTransform ?? DEFAULT_LOGO_TRANSFORM}
-                      onChange={saveLt}
-                      onReset={() => saveLt(null)}
-                    />
-                  )}
                 </div>
               </div>
             </div>
