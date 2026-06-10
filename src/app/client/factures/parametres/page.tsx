@@ -748,7 +748,9 @@ export default function ParametresFacturesPage() {
               <div className="overflow-hidden rounded-xl shadow-[0_24px_70px_rgba(0,0,0,0.6)]">
                 <InvoiceTemplate
                   type={(s.template as TemplateType) || "modern"}
-                  data={previewData}
+                  data={s.logoUrl
+                    ? { ...previewData, company: { ...previewData.company, logoUrl: null } }
+                    : previewData}
                 />
               </div>
               {/* Overlay logo drag & resize */}
