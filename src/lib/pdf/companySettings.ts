@@ -17,13 +17,15 @@ export interface CompanySettings {
   country:      string;
   siret:        string;
   ape:          string;
-  vat_number:   string;   // Numéro de TVA intracommunautaire
+  vat_number:   string;
   iban:         string;
-  bic:          string;   // BIC/SWIFT
-  /** Taille du logo dans le PDF : "sm" = ~12mm, "md" = ~20mm, "lg" = ~30mm */
+  bic:          string;
   logoSize:     "sm" | "md" | "lg";
-  /** Masquer le nom de société dans le PDF quand un logo est présent */
   logoHideName: boolean;
+  /** Template par défaut choisi dans Paramètres */
+  template:     string;
+  /** Couleur d'accent par défaut */
+  color:        string;
 }
 
 const DEFAULTS: CompanySettings = {
@@ -43,6 +45,8 @@ const DEFAULTS: CompanySettings = {
   bic:          "",
   logoSize:     "md",
   logoHideName: false,
+  template:     "modern",
+  color:        "#c9a55a",
 };
 
 export async function fetchCompanySettings(): Promise<CompanySettings> {
@@ -77,5 +81,7 @@ export async function fetchCompanySettings(): Promise<CompanySettings> {
     bic:          map["brand.bic"]           || DEFAULTS.bic,
     logoSize:     (map["brand.logo_size"] as "sm"|"md"|"lg") || DEFAULTS.logoSize,
     logoHideName: map["brand.logo_hide_name"] === "true",
+    template:     map["brand.template"] || DEFAULTS.template,
+    color:        map["brand.color"]    || DEFAULTS.color,
   };
 }

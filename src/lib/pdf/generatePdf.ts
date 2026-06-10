@@ -104,6 +104,8 @@ export async function generatePdf(data: PdfData, download = true): Promise<void>
     bic:          data.company?.bic          ?? "",
     logoSize:     data.company?.logoSize     ?? "md",
     logoHideName: data.company?.logoHideName ?? false,
+    template:     data.company?.template     ?? "modern",
+    color:        data.company?.color        ?? "#c9a55a",
   };
 
   // ── Charger le logo ───────────────────────────────────────────────────────

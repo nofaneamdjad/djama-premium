@@ -766,6 +766,8 @@ export default function FacturesPage() {
       ...EMPTY_DRAFT(),
       type,
       numero: newNumero(type, documents),
+      template: (co?.template as TemplateType) ?? "modern",
+      couleur:  co?.color ?? "#c9a55a",
       // Pré-remplissage depuis les paramètres entreprise
       emetteur_nom:         co?.name        || "",
       emetteur_email:       co?.email       || "",
