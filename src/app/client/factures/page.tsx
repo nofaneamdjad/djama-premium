@@ -1246,24 +1246,6 @@ export default function FacturesPage() {
         <aside className={`flex w-full flex-col overflow-hidden border-r border-white/[0.06] sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-white/[0.08] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}
           style={{ background:"rgba(255,255,255,0.025)" }}>
 
-          {/* Stats bar */}
-          <div className="grid grid-cols-3 border-b border-white/[0.07] px-3 py-3 gap-2">
-            <div className="flex flex-col items-center gap-0.5 rounded-lg bg-white/[0.04] px-2 py-2">
-              <TrendingUp size={11} className="text-green-400"/>
-              <span className="text-[0.6rem] font-bold text-green-400 truncate w-full text-center">{fmtEur(stats.ca)}</span>
-              <span className="text-[0.55rem] text-white/25">CA payé</span>
-            </div>
-            <div className="flex flex-col items-center gap-0.5 rounded-lg bg-white/[0.04] px-2 py-2">
-              <Clock size={11} className="text-blue-400"/>
-              <span className="text-[0.6rem] font-bold text-blue-400">{stats.pending}</span>
-              <span className="text-[0.55rem] text-white/25">En attente</span>
-            </div>
-            <div className="flex flex-col items-center gap-0.5 rounded-lg bg-white/[0.04] px-2 py-2">
-              <AlertCircle size={11} className="text-red-400"/>
-              <span className="text-[0.6rem] font-bold text-red-400">{stats.overdue}</span>
-              <span className="text-[0.55rem] text-white/25">En retard</span>
-            </div>
-          </div>
 
           {/* Search + filter */}
           <div className="space-y-2.5 border-b border-white/[0.07] p-4">
