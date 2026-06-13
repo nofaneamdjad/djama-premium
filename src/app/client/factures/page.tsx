@@ -494,7 +494,7 @@ function DAutoGrow({ value, onChange, placeholder }: {
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      style={{ resize: "none", overflow: "hidden", minHeight: "28px" }}
+      style={{ resize: "none", overflow: "auto", minHeight: "28px", maxHeight: "72px" }}
       className={`w-full rounded-lg ${B} ${BH} px-2.5 py-1.5 text-xs text-white placeholder:text-white/20 outline-none transition`}
     />
   );
