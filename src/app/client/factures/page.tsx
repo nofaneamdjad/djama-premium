@@ -1435,27 +1435,31 @@ export default function FacturesPage() {
                 <div className="space-y-7">
 
                   {/* Document identity card */}
-                  <div className="overflow-hidden rounded-2xl" style={{ background:"linear-gradient(145deg,#08090e,#0d1225)", border:`1px solid ${activeColor}35` }}>
-                    <div className="flex items-center gap-4 px-5 py-5">
+                  <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03]">
+                    {/* Barre couleur top */}
+                    <div className="h-[3px]" style={{ background: activeColor }}/>
+                    <div className="flex items-center gap-5 px-5 py-4">
+                      {/* Logo ou icône */}
                       {draft.emetteur_logo ? (
-                        <img src={draft.emetteur_logo} alt="Logo" className="h-12 w-auto max-w-[90px] rounded object-contain"/>
+                        <img src={draft.emetteur_logo} alt="Logo" className="h-11 w-auto max-w-[80px] rounded-lg object-contain"/>
                       ) : (
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08]" style={{ background:`${activeColor}18` }}>
-                          <Building2 size={18} style={{ color:activeColor }}/>
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
+                          <Building2 size={16} className="text-white/30"/>
                         </div>
                       )}
+                      {/* Centre : type + référence + sujet */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-[0.56rem] font-black uppercase tracking-[0.22em]" style={{ color:activeColor }}>{draft.type}</p>
-                        <p className="text-lg font-extrabold text-white leading-tight truncate">{draft.numero || "(numéro)"}</p>
-                        <p className="text-[0.65rem] text-white/35 truncate">{draft.sujet || "Objet non renseigné"}</p>
+                        <p className="text-[0.5rem] font-bold uppercase tracking-[0.2em] text-white/30">{draft.type === "facture" ? "Facture" : "Devis"}</p>
+                        <p className="text-base font-extrabold text-white leading-snug truncate">{draft.numero || "(numéro)"}</p>
+                        {draft.sujet && <p className="text-[0.65rem] text-white/35 truncate">{draft.sujet}</p>}
                       </div>
+                      {/* Droite : montant + client */}
                       <div className="shrink-0 text-right">
-                        <p className="text-[0.58rem] text-white/30">{fmtDate(draft.date_document)}</p>
-                        <p className="text-2xl font-black leading-tight" style={{ color:activeColor }}>{fmt(totals.ttc)}</p>
-                        {draft.client_nom && <p className="text-[0.62rem] text-white/30 truncate max-w-[110px]">{draft.client_nom}</p>}
+                        <p className="text-xl font-black leading-none" style={{ color: activeColor }}>{fmt(totals.ttc)}</p>
+                        <p className="mt-1 text-[0.6rem] text-white/30">{fmtDate(draft.date_document)}</p>
+                        {draft.client_nom && <p className="text-[0.6rem] font-semibold text-white/50 truncate max-w-[120px]">{draft.client_nom}</p>}
                       </div>
                     </div>
-                    <div className="h-[2px]" style={{ background:`linear-gradient(90deg,${activeColor},${activeColor}44,transparent)` }}/>
                   </div>
 
                   {/* ── Informations du document ── */}
