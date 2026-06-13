@@ -1281,30 +1281,59 @@ export default function FacturesPage() {
               </div>
             ) : (
               <AnimatePresence initial={false}>
-                {filtered.map(doc => (
-                  <motion.button key={doc.id} layout
-                    initial={{ opacity:0, x:-12 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-12 }}
-                    transition={{ duration:0.22, ease }}
-                    onClick={() => openDoc(doc)}
-                    className={`group w-full border-b border-white/[0.05] px-4 py-3.5 text-left transition hover:bg-white/[0.04] ${selected?.id === doc.id ? "bg-white/[0.06]" : ""}`}>
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[0.58rem] font-extrabold uppercase tracking-widest ${
-                        doc.type === "facture" ? "bg-[rgba(201,165,90,0.12)] text-[#c9a55a]" : "bg-[rgba(59,130,246,0.12)] text-blue-400"}`}>
-                        {doc.type}
-                      </span>
-                      <StatutBadge statut={doc.statut}/>
-                    </div>
-                    <p className="text-sm font-bold text-white">{doc.numero || "(sans numéro)"}</p>
-                    {doc.sujet && <p className="text-xs text-white/40 truncate">{doc.sujet}</p>}
-                    <p className="text-xs text-white/30 truncate">{doc.client_nom || "(client)"}</p>
-                    <div className="mt-1.5 flex items-center justify-between">
-                      <span className="text-[0.65rem] text-white/20">{fmtDate(doc.date_document)}</span>
-                      <span className="text-xs font-bold" style={{ color: doc.couleur || "#c9a55a" }}>{fmtEur(doc.total_ttc)}</span>
-                    </div>
-                  </motion.button>
-                ))}
+                {filtered.map(doc => {
+                  const docColor = doc.couleur || "#c9a55a";
+                  const isActive = selected?.id === doc.id;
+                  return (
+                    <motion.button key={doc.id} layout
+                      initial={{ opacity:0, x:-12 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-12 }}
+                      transition={{ duration:0.22, ease }}
+                      onClick={() => openDoc(doc)}
+                      className={`group relative w-full text-left transition-all ${isActive ? "bg-white/[0.07]" : "hover:bg-white/[0.04]"}`}>
+                      {/* Barre latérale couleur */}
+                      <div className="absolute left-0 top-0 h-full w-[3px] rounded-r transition-all"
+                        style={{ background: isActive ? docColor : "transparent", opacity: isActive ? 1 : 0 }}/>
+                      <div className="px-4 py-3.5 pl-5">
+                        {/* Ligne 1 : référence + montant */}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[0.82rem] font-extrabold text-white leading-tight truncate">{doc.numero || "(sans numéro)"}</p>
+                          <span className="shrink-0 text-sm font-black" style={{ color: docColor }}>{fmtEur(doc.total_ttc)}</span>
+                        </div>
+                        {/* Ligne 2 : sujet */}
+                        {doc.sujet && <p className="mt-0.5 text-[0.72rem] text-white/50 truncate">{doc.sujet}</p>}
+                        {/* Ligne 3 : badges + date */}
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className={`rounded-full px-2 py-0.5 text-[0.55rem] font-extrabold uppercase tracking-widest ${
+                            doc.type === "facture" ? "bg-[rgba(201,165,90,0.12)] text-[#c9a55a]" : "bg-[rgba(59,130,246,0.12)] text-blue-400"}`}>
+                            {doc.type}
+                          </span>
+                          <StatutBadge statut={doc.statut}/>
+                          <span className="ml-auto text-[0.6rem] text-white/20">{fmtDate(doc.date_document)}</span>
+                        </div>
+                        {/* Ligne 4 : client */}
+                        {doc.client_nom && (
+                          <p className="mt-1 text-[0.65rem] text-white/30 truncate">{doc.client_nom}</p>
+                        )}
+                      </div>
+                      <div className="mx-4 h-px bg-white/[0.05]"/>
+                    </motion.button>
+                  );
+                })}
               </AnimatePresence>
             )}
+          </div>
+
+          {/* Bouton création rapide bas de sidebar */}
+          <div className="shrink-0 border-t border-white/[0.07] p-3 grid grid-cols-2 gap-2">
+            <button onClick={() => newDoc("devis")}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-400/20 py-2 text-[0.7rem] font-bold text-blue-400/70 transition hover:bg-blue-400/10 hover:text-blue-400">
+              <Plus size={11}/> Devis
+            </button>
+            <button onClick={() => newDoc("facture")}
+              className="flex items-center justify-center gap-1.5 rounded-xl py-2 text-[0.7rem] font-extrabold transition hover:opacity-90"
+              style={{ background:"linear-gradient(135deg,#c9a55a,#b08d45)", color:"#0a0a0a" }}>
+              <Plus size={11}/> Facture
+            </button>
           </div>
         </aside>
 
