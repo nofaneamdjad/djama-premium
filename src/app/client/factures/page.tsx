@@ -1247,8 +1247,9 @@ export default function FacturesPage() {
           <div className="flex items-center gap-2">
             {/* Paramètres */}
             <a href="/client/factures/parametres" title="Paramètres"
-              className={`hidden items-center gap-1.5 rounded-xl ${B} ${BH} px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70 sm:flex`}>
-              <Settings2 size={12}/> Paramètres
+              className={`flex items-center gap-1.5 rounded-xl ${B} ${BH} px-2.5 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70 sm:px-3`}>
+              <Settings2 size={12}/>
+              <span className="hidden sm:inline">Paramètres</span>
             </a>
             {documents.length > 0 && (
               <button onClick={exportCSV} title="Exporter CSV"
