@@ -561,7 +561,7 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
       </div>
 
       {/* Ligne 2 : champs numériques */}
-      <div className="grid grid-cols-[80px_55px_80px_70px_70px_auto] gap-1.5 items-center">
+      <div className="grid grid-cols-[68px_46px_72px_60px_60px_1fr] gap-1.5 items-center">
         <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
         <DInput small type="number" value={String(it.quantity)}
           onChange={v => updItem(idx,"quantity", v===""?0:isNaN(parseFloat(v))?it.quantity:parseFloat(v))} placeholder="1"/>
