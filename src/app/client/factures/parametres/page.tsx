@@ -120,10 +120,10 @@ const DEFAULTS: AllSettings = {
 };
 
 const TABS = [
-  { id: "entetes",   icon: Building2, label: "En-têtes"        },
-  { id: "pieds",     icon: FileText,  label: "Pieds de page"   },
-  { id: "style",     icon: Palette,   label: "Style"           },
-  { id: "documents", icon: Settings2, label: "Devis & factures" },
+  { id: "entetes",   icon: Building2, label: "En-têtes",  short: "En-têtes"  },
+  { id: "pieds",     icon: FileText,  label: "Pieds",     short: "Pieds"     },
+  { id: "style",     icon: Palette,   label: "Style",     short: "Style"     },
+  { id: "documents", icon: Settings2, label: "Documents", short: "Docs"      },
 ] as const;
 type TabId = typeof TABS[number]["id"];
 
@@ -380,16 +380,16 @@ export default function ParametresFacturesPage() {
         </Link>
 
         {/* Onglets */}
-        <div className="flex items-center gap-0.5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
+        <div className="flex items-center gap-0.5 overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.03] p-1 scrollbar-none">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.72rem] font-semibold transition ${
+              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-[0.68rem] font-semibold transition sm:px-3 ${
                 tab === t.id
                   ? "bg-white/[0.09] text-white shadow-sm"
                   : "text-white/35 hover:text-white/60"
               }`}>
               <t.icon size={11} />
-              <span className="hidden sm:inline">{t.label}</span>
+              <span className="hidden xs:inline sm:inline">{t.label}</span>
             </button>
           ))}
         </div>
@@ -429,7 +429,7 @@ export default function ParametresFacturesPage() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── Panneau formulaire (gauche) ── */}
-        <div className="w-[440px] shrink-0 overflow-y-auto border-r border-white/[0.07] px-8 py-7">
+        <div className="w-full shrink-0 overflow-y-auto border-r border-white/[0.07] px-5 py-6 sm:w-[440px] sm:px-8 sm:py-7">
           <AnimatePresence mode="wait">
             <motion.div key={tab}
               initial={{ opacity: 0, x: -6 }}
@@ -733,12 +733,12 @@ export default function ParametresFacturesPage() {
         </div>
 
         {/* ── Flèche ─────────────────────────────────────────────── */}
-        <div className="flex shrink-0 flex-col items-center justify-center px-3">
+        <div className="hidden sm:flex shrink-0 flex-col items-center justify-center px-3">
           <ChevronRight size={22} className="text-white/12" />
         </div>
 
         {/* ── Panneau aperçu (droite) ─────────────────────────────── */}
-        <div className="flex flex-1 flex-col overflow-hidden bg-[#090c12]">
+        <div className="hidden sm:flex sm:flex-1 flex-col overflow-hidden bg-[#090c12]">
           <p className="shrink-0 border-b border-white/[0.05] px-6 py-3 text-[0.62rem] font-bold uppercase tracking-widest text-white/20">
             Aperçu en direct
           </p>

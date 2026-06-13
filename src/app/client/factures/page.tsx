@@ -560,21 +560,43 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
         </button>
       </div>
 
-      {/* Ligne 2 : champs numériques */}
-      <div className="grid grid-cols-[68px_46px_72px_60px_60px_1fr] gap-1.5 items-center">
-        <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
-        <DInput small type="number" value={String(it.quantity)}
-          onChange={v => updItem(idx,"quantity", v===""?0:isNaN(parseFloat(v))?it.quantity:parseFloat(v))} placeholder="1"/>
-        <DInput small type="number" value={String(it.unit_price)}
-          onChange={v => updItem(idx,"unit_price", v===""?0:isNaN(parseFloat(v))?it.unit_price:parseFloat(v))} placeholder="0.00"/>
-        <div className="relative">
-          <DInput small type="number" value={String(it.remise_pct||"")}
-            onChange={v => updItem(idx,"remise_pct", v===""?0:isNaN(parseFloat(v))?it.remise_pct:parseFloat(v))} placeholder="0"/>
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6rem] text-white/30 pointer-events-none">%</span>
+      {/* Ligne 2 : champs numériques — 2 lignes sur mobile, 1 ligne sur desktop */}
+      <div className="space-y-1.5 sm:space-y-0">
+        {/* Ligne 2a (toujours visible) : Unité + Qté + Prix HT */}
+        <div className="grid grid-cols-3 gap-1.5 sm:hidden">
+          <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
+          <DInput small type="number" value={String(it.quantity)}
+            onChange={v => updItem(idx,"quantity", v===""?0:isNaN(parseFloat(v))?it.quantity:parseFloat(v))} placeholder="1"/>
+          <DInput small type="number" value={String(it.unit_price)}
+            onChange={v => updItem(idx,"unit_price", v===""?0:isNaN(parseFloat(v))?it.unit_price:parseFloat(v))} placeholder="0.00"/>
         </div>
-        <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
-          options={VAT_RATES.map(r => ({ val:String(r), label:`${r}%` }))}/>
-        <span className="text-right text-xs font-bold" style={{ color:activeColor }}>{fmtAmount(lineHT, devise)}</span>
+        {/* Ligne 2b (mobile) : Remise + TVA + Total */}
+        <div className="grid grid-cols-[1fr_1fr_auto] gap-1.5 items-center sm:hidden">
+          <div className="relative">
+            <DInput small type="number" value={String(it.remise_pct||"")}
+              onChange={v => updItem(idx,"remise_pct", v===""?0:isNaN(parseFloat(v))?it.remise_pct:parseFloat(v))} placeholder="0"/>
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6rem] text-white/30 pointer-events-none">%</span>
+          </div>
+          <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
+            options={VAT_RATES.map(r => ({ val:String(r), label:`${r}%` }))}/>
+          <span className="text-right text-xs font-bold whitespace-nowrap" style={{ color:activeColor }}>{fmtAmount(lineHT, devise)}</span>
+        </div>
+        {/* Ligne 2 (desktop) : tout en une ligne */}
+        <div className="hidden sm:grid grid-cols-[68px_46px_72px_60px_60px_1fr] gap-1.5 items-center">
+          <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
+          <DInput small type="number" value={String(it.quantity)}
+            onChange={v => updItem(idx,"quantity", v===""?0:isNaN(parseFloat(v))?it.quantity:parseFloat(v))} placeholder="1"/>
+          <DInput small type="number" value={String(it.unit_price)}
+            onChange={v => updItem(idx,"unit_price", v===""?0:isNaN(parseFloat(v))?it.unit_price:parseFloat(v))} placeholder="0.00"/>
+          <div className="relative">
+            <DInput small type="number" value={String(it.remise_pct||"")}
+              onChange={v => updItem(idx,"remise_pct", v===""?0:isNaN(parseFloat(v))?it.remise_pct:parseFloat(v))} placeholder="0"/>
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6rem] text-white/30 pointer-events-none">%</span>
+          </div>
+          <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
+            options={VAT_RATES.map(r => ({ val:String(r), label:`${r}%` }))}/>
+          <span className="text-right text-xs font-bold" style={{ color:activeColor }}>{fmtAmount(lineHT, devise)}</span>
+        </div>
       </div>
     </motion.div>
   );
