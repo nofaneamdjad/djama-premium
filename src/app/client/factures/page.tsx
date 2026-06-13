@@ -1509,59 +1509,6 @@ export default function FacturesPage() {
                       <SectionLabel icon={<Building2 size={10}/>} label="Votre entreprise"/>
                       <div className="space-y-2.5">
                         <LogoUploader value={draft.emetteur_logo} onChange={v => updDraft("emetteur_logo", v)}/>
-                        {draft.emetteur_logo && (
-                          <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 space-y-3">
-                            {/* Drag & resize hint */}
-                            <div className="flex items-start gap-2">
-                              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
-                                style={{ background:`${activeColor}20` }}>
-                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke={activeColor} strokeWidth="1.5" strokeLinecap="round">
-                                  <path d="M5 1v8M1 5h8M2 2l6 6M8 2L2 8"/>
-                                </svg>
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-[0.68rem] font-semibold text-white/60">Drag & resize dans l&apos;aperçu</p>
-                                <p className="text-[0.62rem] text-white/30">Glissez le logo, tirez les poignées pour le redimensionner.</p>
-                              </div>
-                              {logoTransform && (
-                                <button type="button"
-                                  onClick={() => saveLt(null)}
-                                  title="Réinitialiser la position"
-                                  className="shrink-0 rounded-md px-2 py-1 text-[0.6rem] text-white/30 transition hover:text-white/60 border border-white/[0.08]">
-                                  Reset
-                                </button>
-                              )}
-                            </div>
-                            {/* Presets rapides (S / M / L) */}
-                            <div>
-                              <p className="mb-1.5 text-[0.63rem] font-medium text-white/30">Taille rapide</p>
-                              <div className="flex gap-1.5">
-                                {([
-                                  { val:"sm" as const, label:"S", t:{ x:18,y:5,w:30,h:11 } },
-                                  { val:"md" as const, label:"M", t:{ x:18,y:5,w:48,h:18 } },
-                                  { val:"lg" as const, label:"L", t:{ x:18,y:5,w:68,h:25 } },
-                                ]).map(({ val, label, t }) => (
-                                  <button key={val} type="button"
-                                    onClick={() => { setLogoSize(val); localStorage.setItem("pdf.logo_size", val); saveLt(t); }}
-                                    className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all ${logoSize === val ? "text-[#0a0b10] shadow" : "border border-white/[0.09] bg-transparent text-white/40 hover:text-white/70"}`}
-                                    style={logoSize === val ? { backgroundColor:activeColor } : {}}>
-                                    {label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                            {/* Logo seul (sans nom entreprise) */}
-                            <button type="button"
-                              onClick={() => { const next = !logoHideName; setLogoHideName(next); localStorage.setItem("pdf.logo_hide_name", String(next)); }}
-                              className="flex w-full items-center justify-between gap-2 text-left">
-                              <span className="text-[0.7rem] text-white/40">Logo seul (sans nom)</span>
-                              <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${logoHideName ? "bg-[var(--c)]" : "bg-white/10"}`}
-                                style={{ "--c":activeColor } as React.CSSProperties}>
-                                <span className={`inline-block h-3.5 w-3.5 translate-x-0.5 rounded-full bg-white shadow transition-transform ${logoHideName ? "translate-x-[1.15rem]" : ""}`}/>
-                              </span>
-                            </button>
-                          </div>
-                        )}
                         <DInput value={draft.emetteur_nom}     onChange={v => updDraft("emetteur_nom", v)}     placeholder="Nom / Société"/>
                         <DInput value={draft.emetteur_email}   onChange={v => updDraft("emetteur_email", v)}   placeholder="email@exemple.com"/>
                         <DInput value={draft.emetteur_adresse} onChange={v => updDraft("emetteur_adresse", v)} placeholder="Rue, numéro…"/>
