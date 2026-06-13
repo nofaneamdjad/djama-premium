@@ -924,30 +924,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* PRO discovery modal */}
       <ProToolsModal open={proModalOpen} onClose={() => setProModalOpen(false)} />
 
-      {/* Mobile overlay */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-30 bg-black/50 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* ── SIDEBAR ── */}
+      {/* ── SIDEBAR DESKTOP (toujours dans le flux flex à lg+) ── */}
       <aside
-        className={`
-          fixed inset-y-0 left-0 z-40 flex w-[218px] flex-col
-          transition-transform duration-250 ease-out
-          lg:static lg:z-auto lg:translate-x-0
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
+        className="hidden lg:flex w-[218px] flex-shrink-0 flex-col"
         style={{ background: DARK, borderRight: "1px solid rgba(255,255,255,0.07)" }}
       >
         {/* Logo */}
-        <div className="flex h-[52px] shrink-0 items-center justify-between px-4"
+        <div className="flex h-[52px] shrink-0 items-center px-4"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <Link href="/client" className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
@@ -961,10 +944,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               </p>
             </div>
           </Link>
-          <button onClick={() => setSidebarOpen(false)} aria-label="Fermer"
-            className="text-white/25 transition hover:text-white/60 lg:hidden">
-            <X size={14} />
-          </button>
         </div>
 
         {/* Navigation */}
@@ -977,13 +956,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               </p>
               <div className="space-y-0.5">
                 {FREE_NAV.map(item => (
-                  <DarkNavItem key={item.href} {...item} pathname={pathname}
-                    onClick={() => setSidebarOpen(false)} />
+                  <DarkNavItem key={item.href} {...item} pathname={pathname} onClick={() => {}} />
                 ))}
               </div>
               <div className="mx-2 my-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
               <button
-                onClick={() => { setProModalOpen(true); setSidebarOpen(false); }}
+                onClick={() => setProModalOpen(true)}
                 className="group w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-medium transition-all"
                 style={{ background: `${GOLD}0c`, border: `1px solid ${GOLD}1a`, color: GOLD }}
               >
@@ -1011,8 +989,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 )}
                 <div className="space-y-0.5">
                   {group.items.map(item => (
-                    <DarkNavItem key={item.href} {...item} pathname={pathname}
-                      onClick={() => setSidebarOpen(false)} />
+                    <DarkNavItem key={item.href} {...item} pathname={pathname} onClick={() => {}} />
                   ))}
                 </div>
               </div>
@@ -1044,6 +1021,126 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </div>
         </div>
       </aside>
+
+      {/* ── SIDEBAR MOBILE (overlay animé, uniquement quand sidebarOpen) ── */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <>
+            <motion.div
+              key="mobile-backdrop"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-30 bg-black/50"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <motion.aside
+              key="mobile-sidebar"
+              initial={{ x: -218 }} animate={{ x: 0 }} exit={{ x: -218 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="fixed inset-y-0 left-0 z-40 flex w-[218px] flex-col"
+              style={{ background: DARK, borderRight: "1px solid rgba(255,255,255,0.07)" }}
+            >
+              {/* Logo + bouton fermer */}
+              <div className="flex h-[52px] shrink-0 items-center justify-between px-4"
+                style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                <Link href="/client" className="flex items-center gap-2.5">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}28` }}>
+                    <Sparkles size={13} style={{ color: GOLD }} />
+                  </div>
+                  <div className="leading-none">
+                    <p className="text-[0.88rem] font-bold" style={{ color: GOLD }}>DJAMA</p>
+                    <p className="mt-0.5 text-[0.5rem] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.25)" }}>
+                      {isPremium ? "PRO · Actif" : "Plan Gratuit"}
+                    </p>
+                  </div>
+                </Link>
+                <button onClick={() => setSidebarOpen(false)} aria-label="Fermer"
+                  className="text-white/25 transition hover:text-white/60">
+                  <X size={14} />
+                </button>
+              </div>
+
+              {/* Navigation */}
+              <nav className="flex-1 overflow-y-auto px-2 py-3" style={{ scrollbarWidth: "none" }}>
+                {!isPremium ? (
+                  <>
+                    <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
+                      style={{ color: "rgba(255,255,255,0.25)" }}>
+                      Outils gratuits
+                    </p>
+                    <div className="space-y-0.5">
+                      {FREE_NAV.map(item => (
+                        <DarkNavItem key={item.href} {...item} pathname={pathname}
+                          onClick={() => setSidebarOpen(false)} />
+                      ))}
+                    </div>
+                    <div className="mx-2 my-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
+                    <button
+                      onClick={() => { setProModalOpen(true); setSidebarOpen(false); }}
+                      className="group w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-medium transition-all"
+                      style={{ background: `${GOLD}0c`, border: `1px solid ${GOLD}1a`, color: GOLD }}
+                    >
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
+                        style={{ background: `${GOLD}14` }}>
+                        <Lock size={9} style={{ color: GOLD }} />
+                      </div>
+                      <span className="flex-1 text-left">Débloquer les outils PRO</span>
+                      <ChevronRight size={11} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
+                    </button>
+                    <a href="/client/abonnements"
+                      className="mt-2 block text-center text-[0.63rem] font-medium transition hover:opacity-70"
+                      style={{ color: `${GOLD}70` }}>
+                      Voir DJAMA PRO →
+                    </a>
+                  </>
+                ) : (
+                  PREMIUM_GROUPS.map((group, gi) => (
+                    <div key={gi} className={gi > 0 ? "mt-4" : ""}>
+                      {group.label && (
+                        <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
+                          style={{ color: "rgba(255,255,255,0.25)" }}>
+                          {group.label}
+                        </p>
+                      )}
+                      <div className="space-y-0.5">
+                        {group.items.map(item => (
+                          <DarkNavItem key={item.href} {...item} pathname={pathname}
+                            onClick={() => setSidebarOpen(false)} />
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </nav>
+
+              {/* User footer */}
+              <div className="shrink-0 p-2" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2">
+                  <Link href="/client/profil"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.65rem] font-bold transition hover:opacity-75"
+                    style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}22`, color: GOLD }}
+                    title="Mon profil">
+                    {userInitial}
+                  </Link>
+                  <Link href="/client/profil" className="group min-w-0 flex-1">
+                    <p className="truncate text-[0.72rem] font-medium text-white/65 transition group-hover:text-white/85">
+                      {displayName}
+                    </p>
+                    <p className="text-[0.55rem]" style={{ color: "rgba(255,255,255,0.28)" }}>
+                      {isPremium ? "DJAMA PRO" : "Plan Gratuit"}
+                    </p>
+                  </Link>
+                  <button onClick={handleLogout} aria-label="Se déconnecter" title="Se déconnecter"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/25 transition hover:bg-white/5 hover:text-white/60">
+                    <LogOut size={12} />
+                  </button>
+                </div>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ── MAIN CONTENT ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
