@@ -15,7 +15,6 @@ import { fmtEur, fmtDate } from "@/lib/format";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
-import { TemplateSelector } from "@/components/invoice/TemplateSelector";
 import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
 import type { LogoTransform } from "@/components/invoice/LogoDragResize";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
@@ -1738,13 +1737,6 @@ export default function FacturesPage() {
                   <div className="space-y-3">
                     <SectionLabel icon={<Palette size={10}/>} label="Apparence"/>
                     <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
-                    <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
-                      <TemplateSelector
-                        value={draft.template ?? "modern"}
-                        onChange={v => { setDraft(d => d ? { ...d, template:v } : d); setDirty(true); }}
-                        data={draftToPreviewData(draft, items, totals, logoSize)}
-                      />
-                    </div>
                   </div>
 
                   {/* Mobile actions */}
