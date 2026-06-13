@@ -9,6 +9,7 @@ import {
   AlertTriangle, ImagePlus, Palette, Landmark, Eye, Percent,
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
   TrendingUp, Clock, AlertCircle, DollarSign, Settings2,
+  PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEur, fmtDate } from "@/lib/format";
@@ -598,6 +599,7 @@ export default function FacturesPage() {
   const [query,        setQuery]        = useState("");
   const [filterType,   setFilterType]   = useState<"tous"|DocType>("tous");
   const [mobileView,   setMobileView]   = useState<"list"|"editor">("list");
+  const [sidebarOpen,  setSidebarOpen]  = useState(true);
   const [confirmDel,   setConfirmDel]   = useState(false);
   const [showPreview,  setShowPreview]  = useState(false);
 
@@ -1242,7 +1244,7 @@ export default function FacturesPage() {
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 overflow-hidden px-5 py-5 sm:px-5">
 
         {/* ── Sidebar list ── */}
-        <aside className={`flex w-full flex-col overflow-hidden border-r border-white/[0.06] sm:w-[300px] sm:flex-none sm:rounded-xl sm:border sm:border-white/[0.08] ${mobileView === "editor" ? "hidden sm:flex" : "flex"}`}
+        <aside className={`flex-col overflow-hidden border-r border-white/[0.06] sm:rounded-xl sm:border sm:border-white/[0.08] transition-all duration-300 ${mobileView === "editor" ? "hidden sm:flex" : "flex"} ${sidebarOpen ? "w-full sm:w-[300px] sm:flex-none" : "hidden sm:flex sm:w-0 sm:border-0"}`}
           style={{ background:"rgba(255,255,255,0.025)" }}>
 
 
@@ -1369,6 +1371,12 @@ export default function FacturesPage() {
 
               {/* ── Toolbar ── */}
               <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.07] px-5 py-3">
+                {/* Toggle sidebar (desktop) */}
+                <button onClick={() => setSidebarOpen(o => !o)}
+                  title={sidebarOpen ? "Masquer la liste" : "Afficher la liste"}
+                  className="hidden sm:flex items-center justify-center h-7 w-7 rounded-lg border border-white/[0.08] text-white/30 transition hover:bg-white/[0.06] hover:text-white/60">
+                  {sidebarOpen ? <PanelLeftClose size={13}/> : <PanelLeftOpen size={13}/>}
+                </button>
                 <button onClick={() => setMobileView("list")} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition sm:hidden">
                   <ArrowLeft size={13}/>
                 </button>
