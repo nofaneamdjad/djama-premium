@@ -642,7 +642,7 @@ function RapportView({
       setRapport(data);
       setRapportOpen(true);
     } catch {
-      /* silent */
+      toast("Erreur lors de l'analyse IA — réessayez dans quelques instants.", "error");
     } finally {
       setRapportLoading(false);
     }
@@ -1725,7 +1725,7 @@ export default function CRMPage() {
     ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
     const csv = ["Nom,Société,Email,Téléphone,Statut,Type,Secteur,Source,Ville,Budget,Créé le", ...rows].join("\n");
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" }));
     a.download = "contacts.csv";
     a.click();
   }
