@@ -1541,47 +1541,33 @@ export default function FacturesPage() {
                     <DInput label="Objet / Intitulé *" value={draft.sujet} onChange={v => updDraft("sujet", v)} placeholder="Développement application web, Mission de conseil…"/>
                   </div>
 
-                  {/* ── Parties ── */}
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="space-y-3">
-                      <SectionLabel icon={<Building2 size={10}/>} label="Votre entreprise"/>
-                      <div className="space-y-2.5">
-                        <LogoUploader value={draft.emetteur_logo} onChange={v => updDraft("emetteur_logo", v)}/>
-                        <DInput value={draft.emetteur_nom}     onChange={v => updDraft("emetteur_nom", v)}     placeholder="Nom / Société"/>
-                        <DInput value={draft.emetteur_email}   onChange={v => updDraft("emetteur_email", v)}   placeholder="email@exemple.com"/>
-                        <DInput value={draft.emetteur_adresse} onChange={v => updDraft("emetteur_adresse", v)} placeholder="Rue, numéro…"/>
-                        <div className="grid grid-cols-[80px_1fr] gap-2">
-                          <DInput value={draft.emetteur_code_postal} onChange={v => updDraft("emetteur_code_postal", v)} placeholder="75001"/>
-                          <DInput value={draft.emetteur_ville}       onChange={v => updDraft("emetteur_ville", v)}       placeholder="Ville"/>
-                        </div>
-                        <DInput value={draft.emetteur_pays}    onChange={v => updDraft("emetteur_pays", v)}    placeholder="Pays"/>
-                        <DInput value={draft.emetteur_siret}   onChange={v => updDraft("emetteur_siret", v)}   placeholder="SIRET"/>
-                        <DInput value={draft.emetteur_tva}     onChange={v => updDraft("emetteur_tva", v)}     placeholder="N° TVA intracommunautaire (FR12345678901)"/>
-                      </div>
+                  {/* ── Client ── */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2.5">
+                      <User size={10} className="shrink-0 text-blue-400/60"/>
+                      <span className="shrink-0 text-[0.63rem] font-bold uppercase tracking-widest text-white/30">Client</span>
+                      <div className="flex-1 h-px bg-white/[0.06]"/>
+                      <a href="/client/factures/parametres" title="Infos entreprise"
+                        className="flex shrink-0 items-center gap-1 rounded-lg border border-white/[0.07] px-2 py-1 text-[0.62rem] font-semibold text-white/25 transition hover:border-white/20 hover:text-white/50">
+                        <Building2 size={9}/> Mon entreprise
+                      </a>
+                      <button onClick={openCrmModal}
+                        className="flex shrink-0 items-center gap-1 rounded-lg border border-[rgba(96,165,250,0.2)] px-2 py-1 text-[0.62rem] font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400">
+                        <Users size={9}/> CRM
+                      </button>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2.5">
-                        <User size={10} className="shrink-0 text-blue-400/60"/>
-                        <span className="shrink-0 text-[0.63rem] font-bold uppercase tracking-widest text-white/30">Client</span>
-                        <div className="flex-1 h-px bg-white/[0.06]"/>
-                        <button onClick={openCrmModal}
-                          className="flex shrink-0 items-center gap-1 rounded-lg border border-[rgba(96,165,250,0.2)] px-2 py-1 text-[0.62rem] font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400">
-                          <Users size={9}/> CRM
-                        </button>
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      <DInput value={draft.client_nom}       onChange={v => updDraft("client_nom", v)}       placeholder="Prénom Nom du contact"/>
+                      <DInput value={draft.client_societe}   onChange={v => updDraft("client_societe", v)}   placeholder="Société / Entreprise"/>
+                      <DInput value={draft.client_email}     onChange={v => updDraft("client_email", v)}     placeholder="email@client.com"/>
+                      <DInput value={draft.client_telephone} onChange={v => updDraft("client_telephone", v)} placeholder="+33 6 00 00 00 00"/>
+                      <DInput value={draft.client_adresse}   onChange={v => updDraft("client_adresse", v)}   placeholder="Rue, numéro…"/>
+                      <div className="grid grid-cols-[80px_1fr] gap-2">
+                        <DInput value={draft.client_code_postal} onChange={v => updDraft("client_code_postal", v)} placeholder="75001"/>
+                        <DInput value={draft.client_ville}       onChange={v => updDraft("client_ville", v)}       placeholder="Ville"/>
                       </div>
-                      <div className="space-y-2.5">
-                        <DInput value={draft.client_nom}       onChange={v => updDraft("client_nom", v)}       placeholder="Prénom Nom du contact"/>
-                        <DInput value={draft.client_societe}   onChange={v => updDraft("client_societe", v)}   placeholder="Société / Entreprise"/>
-                        <DInput value={draft.client_email}     onChange={v => updDraft("client_email", v)}     placeholder="email@client.com"/>
-                        <DInput value={draft.client_telephone} onChange={v => updDraft("client_telephone", v)} placeholder="+33 6 00 00 00 00"/>
-                        <DInput value={draft.client_adresse}   onChange={v => updDraft("client_adresse", v)}   placeholder="Rue, numéro…"/>
-                        <div className="grid grid-cols-[80px_1fr] gap-2">
-                          <DInput value={draft.client_code_postal} onChange={v => updDraft("client_code_postal", v)} placeholder="75001"/>
-                          <DInput value={draft.client_ville}       onChange={v => updDraft("client_ville", v)}       placeholder="Ville"/>
-                        </div>
-                        <DInput value={draft.client_pays}     onChange={v => updDraft("client_pays", v)}     placeholder="Pays"/>
-                        <DInput value={draft.client_tva}      onChange={v => updDraft("client_tva", v)}      placeholder="N° TVA intracommunautaire"/>
-                      </div>
+                      <DInput value={draft.client_pays}     onChange={v => updDraft("client_pays", v)}     placeholder="Pays"/>
+                      <DInput value={draft.client_tva}      onChange={v => updDraft("client_tva", v)}      placeholder="N° TVA intracommunautaire"/>
                     </div>
                   </div>
 
