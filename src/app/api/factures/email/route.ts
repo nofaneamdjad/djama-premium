@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend }                    from "resend";
 import { createClient }              from "@supabase/supabase-js";
+import { createServerClient }        from "@supabase/ssr";
+import { cookies }                   from "next/headers";
 import { createLogger }              from "@/lib/logger";
 
 export const runtime = "nodejs";
@@ -100,6 +102,16 @@ function invoiceEmailHtml(d: {
 }
 
 export async function POST(req: NextRequest) {
+  /* ── Authentification ── */
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const resend = getResend();
   if (!resend) {
     return NextResponse.json({ error: "Service email non configuré" }, { status: 500 });
@@ -117,11 +129,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "document_id et to_email requis" }, { status: 400 });
   }
 
-  /* ── Récupère le document ── */
+  /* ── Récupère le document (vérifie ownership) ── */
   const { data: doc, error: dbErr } = await supabaseAdmin
     .from("documents")
     .select("*")
     .eq("id", body.document_id)
+    .eq("user_id", user.id)
     .single();
 
   if (dbErr || !doc) {

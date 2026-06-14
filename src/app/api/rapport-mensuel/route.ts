@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
 import { createClient }              from "@supabase/supabase-js";
+import { createServerClient }        from "@supabase/ssr";
+import { cookies }                   from "next/headers";
 import { createLogger }              from "@/lib/logger";
 
 export const runtime = "nodejs";
@@ -48,6 +50,16 @@ Génère un rapport mensuel synthétique en JSON valide (sans markdown) :
 Utilise les vrais chiffres. Sois concret et pragmatique.`;
 
 export async function POST(req: NextRequest) {
+  /* ── Authentification ── */
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Clé API manquante" }, { status: 500 });
@@ -64,6 +76,7 @@ export async function POST(req: NextRequest) {
     supabaseAdmin
       .from("documents")
       .select("client_nom, total_ttc, statut")
+      .eq("user_id", user.id)
       .eq("type", "facture")
       .in("statut", ["envoyé", "payé", "en_retard"])
       .gte("date_document", monthStart)
@@ -71,6 +84,7 @@ export async function POST(req: NextRequest) {
     supabaseAdmin
       .from("expenses")
       .select("category, amount")
+      .eq("user_id", user.id)
       .gte("date", monthStart)
       .lte("date", monthEnd),
   ]);
