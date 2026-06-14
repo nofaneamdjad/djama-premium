@@ -7,8 +7,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-export const runtime    = "nodejs";
+export const runtime     = "nodejs";
 export const maxDuration = 60; // Vercel Pro : 60 s
 
 interface ParsedTx {
@@ -27,6 +29,20 @@ const VALID_CATS = new Set([
   "salaires","fournisseurs","logiciels","marketing",
   "transport","taxes","bancaires","autre",
 ]);
+
+// Rate limit : 5 imports PDF/user/heure (Opus est coûteux)
+const pdfLimits = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(userId: string): boolean {
+  const now  = Date.now();
+  const slot = pdfLimits.get(userId);
+  if (!slot || now > slot.resetAt) {
+    pdfLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    return true;
+  }
+  if (slot.count >= 5) return false;
+  slot.count++;
+  return true;
+}
 
 const SYSTEM_PROMPT = `\
 Tu es un expert-comptable spécialisé en relevés bancaires français.
@@ -57,7 +73,21 @@ Exemple de sortie valide (2 lignes) :
 ]`;
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // ── Auth basique : vérifier ANTHROPIC_API_KEY ──────────────────────────────
+  /* ── Auth ── */
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json({ error: "Limite atteinte : 5 imports PDF par heure." }, { status: 429 });
+  }
+
+  /* ── Clé API ── */
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
     return NextResponse.json(
@@ -66,7 +96,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // ── Lire le fichier depuis le form ─────────────────────────────────────────
+  /* ── Lire le fichier depuis le form ── */
   let formData: FormData;
   try {
     formData = await req.formData();
@@ -89,11 +119,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Fichier trop volumineux — maximum 10 Mo" }, { status: 413 });
   }
 
-  // ── Convertir en base64 ────────────────────────────────────────────────────
+  /* ── Convertir en base64 ── */
   const buffer = await file.arrayBuffer();
   const base64 = Buffer.from(buffer).toString("base64");
 
-  // ── Appel Claude avec support natif PDF ───────────────────────────────────
+  /* ── Appel Claude avec support natif PDF ── */
   const client = new Anthropic({ apiKey, maxRetries: 0, timeout: 55_000 });
 
   let rawText = "";
@@ -133,7 +163,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: `Erreur IA : ${msg}` }, { status: 502 });
   }
 
-  // ── Parser le JSON retourné par Claude ─────────────────────────────────────
+  /* ── Parser le JSON retourné par Claude ── */
   const jsonMatch = rawText.match(/\[[\s\S]*\]/);
   if (!jsonMatch) {
     console.error("[parse-pdf] No JSON array in response:", rawText.slice(0, 300));
@@ -150,7 +180,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Réponse IA mal formée (JSON invalide)" }, { status: 422 });
   }
 
-  // ── Valider et normaliser chaque transaction ───────────────────────────────
+  /* ── Valider et normaliser chaque transaction ── */
   const transactions: ParsedTx[] = [];
   for (const raw of parsed) {
     if (!raw || typeof raw !== "object") continue;
@@ -162,9 +192,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const type   = t.type === "income" || t.type === "expense" ? t.type : null;
     const cat    = typeof t.category === "string" && VALID_CATS.has(t.category) ? t.category : "autre";
 
-    // Vérification minimale : date, libellé, montant, type valides
     if (!date || !label || isNaN(amount) || amount <= 0 || !type) continue;
-    // Date au bon format YYYY-MM-DD
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
 
     transactions.push({
@@ -186,7 +214,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // Trier par date croissante
   transactions.sort((a, b) => a.date.localeCompare(b.date));
 
   return NextResponse.json({ transactions, total: transactions.length });
