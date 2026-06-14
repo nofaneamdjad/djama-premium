@@ -163,6 +163,32 @@ function ExpenseModal({
       if (error) throw error;
       const { data } = supabase.storage.from("receipts").getPublicUrl(path);
       set("receipt_url", data.publicUrl);
+
+      // OCR via Claude vision (images uniquement)
+      if (file.type.startsWith("image/")) {
+        try {
+          const b64 = await new Promise<string>((res, rej) => {
+            const r = new FileReader();
+            r.onload = () => res((r.result as string).split(",")[1]);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+          });
+          const ocrRes = await fetch("/api/depenses/ocr", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image_base64: b64, media_type: file.type }),
+          });
+          if (ocrRes.ok) {
+            const ocr = await ocrRes.json() as {
+              date?: string; amount?: number; description?: string; category?: string;
+            };
+            if (ocr.date)        set("date",        ocr.date);
+            if (ocr.amount)      set("amount",      ocr.amount);
+            if (ocr.description) set("description", ocr.description);
+            if (ocr.category)    set("category",    ocr.category);
+          }
+        } catch { /* OCR optionnel — echec silencieux */ }
+      }
     } catch {
       alert("Erreur upload. Vérifiez que le bucket 'receipts' existe dans Supabase Storage.");
     } finally { setUploading(false); }
@@ -856,7 +882,39 @@ export default function DepensesPage() {
     toast$("Note supprimée");
   }
 
-    function exportCSV() {
+    async function exportPDF() {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const W = 190;
+    doc.setFontSize(16); doc.setFont("helvetica", "bold");
+    doc.text("Rapport de dépenses", 10, 16);
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(120);
+    doc.text(new Date().toLocaleDateString("fr-FR"), 10, 22);
+    doc.text(`${filtered.length} dépense${filtered.length !== 1 ? "s" : ""} · Total : ${fmtCur(filteredTotal)}`, 10, 27);
+    doc.setTextColor(0);
+    let y = 35;
+    const headers = ["Date", "Description", "Catégorie", "Montant", "Statut"];
+    const colW    = [22, 70, 30, 28, 30];
+    doc.setFillColor(245, 245, 245); doc.rect(10, y - 4, W, 7, "F");
+    doc.setFontSize(8); doc.setFont("helvetica", "bold");
+    let x = 10;
+    headers.forEach((h, i) => { doc.text(h, x + 1, y); x += colW[i]; });
+    y += 5;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7.5);
+    filtered.forEach(e => {
+      if (y > 272) { doc.addPage(); y = 16; }
+      x = 10;
+      const row = [
+        e.date, e.description.slice(0, 45), getCat(e.category).l,
+        fmtCur(e.amount, e.currency), getSt(e.status).l,
+      ];
+      row.forEach((cell, i) => { doc.text(String(cell), x + 1, y); x += colW[i]; });
+      y += 5.5;
+    });
+    doc.save("depenses.pdf");
+  }
+
+  function exportCSV() {
     const h = ["Date","Description","Catégorie","Montant","Devise","TVA","TVA récup.","Paiement","Statut","Projet","Centre coût","N° Facture"];
     const rows = filtered.map(e => [
       e.date, `"${e.description}"`, getCat(e.category).l,
@@ -923,6 +981,12 @@ export default function DepensesPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.18 }} onClick={() => void exportPDF()} title="Exporter PDF"
+              className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition-all hover:text-red-400"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <FileCheck size={14} />
+            </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }} onClick={exportCSV} title="Exporter CSV"
               className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition-all hover:text-white"
@@ -1264,12 +1328,37 @@ export default function DepensesPage() {
           <ExpenseModal
             expense={editExpense} reports={reports} userId={userId}
             onSave={saved => {
-              if (editExpense) {
+              const isNew = !editExpense;
+              if (isNew) {
+                setExpenses(es => {
+                  const next = [saved, ...es];
+                  // Alerte budget dépassé
+                  const now = new Date();
+                  const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+                  if (saved.date.startsWith(ym)) {
+                    const cat   = saved.category;
+                    const bud   = budgets.find(b => b.category===cat && b.period==="monthly" && b.year===now.getFullYear() && b.month===now.getMonth()+1);
+                    if (bud && bud.amount > 0) {
+                      const spent = next.filter(e => e.category===cat && e.date.startsWith(ym) && e.status!=="rejected").reduce((a,e) => a+e.amount, 0);
+                      if (spent > bud.amount) toast$(`⚠️ Budget ${getCat(cat).l} dépassé (${fmtCur(spent)} / ${fmtCur(bud.amount)})`, "error");
+                    }
+                  }
+                  return next;
+                });
+                toast$("Dépense ajoutée");
+              } else {
                 setExpenses(es => es.map(e => e.id === saved.id ? saved : e));
                 toast$("Dépense mise à jour");
-              } else {
-                setExpenses(es => [saved, ...es]);
-                toast$("Dépense ajoutée");
+              }
+              // Recalcul total note de frais liée
+              if (saved.expense_report_id) {
+                setExpenses(prev => {
+                  const linked = prev.filter(e => e.expense_report_id === saved.expense_report_id && e.id !== saved.id);
+                  const total  = [...linked, saved].filter(e => e.status !== "rejected").reduce((a,e) => a+e.amount, 0);
+                  void supabaseClient.from("expense_reports").update({ total_amount: total }).eq("id", saved.expense_report_id!);
+                  setReports(rs => rs.map(r => r.id === saved.expense_report_id ? { ...r, total_amount: total } : r));
+                  return prev;
+                });
               }
               setShowModal(false);
               setEditExpense(null);

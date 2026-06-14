@@ -751,10 +751,11 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
 /* ─────────── BOTTOM NAV (mobile only) ─────────── */
 function BottomNav({ pathname, dark = false }: { pathname: string; dark?: boolean }) {
   const items = [
-    { href: "/client",          label: "Accueil",  icon: Home,        exact: true  },
-    { href: "/client/factures", label: "Factures", icon: ReceiptText, exact: false },
-    { href: "/client/planning", label: "Planning", icon: Calendar,    exact: false },
-    { href: "/client/profil",   label: "Profil",   icon: User,        exact: false },
+    { href: "/client",           label: "Accueil",  icon: Home,        exact: true  },
+    { href: "/client/factures",  label: "Factures", icon: ReceiptText, exact: false },
+    { href: "/client/depenses",  label: "Dépenses", icon: CreditCard,  exact: false },
+    { href: "/client/planning",  label: "Planning", icon: Calendar,    exact: false },
+    { href: "/client/profil",    label: "Profil",   icon: User,        exact: false },
   ] as const;
 
   return (
