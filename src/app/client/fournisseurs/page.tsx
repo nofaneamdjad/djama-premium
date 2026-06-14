@@ -966,7 +966,7 @@ export default function FournisseursPage() {
         if (!user) { router.replace("/login"); return; }
         setUserId(user.id);
         const [fRes, oRes, iRes] = await Promise.all([
-          supabase.from("fournisseurs").select("*").eq("user_id", user.id).order("company_name"),
+          supabase.from("fournisseurs").select("*").eq("user_id", user.id).order("company_name").limit(500),
           supabase.from("fournisseur_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
           supabase.from("fournisseur_invoices").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
         ]);
@@ -974,7 +974,7 @@ export default function FournisseursPage() {
         if (!oRes.error && oRes.data) setOrders(oRes.data as FOrder[]);
         if (!iRes.error && iRes.data) setInvoices(iRes.data as FInvoice[]);
       } catch {
-        // Erreur réseau — silencieux
+        toast("Erreur réseau — impossible de charger les fournisseurs", "error");
       } finally {
         setLoading(false);
       }
