@@ -282,6 +282,7 @@ export default function BlocNotesPage() {
   const [voiceLoad,  setVoiceLoad]  = useState(false);
 
   /* ── Notebooks (Canvas) ── */
+  const [hasMore,       setHasMore]       = useState(false);
   const [notebooks,     setNotebooks]     = useState<Notebook[]>([]);
   const [activeNb,      setActiveNb]      = useState<Notebook|null>(null);
   const [nbPages,       setNbPages]       = useState<NotebookPage[]>([]);
@@ -320,16 +321,31 @@ export default function BlocNotesPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
     const [nRes, fRes] = await Promise.all([
-      supabase.from("notes").select("*").eq("user_id",user.id).order("updated_at",{ascending:false}).limit(500),
+      supabase.from("notes").select("*").eq("user_id",user.id).order("updated_at",{ascending:false}).limit(50),
       supabase.from("note_folders").select("*").eq("user_id",user.id).order("name"),
     ]);
-    if (nRes.data) setNotes(nRes.data as Note[]);
+    if (nRes.data) {
+      setNotes(nRes.data as Note[]);
+      setHasMore(nRes.data.length === 50);
+      setFavSet(new Set((nRes.data as Note[]).filter(n => n.is_favorite).map(n => n.id)));
+    }
     if (fRes.data) setFolders(fRes.data as NoteFolder[]);
-    setFavSet(getLocalFavs());
     setLoading(false);
   }, []);
 
   useEffect(() => { void fetchAll(); }, [fetchAll]);
+
+  const loadMore = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from("notes").select("*")
+      .eq("user_id", user.id).order("updated_at", { ascending: false })
+      .range(notes.length, notes.length + 49);
+    if (data) {
+      setNotes(p => [...p, ...(data as Note[])]);
+      setHasMore(data.length === 50);
+    }
+  }, [notes.length]);
 
   /* ══ Notebook CRUD ══ */
   const fetchNotebooks = useCallback(async () => {
@@ -520,10 +536,12 @@ export default function BlocNotesPage() {
   }
 
   function toggleFav(id: string) {
+    const newVal = !favSet.has(id);
     const s = new Set(favSet);
-    if (s.has(id)) s.delete(id); else s.add(id);
+    if (newVal) s.add(id); else s.delete(id);
     setFavSet(s);
-    try { localStorage.setItem(FAV_KEY, JSON.stringify([...s])); } catch {}
+    setNotes(p => p.map(n => n.id === id ? { ...n, is_favorite: newVal } : n));
+    void supabase.from("notes").update({ is_favorite: newVal }).eq("id", id);
   }
 
   async function toggleArchive() {
@@ -1054,6 +1072,15 @@ export default function BlocNotesPage() {
                     );
                   })}
                 </AnimatePresence>
+              )}
+              {/* Load more */}
+              {hasMore && (
+                <div className="px-4 py-3">
+                  <button onClick={() => void loadMore()}
+                    className="w-full rounded-xl border border-white/[0.07] py-2 text-[0.7rem] font-semibold text-white/30 transition hover:border-white/14 hover:text-white/55">
+                    Charger plus de notes…
+                  </button>
+                </div>
               )}
             </div>
           </>
