@@ -1,10 +1,26 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export const runtime  = "nodejs";
 export const dynamic  = "force-dynamic";
 
 const MODEL = "claude-haiku-4-5-20251001";
+
+// Rate limit : 5 générations de contrat/user/heure
+const generateLimits = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(userId: string): boolean {
+  const now  = Date.now();
+  const slot = generateLimits.get(userId);
+  if (!slot || now > slot.resetAt) {
+    generateLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    return true;
+  }
+  if (slot.count >= 5) return false;
+  slot.count++;
+  return true;
+}
 
 /* ─────────────────────────────────────────────────────────
    PROMPT SYSTÈME — contrat professionnel, ton juridique
@@ -93,6 +109,20 @@ const TYPE_LABEL: Record<string, string> = {
    HANDLER
 ───────────────────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
+  /* ── Auth ── */
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json({ error: "Limite atteinte : 5 générations par heure." }, { status: 429 });
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Clé API Anthropic manquante." }, { status: 500 });

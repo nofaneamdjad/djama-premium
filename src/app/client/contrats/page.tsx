@@ -1278,7 +1278,7 @@ export default function ContratsPage() {
       if (!actRes.error && actRes.data) setActivities(actRes.data as CActivity[]);
       if (!comRes.error && comRes.data) setComments(comRes.data as CComment[]);
     }).catch(() => {
-      // Erreur réseau — silencieux
+      toast("Impossible de charger les détails du contrat (signataires/historique)", "error");
     });
   }, [selected?.id, userId]);
 
@@ -1412,7 +1412,8 @@ export default function ContratsPage() {
       if (!res.ok || json.error) throw new Error(json.error ?? "Erreur de génération");
       await handleCreateContract(form, json.content ?? "");
     } catch (err: unknown) {
-      // Fallback to template if API unavailable
+      // IA indisponible — fallback sur le template local
+      toast("Génération IA indisponible — contrat créé avec le modèle standard.", "error");
       const templateContent = buildContractText(form);
       await handleCreateContract(form, templateContent);
     } finally { setGenerating(false); }
