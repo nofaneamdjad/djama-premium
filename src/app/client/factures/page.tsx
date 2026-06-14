@@ -1690,19 +1690,6 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
-                  {/* ── Coordonnées bancaires ── */}
-                  <div className="space-y-3">
-                    <SectionLabel icon={<Landmark size={10}/>} label="Coordonnées bancaires" hint="optionnel — apparaît dans le PDF"/>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <DInput label="Titulaire du compte" value={draft.rib_titulaire} onChange={v => updDraft("rib_titulaire", v)} placeholder="Prénom NOM"/>
-                      <DInput label="Banque"              value={draft.rib_banque}    onChange={v => updDraft("rib_banque", v)}    placeholder="Nom de la banque"/>
-                      <div className="sm:col-span-2">
-                        <DInput label="IBAN" value={draft.rib_iban} onChange={v => updDraft("rib_iban", v)} placeholder="FR76 3000 6000 0112 3456 7890 189"/>
-                      </div>
-                      <DInput label="BIC / SWIFT" value={draft.rib_bic} onChange={v => updDraft("rib_bic", v)} placeholder="BNPAFRPP"/>
-                    </div>
-                  </div>
-
                   {/* ── Notes & conditions ── */}
                   <div className="space-y-3">
                     <SectionLabel icon={<FileText size={10}/>} label="Notes & conditions"/>
