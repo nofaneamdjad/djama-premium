@@ -1532,7 +1532,7 @@ export default function FacturesPage() {
                   {/* ── Informations du document ── */}
                   <div className="space-y-3">
                     <SectionLabel icon={<FileText size={10}/>} label="Informations du document"/>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3">
                       <DInput label="Numéro" value={draft.numero} onChange={v => updDraft("numero", v)} placeholder="FAC-2026-001"/>
                       <DInput label="Date d'émission" type="date" value={draft.date_document} onChange={v => updDraft("date_document", v)}/>
                       <DInput label={draft.type === "facture" ? "Date d'échéance" : "Valable jusqu'au"} type="date" value={draft.date_echeance} onChange={v => updDraft("date_echeance", v)}/>
