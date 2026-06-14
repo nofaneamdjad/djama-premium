@@ -19,6 +19,20 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
+// Rate limiter : max 10 emails / user / heure
+const emailLimits = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(userId: string): boolean {
+  const now  = Date.now();
+  const slot = emailLimits.get(userId);
+  if (!slot || now > slot.resetAt) {
+    emailLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    return true;
+  }
+  if (slot.count >= 10) return false;
+  slot.count++;
+  return true;
+}
+
 function getResend() {
   const key = process.env.RESEND_API_KEY?.trim();
   return key ? new Resend(key) : null;
@@ -30,6 +44,16 @@ function FROM_EMAIL() {
 const GOLD = "#c9a55a";
 const BG   = "#09090b";
 const CARD = "#111113";
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/\n/g, "<br>");
+}
 
 function invoiceEmailHtml(d: {
   typeLabel:  string;
@@ -112,6 +136,13 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json(
+      { error: "Limite atteinte : 10 emails par heure." },
+      { status: 429 }
+    );
+  }
+
   const resend = getResend();
   if (!resend) {
     return NextResponse.json({ error: "Service email non configuré" }, { status: 500 });
@@ -152,8 +183,9 @@ export async function POST(req: NextRequest) {
     : "";
   const subject    = body.subject
     || `${typeLabel} ${doc.numero} — ${fromName}`;
-  const message    = body.message
+  const rawMessage = body.message
     || `Bonjour ${toName},\n\nVeuillez trouver ci-dessous les détails de votre ${typeLabel.toLowerCase()}.\n\nNous restons à votre disposition pour toute question.`;
+  const message = escapeHtml(rawMessage);
 
   const html = invoiceEmailHtml({
     typeLabel,

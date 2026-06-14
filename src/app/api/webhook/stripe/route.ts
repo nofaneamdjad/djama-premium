@@ -165,6 +165,19 @@ async function upsertClientRecord(opts: {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Marquer une facture comme payée (paiement via lien de paiement)
+───────────────────────────────────────────────────────────── */
+async function markDocumentPaid(documentId: string) {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("documents")
+    .update({ statut: "payé", updated_at: new Date().toISOString() })
+    .eq("id", documentId);
+  if (error) log.error("markDocumentPaid error", error.message);
+  else log.info(`Document ${documentId} → payé`);
+}
+
+/* ─────────────────────────────────────────────────────────────
    checkout.session.completed
    → Flux principal : créer compte + activer + envoyer email
 ───────────────────────────────────────────────────────────── */
@@ -454,8 +467,10 @@ export async function POST(req: Request) {
   /* ── checkout.session.completed ─────────────────────────── */
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    /* Router selon le produit */
-    if (session.metadata?.product === "coaching_ia") {
+    if (session.metadata?.document_id) {
+      /* Paiement lien de paiement (facture/devis) */
+      await markDocumentPaid(session.metadata.document_id);
+    } else if (session.metadata?.product === "coaching_ia") {
       await activateCoachingIA(session);
     } else {
       await handleCheckoutCompleted(session);

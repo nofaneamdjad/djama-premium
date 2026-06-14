@@ -836,12 +836,26 @@ export default function FacturesPage() {
     if (!draft) { showToast("error", "Aucun document ouvert."); return; }
     // ── Validation des champs obligatoires ───────────────────────────────────
     if (!draft.sujet.trim()) { showToast("error", "L'objet / intitulé est requis."); return; }
-    // Auto-génère le numéro si vide
+    if (!draft.client_nom.trim() && !draft.client_societe.trim()) { showToast("error", "Le nom ou la société du client est requis."); return; }
+    if (items.length === 0 || items.every(it => !it.description.trim())) { showToast("error", "Ajoutez au moins une ligne de prestation."); return; }
+    // Auto-génère le numéro côté serveur si vide
     let workingDraft = draft;
     if (!workingDraft.numero.trim()) {
-      const autoNum = newNumero(workingDraft.type, documents);
-      updDraft("numero", autoNum);
-      workingDraft = { ...workingDraft, numero: autoNum };
+      try {
+        const numRes = await fetch("/api/factures/numero", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: workingDraft.type }),
+        });
+        const numData = await numRes.json() as { numero?: string };
+        const autoNum = numData.numero || newNumero(workingDraft.type, documents);
+        updDraft("numero", autoNum);
+        workingDraft = { ...workingDraft, numero: autoNum };
+      } catch {
+        const autoNum = newNumero(workingDraft.type, documents);
+        updDraft("numero", autoNum);
+        workingDraft = { ...workingDraft, numero: autoNum };
+      }
     }
     setSaving(true);
     const { data:{ user }, error:authErr } = await supabase.auth.getUser();
@@ -1119,7 +1133,7 @@ export default function FacturesPage() {
     try {
       const res = await fetch("/api/stripe/payment-link", {
         method:"POST", headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ amount:totals.ttc, description:draft.sujet||`${draft.type === "facture" ? "Facture":"Devis"} ${draft.numero}`, document_id:selected.id, reference:draft.numero, client_email:draft.client_email, currency:(draft.devise||"EUR").toLowerCase() }),
+        body: JSON.stringify({ document_id: selected.id }),
       });
       const data = await res.json() as { url?:string; error?:string };
       if (!res.ok || data.error) throw new Error(data.error || "Erreur Stripe");
