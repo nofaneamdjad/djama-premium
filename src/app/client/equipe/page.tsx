@@ -245,9 +245,11 @@ export default function EquipePage() {
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ memberId:credTarget.id, name:credTarget.name, email:credEmail.trim(), password:credPwd.trim(), chefId }),
       });
-      const data = await res.json();
-      if (!res.ok) { toast(data.error ?? "Erreur création compte", "error"); }
-      else {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        toast(err.error ?? "Erreur création compte", "error");
+      } else {
+        const data = await res.json() as { auth_user_id?: string; needs_confirmation?: boolean };
         setCredResult({ email:credEmail.trim(), password:credPwd.trim(), needsConfirmation:!!data.needs_confirmation });
         setMembers(p=>p.map(m=>m.id===credTarget.id ? {...m,auth_user_id:data.auth_user_id} : m));
         toast("Compte créé avec succès !", "success");
@@ -262,11 +264,11 @@ export default function EquipePage() {
       if (!user) { router.replace("/login"); return; }
       const uid = user.id;
       const [mR,tkR,msgR,lR,mrR] = await Promise.all([
-        supabase.from("team_members").select("*").eq("user_id",uid).order("name"),
-        supabase.from("team_tasks").select("*").eq("user_id",uid).order("created_at",{ascending:false}),
+        supabase.from("team_members").select("*").eq("user_id",uid).order("name").limit(200),
+        supabase.from("team_tasks").select("*").eq("user_id",uid).order("created_at",{ascending:false}).limit(500),
         supabase.from("team_messages").select("*").eq("user_id",uid).order("created_at").limit(200),
-        supabase.from("team_leaves").select("*").eq("user_id",uid).order("start_date",{ascending:false}),
-        supabase.from("team_meetings").select("*").eq("user_id",uid).order("date_at"),
+        supabase.from("team_leaves").select("*").eq("user_id",uid).order("start_date",{ascending:false}).limit(200),
+        supabase.from("team_meetings").select("*").eq("user_id",uid).order("date_at").limit(200),
       ]);
       setMembers((mR.data??[]).map(r=>parseMember(r as Record<string,unknown>)));
       setTasks((tkR.data??[]).map(r=>parseTask(r as Record<string,unknown>)));
@@ -274,7 +276,7 @@ export default function EquipePage() {
       setLeaves((lR.data??[]) as TeamLeave[]);
       setMeetings((mrR.data??[]) as TeamMeeting[]);
     } catch {
-      // erreur réseau
+      toast("Erreur réseau — impossible de charger l'équipe", "error");
     } finally {
       setLoading(false);
     }
@@ -375,10 +377,11 @@ export default function EquipePage() {
     if (!quickTask.trim()) return;
     const { data:{ user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("team_tasks").insert({
+    const { data, error: taskErr } = await supabase.from("team_tasks").insert({
       user_id:user.id, title:quickTask.trim(), status:qTaskCol,
       priority:"normal",
     }).select().single();
+    if (taskErr) { toast("Erreur lors de la création de la tâche", "error"); return; }
     if (data) setTasks(p=>[parseTask(data as Record<string,unknown>),...p]);
     setQuickTask("");
   }
@@ -412,7 +415,8 @@ export default function EquipePage() {
     toast("Demande de congé envoyée", "success");
   }
   async function updateLeaveStatus(id:string, status:LeaveStatus) {
-    await supabase.from("team_leaves").update({status}).eq("id",id);
+    const { error } = await supabase.from("team_leaves").update({status}).eq("id",id);
+    if (error) { toast("Erreur lors de la mise à jour du congé", "error"); return; }
     setLeaves(p=>p.map(l=>l.id===id?{...l,status}:l));
   }
 
@@ -446,6 +450,7 @@ export default function EquipePage() {
         body:JSON.stringify({action:"chat",content:ctx,prompt}),
       });
       const j = await r.json() as {result?:string;error?:string};
+      if (!r.ok) { setAiResult(j.error ?? `Erreur ${r.status}`); return; }
       setAiResult(j.result ?? j.error ?? "Erreur");
     } catch { setAiResult("Erreur réseau"); }
     finally { setAiLoad(false); }
