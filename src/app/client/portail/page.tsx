@@ -137,7 +137,7 @@ export default function PortailClientPage() {
         && (filter === "all" || c.statut === filter);
   });
 
-  const counts = { all: clients.length, ...Object.fromEntries(Object.keys(STATUT).map(k => [k, clients.filter(c => c.statut === k).length])) };
+  const counts: Record<string, number> = { all: clients.length, ...Object.fromEntries(Object.keys(STATUT).map(k => [k, clients.filter(c => c.statut === k).length])) };
 
   /* ═══════════════════════════════════════════════════════════════ */
   return (
