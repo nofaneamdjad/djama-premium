@@ -1859,7 +1859,7 @@ export default function EspaceCoachingIA() {
   ];
 
   return (
-    <div className={`flex overflow-hidden transition-all duration-300 ${focusMode ? "h-screen" : "h-[calc(100vh-56px)]"}`}>
+    <div className={`flex overflow-hidden bg-[#07080e] transition-all duration-300 ${focusMode ? "h-screen" : "h-[calc(100vh-56px)]"}`}>
 
       {/* ── SIDEBAR ─────────────────────────────────────────── */}
       <AnimatePresence>
