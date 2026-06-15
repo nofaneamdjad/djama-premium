@@ -3,11 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Building2, Plus, Search, Mail, Phone, Trash2, X, Loader2,
-  User, Globe, MapPin, FileText, CheckCircle2, Clock,
-  Pause, UserX, Copy, Check, Edit3, Save, ArrowLeft,
-  Briefcase, Star, Send, Info, ChevronRight, Users,
-  TrendingUp, AlertCircle, Sparkles, MessageSquare,
+  Plus, Search, Mail, Phone, Trash2, X, Loader2, Globe, MapPin,
+  FileText, CheckCircle2, Pause, UserX, Copy, Check, Edit3, Save,
+  Briefcase, Star, Send, MessageSquare, Users, TrendingUp,
+  Sparkles, ChevronDown, MoreHorizontal, ArrowUpRight, Building2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToastStack, ToastStack } from "@/components/ui/ToastStack";
@@ -24,60 +23,74 @@ interface Client {
   site_web?: string; adresse?: string; tags: string[];
 }
 
-const STATUT: Record<Statut, { label: string; color: string; bg: string; border: string; icon: React.ElementType }> = {
-  prospect: { label: "Prospect",  color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.3)", icon: Star        },
-  actif:    { label: "Actif",     color: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.3)", icon: CheckCircle2 },
-  pause:    { label: "En pause",  color: "#6366f1", bg: "rgba(99,102,241,0.12)", border: "rgba(99,102,241,0.3)", icon: Pause        },
-  termine:  { label: "Terminé",   color: "#94a3b8", bg: "rgba(148,163,184,0.12)",border: "rgba(148,163,184,0.3)",icon: UserX        },
+const STATUT: Record<Statut, { label: string; color: string; glow: string; bg: string; border: string; icon: React.ElementType }> = {
+  prospect: { label: "Prospect",  color: "#f59e0b", glow: "rgba(245,158,11,0.35)", bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.25)",  icon: Star         },
+  actif:    { label: "Actif",     color: "#10b981", glow: "rgba(16,185,129,0.35)", bg: "rgba(16,185,129,0.1)",  border: "rgba(16,185,129,0.25)",  icon: CheckCircle2  },
+  pause:    { label: "En pause",  color: "#6366f1", glow: "rgba(99,102,241,0.35)",  bg: "rgba(99,102,241,0.1)",  border: "rgba(99,102,241,0.25)",  icon: Pause         },
+  termine:  { label: "Terminé",   color: "#64748b", glow: "rgba(100,116,139,0.25)", bg: "rgba(100,116,139,0.08)",border: "rgba(100,116,139,0.2)",  icon: UserX         },
 };
+
+const AVATAR_GRADIENTS = [
+  "linear-gradient(135deg,#6366f1,#8b5cf6)",
+  "linear-gradient(135deg,#10b981,#059669)",
+  "linear-gradient(135deg,#f59e0b,#d97706)",
+  "linear-gradient(135deg,#3b82f6,#2563eb)",
+  "linear-gradient(135deg,#ec4899,#db2777)",
+  "linear-gradient(135deg,#14b8a6,#0d9488)",
+];
+function avatarGradient(id: string) {
+  const n = id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return AVATAR_GRADIENTS[n % AVATAR_GRADIENTS.length];
+}
 
 function CopyBtn({ text }: { text: string }) {
   const [ok, setOk] = useState(false);
-  function copy() { navigator.clipboard.writeText(text).then(() => { setOk(true); setTimeout(() => setOk(false), 1800); }); }
+  function copy() { navigator.clipboard.writeText(text).then(() => { setOk(true); setTimeout(() => setOk(false), 1500); }); }
   return (
-    <button onClick={copy} title="Copier"
-      className="flex h-6 w-6 items-center justify-center rounded-md text-gray-300 transition hover:bg-gray-100 hover:text-gray-600">
-      {ok ? <Check size={11} className="text-green-500" /> : <Copy size={11} />}
+    <button onClick={copy} className="rounded-md p-1 text-white/25 transition hover:bg-white/8 hover:text-white/60">
+      {ok ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
     </button>
   );
 }
 
 export default function PortailClientPage() {
-  const [clients,  setClients]  = useState<Client[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [search,   setSearch]   = useState("");
-  const [filter,   setFilter]   = useState<Statut | "all">("all");
-  const [selected, setSelected] = useState<Client | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [userId,   setUserId]   = useState<string | null>(null);
-  const { toasts, add, remove } = useToastStack();
-  const [form, setForm]         = useState({ nom: "", email: "", phone: "", entreprise: "", statut: "actif" as Statut, secteur: "", site_web: "", adresse: "" });
-  const [notes, setNotes]       = useState("");
-  const [editNotes, setEditNotes] = useState(false);
-  const [savingNotes, setSavingNotes] = useState(false);
-  const [tab, setTab]           = useState<"info" | "notes">("info");
+  const [clients,    setClients]    = useState<Client[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [search,     setSearch]     = useState("");
+  const [filter,     setFilter]     = useState<Statut | "all">("all");
+  const [drawer,     setDrawer]     = useState<Client | null>(null);
+  const [showForm,   setShowForm]   = useState(false);
+  const [userId,     setUserId]     = useState<string | null>(null);
+  const [tab,        setTab]        = useState<"info" | "notes">("info");
+  const [notes,      setNotes]      = useState("");
+  const [editNotes,  setEditNotes]  = useState(false);
+  const [savingN,    setSavingN]    = useState(false);
+  const [form,       setForm]       = useState({ nom: "", email: "", phone: "", entreprise: "", statut: "actif" as Statut, secteur: "", site_web: "", adresse: "" });
+  const { toasts, add, remove }     = useToastStack();
   const notesRef = useRef<HTMLTextAreaElement>(null);
+
+  const normalize = (c: Client): Client => ({
+    ...c,
+    nom:    c.nom    || "—",
+    email:  c.email  || "",
+    statut: (c.statut in STATUT ? c.statut : "actif") as Statut,
+    notes:  c.notes  ?? "",
+    tags:   c.tags   ?? [],
+  });
 
   const load = useCallback(async (uid?: string | null) => {
     const id = uid ?? userId;
     if (!id) return;
     setLoading(true);
     const { data } = await supabase.from("portail_clients").select("*").eq("user_id", id).order("created_at", { ascending: false });
-    const list = ((data as Client[]) ?? []).map(c => ({
-      ...c,
-      nom:    c.nom    || "—",
-      email:  c.email  || "",
-      statut: (c.statut in STATUT ? c.statut : "actif") as Statut,
-      notes:  c.notes  ?? "",
-      tags:   c.tags   ?? [],
-    }));
+    const list = ((data as Client[]) ?? []).map(normalize);
     setClients(list);
     setLoading(false);
-    if (selected) {
-      const fresh = list.find(c => c.id === selected.id);
-      if (fresh) { setSelected(fresh); setNotes(fresh.notes); }
+    if (drawer) {
+      const fresh = list.find(c => c.id === drawer.id);
+      if (fresh) setDrawer(fresh);
     }
-  }, [userId, selected?.id]);
+  }, [userId, drawer?.id]);
 
   useEffect(() => {
     (async () => {
@@ -88,9 +101,9 @@ export default function PortailClientPage() {
     })();
   }, []);
 
-  useEffect(() => { if (selected) { setNotes(selected.notes); setTab("info"); setEditNotes(false); } }, [selected?.id]);
+  useEffect(() => { if (drawer) { setNotes(drawer.notes); setTab("info"); setEditNotes(false); } }, [drawer?.id]);
 
-  async function invite() {
+  async function create() {
     if (!userId || !form.nom.trim() || !form.email.trim()) return;
     const { error } = await supabase.from("portail_clients").insert({
       user_id: userId, nom: form.nom.trim(), email: form.email.trim(),
@@ -106,30 +119,34 @@ export default function PortailClientPage() {
     await load();
   }
 
-  async function deleteClient(id: string, nom: string) {
+  async function del(id: string, nom: string) {
     if (!confirm(`Supprimer ${nom} ?`)) return;
     await supabase.from("portail_clients").delete().eq("id", id);
-    if (selected?.id === id) setSelected(null);
+    if (drawer?.id === id) setDrawer(null);
     add("Client supprimé", "success");
     await load();
   }
 
-  async function updateStatut(id: string, statut: Statut) {
+  async function changeStatut(id: string, statut: Statut) {
     await supabase.from("portail_clients").update({ statut }).eq("id", id);
-    setSelected(c => c?.id === id ? { ...c, statut } : c);
     setClients(cs => cs.map(c => c.id === id ? { ...c, statut } : c));
-    add("Statut mis à jour", "success");
+    if (drawer?.id === id) setDrawer(d => d ? { ...d, statut } : d);
   }
 
   async function saveNotes() {
-    if (!selected) return;
-    setSavingNotes(true);
-    await supabase.from("portail_clients").update({ notes }).eq("id", selected.id);
-    setSelected(c => c ? { ...c, notes } : null);
-    setClients(cs => cs.map(c => c.id === selected.id ? { ...c, notes } : c));
-    setSavingNotes(false); setEditNotes(false);
+    if (!drawer) return;
+    setSavingN(true);
+    await supabase.from("portail_clients").update({ notes }).eq("id", drawer.id);
+    setClients(cs => cs.map(c => c.id === drawer.id ? { ...c, notes } : c));
+    setDrawer(d => d ? { ...d, notes } : d);
+    setSavingN(false); setEditNotes(false);
     add("Notes sauvegardées", "success");
   }
+
+  const counts: Record<string, number> = {
+    all: clients.length,
+    ...Object.fromEntries(Object.keys(STATUT).map(k => [k, clients.filter(c => c.statut === k).length])),
+  };
 
   const filtered = clients.filter(c => {
     const q = search.toLowerCase();
@@ -137,65 +154,73 @@ export default function PortailClientPage() {
         && (filter === "all" || c.statut === filter);
   });
 
-  const counts: Record<string, number> = { all: clients.length, ...Object.fromEntries(Object.keys(STATUT).map(k => [k, clients.filter(c => c.statut === k).length])) };
-
-  /* ═══════════════════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════════════════════════ */
   return (
-    <div className="flex h-full min-h-screen bg-[#f0f2f5]">
+    <div className="relative min-h-screen bg-[#07080e] text-white">
       <ToastStack toasts={toasts} remove={remove} />
 
-      {/* ══ PANNEAU LISTE ══ */}
-      <div className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${selected ? "hidden lg:flex lg:w-[360px] xl:w-[400px]" : "w-full lg:w-[360px] xl:w-[400px]"}`}>
+      {/* ── PAGE ── */}
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
 
-        {/* Header */}
-        <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] px-5 py-6">
-          <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
-                <Users size={18} className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-base font-bold text-white">Portail Client</h1>
-                <p className="text-[0.65rem] text-white/40">{clients.length} client{clients.length !== 1 ? "s" : ""} enregistrés</p>
-              </div>
-            </div>
-            <button onClick={() => setShowForm(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/20 border border-white/10">
-              <Plus size={13} /> Ajouter
-            </button>
+        {/* ── HEADER ── */}
+        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">CRM Client</p>
+            <h1 className="text-2xl font-black text-white sm:text-3xl">Portail Client</h1>
           </div>
-
-          {/* Mini stats */}
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: "Actifs",    value: counts.actif ?? 0,    color: "#10b981" },
-              { label: "Prospects", value: counts.prospect ?? 0, color: "#f59e0b" },
-            ].map(s => (
-              <div key={s.label} className="rounded-xl bg-white/8 border border-white/10 px-3 py-2.5">
-                <p className="text-xl font-extrabold text-white">{s.value}</p>
-                <p className="text-[0.62rem] font-medium" style={{ color: s.color }}>{s.label}</p>
-              </div>
-            ))}
-          </div>
+          <button onClick={() => setShowForm(true)}
+            className="group flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#07080e] shadow-lg shadow-white/10 transition hover:scale-[1.02] hover:shadow-white/20 active:scale-[0.98]">
+            <Plus size={16} /> Nouveau client
+            <ArrowUpRight size={13} className="ml-0.5 opacity-40 transition group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </button>
         </div>
 
-        {/* Search + filters */}
-        <div className="border-b border-gray-100 px-4 py-3">
-          <div className="mb-3 flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5">
-            <Search size={13} className="text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un client…"
-              className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none" />
+        {/* ── STATS ── */}
+        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "Total",     value: counts.all       ?? 0, color: "#ffffff", icon: Users       },
+            { label: "Actifs",    value: counts.actif     ?? 0, color: "#10b981", icon: CheckCircle2 },
+            { label: "Prospects", value: counts.prospect  ?? 0, color: "#f59e0b", icon: Star         },
+            { label: "Pause",     value: counts.pause     ?? 0, color: "#6366f1", icon: Pause        },
+          ].map(({ label, value, color, icon: Icon }) => (
+            <div key={label}
+              className="relative overflow-hidden rounded-2xl border border-white/6 bg-white/4 p-5 backdrop-blur-sm">
+              <div className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rounded-full opacity-10 blur-2xl"
+                style={{ background: color }} />
+              <p className="mb-2 text-2xl font-black" style={{ color }}>{value}</p>
+              <div className="flex items-center gap-1.5">
+                <Icon size={11} style={{ color }} className="opacity-70" />
+                <p className="text-[0.65rem] font-semibold text-white/40">{label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── TOOLBAR ── */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-1 items-center gap-2.5 rounded-2xl border border-white/8 bg-white/4 px-4 py-3 backdrop-blur-sm">
+            <Search size={14} className="text-white/30" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un client, une entreprise…"
+              className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none" />
+            {search && <button onClick={() => setSearch("")} className="text-white/30 transition hover:text-white/60"><X size={13} /></button>}
           </div>
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+          <div className="flex gap-1.5 overflow-x-auto">
             {(["all", "prospect", "actif", "pause", "termine"] as const).map(k => {
               const s = k !== "all" ? STATUT[k] : null;
               const active = filter === k;
               return (
                 <button key={k} onClick={() => setFilter(k)}
-                  className={`flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-[0.65rem] font-semibold transition-all ${active ? "text-white shadow-sm" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
-                  style={active ? { background: s?.color ?? "#1e293b", border: `1px solid ${s?.color ?? "#1e293b"}` } : {}}>
+                  className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-[0.68rem] font-bold transition-all ${
+                    active
+                      ? "text-white"
+                      : "border border-white/8 bg-white/4 text-white/40 hover:text-white/70"
+                  }`}
+                  style={active && s ? { background: s.bg, border: `1px solid ${s.border}`, color: s.color }
+                    : active ? { background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }
+                    : {}}>
                   {k === "all" ? "Tous" : s!.label}
-                  <span className={`rounded-full px-1 text-[0.55rem] font-bold ${active ? "bg-white/20 text-white" : "bg-white text-gray-500"}`}>
+                  <span className="rounded-full px-1.5 py-0.5 text-[0.55rem]"
+                    style={active ? { background: "rgba(0,0,0,0.2)" } : { background: "rgba(255,255,255,0.07)" }}>
                     {counts[k] ?? 0}
                   </span>
                 </button>
@@ -204,220 +229,228 @@ export default function PortailClientPage() {
           </div>
         </div>
 
-        {/* Liste */}
-        <div className="flex-1 overflow-y-auto p-3">
-          {loading ? (
-            <div className="flex items-center justify-center py-16"><Loader2 size={20} className="animate-spin text-gray-300" /></div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center px-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
-                <Users size={22} className="text-gray-300" />
-              </div>
-              <p className="text-sm font-semibold text-gray-500">{search ? "Aucun résultat" : "Aucun client"}</p>
-              {!search && <button onClick={() => setShowForm(true)} className="rounded-xl bg-[#1e293b] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#0f172a]">+ Ajouter le premier</button>}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filtered.map((c, i) => {
-                const s = STATUT[c.statut] ?? STATUT.actif;
-                const active = selected?.id === c.id;
-                return (
-                  <motion.button key={c.id}
-                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.04, duration: 0.25, ease }}
-                    onClick={() => setSelected(c)}
-                    className={`group flex w-full items-center gap-3.5 rounded-2xl p-3.5 text-left transition-all ${
-                      active ? "bg-[#1e293b] shadow-lg ring-1 ring-[#1e293b]" : "bg-white hover:bg-gray-50 border border-gray-100 shadow-sm hover:shadow-md"
-                    }`}
-                  >
-                    {/* Avatar */}
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
-                      style={{ background: s.color }}>
-                      {(c.nom || "?")[0].toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className={`truncate text-sm font-bold ${active ? "text-white" : "text-gray-800"}`}>{c.nom}</p>
-                        <span className="shrink-0 rounded-full px-2 py-0.5 text-[0.55rem] font-bold"
-                          style={active
-                            ? { background: "rgba(255,255,255,0.15)", color: "white" }
-                            : { background: s.bg, color: s.color }}>
-                          {s.label}
-                        </span>
-                      </div>
-                      <p className={`mt-0.5 truncate text-[0.68rem] ${active ? "text-white/50" : "text-gray-400"}`}>
-                        {c.entreprise || c.email}
-                      </p>
-                    </div>
-                    <ChevronRight size={14} className={`shrink-0 transition-transform group-hover:translate-x-0.5 ${active ? "text-white/40" : "text-gray-300"}`} />
-                  </motion.button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ══ FICHE CLIENT ══ */}
-      <div className={`flex flex-1 flex-col overflow-hidden ${selected ? "flex" : "hidden lg:flex"}`}>
-        {!selected ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center px-8">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white shadow-lg border border-gray-100">
-              <Users size={32} className="text-gray-300" />
+        {/* ── GRILLE CLIENTS ── */}
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <Loader2 size={24} className="animate-spin text-white/20" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-white/8 bg-white/4">
+              <Users size={24} className="text-white/20" />
             </div>
             <div>
-              <p className="text-base font-bold text-gray-500">Sélectionnez un client</p>
-              <p className="mt-1.5 text-sm text-gray-400 max-w-xs">Cliquez sur un client dans la liste pour accéder à sa fiche complète</p>
+              <p className="font-bold text-white/50">{search ? "Aucun résultat" : "Aucun client pour l'instant"}</p>
+              <p className="mt-1 text-sm text-white/25">{search ? "Essaie un autre mot-clé" : "Crée ta première fiche client"}</p>
             </div>
-            <button onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 rounded-2xl bg-[#1e293b] px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-[#0f172a]">
-              <Plus size={15} /> Créer une fiche client
-            </button>
+            {!search && (
+              <button onClick={() => setShowForm(true)}
+                className="flex items-center gap-2 rounded-2xl bg-white/10 border border-white/10 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-white/15">
+                <Plus size={14} /> Créer une fiche
+              </button>
+            )}
           </div>
         ) : (
-          <AnimatePresence mode="wait">
-            <motion.div key={selected.id}
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.22, ease }}
-              className="flex flex-1 flex-col overflow-hidden">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((c, i) => {
+              const s = STATUT[c.statut] ?? STATUT.actif;
+              const Icon = s.icon;
+              return (
+                <motion.div key={c.id}
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.3, ease }}
+                  onClick={() => setDrawer(c)}
+                  className="group relative cursor-pointer overflow-hidden rounded-3xl border border-white/6 bg-white/4 p-6 backdrop-blur-sm transition-all duration-200 hover:border-white/12 hover:bg-white/7 hover:shadow-xl hover:shadow-black/30 hover:-translate-y-0.5">
 
-              {/* ── Hero fiche ── */}
-              <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] px-6 py-6">
-                <button onClick={() => setSelected(null)}
-                  className="mb-4 flex items-center gap-1.5 text-xs font-semibold text-white/50 transition hover:text-white/80 lg:hidden">
-                  <ArrowLeft size={13} /> Retour
-                </button>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                  {/* Avatar */}
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-white shadow-xl"
-                    style={{ background: STATUT[selected.statut]?.color ?? "#10b981" }}>
-                    {(selected.nom || "?")[0].toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <h2 className="text-lg font-extrabold text-white">{selected.nom}</h2>
-                      <select value={selected.statut} onChange={e => updateStatut(selected.id, e.target.value as Statut)}
-                        className="rounded-full border-0 px-2.5 py-0.5 text-[0.65rem] font-bold outline-none cursor-pointer"
-                        style={{ color: STATUT[selected.statut]?.color, background: STATUT[selected.statut]?.bg }}>
-                        {Object.entries(STATUT).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                      </select>
+                  {/* Status glow blob */}
+                  <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-30"
+                    style={{ background: s.glow }} />
+
+                  {/* Top row */}
+                  <div className="mb-4 flex items-start justify-between">
+                    {/* Avatar */}
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl text-base font-black text-white shadow-lg"
+                      style={{ background: avatarGradient(c.id) }}>
+                      {(c.nom || "?")[0].toUpperCase()}
                     </div>
-                    {selected.entreprise && (
-                      <p className="mt-1 flex items-center gap-1.5 text-sm text-white/50">
-                        <Briefcase size={12} /> {selected.entreprise}
-                      </p>
+                    {/* Status badge */}
+                    <div className="flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5"
+                      style={{ background: s.bg, borderColor: s.border }}>
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.color, boxShadow: `0 0 6px ${s.color}` }} />
+                      <span className="text-[0.62rem] font-bold" style={{ color: s.color }}>{s.label}</span>
+                    </div>
+                  </div>
+
+                  {/* Name + company */}
+                  <p className="mb-0.5 text-base font-bold text-white">{c.nom}</p>
+                  {c.entreprise && (
+                    <p className="mb-3 flex items-center gap-1.5 text-xs text-white/40">
+                      <Building2 size={10} /> {c.entreprise}
+                    </p>
+                  )}
+
+                  {/* Contact chips */}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {c.email && (
+                      <a onClick={e => e.stopPropagation()} href={`mailto:${c.email}`}
+                        className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-2.5 py-1.5 text-[0.62rem] font-semibold text-white/50 transition hover:border-white/15 hover:text-white/80">
+                        <Mail size={10} /> {c.email.length > 22 ? c.email.slice(0, 22) + "…" : c.email}
+                      </a>
                     )}
-                    {selected.email && (
-                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-white/35">
-                        <Mail size={10} /> {selected.email}
-                      </p>
+                    {c.phone && (
+                      <a onClick={e => e.stopPropagation()} href={`tel:${c.phone}`}
+                        className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-2.5 py-1.5 text-[0.62rem] font-semibold text-white/50 transition hover:border-white/15 hover:text-white/80">
+                        <Phone size={10} /> {c.phone}
+                      </a>
                     )}
                   </div>
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-2">
-                    {selected.email && (
-                      <a href={`mailto:${selected.email}`}
-                        className="flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20">
-                        <Mail size={12} /> Email
-                      </a>
-                    )}
-                    {selected.phone && (
-                      <a href={`tel:${selected.phone}`}
-                        className="flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20">
-                        <Phone size={12} /> Appel
-                      </a>
-                    )}
-                    {selected.phone && (
-                      <a href={`https://wa.me/${selected.phone.replace(/\D/g,"")}`} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 rounded-xl bg-[rgba(37,211,102,0.15)] border border-[rgba(37,211,102,0.3)] px-3 py-2 text-xs font-semibold text-[#25d366] transition hover:bg-[rgba(37,211,102,0.25)]">
-                        <MessageSquare size={12} /> WhatsApp
-                      </a>
-                    )}
-                    <button onClick={() => deleteClient(selected.id, selected.nom)}
-                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white/30 transition hover:bg-red-500/20 hover:border-red-400/30 hover:text-red-400">
-                      <Trash2 size={14} />
-                    </button>
+
+                  {/* Footer */}
+                  <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+                    <p className="text-[0.6rem] text-white/25">
+                      Ajouté le {new Date(c.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                    <div className="flex items-center gap-1 text-[0.6rem] font-semibold text-white/25 transition group-hover:text-white/50">
+                      Voir la fiche <ArrowUpRight size={10} />
+                    </div>
                   </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════ DRAWER FICHE CLIENT ══════════ */}
+      <AnimatePresence>
+        {drawer && (
+          <>
+            {/* Backdrop */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setDrawer(null)}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
+
+            {/* Panel */}
+            <motion.div
+              initial={{ x: "100%", opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100%", opacity: 0 }}
+              transition={{ duration: 0.3, ease }}
+              className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col overflow-hidden bg-[#0e1420] shadow-2xl border-l border-white/6">
+
+              {/* Header drawer */}
+              <div className="relative overflow-hidden border-b border-white/6 px-6 py-6">
+                <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-15 blur-3xl"
+                  style={{ background: STATUT[drawer.statut]?.glow }} />
+                <div className="mb-5 flex items-start justify-between">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black text-white shadow-xl"
+                    style={{ background: avatarGradient(drawer.id) }}>
+                    {(drawer.nom || "?")[0].toUpperCase()}
+                  </div>
+                  <button onClick={() => setDrawer(null)}
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition hover:bg-white/8 hover:text-white/70">
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-black text-white">{drawer.nom}</h2>
+                  <select value={drawer.statut} onChange={e => changeStatut(drawer.id, e.target.value as Statut)}
+                    className="rounded-xl border-0 px-2.5 py-1 text-[0.65rem] font-bold outline-none cursor-pointer"
+                    style={{ color: STATUT[drawer.statut]?.color, background: STATUT[drawer.statut]?.bg }}>
+                    {Object.entries(STATUT).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                  </select>
+                </div>
+                {drawer.entreprise && (
+                  <p className="mt-1 flex items-center gap-1.5 text-sm text-white/40">
+                    <Building2 size={12} /> {drawer.entreprise}
+                  </p>
+                )}
+
+                {/* Actions rapides */}
+                <div className="mt-4 flex gap-2">
+                  {drawer.email && (
+                    <a href={`mailto:${drawer.email}`}
+                      className="flex items-center gap-1.5 rounded-xl bg-white/8 border border-white/8 px-3 py-2 text-xs font-bold text-white/70 transition hover:bg-white/14 hover:text-white">
+                      <Mail size={12} /> Email
+                    </a>
+                  )}
+                  {drawer.phone && (
+                    <a href={`tel:${drawer.phone}`}
+                      className="flex items-center gap-1.5 rounded-xl bg-white/8 border border-white/8 px-3 py-2 text-xs font-bold text-white/70 transition hover:bg-white/14 hover:text-white">
+                      <Phone size={12} /> Appel
+                    </a>
+                  )}
+                  {drawer.phone && (
+                    <a href={`https://wa.me/${drawer.phone.replace(/\D/g,"")}`} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-[#25d366] transition hover:bg-[rgba(37,211,102,0.1)] border border-[rgba(37,211,102,0.2)]">
+                      <MessageSquare size={12} /> WhatsApp
+                    </a>
+                  )}
+                  <button onClick={() => del(drawer.id, drawer.nom)}
+                    className="ml-auto flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-white/25 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400">
+                    <Trash2 size={13} />
+                  </button>
                 </div>
 
                 {/* Tabs */}
                 <div className="mt-5 flex gap-1">
                   {[
-                    { k: "info",  label: "Informations", icon: Info      },
-                    { k: "notes", label: "Notes",         icon: FileText, dot: !!selected.notes },
-                  ].map(({ k, label, icon: Icon, dot }) => (
+                    { k: "info",  label: "Informations" },
+                    { k: "notes", label: "Notes",       dot: !!drawer.notes },
+                  ].map(({ k, label, dot }) => (
                     <button key={k} onClick={() => setTab(k as typeof tab)}
-                      className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
-                        tab === k
-                          ? "bg-white text-[#1e293b] shadow-sm"
-                          : "text-white/50 hover:bg-white/10 hover:text-white"
+                      className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                        tab === k ? "bg-white/12 text-white" : "text-white/35 hover:text-white/60"
                       }`}>
-                      <Icon size={12} /> {label}
-                      {dot && <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" />}
+                      {label}
+                      {dot && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* ── Corps ── */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
-
+              {/* Body drawer */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-3">
                 {tab === "info" && (
                   <>
-                    {/* Coordonnées */}
-                    <div className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
-                      <div className="border-b border-gray-50 px-5 py-3.5">
-                        <p className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-400">Coordonnées</p>
+                    {[
+                      { icon: Mail,      label: "Email",      value: drawer.email,     href: drawer.email ? `mailto:${drawer.email}` : undefined },
+                      { icon: Phone,     label: "Téléphone",  value: drawer.phone,     href: drawer.phone ? `tel:${drawer.phone}` : undefined },
+                      { icon: Briefcase, label: "Secteur",    value: drawer.secteur    },
+                      { icon: Globe,     label: "Site web",   value: drawer.site_web,  href: drawer.site_web },
+                      { icon: MapPin,    label: "Adresse",    value: drawer.adresse    },
+                    ].filter(r => r.value).map(({ icon: Icon, label, value, href }) => (
+                      <div key={label} className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/4 px-4 py-3.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/8">
+                          <Icon size={13} className="text-white/40" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">{label}</p>
+                          {href ? (
+                            <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
+                              className="truncate text-sm font-semibold text-blue-400 hover:text-blue-300">{value}</a>
+                          ) : (
+                            <p className="truncate text-sm font-semibold text-white/80">{value}</p>
+                          )}
+                        </div>
+                        {value && <CopyBtn text={value} />}
                       </div>
-                      <div className="divide-y divide-gray-50">
-                        {[
-                          { icon: Mail,      label: "Email",      value: selected.email,      href: selected.email ? `mailto:${selected.email}` : undefined },
-                          { icon: Phone,     label: "Téléphone",  value: selected.phone,      href: selected.phone ? `tel:${selected.phone}` : undefined },
-                          { icon: Building2, label: "Entreprise", value: selected.entreprise  },
-                          { icon: Briefcase, label: "Secteur",    value: selected.secteur     },
-                          { icon: Globe,     label: "Site web",   value: selected.site_web,   href: selected.site_web },
-                          { icon: MapPin,    label: "Adresse",    value: selected.adresse     },
-                        ].filter(r => r.value).map(({ icon: Icon, label, value, href }) => (
-                          <div key={label} className="flex items-center gap-3 px-5 py-3">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-50">
-                              <Icon size={13} className="text-gray-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[0.58rem] font-bold uppercase tracking-wider text-gray-400">{label}</p>
-                              {href ? (
-                                <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
-                                  className="truncate text-sm font-medium text-blue-600 hover:underline">{value}</a>
-                              ) : (
-                                <p className="truncate text-sm font-medium text-gray-700">{value}</p>
-                              )}
-                            </div>
-                            {value && <CopyBtn text={value} />}
-                          </div>
-                        ))}
-                        {![selected.email, selected.phone, selected.entreprise, selected.secteur, selected.site_web, selected.adresse].some(Boolean) && (
-                          <div className="flex flex-col items-center gap-2 py-8 text-center">
-                            <AlertCircle size={20} className="text-gray-200" />
-                            <p className="text-xs text-gray-400">Aucune coordonnée renseignée</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    ))}
 
-                    {/* Statut */}
-                    <div className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
-                      <div className="border-b border-gray-50 px-5 py-3.5">
-                        <p className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-400">Statut du client</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 p-4">
+                    {/* Statut selector */}
+                    <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
+                      <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Changer le statut</p>
+                      <div className="grid grid-cols-2 gap-2">
                         {(Object.entries(STATUT) as [Statut, typeof STATUT[Statut]][]).map(([k, v]) => {
-                          const Icon = v.icon;
-                          const active = selected.statut === k;
+                          const Ico = v.icon;
+                          const active = drawer.statut === k;
                           return (
-                            <button key={k} onClick={() => updateStatut(selected.id, k)}
-                              className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${active ? "shadow-sm" : "border-gray-100 bg-gray-50 text-gray-500 hover:bg-gray-100"}`}
+                            <button key={k} onClick={() => changeStatut(drawer.id, k)}
+                              className={`flex items-center gap-2 rounded-xl border px-3.5 py-3 text-xs font-bold transition-all ${
+                                active ? "" : "border-white/6 bg-white/3 text-white/30 hover:bg-white/7 hover:text-white/60"
+                              }`}
                               style={active ? { borderColor: v.border, background: v.bg, color: v.color } : {}}>
-                              <Icon size={15} /> {v.label}
-                              {active && <CheckCircle2 size={13} className="ml-auto" />}
+                              <Ico size={13} /> {v.label}
+                              {active && <CheckCircle2 size={12} className="ml-auto opacity-60" />}
                             </button>
                           );
                         })}
@@ -425,56 +458,48 @@ export default function PortailClientPage() {
                     </div>
 
                     {/* Meta */}
-                    <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-5 py-4">
+                    <div className="rounded-2xl border border-white/6 bg-white/4 px-4 py-3.5">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500">Ajouté le</p>
-                        <p className="text-xs font-semibold text-gray-700">{new Date(selected.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</p>
+                        <p className="text-xs text-white/30">Ajouté le</p>
+                        <p className="text-xs font-bold text-white/60">{new Date(drawer.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</p>
                       </div>
-                      {selected.derniere_connexion && (
-                        <div className="mt-2 flex items-center justify-between border-t border-gray-50 pt-2">
-                          <p className="text-xs text-gray-500">Dernière connexion</p>
-                          <p className="text-xs font-semibold text-gray-700">{new Date(selected.derniere_connexion).toLocaleDateString("fr-FR")}</p>
-                        </div>
-                      )}
                     </div>
                   </>
                 )}
 
                 {tab === "notes" && (
-                  <div className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-gray-50 px-5 py-3.5">
-                      <p className="text-[0.65rem] font-bold uppercase tracking-widest text-gray-400">Notes internes</p>
+                  <div className="rounded-2xl border border-white/6 bg-white/4 overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-white/6 px-4 py-3">
+                      <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Notes internes</p>
                       {!editNotes ? (
                         <button onClick={() => { setEditNotes(true); setTimeout(() => notesRef.current?.focus(), 50); }}
-                          className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-semibold text-gray-500 transition hover:bg-gray-50">
-                          <Edit3 size={11} /> Modifier
+                          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-[0.68rem] font-semibold text-white/40 transition hover:bg-white/8 hover:text-white/70">
+                          <Edit3 size={10} /> Modifier
                         </button>
                       ) : (
                         <div className="flex gap-2">
-                          <button onClick={() => { setEditNotes(false); setNotes(selected.notes); }}
-                            className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-400 transition hover:bg-gray-50">
-                            Annuler
-                          </button>
-                          <button onClick={saveNotes} disabled={savingNotes}
-                            className="flex items-center gap-1.5 rounded-lg bg-[#1e293b] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#0f172a] disabled:opacity-60">
-                            {savingNotes ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Sauvegarder
+                          <button onClick={() => { setEditNotes(false); setNotes(drawer.notes); }}
+                            className="rounded-lg px-2.5 py-1.5 text-[0.68rem] text-white/30 transition hover:text-white/60">Annuler</button>
+                          <button onClick={saveNotes} disabled={savingN}
+                            className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 text-[0.68rem] font-bold text-emerald-400 transition hover:bg-emerald-500/30 disabled:opacity-50">
+                            {savingN ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />} Sauvegarder
                           </button>
                         </div>
                       )}
                     </div>
-                    <div className="p-5">
+                    <div className="p-4">
                       {editNotes ? (
                         <textarea ref={notesRef} value={notes} onChange={e => setNotes(e.target.value)} rows={10}
-                          placeholder="Écrivez vos notes internes (contexte, historique, points importants…)"
-                          className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none transition focus:border-blue-300 focus:bg-white" />
+                          placeholder="Contexte, historique, points importants…"
+                          className="w-full resize-none bg-transparent text-sm leading-relaxed text-white/80 placeholder-white/20 outline-none" />
                       ) : notes ? (
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">{notes}</p>
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/70">{notes}</p>
                       ) : (
-                        <div className="flex flex-col items-center gap-2 py-10 text-center">
-                          <FileText size={28} className="text-gray-200" />
-                          <p className="text-sm text-gray-400">Aucune note pour ce client</p>
+                        <div className="flex flex-col items-center gap-2.5 py-8 text-center">
+                          <FileText size={24} className="text-white/15" />
+                          <p className="text-sm text-white/30">Aucune note</p>
                           <button onClick={() => { setEditNotes(true); setTimeout(() => notesRef.current?.focus(), 50); }}
-                            className="rounded-xl bg-gray-100 px-4 py-2 text-xs font-bold text-gray-600 transition hover:bg-gray-200">
+                            className="rounded-xl border border-white/10 bg-white/6 px-4 py-2 text-xs font-bold text-white/50 transition hover:bg-white/10 hover:text-white/70">
                             Ajouter une note
                           </button>
                         </div>
@@ -484,30 +509,31 @@ export default function PortailClientPage() {
                 )}
               </div>
             </motion.div>
-          </AnimatePresence>
+          </>
         )}
-      </div>
+      </AnimatePresence>
 
-      {/* ══ MODAL NOUVEAU CLIENT ══ */}
+      {/* ══════════ MODAL NOUVEAU CLIENT ══════════ */}
       <AnimatePresence>
         {showForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-md">
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.22, ease }}
-              className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
-              <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] px-6 py-5">
+              className="w-full max-w-lg overflow-hidden rounded-3xl border border-white/8 bg-[#0e1420] shadow-2xl">
+
+              <div className="border-b border-white/6 px-6 py-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
-                      <Sparkles size={16} className="text-white" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/8">
+                      <Sparkles size={16} className="text-white/60" />
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-white">Nouvelle fiche client</h2>
-                      <p className="text-[0.62rem] text-white/40">Remplissez les informations du client</p>
+                      <p className="text-[0.62rem] text-white/30">Remplis les informations du client</p>
                     </div>
                   </div>
                   <button onClick={() => setShowForm(false)}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/10 hover:text-white">
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/8 hover:text-white/60">
                     <X size={15} />
                   </button>
                 </div>
@@ -515,29 +541,31 @@ export default function PortailClientPage() {
 
               <div className="grid grid-cols-2 gap-3 p-5">
                 {[
-                  { key: "nom",        label: "Nom complet *",  placeholder: "Marie Dupont",       type: "text",  col: 2 },
-                  { key: "email",      label: "Email *",         placeholder: "marie@exemple.com",  type: "email", col: 2 },
-                  { key: "phone",      label: "Téléphone",       placeholder: "+33 6 00 00 00 00",  type: "tel",   col: 1 },
-                  { key: "entreprise", label: "Entreprise",      placeholder: "Acme SAS",           type: "text",  col: 1 },
-                  { key: "secteur",    label: "Secteur d'activité", placeholder: "Marketing, Tech…",type: "text",  col: 1 },
-                  { key: "site_web",   label: "Site web",        placeholder: "https://…",          type: "url",   col: 1 },
-                  { key: "adresse",    label: "Ville / Adresse", placeholder: "Paris, France",      type: "text",  col: 2 },
+                  { key: "nom",        label: "Nom complet *",       placeholder: "Marie Dupont",      type: "text",  col: 2 },
+                  { key: "email",      label: "Email *",              placeholder: "marie@exemple.com", type: "email", col: 2 },
+                  { key: "phone",      label: "Téléphone",            placeholder: "+33 6 00 00 00 00", type: "tel",   col: 1 },
+                  { key: "entreprise", label: "Entreprise",           placeholder: "Acme SAS",          type: "text",  col: 1 },
+                  { key: "secteur",    label: "Secteur d'activité",   placeholder: "Marketing, Tech…",  type: "text",  col: 1 },
+                  { key: "site_web",   label: "Site web",             placeholder: "https://…",         type: "url",   col: 1 },
+                  { key: "adresse",    label: "Ville / Adresse",      placeholder: "Paris, France",     type: "text",  col: 2 },
                 ].map(({ key, label, placeholder, type, col }) => (
                   <div key={key} className={col === 2 ? "col-span-2" : ""}>
-                    <label className="mb-1 block text-[0.7rem] font-semibold text-gray-500">{label}</label>
+                    <label className="mb-1.5 block text-[0.68rem] font-semibold text-white/40">{label}</label>
                     <input type={type} placeholder={placeholder}
                       value={form[key as keyof typeof form] as string}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-blue-400 focus:bg-white" />
+                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder-white/20 outline-none transition focus:border-white/20 focus:bg-white/8" />
                   </div>
                 ))}
 
                 <div className="col-span-2">
-                  <label className="mb-2 block text-[0.7rem] font-semibold text-gray-500">Statut initial</label>
+                  <label className="mb-2 block text-[0.68rem] font-semibold text-white/40">Statut initial</label>
                   <div className="grid grid-cols-4 gap-1.5">
                     {(Object.entries(STATUT) as [Statut, typeof STATUT[Statut]][]).map(([k, v]) => (
                       <button key={k} type="button" onClick={() => setForm(f => ({ ...f, statut: k }))}
-                        className={`flex items-center justify-center gap-1 rounded-xl border py-2.5 text-[0.72rem] font-semibold transition-all ${form.statut === k ? "shadow-sm" : "border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-200"}`}
+                        className={`flex items-center justify-center rounded-xl border py-2.5 text-[0.7rem] font-bold transition-all ${
+                          form.statut === k ? "" : "border-white/8 bg-white/4 text-white/35 hover:bg-white/8 hover:text-white/60"
+                        }`}
                         style={form.statut === k ? { borderColor: v.border, background: v.bg, color: v.color } : {}}>
                         {v.label}
                       </button>
@@ -546,13 +574,13 @@ export default function PortailClientPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2 border-t border-gray-100 px-5 py-4">
+              <div className="flex gap-2 border-t border-white/6 px-5 py-4">
                 <button onClick={() => setShowForm(false)}
-                  className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-50">
+                  className="flex-1 rounded-xl border border-white/8 py-2.5 text-sm font-semibold text-white/40 transition hover:bg-white/5 hover:text-white/60">
                   Annuler
                 </button>
-                <button onClick={invite} disabled={!form.nom.trim() || !form.email.trim()}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#1e293b] py-2.5 text-sm font-bold text-white transition hover:bg-[#0f172a] disabled:opacity-40">
+                <button onClick={create} disabled={!form.nom.trim() || !form.email.trim()}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white py-2.5 text-sm font-black text-[#07080e] transition hover:bg-white/90 disabled:opacity-30">
                   <Send size={14} /> Créer la fiche
                 </button>
               </div>
