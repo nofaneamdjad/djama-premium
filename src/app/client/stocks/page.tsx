@@ -830,7 +830,7 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
               <span className="col-span-2">SKU / Catégorie</span>
               <span className="col-span-2 text-right">Prix achat</span>
               <span className="col-span-2 text-right">Prix vente</span>
-              <span className="col-span-2 text-right">Stock</span>
+              <span className="col-span-2 text-right">Stocks</span>
             </div>
             <AnimatePresence>
               {filtered.map((p) => (
@@ -1082,7 +1082,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
       setRapport(data);
       setRapportOpen(true);
     } catch {
-      /* silent */
+      toast("Erreur lors de l'analyse IA — réessayez dans quelques instants.", "error");
     } finally {
       setRapportLoading(false);
     }
@@ -1693,7 +1693,7 @@ export default function StocksPage() {
         if (!cliRes.error && cliRes.data) setClients(cliRes.data as LoyalClient[]);
         if (!delRes.error && delRes.data) setDeliveries(delRes.data as ClientDelivery[]);
       } catch {
-        // Erreur réseau — silencieux
+        toast("Erreur réseau — impossible de charger les stocks", "error");
       } finally {
         setLoading(false);
       }

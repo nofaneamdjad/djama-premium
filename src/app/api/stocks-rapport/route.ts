@@ -12,12 +12,28 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { createServerClient }        from "@supabase/ssr";
+import { cookies }                   from "next/headers";
 import { createLogger }              from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const log = createLogger("stocks-rapport");
+
+// Rate limit : 10 analyses stocks/user/heure
+const stocksLimits = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(userId: string): boolean {
+  const now  = Date.now();
+  const slot = stocksLimits.get(userId);
+  if (!slot || now > slot.resetAt) {
+    stocksLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    return true;
+  }
+  if (slot.count >= 10) return false;
+  slot.count++;
+  return true;
+}
 
 const SYSTEM = `\
 Tu es un expert en gestion des stocks et logistique pour TPE/freelances françaises.
@@ -35,6 +51,20 @@ Le score_sante évalue : taux de ruptures, adéquation stocks/minimums, rotation
 Sois direct, orienté action, utilise les vrais chiffres.`;
 
 export async function POST(req: NextRequest) {
+  /* ── Auth ── */
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json({ error: "Limite atteinte : 10 analyses par heure." }, { status: 429 });
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Clé API manquante" }, { status: 500 });
@@ -106,10 +136,11 @@ export async function POST(req: NextRequest) {
     });
 
     const raw   = res.content[0].type === "text" ? res.content[0].text.trim() : "{}";
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("Réponse non-JSON");
+    const start = raw.indexOf("{");
+    const end   = raw.lastIndexOf("}");
+    if (start === -1 || end === -1) throw new Error("Réponse non-JSON");
 
-    return NextResponse.json(JSON.parse(match[0]));
+    return NextResponse.json(JSON.parse(raw.slice(start, end + 1)));
   } catch (err) {
     log.error("Erreur génération analyse stocks", err);
     return NextResponse.json({ error: "Erreur génération analyse stocks" }, { status: 500 });
