@@ -278,7 +278,8 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
         body: JSON.stringify({ action: "chat", content: ctx, prompt }),
       });
       const d = await r.json();
-      setResp(d.result ?? d.error ?? "Erreur");
+      if (!r.ok) { setResp(d.error ?? `Erreur ${r.status}`); return; }
+      setResp(d.result ?? "Erreur");
     } catch { setResp("Erreur réseau"); }
     setLoading(false);
   }
@@ -384,7 +385,8 @@ export default function ProductivitePage() {
       .from("productivity_tasks")
       .select("*")
       .eq("user_id", resolvedUid)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(500);
     if (error) toast(error.message, "error");
     else setTasks((data ?? []).map((r: Record<string, unknown>) => parseTask(r)));
     setLoading(false);
@@ -399,7 +401,7 @@ export default function ProductivitePage() {
         setUserId(user.id);
         await load(user.id);
       } catch {
-        // Erreur réseau — silencieux
+        toast("Erreur réseau — impossible de charger les tâches", "error");
       } finally {
         setLoading(false);
       }
@@ -434,6 +436,7 @@ export default function ProductivitePage() {
 
   const save = async () => {
     if (!form.title.trim()) { toast("Le titre est requis", "error"); return; }
+    if (!userId) { toast("Session expirée — rechargez la page", "error"); return; }
     setSaving(true);
     const payload = {
       title: form.title.trim(), description: form.description,
