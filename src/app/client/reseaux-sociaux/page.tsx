@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Share2, Loader2, Trash2, Calendar, Hash, Send,
   Sparkles, Camera, Globe, Briefcase, Music, Clock,
+  ImagePlus, X, Play, Copy, Check,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -22,6 +23,7 @@ interface SocialPost {
   status:       PostStatus;
   scheduled_at: string | null;
   published_at: string | null;
+  media_urls:   string[];
   created_at:   string;
 }
 
@@ -34,6 +36,8 @@ type Draft = {
 };
 
 const VIOLET = "#8b5cf6";
+const MAX_FILES = 4;
+const MAX_SIZE_MB = 50;
 
 const PLATFORMS: {
   id: Platform;
@@ -80,16 +84,57 @@ function fmtDate(iso: string | null) {
   });
 }
 
+function isVideo(url: string) {
+  return /\.(mp4|mov|webm|avi|mkv)(\?|$)/i.test(url);
+}
+
+// Miniature d'un media (image ou vidéo) — utilisée dans le composer et les cartes
+function MediaThumb({ src, onRemove }: { src: string; onRemove?: () => void }) {
+  const video = isVideo(src);
+  return (
+    <div className="relative shrink-0">
+      {video ? (
+        <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-white/6">
+          <video
+            src={src}
+            className="h-full w-full object-cover"
+            preload="metadata"
+            muted
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <Play size={16} className="text-white" fill="white" />
+          </div>
+        </div>
+      ) : (
+        <img src={src} alt="" className="h-20 w-20 rounded-xl object-cover" />
+      )}
+      {onRemove && (
+        <button
+          onClick={onRemove}
+          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/80 text-white transition hover:bg-red-500"
+        >
+          <X size={10} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function ReseauxSociauxPage() {
-  const router                              = useRouter();
-  const { toasts, add: toast, remove }     = useToastStack();
-  const [posts,     setPosts]              = useState<SocialPost[]>([]);
-  const [loading,   setLoading]            = useState(true);
-  const [filter,    setFilter]             = useState<Platform | "tous">("tous");
-  const [showIdeas, setShowIdeas]          = useState(false);
-  const [aiLoading, setAiLoading]          = useState(false);
-  const [saving,    setSaving]             = useState(false);
-  const [draft,     setDraft]              = useState<Draft>({
+  const router                          = useRouter();
+  const { toasts, add: toast, remove } = useToastStack();
+  const fileRef                         = useRef<HTMLInputElement>(null);
+
+  const [posts,       setPosts]       = useState<SocialPost[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [filter,      setFilter]      = useState<Platform | "tous">("tous");
+  const [showIdeas,   setShowIdeas]   = useState(false);
+  const [aiLoading,   setAiLoading]   = useState(false);
+  const [saving,      setSaving]      = useState(false);
+  const [mediaFiles,  setMediaFiles]  = useState<File[]>([]);
+  const [previews,    setPreviews]    = useState<string[]>([]);
+  const [copiedId,    setCopiedId]    = useState<string | null>(null);
+  const [draft,       setDraft]       = useState<Draft>({
     platform:       "instagram",
     content:        "",
     hashtags:       "",
@@ -99,6 +144,13 @@ export default function ReseauxSociauxPage() {
 
   const setField = <K extends keyof Draft>(k: K, v: Draft[K]) =>
     setDraft(d => ({ ...d, [k]: v }));
+
+  // Génère les object URLs pour la prévisualisation locale
+  useEffect(() => {
+    const urls = mediaFiles.map(f => URL.createObjectURL(f));
+    setPreviews(urls);
+    return () => { urls.forEach(URL.revokeObjectURL); };
+  }, [mediaFiles]);
 
   const load = useCallback(async () => {
     try {
@@ -120,6 +172,40 @@ export default function ReseauxSociauxPage() {
   }, [router, toast]);
 
   useEffect(() => { void load(); }, [load]);
+
+  function pickFiles(files: FileList | null) {
+    if (!files) return;
+    const valid = Array.from(files).filter(f => {
+      if (!f.type.startsWith("image/") && !f.type.startsWith("video/")) return false;
+      if (f.size > MAX_SIZE_MB * 1024 * 1024) {
+        toast(`${f.name} dépasse ${MAX_SIZE_MB} Mo`, "error");
+        return false;
+      }
+      return true;
+    });
+    setMediaFiles(prev => [...prev, ...valid].slice(0, MAX_FILES));
+  }
+
+  function removeFile(i: number) {
+    setMediaFiles(prev => prev.filter((_, idx) => idx !== i));
+  }
+
+  async function uploadMedia(userId: string): Promise<string[]> {
+    const urls: string[] = [];
+    for (const file of mediaFiles) {
+      const ext  = file.name.split(".").pop() ?? "bin";
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage
+        .from("social-media")
+        .upload(path, file, { upsert: false });
+      if (error) throw new Error(error.message);
+      const { data: { publicUrl } } = supabase.storage
+        .from("social-media")
+        .getPublicUrl(path);
+      urls.push(publicUrl);
+    }
+    return urls;
+  }
 
   async function generateContent() {
     if (!draft.content.trim() && !draft.hashtags.trim()) {
@@ -155,12 +241,20 @@ export default function ReseauxSociauxPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast("Session expirée.", "error"); return; }
 
+      let media_urls: string[] = [];
+      if (mediaFiles.length > 0) {
+        try {
+          media_urls = await uploadMedia(user.id);
+        } catch {
+          toast("Erreur lors de l'envoi des médias.", "error");
+          return;
+        }
+      }
+
       const scheduled_at = draft.scheduled_date
         ? new Date(`${draft.scheduled_date}T${draft.scheduled_time}`).toISOString()
         : null;
-
       const status: PostStatus = scheduled_at ? "planifié" : "brouillon";
-
       const hashArr = draft.hashtags
         .split(/\s+/)
         .filter(h => h.startsWith("#") && h.length > 1);
@@ -174,6 +268,7 @@ export default function ReseauxSociauxPage() {
           hashtags:     hashArr,
           status,
           scheduled_at,
+          media_urls,
         })
         .select()
         .single();
@@ -181,6 +276,7 @@ export default function ReseauxSociauxPage() {
       if (error) { toast("Erreur lors de la sauvegarde.", "error"); return; }
       if (data) setPosts(p => [data as SocialPost, ...p]);
       setDraft(d => ({ ...d, content: "", hashtags: "", scheduled_date: "" }));
+      setMediaFiles([]);
       toast(status === "planifié" ? "Post planifié" : "Brouillon sauvegardé", "success");
     } finally {
       setSaving(false);
@@ -192,6 +288,22 @@ export default function ReseauxSociauxPage() {
     if (error) { toast("Erreur lors de la suppression.", "error"); return; }
     setPosts(p => p.filter(x => x.id !== id));
     toast("Post supprimé", "success");
+  }
+
+  async function sharePost(post: SocialPost) {
+    const text = [post.content, post.hashtags.join(" ")].filter(Boolean).join("\n\n");
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        setCopiedId(post.id);
+        toast("Post copié dans le presse-papier", "success");
+        setTimeout(() => setCopiedId(null), 2000);
+      }
+    } catch {
+      // Partage annulé par l'utilisateur
+    }
   }
 
   const filtered = useMemo(
@@ -319,6 +431,50 @@ export default function ReseauxSociauxPage() {
             />
           </div>
 
+          {/* Médias */}
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-white/30">
+              Photos / Vidéos
+              <span className="ml-1.5 font-normal normal-case text-white/20">
+                ({mediaFiles.length}/{MAX_FILES} — max {MAX_SIZE_MB} Mo)
+              </span>
+            </label>
+
+            {/* Prévisualisations */}
+            {previews.length > 0 && (
+              <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
+                {mediaFiles.map((f, i) => (
+                  <MediaThumb
+                    key={i}
+                    src={previews[i]}
+                    onRemove={() => removeFile(i)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Bouton ajout */}
+            {mediaFiles.length < MAX_FILES && (
+              <>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={e => { pickFiles(e.target.files); e.target.value = ""; }}
+                />
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/12 py-2.5 text-xs font-semibold text-white/35 transition hover:border-white/25 hover:text-white/55"
+                >
+                  <ImagePlus size={14} />
+                  Ajouter des photos ou vidéos
+                </button>
+              </>
+            )}
+          </div>
+
           {/* Hashtags */}
           <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3 py-2.5">
             <Hash size={13} className="shrink-0 text-white/25" />
@@ -433,8 +589,10 @@ export default function ReseauxSociauxPage() {
           ) : (
             <AnimatePresence mode="popLayout">
               {filtered.map(post => {
-                const pf = PLATFORMS.find(p => p.id === post.platform)!;
-                const st = STATUS_CFG[post.status];
+                const pf      = PLATFORMS.find(p => p.id === post.platform)!;
+                const st      = STATUS_CFG[post.status];
+                const copied  = copiedId === post.id;
+                const media   = post.media_urls ?? [];
                 return (
                   <motion.div
                     key={post.id}
@@ -444,6 +602,7 @@ export default function ReseauxSociauxPage() {
                     exit={{ opacity: 0, x: -10 }}
                     className="rounded-2xl border border-white/6 bg-white/4 p-4 space-y-3"
                   >
+                    {/* Badges + actions */}
                     <div className="flex items-center gap-2">
                       <span
                         className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold"
@@ -458,24 +617,49 @@ export default function ReseauxSociauxPage() {
                       >
                         {st.label}
                       </span>
-                      <button
-                        onClick={() => void deletePost(post.id)}
-                        className="ml-auto rounded-lg p-1.5 text-white/20 transition hover:text-red-400"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                      <div className="ml-auto flex items-center gap-1">
+                        {/* Partager */}
+                        <button
+                          onClick={() => void sharePost(post)}
+                          className="rounded-lg p-1.5 text-white/20 transition hover:text-violet-400"
+                          title="Partager / Copier"
+                        >
+                          {copied
+                            ? <Check size={13} className="text-green-400" />
+                            : <Copy size={13} />}
+                        </button>
+                        {/* Supprimer */}
+                        <button
+                          onClick={() => void deletePost(post.id)}
+                          className="rounded-lg p-1.5 text-white/20 transition hover:text-red-400"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
 
+                    {/* Contenu */}
                     <p className="line-clamp-3 text-sm leading-relaxed text-white/70">
                       {post.content}
                     </p>
 
+                    {/* Médias */}
+                    {media.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {media.map((url, i) => (
+                          <MediaThumb key={i} src={url} />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Hashtags */}
                     {post.hashtags.length > 0 && (
                       <p className="text-xs text-violet-400/60">
                         {post.hashtags.join(" ")}
                       </p>
                     )}
 
+                    {/* Date planifiée */}
                     {post.scheduled_at && (
                       <div className="flex items-center gap-1.5 text-xs text-white/25">
                         <Clock size={10} />
