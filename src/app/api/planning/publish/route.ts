@@ -181,6 +181,22 @@ function buildEmployeeEmail(
 }
 
 /* ─────────────────────────────────────────────────────────
+   RATE LIMIT
+───────────────────────────────────────────────────────── */
+const publishLimits = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(userId: string): boolean {
+  const now  = Date.now();
+  const slot = publishLimits.get(userId);
+  if (!slot || now > slot.resetAt) {
+    publishLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    return true;
+  }
+  if (slot.count >= 5) return false;
+  slot.count++;
+  return true;
+}
+
+/* ─────────────────────────────────────────────────────────
    HANDLER
 ───────────────────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
@@ -209,6 +225,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
   }
   log.info("utilisateur authentifié: " + user.id);
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json({ error: "Limite atteinte : 5 publications par heure." }, { status: 429 });
+  }
 
   /* ── Body ── */
   let body: { week_start: string };

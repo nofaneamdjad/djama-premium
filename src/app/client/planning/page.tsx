@@ -231,15 +231,15 @@ export default function PlanningPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/login"); return; }
       const [evR, tkR, goR] = await Promise.all([
-        supabase.from("planning_events").select("*").eq("user_id", user.id).order("start_at"),
-        supabase.from("planning_tasks").select("*").eq("user_id", user.id).order("due_date").order("created_at"),
-        supabase.from("planning_goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("planning_events").select("*").eq("user_id", user.id).order("start_at").limit(500),
+        supabase.from("planning_tasks").select("*").eq("user_id", user.id).order("due_date").order("created_at").limit(500),
+        supabase.from("planning_goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
       ]);
       setEvents((evR.data ?? []).map(r => parseEvent(r as Record<string,unknown>)));
       setTasks((tkR.data ?? []).map(r => parseTask(r as Record<string,unknown>)));
       setGoals((goR.data ?? []) as PlanGoal[]);
     } catch {
-      // erreur réseau — l'UI reste utilisable
+      addToast("Erreur réseau — impossible de charger le planning", "error");
     } finally {
       setLoading(false);
     }
@@ -356,12 +356,14 @@ export default function PlanningPage() {
 
   async function toggleTask(t: PlanTask) {
     const next: TaskStatus = t.status === "done" ? "todo" : "done";
-    await supabase.from("planning_tasks").update({ status: next }).eq("id", t.id);
+    const { error } = await supabase.from("planning_tasks").update({ status: next }).eq("id", t.id);
+    if (error) { addToast("Erreur lors de la mise à jour de la tâche", "error"); return; }
     setTasks(p => p.map(x => x.id === t.id ? { ...x, status: next } : x));
   }
 
   async function deleteTask(id: string) {
-    await supabase.from("planning_tasks").delete().eq("id", id);
+    const { error } = await supabase.from("planning_tasks").delete().eq("id", id);
+    if (error) { addToast("Erreur lors de la suppression de la tâche", "error"); return; }
     setTasks(p => p.filter(t => t.id !== id));
   }
 
@@ -378,12 +380,14 @@ export default function PlanningPage() {
   }
 
   async function updateGoalProgress(id: string, progress: number) {
-    await supabase.from("planning_goals").update({ progress, status: progress >= 100 ? "done" : "active" }).eq("id", id);
+    const { error } = await supabase.from("planning_goals").update({ progress, status: progress >= 100 ? "done" : "active" }).eq("id", id);
+    if (error) { addToast("Erreur lors de la mise à jour de l'objectif", "error"); return; }
     setGoals(p => p.map(g => g.id === id ? { ...g, progress, status: progress >= 100 ? "done" : "active" } : g));
   }
 
   async function deleteGoal(id: string) {
-    await supabase.from("planning_goals").delete().eq("id", id);
+    const { error } = await supabase.from("planning_goals").delete().eq("id", id);
+    if (error) { addToast("Erreur lors de la suppression de l'objectif", "error"); return; }
     setGoals(p => p.filter(g => g.id !== id));
   }
 
@@ -404,6 +408,7 @@ export default function PlanningPage() {
         body: JSON.stringify({ action:"chat", content:context, prompt }),
       });
       const j = await r.json() as { result?: string; error?: string };
+      if (!r.ok) { setAiResult(j.error ?? `Erreur ${r.status}`); return; }
       setAiResult(j.result ?? j.error ?? "Erreur");
     } catch { setAiResult("Erreur réseau"); }
     finally { setAiLoading(false); }

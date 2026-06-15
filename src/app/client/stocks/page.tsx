@@ -1025,6 +1025,7 @@ type StocksRapport = {
 };
 
 function ReportView({ products, movements }: { products: Product[]; movements: Movement[] }) {
+  const { add: toast } = useToastStack();
   const [rapport, setRapport]               = useState<StocksRapport | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportOpen, setRapportOpen]       = useState(false);

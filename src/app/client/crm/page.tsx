@@ -545,6 +545,7 @@ function RapportView({
   tickets: SupportTicket[];
 }) {
   const today = new Date().toISOString().split("T")[0];
+  const { add: toast } = useToastStack();
 
   const [rapport, setRapport]             = useState<CrmRapport | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
