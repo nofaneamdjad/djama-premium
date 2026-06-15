@@ -517,7 +517,7 @@ export default function SourcingPage() {
                 suggestions: inner.suggestions ?? rawData.suggestions ?? [],
               };
             }
-          } catch {  }
+          } catch { /* double-parse optionnel — rawData utilisé tel quel */ }
         }
       }
 

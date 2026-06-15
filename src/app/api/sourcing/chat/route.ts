@@ -11,6 +11,8 @@
 
 import Anthropic                    from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient }       from "@supabase/ssr";
+import { cookies }                  from "next/headers";
 import { createLogger }             from "@/lib/logger";
 
 const log = createLogger("sourcing/chat");
@@ -132,9 +134,39 @@ function friendlyAnthropicError(err: unknown): string {
 }
 
 /* ─────────────────────────────────────────────────────────
+   RATE LIMIT
+───────────────────────────────────────────────────────── */
+const sourcingLimits = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(userId: string): boolean {
+  const now  = Date.now();
+  const slot = sourcingLimits.get(userId);
+  if (!slot || now > slot.resetAt) {
+    sourcingLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    return true;
+  }
+  if (slot.count >= 20) return false;
+  slot.count++;
+  return true;
+}
+
+/* ─────────────────────────────────────────────────────────
    HANDLER
 ───────────────────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
+
+  /* ── Auth ── */
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json({ error: "Limite atteinte : 20 analyses par heure." }, { status: 429 });
+  }
 
   /* ── Clé API ── */
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -201,9 +233,10 @@ export async function POST(req: NextRequest) {
       if (codeBlock) src = codeBlock[1].trim();
 
       /* Extraire premier objet JSON complet */
-      const match = src.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error("Aucun JSON trouve");
-      parsed = JSON.parse(match[0]) as Record<string, unknown>;
+      const start = src.indexOf("{");
+      const end   = src.lastIndexOf("}");
+      if (start === -1 || end === -1) throw new Error("Aucun JSON trouve");
+      parsed = JSON.parse(src.slice(start, end + 1)) as Record<string, unknown>;
       log.debug("JSON parse OK, cles: " + Object.keys(parsed).join(", "));
     } catch {
       log.warn("JSON parse echoue, fallback texte");
