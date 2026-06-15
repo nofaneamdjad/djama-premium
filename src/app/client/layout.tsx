@@ -10,7 +10,7 @@ import {
   CalendarRange, Timer, StickyNote, Search, Zap, Star, Brain,
   Crown, Sparkles, Lock, ChevronRight, X, Menu,
   LogOut, Bell, ArrowRight, CheckCircle2, Share2, User, AlertTriangle,
-  Building2, Banknote,
+  Building2, Banknote, FolderOpen,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSubscription } from "@/lib/use-require-subscription";
@@ -43,7 +43,7 @@ const PRO_TOOLS = [
   { href: "/client/chrono",          label: "Chrono",            icon: Timer        },
   { href: "/client/bloc-notes",      label: "Notes",             icon: StickyNote   },
   { href: "/client/sourcing",        label: "Sourcing IA",       icon: Search       },
-  { href: "/client/reputation",      label: "Réputation",        icon: Star         },
+  { href: "/client/projets",          label: "Projets",           icon: FolderOpen   },
   { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux",   icon: Share2       },
   { href: "/coaching-ia/espace",     label: "Coaching IA",       icon: Brain        },
   { href: "/client/portail",         label: "Portail Client",    icon: Building2    },
@@ -91,7 +91,7 @@ const PREMIUM_GROUPS = [
       { href: "/client/bloc-notes",       label: "Notes",          icon: StickyNote, exact: false },
       { href: "/client/sourcing",        label: "Sourcing IA",    icon: Search,     exact: false },
       { href: "/client/assistant",       label: "Assistant IA",   icon: Zap,        exact: false },
-      { href: "/client/reputation",      label: "Réputation",     icon: Star,       exact: false },
+      { href: "/client/projets",          label: "Projets",        icon: FolderOpen, exact: false },
       { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux",icon: Share2,     exact: false },
       { href: "/coaching-ia/espace",     label: "Coaching IA",    icon: Brain,      exact: false },
     ],
@@ -825,7 +825,7 @@ const DARK_PAGES = [
   "/client/chrono",
   "/client/sourcing",
   "/client/notes",
-  "/client/reputation",
+  "/client/projets",
   "/client/coaching-ia",
   "/client/stocks",
   "/client/fournisseurs",
