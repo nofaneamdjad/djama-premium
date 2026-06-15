@@ -9,9 +9,11 @@
  * Pas d'appel IA — réponse instantanée depuis Supabase.
  */
 
-import { NextResponse }         from "next/server";
-import { createSupabaseAdmin }  from "@/lib/supabase-server";
-import { createLogger }         from "@/lib/logger";
+import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseAdmin }       from "@/lib/supabase-server";
+import { createServerClient }        from "@supabase/ssr";
+import { cookies }                   from "next/headers";
+import { createLogger }              from "@/lib/logger";
 import type {
   RadarItem,
   RadarResponse,
@@ -37,7 +39,19 @@ function computeUrgency(days: number, amount: number): UrgencyLevel {
 }
 
 /* ── Handler ── */
-export async function GET(): Promise<NextResponse<RadarResponse | { error: string }>> {
+export async function GET(req: NextRequest): Promise<NextResponse<RadarResponse | { error: string }>> {
+  /* ── Auth ── */
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+
+  void req;
+
   try {
     const sb  = createSupabaseAdmin();
     const now = new Date();
@@ -47,6 +61,7 @@ export async function GET(): Promise<NextResponse<RadarResponse | { error: strin
     const { data: invoices, error: invErr } = await sb
       .from("invoices")
       .select("id, reference, client_name, client_email, total, issue_date, status")
+      .eq("user_id", user.id)
       .in("status", ["envoyée", "en retard"])
       .eq("payment_status", "non payée");
 
@@ -71,6 +86,7 @@ export async function GET(): Promise<NextResponse<RadarResponse | { error: strin
     const { data: quotes, error: qErr } = await sb
       .from("quotes")
       .select("id, reference, client_name, client_email, total, created_at")
+      .eq("user_id", user.id)
       .eq("status", "envoyé");
 
     if (qErr) log.error("quotes error", qErr.message);

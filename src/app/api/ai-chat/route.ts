@@ -6,12 +6,28 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { createServerClient }        from "@supabase/ssr";
+import { cookies }                   from "next/headers";
 import { createLogger }              from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const log = createLogger("ai-chat");
+
+// Rate limit : 30 questions/user/heure
+const aiChatLimits = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(userId: string): boolean {
+  const now  = Date.now();
+  const slot = aiChatLimits.get(userId);
+  if (!slot || now > slot.resetAt) {
+    aiChatLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    return true;
+  }
+  if (slot.count >= 30) return false;
+  slot.count++;
+  return true;
+}
 
 const SYSTEM = (tool: string) => `\
 Tu es l'assistant IA intégré à DJAMA, une application de gestion tout-en-un pour freelances et TPE françaises.
@@ -29,16 +45,31 @@ Tes règles :
 type MsgIn = { role: "user" | "assistant"; content: string };
 
 export async function POST(req: NextRequest) {
+  /* ── Auth ── */
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json({ error: "Limite atteinte : 30 questions par heure." }, { status: 429 });
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Clé API manquante" }, { status: 500 });
   }
 
-  const { tool, question, history = [] } = await req.json() as {
-    tool:     string;
-    question: string;
-    history:  MsgIn[];
-  };
+  let tool: string, question: string, history: MsgIn[];
+  try {
+    ({ tool, question, history = [] } = await req.json() as { tool: string; question: string; history: MsgIn[] });
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
+  }
 
   if (!question?.trim()) {
     return NextResponse.json({ error: "Question manquante" }, { status: 400 });
