@@ -231,12 +231,14 @@ export default function ChronoPage() {
     if (!user) { setLoading(false); return; }
     const uid = user.id;
     const [eRes, pRes, gRes] = await Promise.all([
-      supabase.from("time_entries").select("*").eq("user_id",uid).order("date",{ascending:false}).order("created_at",{ascending:false}).limit(1000),
-      supabase.from("chrono_projects").select("*").eq("user_id",uid).eq("is_active",true).order("name"),
+      supabase.from("time_entries").select("*").eq("user_id",uid).order("date",{ascending:false}).order("created_at",{ascending:false}).limit(500),
+      supabase.from("chrono_projects").select("*").eq("user_id",uid).eq("is_active",true).order("name").limit(100),
       supabase.from("chrono_goals").select("*").eq("user_id",uid).limit(1),
     ]);
-    if (eRes.data) setEntries(eRes.data as TimeEntry[]);
-    if (pRes.data) setProjects(pRes.data as ChronoProject[]);
+    if (eRes.error) showToast("error", "Erreur réseau — impossible de charger les sessions");
+    else if (eRes.data) setEntries(eRes.data as TimeEntry[]);
+    if (pRes.error) showToast("error", "Erreur réseau — impossible de charger les projets");
+    else if (pRes.data) setProjects(pRes.data as ChronoProject[]);
     if (gRes.data?.length) setGoal(gRes.data[0] as ChronoGoal);
     setLoading(false);
   }, []);
@@ -315,13 +317,12 @@ export default function ChronoPage() {
     startTimerInterval(newMs);
   }
 
-  function handleCountdownEnd() {
+  async function handleCountdownEnd() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setRunning(false); setPaused(false);
     const mins = Math.max(1, Math.round(cdTargetRef.current/60));
-    void saveSession(mins, "countdown");
     setElapsed(0); setStartMs(null);
-    showToast("success", `⏰ Terminé ! ${fmtMin(mins)} enregistrés.`);
+    await saveSession(mins, "countdown");
   }
 
     async function saveSession(mins: number, timerMode: string, pomodoroNum?: number) {
@@ -416,6 +417,13 @@ export default function ChronoPage() {
     const { error } = await supabase.from("time_entries").update({is_billed:true}).eq("id",id);
     if (error) showToast("error",error.message);
     else { setEntries(p=>p.map(e=>e.id===id?{...e,is_billed:true}:e)); showToast("success","Marqué facturé."); }
+  }
+
+  async function handleMarkAllBilled(ids: string[]) {
+    const { error } = await supabase.from("time_entries").update({ is_billed: true }).in("id", ids);
+    if (error) { showToast("error", error.message); return; }
+    setEntries(p => p.map(e => ids.includes(e.id) ? { ...e, is_billed: true } : e));
+    showToast("success", `${ids.length} entrée${ids.length > 1 ? "s" : ""} marquée${ids.length > 1 ? "s" : ""} facturée${ids.length > 1 ? "s" : ""}.`);
   }
 
     const today      = todayISO();
@@ -1143,7 +1151,7 @@ export default function ChronoPage() {
                             </div>
                             <div className="flex items-center gap-3">
                               {projAmt>0&&<span className="font-extrabold" style={{color:"#c9a55a"}}>{fmtEur(projAmt)}</span>}
-                              <button onClick={async()=>{ for(const e of ents) await handleMarkBilled(e.id); }}
+                              <button onClick={()=>{ void handleMarkAllBilled(ents.map(e=>e.id)); }}
                                 className="flex items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-3 py-1.5 text-xs font-bold text-emerald-400 transition hover:bg-emerald-500/15">
                                 <CheckCircle size={11}/>Tout marquer facturé
                               </button>
