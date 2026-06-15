@@ -10,7 +10,7 @@ import {
   CreditCard, Landmark, Brain, Lightbulb, Download,
   Star, Maximize2, Minimize2, Copy, Check, X,
   FileText, Zap, HelpCircle, BookMarked, Rocket,
-  Shield, RefreshCw, Gamepad2, Trophy, Timer,
+  Shield, RefreshCw, Gamepad2, Trophy, Timer, LayoutDashboard,
 } from "lucide-react";
 import { COACHING_MODULES, getNextChapter, type Module, type Chapter } from "@/lib/coaching-content";
 import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
@@ -48,7 +48,7 @@ function saveFavorites(s: Set<string>) {
 /* ─────────────────────────────────────────────────────────
    TYPES
 ───────────────────────────────────────────────────────── */
-type View      = "chapter" | "assistant" | "booking" | "favorites" | "jeux";
+type View      = "dashboard" | "chapter" | "assistant" | "booking" | "favorites" | "jeux";
 type AiAction  = "summarize" | "simplify" | "quiz" | "action_plan" | "create_prompt";
 
 /* ─────────────────────────────────────────────────────────
@@ -1752,6 +1752,223 @@ function JeuxPanel() {
 }
 
 /* ─────────────────────────────────────────────────────────
+   COMPOSANT — Dashboard
+───────────────────────────────────────────────────────── */
+function DashboardPanel({
+  completed, favorites, onSelectChapter, onSetView, userName,
+}: {
+  completed:       Set<string>;
+  favorites:       Set<string>;
+  onSelectChapter: (moduleId: string, chapterId: string) => void;
+  onSetView:       (v: View) => void;
+  userName?:       string;
+}) {
+  const totalChapters  = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
+  const completedCount = completed.size;
+  const overallPct     = Math.round((completedCount / totalChapters) * 100);
+  const favCount       = favorites.size;
+  const totalModules   = COACHING_MODULES.length;
+  const doneModules    = COACHING_MODULES.filter((m) => m.chapters.every((c) => completed.has(c.id))).length;
+
+  /* Prochain chapitre non terminé */
+  let nextModule:  Module  | null = null;
+  let nextChapter: Chapter | null = null;
+  for (const m of COACHING_MODULES) {
+    for (const ch of m.chapters) {
+      if (!completed.has(ch.id)) { nextModule = m; nextChapter = ch; break; }
+    }
+    if (nextChapter) break;
+  }
+
+  const STATS = [
+    { label: "Progression",       value: `${overallPct}%`, sub: `${completedCount}/${totalChapters} chapitres`, color: "#a78bfa", icon: TrendingUp },
+    { label: "Modules terminés",  value: `${doneModules}/${totalModules}`, sub: "modules complétés", color: "#34d399", icon: Award },
+    { label: "Favoris",           value: String(favCount), sub: "chapitres sauvegardés", color: "#f9a826", icon: Star },
+    { label: "Restant",           value: String(totalChapters - completedCount), sub: "chapitres à faire", color: "#60a5fa", icon: Target },
+  ];
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-8">
+
+      {/* ── En-tête ── */}
+      <div>
+        <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Tableau de bord</p>
+        <h1 className="mt-1 text-2xl font-extrabold text-white">
+          {userName ? `Bonjour, ${userName.split(" ")[0]}` : "Bienvenue dans votre espace"}
+        </h1>
+        <p className="mt-1 text-sm text-white/40">Votre progression Coaching IA DJAMA</p>
+      </div>
+
+      {/* ── Progression globale ── */}
+      <div className="rounded-2xl border border-[rgba(167,139,250,0.2)] bg-gradient-to-br from-[rgba(167,139,250,0.08)] to-[rgba(167,139,250,0.03)] p-5">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[0.65rem] font-bold uppercase tracking-widest text-[#a78bfa]">Progression globale</span>
+          <span className="text-2xl font-extrabold text-white">{overallPct}%</span>
+        </div>
+        <div className="h-2.5 overflow-hidden rounded-full bg-white/[0.07]">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd]"
+            initial={{ width: 0 }}
+            animate={{ width: `${overallPct}%` }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          />
+        </div>
+        <p className="mt-2 text-[0.65rem] text-white/30">{completedCount} chapitres terminés sur {totalChapters} · {totalModules} modules</p>
+      </div>
+
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {STATS.map(({ label, value, sub, color, icon: Icon }) => (
+          <motion.div
+            key={label}
+            whileHover={{ y: -2 }}
+            className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4"
+          >
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl"
+              style={{ background: `rgba(${color === "#a78bfa" ? "167,139,250" : color === "#34d399" ? "52,211,153" : color === "#f9a826" ? "249,168,38" : "96,165,250"},0.12)` }}>
+              <Icon size={15} style={{ color }} />
+            </div>
+            <p className="text-xl font-extrabold text-white">{value}</p>
+            <p className="mt-0.5 text-[0.62rem] font-semibold text-white/50">{label}</p>
+            <p className="text-[0.6rem] text-white/25">{sub}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* ── Continuer ── */}
+      {nextChapter && nextModule && (
+        <div>
+          <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Continuer là où vous étiez</p>
+          <motion.button
+            whileHover={{ x: 4 }}
+            onClick={() => { onSelectChapter(nextModule!.id, nextChapter!.id); onSetView("chapter"); }}
+            className="group flex w-full items-center gap-5 rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.05)] p-5 text-left transition-all hover:border-[rgba(167,139,250,0.35)] hover:bg-[rgba(167,139,250,0.09)]"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+              style={{ background: `rgba(${nextModule.rgb},0.15)`, border: `1px solid rgba(${nextModule.rgb},0.25)` }}>
+              <Play size={20} style={{ color: `rgb(${nextModule.rgb})` }} fill={`rgb(${nextModule.rgb})`} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[0.62rem] font-bold uppercase tracking-widest" style={{ color: `rgb(${nextModule.rgb})` }}>
+                M{nextModule.id} · {nextModule.title}
+              </p>
+              <p className="mt-0.5 truncate text-sm font-bold text-white">{nextChapter.title}</p>
+              <div className="mt-1 flex items-center gap-2 text-[0.6rem] text-white/30">
+                <Clock size={9} /> {nextChapter.duration}
+                <span>·</span>
+                <span>{nextChapter.type === "exercise" ? "Exercice" : nextChapter.type === "quiz" ? "Quiz" : "Cours"}</span>
+              </div>
+            </div>
+            <ArrowRight size={18} className="shrink-0 text-white/20 transition-transform group-hover:translate-x-1 group-hover:text-[#a78bfa]" />
+          </motion.button>
+        </div>
+      )}
+
+      {overallPct === 100 && (
+        <div className="rounded-2xl border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.06)] p-6 text-center">
+          <Award size={40} className="mx-auto mb-3 text-[#34d399]" />
+          <h3 className="text-lg font-extrabold text-white">Félicitations — Formation terminée !</h3>
+          <p className="mt-1.5 text-sm text-white/45">Vous avez complété l'intégralité du programme Coaching IA DJAMA.</p>
+        </div>
+      )}
+
+      {/* ── Modules ── */}
+      <div>
+        <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Tous les modules</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {COACHING_MODULES.map((m) => {
+            const done = m.chapters.filter((c) => completed.has(c.id)).length;
+            const pct  = m.chapters.length > 0 ? Math.round((done / m.chapters.length) * 100) : 0;
+            const firstIncomplete = m.chapters.find((c) => !completed.has(c.id));
+            return (
+              <motion.button
+                key={m.id}
+                whileHover={{ y: -2 }}
+                onClick={() => {
+                  const target = firstIncomplete ?? m.chapters[0];
+                  onSelectChapter(m.id, target.id);
+                  onSetView("chapter");
+                }}
+                className="group rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 text-left transition-all hover:border-white/[0.12] hover:bg-white/[0.04]"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: m.color }}>
+                    Module {m.id}
+                  </span>
+                  <span className="text-[0.62rem] font-bold text-white/40">{pct}%</span>
+                </div>
+                <p className="mb-1 text-sm font-bold text-white">{m.title}</p>
+                <p className="mb-3 text-[0.65rem] leading-relaxed text-white/35">{m.tagline}</p>
+                <div className="h-1 overflow-hidden rounded-full bg-white/[0.07]">
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%`, background: m.color }} />
+                </div>
+                <p className="mt-1.5 text-[0.58rem] text-white/20">{done}/{m.chapters.length} chapitres · {m.duration}</p>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Réserver un appel ── */}
+      <div className="overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.2)] bg-gradient-to-br from-[rgba(167,139,250,0.07)] to-[rgba(96,165,250,0.04)]">
+        <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.12)]">
+            <Calendar size={26} className="text-[#a78bfa]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[0.62rem] font-bold uppercase tracking-widest text-[#a78bfa]">Coaching individuel</p>
+            <h3 className="mt-0.5 text-base font-extrabold text-white">Réserver un appel vidéo avec un expert IA</h3>
+            <p className="mt-1 text-sm text-white/40">1 séance par semaine · 6 mois · Expert certifié DJAMA</p>
+            <div className="mt-3 flex flex-wrap gap-2 text-[0.62rem] text-white/35">
+              {["Google Meet / Zoom", "Enregistrement fourni", "Compte-rendu après séance", "Accès 6 mois"].map((item) => (
+                <span key={item} className="flex items-center gap-1">
+                  <CheckCircle2 size={9} className="text-[#34d399]" /> {item}
+                </span>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={() => onSetView("booking")}
+            className="shrink-0 flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] px-5 py-3 text-sm font-bold text-white shadow-[0_4px_20px_rgba(167,139,250,0.25)] transition hover:shadow-[0_4px_30px_rgba(167,139,250,0.4)]"
+          >
+            Réserver <ArrowRight size={15} />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Accès rapide ── */}
+      <div>
+        <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Accès rapide</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "Assistant IA",  icon: Bot,     color: "#a78bfa", view: "assistant" as View },
+            { label: "Jeux IA",       icon: Gamepad2,color: "#38bdf8", view: "jeux"      as View },
+            { label: "Favoris",       icon: Star,    color: "#f9a826", view: "favorites" as View, badge: favCount },
+            { label: "Réserver",      icon: Calendar,color: "#34d399", view: "booking"   as View },
+          ].map(({ label, icon: Icon, color, view: v, badge }) => (
+            <button key={label} onClick={() => onSetView(v)}
+              className="group flex flex-col items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 transition-all hover:border-white/[0.12] hover:bg-white/[0.04]">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
+                <Icon size={18} style={{ color }} />
+                {badge !== undefined && badge > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-[0.5rem] font-black text-black" style={{ background: color }}>
+                    {badge}
+                  </span>
+                )}
+              </div>
+              <span className="text-[0.65rem] font-semibold text-white/50 group-hover:text-white/80">{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    PAGE PRINCIPALE
 ───────────────────────────────────────────────────────── */
 export default function EspaceCoachingIA() {
@@ -1763,7 +1980,7 @@ export default function EspaceCoachingIA() {
   const [selectedModuleId,  setSelectedModuleId]  = useState<string>("1");
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>("1.1");
   const [expandedModules,   setExpandedModules]   = useState<Set<string>>(new Set(["1"]));
-  const [view,              setView]              = useState<View>("chapter");
+  const [view,              setView]              = useState<View>("dashboard");
   const [sidebarOpen,       setSidebarOpen]       = useState(true);
   const [focusMode,         setFocusMode]         = useState(false);
   const [assistantInitMsg,  setAssistantInitMsg]  = useState<string | undefined>();
@@ -1851,11 +2068,12 @@ export default function EspaceCoachingIA() {
   if (access === "preview" && !devBypass) return <PreviewGate user={user} />;
 
   const TAB_ITEMS: { key: View; icon: React.ElementType; label: string; badge?: number }[] = [
-    { key: "chapter",   icon: BookOpen,    label: "Cours" },
-    { key: "assistant", icon: Bot,         label: "Assistant IA" },
-    { key: "jeux",      icon: Gamepad2,    label: "Jeux IA" },
-    { key: "favorites", icon: Star,        label: "Favoris", badge: favCount || undefined },
-    { key: "booking",   icon: Calendar,    label: "Réserver" },
+    { key: "dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
+    { key: "chapter",   icon: BookOpen,        label: "Cours" },
+    { key: "assistant", icon: Bot,             label: "Assistant IA" },
+    { key: "jeux",      icon: Gamepad2,        label: "Jeux IA" },
+    { key: "favorites", icon: Star,            label: "Favoris", badge: favCount || undefined },
+    { key: "booking",   icon: Calendar,        label: "Réserver" },
   ];
 
   return (
@@ -2011,6 +2229,21 @@ export default function EspaceCoachingIA() {
         {/* Vue principale */}
         <div className={`flex-1 overflow-y-auto ${focusMode ? "bg-[#07080e]" : ""}`}>
           <AnimatePresence mode="wait">
+
+            {view === "dashboard" && (
+              <motion.div key="dashboard"
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.22, ease }}
+              >
+                <DashboardPanel
+                  completed={completed}
+                  favorites={favorites}
+                  onSelectChapter={selectChapter}
+                  onSetView={setView}
+                  userName={user?.name}
+                />
+              </motion.div>
+            )}
 
             {view === "chapter" && currentChapter && (
               <motion.div key={`chapter-${currentChapter.id}`}
