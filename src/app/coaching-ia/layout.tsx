@@ -1,21 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LogOut, Lock, BookOpen, Bot, Calendar, LayoutDashboard, Clock, CheckCircle2, MessageCircle } from "lucide-react";
+import { LogOut, Lock, Clock, CheckCircle2, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
 import { motion } from "framer-motion";
 
-const NAV = [
-  { href: "/coaching-ia/espace",           label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/coaching-ia/espace#cours",     label: "Mes cours",       icon: BookOpen },
-  { href: "/coaching-ia/espace#assistant", label: "Assistant IA",    icon: Bot },
-  { href: "/coaching-ia/espace#reserver",  label: "Réserver",        icon: Calendar },
-];
-
 export default function CoachingIALayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const { access, user } = useCoachingIAAccess();
 
   async function handleLogout() {
@@ -118,31 +109,6 @@ export default function CoachingIALayout({ children }: { children: React.ReactNo
             Coaching IA
           </span>
         </Link>
-
-        {/* Navigation — visible uniquement en accès complet */}
-        {access === "full" && (
-          <nav className="flex flex-1 items-center gap-1">
-            {NAV.map(({ href, label, icon: Icon }) => {
-              const active =
-                pathname === href ||
-                (href.includes("#") && pathname === href.split("#")[0]);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
-                    active
-                      ? "border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] text-[#a78bfa]"
-                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                  }`}
-                >
-                  <Icon size={14} />
-                  <span className="hidden sm:inline">{label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        )}
 
         {/* Badge aperçu si mode preview */}
         {access === "preview" && (
