@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * ModuleCard + ModuleGroupSection — composants partagés
- * Utilisés par /client (page d'accueil) ET /client/dashboard
- * Toute modification ici se propage aux deux pages automatiquement.
- */
-
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -39,12 +33,15 @@ export function ModuleCard({
       <Link href={isLocked ? "/client/abonnements" : mod.href} className="group block">
         <motion.div
           whileTap={{ scale: 0.96 }}
-          className="relative flex flex-col gap-2.5 rounded-2xl bg-white p-3.5 transition-all"
+          className="relative flex flex-col gap-2.5 rounded-2xl p-3.5 transition-all duration-200 hover:-translate-y-0.5"
           style={{
-            border: isLocked ? "1px solid rgba(201,165,90,0.2)" : "1px solid rgba(0,0,0,0.05)",
-            boxShadow: isLocked
-              ? "0 2px 12px rgba(201,165,90,0.07)"
-              : "0 2px 10px rgba(0,0,0,0.05)",
+            background: isLocked
+              ? "rgba(201,165,90,0.05)"
+              : "rgba(255,255,255,0.04)",
+            border: isLocked
+              ? "1px solid rgba(201,165,90,0.2)"
+              : "1px solid rgba(255,255,255,0.07)",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.2)",
           }}
         >
           {/* Icône + badge verrou */}
@@ -53,7 +50,7 @@ export function ModuleCard({
             {isLocked && (
               <div
                 className="absolute -bottom-0.5 -right-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full shadow"
-                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", border: "1.5px solid #fff" }}
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", border: "1.5px solid rgba(255,255,255,0.15)" }}
               >
                 <Lock size={8} color="white" strokeWidth={2.5} />
               </div>
@@ -62,11 +59,11 @@ export function ModuleCard({
 
           {/* Texte */}
           <div className="flex-1 min-w-0">
-            <p className={`text-[12.5px] font-bold leading-tight ${isLocked ? "text-gray-400" : "text-gray-800"}`}>
+            <p className={`text-[12.5px] font-bold leading-tight ${isLocked ? "text-white/35" : "text-white/85"}`}>
               {mod.label}
             </p>
             {mod.sub && (
-              <p className="mt-0.5 text-[10.5px] leading-snug text-gray-400 line-clamp-2">
+              <p className="mt-0.5 text-[10.5px] leading-snug text-white/35 line-clamp-2">
                 {isLocked ? "Accès PRO requis" : mod.sub}
               </p>
             )}
@@ -83,7 +80,7 @@ export function ModuleCard({
           ) : tier === "free" ? (
             <div
               className="self-start flex items-center gap-1 rounded-full px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-wide"
-              style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", color: "#16a34a" }}
+              style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", color: "#4ade80" }}
             >
               Gratuit
             </div>
@@ -125,7 +122,7 @@ export function ModuleGroupSection({
           >
             <GroupIcon size={13} style={{ color: group.color }} strokeWidth={2} />
           </div>
-          <h3 className="text-[12.5px] font-black text-gray-700 tracking-wide">{group.label}</h3>
+          <h3 className="text-[12.5px] font-black text-white/60 tracking-wide">{group.label}</h3>
         </div>
         <div className="flex items-center gap-2">
           {groupIsLocked && (
@@ -136,7 +133,7 @@ export function ModuleGroupSection({
               <Crown size={7} /> PRO
             </div>
           )}
-          <span className="text-[10px] font-bold text-gray-300 tabular-nums">
+          <span className="text-[10px] font-bold text-white/20 tabular-nums">
             {group.modules.length}
           </span>
         </div>

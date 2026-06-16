@@ -324,11 +324,11 @@ export default function CockpitPage() {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.92, y: -6 }}
                       transition={{ duration: 0.16, ease }}
-                      className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-2xl bg-white shadow-[0_16px_48px_rgba(0,0,0,0.24)]"
+                      className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-2xl bg-[#0e1420] border border-white/8 shadow-[0_16px_48px_rgba(0,0,0,0.5)]"
                       style={{ border: "1px solid rgba(0,0,0,0.07)" }}
                     >
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-[12px] font-bold text-gray-900 truncate">{firstName}</p>
+                        <p className="text-[12px] font-bold text-white truncate">{firstName}</p>
                         <div className="mt-1">
                           {isPremium ? (
                             <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold w-fit"
@@ -347,9 +347,9 @@ export default function CockpitPage() {
                         const Icon = item.icon;
                         return (
                           <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50">
-                            <Icon size={13} className="text-gray-400" />
-                            <span className="flex-1 text-[12.5px] font-medium text-gray-700">{item.label}</span>
+                            className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-white/5">
+                            <Icon size={13} className="text-white/40" />
+                            <span className="flex-1 text-[12.5px] font-medium text-white/70">{item.label}</span>
                             <ChevronRight size={11} className="text-gray-300" />
                           </Link>
                         );
@@ -630,15 +630,15 @@ export default function CockpitPage() {
         >
           <div className="flex items-center gap-2 mb-3">
             <div className="h-1 w-1 rounded-full" style={{ background: GOLD }} />
-            <h2 className="text-[12px] font-black uppercase tracking-[0.15em] text-gray-500">Aujourd&apos;hui</h2>
+            <h2 className="text-[12px] font-black uppercase tracking-[0.15em] text-white/30">Aujourd&apos;hui</h2>
           </div>
           <div className="grid grid-cols-2 gap-3">
 
             {/* Card Tâches */}
             <Link href="/client/productivite">
               <motion.div whileTap={{ scale: 0.97 }}
-                className="rounded-2xl bg-white p-4 transition-all"
-                style={{ border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
+                className="rounded-2xl p-4 transition-all"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 2px 12px rgba(0,0,0,0.2)" }}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl"
                     style={{ background: "rgba(190,24,93,0.08)" }}>
@@ -650,7 +650,7 @@ export default function CockpitPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-[11.5px] font-bold text-gray-700 mb-0.5">Tâches</p>
+                <p className="text-[11.5px] font-bold text-white/80 mb-0.5">Tâches</p>
                 {todayLoading ? (
                   <div className="space-y-1.5 mt-2">
                     {[0, 1].map(i => (
@@ -662,17 +662,17 @@ export default function CockpitPage() {
                     {todayTasks.slice(0, 2).map(t => (
                       <div key={t.id} className="flex items-center gap-1.5">
                         <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: priorityColor(t.priority) }} />
-                        <p className="text-[10.5px] text-gray-500 truncate leading-tight">{t.title}</p>
+                        <p className="text-[10.5px] text-white/50 truncate leading-tight">{t.title}</p>
                       </div>
                     ))}
                     {todayTasks.length > 2 && (
-                      <p className="text-[9.5px] text-gray-400">+{todayTasks.length - 2} de plus</p>
+                      <p className="text-[9.5px] text-white/30">+{todayTasks.length - 2} de plus</p>
                     )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5 mt-1">
                     <CheckCircle2 size={11} className="text-emerald-400 shrink-0" />
-                    <span className="text-[10.5px] text-gray-400">Tout est fait !</span>
+                    <span className="text-[10.5px] text-white/40">Tout est fait !</span>
                   </div>
                 )}
               </motion.div>
@@ -681,8 +681,8 @@ export default function CockpitPage() {
             {/* Card Événement */}
             <Link href="/client/planning">
               <motion.div whileTap={{ scale: 0.97 }}
-                className="rounded-2xl bg-white p-4 transition-all"
-                style={{ border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
+                className="rounded-2xl p-4 transition-all"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 2px 12px rgba(0,0,0,0.2)" }}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl"
                     style={{ background: "rgba(79,70,229,0.08)" }}>
@@ -694,7 +694,7 @@ export default function CockpitPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-[11.5px] font-bold text-gray-700 mb-0.5">Agenda</p>
+                <p className="text-[11.5px] font-bold text-white/80 mb-0.5">Agenda</p>
                 {todayLoading ? (
                   <div className="space-y-1.5 mt-2">
                     <div className="h-2 rounded animate-pulse" style={{ background: "#f3f4f6", width: "75%" }} />
@@ -702,15 +702,15 @@ export default function CockpitPage() {
                   </div>
                 ) : nextEvent ? (
                   <div className="mt-1">
-                    <p className="text-[10.5px] text-gray-700 font-semibold truncate leading-tight">{nextEvent.title}</p>
-                    <p className="text-[9.5px] text-gray-400 mt-0.5">
+                    <p className="text-[10.5px] text-white/80 font-semibold truncate leading-tight">{nextEvent.title}</p>
+                    <p className="text-[9.5px] text-white/35 mt-0.5">
                       {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
                     </p>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5 mt-1">
                     <Clock size={11} className="text-gray-300 shrink-0" />
-                    <span className="text-[10.5px] text-gray-400">Aucun événement</span>
+                    <span className="text-[10.5px] text-white/35">Aucun événement</span>
                   </div>
                 )}
               </motion.div>
@@ -727,21 +727,21 @@ export default function CockpitPage() {
             className="mb-5"
           >
             <Link href="/client/factures">
-              <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 transition-colors hover:bg-gray-50"
-                style={{ border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all hover:bg-white/6"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: "rgba(37,99,235,0.08)" }}>
                   <Activity size={15} style={{ color: "#2563eb" }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-bold text-gray-700 truncate">
-                    Dernière facture — <span className="text-gray-500">{lastFac.client_nom || "client"}</span>
+                  <p className="text-[12px] font-bold text-white/80 truncate">
+                    Dernière facture — <span className="text-white/40">{lastFac.client_nom || "client"}</span>
                   </p>
-                  <p className="text-[10.5px] text-gray-400">
+                  <p className="text-[10.5px] text-white/35">
                     {lastFac.numero} · {new Date(lastFac.date_emission).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                   </p>
                 </div>
-                <span className="shrink-0 text-[13px] font-black text-gray-800">{fmtEurInt(lastFac.montant_ttc)}</span>
+                <span className="shrink-0 text-[13px] font-black text-white">{fmtEurInt(lastFac.montant_ttc)}</span>
                 <ChevronRight size={13} className="shrink-0 text-gray-300" />
               </div>
             </Link>
@@ -755,23 +755,24 @@ export default function CockpitPage() {
           transition={{ duration: 0.3, delay: 0.22, ease }}
           className="relative mb-5"
         >
-          <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher un module…"
-            className="w-full rounded-2xl bg-white py-3 pl-11 pr-10 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none transition"
+            className="w-full rounded-2xl py-3 pl-11 pr-10 text-[13px] text-white placeholder:text-white/30 outline-none transition"
             style={{
-              border: search ? `1px solid rgba(201,165,90,0.4)` : "1px solid rgba(0,0,0,0.07)",
+              background: "rgba(255,255,255,0.05)",
+              border: search ? `1px solid rgba(201,165,90,0.4)` : "1px solid rgba(255,255,255,0.08)",
               boxShadow: search
-                ? `0 0 0 3px rgba(201,165,90,0.1), 0 2px 12px rgba(0,0,0,0.06)`
-                : "0 2px 10px rgba(0,0,0,0.04)",
+                ? `0 0 0 3px rgba(201,165,90,0.08), 0 2px 12px rgba(0,0,0,0.2)`
+                : "0 2px 10px rgba(0,0,0,0.15)",
             }}
           />
           {search && (
             <button onClick={() => setSearch("")}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
               <X size={14} />
             </button>
           )}
@@ -786,8 +787,8 @@ export default function CockpitPage() {
             className="mb-5"
           >
             {filteredGroups.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 rounded-2xl bg-white"
-                style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+              <div className="flex flex-col items-center gap-2 py-10 rounded-2xl"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <Search size={22} className="text-gray-300" />
                 <p className="text-[12px] text-gray-400">Aucun module pour &ldquo;{search}&rdquo;</p>
               </div>
