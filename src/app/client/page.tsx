@@ -254,7 +254,7 @@ export default function CockpitPage() {
       ══════════════════════════════════════════ */}
       <div
         className="relative overflow-hidden"
-        style={{ background: "linear-gradient(155deg,#07090f 0%,#0c1526 50%,#070c18 100%)" }}
+        style={{ background: "linear-gradient(155deg,#07080e 0%,#0d1117 50%,#07080e 100%)" }}
       >
         {/* Shimmer gold line */}
         <motion.div

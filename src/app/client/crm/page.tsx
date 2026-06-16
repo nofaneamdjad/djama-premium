@@ -1792,7 +1792,7 @@ export default function CRMPage() {
       <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* ── HEADER ── */}
-      <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#07080e,#0c1020,#07080e)" }}>
+      <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#07080e)" }}>
         <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
         <div className="pointer-events-none absolute -bottom-8 right-10 h-32 w-32 rounded-full opacity-[0.04]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
         <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.3),transparent)" }}/>
