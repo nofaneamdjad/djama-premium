@@ -444,6 +444,7 @@ export default function BlocNotesPage() {
   }, [nbPages]);
 
   const deleteNotebook = useCallback(async (nb: Notebook) => {
+    if (!window.confirm(`Supprimer le cahier "${nb.name}" ? Cette action est irréversible.`)) return;
     await supabase.from("notebooks").delete().eq("id",nb.id);
     setNotebooks(prev => prev.filter(n => n.id!==nb.id));
     if (activeNb?.id === nb.id) { setActiveNb(null); setNbPages([]); }
@@ -882,8 +883,8 @@ export default function BlocNotesPage() {
                         <div className="flex w-full items-center justify-between px-0.5">
                           <span className="text-[0.65rem] font-semibold text-white/45 truncate flex-1">{nb.name}</span>
                           <button onClick={() => void deleteNotebook(nb)}
-                            className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400/70 transition ml-1">
-                            <Trash2 size={10}/>
+                            className="shrink-0 p-1.5 -m-1 text-white/40 hover:text-red-400/70 active:text-red-400 transition ml-1">
+                            <Trash2 size={13}/>
                           </button>
                         </div>
                       </motion.div>
