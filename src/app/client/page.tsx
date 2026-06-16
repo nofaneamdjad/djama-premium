@@ -557,7 +557,7 @@ export default function CockpitPage() {
         {/* ── Wave ── */}
         <svg viewBox="0 0 1440 56" fill="none" preserveAspectRatio="none"
           className="w-full block" style={{ marginBottom: "-1px", height: "56px" }}>
-          <path d="M0,24 C180,56 420,6 720,28 C1020,50 1260,10 1440,32 L1440,56 L0,56 Z" fill="#eef0f5"/>
+          <path d="M0,24 C180,56 420,6 720,28 C1020,50 1260,10 1440,32 L1440,56 L0,56 Z" fill="#07080e"/>
         </svg>
       </div>
 

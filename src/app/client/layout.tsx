@@ -811,6 +811,7 @@ function BottomNav({ pathname, dark = false }: { pathname: string; dark?: boolea
 /* ─────────── LAYOUT ─────────── */
 /* Pages that carry their own dark background — topbar adapts accordingly */
 const DARK_PAGES = [
+  "/client",
   "/client/dashboard",
   "/client/abonnements",
   "/client/tresorerie",
