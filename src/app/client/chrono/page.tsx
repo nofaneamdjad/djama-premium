@@ -584,13 +584,22 @@ export default function ChronoPage() {
         )}
       </AnimatePresence>
 
-            <div className="relative z-10 border-b border-white/6 bg-[#07080e]/95 px-5 py-3.5 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+            <div className="relative z-10 overflow-hidden border-b border-white/6 px-5 py-4 sm:px-8"
+        style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#07080e)" }}>
+        {/* Gold shimmer line */}
+        <motion.div initial={{scaleX:0}} animate={{scaleX:1}} transition={{duration:0.9,ease:"easeOut"}}
+          className="absolute inset-x-0 top-0 h-[2px] origin-left"
+          style={{background:`linear-gradient(90deg,${violet},${violet}aa,${violet}22,transparent)`}}/>
+        {/* Glow orbs */}
+        <div className="pointer-events-none absolute -top-8 -right-8 h-36 w-36 rounded-full opacity-[0.07]"
+          style={{background:`radial-gradient(circle,${violet},transparent 70%)`}}/>
+        <div className="pointer-events-none absolute bottom-0 left-1/3 h-20 w-20 rounded-full opacity-[0.04]"
+          style={{background:`radial-gradient(circle,${violet},transparent 70%)`}}/>
+        <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border" style={{backgroundColor:`${violet}14`,borderColor:`${violet}28`}}>
-                <Timer size={18} style={{color:violet}}/>
-              </div>
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+              style={{backgroundColor:`${violet}14`,borderColor:`${violet}28`}}>
+              <Timer size={18} style={{color:violet}}/>
             </div>
             <div>
               <h1 className="text-base font-extrabold text-white">Chrono Pro</h1>
