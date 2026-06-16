@@ -1244,7 +1244,7 @@ export default function FacturesPage() {
   const fmt         = (n: number) => fmtAmount(n, devise);
 
   return (
-    <div className="flex h-[calc(100vh-56px)] flex-col overflow-hidden bg-[#0a0f1e]">
+    <div className="flex h-[calc(100vh-56px)] flex-col overflow-hidden bg-[#07080e]">
 
       {/* ── Header ── */}
       <div className="shrink-0 border-b border-white/[0.07] bg-[rgba(10,11,16,0.95)] px-5 py-4 backdrop-blur-xl sm:px-8">
@@ -1289,7 +1289,7 @@ export default function FacturesPage() {
 
         {/* ── Sidebar list ── */}
         <aside className={`flex-col overflow-hidden border-r border-white/[0.06] sm:rounded-xl sm:border sm:border-white/[0.08] transition-all duration-300 ${mobileView === "editor" ? "hidden sm:flex" : "flex"} ${sidebarOpen ? "w-full sm:w-[300px] sm:flex-none" : "hidden sm:flex sm:w-0 sm:border-0"}`}
-          style={{ background:"rgba(255,255,255,0.025)" }}>
+          style={{ background:"rgba(255,255,255,0.01)" }}>
 
 
           {/* Search + filter */}
@@ -1411,7 +1411,7 @@ export default function FacturesPage() {
             <motion.div key={selected?.id ?? "new"} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
               transition={{ duration:0.3, ease }}
               className="flex h-full flex-col overflow-hidden rounded-none sm:rounded-xl sm:border sm:border-white/[0.08]"
-              style={{ background:"rgba(255,255,255,0.025)" }}>
+              style={{ background:"rgba(255,255,255,0.01)" }}>
 
               {/* ── Toolbar ── */}
               <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.07] px-5 py-3">
