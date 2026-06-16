@@ -931,7 +931,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       {/* ── SIDEBAR DESKTOP (toujours dans le flux flex à lg+) ── */}
       <aside
-        className="hidden lg:flex w-[218px] flex-shrink-0 flex-col"
+        className="hidden lg:flex w-[13.625rem] flex-shrink-0 flex-col"
         style={{ background: DARK, borderRight: "1px solid rgba(255,255,255,0.07)" }}
       >
         {/* Logo */}
@@ -1040,9 +1040,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             />
             <motion.aside
               key="mobile-sidebar"
-              initial={{ x: -218 }} animate={{ x: 0 }} exit={{ x: -218 }}
+              initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="fixed inset-y-0 left-0 z-40 flex w-[218px] flex-col"
+              className="fixed inset-y-0 left-0 z-40 flex w-[13.625rem] flex-col"
               style={{ background: DARK, borderRight: "1px solid rgba(255,255,255,0.07)" }}
             >
               {/* Logo + bouton fermer */}
