@@ -991,7 +991,7 @@ export default function BlocNotesPage() {
             </div>
 
             {/* Notes list */}
-            <div className="flex-1 overflow-y-auto" style={{scrollbarWidth:"none"}}>
+            <div className="flex-1 overflow-y-auto pb-20 lg:pb-0" style={{scrollbarWidth:"none"}}>
               {loading ? (
                 <div className="flex items-center justify-center py-16">
                   <Loader2 size={18} className="animate-spin text-white/20"/>

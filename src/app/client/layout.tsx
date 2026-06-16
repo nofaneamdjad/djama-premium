@@ -847,6 +847,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   /* ── #2: detect dark pages for consistent background ── */
   const isDarkPage = DARK_PAGES.some(p => pathname === p || pathname.startsWith(p + "/"));
 
+  /* Pages with their own complete mobile nav — hide the global bottom bar */
+  const hasOwnMobileNav = pathname.startsWith("/client/bloc-notes");
+
   const { level, isPremium, name, email } = subscription;
   const userInitial = (name?.[0] ?? email?.[0] ?? "U").toUpperCase();
   const displayName = name || email || "Mon compte";
@@ -1212,13 +1215,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </header>
 
         {/* Page — gated for free users on premium routes */}
-        <main className="flex-1 overflow-auto pb-16 lg:pb-0">
+        <main className={`flex-1 overflow-auto ${hasOwnMobileNav ? "" : "pb-16 lg:pb-0"}`}>
           {isGated ? <PremiumGate /> : children}
         </main>
       </div>
 
       {/* Mobile bottom navigation */}
-      <BottomNav pathname={pathname} dark={isDarkPage} />
+      {!hasOwnMobileNav && <BottomNav pathname={pathname} dark={isDarkPage} />}
     </div>
   );
 }
