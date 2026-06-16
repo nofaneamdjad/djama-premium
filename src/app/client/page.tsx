@@ -245,7 +245,7 @@ export default function CockpitPage() {
      RENDU
   ───────────────────────────────────────────────── */
   return (
-    <div className="min-h-full overflow-x-hidden" style={{ background: "#eef0f5" }}>
+    <div className="min-h-full overflow-x-hidden bg-[#07080e]">
 
       <OnboardingModal name={firstName} />
 
