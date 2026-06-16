@@ -1593,7 +1593,7 @@ export default function TresoreriePage() {
       </AnimatePresence>
 
       <div className="relative shrink-0 overflow-hidden px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6"
-        style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+        style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#09080e)" }}>
         <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, ease: "easeOut" }}
           className="absolute inset-x-0 top-0 h-[2px] origin-left"
           style={{ background: "linear-gradient(90deg,#c9a55a,#e8c97a,#c9a55a44,transparent)" }} />
