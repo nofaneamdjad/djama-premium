@@ -1188,7 +1188,11 @@ export default function BlocNotesPage() {
 
         ) : isCanvas && !activeNb ? (
           /* ─ CANVAS empty state ─ */
-          <div className="flex flex-1 flex-col items-center justify-center gap-8 p-10 text-center">
+          <div className="relative flex flex-1 flex-col items-center justify-center gap-8 overflow-hidden p-10 text-center">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-72 w-72 rounded-full opacity-[0.06]"
+              style={{background:"radial-gradient(circle,#a78bfa,transparent 70%)"}}/>
+            <div className="pointer-events-none absolute bottom-0 left-0 h-56 w-56 rounded-full opacity-[0.05]"
+              style={{background:"radial-gradient(circle,#a78bfa,transparent 70%)"}}/>
             <div className="flex h-20 w-20 items-center justify-center rounded-3xl"
               style={{background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.16)"}}>
               <Pencil size={28} style={{color:"rgba(167,139,250,0.55)"}}/>
@@ -1208,7 +1212,11 @@ export default function BlocNotesPage() {
 
         ) : !selected ? (
           /* ─ NOTE empty state ─ */
-          <div className="flex flex-1 flex-col items-center justify-center gap-8 p-10 text-center">
+          <div className="relative flex flex-1 flex-col items-center justify-center gap-8 overflow-hidden p-10 text-center">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-72 w-72 rounded-full opacity-[0.07]"
+              style={{background:"radial-gradient(circle,#f59e0b,transparent 70%)"}}/>
+            <div className="pointer-events-none absolute bottom-0 left-0 h-56 w-56 rounded-full opacity-[0.05]"
+              style={{background:"radial-gradient(circle,#f59e0b,transparent 70%)"}}/>
             <div className="flex h-20 w-20 items-center justify-center rounded-3xl"
               style={{background:"linear-gradient(135deg,rgba(245,158,11,0.09),rgba(245,158,11,0.03))",border:"1px solid rgba(245,158,11,0.16)",boxShadow:"0 0 40px rgba(245,158,11,0.05)"}}>
               <StickyNote size={28} style={{color:"rgba(245,158,11,0.6)"}}/>
