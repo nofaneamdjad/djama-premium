@@ -134,7 +134,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inp = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all";
-const sel = "w-full rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2.5 pr-8 text-[0.8rem] text-white outline-none appearance-none [color-scheme:dark] focus:border-white/[0.15] transition-all";
+const sel = "w-full rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2.5 pr-8 text-[0.8rem] text-white outline-none appearance-none [color-scheme:dark] focus:border-white/[0.15] transition-all";
 
 function ExpenseModal({
   expense, reports, userId, onSave, onClose,
@@ -939,20 +939,20 @@ export default function DepensesPage() {
   const grandTotal = expenses.filter(e => e.status !== "rejected").reduce((a, e) => a + e.amount, 0);
 
   if (loading) return (
-    <div className="flex h-full items-center justify-center" style={{ background:"#0c1222" }}>
+    <div className="flex h-full items-center justify-center" style={{ background:"#07080e" }}>
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
     </div>
   );
 
   return (
-    <div className="flex h-full flex-col overflow-hidden" style={{ background: "#0c1222" }}>
+    <div className="flex h-full flex-col overflow-hidden" style={{ background: "#07080e" }}>
       <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       </AnimatePresence>
 
       {/* ── Animated header ── */}
       <div className="relative shrink-0 overflow-hidden px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6"
-        style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+        style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#09080e)" }}>
 
         {/* Gold top line */}
         <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, ease: "easeOut" }}
@@ -961,10 +961,12 @@ export default function DepensesPage() {
 
         {/* Floating orbs */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-8 -right-8 h-40 w-40 rounded-full opacity-[0.06]"
+          <div className="absolute -top-12 -right-12 h-56 w-56 rounded-full opacity-[0.07]"
             style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }} />
-          <div className="absolute bottom-0 left-1/3 h-24 w-24 rounded-full opacity-[0.04]"
+          <div className="absolute top-4 left-1/4 h-32 w-32 rounded-full opacity-[0.04]"
             style={{ background: "radial-gradient(circle,#6366f1,transparent 70%)" }} />
+          <div className="absolute -bottom-4 left-1/2 h-28 w-28 rounded-full opacity-[0.03]"
+            style={{ background: "radial-gradient(circle,#10b981,transparent 70%)" }} />
         </div>
 
         <div className="relative z-10 flex items-start justify-between gap-4">
@@ -1004,19 +1006,23 @@ export default function DepensesPage() {
         </div>
 
         {/* KPI cards */}
-        <div className="relative z-10 mt-5 grid grid-cols-3 gap-3">
+        <div className="relative z-10 mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { l: "Total filtré",    v: fmtCur(filteredTotal), c: "#c9a55a", delay: 0.1 },
-            { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#10b981", delay: 0.15 },
-            { l: "À rembourser",    v: fmtCur(filteredReimb), c: "#f59e0b", delay: 0.2 },
-          ].map(({ l, v, c, delay }) => (
+            { l: "Total dépenses",  v: fmtCur(grandTotal),    c: "#c9a55a", sub: `${expenses.length} dépense${expenses.length !== 1 ? "s" : ""}`, delay: 0.08 },
+            { l: "Total filtré",    v: fmtCur(filteredTotal),  c: "#6366f1", sub: `${filtered.length} résultat${filtered.length !== 1 ? "s" : ""}`,  delay: 0.13 },
+            { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#10b981", sub: "Récupérable", delay: 0.18 },
+            { l: "À rembourser",    v: fmtCur(filteredReimb), c: "#f59e0b", sub: "Carte perso",  delay: 0.23 },
+          ].map(({ l, v, c, sub, delay }) => (
             <motion.div key={l} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay, type: "spring", stiffness: 260, damping: 22 }}
-              className="rounded-2xl p-3"
+              className="relative overflow-hidden rounded-2xl p-3.5"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="text-[0.6rem] font-semibold uppercase tracking-widest" style={{ color: c + "99" }}>{l}</p>
-              <p className="mt-1 text-[1.05rem] font-black leading-tight text-white">{v}</p>
-              <div className="mt-2 h-0.5 rounded-full" style={{ background: `linear-gradient(90deg,${c}60,transparent)` }} />
+              <div className="pointer-events-none absolute -top-4 -right-4 h-16 w-16 rounded-full opacity-[0.15]"
+                style={{ background: `radial-gradient(circle,${c},transparent 70%)` }} />
+              <p className="text-[0.58rem] font-bold uppercase tracking-widest" style={{ color: c + "aa" }}>{l}</p>
+              <p className="mt-1.5 text-[1.1rem] font-black leading-tight text-white">{v}</p>
+              <p className="mt-0.5 text-[0.58rem]" style={{ color: c + "77" }}>{sub}</p>
+              <div className="mt-2.5 h-0.5 rounded-full" style={{ background: `linear-gradient(90deg,${c}55,transparent)` }} />
             </motion.div>
           ))}
         </div>
@@ -1024,7 +1030,7 @@ export default function DepensesPage() {
 
       {/* ── Tab bar ── */}
       <div className="relative shrink-0 flex border-b border-white/[0.07] px-4 sm:px-8"
-        style={{ background: "rgba(6,8,14,0.5)" }}>
+        style={{ background: "rgba(7,8,14,0.8)" }}>
         {TABS.map(({ id, l, I }) => (
           <button key={id} onClick={() => setTab(id as typeof tab)}
             className={`relative flex items-center gap-2 whitespace-nowrap px-4 py-3 text-[0.72rem] font-semibold transition-colors ${
@@ -1058,7 +1064,7 @@ export default function DepensesPage() {
                   </div>
                   <div className="relative">
                     <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0d1426] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
+                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
                       <option value="">Toutes catégories</option>
                       {CATS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
                     </select>
@@ -1066,7 +1072,7 @@ export default function DepensesPage() {
                   </div>
                   <div className="relative">
                     <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
-                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0d1426] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
+                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
                       <option value="">Tous statuts</option>
                       {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                     </select>
@@ -1074,14 +1080,14 @@ export default function DepensesPage() {
                   </div>
                   <div className="relative">
                     <select value={filterPay} onChange={e => setFilterPay(e.target.value)}
-                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0d1426] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
+                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
                       <option value="">Tous paiements</option>
                       {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
                     </select>
                     <ChevronDown size={11} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25" />
                   </div>
                   <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
-                    className="[color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0d1426] px-3 py-2 text-[0.75rem] text-white/50 outline-none" />
+                    className="[color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2 text-[0.75rem] text-white/50 outline-none" />
                   {hasFilters && (
                     <button onClick={() => { setSearch(""); setFilterCat(""); setFilterSt(""); setFilterMonth(""); setFilterPay(""); }}
                       className="flex items-center gap-1 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.72rem] text-white/30 hover:text-white/60 transition-colors">
@@ -1178,7 +1184,7 @@ export default function DepensesPage() {
                             </div>
 
                             <select value={e.status} onChange={ev => updateStatus(e.id, ev.target.value as ExpStatus)}
-                              className="shrink-0 cursor-pointer appearance-none [color-scheme:dark] rounded-lg border border-white/[0.05] bg-[#0d1426] px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 hover:border-white/15 group-hover:opacity-100 transition-all"
+                              className="shrink-0 cursor-pointer appearance-none [color-scheme:dark] rounded-lg border border-white/[0.05] bg-[#0e1420] px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 hover:border-white/15 group-hover:opacity-100 transition-all"
                               style={{ minWidth: "90px" }}>
                               {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                             </select>
