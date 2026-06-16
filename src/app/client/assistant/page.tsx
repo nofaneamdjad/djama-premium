@@ -607,7 +607,7 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-56px)] bg-[#0a0f1e] text-white overflow-hidden">
+    <div className="flex h-[calc(100dvh-56px)] bg-[#07080e] text-white overflow-hidden">
 
             <AnimatePresence>
         {showSidebar && (

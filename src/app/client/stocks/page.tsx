@@ -549,7 +549,7 @@ function MovementModal({ products, warehouses, onSave, onClose }: {
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
           <button onClick={save} disabled={saving || !form.product_id || !form.quantity}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-            style={{ background: movType.color, color: "#0a0f1e" }}>
+            style={{ background: movType.color, color: "#07080e" }}>
             {saving ? <RefreshCw size={14} className="animate-spin"/> : <Check size={14}/>}
             Enregistrer
           </button>
@@ -796,12 +796,12 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"/>
         </div>
         <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
-          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+          className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
           <option value="all">Toutes catégories</option>
           {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
-          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+          className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
           <option value="all">Tous états</option>
           <option value="rupture">🔴 Rupture</option>
           <option value="critique">🟠 Critique</option>
@@ -905,12 +905,12 @@ function MovementsView({ movements, products, warehouses, onNew }: {
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex items-center gap-2 p-4 border-b border-white/[0.06] flex-wrap">
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as MovementType | "all")}
-          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+          className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
           <option value="all">Tous types</option>
           {MOV_TYPES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
         <select value={productFilter} onChange={(e) => setProductFilter(e.target.value)}
-          className="flex-1 bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark] max-w-xs">
+          className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark] max-w-xs">
           <option value="all">Tous produits</option>
           {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
@@ -1838,11 +1838,11 @@ export default function StocksPage() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white flex flex-col">
+    <div className="min-h-screen bg-[#07080e] text-white flex flex-col">
       <ToastStack toasts={toasts} remove={removeToast}/>
 
       {/* Animated header */}
-      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: "linear-gradient(160deg,#07080e,#0c1020,#07080e)" }}>
         {/* Orbs */}
         <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
         <div className="pointer-events-none absolute -bottom-10 right-20 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#10b981,transparent)" }}/>

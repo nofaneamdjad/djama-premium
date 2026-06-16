@@ -135,7 +135,7 @@ const ini = (n: string) =>
 const AV_COLS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
 const avCol = (n: string) => AV_COLS[(n.charCodeAt(0) || 0) % AV_COLS.length];
 
-const SEL = "rounded-lg border border-white/[0.08] bg-white/[0.025] py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition";
+const SEL = "rounded-lg border border-white/8 bg-white/6 py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition [color-scheme:dark]";
 
 function PBadge({ p }: { p: Priority }) {
   const c = PRIO[p];
@@ -193,7 +193,7 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
     <motion.div layout
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      className="relative rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 cursor-pointer transition-all hover:border-white/[0.16] hover:shadow-lg hover:shadow-black/30"
+      className="relative rounded-xl border border-white/6 bg-white/4 p-3 cursor-pointer transition-all hover:border-white/[0.16] hover:shadow-lg hover:shadow-black/30"
       style={{ borderLeft: `3px solid ${pc.color}` }}
       onClick={onEdit}>
 
@@ -217,7 +217,7 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
 
             <SubBar subs={task.subtasks} />
 
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.05]">
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
         <div className="flex items-center gap-2">
           {task.due_date && (
             <span className={`text-[0.62rem] font-medium ${late ? "text-red-400" : "text-white/35"}`}>
@@ -294,8 +294,8 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
   return (
     <motion.div initial={{ x: 360 }} animate={{ x: 0 }} exit={{ x: 360 }}
       transition={{ type: "spring", damping: 24, stiffness: 200 }}
-      className="fixed right-0 top-0 h-full w-[340px] bg-white/[0.025] border-l border-white/[0.07] z-50 flex flex-col shadow-2xl">
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/[0.07]">
+      className="fixed right-0 top-0 h-full w-[340px] bg-white/4 border-l border-white/6 z-50 flex flex-col shadow-2xl">
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/6">
         <div className="flex items-center gap-2">
           <div className="h-5 w-5 rounded-full flex items-center justify-center"
             style={{ background: VIOLET + "30", border: `1px solid ${VIOLET}50` }}>
@@ -311,7 +311,7 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
         <div className="grid grid-cols-2 gap-2">
           {QUICK.map(q => (
             <button key={q.l} onClick={() => ask(q.p)}
-              className="flex flex-col items-center gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-center transition hover:border-violet-500/40 hover:bg-violet-500/10">
+              className="flex flex-col items-center gap-1.5 rounded-xl border border-white/6 bg-white/4 p-3 text-center transition hover:border-violet-500/40 hover:bg-violet-500/10">
               <q.Icon size={18} style={{ color: VIOLET }} />
               <span className="text-[0.63rem] text-white/55 leading-tight">{q.l}</span>
             </button>
@@ -329,11 +329,11 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
         )}
       </div>
 
-      <div className="border-t border-white/[0.07] p-3 flex gap-2">
+      <div className="border-t border-white/6 p-3 flex gap-2">
         <input value={msg} onChange={e => setMsg(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && msg.trim()) { ask(msg.trim()); setMsg(""); } }}
           placeholder="Question libre sur vos tâches…"
-          className="flex-1 rounded-lg border border-white/[0.07] bg-white/[0.04] px-3 py-2 text-xs text-white/75 outline-none placeholder:text-white/25 hover:border-white/15" />
+          className="flex-1 rounded-lg border border-white/8 bg-white/6 px-3 py-2 text-xs text-white/75 outline-none placeholder:text-white/25 hover:border-white/15" />
         <button onClick={() => { if (msg.trim()) { ask(msg.trim()); setMsg(""); } }}
           className="rounded-lg px-3 py-2 text-sm text-white transition hover:opacity-90"
           style={{ background: VIOLET }}><ArrowRight size={13} /></button>
@@ -573,10 +573,10 @@ export default function ProductivitePage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white flex flex-col">
+    <div className="min-h-screen bg-[#07080e] text-white flex flex-col">
 
       {/* ── Animated header ── */}
-      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10 bg-[#07080e] border-b border-white/6">
         {/* Orbs */}
         <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
         <div className="pointer-events-none absolute -bottom-10 right-20 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#8b5cf6,transparent)" }}/>
@@ -586,7 +586,7 @@ export default function ProductivitePage() {
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
-                className="h-10 w-10 flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
+                className="h-10 w-10 flex items-center justify-center rounded-xl border border-white/8 bg-white/6">
                 <Zap size={18} style={{ color: "#c9a55a" }}/>
               </motion.div>
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
@@ -598,7 +598,7 @@ export default function ProductivitePage() {
               <button onClick={() => setShowAI(s => !s)}
                 className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${showAI
                   ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
-                  : "border-white/[0.08] text-white/50 hover:border-violet-500/30 hover:text-violet-300"}`}>
+                  : "border-white/8 text-white/50 hover:border-violet-500/30 hover:text-violet-300"}`}>
                 <Sparkles size={13}/> IA
               </button>
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -624,7 +624,7 @@ export default function ProductivitePage() {
                 const KpiIcon = kpi.icon;
                 return (
                   <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
-                    className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.06] bg-white/[0.03]">
+                    className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/6 bg-white/4">
                     <KpiIcon size={13} style={{ color: "#c9a55a" }} className="shrink-0"/>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-white leading-none">{kpi.value}</p>
@@ -636,7 +636,7 @@ export default function ProductivitePage() {
             </div>
             {/* Completion bar */}
             <div className="flex items-center gap-3">
-              <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+              <div className="flex-1 h-1 rounded-full bg-white/6 overflow-hidden">
                 <motion.div className="h-full rounded-full" style={{ background: "#c9a55a" }}
                   initial={{ width: 0 }} animate={{ width: `${completionRate}%` }} transition={{ duration: 0.8 }} />
               </div>
@@ -672,21 +672,21 @@ export default function ProductivitePage() {
           <div className="flex flex-wrap items-center gap-2">
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="🔍 Rechercher une tâche…"
-              className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 text-sm text-white/70 outline-none placeholder:text-white/25 w-52 hover:border-white/15 focus:border-violet-500/40 [color-scheme:dark]" />
+              className="rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-sm text-white/70 outline-none placeholder:text-white/25 w-52 hover:border-white/15 focus:border-violet-500/40 [color-scheme:dark]" />
 
-            <select value={fprio} onChange={e => setFprio(e.target.value)} className="rounded-lg border border-white/[0.08] bg-[#131c30] py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition [color-scheme:dark]">
+            <select value={fprio} onChange={e => setFprio(e.target.value)} className="rounded-lg border border-white/8 bg-white/6 py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition [color-scheme:dark]">
               <option value="">Toutes priorités</option>
               {(Object.keys(PRIO) as Priority[]).map(p => (
                 <option key={p} value={p}>{PRIO[p].label}</option>
               ))}
             </select>
 
-            <select value={fcat} onChange={e => setFcat(e.target.value)} className="rounded-lg border border-white/[0.08] bg-[#131c30] py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition [color-scheme:dark]">
+            <select value={fcat} onChange={e => setFcat(e.target.value)} className="rounded-lg border border-white/8 bg-white/6 py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition [color-scheme:dark]">
               <option value="">Toutes catégories</option>
               {CATS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            <select value={fstat} onChange={e => setFstat(e.target.value)} className="rounded-lg border border-white/[0.08] bg-[#131c30] py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition [color-scheme:dark]">
+            <select value={fstat} onChange={e => setFstat(e.target.value)} className="rounded-lg border border-white/8 bg-white/6 py-1.5 pl-3 pr-8 text-sm text-white/75 outline-none appearance-none hover:border-white/20 transition [color-scheme:dark]">
               <option value="">Tous statuts</option>
               {(Object.keys(STAT) as Status[]).map(s => (
                 <option key={s} value={s}>{STAT[s].label}</option>
@@ -695,7 +695,7 @@ export default function ProductivitePage() {
 
             {(search || fprio || fcat || fstat) && (
               <button onClick={() => { setSearch(""); setFprio(""); setFcat(""); setFstat(""); }}
-                className="rounded-xl border border-white/[0.08] px-3 py-2 text-xs text-white/40 hover:text-white/70 transition">
+                className="rounded-xl border border-white/8 px-3 py-2 text-xs text-white/40 hover:text-white/70 transition">
                 ✕ Réinitialiser
               </button>
             )}
@@ -707,9 +707,9 @@ export default function ProductivitePage() {
               const colTasks = filtered.filter(t => t.status === col.key);
               return (
                 <div key={col.key}
-                  className="flex flex-col rounded-2xl border border-white/[0.06] bg-white/[0.025] overflow-hidden">
+                  className="flex flex-col rounded-2xl border border-white/6 bg-white/4 overflow-hidden">
 
-                                    <div className="px-4 py-3 border-b border-white/[0.06]"
+                                    <div className="px-4 py-3 border-b border-white/6"
                     style={{ borderTop: `3px solid ${col.col}` }}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -752,14 +752,14 @@ export default function ProductivitePage() {
                     )}
                   </div>
 
-                                    <div className="border-t border-white/[0.05] p-2.5">
+                                    <div className="border-t border-white/5 p-2.5">
                     <div className="flex gap-1">
                       <input
                         value={quickAdd[col.key] ?? ""}
                         onChange={e => setQuickAdd(q => ({ ...q, [col.key]: e.target.value }))}
                         onKeyDown={e => { if (e.key === "Enter") quickAddTask(col.key); }}
                         placeholder="+ Ajouter rapidement…"
-                        className="flex-1 rounded-lg bg-white/[0.03] border border-white/[0.05] px-2.5 py-1.5 text-xs text-white/60 outline-none placeholder:text-white/20 focus:border-white/10 hover:border-white/[0.08]" />
+                        className="flex-1 rounded-lg bg-white/4 border border-white/5 px-2.5 py-1.5 text-xs text-white/60 outline-none placeholder:text-white/20 focus:border-white/10 hover:border-white/8" />
                       <button onClick={() => quickAddTask(col.key)}
                         className="rounded-lg px-2 py-1.5 text-xs text-white/40 hover:text-white/80 hover:bg-white/5 transition">
                         <CornerDownLeft size={12} />
@@ -774,7 +774,7 @@ export default function ProductivitePage() {
 
                 {view === "list" && (
           <div className="space-y-4">
-                        <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.025] p-1 w-fit">
+                        <div className="flex gap-1 rounded-xl border border-white/6 bg-white/4 p-1 w-fit">
               {([
                 { k: "today", l: "Aujourd'hui", n: listTasks.today.length },
                 { k: "week",  l: "Cette semaine", n: listTasks.week.length },
@@ -800,7 +800,7 @@ export default function ProductivitePage() {
                   <motion.div key={t.id}
                     initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                     onClick={() => openEdit(t)}
-                    className="flex items-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 cursor-pointer transition hover:border-white/15 hover:bg-white/[0.025]"
+                    className="flex items-center gap-4 rounded-xl border border-white/6 bg-white/4 px-4 py-3 cursor-pointer transition hover:border-white/15 hover:bg-white/6"
                     style={{ borderLeft: `3px solid ${PRIO[t.priority].color}` }}>
 
                     <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: STAT[t.status].col }} />
@@ -856,14 +856,14 @@ export default function ProductivitePage() {
       <AnimatePresence>
         {showModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center pt-6 pb-6 px-4 overflow-y-auto"
+            className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-start justify-center pt-6 pb-6 px-4 overflow-y-auto"
             onClick={() => setShowModal(false)}>
             <motion.div initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.97 }}
-              className="relative w-full max-w-3xl rounded-2xl border border-white/[0.09] bg-white/[0.025] shadow-2xl"
+              className="relative w-full max-w-3xl rounded-3xl border border-white/8 bg-[#0e1420] shadow-2xl"
               onClick={e => e.stopPropagation()}>
 
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07]">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
                 <h2 className="text-base font-semibold text-white/88">
                   {editId ? "Modifier la tâche" : "Nouvelle tâche"}
                 </h2>
@@ -883,11 +883,11 @@ export default function ProductivitePage() {
 
                                 <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="Titre de la tâche *"
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-base font-medium text-white/90 outline-none placeholder:text-white/25 focus:border-violet-500/50 transition" />
+                  className="w-full rounded-xl border border-white/8 bg-white/6 px-4 py-3 text-base font-medium text-white/90 outline-none placeholder:text-white/25 focus:border-violet-500/50 transition" />
 
                                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="Description (optionnel)…" rows={3}
-                  className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-sm text-white/75 outline-none placeholder:text-white/25 focus:border-white/15 transition" />
+                  className="w-full resize-none rounded-xl border border-white/8 bg-white/6 px-4 py-3 text-sm text-white/75 outline-none placeholder:text-white/25 focus:border-white/15 transition" />
 
                                 <div className="grid grid-cols-3 gap-3">
                   <div>
@@ -895,7 +895,7 @@ export default function ProductivitePage() {
                     <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))}
                       className={SEL + " w-full"}>
                       {(Object.keys(PRIO) as Priority[]).map(p => (
-                        <option key={p} value={p} className="bg-white/[0.025] text-white/70">{PRIO[p].label}</option>
+                        <option key={p} value={p} className="bg-white/4 text-white/70">{PRIO[p].label}</option>
                       ))}
                     </select>
                   </div>
@@ -904,7 +904,7 @@ export default function ProductivitePage() {
                     <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))}
                       className={SEL + " w-full"}>
                       {(Object.keys(STAT) as Status[]).map(s => (
-                        <option key={s} value={s} className="bg-white/[0.025] text-white/70">{STAT[s].label}</option>
+                        <option key={s} value={s} className="bg-white/4 text-white/70">{STAT[s].label}</option>
                       ))}
                     </select>
                   </div>
@@ -912,8 +912,8 @@ export default function ProductivitePage() {
                     <label className="text-[0.68rem] text-white/40 mb-1.5 block">Catégorie</label>
                     <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
                       className={SEL + " w-full"}>
-                      <option value="" className="bg-white/[0.025] text-white/70">Sans catégorie</option>
-                      {CATS.map(c => <option key={c} value={c} className="bg-white/[0.025] text-white/70">{c}</option>)}
+                      <option value="" className="bg-white/4 text-white/70">Sans catégorie</option>
+                      {CATS.map(c => <option key={c} value={c} className="bg-white/4 text-white/70">{c}</option>)}
                     </select>
                   </div>
                 </div>
@@ -941,7 +941,7 @@ export default function ProductivitePage() {
                   <label className="text-[0.68rem] text-white/40 mb-1.5 block">Responsable</label>
                   <input value={form.responsible} onChange={e => setForm(f => ({ ...f, responsible: e.target.value }))}
                     placeholder="Nom du responsable"
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-sm text-white/75 outline-none focus:border-white/15 transition" />
+                    className="w-full rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-sm text-white/75 outline-none focus:border-white/15 transition" />
                 </div>
 
                                 <div>
@@ -962,7 +962,7 @@ export default function ProductivitePage() {
                     <input value={newAssignee} onChange={e => setNewAssignee(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") addAssignee(); }}
                       placeholder="Ajouter un collaborateur…"
-                      className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
+                      className="flex-1 rounded-lg border border-white/8 bg-white/6 px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
                     <button onClick={addAssignee}
                       className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-white/50 hover:bg-violet-500/20 hover:text-violet-400 transition">+</button>
                   </div>
@@ -973,7 +973,7 @@ export default function ProductivitePage() {
                     Sous-tâches ({form.subtasks.filter(s => s.done).length}/{form.subtasks.length})
                   </label>
                   {form.subtasks.length > 0 && (
-                    <div className="mb-2 space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-2">
+                    <div className="mb-2 space-y-1 rounded-xl border border-white/6 bg-white/4 p-2">
                       {form.subtasks.map(s => (
                         <div key={s.id} className="flex items-center gap-2 group/sub py-0.5">
                           <input type="checkbox" checked={s.done} onChange={() => toggleSub(s.id)}
@@ -986,7 +986,7 @@ export default function ProductivitePage() {
                         </div>
                       ))}
                                             {form.subtasks.length > 0 && (
-                        <div className="flex items-center gap-2 pt-1 mt-1 border-t border-white/[0.05]">
+                        <div className="flex items-center gap-2 pt-1 mt-1 border-t border-white/5">
                           <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
                             <div className="h-full rounded-full transition-all duration-300"
                               style={{ width: `${(form.subtasks.filter(s => s.done).length / form.subtasks.length) * 100}%`, background: VIOLET }} />
@@ -1002,7 +1002,7 @@ export default function ProductivitePage() {
                     <input value={newSub} onChange={e => setNewSub(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") addSub(); }}
                       placeholder="Nouvelle sous-tâche…"
-                      className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
+                      className="flex-1 rounded-lg border border-white/8 bg-white/6 px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
                     <button onClick={addSub}
                       className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-white/50 hover:bg-violet-500/20 hover:text-violet-400 transition">+</button>
                   </div>
@@ -1024,7 +1024,7 @@ export default function ProductivitePage() {
                       <input value={newTag} onChange={e => setNewTag(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter") addTag(); }}
                         placeholder="Ajouter un tag…"
-                        className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.025] px-2.5 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
+                        className="flex-1 rounded-lg border border-white/8 bg-white/6 px-2.5 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
                       <button onClick={addTag}
                         className="rounded-lg bg-white/5 px-2.5 text-xs text-white/50 hover:bg-violet-500/20 hover:text-violet-400 transition">+</button>
                     </div>
@@ -1034,7 +1034,7 @@ export default function ProductivitePage() {
                     <select value={form.recurrence}
                       onChange={e => setForm(f => ({ ...f, recurrence: e.target.value, is_recurring: e.target.value !== "none" }))}
                       className={SEL + " w-full"}>
-                      {RECURS.map(r => <option key={r.v} value={r.v} className="bg-white/[0.025] text-white/70">{r.l}</option>)}
+                      {RECURS.map(r => <option key={r.v} value={r.v} className="bg-white/4 text-white/70">{r.l}</option>)}
                     </select>
                     {form.linked_module && (
                       <p className="mt-2 text-[0.62rem] text-white/30">🔗 Lié à : {form.linked_module}</p>
@@ -1043,7 +1043,7 @@ export default function ProductivitePage() {
                 </div>
 
                                 {editId && (
-                  <div className="border-t border-white/[0.07] pt-5">
+                  <div className="border-t border-white/6 pt-5">
                     <label className="text-[0.68rem] text-white/40 mb-3 block">
                       💬 Commentaires ({comments.length})
                     </label>
@@ -1069,11 +1069,11 @@ export default function ProductivitePage() {
                     )}
                     <div className="flex gap-2">
                       <input value={cmtAuthor} onChange={e => setCmtAuthor(e.target.value)}
-                        className="w-24 rounded-lg border border-white/[0.08] bg-white/[0.025] px-2 py-1.5 text-xs text-white/60 outline-none focus:border-white/15 transition" />
+                        className="w-24 rounded-lg border border-white/8 bg-white/6 px-2 py-1.5 text-xs text-white/60 outline-none focus:border-white/15 transition" />
                       <input value={cmt} onChange={e => setCmt(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter") addComment(); }}
                         placeholder="Ajouter un commentaire…"
-                        className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
+                        className="flex-1 rounded-lg border border-white/8 bg-white/6 px-3 py-1.5 text-xs text-white/70 outline-none focus:border-white/15 transition" />
                       <button onClick={addComment}
                         className="rounded-lg bg-white/5 px-3 text-xs text-white/50 hover:bg-violet-500/20 hover:text-violet-400 transition">↵</button>
                     </div>
@@ -1081,7 +1081,7 @@ export default function ProductivitePage() {
                 )}
               </div>
 
-                            <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.07]">
+                            <div className="flex items-center justify-between px-6 py-4 border-t border-white/6">
                 <div className="text-xs text-white/30">
                   {form.time_spent > 0 && `Temps passé : ${fmtSec(form.time_spent)}`}
                   {form.estimated_minutes > 0 && (
@@ -1090,7 +1090,7 @@ export default function ProductivitePage() {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setShowModal(false)}
-                    className="rounded-xl border border-white/[0.08] px-4 py-2 text-sm text-white/50 hover:text-white/80 transition">
+                    className="rounded-xl border border-white/8 px-4 py-2 text-sm text-white/50 hover:text-white/80 transition">
                     Annuler
                   </button>
                   <button onClick={save} disabled={saving}

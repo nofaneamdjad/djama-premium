@@ -422,7 +422,7 @@ export default function PlanningPage() {
     const grid = getMonthGrid(current.getFullYear(), current.getMonth());
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-                <div className="grid grid-cols-7 border-b border-white/[0.06]">
+                <div className="grid grid-cols-7 border-b border-white/6">
           {DAYS_FR.map(d => (
             <div key={d} className="py-2 text-center text-[11px] font-semibold text-white/30 uppercase tracking-wide">
               {d}
@@ -431,7 +431,7 @@ export default function PlanningPage() {
         </div>
                 <div className="flex-1 grid" style={{ gridTemplateRows: `repeat(${grid.length}, 1fr)` }}>
           {grid.map((week, wi) => (
-            <div key={wi} className="grid grid-cols-7 border-b border-white/[0.04]">
+            <div key={wi} className="grid grid-cols-7 border-b border-white/4">
               {week.map((day, di) => {
                 const isCurrentMonth = day.getMonth() === current.getMonth();
                 const dayEvs = eventsOnDate(day).slice(0, 3);
@@ -439,7 +439,7 @@ export default function PlanningPage() {
                 return (
                   <div key={di}
                     onClick={() => openCreate(day)}
-                    className={`border-r border-white/[0.04] p-1.5 min-h-[90px] cursor-pointer transition-colors hover:bg-white/[0.02] ${!isCurrentMonth ? "opacity-35" : ""}`}>
+                    className={`border-r border-white/4 p-1.5 min-h-[90px] cursor-pointer transition-colors hover:bg-white/4 ${!isCurrentMonth ? "opacity-35" : ""}`}>
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 text-[11px] font-bold mx-auto transition-colors
                       ${isToday(day)
                         ? "text-white"
@@ -471,10 +471,10 @@ export default function PlanningPage() {
 
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-                <div className="grid border-b border-white/[0.06]" style={{ gridTemplateColumns:"50px repeat(7,1fr)" }}>
+                <div className="grid border-b border-white/6" style={{ gridTemplateColumns:"50px repeat(7,1fr)" }}>
           <div />
           {days.map(d => (
-            <div key={d.toString()} className="py-2 text-center border-l border-white/[0.04]">
+            <div key={d.toString()} className="py-2 text-center border-l border-white/4">
               <p className="text-[10px] text-white/30 uppercase tracking-wide">{DAYS_FR[(d.getDay()+6)%7]}</p>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold mx-auto mt-0.5 ${isToday(d) ? "text-white" : "text-white/60"}`}
                 style={isToday(d) ? { background: INDIGO } : {}}>
@@ -498,11 +498,11 @@ export default function PlanningPage() {
             {days.map(d => {
               const dayEvs = eventsOnDate(d).filter(e => !e.is_all_day);
               return (
-                <div key={d.toString()} className="relative border-l border-white/[0.04]">
+                <div key={d.toString()} className="relative border-l border-white/4">
                                     {HOURS.map(h => (
                     <div key={h}
                       style={{ top: (h - START_H) * CELL_H, height: CELL_H }}
-                      className="absolute inset-x-0 border-b border-white/[0.04] cursor-pointer hover:bg-white/[0.015] transition-colors"
+                      className="absolute inset-x-0 border-b border-white/4 cursor-pointer hover:bg-white/4 transition-colors"
                       onClick={() => openCreate(d, h)}
                     />
                   ))}
@@ -617,12 +617,12 @@ export default function PlanningPage() {
   }
 
     return (
-    <div className="flex h-[calc(100vh-56px)] bg-[#080a0f] overflow-hidden text-white">
+    <div className="flex h-[calc(100vh-56px)] bg-[#07080e] overflow-hidden text-white">
       <ToastStack toasts={toasts} remove={removeToast} />
 
-            <div className="hidden lg:flex w-64 xl:w-72 flex-col shrink-0 border-r border-white/[0.06] bg-[#0b0d14] overflow-y-auto">
+            <div className="hidden lg:flex w-64 xl:w-72 flex-col shrink-0 border-r border-white/6 bg-white/4 overflow-y-auto">
 
-                <div className="p-4 border-b border-white/[0.06]">
+                <div className="p-4 border-b border-white/6">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-bold text-white/60">
               {MONTHS_FR[current.getMonth()].slice(0,3)} {current.getFullYear()}
@@ -666,7 +666,7 @@ export default function PlanningPage() {
           ))}
         </div>
 
-                <div className="p-4 border-b border-white/[0.06]">
+                <div className="p-4 border-b border-white/6">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-bold text-white/50 flex items-center gap-1.5">
               <CheckCircle2 size={12}/>Tâches du jour
@@ -758,7 +758,7 @@ export default function PlanningPage() {
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
         {/* Animated header */}
-        <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+        <div className="relative overflow-hidden shrink-0 bg-[#07080e] border-b border-white/6">
           {/* Orbs */}
           <div className="pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
           <div className="pointer-events-none absolute -bottom-8 right-16 h-24 w-24 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#6366f1,transparent)" }}/>
@@ -766,13 +766,13 @@ export default function PlanningPage() {
           {/* Main row */}
           <div className="relative flex items-center gap-2 px-4 pt-3 pb-2">
             <div className="flex items-center gap-0.5">
-              <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.08] transition-all">
+              <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all">
                 <ChevronLeft size={15}/>
               </button>
-              <button onClick={() => setCurrent(new Date())} className="px-2 py-1 rounded-lg text-xs font-medium text-white/40 hover:text-white hover:bg-white/[0.08] transition-all">
+              <button onClick={() => setCurrent(new Date())} className="px-2 py-1 rounded-lg text-xs font-medium text-white/40 hover:text-white hover:bg-white/8 transition-all">
                 Aujourd&apos;hui
               </button>
-              <button onClick={() => navigate(1)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.08] transition-all">
+              <button onClick={() => navigate(1)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all">
                 <ChevronRight size={15}/>
               </button>
             </div>
@@ -780,7 +780,7 @@ export default function PlanningPage() {
             <button onClick={() => setShowAI(p => !p)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${showAI
                 ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
-                : "border-white/[0.08] text-white/50 hover:border-violet-500/30 hover:text-violet-300"}`}>
+                : "border-white/8 text-white/50 hover:border-violet-500/30 hover:text-violet-300"}`}>
               <Sparkles size={12}/> IA Planning
             </button>
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -803,7 +803,7 @@ export default function PlanningPage() {
                 const KpiIcon = kpi.icon;
                 return (
                   <motion.div key={kpi.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border border-white/[0.06] bg-white/[0.03]">
+                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border border-white/6 bg-white/4">
                     <KpiIcon size={11} style={{ color: "#c9a55a" }} className="shrink-0"/>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-white leading-none">{kpi.value}</p>
@@ -838,7 +838,7 @@ export default function PlanningPage() {
           {showAI && (
             <motion.div
               initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }} exit={{ height:0, opacity:0 }}
-              className="border-b border-white/[0.06] bg-[#0b0d14] overflow-hidden shrink-0">
+              className="border-b border-white/6 bg-[#07080e] overflow-hidden shrink-0">
               <div className="px-5 py-3 space-y-2">
                 <div className="flex flex-wrap gap-2">
                   {([
@@ -895,14 +895,14 @@ export default function PlanningPage() {
         {showModal && (
           <>
             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+              className="fixed inset-0 bg-black/70 backdrop-blur-md z-40"
               onClick={() => setShowModal(false)} />
 
             <motion.div
               initial={{opacity:0, scale:0.95, y:12}}
               animate={{opacity:1, scale:1, y:0}}
               exit={{opacity:0, scale:0.95, y:12}}
-              className="fixed inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-50 rounded-3xl border border-white/[0.08] bg-[#0e1018] shadow-2xl flex flex-col overflow-hidden"
+              className="fixed inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-50 rounded-3xl border border-white/8 bg-[#0e1420] shadow-2xl flex flex-col overflow-hidden"
               onClick={e => e.stopPropagation()}>
 
                             <div className="flex items-center gap-3 px-5 pt-5 pb-3 shrink-0">
@@ -913,7 +913,7 @@ export default function PlanningPage() {
                   <AnimatePresence>
                     {showColPal && (
                       <motion.div initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} exit={{opacity:0}}
-                        className="absolute top-10 left-0 flex flex-wrap gap-1.5 p-2 rounded-xl border border-white/10 bg-[#0e1018] shadow-2xl z-10 w-32">
+                        className="absolute top-10 left-0 flex flex-wrap gap-1.5 p-2 rounded-xl border border-white/10 bg-[#0e1420] shadow-2xl z-10 w-32">
                         {EV_COLORS.map(c => (
                           <button key={c}
                             onClick={() => { setForm(p => ({...p, color:c})); setShowColPal(false); }}
@@ -951,7 +951,7 @@ export default function PlanningPage() {
                             <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-4">
                                 <input value={form.title ?? ""} onChange={e => setForm(p => ({...p, title:e.target.value}))}
                   placeholder="Titre de l'événement *"
-                  className="w-full bg-transparent text-lg font-bold text-white placeholder:text-white/20 focus:outline-none border-b border-white/[0.06] pb-2" />
+                  className="w-full bg-transparent text-lg font-bold text-white placeholder:text-white/20 focus:outline-none border-b border-white/6 pb-2" />
 
                                 <div className="flex items-center gap-2">
                   <button onClick={() => setForm(p => ({...p, is_all_day:!p.is_all_day}))}
@@ -972,7 +972,7 @@ export default function PlanningPage() {
                         <label className="text-[10px] text-white/35 uppercase tracking-wide">{label}</label>
                         <input type="date" value={(form[key] ?? "").slice(0,10)}
                           onChange={e => setForm(p => ({...p, [key]: e.target.value}))}
-                          className="w-full bg-white/[0.05] border border-white/8 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-white/20 appearance-none [color-scheme:dark]"/>
+                          className="w-full bg-white/6 border border-white/8 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-white/20 appearance-none [color-scheme:dark]"/>
                       </div>
                     ))}
                   </div>
@@ -986,34 +986,34 @@ export default function PlanningPage() {
                         <label className="text-[10px] text-white/35 uppercase tracking-wide">{label}</label>
                         <input type="datetime-local" value={form[key] ?? ""}
                           onChange={e => setForm(p => ({...p, [key]: e.target.value}))}
-                          className="w-full bg-white/[0.05] border border-white/8 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-white/20 [color-scheme:dark]"/>
+                          className="w-full bg-white/6 border border-white/8 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-white/20 [color-scheme:dark]"/>
                       </div>
                     ))}
                   </div>
                 )}
 
-                                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                                <div className="flex items-center gap-2 bg-white/4 border border-white/6 rounded-xl px-3 py-2">
                   <MapPin size={13} className="text-white/25 shrink-0"/>
                   <input value={form.location ?? ""} onChange={e => setForm(p => ({...p, location:e.target.value}))}
                     placeholder="Lieu (optionnel)"
                     className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none"/>
                 </div>
 
-                                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                                <div className="flex items-center gap-2 bg-white/4 border border-white/6 rounded-xl px-3 py-2">
                   <Video size={13} className="text-white/25 shrink-0"/>
                   <input value={form.meet_link ?? ""} onChange={e => setForm(p => ({...p, meet_link:e.target.value}))}
                     placeholder="Lien visioconférence (optionnel)"
                     className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none"/>
                 </div>
 
-                                <div className="flex items-start gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                                <div className="flex items-start gap-2 bg-white/4 border border-white/6 rounded-xl px-3 py-2">
                   <AlignLeft size={13} className="text-white/25 shrink-0 mt-0.5"/>
                   <textarea value={form.description ?? ""} onChange={e => setForm(p => ({...p, description:e.target.value}))}
                     placeholder="Description (optionnel)" rows={3}
                     className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none resize-none leading-relaxed"/>
                 </div>
 
-                                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                                <div className="flex items-center gap-2 bg-white/4 border border-white/6 rounded-xl px-3 py-2">
                   <Tag size={13} className="text-white/25 shrink-0"/>
                   <input
                     value={(form.participants ?? []).join(", ")}
@@ -1027,18 +1027,18 @@ export default function PlanningPage() {
                   <span className="text-xs text-white/35">Rappel</span>
                   <select value={form.reminder_minutes ?? 30}
                     onChange={e => setForm(p => ({...p, reminder_minutes: Number(e.target.value)}))}
-                    className="ml-auto cursor-pointer rounded-xl border border-white/[0.08] bg-[#0e1018] px-3 py-1.5 text-xs text-white/55 outline-none appearance-none">
-                    <option value={0} className="bg-[#0e1018]">Aucun</option>
-                    <option value={5} className="bg-[#0e1018]">5 min avant</option>
-                    <option value={15} className="bg-[#0e1018]">15 min avant</option>
-                    <option value={30} className="bg-[#0e1018]">30 min avant</option>
-                    <option value={60} className="bg-[#0e1018]">1 h avant</option>
-                    <option value={1440} className="bg-[#0e1018]">1 jour avant</option>
+                    className="ml-auto cursor-pointer rounded-xl border border-white/8 bg-[#0e1420] px-3 py-1.5 text-xs text-white/55 outline-none appearance-none">
+                    <option value={0} className="bg-[#0e1420]">Aucun</option>
+                    <option value={5} className="bg-[#0e1420]">5 min avant</option>
+                    <option value={15} className="bg-[#0e1420]">15 min avant</option>
+                    <option value={30} className="bg-[#0e1420]">30 min avant</option>
+                    <option value={60} className="bg-[#0e1420]">1 h avant</option>
+                    <option value={1440} className="bg-[#0e1420]">1 jour avant</option>
                   </select>
                 </div>
               </div>
 
-                            <div className="flex items-center gap-2 px-5 py-4 border-t border-white/[0.06] shrink-0">
+                            <div className="flex items-center gap-2 px-5 py-4 border-t border-white/6 shrink-0">
                 {editEvent && (
                   <button onClick={() => deleteEvent(editEvent.id)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all">

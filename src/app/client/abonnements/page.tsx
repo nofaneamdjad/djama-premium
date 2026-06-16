@@ -96,7 +96,7 @@ export default function AbonnementsPage() {
   const isPaid  = level === "premium";
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0a0c10] px-4 py-10">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080e] px-4 py-10 text-white">
 
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
@@ -150,11 +150,7 @@ export default function AbonnementsPage() {
       >
         {/* Gratuit card */}
         <div
-          className="flex flex-col rounded-2xl p-6"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
+          className="flex flex-col rounded-2xl border border-white/6 bg-white/4 p-6"
         >
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-white/30">Gratuit</p>
           <div className="flex items-end gap-1 mb-1">
@@ -166,15 +162,14 @@ export default function AbonnementsPage() {
           <div className="mt-auto space-y-2.5">
             {["Factures & devis (5 max)", "Planning", "Bloc-note"].map(f => (
               <div key={f} className="flex items-center gap-2.5">
-                <Check size={13} className="shrink-0 text-gray-500" strokeWidth={2.5} />
+                <Check size={13} className="shrink-0 text-white/30" strokeWidth={2.5} />
                 <span className="text-sm text-white/40">{f}</span>
               </div>
             ))}
           </div>
           {isPaid ? null : (
             <div
-              className="mt-6 rounded-xl py-2.5 text-center text-sm font-bold"
-              style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.35)" }}
+              className="mt-6 rounded-xl border border-white/8 py-2.5 text-center text-sm font-bold text-white/35"
             >
               Plan actuel
             </div>
@@ -261,16 +256,11 @@ export default function AbonnementsPage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.18, ease }}
-        className="relative z-10 mx-auto max-w-2xl overflow-hidden rounded-2xl"
-        style={{
-          background: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.07)",
-        }}
+        className="relative z-10 mx-auto max-w-2xl overflow-hidden rounded-2xl border border-white/6 bg-white/4"
       >
         {/* Table header */}
         <div
-          className="grid grid-cols-[1fr_80px_80px] gap-0 border-b px-5 py-3"
-          style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}
+          className="grid grid-cols-[1fr_80px_80px] gap-0 border-b border-white/6 px-5 py-3 bg-white/3"
         >
           <div />
           <div className="text-center text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Gratuit</div>
@@ -311,8 +301,8 @@ export default function AbonnementsPage() {
         {/* CTA row */}
         {!isPaid && !loading && (
           <div
-            className="px-5 py-4"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(201,165,90,0.03)" }}
+            className="px-5 py-4 border-t border-white/6"
+            style={{ background: "rgba(201,165,90,0.03)" }}
           >
             <div className="grid grid-cols-[1fr_80px_80px] items-center gap-0">
               <p className="text-sm font-semibold text-white/50">Commencer maintenant</p>

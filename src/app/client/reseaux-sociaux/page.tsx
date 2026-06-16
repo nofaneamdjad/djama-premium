@@ -326,7 +326,7 @@ export default function ReseauxSociauxPage() {
   );
 
   return (
-    <div className="space-y-6 px-4 py-6 lg:px-8">
+    <div className="min-h-screen bg-[#07080e] text-white space-y-6 px-4 py-6 lg:px-8">
       <ToastStack toasts={toasts} remove={remove} />
 
       {/* Header */}

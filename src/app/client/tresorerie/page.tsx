@@ -1581,13 +1581,13 @@ export default function TresoreriePage() {
   const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
 
   if (loading) return (
-    <div className="flex h-full items-center justify-center" style={{ background: "#0c1222" }}>
+    <div className="flex h-full items-center justify-center bg-[#07080e]">
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
     </div>
   );
 
   return (
-    <div className="flex h-full flex-col overflow-hidden" style={{ background: "#0c1222" }}>
+    <div className="flex h-full flex-col overflow-hidden bg-[#07080e]">
       <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       </AnimatePresence>

@@ -115,7 +115,7 @@ const QUICKSTART = [
 const ACTION_STYLE: Record<string, string> = {
   primary:   "bg-blue-500/12 border-blue-500/25 text-blue-400 hover:bg-blue-500/22",
   warning:   "bg-amber-500/12 border-amber-500/25 text-amber-400 hover:bg-amber-500/22",
-  secondary: "bg-white/[0.04] border-white/10 text-white/50 hover:bg-white/[0.08] hover:text-white/70",
+  secondary: "bg-white/6 border-white/8 text-white/50 hover:bg-white/8 hover:text-white/70",
   ghost:     "border-transparent text-white/30 hover:text-white/55",
 };
 
@@ -167,7 +167,7 @@ function ReasoningBlock({ text }: { text: string }) {
 
 function SupplierCard({ item }: { item: SourcingItem }) {
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 space-y-2">
+    <div className="rounded-xl border border-white/8 bg-white/4 px-4 py-3.5 space-y-2">
       <div className="flex items-start justify-between gap-2 flex-wrap">
         <p className="text-[13px] font-bold text-white/92">{item.name}</p>
         <div className="flex gap-1.5 flex-wrap">
@@ -177,7 +177,7 @@ function SupplierCard({ item }: { item: SourcingItem }) {
             </span>
           )}
           {item.type && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10 text-white/40 font-semibold">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/6 border border-white/8 text-white/40 font-semibold">
               {item.type}
             </span>
           )}
@@ -202,7 +202,7 @@ function StepItem({ item, index }: { item: SourcingItem; index: number }) {
       <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-bold text-white">
         {index + 1}
       </div>
-      <div className="flex-1 border-b border-white/[0.05] last:border-0 pb-4 last:pb-0">
+      <div className="flex-1 border-b border-white/5 last:border-0 pb-4 last:pb-0">
         <p className="text-[13px] font-bold text-white/88 leading-snug mb-1">
           {(item.name ?? "").replace(/^\d+\.\s*/, "")}
         </p>
@@ -259,7 +259,7 @@ function SectionBlock({ section }: { section: SourcingSection }) {
     steps:         { text: "text-sky-400",     bg: "bg-sky-500/8",     border: "border-sky-500/15"     },
     checklist:     { text: "text-emerald-400", bg: "bg-emerald-500/8", border: "border-emerald-500/15" },
     tips:          { text: "text-amber-400",   bg: "bg-amber-500/8",   border: "border-amber-500/15"   },
-    text:          { text: "text-white/40",    bg: "bg-white/[0.03]",  border: "border-white/8"        },
+    text:          { text: "text-white/40",    bg: "bg-white/4",  border: "border-white/8"        },
   };
   const col = colorMap[section.type] ?? colorMap.text;
 
@@ -362,7 +362,7 @@ function MessageBubble({
       <div className="flex-1 min-w-0">
 
                 {msg.loading && (
-          <div className="rounded-3xl rounded-tl-lg bg-white/[0.03] border border-white/[0.07] px-5 py-5 mb-2.5">
+          <div className="rounded-3xl rounded-tl-lg bg-white/4 border border-white/6 px-5 py-5 mb-2.5">
             <div className="flex items-center gap-2 mb-2">
               {[0, 1, 2].map(i => (
                 <span
@@ -403,7 +403,7 @@ function MessageBubble({
 
                 {!msg.loading && !msg.isError && (
           <>
-            <div className="rounded-3xl rounded-tl-lg bg-white/[0.025] border border-white/[0.07] px-5 py-5 mb-3">
+            <div className="rounded-3xl rounded-tl-lg bg-white/4 border border-white/6 px-5 py-5 mb-3">
 
                             {msg.content && (
                 <div className="mb-1">
@@ -423,7 +423,7 @@ function MessageBubble({
               ))}
 
                             {(msg.sections ?? []).length > 0 && (
-                <div className="mt-5 pt-4 border-t border-white/[0.05] flex items-center gap-3 flex-wrap">
+                <div className="mt-5 pt-4 border-t border-white/5 flex items-center gap-3 flex-wrap">
                   <span className="flex items-center gap-1 text-[10px] text-white/20">
                     <Sparkles size={9} />
                     {(msg.sections ?? []).length} sections
@@ -455,7 +455,7 @@ function MessageBubble({
                   <button
                     key={i}
                     onClick={() => onSuggestion(s)}
-                    className="flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-full border border-white/[0.09] text-white/35 hover:text-white/65 hover:border-white/20 transition-all"
+                    className="flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-full border border-white/8 text-white/35 hover:text-white/65 hover:border-white/20 transition-all"
                   >
                     <ChevronRight size={10} className="shrink-0" />
                     {s}
@@ -619,9 +619,9 @@ export default function SourcingPage() {
   const hasAiMsg    = messages.some(m => m.role === "assistant" && !m.loading);
 
     return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white pb-40">
+    <div className="min-h-screen bg-[#07080e] text-white pb-40">
 
-            <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+            <div className="border-b border-white/6 bg-[#07080e]/95 px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -641,7 +641,7 @@ export default function SourcingPage() {
               <button
                 onClick={handleGeneratePdf}
                 disabled={pdfLoading}
-                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08] disabled:opacity-40"
+                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/6 px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8 disabled:opacity-40"
               >
                 {pdfLoading
                   ? <RefreshCw size={12} className="animate-spin" />
@@ -653,7 +653,7 @@ export default function SourcingPage() {
             {hasMessages && (
               <button
                 onClick={newChat}
-                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08]"
+                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8"
               >
                 <X size={13} />
                 Nouveau
@@ -755,9 +755,9 @@ export default function SourcingPage() {
         {!hasMessages && <div ref={bottomRef} />}
       </div>
 
-            <div className="fixed bottom-0 inset-x-0 z-30 bg-[rgba(10,11,16,0.96)] backdrop-blur-xl border-t border-white/[0.06]">
+            <div className="fixed bottom-0 inset-x-0 z-30 bg-[#07080e]/98 backdrop-blur-xl border-t border-white/6">
         <div className="max-w-2xl mx-auto px-4 py-3">
-          <div className="flex items-end gap-2.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 transition-colors focus-within:border-[rgba(129,140,248,0.3)]">
+          <div className="flex items-end gap-2.5 rounded-2xl border border-white/8 bg-white/6 px-4 py-2.5 transition-colors focus-within:border-[rgba(129,140,248,0.3)]">
             <textarea
               ref={inputRef}
               value={input}

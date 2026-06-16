@@ -247,11 +247,11 @@ export default function ReputationPage() {
      RENDER
   ════════════════════════════════════════= */
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white">
+    <div className="min-h-screen bg-[#07080e] text-white">
       <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* ── Sub-header ── */}
-      <div className="border-b border-white/[0.06] bg-[rgba(10,11,16,0.92)] px-5 py-4 backdrop-blur-xl sm:px-8">
+      <div className="border-b border-white/6 bg-[#07080e]/95 px-5 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">

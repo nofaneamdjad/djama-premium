@@ -420,7 +420,7 @@ export default function PlanificationPage() {
   };
 
     return (
-    <div className="min-h-screen bg-[#080a0f]">
+    <div className="min-h-screen bg-[#07080e]">
             <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute left-[10%] top-[5%] h-[600px] w-[600px] rounded-full bg-[rgba(56,189,248,0.025)] blur-[180px]" />
       </div>

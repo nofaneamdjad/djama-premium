@@ -1091,7 +1091,7 @@ export default function FournisseursPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white flex flex-col">
+    <div className="min-h-screen bg-[#07080e] text-white flex flex-col">
       <ToastStack toasts={toasts} remove={removeToast}/>
 
       {/* Animated header */}

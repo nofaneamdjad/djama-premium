@@ -83,7 +83,7 @@ export default function ListeDocuments() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[var(--surface)]">
+    <main className="min-h-screen bg-[#07080e] text-white">
       <div className="mx-auto max-w-5xl px-6 py-14">
 
         <motion.div
@@ -93,10 +93,11 @@ export default function ListeDocuments() {
           className="mb-10 flex flex-wrap items-center justify-between gap-4"
         >
           <div>
-            <h1 className="text-3xl font-extrabold text-[var(--ink)]">Mes documents</h1>
-            <p className="mt-1 text-sm text-[var(--muted)]">Toutes vos factures et devis enregistrés</p>
+            <h1 className="text-3xl font-extrabold text-white">Mes documents</h1>
+            <p className="mt-1 text-sm text-white/60">Toutes vos factures et devis enregistrés</p>
           </div>
-          <Link href="/client/factures" className="btn-primary text-sm">
+          <Link href="/client/factures"
+            className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#07080e] shadow-lg shadow-white/10 transition hover:opacity-90">
             <Plus size={15} /> Nouveau document
           </Link>
         </motion.div>
@@ -111,7 +112,7 @@ export default function ListeDocuments() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-600"
+            className="flex items-center gap-3 rounded-2xl border border-red-500/25 bg-red-500/10 px-5 py-4 text-sm text-red-400"
           >
             <AlertCircle size={16} className="flex-shrink-0" />
             {error}
@@ -123,14 +124,15 @@ export default function ListeDocuments() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease }}
-            className="flex flex-col items-center justify-center rounded-[2rem] border border-dashed border-[rgba(201,165,90,0.3)] bg-white py-24 text-center"
+            className="flex flex-col items-center justify-center rounded-3xl border border-white/8 bg-white/4 py-24 text-center backdrop-blur-sm"
           >
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(201,165,90,0.1)]">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-white/8 bg-white/4">
               <ReceiptText size={28} className="text-[#c9a55a]" />
             </div>
-            <h2 className="text-lg font-extrabold text-[var(--ink)]">Aucun document encore</h2>
-            <p className="mt-2 text-sm text-[var(--muted)]">Créez votre première facture ou votre premier devis</p>
-            <Link href="/client/factures" className="btn-primary mt-6 text-sm">
+            <h2 className="text-lg font-extrabold text-white">Aucun document encore</h2>
+            <p className="mt-2 text-sm text-white/50">Créez votre première facture ou votre premier devis</p>
+            <Link href="/client/factures"
+              className="mt-6 flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#07080e] shadow-lg shadow-white/10 transition hover:opacity-90">
               <Plus size={14} /> Créer un document
             </Link>
           </motion.div>
@@ -141,12 +143,12 @@ export default function ListeDocuments() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease }}
-            className="overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-[0_2px_12px_rgba(9,9,11,0.05)]"
+            className="overflow-hidden rounded-2xl border border-white/6 bg-white/4 backdrop-blur-sm"
           >
             {/* En-tête tableau */}
-            <div className="hidden grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 border-b border-[var(--border)] bg-[var(--surface)] px-6 py-3 sm:grid">
+            <div className="hidden grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 border-b border-white/6 bg-white/4 px-6 py-3 sm:grid">
               {["Type", "Client / Numéro", "Date", "Montant TTC", ""].map((h) => (
-                <span key={h} className="text-[0.6rem] font-extrabold uppercase tracking-widest text-[var(--muted)]">{h}</span>
+                <span key={h} className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">{h}</span>
               ))}
             </div>
 
@@ -156,7 +158,7 @@ export default function ListeDocuments() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, ease, delay: i * 0.04 }}
-                className="grid grid-cols-1 items-center gap-3 border-b border-[var(--border)] px-6 py-4 last:border-0 hover:bg-[var(--surface)] transition-colors duration-200 sm:grid-cols-[auto_1fr_auto_auto_auto]"
+                className="grid grid-cols-1 items-center gap-3 border-b border-white/6 px-6 py-4 last:border-0 hover:bg-white/4 transition-colors duration-200 sm:grid-cols-[auto_1fr_auto_auto_auto]"
               >
                 {/* Type + statut */}
                 <div className="flex items-center gap-2">
@@ -184,12 +186,12 @@ export default function ListeDocuments() {
 
                 {/* Client + numéro */}
                 <div>
-                  <p className="text-sm font-semibold text-[var(--ink)]">{doc.client_nom || "—"}</p>
-                  <p className="text-xs text-[var(--muted)]">{doc.numero}</p>
+                  <p className="text-sm font-semibold text-white">{doc.client_nom || "—"}</p>
+                  <p className="text-xs text-white/40">{doc.numero}</p>
                 </div>
 
                 {/* Date */}
-                <p className="hidden text-sm text-[var(--muted)] sm:block">
+                <p className="hidden text-sm text-white/60 sm:block">
                   {fmtDate(doc.date_document ?? doc.created_at)}
                 </p>
 
@@ -201,7 +203,7 @@ export default function ListeDocuments() {
                 {/* CTA */}
                 <Link
                   href="/client/factures"
-                  className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--muted)] transition-all hover:border-[rgba(201,165,90,0.3)] hover:text-[#c9a55a]"
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/8 bg-white/8 px-3 py-1.5 text-xs font-semibold text-white/60 transition-all hover:border-[rgba(201,165,90,0.3)] hover:text-[#c9a55a]"
                 >
                   <ExternalLink size={11} /> Ouvrir
                 </Link>
@@ -209,8 +211,8 @@ export default function ListeDocuments() {
             ))}
 
             {/* Footer */}
-            <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface)] px-6 py-4">
-              <span className="text-xs text-[var(--muted)]">
+            <div className="flex items-center justify-between border-t border-white/6 bg-white/4 px-6 py-4">
+              <span className="text-xs text-white/40">
                 {documents.length} document{documents.length > 1 ? "s" : ""}
               </span>
               <Link href="/client/factures" className="flex items-center gap-1.5 text-xs font-bold text-[#c9a55a] transition-all hover:gap-2.5 duration-300">

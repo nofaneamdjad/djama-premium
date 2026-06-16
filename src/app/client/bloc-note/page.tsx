@@ -512,12 +512,12 @@ export default function BlocNotePage() {
   const eTags   =      eDraft.tags   ?? editNote?.tags   ?? [];
 
     return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white pb-24">
+    <div className="min-h-screen bg-[#07080e] text-white pb-24">
       <AnimatePresence>
         {toastData && <Toast toast={toastData} onClose={() => setToastData(null)} />}
       </AnimatePresence>
 
-            <div className="sticky top-0 z-30 bg-[#0a0f1e]/95 backdrop-blur border-b border-white/5 px-4 py-3">
+            <div className="sticky top-0 z-30 bg-[#07080e]/95 backdrop-blur border-b border-white/5 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 mr-auto">
             <FileText size={20} className="text-emerald-400"/>

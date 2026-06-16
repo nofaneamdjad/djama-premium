@@ -190,7 +190,7 @@ function Select({ label, children, ...props }: React.SelectHTMLAttributes<HTMLSe
     <div className="space-y-1">
       {label && <label className="block text-[0.62rem] font-bold uppercase tracking-widest text-white/30">{label}</label>}
       <select {...props}
-        className="w-full rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 text-[0.8rem] text-white outline-none focus:border-white/[0.15] transition-colors appearance-none [color-scheme:dark]">
+        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.8rem] text-white outline-none focus:border-white/[0.15] transition-colors appearance-none [color-scheme:dark]">
         {children}
       </select>
     </div>
@@ -250,7 +250,7 @@ function PipelineView({
           const total = totalByStage(stage);
           const count = byStage[stage].length;
           return (
-            <div key={stage} className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-3 text-center">
+            <div key={stage} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 text-center">
               <div className="text-[0.58rem] font-bold uppercase tracking-widest mb-1"
                 style={{ color: STAGES[stage].color }}>{STAGES[stage].label}</div>
               <div className="text-base font-black text-white">{count}</div>
@@ -262,7 +262,7 @@ function PipelineView({
 
             <div className="flex gap-3 overflow-x-auto pb-3">
         {stageKeys.map(stage => (
-          <div key={stage} className="shrink-0 w-64 rounded-2xl border border-white/[0.06] bg-[#0a0b10] flex flex-col">
+          <div key={stage} className="shrink-0 w-64 rounded-2xl border border-white/[0.06] bg-white/[0.02] flex flex-col">
                         <div className="flex items-center justify-between p-3 border-b border-white/[0.05]">
               <div>
                 <span className="text-[0.65rem] font-black uppercase tracking-widest"
@@ -279,7 +279,7 @@ function PipelineView({
                         <div className="flex flex-col gap-2 p-2 flex-1 min-h-[100px]">
               {byStage[stage].map(opp => (
                 <motion.div key={opp.id} layout
-                  className="rounded-xl border border-white/[0.06] bg-[#0f1117] p-3 cursor-pointer hover:border-white/10 transition-all group"
+                  className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 cursor-pointer hover:border-white/10 transition-all group"
                   onClick={() => openEdit(opp)}>
                   <div className="flex items-start justify-between gap-1">
                     <p className="text-[0.72rem] font-semibold text-white leading-tight">{opp.title}</p>
@@ -325,7 +325,7 @@ function PipelineView({
             onClick={() => { setAddModal(null); setEditOpp(null); setForm({}); }}>
             <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-md rounded-3xl border border-white/[0.08] bg-[#0f1117] p-6 space-y-4"
+              className="w-full max-w-md rounded-3xl border border-white/[0.08] bg-white/[0.03] p-6 space-y-4"
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-white text-sm">{editOpp ? "Modifier l'opportunité" : "Nouvelle opportunité"}</h3>
@@ -440,7 +440,7 @@ function TachesView({
               return (
                 <motion.div key={task.id} layout initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-[#0f1117] p-3.5 group">
+                  className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3.5 group">
                   <button onClick={() => onToggle(task.id, !task.done)} className="mt-0.5 shrink-0 transition-colors"
                     style={{ color: task.done ? "#34d399" : "rgba(255,255,255,0.2)" }}>
                     {task.done ? <CheckSquare size={16}/> : <Square size={16}/>}
@@ -487,7 +487,7 @@ function TachesView({
             onClick={() => setAddModal(false)}>
             <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-md rounded-3xl border border-white/[0.08] bg-[#0f1117] p-6 space-y-4"
+              className="w-full max-w-md rounded-3xl border border-white/[0.08] bg-white/[0.03] p-6 space-y-4"
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-white text-sm">Nouvelle tâche</h3>
@@ -814,7 +814,7 @@ function RapportView({
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {kpis.map(k => (
-          <div key={k.label} className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-4">
+          <div key={k.label} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{k.label}</p>
               <k.icon size={13} style={{ color: k.color }}/>
@@ -826,7 +826,7 @@ function RapportView({
 
       {/* ── Pipeline + répartition contacts ── */}
       <div className="grid sm:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-5">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
           <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-white/40 mb-4">Pipeline commercial</h3>
           <div className="space-y-2.5">
             {(Object.keys(STAGES) as OppStage[]).map(stage => {
@@ -849,7 +849,7 @@ function RapportView({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-5">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
           <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-white/40 mb-4">Répartition contacts</h3>
           <div className="space-y-3">
             {(Object.keys(CONTACT_TYPES) as ContactType[]).map(type => {
@@ -953,7 +953,7 @@ function TicketsGlobalView({
             {filtered.map(ticket => (
               <motion.div key={ticket.id} layout initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, height:0 }}
                 className="rounded-2xl border border-white/[0.06] p-4 group"
-                style={{ background: "rgba(15,17,23,0.8)" }}>
+                style={{ background: "rgba(7,8,14,0.8)" }}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-[0.78rem] font-bold text-white">{ticket.title}</p>
@@ -978,7 +978,7 @@ function TicketsGlobalView({
                   <div className="relative">
                     <select value={ticket.status}
                       onChange={e => onUpdate(ticket.id, { status: e.target.value as TicketStatus })}
-                      className="rounded-lg border border-white/[0.08] bg-[#131c30] pl-2 pr-6 py-1 text-[0.62rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+                      className="rounded-lg border border-white/[0.08] bg-white/[0.05] pl-2 pr-6 py-1 text-[0.62rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
                       {(["ouvert","en_cours","résolu","fermé"] as TicketStatus[]).map(s =>
                         <option key={s} value={s}>{TICKET_STATUSES[s].label}</option>)}
                     </select>
@@ -1000,7 +1000,7 @@ function TicketsGlobalView({
             <motion.div initial={{ y:40, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:40, opacity:0 }}
               transition={{ type:"spring", stiffness:300, damping:30 }}
               className="w-full max-w-md rounded-3xl border border-white/[0.08] p-6 space-y-4"
-              style={{ background: "rgba(10,14,26,0.98)" }}
+              style={{ background: "rgba(7,8,14,0.98)" }}
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-white text-sm">Nouveau ticket</h3>
@@ -1090,7 +1090,7 @@ function ContactDetail({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: "100%", opacity: 0 }}
       transition={{ type: "spring", stiffness: 280, damping: 30 }}
-      className="fixed inset-y-0 right-0 z-40 flex flex-col w-full sm:w-[520px] border-l border-white/[0.06] bg-[#0a0b10] shadow-2xl overflow-hidden">
+      className="fixed inset-y-0 right-0 z-40 flex flex-col w-full sm:w-[520px] border-l border-white/[0.06] bg-white/[0.02] shadow-2xl overflow-hidden">
 
             <div className="shrink-0 p-5 border-b border-white/[0.06]">
         <div className="flex items-start gap-3">
@@ -1306,7 +1306,7 @@ function ContactDetail({
             </button>
 
             {newAct !== null && (
-              <div className="rounded-2xl border border-white/[0.08] bg-[#0f1117] p-4 space-y-3">
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <Select label="Type" value={newAct.type ?? "note"} onChange={e => setNewAct(a => ({ ...a, type: e.target.value as ActivityType }))}>
                     {(["note","call","email","meeting","document","rdv"] as ActivityType[]).map(t =>
@@ -1371,7 +1371,7 @@ function ContactDetail({
               <p className="text-center text-white/20 text-sm py-6">Aucune opportunité</p>
             )}
             {opportunities.map(opp => (
-              <div key={opp.id} className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-4">
+              <div key={opp.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="text-[0.78rem] font-bold text-white">{opp.title}</p>
@@ -1397,7 +1397,7 @@ function ContactDetail({
             </button>
 
             {newTask !== null && (
-              <div className="rounded-2xl border border-white/[0.08] bg-[#0f1117] p-4 space-y-3">
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
                 <Input label="Titre *" value={newTask.title ?? ""} onChange={e => setNewTask(t => ({ ...t, title: e.target.value }))}/>
                 <div className="grid grid-cols-2 gap-3">
                   <Select label="Type" value={newTask.type ?? "action"} onChange={e => setNewTask(t => ({ ...t, type: e.target.value as TaskType }))}>
@@ -1418,7 +1418,7 @@ function ContactDetail({
             {tasks.map(task => {
               const isLate = !task.done && task.due_date && task.due_date < today;
               return (
-                <div key={task.id} className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-[#0f1117] p-3 group">
+                <div key={task.id} className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 group">
                   <button onClick={() => onToggleTask(task.id, !task.done)} style={{ color: task.done ? "#34d399" : "rgba(255,255,255,0.2)" }}>
                     {task.done ? <CheckSquare size={15}/> : <Square size={15}/>}
                   </button>
@@ -1447,7 +1447,7 @@ function ContactDetail({
             </button>
 
             {newTicket !== null && (
-              <div className="rounded-2xl border border-white/[0.08] bg-[#0f1117] p-4 space-y-3">
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
                 <Input label="Objet *" value={newTicket.title ?? ""} onChange={e => setNewTicket(t => ({ ...t, title: e.target.value }))}/>
                 <div className="grid grid-cols-2 gap-3">
                   <Select label="Priorité" value={newTicket.priority ?? "normale"} onChange={e => setNewTicket(t => ({ ...t, priority: e.target.value as TicketPriority }))}>
@@ -1469,7 +1469,7 @@ function ContactDetail({
             )}
 
             {tickets.map(ticket => (
-              <div key={ticket.id} className="rounded-2xl border border-white/[0.06] bg-[#0f1117] p-4 group">
+              <div key={ticket.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 group">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-[0.72rem] font-semibold text-white">{ticket.title}</p>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -1788,11 +1788,11 @@ export default function CRMPage() {
   }
 
     return (
-    <div className="relative flex h-full flex-col gap-0" style={{ background: "#0c1222" }}>
+    <div className="relative flex h-full flex-col gap-0 bg-[#07080e]">
       <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* ── HEADER ── */}
-      <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#0c1222,#111827,#0d1320)" }}>
+      <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#07080e,#0c1020,#07080e)" }}>
         <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
         <div className="pointer-events-none absolute -bottom-8 right-10 h-32 w-32 rounded-full opacity-[0.04]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
         <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.3),transparent)" }}/>
@@ -1853,7 +1853,7 @@ export default function CRMPage() {
       </div>
 
       {/* ── TABS ── */}
-      <div className="relative shrink-0 flex overflow-x-auto" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.15)" }}>
+      <div className="relative shrink-0 flex overflow-x-auto" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.25)" }}>
         {MAIN_TABS.map(t => (
           <button key={t.id} onClick={() => setMainTab(t.id)}
             className="relative flex items-center gap-1.5 px-4 py-3.5 text-[0.67rem] font-bold uppercase tracking-wider whitespace-nowrap transition-colors"
@@ -1893,12 +1893,12 @@ export default function CRMPage() {
                     </div>
                     <div className="flex gap-2 flex-wrap">
                       <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ContactStatus | "tous")}
-                        className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+                        className="rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
                         <option value="tous">Tous statuts</option>
                         {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
                       <select value={filterType} onChange={e => setFilterType(e.target.value as ContactType | "tous")}
-                        className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+                        className="rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
                         <option value="tous">Tous types</option>
                         {Object.entries(CONTACT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
@@ -1940,7 +1940,7 @@ export default function CRMPage() {
                               exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                               onClick={() => setSelected(isSelected ? null : c)}
                               className={`flex items-center gap-3 rounded-2xl border p-3.5 cursor-pointer transition-all group ${
-                                isSelected ? "border-white/15 bg-white/[0.06]" : "border-white/[0.05] bg-[#0f1117] hover:border-white/10 hover:bg-white/[0.03]"}`}>
+                                isSelected ? "border-white/15 bg-white/[0.06]" : "border-white/[0.05] bg-white/[0.03] hover:border-white/10 hover:bg-white/[0.03]"}`}>
                               <Avatar name={c.name} color={typeColor} size={38}/>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -2083,7 +2083,7 @@ export default function CRMPage() {
             <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="w-full max-w-lg rounded-3xl border border-white/[0.08] p-6 space-y-4 max-h-[90vh] overflow-y-auto"
-              style={{ background: "rgba(10,14,26,0.98)" }}
+              style={{ background: "rgba(7,8,14,0.98)" }}
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-white">{editContact ? "Modifier le contact" : "Nouveau contact"}</h3>

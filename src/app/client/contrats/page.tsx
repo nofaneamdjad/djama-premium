@@ -1497,7 +1497,7 @@ export default function ContratsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white">
+    <div className="min-h-screen bg-[#07080e] text-white">
       <ToastStack toasts={toasts} remove={removeToast}/>
 
       {/* Animated header */}

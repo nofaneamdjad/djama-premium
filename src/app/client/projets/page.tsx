@@ -92,7 +92,7 @@ function ProjectCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
-      className="flex flex-col gap-3 rounded-2xl border border-white/6 bg-white/4 p-5 transition-all hover:border-white/12"
+      className="flex flex-col gap-3 rounded-2xl border border-white/6 bg-white/4 p-5 backdrop-blur-sm transition-all hover:border-white/12 hover:bg-white/6 hover:shadow-lg hover:shadow-black/30"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
@@ -146,7 +146,7 @@ function ProjectCard({
       <div className="flex gap-2 pt-1">
         <button
           onClick={() => onEdit(project)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/8 py-1.5 text-xs font-semibold text-white/60 transition hover:bg-white/6 hover:text-white"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/8 bg-white/8 py-1.5 text-xs font-semibold text-white/60 transition hover:bg-white/12 hover:text-white"
         >
           <Edit2 size={11} /> Modifier
         </button>
@@ -178,12 +178,12 @@ function ProjectModal({
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
         initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/8 bg-[#151821] p-6 shadow-2xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/8 bg-[#0e1420] p-6 shadow-2xl"
       >
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">{isEdit ? "Modifier le projet" : "Nouveau projet"}</h2>
@@ -194,31 +194,31 @@ function ProjectModal({
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/40">Titre *</label>
+            <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/40">Titre *</label>
             <input
               value={draft.title ?? ""}
               onChange={e => field("title", e.target.value)}
               placeholder="Ex : Site e-commerce Boutique X"
-              className="w-full rounded-xl border border-white/8 bg-white/4 px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-violet-500/50 focus:outline-none"
+              className="w-full rounded-xl border border-white/8 bg-white/6 px-4 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition focus:border-white/20 focus:bg-white/8"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/40">Client</label>
+              <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/40">Client</label>
               <input
                 value={draft.client ?? ""}
                 onChange={e => field("client", e.target.value)}
                 placeholder="Nom du client"
-                className="w-full rounded-xl border border-white/8 bg-white/4 px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-violet-500/50 focus:outline-none"
+                className="w-full rounded-xl border border-white/8 bg-white/6 px-4 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition focus:border-white/20 focus:bg-white/8"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/40">Catégorie</label>
+              <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/40">Catégorie</label>
               <select
                 value={draft.category ?? "Autre"}
                 onChange={e => field("category", e.target.value)}
-                className="w-full rounded-xl border border-white/8 bg-[#1a1f2e] px-4 py-2.5 text-sm text-white focus:border-violet-500/50 focus:outline-none"
+                className="w-full rounded-xl border border-white/8 bg-[#0e1420] px-4 py-2.5 text-sm text-white outline-none transition focus:border-white/20"
               >
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -226,7 +226,7 @@ function ProjectModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/40">Statut</label>
+            <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/40">Statut</label>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(STATUS_CONFIG) as Status[]).map(s => {
                 const { label, color, bg } = STATUS_CONFIG[s];
@@ -238,7 +238,7 @@ function ProjectModal({
                     className="rounded-xl border px-3 py-1.5 text-xs font-semibold transition"
                     style={active
                       ? { color, background: bg, borderColor: color + "40" }
-                      : { color: "rgba(255,255,255,0.4)", borderColor: "rgba(255,255,255,0.08)" }}
+                      : { color: "rgba(255,255,255,0.4)", borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)" }}
                   >
                     {label}
                   </button>
@@ -249,48 +249,48 @@ function ProjectModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/40">Date début</label>
+              <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/40">Date début</label>
               <input
                 type="date"
                 value={draft.start_date ?? ""}
                 onChange={e => field("start_date", e.target.value)}
-                className="w-full rounded-xl border border-white/8 bg-white/4 px-4 py-2.5 text-sm text-white focus:border-violet-500/50 focus:outline-none"
+                className="w-full rounded-xl border border-white/8 bg-white/6 px-4 py-2.5 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/8 [color-scheme:dark]"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/40">Date fin</label>
+              <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/40">Date fin</label>
               <input
                 type="date"
                 value={draft.end_date ?? ""}
                 onChange={e => field("end_date", e.target.value)}
-                className="w-full rounded-xl border border-white/8 bg-white/4 px-4 py-2.5 text-sm text-white focus:border-violet-500/50 focus:outline-none"
+                className="w-full rounded-xl border border-white/8 bg-white/6 px-4 py-2.5 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/8 [color-scheme:dark]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/40">Budget (€)</label>
+              <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/40">Budget (€)</label>
               <input
                 type="number" min="0"
                 value={draft.budget ?? 0}
                 onChange={e => field("budget", parseFloat(e.target.value) || 0)}
-                className="w-full rounded-xl border border-white/8 bg-white/4 px-4 py-2.5 text-sm text-white focus:border-violet-500/50 focus:outline-none"
+                className="w-full rounded-xl border border-white/8 bg-white/6 px-4 py-2.5 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/8"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/40">Encaissé (€)</label>
+              <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/40">Encaissé (€)</label>
               <input
                 type="number" min="0"
                 value={draft.spent ?? 0}
                 onChange={e => field("spent", parseFloat(e.target.value) || 0)}
-                className="w-full rounded-xl border border-white/8 bg-white/4 px-4 py-2.5 text-sm text-white focus:border-violet-500/50 focus:outline-none"
+                className="w-full rounded-xl border border-white/8 bg-white/6 px-4 py-2.5 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/8"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/40">Couleur</label>
+            <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/40">Couleur</label>
             <div className="flex gap-2">
               {COLORS.map(c => (
                 <button
@@ -304,13 +304,13 @@ function ProjectModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/40">Description</label>
+            <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/40">Description</label>
             <textarea
               value={draft.description ?? ""}
               onChange={e => field("description", e.target.value)}
               placeholder="Contexte, livrables, notes..."
               rows={3}
-              className="w-full resize-none rounded-xl border border-white/8 bg-white/4 px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-violet-500/50 focus:outline-none"
+              className="w-full resize-none rounded-xl border border-white/8 bg-white/6 px-4 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition focus:border-white/20 focus:bg-white/8"
             />
           </div>
         </div>
@@ -318,14 +318,14 @@ function ProjectModal({
         <div className="mt-6 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl border border-white/8 py-2.5 text-sm font-semibold text-white/50 transition hover:bg-white/4"
+            className="flex-1 rounded-xl border border-white/8 bg-white/8 py-2.5 text-sm font-semibold text-white/50 transition hover:bg-white/12 hover:text-white/70"
           >
             Annuler
           </button>
           <button
             onClick={onSave}
             disabled={saving || !draft.title?.trim()}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition disabled:opacity-50 shadow-lg"
             style={{ background: VIOLET }}
           >
             {saving && <Loader2 size={14} className="animate-spin" />}
@@ -446,156 +446,161 @@ export default function ProjetsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="flex h-64 items-center justify-center bg-[#07080e]">
         <Loader2 size={28} className="animate-spin text-violet-400" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 px-4 py-6 lg:px-8">
-      <ToastStack toasts={toasts} remove={removeToast} />
+    <div className="relative min-h-screen bg-[#07080e] text-white">
+      <div className="space-y-6 px-4 py-6 lg:px-8">
+        <ToastStack toasts={toasts} remove={removeToast} />
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold text-white">Projets</h1>
-          <p className="text-sm text-white/40">{projects.length} projet{projects.length !== 1 ? "s" : ""}</p>
-        </div>
-        <button
-          onClick={openNew}
-          className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-90"
-          style={{ background: VIOLET }}
-        >
-          <Plus size={16} /> Nouveau projet
-        </button>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[
-          { label: "En cours",  value: String(kpis.enCours),          color: "#3b82f6", sub: "projets actifs"     },
-          { label: "Terminés",  value: String(kpis.terminé),           color: "#10b981", sub: "projets terminés"   },
-          { label: "Budget",    value: fmtEur(kpis.budget),            color: GOLD,      sub: "budget total"       },
-          { label: "Encaissé",  value: fmtEur(kpis.encaissé),          color: VIOLET,    sub: "revenus encaissés"  },
-        ].map(k => (
-          <div key={k.label} className="rounded-2xl border border-white/6 bg-white/3 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/35">{k.label}</p>
-            <p className="mt-1 text-2xl font-extrabold" style={{ color: k.color }}>{k.value}</p>
-            <p className="text-xs text-white/25">{k.sub}</p>
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">Gestion</p>
+            <h1 className="text-2xl font-black text-white">Projets</h1>
+            <p className="text-sm text-white/40">{projects.length} projet{projects.length !== 1 ? "s" : ""}</p>
           </div>
-        ))}
-      </div>
-
-      {/* Filtres */}
-      <div className="flex flex-wrap gap-2">
-        {([
-          ["tous",       "Tous"],
-          ["en_cours",   "En cours"],
-          ["en_attente", "En attente"],
-          ["terminé",    "Terminés"],
-          ["annulé",    "Annulés"],
-        ] as [Status | "tous", string][]).map(([s, l]) => (
           <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className="rounded-xl border px-4 py-1.5 text-xs font-semibold transition"
-            style={filter === s
-              ? { background: VIOLET, borderColor: VIOLET, color: "#fff" }
-              : { borderColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}
+            onClick={openNew}
+            className="group flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#07080e] shadow-lg shadow-white/10 transition hover:scale-[1.02] hover:shadow-white/20 active:scale-[0.98]"
           >
-            {l}
-            {s !== "tous" && (
-              <span className="ml-1.5 opacity-60">
-                {projects.filter(p => p.status === s).length}
-              </span>
-            )}
+            <Plus size={16} /> Nouveau projet
           </button>
-        ))}
-      </div>
-
-      {/* Liste projets */}
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-          <div className="rounded-3xl bg-white/4 p-6">
-            <FolderOpen size={40} className="text-white/20" />
-          </div>
-          <p className="font-bold text-white/40">
-            {filter === "tous"
-              ? "Aucun projet pour le moment"
-              : `Aucun projet « ${STATUS_CONFIG[filter as Status]?.label ?? filter} »`}
-          </p>
-          {filter === "tous" && (
-            <button
-              onClick={openNew}
-              className="mt-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
-              style={{ background: VIOLET }}
-            >
-              Créer mon premier projet
-            </button>
-          )}
         </div>
-      ) : (
-        <motion.div layout className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence>
-            {filtered.map(p => (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                onEdit={openEdit}
-                onDelete={id => setConfirmDel(id)}
-              />
-            ))}
-          </AnimatePresence>
-        </motion.div>
-      )}
 
-      {/* Modal projet */}
-      <AnimatePresence>
-        {showModal && (
-          <ProjectModal
-            draft={draft}
-            setDraft={setDraft}
-            onSave={saveProject}
-            onClose={() => setShowModal(false)}
-            saving={saving}
-            isEdit={!!editProject}
-          />
-        )}
-      </AnimatePresence>
+        {/* KPIs */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: "En cours",  value: String(kpis.enCours),   color: "#3b82f6", sub: "projets actifs"    },
+            { label: "Terminés",  value: String(kpis.terminé),    color: "#10b981", sub: "projets terminés"  },
+            { label: "Budget",    value: fmtEur(kpis.budget),     color: GOLD,      sub: "budget total"      },
+            { label: "Encaissé",  value: fmtEur(kpis.encaissé),   color: VIOLET,    sub: "revenus encaissés" },
+          ].map(k => (
+            <div key={k.label} className="relative overflow-hidden rounded-2xl border border-white/6 bg-white/4 p-5 backdrop-blur-sm">
+              <div className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rounded-full opacity-10 blur-2xl" style={{ background: k.color }} />
+              <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">{k.label}</p>
+              <p className="mt-1 text-2xl font-black" style={{ color: k.color }}>{k.value}</p>
+              <p className="text-[0.65rem] text-white/25">{k.sub}</p>
+            </div>
+          ))}
+        </div>
 
-      {/* Confirm suppression */}
-      <AnimatePresence>
-        {confirmDel && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.96 }} animate={{ scale: 1 }} exit={{ scale: 0.96 }}
-              className="w-full max-w-sm rounded-2xl border border-white/8 bg-[#151821] p-6 text-center shadow-2xl"
+        {/* Filtres */}
+        <div className="flex flex-wrap gap-2">
+          {([
+            ["tous",       "Tous"],
+            ["en_cours",   "En cours"],
+            ["en_attente", "En attente"],
+            ["terminé",    "Terminés"],
+            ["annulé",    "Annulés"],
+          ] as [Status | "tous", string][]).map(([s, l]) => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className="rounded-xl border px-4 py-1.5 text-xs font-semibold transition"
+              style={filter === s
+                ? { background: VIOLET, borderColor: VIOLET, color: "#fff" }
+                : { borderColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.04)" }}
             >
-              <AlertCircle size={36} className="mx-auto mb-3 text-red-400" />
-              <h3 className="mb-1 text-lg font-bold text-white">Supprimer ce projet ?</h3>
-              <p className="mb-6 text-sm text-white/40">Cette action est irréversible.</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setConfirmDel(null)}
-                  className="flex-1 rounded-xl border border-white/8 py-2.5 text-sm font-semibold text-white/50 transition hover:bg-white/4"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={() => void deleteProject(confirmDel)}
-                  className="flex-1 rounded-xl bg-red-500/15 py-2.5 text-sm font-bold text-red-400 transition hover:bg-red-500/25"
-                >
-                  Supprimer
-                </button>
-              </div>
-            </motion.div>
+              {l}
+              {s !== "tous" && (
+                <span className="ml-1.5 opacity-60">
+                  {projects.filter(p => p.status === s).length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Liste projets */}
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-white/8 bg-white/4">
+              <FolderOpen size={28} className="text-white/20" />
+            </div>
+            <p className="font-bold text-white/50">
+              {filter === "tous"
+                ? "Aucun projet pour le moment"
+                : `Aucun projet « ${STATUS_CONFIG[filter as Status]?.label ?? filter} »`}
+            </p>
+            <p className="text-sm text-white/25">
+              {filter === "tous" ? "Créez votre premier projet" : "Essayez un autre filtre"}
+            </p>
+            {filter === "tous" && (
+              <button
+                onClick={openNew}
+                className="mt-2 rounded-2xl border border-white/10 bg-white/8 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-white/12"
+              >
+                Créer mon premier projet
+              </button>
+            )}
+          </div>
+        ) : (
+          <motion.div layout className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <AnimatePresence>
+              {filtered.map(p => (
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  onEdit={openEdit}
+                  onDelete={id => setConfirmDel(id)}
+                />
+              ))}
+            </AnimatePresence>
           </motion.div>
         )}
-      </AnimatePresence>
+
+        {/* Modal projet */}
+        <AnimatePresence>
+          {showModal && (
+            <ProjectModal
+              draft={draft}
+              setDraft={setDraft}
+              onSave={saveProject}
+              onClose={() => setShowModal(false)}
+              saving={saving}
+              isEdit={!!editProject}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Confirm suppression */}
+        <AnimatePresence>
+          {confirmDel && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+            >
+              <motion.div
+                initial={{ scale: 0.96 }} animate={{ scale: 1 }} exit={{ scale: 0.96 }}
+                className="w-full max-w-sm rounded-2xl border border-white/8 bg-[#0e1420] p-6 text-center shadow-2xl"
+              >
+                <AlertCircle size={36} className="mx-auto mb-3 text-red-400" />
+                <h3 className="mb-1 text-lg font-bold text-white">Supprimer ce projet ?</h3>
+                <p className="mb-6 text-sm text-white/40">Cette action est irréversible.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setConfirmDel(null)}
+                    className="flex-1 rounded-xl border border-white/8 bg-white/8 py-2.5 text-sm font-semibold text-white/50 transition hover:bg-white/12"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => void deleteProject(confirmDel)}
+                    className="flex-1 rounded-xl bg-red-500/15 py-2.5 text-sm font-bold text-red-400 transition hover:bg-red-500/25"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

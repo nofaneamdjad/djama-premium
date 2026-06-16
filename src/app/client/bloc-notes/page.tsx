@@ -740,10 +740,10 @@ export default function BlocNotesPage() {
      RENDER
   ══════════════════════════════════════════════════ */
   return (
-    <div className="flex h-[calc(100vh-56px)] overflow-hidden bg-[#0f1117]">
+    <div className="flex h-[calc(100vh-56px)] overflow-hidden bg-[#07080e]">
 
       {/* ══ SIDEBAR (desktop only) ══ */}
-      <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-[#161b22] border-r border-white/[0.06]">
+      <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-[#0e1420] border-r border-white/[0.06]">
         <div className="flex flex-col h-full p-3 gap-0">
 
           {/* Brand */}
@@ -1096,7 +1096,7 @@ export default function BlocNotesPage() {
           <div className="flex flex-col h-full overflow-hidden">
 
             {/* Canvas toolbar */}
-            <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#0f1117] px-4 py-2.5 flex-wrap">
+            <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#07080e] px-4 py-2.5 flex-wrap">
               <button onClick={() => setActiveNb(null)}
                 className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.68rem] font-bold text-white/40 transition hover:bg-white/[0.05] hover:text-white/70">
                 <ChevronLeft size={12}/> Cahiers
@@ -1243,7 +1243,7 @@ export default function BlocNotesPage() {
           <div className="flex flex-1 flex-col overflow-hidden">
 
             {/* Mobile back bar */}
-            <div className="flex items-center gap-3 border-b border-white/[0.06] bg-[#0f1117] px-4 py-2.5 lg:hidden">
+            <div className="flex items-center gap-3 border-b border-white/[0.06] bg-[#07080e] px-4 py-2.5 lg:hidden">
               <button onClick={() => { setMobilePanel("list"); setSelected(null); }}
                 className="flex items-center gap-1.5 text-xs font-bold text-white/45 transition hover:text-white/75">
                 <ArrowLeft size={14}/> Retour
@@ -1251,7 +1251,7 @@ export default function BlocNotesPage() {
             </div>
 
             {/* Editor toolbar */}
-            <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] bg-[#0f1117] px-5 py-2.5 flex-wrap">
+            <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] bg-[#07080e] px-5 py-2.5 flex-wrap">
               <div className="flex items-center gap-1 flex-wrap">
                 {NOTE_TYPES.map(t => (
                   <button key={t.value} onClick={() => { setDType(t.value); setIsDirty(true); }}
@@ -1276,7 +1276,7 @@ export default function BlocNotesPage() {
                   <AnimatePresence>
                     {exportMenu && (
                       <motion.div initial={{opacity:0,y:-5}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-5}}
-                        className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border border-white/[0.09] bg-[#161b22] shadow-xl">
+                        className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border border-white/[0.09] bg-[#0e1420] shadow-xl">
                         {[{label:"PDF",fn:exportPDF},{label:"Markdown (.md)",fn:exportMarkdown},{label:"Texte (.txt)",fn:exportTXT}].map(opt => (
                           <button key={opt.label} onClick={() => { void opt.fn(); setExportMenu(false); }}
                             className="flex w-full items-center px-4 py-2.5 text-xs font-semibold text-white/55 transition hover:bg-white/[0.05] hover:text-white/85">
@@ -1333,7 +1333,7 @@ export default function BlocNotesPage() {
             </div>
 
             {/* Format bar */}
-            <div className="flex items-center gap-0 overflow-x-auto border-b border-white/[0.04] bg-[#0f1117] px-4 py-1.5" style={{scrollbarWidth:"none"}}>
+            <div className="flex items-center gap-0 overflow-x-auto border-b border-white/[0.04] bg-[#07080e] px-4 py-1.5" style={{scrollbarWidth:"none"}}>
               {[
                 { label:"H1",  fn:()=>insertLinePrefix("# ")          },
                 { label:"H2",  fn:()=>insertLinePrefix("## ")         },
@@ -1387,7 +1387,7 @@ export default function BlocNotesPage() {
                 )}
 
                 {/* Status bar + voice */}
-                <div className="flex items-center justify-between border-t border-white/[0.04] bg-[#0f1117] px-5 py-2">
+                <div className="flex items-center justify-between border-t border-white/[0.04] bg-[#07080e] px-5 py-2">
                   <div className="flex items-center gap-3">
                     <span className="text-[0.58rem] text-white/18">{wordCnt} mot{wordCnt!==1?"s":""}</span>
                     <span className="text-[0.58rem] text-white/18">{dContent.length} car.</span>
@@ -1431,7 +1431,7 @@ export default function BlocNotesPage() {
                 {aiPanel && (
                   <motion.div initial={{width:0,opacity:0}} animate={{width:300,opacity:1}} exit={{width:0,opacity:0}}
                     transition={{duration:0.28,ease}}
-                    className="overflow-hidden border-l border-white/[0.06] bg-[#0f1117]"
+                    className="overflow-hidden border-l border-white/[0.06] bg-[#07080e]"
                     style={{minWidth:0}}>
                     <div className="flex h-full w-[300px] flex-col p-4">
                       <div className="mb-3 flex items-center justify-between">
@@ -1497,7 +1497,7 @@ export default function BlocNotesPage() {
             </div>
 
             {/* AI actions bar */}
-            <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.05] bg-[#0f1117] px-5 py-2.5" style={{scrollbarWidth:"none"}}>
+            <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.05] bg-[#07080e] px-5 py-2.5" style={{scrollbarWidth:"none"}}>
               {AI_ACTIONS.map(a => (
                 <button key={a.action}
                   onClick={() => {
@@ -1516,7 +1516,7 @@ export default function BlocNotesPage() {
       </div>
 
       {/* ══ MOBILE BOTTOM BAR ══ */}
-      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-white/[0.06] bg-[#161b22]/95 px-2 pb-safe backdrop-blur-sm lg:hidden"
+      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-white/[0.06] bg-[#0e1420]/95 px-2 pb-safe backdrop-blur-sm lg:hidden"
         style={{paddingBottom:"max(env(safe-area-inset-bottom), 8px)", paddingTop:"8px"}}>
         <button onClick={() => { if (section !== "all" && section !== "favorites" && section !== "checklist" && section !== "vocal" && section !== "archived" && !section.startsWith("folder:")) setSection("all"); setMobilePanel("list"); }}
           className={`flex flex-col items-center gap-1 px-4 py-1 ${(section !== "canvas" && mobilePanel === "list") ? "text-white" : "text-white/35"}`}>
@@ -1562,7 +1562,7 @@ export default function BlocNotesPage() {
             <motion.div key="tb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setShowTemplates(false)}/>
             <motion.div key="td" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-2xl -translate-y-1/2 rounded-2xl border border-white/[0.09] bg-[#161b22] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-2xl -translate-y-1/2 rounded-2xl border border-white/[0.09] bg-[#0e1420] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
               <div className="mb-5 flex items-center justify-between">
                 <h2 className="text-base font-extrabold text-white">Templates</h2>
                 <button onClick={() => setShowTemplates(false)} className="text-white/30 hover:text-white/65"><X size={15}/></button>
@@ -1593,7 +1593,7 @@ export default function BlocNotesPage() {
             <motion.div key="fb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setFolderModal(false)}/>
             <motion.div key="fd" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-2xl border border-white/[0.09] bg-[#161b22] p-6">
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-2xl border border-white/[0.09] bg-[#0e1420] p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-extrabold text-white">Nouveau dossier</h2>
                 <button onClick={() => setFolderModal(false)} className="text-white/30 hover:text-white/65"><X size={14}/></button>
@@ -1628,7 +1628,7 @@ export default function BlocNotesPage() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm">
             <motion.div initial={{scale:0.93,y:16,opacity:0}} animate={{scale:1,y:0,opacity:1}} exit={{scale:0.95,opacity:0}}
               transition={{duration:0.25,ease}}
-              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#161b22] p-6">
+              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0e1420] p-6">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/18 bg-red-500/9">
                 <Trash2 size={16} className="text-red-400"/>
               </div>
@@ -1654,7 +1654,7 @@ export default function BlocNotesPage() {
               onClick={() => { if (!nbCreating) setCreateNbOpen(false); }}/>
             <motion.div key="nb-modal" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
               transition={{duration:0.26,ease}}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-lg -translate-y-1/2 rounded-2xl border border-white/[0.08] bg-[#161b22] p-6 shadow-[0_40px_100px_rgba(0,0,0,0.8)]">
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-lg -translate-y-1/2 rounded-2xl border border-white/[0.08] bg-[#0e1420] p-6 shadow-[0_40px_100px_rgba(0,0,0,0.8)]">
 
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">

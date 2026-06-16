@@ -236,7 +236,7 @@ export default function DashboardPage() {
      RENDU
   ───────────────────────────────────────────────── */
   return (
-    <div className="min-h-full overflow-x-hidden" style={{ background: "#eef0f5" }}>
+    <div className="relative min-h-screen bg-[#07080e] text-white">
 
       {/* ══════════════════════════════════════════
           HERO SOMBRE
@@ -308,7 +308,7 @@ export default function DashboardPage() {
             </motion.button>
           </motion.div>
 
-          {/* ── 4 metric cards (style tableau de bord bancaire) ── */}
+          {/* ── 4 metric cards ── */}
           <motion.div
             initial={{ opacity:0, y:18 }} animate={{ opacity:1, y:0 }}
             transition={{ duration:0.45, delay:0.07, ease }}
@@ -405,12 +405,12 @@ export default function DashboardPage() {
         {/* ── Wave ── */}
         <svg viewBox="0 0 1440 56" fill="none" preserveAspectRatio="none"
           className="w-full block" style={{ marginBottom:"-1px", height:"56px" }}>
-          <path d="M0,24 C180,56 420,6 720,28 C1020,50 1260,10 1440,32 L1440,56 L0,56 Z" fill="#eef0f5"/>
+          <path d="M0,24 C180,56 420,6 720,28 C1020,50 1260,10 1440,32 L1440,56 L0,56 Z" fill="#07080e"/>
         </svg>
       </div>
 
       {/* ══════════════════════════════════════════
-          CONTENU CLAIR
+          CONTENU DARK
       ══════════════════════════════════════════ */}
       <div className="mx-auto max-w-4xl px-4 pb-14 pt-3 sm:px-6">
 
@@ -423,15 +423,15 @@ export default function DashboardPage() {
               className="overflow-hidden mb-4"
             >
               <div className="flex items-center gap-3 rounded-2xl px-4 py-3"
-                style={{ background:"rgba(239,68,68,0.07)", border:"1px solid rgba(239,68,68,0.18)" }}>
-                <AlertTriangle size={15} className="shrink-0 text-red-500"/>
-                <p className="flex-1 text-[12px] font-semibold text-red-700">
+                style={{ background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.2)" }}>
+                <AlertTriangle size={15} className="shrink-0 text-red-400"/>
+                <p className="flex-1 text-[12px] font-semibold text-red-400">
                   {overdue.length} facture{overdue.length>1?"s":""} en retard de paiement
                 </p>
-                <Link href="/client/tresorerie" className="shrink-0 text-[11px] font-bold text-red-600 underline underline-offset-2">
+                <Link href="/client/tresorerie" className="shrink-0 text-[11px] font-bold text-red-400 underline underline-offset-2">
                   Voir
                 </Link>
-                <button onClick={()=>setShowAlert(false)} className="shrink-0 text-red-400 hover:text-red-600 transition-colors ml-1">
+                <button onClick={()=>setShowAlert(false)} className="shrink-0 text-red-400/60 hover:text-red-400 transition-colors ml-1">
                   <X size={13}/>
                 </button>
               </div>
@@ -445,17 +445,16 @@ export default function DashboardPage() {
             <motion.div
               initial={{ opacity:0, y:-10, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }}
               exit={{ opacity:0, y:-8, scale:0.97 }} transition={{ duration:0.25 }}
-              className="overflow-hidden rounded-3xl mb-4 bg-white"
-              style={{ border:"1px solid rgba(0,0,0,0.07)", boxShadow:"0 8px 32px rgba(0,0,0,0.1)" }}
+              className="overflow-hidden rounded-3xl mb-4 border border-white/8 bg-[#0e1420] shadow-lg shadow-black/30"
             >
-              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
+              <div className="flex items-center justify-between border-b border-white/6 px-5 py-3.5">
                 <div className="flex items-center gap-2.5">
                   <FileBarChart2 size={13} style={{ color:GOLD }}/>
-                  <span className="text-[0.85rem] font-bold text-gray-800">
+                  <span className="text-[0.85rem] font-bold text-white">
                     Rapport IA — {new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}
                   </span>
                 </div>
-                <button onClick={()=>setRapportOpen(false)} className="text-gray-400 hover:text-gray-700 transition-colors">
+                <button onClick={()=>setRapportOpen(false)} className="text-white/30 hover:text-white/60 transition-colors">
                   <X size={15}/>
                 </button>
               </div>
@@ -468,14 +467,14 @@ export default function DashboardPage() {
                       style={{ border:"2px solid transparent", borderTopColor:GOLD }}
                       animate={{ rotate:360 }} transition={{ duration:0.9, repeat:Infinity, ease:"linear" }}/>
                   </div>
-                  <p className="text-[0.8rem] text-gray-400">Génération du rapport en cours…</p>
+                  <p className="text-[0.8rem] text-white/40">Génération du rapport en cours…</p>
                 </div>
               ) : rapport && (
                 <div className="space-y-5 p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                     <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
                       <svg className="absolute inset-0 -rotate-90" viewBox="0 0 64 64">
-                        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="5"/>
+                        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5"/>
                         <circle cx="32" cy="32" r="26" fill="none"
                           stroke={rapport.score_sante>=70?"#10b981":rapport.score_sante>=40?"#f59e0b":"#ef4444"}
                           strokeWidth="5" strokeLinecap="round"
@@ -489,8 +488,8 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex-1">
-                      <p className="text-[0.62rem] font-medium text-gray-400">Santé financière</p>
-                      <p className="mt-1 text-[0.8rem] leading-relaxed text-gray-600">{rapport.resume_executif}</p>
+                      <p className="text-[0.62rem] font-medium text-white/40">Santé financière</p>
+                      <p className="mt-1 text-[0.8rem] leading-relaxed text-white/60">{rapport.resume_executif}</p>
                     </div>
                   </div>
                   {rapport.kpis && (
@@ -503,33 +502,32 @@ export default function DashboardPage() {
                         { label:"Factures",          value:String(rapport.kpis.nb_factures) },
                         { label:"Clients actifs",    value:String(rapport.kpis.nb_clients) },
                       ].map(k=>(
-                        <div key={k.label} className="rounded-2xl px-3.5 py-3"
-                          style={{ background:"rgba(0,0,0,0.03)", border:"1px solid rgba(0,0,0,0.06)" }}>
-                          <p className="text-[0.6rem] font-medium text-gray-400">{k.label}</p>
-                          <p className="mt-0.5 text-[0.95rem] font-black text-gray-800">{k.value}</p>
+                        <div key={k.label} className="rounded-2xl border border-white/6 bg-white/4 px-3.5 py-3">
+                          <p className="text-[0.6rem] font-medium text-white/40">{k.label}</p>
+                          <p className="mt-0.5 text-[0.95rem] font-black text-white">{k.value}</p>
                         </div>
                       ))}
                     </div>
                   )}
                   <div className="grid gap-3 sm:grid-cols-2">
                     {rapport.points_forts?.length>0 && (
-                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                        <div className="mb-2 flex items-center gap-2"><ShieldCheck size={11} className="text-emerald-500"/><span className="text-[0.63rem] font-bold text-emerald-600">Points forts</span></div>
-                        <ul className="space-y-1.5">{rapport.points_forts.map((p,i)=><li key={i} className="flex items-start gap-2 text-[0.73rem] text-gray-600"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400"/>{p}</li>)}</ul>
+                      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/8 p-4">
+                        <div className="mb-2 flex items-center gap-2"><ShieldCheck size={11} className="text-emerald-400"/><span className="text-[0.63rem] font-bold text-emerald-400">Points forts</span></div>
+                        <ul className="space-y-1.5">{rapport.points_forts.map((p,i)=><li key={i} className="flex items-start gap-2 text-[0.73rem] text-white/60"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400"/>{p}</li>)}</ul>
                       </div>
                     )}
                     {rapport.alertes?.length>0 && (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                        <div className="mb-2 flex items-center gap-2"><AlertTriangle size={11} className="text-amber-500"/><span className="text-[0.63rem] font-bold text-amber-600">Alertes</span></div>
-                        <ul className="space-y-1.5">{rapport.alertes.map((a,i)=><li key={i} className="flex items-start gap-2 text-[0.73rem] text-gray-600"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400"/>{a}</li>)}</ul>
+                      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/8 p-4">
+                        <div className="mb-2 flex items-center gap-2"><AlertTriangle size={11} className="text-amber-400"/><span className="text-[0.63rem] font-bold text-amber-400">Alertes</span></div>
+                        <ul className="space-y-1.5">{rapport.alertes.map((a,i)=><li key={i} className="flex items-start gap-2 text-[0.73rem] text-white/60"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400"/>{a}</li>)}</ul>
                       </div>
                     )}
                   </div>
                   {rapport.recommandations?.length>0 && (
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                      <div className="mb-2 flex items-center gap-2"><Lightbulb size={11} style={{ color:GOLD }}/><span className="text-[0.63rem] font-bold text-gray-400">Recommandations</span></div>
+                    <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
+                      <div className="mb-2 flex items-center gap-2"><Lightbulb size={11} style={{ color:GOLD }}/><span className="text-[0.63rem] font-bold text-white/40">Recommandations</span></div>
                       <ol className="space-y-1.5">{rapport.recommandations.map((r,i)=>(
-                        <li key={i} className="flex items-start gap-2.5 text-[0.73rem] text-gray-600">
+                        <li key={i} className="flex items-start gap-2.5 text-[0.73rem] text-white/60">
                           <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[0.55rem] font-bold"
                             style={{ background:"rgba(201,165,90,0.15)", color:GOLD }}>{i+1}</span>
                           {r}
@@ -543,7 +541,7 @@ export default function DashboardPage() {
                       <TrendingUp size={13} className="mt-0.5 shrink-0" style={{ color:GOLD }}/>
                       <div>
                         <p className="mb-1 text-[0.62rem] font-bold" style={{ color:`${GOLD}99` }}>Objectif mois prochain</p>
-                        <p className="text-[0.77rem] text-gray-600">{rapport.objectif_mois_prochain}</p>
+                        <p className="text-[0.77rem] text-white/60">{rapport.objectif_mois_prochain}</p>
                       </div>
                     </div>
                   )}
@@ -553,7 +551,7 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
-        {/* ── Section "Aujourd'hui" — label ── */}
+        {/* ── Section "Activité" — label ── */}
         <motion.div
           initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
           transition={{ duration:0.35, delay:0.12, ease }}
@@ -561,7 +559,7 @@ export default function DashboardPage() {
         >
           <div className="flex items-center gap-2">
             <div className="h-1 w-1 rounded-full" style={{ background:GOLD }}/>
-            <h2 className="text-[12px] font-black uppercase tracking-[0.15em] text-gray-500">Activité</h2>
+            <h2 className="text-[12px] font-black uppercase tracking-[0.15em] text-white/30">Activité</h2>
           </div>
         </motion.div>
 
@@ -571,21 +569,20 @@ export default function DashboardPage() {
           transition={{ duration:0.38, delay:0.15, ease }}
           className="mb-4"
         >
-          <div className="rounded-2xl bg-white p-5"
-            style={{ border:"1px solid rgba(0,0,0,0.05)", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+          <div className="rounded-2xl border border-white/6 bg-white/4 p-5 backdrop-blur-sm shadow-lg shadow-black/30">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-[13px] font-bold text-gray-800">Flux de trésorerie</p>
-                <p className="text-[11px] text-gray-400">6 derniers mois</p>
+                <p className="text-[13px] font-bold text-white">Flux de trésorerie</p>
+                <p className="text-[11px] text-white/40">6 derniers mois</p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
                   <div className="h-2 w-2 rounded-full bg-emerald-400"/>
-                  <span className="text-[10px] text-gray-400">Entrées</span>
+                  <span className="text-[10px] text-white/40">Entrées</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="h-2 w-2 rounded-full bg-red-400"/>
-                  <span className="text-[10px] text-gray-400">Sorties</span>
+                  <span className="text-[10px] text-white/40">Sorties</span>
                 </div>
               </div>
             </div>
@@ -593,8 +590,8 @@ export default function DashboardPage() {
               <div className="flex items-end gap-2 h-32">
                 {[1,2,3,4,5,6].map(i=>(
                   <div key={i} className="flex flex-1 items-end gap-0.5">
-                    <div className="flex-1 animate-pulse rounded-t-md" style={{ height:`${28+i*9}%`, background:"rgba(74,222,128,0.18)" }}/>
-                    <div className="flex-1 animate-pulse rounded-t-md" style={{ height:`${18+i*7}%`, background:"rgba(248,113,113,0.18)" }}/>
+                    <div className="flex-1 animate-pulse rounded-t-md" style={{ height:`${28+i*9}%`, background:"rgba(74,222,128,0.12)" }}/>
+                    <div className="flex-1 animate-pulse rounded-t-md" style={{ height:`${18+i*7}%`, background:"rgba(248,113,113,0.12)" }}/>
                   </div>
                 ))}
               </div>
@@ -619,17 +616,17 @@ export default function DashboardPage() {
                             initial={{ height:0 }} animate={{ height:`${revPct}%` }}
                             transition={{ duration:0.7, delay:0.3+i*0.07, ease }}
                             className="flex-1 rounded-t-md"
-                            style={{ background: isLast ? "linear-gradient(180deg,#4ade80,#16a34a)" : "rgba(74,222,128,0.35)" }}
+                            style={{ background: isLast ? "linear-gradient(180deg,#4ade80,#16a34a)" : "rgba(74,222,128,0.3)" }}
                           />
                           {/* Barre Sorties (rouge) */}
                           <motion.div
                             initial={{ height:0 }} animate={{ height:`${expPct}%` }}
                             transition={{ duration:0.7, delay:0.33+i*0.07, ease }}
                             className="flex-1 rounded-t-md"
-                            style={{ background: isLast ? "linear-gradient(180deg,#f87171,#dc2626)" : "rgba(248,113,113,0.35)" }}
+                            style={{ background: isLast ? "linear-gradient(180deg,#f87171,#dc2626)" : "rgba(248,113,113,0.3)" }}
                           />
                         </div>
-                        <span className="text-[0.58rem] font-medium" style={{ color: isLast ? GOLD : "rgba(0,0,0,0.3)" }}>
+                        <span className="text-[0.58rem] font-medium" style={{ color: isLast ? GOLD : "rgba(255,255,255,0.25)" }}>
                           {r.label}
                         </span>
                       </div>
@@ -647,12 +644,11 @@ export default function DashboardPage() {
           transition={{ duration:0.38, delay:0.18, ease }}
           className="mb-4"
         >
-          <div className="rounded-2xl bg-white p-5"
-            style={{ border:"1px solid rgba(0,0,0,0.05)", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+          <div className="rounded-2xl border border-white/6 bg-white/4 p-5 backdrop-blur-sm shadow-lg shadow-black/30">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-[13px] font-bold text-gray-800">Meilleurs clients</p>
-                <p className="text-[11px] text-gray-400">3 mois glissants</p>
+                <p className="text-[13px] font-bold text-white">Meilleurs clients</p>
+                <p className="text-[11px] text-white/40">3 mois glissants</p>
               </div>
               {!chartsLoading && topClients.length > 0 && (
                 <p className="text-[12px] font-black" style={{ color:GOLD }}>
@@ -661,11 +657,11 @@ export default function DashboardPage() {
               )}
             </div>
             {chartsLoading ? (
-              <div className="space-y-3">{[1,2,3].map(i=><div key={i} className="h-8 animate-pulse rounded-xl" style={{ background:"rgba(0,0,0,0.05)" }}/>)}</div>
+              <div className="space-y-3">{[1,2,3].map(i=><div key={i} className="h-8 animate-pulse rounded-xl bg-white/5"/>)}</div>
             ) : topClients.length===0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-center">
-                <Users size={18} className="text-gray-200"/>
-                <p className="text-[0.72rem] text-gray-400">Aucun encaissement récent</p>
+                <Users size={18} className="text-white/20"/>
+                <p className="text-[0.72rem] text-white/40">Aucun encaissement récent</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -676,11 +672,11 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full shrink-0" style={{ background: i===0 ? GOLD : `${GOLD}66` }}/>
-                          <span className="text-[0.72rem] font-medium text-gray-600 truncate max-w-[150px]">{c.name}</span>
+                          <span className="text-[0.72rem] font-medium text-white/60 truncate max-w-[150px]">{c.name}</span>
                         </div>
                         <span className="text-[0.72rem] font-bold ml-2" style={{ color:GOLD }}>{fmtEurInt(c.amount)}</span>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/8">
                         <motion.div
                           initial={{ width:0 }} animate={{ width:`${pct}%` }}
                           transition={{ duration:0.8, delay:0.4+i*0.08 }}
@@ -705,47 +701,46 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="h-1 w-1 rounded-full" style={{ background:GOLD }}/>
-              <h2 className="text-[12px] font-black uppercase tracking-[0.15em] text-gray-500">Factures récentes</h2>
+              <h2 className="text-[12px] font-black uppercase tracking-[0.15em] text-white/30">Factures récentes</h2>
             </div>
             <Link href="/client/factures" className="text-[11px] font-bold transition hover:opacity-70" style={{ color:GOLD }}>
               Voir tout →
             </Link>
           </div>
 
-          <div className="overflow-hidden rounded-2xl bg-white"
-            style={{ border:"1px solid rgba(0,0,0,0.05)", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+          <div className="overflow-hidden rounded-2xl border border-white/6 bg-white/4 shadow-lg shadow-black/30">
             {chartsLoading ? (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-white/5">
                 {[1,2,3,4].map(i=>(
                   <div key={i} className="flex items-center gap-3.5 px-4 py-3.5">
-                    <div className="h-8 w-8 animate-pulse rounded-xl bg-gray-100"/>
+                    <div className="h-8 w-8 animate-pulse rounded-xl bg-white/6"/>
                     <div className="flex-1 space-y-1.5">
-                      <div className="h-2.5 w-28 animate-pulse rounded-full bg-gray-100"/>
-                      <div className="h-2 w-16 animate-pulse rounded-full bg-gray-50"/>
+                      <div className="h-2.5 w-28 animate-pulse rounded-full bg-white/6"/>
+                      <div className="h-2 w-16 animate-pulse rounded-full bg-white/4"/>
                     </div>
-                    <div className="h-5 w-14 animate-pulse rounded-full bg-gray-100"/>
+                    <div className="h-5 w-14 animate-pulse rounded-full bg-white/6"/>
                   </div>
                 ))}
               </div>
             ) : recentInvoices.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-10">
-                <ReceiptText size={20} className="text-gray-200"/>
-                <p className="text-[0.72rem] text-gray-400">Aucune facture créée pour l&apos;instant</p>
+                <ReceiptText size={20} className="text-white/20"/>
+                <p className="text-[0.72rem] text-white/40">Aucune facture créée pour l&apos;instant</p>
                 <Link href="/client/factures"
-                  className="rounded-xl px-4 py-2 text-[0.72rem] font-bold text-white transition hover:opacity-90"
+                  className="rounded-xl px-4 py-2 text-[0.72rem] font-bold text-[#07080e] transition hover:opacity-90"
                   style={{ background:`linear-gradient(135deg,${GOLD},#b08d45)` }}>
                   Créer ma première facture
                 </Link>
               </div>
             ) : (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-white/5">
                 {recentInvoices.map((inv,i) => {
                   const statusConfig: Record<string,{ label:string; color:string; bg:string; icon:React.ElementType }> = {
-                    payé:       { label:"Payée",      color:"#16a34a", bg:"rgba(22,163,74,0.1)",    icon:CheckCircle2 },
-                    envoyé:     { label:"Envoyée",    color:"#2563eb", bg:"rgba(37,99,235,0.1)",    icon:Send         },
-                    en_attente: { label:"En attente", color:"#92681e", bg:"rgba(201,165,90,0.12)",  icon:CircleDot    },
-                    brouillon:  { label:"Brouillon",  color:"#6b7280", bg:"rgba(107,114,128,0.1)",  icon:FileText     },
-                    en_retard:  { label:"En retard",  color:"#dc2626", bg:"rgba(220,38,38,0.1)",    icon:AlertTriangle},
+                    payé:       { label:"Payée",      color:"#4ade80", bg:"rgba(74,222,128,0.1)",    icon:CheckCircle2 },
+                    envoyé:     { label:"Envoyée",    color:"#60a5fa", bg:"rgba(96,165,250,0.1)",    icon:Send         },
+                    en_attente: { label:"En attente", color:"#c9a55a", bg:"rgba(201,165,90,0.12)",   icon:CircleDot    },
+                    brouillon:  { label:"Brouillon",  color:"#6b7280", bg:"rgba(107,114,128,0.1)",   icon:FileText     },
+                    en_retard:  { label:"En retard",  color:"#f87171", bg:"rgba(248,113,113,0.1)",   icon:AlertTriangle},
                   };
                   const s = statusConfig[inv.statut] ?? { label:inv.statut, color:"#6b7280", bg:"rgba(107,114,128,0.1)", icon:CircleDot };
                   const StatusIcon = s.icon;
@@ -755,16 +750,16 @@ export default function DashboardPage() {
                       initial={{ opacity:0, x:-6 }} animate={{ opacity:1, x:0 }}
                       transition={{ duration:0.22, delay:0.24+i*0.04 }}>
                       <Link href="/client/factures"
-                        className="group flex items-center gap-3.5 px-4 py-3 transition-colors hover:bg-gray-50">
+                        className="group flex items-center gap-3.5 px-4 py-3 transition-colors hover:bg-white/4">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                          style={{ background:"rgba(201,165,90,0.09)", border:"1px solid rgba(201,165,90,0.14)" }}>
+                          style={{ background:"rgba(201,165,90,0.08)", border:"1px solid rgba(201,165,90,0.14)" }}>
                           <ReceiptText size={14} style={{ color:GOLD }}/>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[0.78rem] font-semibold text-gray-700">
+                          <p className="truncate text-[0.78rem] font-semibold text-white/80">
                             {inv.client_nom || inv.numero || "Sans nom"}
                           </p>
-                          <p className="text-[0.62rem] text-gray-400">
+                          <p className="text-[0.62rem] text-white/40">
                             {inv.numero ? `${inv.numero} · ` : ""}{date}
                           </p>
                         </div>
@@ -794,28 +789,22 @@ export default function DashboardPage() {
         >
           <div className="flex items-center gap-2 mb-4">
             <div className="h-1 w-1 rounded-full" style={{ background:GOLD }}/>
-            <h2 className="text-[12px] font-black uppercase tracking-[0.15em] text-gray-500">Modules</h2>
+            <h2 className="text-[12px] font-black uppercase tracking-[0.15em] text-white/30">Modules</h2>
           </div>
 
           {/* Barre de recherche */}
           <div className="relative mb-5">
-            <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher un module…"
-              className="w-full rounded-2xl bg-white py-3 pl-11 pr-10 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none transition"
-              style={{
-                border: search ? `1px solid rgba(201,165,90,0.4)` : "1px solid rgba(0,0,0,0.07)",
-                boxShadow: search
-                  ? `0 0 0 3px rgba(201,165,90,0.1), 0 2px 12px rgba(0,0,0,0.06)`
-                  : "0 2px 10px rgba(0,0,0,0.04)",
-              }}
+              className="w-full rounded-2xl border border-white/8 bg-white/4 py-3 pl-11 pr-10 text-[13px] text-white placeholder:text-white/25 outline-none transition focus:border-white/20 focus:bg-white/6 backdrop-blur-sm"
             />
             {search && (
               <button onClick={() => setSearch("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
                 <X size={14} />
               </button>
             )}
@@ -829,10 +818,9 @@ export default function DashboardPage() {
                 .flatMap(g => g.modules)
                 .filter(m => m.label.toLowerCase().includes(q) || m.sub.toLowerCase().includes(q));
               return results.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-10 rounded-2xl bg-white"
-                  style={{ border:"1px solid rgba(0,0,0,0.05)" }}>
-                  <Search size={22} className="text-gray-300"/>
-                  <p className="text-[12px] text-gray-400">Aucun module pour &ldquo;{search}&rdquo;</p>
+                <div className="flex flex-col items-center gap-2 py-10 rounded-2xl border border-white/6 bg-white/4">
+                  <Search size={22} className="text-white/20"/>
+                  <p className="text-[12px] text-white/40">Aucun module pour &ldquo;{search}&rdquo;</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -864,7 +852,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* ── Footer ── */}
-        <p className="text-center text-[10px] text-gray-400">
+        <p className="text-center text-[10px] text-white/25">
           DJAMA PRO · Données en temps réel
         </p>
       </div>
