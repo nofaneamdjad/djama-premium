@@ -29,7 +29,7 @@ type AiAction =
   | "rephrase" | "translate" | "meeting-report" | "extract-actions" | "chat";
 
 type SortBy  = "date" | "alpha" | "type";
-type Section = "all" | "favorites" | "canvas" | "vocal" | "checklist" | "archived" | `folder:${string}`;
+type Section = "all" | "favorites" | "vocal" | "checklist" | "archived" | `folder:${string}`;
 
 interface Note {
   id:            string;
@@ -706,7 +706,7 @@ export default function BlocNotesPage() {
       if (section === "archived")  return arch;
       if (section === "vocal")     return !arch && getNoteType(n) === "vocal";
       if (section === "checklist") return !arch && getNoteType(n) === "checklist";
-      if (section === "canvas")    return false;
+
       if (section.startsWith("folder:")) return !arch && n.folder_id === section.slice(7);
       return !arch;
     });
@@ -735,7 +735,7 @@ export default function BlocNotesPage() {
   }), [notes, favSet]);
 
   const wordCnt = countWords(dContent);
-  const isCanvas = section === "canvas";
+  const isCanvas = false;
 
   /* ══════════════════════════════════════════════════
      RENDER
@@ -749,7 +749,7 @@ export default function BlocNotesPage() {
 
           {/* Brand */}
           <div className="px-2 py-3 mb-1">
-            <p className="text-[0.58rem] font-black uppercase tracking-[0.18em] text-white/18">Notes &amp; Cahiers</p>
+            <p className="text-[0.58rem] font-black uppercase tracking-[0.18em] text-white/18">Notes</p>
           </div>
 
           {/* Main sections */}
@@ -757,7 +757,6 @@ export default function BlocNotesPage() {
             {([
               { key:"all",       label:"Toutes",    Icon:StickyNote,  count:counts.all       },
               { key:"favorites", label:"Favoris",   Icon:Star,        count:counts.favs      },
-              { key:"canvas",    label:"Cahiers",   Icon:Book,        count:notebooks.length },
               { key:"checklist", label:"Checklist", Icon:CheckSquare, count:counts.checklist },
               { key:"vocal",     label:"Vocal",     Icon:Mic,         count:counts.vocal     },
               { key:"archived",  label:"Archives",  Icon:Archive,     count:counts.archived  },
@@ -766,7 +765,7 @@ export default function BlocNotesPage() {
                 onClick={() => {
                   setSection(item.key as Section);
                   setSelected(null);
-                  if (item.key !== "canvas") setActiveNb(null);
+                  setActiveNb(null);
                   setMobilePanel("list");
                 }}
                 className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[0.76rem] font-semibold transition-all duration-150 ${
@@ -1527,17 +1526,12 @@ export default function BlocNotesPage() {
       {/* ══ MOBILE BOTTOM BAR ══ */}
       <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-white/[0.06] bg-[#0e1420]/95 px-2 pb-safe backdrop-blur-sm lg:hidden"
         style={{paddingBottom:"max(env(safe-area-inset-bottom), 8px)", paddingTop:"8px"}}>
-        <button onClick={() => { if (section !== "all" && section !== "favorites" && section !== "checklist" && section !== "vocal" && section !== "archived" && !section.startsWith("folder:")) setSection("all"); setMobilePanel("list"); }}
-          className={`flex flex-col items-center gap-1 px-4 py-1 ${(section !== "canvas" && mobilePanel === "list") ? "text-white" : "text-white/35"}`}>
+        <button onClick={() => setMobilePanel("list")}
+          className={`flex flex-col items-center gap-1 px-4 py-1 ${mobilePanel === "list" ? "text-white" : "text-white/35"}`}>
           <StickyNote size={18}/>
           <span className="text-[0.55rem] font-bold">Notes</span>
         </button>
-        <button onClick={() => { setSection("canvas"); setMobilePanel("list"); }}
-          className={`flex flex-col items-center gap-1 px-4 py-1 ${section === "canvas" ? "text-white" : "text-white/35"}`}>
-          <Book size={18}/>
-          <span className="text-[0.55rem] font-bold">Cahiers</span>
-        </button>
-        <button onClick={() => isCanvas ? setCreateNbOpen(true) : createNote("texte")}
+        <button onClick={() => createNote("texte")}
           className="flex h-11 w-11 items-center justify-center rounded-2xl text-[#0a0a0a] transition active:scale-95"
           style={{background:`linear-gradient(135deg,${amber},#d97706)`,boxShadow:`0 4px 16px rgba(245,158,11,0.3)`}}>
           <Plus size={20}/>
