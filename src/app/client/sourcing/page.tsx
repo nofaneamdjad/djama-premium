@@ -8,6 +8,7 @@ import {
   CheckCircle2, Factory, Sparkles, Package, AlertCircle,
   Brain, Star, ShieldCheck, TrendingUp,
 } from "lucide-react";
+import Link from "next/link";
 import type { GuideMessage, GuideSection, GuideItem } from "@/lib/sourcing/generateGuide";
 
 interface SourcingItem extends GuideItem {
@@ -89,8 +90,9 @@ const QUICKSTART = [
     bg:    "rgba(74,222,128,0.08)",
     border:"rgba(74,222,128,0.18)",
     label: "Répondre à un appel d'offre",
-    desc:  "Étapes, stratégie, erreurs à éviter",
-    question: "Comment répondre efficacement à un appel d'offre ? Donne-moi les étapes complètes, la stratégie de positionnement, comment rédiger le mémoire technique, et toutes les erreurs classiques à éviter pour maximiser mes chances.",
+    desc:  "Assistant IA — dossier complet en 6 étapes",
+    question: "",
+    href: "/client/sourcing/appel-offre",
   },
   {
     icon: Package,
@@ -716,31 +718,38 @@ export default function SourcingPage() {
               </div>
 
                             <div className="grid grid-cols-2 gap-3 mb-8">
-                {QUICKSTART.map((card, i) => (
-                  <motion.button
-                    key={i}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.07, duration: 0.25, ease }}
-                    onClick={() => handleSend(card.question)}
-                    className="flex flex-col items-start gap-2.5 p-4 rounded-2xl border text-left transition-all hover:scale-[1.02] active:scale-[0.99]"
-                    style={{ background: card.bg, borderColor: card.border }}
-                  >
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center"
-                      style={{ background: "rgba(255,255,255,0.07)" }}
-                    >
-                      <card.icon size={16} style={{ color: card.color }} />
-                    </div>
-                    <div>
-                      <p className="text-[13px] font-bold text-white/88 leading-snug">{card.label}</p>
-                      <p className="text-[11px] text-white/38 mt-0.5">{card.desc}</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] font-bold mt-auto" style={{ color: card.color }}>
-                      Analyse complète <ChevronRight size={10} />
-                    </div>
-                  </motion.button>
-                ))}
+                {QUICKSTART.map((card, i) => {
+                  const cardClass = "flex flex-col items-start gap-2.5 p-4 rounded-2xl border text-left transition-all hover:scale-[1.02] active:scale-[0.99]";
+                  const cardStyle = { background: card.bg, borderColor: card.border };
+                  const inner = (
+                    <>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                        style={{ background: "rgba(255,255,255,0.07)" }}>
+                        <card.icon size={16} style={{ color: card.color }} />
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-bold text-white/88 leading-snug">{card.label}</p>
+                        <p className="text-[11px] text-white/38 mt-0.5">{card.desc}</p>
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] font-bold mt-auto" style={{ color: card.color }}>
+                        {card.href ? "Lancer le wizard" : "Analyse complète"} <ChevronRight size={10} />
+                      </div>
+                    </>
+                  );
+                  return card.href ? (
+                    <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.07, duration: 0.25, ease }}>
+                      <Link href={card.href} className={cardClass} style={cardStyle}>{inner}</Link>
+                    </motion.div>
+                  ) : (
+                    <motion.button key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.07, duration: 0.25, ease }}
+                      onClick={() => handleSend(card.question)}
+                      className={cardClass} style={cardStyle}>
+                      {inner}
+                    </motion.button>
+                  );
+                })}
               </div>
 
               <p className="text-center text-[11px] text-white/20 pb-4">
