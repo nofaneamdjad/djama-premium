@@ -397,17 +397,20 @@ export default function AppelOffrePage() {
     if (!analysis) return;
     setGenerating(true);
     setGenerateError(null);
+    setGeneratedDocs([]);
+    setActiveDocTab("");
     try {
       const res = await fetch("/api/sourcing/appel-offre/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ company, analysis, selectedDocs, files }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur serveur");
-      setGeneratedDocs(data.documents || []);
-      if (data.documents?.length) setActiveDocTab(data.documents[0].id);
-      setStep(4);
+      const docs = data.documents || [];
+      setGeneratedDocs(docs);
+      if (docs.length) setActiveDocTab(docs[0].id);
     } catch (err) {
       setGenerateError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
@@ -1065,24 +1068,21 @@ export default function AppelOffrePage() {
   );
 
   /* ── NAV BUTTONS ── */
+  const needsGenerate = step === 4 && generatedDocs.length === 0 && !generating;
+
   const canProceed = () => {
     if (step === 1) return company.nom.trim().length > 0;
     if (step === 2) return true;
     if (step === 3) return analysis !== null;
+    if (needsGenerate) return true; // "Générer" toujours actif
     if (step === 4) return generatedDocs.length > 0;
     if (step === 5) return true;
     return true;
   };
 
   const handleNext = async () => {
-    if (step === 2) {
-      await runAnalysis();
-      return;
-    }
-    if (step === 3) {
-      setStep(4);
-      return;
-    }
+    if (step === 2) { await runAnalysis(); return; }
+    if (needsGenerate) { await runGeneration(); return; }
     setStep(s => Math.min(s + 1, 6));
   };
 
@@ -1175,7 +1175,12 @@ export default function AppelOffrePage() {
                 className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[0.82rem] font-black transition-all disabled:opacity-35 active:scale-[0.98]"
                 style={{ background: "linear-gradient(135deg,rgba(129,140,248,0.85),rgba(96,165,250,0.75))", color: "#fff" }}
               >
-                {step === 2 ? (<><Brain size={15} /> Analyser</>) : (<>Suivant <ChevronRight size={15} /></>)}
+                {step === 2
+                  ? (<><Brain size={15} /> Analyser</>)
+                  : needsGenerate
+                    ? (<><Sparkles size={15} /> Générer {selectedDocs.length} doc{selectedDocs.length > 1 ? "s" : ""}</>)
+                    : (<>Suivant <ChevronRight size={15} /></>)
+                }
               </button>
             ) : (
               <button

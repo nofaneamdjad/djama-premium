@@ -248,12 +248,12 @@ ENTREPRISE :
 
   contextBlocks.push({ type: "text", text: contextText });
 
-  /* ── Génération séquentielle ── */
-  const anthropic = new Anthropic({ apiKey, maxRetries: 1, timeout: 150_000 });
-  const documents: GeneratedDoc[] = [];
+  /* ── Génération parallèle ── */
+  const anthropic = new Anthropic({ apiKey, maxRetries: 0, timeout: 90_000 });
   const docsToGenerate = selectedDocs.filter(id => DOC_SPECS[id]);
+  const SYSTEM_PROMPT = "Tu es un expert en marchés publics avec 20 ans d'expérience. Tu rédiges des documents de réponse aux appels d'offres de niveau professionnel, prêts à être soumis. Tes documents sont précis, complets et conformes aux exigences réglementaires françaises. Réponds UNIQUEMENT avec le contenu du document demandé.";
 
-  for (const docId of docsToGenerate) {
+  const generateOne = async (docId: string): Promise<GeneratedDoc> => {
     const spec = DOC_SPECS[docId];
     try {
       const messages: MessageParam[] = [
@@ -263,7 +263,7 @@ ENTREPRISE :
             ...contextBlocks,
             {
               type: "text",
-              text: `${spec.prompt}\n\nRéponds UNIQUEMENT avec le contenu du document, en texte brut formaté (titres, paragraphes, listes). Pas de commentaire, pas d'explication autour. Commence directement par le titre du document.`,
+              text: `${spec.prompt}\n\nRéponds UNIQUEMENT avec le contenu du document, en texte brut bien formaté (titres en MAJUSCULES, paragraphes, listes avec tirets). Commence directement par le titre du document. Pas de commentaire autour.`,
             },
           ],
         },
@@ -271,23 +271,26 @@ ENTREPRISE :
 
       const response = await anthropic.messages.create({
         model: MODEL,
-        max_tokens: 3000,
-        system: "Tu es un expert en marchés publics avec 20 ans d'expérience. Tu rédiges des documents de réponse aux appels d'offres publics et privés de niveau professionnel, prêts à être soumis. Tes documents sont précis, complets et conformes aux exigences réglementaires françaises.",
+        max_tokens: 2000,
+        system: SYSTEM_PROMPT,
         messages,
       });
 
       const content = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
-      if (content) {
-        documents.push({ id: docId, title: spec.title, content });
-      }
-    } catch {
-      // Continue avec les autres documents si un échoue
-      documents.push({
-        id: docId,
-        title: spec.title,
-        content: `[Erreur de génération pour ce document. Veuillez réessayer.]`,
-      });
+      return { id: docId, title: spec.title, content: content || "[Document vide — réessayez]" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message.slice(0, 100) : "Erreur inconnue";
+      return { id: docId, title: spec.title, content: `[Erreur : ${msg}. Veuillez régénérer ce document.]` };
     }
+  };
+
+  // Paralléliser par groupes de 3 pour éviter le rate-limit
+  const documents: GeneratedDoc[] = [];
+  const chunkSize = 3;
+  for (let i = 0; i < docsToGenerate.length; i += chunkSize) {
+    const chunk = docsToGenerate.slice(i, i + chunkSize);
+    const results = await Promise.all(chunk.map(generateOne));
+    documents.push(...results);
   }
 
   return NextResponse.json({ documents });
