@@ -821,7 +821,7 @@ export default function BlocNotesPage() {
       </aside>
 
       {/* ══ LIST PANEL ══ */}
-      <div className={`flex flex-col bg-[#12151c] border-r border-white/[0.06]
+      <div className={`flex-col bg-[#12151c] border-r border-white/[0.06]
         shrink-0 w-full lg:w-80
         ${mobilePanel === "editor" ? "hidden lg:flex" : "flex"}`}>
 
@@ -1115,7 +1115,7 @@ export default function BlocNotesPage() {
       </div>
 
       {/* ══ RIGHT PANEL ══ */}
-      <div className={`flex flex-1 flex-col overflow-hidden bg-[#0d1117]
+      <div className={`flex-1 flex-col overflow-hidden bg-[#0d1117]
         ${mobilePanel === "list" ? "hidden lg:flex" : "flex"}`}>
 
         {/* ─ CANVAS EDITOR ─ */}
