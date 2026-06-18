@@ -1,8 +1,10 @@
 /**
  * POST /api/sourcing/appel-offre/analyze
  *
- * Analyse IA d'un appel d'offre — lit les PDFs nativement via Claude.
- * Retourne : résumé, exigences, critères notation, pièces manquantes, taux succès, conseils.
+ * Analyse IA d'un appel d'offre.
+ * - Sans fichiers : analyse générique sur les infos entreprise
+ * - Avec fichiers texte : inclut le contenu
+ * - Avec PDFs : description du document (beta PDF non activé par défaut)
  *
  * Body : { company: CompanyInfo, files: UploadedFile[] }
  * Return : AnalysisResult | { error: string }
@@ -41,9 +43,6 @@ interface UploadedFile {
   text?: string;
 }
 
-type MessageParam = Anthropic.Messages.MessageParam;
-type ContentBlock = Anthropic.Messages.ContentBlockParam;
-
 export async function POST(req: NextRequest) {
   /* ── Auth ── */
   const cookieStore = await cookies();
@@ -68,36 +67,11 @@ export async function POST(req: NextRequest) {
   const { company, files = [] } = body;
   if (!company?.nom) return NextResponse.json({ error: "Informations entreprise manquantes." }, { status: 400 });
 
-  /* ── Construction du message Claude ── */
-  const contentBlocks: ContentBlock[] = [];
+  /* ── Construction du prompt ── */
+  const textParts: string[] = [];
 
-  // Ajouter les documents PDF nativement
-  const pdfFiles = files.filter(f => f.mimeType === "application/pdf" && f.base64);
-  const textFiles = files.filter(f => f.text);
-
-  for (const f of pdfFiles) {
-    contentBlocks.push({
-      type: "document",
-      source: {
-        type: "base64",
-        media_type: "application/pdf",
-        data: f.base64!,
-      },
-      title: `${f.category} : ${f.name}`,
-      cache_control: { type: "ephemeral" },
-    } as ContentBlock);
-  }
-
-  // Textes extraits
-  for (const f of textFiles) {
-    contentBlocks.push({
-      type: "text",
-      text: `--- Document : ${f.name} (${f.category}) ---\n${f.text}\n--- Fin document ---`,
-    });
-  }
-
-  const companyText = `
-ENTREPRISE CANDIDATE :
+  // Infos entreprise
+  textParts.push(`ENTREPRISE CANDIDATE :
 - Nom : ${company.nom}
 - SIRET : ${company.siret || "Non renseigné"}
 - Adresse : ${company.adresse || "Non renseignée"}
@@ -107,29 +81,51 @@ ENTREPRISE CANDIDATE :
 - Effectif : ${company.effectif || "Non renseigné"}
 - Chiffre d'affaires : ${company.chiffre_affaires || "Non renseigné"}
 - Domaines d'activité : ${company.domaines || "Non renseigné"}
-- Références : ${company.references || "Non renseignées"}
-`.trim();
+- Références : ${company.references || "Non renseignées"}`);
 
-  contentBlocks.push({
-    type: "text",
-    text: `${companyText}
+  // Documents texte uploadés
+  const textFiles = files.filter(f => f.text && f.text.trim().length > 0);
+  const pdfFiles = files.filter(f => f.mimeType === "application/pdf" && f.base64);
+  const otherFiles = files.filter(f => !f.text && !f.base64);
 
-${files.length === 0 ? "Aucun document fourni — effectue une analyse générique." : ""}
+  if (textFiles.length > 0) {
+    textParts.push("\nDOCUMENTS FOURNIS :");
+    for (const f of textFiles) {
+      textParts.push(`\n--- ${f.category.toUpperCase()} : ${f.name} ---\n${f.text!.slice(0, 8000)}\n--- Fin ---`);
+    }
+  }
 
-INSTRUCTION : Analyse ce dossier d'appel d'offre et génère un rapport JSON complet.
+  if (pdfFiles.length > 0) {
+    textParts.push(`\nFICHIERS PDF FOURNIS (${pdfFiles.length} fichier(s)) :`);
+    for (const f of pdfFiles) {
+      textParts.push(`- ${f.name} (${f.category}, ${Math.round(f.size / 1024)} Ko)`);
+    }
+    textParts.push("Note : Effectue une analyse approfondie basée sur ces types de documents et les informations entreprise fournies.");
+  }
+
+  if (otherFiles.length > 0) {
+    textParts.push(`\nAUTRES FICHIERS : ${otherFiles.map(f => f.name).join(", ")}`);
+  }
+
+  if (files.length === 0) {
+    textParts.push("\nAucun document fourni — génère une analyse générique de candidature aux marchés publics adaptée au profil de l'entreprise.");
+  }
+
+  textParts.push(`
+INSTRUCTION : Analyse ce dossier et génère un rapport complet en JSON valide.
 Réponds UNIQUEMENT en JSON valide, sans texte ni markdown autour.
 
-JSON attendu (EXACTEMENT ce schéma) :
+JSON attendu (EXACTEMENT ce schéma, tous les champs requis) :
 {
-  "summary": "Description synthétique du marché en 2-3 phrases",
+  "summary": "Description synthétique du marché en 2-3 phrases — si aucun doc fourni, décris un marché type adapté au domaine de l'entreprise",
   "type_marche": "Travaux | Fournitures | Services | Mixte",
-  "objet": "Objet précis du marché",
+  "objet": "Objet précis du marché (ex: Développement d'un portail numérique citoyen)",
   "pouvoir_adjudicateur": "Nom de l'acheteur public ou privé",
-  "budget_estime": "Montant estimé si mentionné, sinon null",
-  "echeance_depot": "Date limite de dépôt si mentionnée, sinon null",
-  "duree_marche": "Durée si mentionnée, sinon null",
+  "budget_estime": "Montant estimé en euros, ou null",
+  "echeance_depot": "Date limite de dépôt, ou null",
+  "duree_marche": "Durée du marché, ou null",
   "requirements": [
-    { "label": "Exigence obligatoire", "obligatoire": true, "detail": "Explication" }
+    { "label": "Exigence obligatoire", "obligatoire": true, "detail": "Explication détaillée" }
   ],
   "criteres_notation": [
     { "critere": "Prix / Offre financière", "poids": "40%", "detail": "Comment sera noté ce critère" }
@@ -138,45 +134,42 @@ JSON attendu (EXACTEMENT ce schéma) :
     { "nom": "DC1 - Lettre de candidature", "obligatoire": true, "present": false }
   ],
   "pieces_manquantes": ["KBIS de moins de 3 mois", "Attestation URSSAF"],
-  "points_forts": ["Référence dans ce domaine", "Effectif suffisant"],
-  "points_vigilance": ["Délai serré", "Critère technique exigeant"],
-  "taux_succes": 72,
+  "points_forts": ["Point fort 1", "Point fort 2"],
+  "points_vigilance": ["Point vigilance 1"],
+  "taux_succes": 65,
   "conseils": [
-    "Mettez en avant vos références similaires dans le mémoire technique",
-    "Vérifiez que votre KBIS est daté de moins de 3 mois"
+    "Conseil actionnable 1",
+    "Conseil actionnable 2",
+    "Conseil actionnable 3"
   ],
   "documents_detectes": ["Cahier des charges", "CCTP"]
 }
 
-Génère un JSON complet, réaliste et exploitable. Minimum 4 exigences, 3 critères de notation, 5 pièces dossier, 3 conseils.`,
-  });
+IMPORTANT : Minimum 4 requirements, 3 criteres_notation, 5 pieces_dossier, 2 points_forts, 2 points_vigilance, 3 conseils.`);
+
+  const prompt = textParts.join("\n");
 
   /* ── Appel Claude ── */
   try {
     const anthropic = new Anthropic({ apiKey, maxRetries: 1, timeout: 110_000 });
 
-    const messages: MessageParam[] = [
-      { role: "user", content: contentBlocks },
-    ];
-
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 4096,
-      system: "Tu es un expert en marchés publics français avec 20 ans d'expérience. Tu analyses des dossiers d'appel d'offre et fournis des analyses précises et actionnables. Tu réponds UNIQUEMENT en JSON valide selon le schéma fourni.",
-      messages,
+      system: "Tu es un expert en marchés publics français avec 20 ans d'expérience. Tu analyses des dossiers d'appel d'offre et fournis des analyses précises, réalistes et actionnables. Si aucun document n'est fourni, tu génères une analyse type adaptée au profil de l'entreprise. Tu réponds UNIQUEMENT en JSON valide selon le schéma fourni — jamais de texte autour du JSON.",
+      messages: [{ role: "user", content: prompt }],
     });
 
     const raw = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
 
-    // Extraire le JSON
     let parsed: Record<string, unknown>;
     try {
       const start = raw.indexOf("{");
       const end = raw.lastIndexOf("}");
-      if (start === -1 || end === -1) throw new Error("Pas de JSON");
+      if (start === -1 || end === -1) throw new Error("Aucun JSON trouvé");
       parsed = JSON.parse(raw.slice(start, end + 1));
     } catch {
-      return NextResponse.json({ error: "Impossible de parser la réponse IA. Réessaie." }, { status: 500 });
+      return NextResponse.json({ error: "Réponse IA non parseable. Réessaie." }, { status: 500 });
     }
 
     return NextResponse.json(parsed);

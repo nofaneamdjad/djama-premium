@@ -371,18 +371,20 @@ export default function AppelOffrePage() {
 
   /* ── Analysis ── */
   const runAnalysis = async () => {
+    setStep(3);           // Afficher l'écran de chargement immédiatement
     setAnalyzing(true);
     setAnalyzeError(null);
+    setAnalysis(null);
     try {
       const res = await fetch("/api/sourcing/appel-offre/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ company, files }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur serveur");
       setAnalysis(data as AnalysisResult);
-      setStep(3);
     } catch (err) {
       setAnalyzeError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
