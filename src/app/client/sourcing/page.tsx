@@ -684,37 +684,63 @@ export default function SourcingPage() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3, ease }}
             >
-                            <div className="text-center mb-8 pt-6">
-                {/* Icon hero with glow */}
+                            {/* ── HERO ── */}
+              <div className="relative text-center mb-8 pt-8 pb-2">
+                {/* ambient orbs */}
+                <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-48 w-48 rounded-full opacity-[0.10]"
+                  style={{ background: "radial-gradient(circle,#818cf8,transparent 70%)" }}/>
+                <div className="pointer-events-none absolute top-8 left-1/2 ml-20 h-28 w-28 rounded-full opacity-[0.06]"
+                  style={{ background: "radial-gradient(circle,#60a5fa,transparent 70%)" }}/>
+
+                {/* Icon */}
                 <div className="relative inline-flex mb-5">
-                  <div className="pointer-events-none absolute inset-0 -m-6 rounded-full opacity-20"
-                    style={{ background: "radial-gradient(circle,#818cf8,transparent 70%)" }}/>
-                  <div className="relative flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl"
-                    style={{ background: "linear-gradient(135deg,rgba(129,140,248,0.18),rgba(96,165,250,0.10))", border: "1px solid rgba(129,140,248,0.3)", boxShadow: "0 8px 32px rgba(129,140,248,0.18)" }}>
-                    <Sparkles size={30} className="text-blue-300" />
+                  <div className="pointer-events-none absolute inset-0 -m-10 rounded-full opacity-25"
+                    style={{ background: "radial-gradient(circle,#818cf8,transparent 65%)" }}/>
+                  <div className="relative flex h-[5.5rem] w-[5.5rem] items-center justify-center rounded-3xl"
+                    style={{
+                      background: "linear-gradient(145deg,rgba(129,140,248,0.22),rgba(96,165,250,0.10))",
+                      border: "1px solid rgba(129,140,248,0.35)",
+                      boxShadow: "0 0 40px rgba(129,140,248,0.22), 0 8px 32px rgba(0,0,0,0.4)",
+                    }}>
+                    <Sparkles size={34} style={{ color: "#a5b4fc" }} />
                   </div>
                 </div>
-                <h2 className="text-[1.35rem] font-black text-white mb-2 tracking-tight">
+
+                {/* Title with gradient */}
+                <h2 className="text-[1.55rem] font-black tracking-tight mb-2"
+                  style={{
+                    background: "linear-gradient(135deg,#e0e7ff 0%,#a5b4fc 40%,#93c5fd 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}>
                   Expert Sourcing & Marchés IA
                 </h2>
-                <p className="text-[13px] text-white/40 max-w-sm mx-auto leading-relaxed">
-                  Analyses complètes, raisonnement stratégique, guides actionnables.
-                  Réponses expertes avec <strong className="text-white/60 font-bold">Claude Sonnet</strong>.
+
+                <p className="text-[0.8rem] text-white/38 max-w-xs mx-auto leading-relaxed mb-4">
+                  Analyses complètes, raisonnement stratégique, guides actionnables.<br/>
+                  Propulsé par <span className="text-white/55 font-semibold">Claude Sonnet</span>.
                 </p>
-                <div className="flex items-center justify-center gap-3 mt-3.5 flex-wrap">
-                  <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold text-emerald-400/70"
-                    style={{ background: "rgba(52,211,153,0.07)", border: "1px solid rgba(52,211,153,0.15)" }}>
-                    <CheckCircle2 size={9} /> Réponses longues
+
+                {/* Chips */}
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.7rem] font-semibold"
+                    style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", color: "rgba(52,211,153,0.8)" }}>
+                    <CheckCircle2 size={10} /> Réponses longues
                   </span>
-                  <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold text-violet-400/70"
-                    style={{ background: "rgba(167,139,250,0.07)", border: "1px solid rgba(167,139,250,0.15)" }}>
-                    <Brain size={9} /> Raisonnement stratégique
+                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.7rem] font-semibold"
+                    style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)", color: "rgba(167,139,250,0.8)" }}>
+                    <Brain size={10} /> Raisonnement stratégique
                   </span>
-                  <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold text-blue-400/70"
-                    style={{ background: "rgba(96,165,250,0.07)", border: "1px solid rgba(96,165,250,0.15)" }}>
-                    <Download size={9} /> Export PDF
+                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.7rem] font-semibold"
+                    style={{ background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.2)", color: "rgba(96,165,250,0.8)" }}>
+                    <Download size={10} /> Export PDF
                   </span>
                 </div>
+
+                {/* Thin separator */}
+                <div className="mx-auto mt-6 h-px w-24 opacity-30 rounded-full"
+                  style={{ background: "linear-gradient(90deg,transparent,#818cf8,transparent)" }}/>
               </div>
 
                             <div className="grid grid-cols-2 gap-3 mb-8">
