@@ -931,34 +931,61 @@ export default function BlocNotesPage() {
         ) : (
           /* ─ NOTES LIST ─ */
           <>
-            {/* Header */}
-            <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[0.84rem] font-black text-white">
-                  {section === "all" ? "Toutes les notes"
-                    : section === "favorites" ? "Favoris"
-                    : section === "archived" ? "Archives"
-                    : section === "vocal" ? "Notes vocales"
-                    : section === "checklist" ? "Checklists"
-                    : folders.find(f => section === `folder:${f.id}`)?.name ?? "Notes"}
-                </span>
-                {displayNotes.length > 0 && (
-                  <span className="rounded-full bg-white/[0.07] px-1.5 py-0.5 text-[0.56rem] font-bold text-white/30">
-                    {displayNotes.length}
-                  </span>
-                )}
+            {/* Header — premium zone */}
+            <div className="relative overflow-hidden"
+              style={{background:"linear-gradient(180deg,rgba(245,158,11,0.05) 0%,transparent 100%)"}}>
+              {/* Ambient glow */}
+              <div className="pointer-events-none absolute -top-8 -left-6 h-28 w-28 rounded-full opacity-[0.13]"
+                style={{background:"radial-gradient(circle,#f59e0b,transparent 70%)"}}/>
+              {/* Top accent line */}
+              <div className="absolute top-0 left-0 right-0 h-[1px]"
+                style={{background:"linear-gradient(90deg,rgba(245,158,11,0.55),rgba(245,158,11,0.12),transparent)"}}/>
+              <div className="relative flex items-center justify-between gap-3 px-4 py-3.5">
+                <div className="flex items-center gap-2.5">
+                  {/* Section icon badge */}
+                  <div className="flex h-[1.9rem] w-[1.9rem] shrink-0 items-center justify-center rounded-xl"
+                    style={{background:"rgba(245,158,11,0.09)",border:"1px solid rgba(245,158,11,0.17)"}}>
+                    {section === "favorites"
+                      ? <Star size={13} style={{color:amber}}/>
+                      : section === "archived"
+                      ? <Archive size={13} className="text-white/45"/>
+                      : section === "vocal"
+                      ? <Mic size={13} style={{color:amber}}/>
+                      : section === "checklist"
+                      ? <ListChecks size={13} style={{color:amber}}/>
+                      : section.startsWith("folder:")
+                      ? <Folder size={13} style={{color:amber}}/>
+                      : <StickyNote size={13} style={{color:amber}}/>}
+                  </div>
+                  <div>
+                    <p className="text-[0.82rem] font-black leading-tight text-white/88">
+                      {section === "all" ? "Toutes les notes"
+                        : section === "favorites" ? "Favoris"
+                        : section === "archived" ? "Archives"
+                        : section === "vocal" ? "Notes vocales"
+                        : section === "checklist" ? "Checklists"
+                        : folders.find(f => section === `folder:${f.id}`)?.name ?? "Notes"}
+                    </p>
+                    {displayNotes.length > 0 && (
+                      <p className="mt-px text-[0.56rem] font-semibold text-white/28">
+                        {displayNotes.length} note{displayNotes.length > 1 ? "s" : ""}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => setShowTemplates(true)}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[0.05] hover:text-white/55">
+                    <Hash size={13}/>
+                  </button>
+                  <button onClick={() => createNote("texte")}
+                    className="flex h-7 w-7 items-center justify-center rounded-xl transition active:scale-95"
+                    style={{background:"rgba(245,158,11,0.11)",border:"1px solid rgba(245,158,11,0.2)",color:amber}}>
+                    <Plus size={14}/>
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setShowTemplates(true)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[0.05] hover:text-white/60">
-                  <Hash size={13}/>
-                </button>
-                <button onClick={() => createNote("texte")}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-white/[0.05]"
-                  style={{color:amber}}>
-                  <Plus size={15}/>
-                </button>
-              </div>
+              <div className="h-[1px]" style={{background:"linear-gradient(90deg,rgba(245,158,11,0.2),rgba(255,255,255,0.05),transparent)"}}/>
             </div>
 
             {/* Search */}
