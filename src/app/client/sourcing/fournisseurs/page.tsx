@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Factory, Search, Brain, Globe, Package,
@@ -9,7 +9,7 @@ import {
   Euro, Award, Sparkles, Copy, RefreshCw, Target,
   BookOpen, Zap, FileCheck, ClipboardList, FileText,
   MessageSquare, BarChart3, Truck, Map, ShoppingBag,
-  CheckCircle2, Info, ExternalLink, Flag,
+  CheckCircle2, Info, ExternalLink, Flag, ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -172,6 +172,116 @@ const DOC_OPTIONS = [
 ───────────────────────────────────────────────────────── */
 function copyToClipboard(text: string) {
   navigator.clipboard.writeText(text).catch(() => {});
+}
+
+/* ─────────────────────────────────────────────────────────
+   TERRITOIRE DROPDOWN (custom — 100% dark)
+───────────────────────────────────────────────────────── */
+function TerritoireDropdown({
+  value,
+  onChange,
+  groups,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  groups: { groupe: string; options: string[] }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-full">
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[0.85rem] outline-none transition text-left"
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          border: `1px solid ${open ? "rgba(96,165,250,0.6)" : "rgba(96,165,250,0.25)"}`,
+          color: value ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
+        }}
+      >
+        <span>{value || "Sélectionner votre territoire..."}</span>
+        <ChevronDown
+          size={15}
+          className="shrink-0 transition-transform"
+          style={{
+            color: "rgba(96,165,250,0.6)",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </button>
+
+      {/* Dropdown panel */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scaleY: 0.95 }}
+            animate={{ opacity: 1, y: 0, scaleY: 1 }}
+            exit={{ opacity: 0, y: -6, scaleY: 0.95 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              background: "#0d1117",
+              border: "1px solid rgba(96,165,250,0.2)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.7)",
+              transformOrigin: "top",
+            }}
+            className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 rounded-2xl overflow-hidden max-h-72 overflow-y-auto"
+          >
+            {groups.map(g => (
+              <div key={g.groupe}>
+                {/* Group header */}
+                <div
+                  className="px-3.5 py-2 text-[0.62rem] font-black uppercase tracking-widest"
+                  style={{
+                    color: "rgba(96,165,250,0.5)",
+                    background: "rgba(96,165,250,0.04)",
+                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  }}
+                >
+                  {g.groupe}
+                </div>
+                {/* Options */}
+                {g.options.map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => { onChange(opt); setOpen(false); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[0.83rem] transition-colors"
+                    style={{
+                      background: value === opt ? "rgba(96,165,250,0.10)" : "transparent",
+                      color: value === opt ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.62)",
+                    }}
+                    onMouseEnter={e => {
+                      if (value !== opt) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)";
+                    }}
+                    onMouseLeave={e => {
+                      if (value !== opt) (e.currentTarget as HTMLElement).style.background = "transparent";
+                    }}
+                  >
+                    {value === opt && (
+                      <Check size={12} style={{ color: "#60a5fa", flexShrink: 0 }} />
+                    )}
+                    {value !== opt && <span className="w-3 shrink-0" />}
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -430,21 +540,11 @@ export default function FournisseursPage() {
             Votre pays / territoire de destination *
           </p>
         </div>
-        <select
+        <TerritoireDropdown
           value={request.pays_utilisateur}
-          onChange={e => update("pays_utilisateur")(e.target.value)}
-          className="w-full rounded-xl px-3.5 py-2.5 text-[0.85rem] text-white/80 outline-none transition"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(96,165,250,0.25)" }}
-          onFocus={e => (e.target.style.borderColor = "rgba(96,165,250,0.6)")}
-          onBlur={e => (e.target.style.borderColor = "rgba(96,165,250,0.25)")}
-        >
-          <option value="">Sélectionner votre territoire...</option>
-          {PAYS_UTILISATEUR_GROUPS.map(g => (
-            <optgroup key={g.groupe} label={g.groupe}>
-              {g.options.map(o => <option key={o} value={o}>{o}</option>)}
-            </optgroup>
-          ))}
-        </select>
+          onChange={update("pays_utilisateur")}
+          groups={PAYS_UTILISATEUR_GROUPS}
+        />
         {request.pays_utilisateur && (
           <p className="mt-2 text-[0.68rem] text-white/40">
             {request.pays_utilisateur === "Mayotte" && "⚠️ Mayotte : hors UE douanière — réglementation import spécifique (OCT)"}
