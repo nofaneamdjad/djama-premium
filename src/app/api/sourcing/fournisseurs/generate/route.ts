@@ -20,8 +20,12 @@ export const maxDuration = 120;
 const MODEL = "claude-sonnet-4-5";
 
 interface Supplier {
+  id?: string;
   nom: string;
   pays: string;
+  ville?: string;
+  plateforme?: string;
+  url?: string;
   prix_unite: string;
   moq: string;
   delai_fab: string;
@@ -30,6 +34,7 @@ interface Supplier {
   certifications?: string[];
   avantages?: string[];
   inconvenients?: string[];
+  description?: string;
 }
 
 interface SearchResult {
@@ -178,16 +183,17 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "Clé API non configurée." }, { status: 500 });
 
-  let body: { request: SearchRequest; searchResult: SearchResult; selectedDocs: string[] };
+  let body: { request: SearchRequest; searchResult: SearchResult; selectedDocs: string[]; selectedSupplier?: Supplier | null };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "Corps JSON invalide." }, { status: 400 }); }
 
-  const { request, searchResult, selectedDocs = Object.keys(DOC_SPECS) } = body;
+  const { request, searchResult, selectedDocs = Object.keys(DOC_SPECS), selectedSupplier } = body;
   if (!request?.produit) {
     return NextResponse.json({ error: "Données manquantes." }, { status: 400 });
   }
 
   /* ── Contexte commun ── */
+  const primarySupplier = selectedSupplier ?? searchResult.suppliers?.[0] ?? null;
   const ctx = `
 PRODUIT : ${request.produit}
 QUANTITÉ : ${request.quantite || "Non précisée"}
@@ -197,6 +203,20 @@ TYPE : ${request.type_produit || "Générique"}
 TERRITOIRE DESTINATION : ${request.pays_utilisateur || "Non précisé"}
 CRITÈRES : ${request.criteres_speciaux || "Aucun"}
 
+${primarySupplier ? `FOURNISSEUR PRINCIPAL SÉLECTIONNÉ :
+- Nom : ${primarySupplier.nom}
+- Pays / Ville : ${primarySupplier.pays}${primarySupplier.ville ? `, ${primarySupplier.ville}` : ""}
+- Plateforme : ${primarySupplier.plateforme}
+- Prix unitaire : ${primarySupplier.prix_unite}
+- MOQ : ${primarySupplier.moq}
+- Délai fabrication : ${primarySupplier.delai_fab}
+- Délai transport : ${primarySupplier.delai_transport}
+- Niveau de confiance : ${primarySupplier.niveau_confiance}%
+- Certifications : ${primarySupplier.certifications?.join(", ") || "N/A"}
+- Description : ${primarySupplier.description || "N/A"}
+
+IMPORTANT : Tous les documents doivent être rédigés spécifiquement pour ce fournisseur (nom, pays, conditions).
+` : ""}
 FOURNISSEURS IDENTIFIÉS :
 ${searchResult.suppliers?.map((s, i) => `${i + 1}. ${s.nom} (${s.pays}) — ${s.prix_unite} — MOQ: ${s.moq} — Confiance: ${s.niveau_confiance}%`).join("\n") || "Voir analyse"}
 

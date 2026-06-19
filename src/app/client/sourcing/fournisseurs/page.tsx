@@ -11,6 +11,7 @@ import {
   MessageSquare, BarChart3, Truck, Map, ShoppingBag,
   CheckCircle2, Info, ExternalLink, Flag, ChevronDown,
   Pencil, RotateCcw, X as XIcon, Save,
+  Mail, Phone, MessageCircle, BadgeCheck,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -424,6 +425,7 @@ export default function FournisseursPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
 
   const update = (field: keyof SearchRequest) => (val: string) =>
     setRequest(r => ({ ...r, [field]: val }));
@@ -462,7 +464,14 @@ export default function FournisseursPage() {
       const res = await fetch("/api/sourcing/fournisseurs/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ request, searchResult, selectedDocs }),
+        body: JSON.stringify({
+          request,
+          searchResult,
+          selectedDocs,
+          selectedSupplier: selectedSupplierId
+            ? searchResult.suppliers.find(s => (s.id || String(searchResult.suppliers.indexOf(s))) === selectedSupplierId) ?? null
+            : null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur serveur");
@@ -487,6 +496,7 @@ export default function FournisseursPage() {
     setActiveDocTab("");
     setEditingDocId(null);
     setEditContent("");
+    setSelectedSupplierId(null);
   };
 
   const startEdit = (doc: GeneratedDoc) => {
@@ -743,76 +753,170 @@ export default function FournisseursPage() {
 
         {/* Supplier cards */}
         <div className="space-y-3">
-          <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider">Fournisseurs identifiés</p>
-          {suppliers.map((s, i) => (
-            <Card key={s.id || i} className="hover:border-white/12 transition-colors">
-              <div className="flex items-start gap-4">
-                {/* Confidence */}
-                <div className="shrink-0">
-                  <ConfidenceRing value={s.niveau_confiance} size={52} />
-                </div>
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-[0.9rem] font-black text-white/88 truncate">{s.nom}</p>
-                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[0.62rem] font-semibold text-white/50"
-                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                      {s.plateforme}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <span className="flex items-center gap-1 text-[0.72rem] text-white/50">
-                      <Flag size={10} /> {s.pays}{s.ville ? `, ${s.ville}` : ""}
-                    </span>
-                    {s.certifications?.map(c => (
-                      <span key={c} className="text-[0.62rem] font-semibold rounded px-1.5 py-0.5"
-                        style={{ background: "rgba(52,211,153,0.07)", color: "rgba(52,211,153,0.7)" }}>
-                        {c}
+          <div className="flex items-center justify-between">
+            <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider">Fournisseurs identifiés</p>
+            {selectedSupplierId && (
+              <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.65rem] font-black"
+                style={{ background: "rgba(52,211,153,0.12)", color: emerald, border: "1px solid rgba(52,211,153,0.25)" }}>
+                <BadgeCheck size={11} /> 1 fournisseur sélectionné
+              </span>
+            )}
+          </div>
+          {suppliers.map((s, i) => {
+            const isSelected = selectedSupplierId === (s.id || String(i));
+            const suppId = s.id || String(i);
+            const waText = encodeURIComponent(
+              `Bonjour,\n\nJe suis intéressé(e) par votre produit : ${request.produit}.\n` +
+              `Quantité souhaitée : ${request.quantite || "à définir"}\n` +
+              `Pourriez-vous m'envoyer un devis avec : prix unitaire, MOQ, délai de fabrication, conditions de paiement ?\n\nMerci.`
+            );
+            const waLink = `https://wa.me/?text=${waText}`;
+            const mailSubject = encodeURIComponent(`Demande de devis — ${request.produit}`);
+            const mailBody = encodeURIComponent(
+              `Bonjour,\n\nNous souhaitons commander : ${request.produit}\nQuantité : ${request.quantite || "à définir"}\nBudget : ${request.budget || "à discuter"}\n\nMerci de nous transmettre votre meilleur devis.\n\nCordialement`
+            );
+
+            return (
+              <motion.div key={suppId}
+                animate={{ scale: isSelected ? 1.005 : 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}>
+                <div className="rounded-2xl p-4 transition-all"
+                  style={{
+                    background: isSelected ? "rgba(52,211,153,0.04)" : "rgba(255,255,255,0.02)",
+                    border: isSelected
+                      ? "1.5px solid rgba(52,211,153,0.45)"
+                      : "1px solid rgba(255,255,255,0.07)",
+                    boxShadow: isSelected ? "0 0 24px rgba(52,211,153,0.08)" : "none",
+                  }}>
+
+                  {/* Selected banner */}
+                  {isSelected && (
+                    <div className="flex items-center gap-2 rounded-xl px-3 py-2 mb-3"
+                      style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+                      <BadgeCheck size={14} style={{ color: emerald }} />
+                      <span className="text-[0.72rem] font-black" style={{ color: emerald }}>
+                        Fournisseur sélectionné — les documents seront générés pour ce fournisseur
                       </span>
-                    ))}
-                  </div>
-                  {/* Metrics row */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2.5">
-                    {[
-                      { label: "Prix unité", val: s.prix_unite },
-                      { label: "MOQ", val: s.moq },
-                      { label: "Fab.", val: s.delai_fab },
-                      { label: "Transport", val: s.delai_transport },
-                    ].map(m => (
-                      <div key={m.label} className="rounded-lg px-2.5 py-1.5"
-                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                        <p className="text-[0.58rem] text-white/35 uppercase">{m.label}</p>
-                        <p className="text-[0.75rem] font-bold text-white/75 mt-0.5">{m.val}</p>
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-4">
+                    {/* Confidence */}
+                    <div className="shrink-0">
+                      <ConfidenceRing value={s.niveau_confiance} size={52} />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-[0.9rem] font-black text-white/88 truncate">{s.nom}</p>
+                        <span className="shrink-0 rounded-full px-2 py-0.5 text-[0.62rem] font-semibold text-white/50"
+                          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          {s.plateforme}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                  {/* Pros / Cons */}
-                  <div className="grid sm:grid-cols-2 gap-2">
-                    {s.avantages?.length > 0 && (
-                      <div className="space-y-1">
-                        {s.avantages.slice(0, 2).map((a, j) => (
-                          <div key={j} className="flex items-center gap-1.5">
-                            <CheckCircle2 size={10} style={{ color: emerald }} className="shrink-0" />
-                            <span className="text-[0.7rem] text-white/55">{a}</span>
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <span className="flex items-center gap-1 text-[0.72rem] text-white/50">
+                          <Flag size={10} /> {s.pays}{s.ville ? `, ${s.ville}` : ""}
+                        </span>
+                        {s.certifications?.map(c => (
+                          <span key={c} className="text-[0.62rem] font-semibold rounded px-1.5 py-0.5"
+                            style={{ background: "rgba(52,211,153,0.07)", color: "rgba(52,211,153,0.7)" }}>
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Metrics */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2.5">
+                        {[
+                          { label: "Prix unité", val: s.prix_unite },
+                          { label: "MOQ", val: s.moq },
+                          { label: "Fab.", val: s.delai_fab },
+                          { label: "Transport", val: s.delai_transport },
+                        ].map(m => (
+                          <div key={m.label} className="rounded-lg px-2.5 py-1.5"
+                            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                            <p className="text-[0.58rem] text-white/35 uppercase">{m.label}</p>
+                            <p className="text-[0.75rem] font-bold text-white/75 mt-0.5">{m.val}</p>
                           </div>
                         ))}
                       </div>
-                    )}
-                    {s.inconvenients?.length > 0 && (
-                      <div className="space-y-1">
-                        {s.inconvenients.slice(0, 2).map((c, j) => (
-                          <div key={j} className="flex items-center gap-1.5">
-                            <AlertTriangle size={10} className="text-amber-400 shrink-0" />
-                            <span className="text-[0.7rem] text-white/45">{c}</span>
+
+                      {/* Pros / Cons */}
+                      <div className="grid sm:grid-cols-2 gap-2 mb-3">
+                        {s.avantages?.length > 0 && (
+                          <div className="space-y-1">
+                            {s.avantages.slice(0, 2).map((a, j) => (
+                              <div key={j} className="flex items-center gap-1.5">
+                                <CheckCircle2 size={10} style={{ color: emerald }} className="shrink-0" />
+                                <span className="text-[0.7rem] text-white/55">{a}</span>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
+                        {s.inconvenients?.length > 0 && (
+                          <div className="space-y-1">
+                            {s.inconvenients.slice(0, 2).map((c, j) => (
+                              <div key={j} className="flex items-center gap-1.5">
+                                <AlertTriangle size={10} className="text-amber-400 shrink-0" />
+                                <span className="text-[0.7rem] text-white/45">{c}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+
+                      {/* ── BARRE ACTIONS : contact + sélection ── */}
+                      <div className="flex items-center justify-between gap-2 pt-3 flex-wrap"
+                        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+
+                        {/* Icônes contact */}
+                        <div className="flex items-center gap-2">
+                          {s.url && (
+                            <a href={s.url} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold transition hover:scale-105"
+                              style={{ background: "rgba(96,165,250,0.1)", color: blue, border: "1px solid rgba(96,165,250,0.22)" }}>
+                              <ExternalLink size={11} /> {s.plateforme}
+                            </a>
+                          )}
+                          <a href={waLink} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold transition hover:scale-105"
+                            style={{ background: "rgba(37,211,102,0.1)", color: "#25d366", border: "1px solid rgba(37,211,102,0.22)" }}>
+                            <MessageCircle size={11} /> WhatsApp
+                          </a>
+                          <a href={`mailto:?subject=${mailSubject}&body=${mailBody}`}
+                            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold transition hover:scale-105"
+                            style={{ background: "rgba(251,191,36,0.08)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.18)" }}>
+                            <Mail size={11} /> Email RFQ
+                          </a>
+                        </div>
+
+                        {/* Bouton sélection */}
+                        <button
+                          onClick={() => setSelectedSupplierId(isSelected ? null : suppId)}
+                          className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.75rem] font-black transition-all hover:scale-105 active:scale-95"
+                          style={isSelected ? {
+                            background: "rgba(52,211,153,0.18)",
+                            color: emerald,
+                            border: "1.5px solid rgba(52,211,153,0.45)",
+                          } : {
+                            background: "rgba(255,255,255,0.05)",
+                            color: "rgba(255,255,255,0.5)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                          }}>
+                          {isSelected
+                            ? <><BadgeCheck size={13} /> Sélectionné</>
+                            : <><Check size={13} /> Choisir ce fournisseur</>
+                          }
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
 
         {/* Analyse marché */}
