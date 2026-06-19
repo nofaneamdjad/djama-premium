@@ -21,6 +21,7 @@ interface SearchRequest {
   quantite: string;
   budget: string;
   pays_cible: string;
+  pays_utilisateur: string;
   delai: string;
   qualite: string;
   type_produit: string;
@@ -115,6 +116,40 @@ const PAYS_OPTIONS = [
   "Chine", "Inde", "Turquie", "Vietnam", "Bangladesh",
   "Maroc", "Tunisie", "Europe", "USA", "International (optimiser)",
 ];
+
+const PAYS_UTILISATEUR_GROUPS = [
+  {
+    groupe: "🇫🇷 France",
+    options: ["France métropolitaine"],
+  },
+  {
+    groupe: "🌴 DOM-TOM / DROM-COM",
+    options: [
+      "Mayotte", "La Réunion", "Guadeloupe", "Martinique",
+      "Guyane", "Saint-Martin", "Saint-Barthélemy",
+      "Saint-Pierre-et-Miquelon", "Polynésie française",
+      "Nouvelle-Calédonie", "Wallis-et-Futuna",
+    ],
+  },
+  {
+    groupe: "🌍 Afrique francophone",
+    options: [
+      "Sénégal", "Côte d'Ivoire", "Cameroun", "Madagascar",
+      "Mali", "Burkina Faso", "Bénin", "Togo", "Niger",
+      "Tchad", "Congo-Brazzaville", "RD Congo", "Gabon",
+      "Maroc", "Algérie", "Tunisie", "Mauritanie",
+    ],
+  },
+  {
+    groupe: "🌐 Autres",
+    options: [
+      "Belgique", "Suisse", "Luxembourg", "Monaco",
+      "Canada (Québec)", "Haïti", "Maurice", "Comores", "Autre",
+    ],
+  },
+];
+
+const ALL_PAYS_UTILISATEUR = PAYS_UTILISATEUR_GROUPS.flatMap(g => g.options);
 
 const DELAI_OPTIONS = [
   "Urgent (< 30 jours)", "Normal (1-2 mois)", "Long terme (3-6 mois)", "Flexible",
@@ -260,7 +295,8 @@ export default function FournisseursPage() {
   /* Form */
   const [request, setRequest] = useState<SearchRequest>({
     produit: "", quantite: "", budget: "", pays_cible: "",
-    delai: "", qualite: "standard", type_produit: "generique", criteres_speciaux: "",
+    pays_utilisateur: "", delai: "", qualite: "standard",
+    type_produit: "generique", criteres_speciaux: "",
   });
 
   /* Search */
@@ -385,6 +421,42 @@ export default function FournisseursPage() {
         </div>
       )}
 
+      {/* Territoire utilisateur */}
+      <div className="rounded-2xl p-4"
+        style={{ background: "rgba(96,165,250,0.04)", border: "1px solid rgba(96,165,250,0.18)" }}>
+        <div className="flex items-center gap-2 mb-3">
+          <Globe size={14} style={{ color: blue }} />
+          <p className="text-[0.72rem] font-semibold uppercase tracking-wider" style={{ color: blue }}>
+            Votre pays / territoire de destination *
+          </p>
+        </div>
+        <select
+          value={request.pays_utilisateur}
+          onChange={e => update("pays_utilisateur")(e.target.value)}
+          className="w-full rounded-xl px-3.5 py-2.5 text-[0.85rem] text-white/80 outline-none transition"
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(96,165,250,0.25)" }}
+          onFocus={e => (e.target.style.borderColor = "rgba(96,165,250,0.6)")}
+          onBlur={e => (e.target.style.borderColor = "rgba(96,165,250,0.25)")}
+        >
+          <option value="">Sélectionner votre territoire...</option>
+          {PAYS_UTILISATEUR_GROUPS.map(g => (
+            <optgroup key={g.groupe} label={g.groupe}>
+              {g.options.map(o => <option key={o} value={o}>{o}</option>)}
+            </optgroup>
+          ))}
+        </select>
+        {request.pays_utilisateur && (
+          <p className="mt-2 text-[0.68rem] text-white/40">
+            {request.pays_utilisateur === "Mayotte" && "⚠️ Mayotte : hors UE douanière — réglementation import spécifique (OCT)"}
+            {(request.pays_utilisateur === "La Réunion" || request.pays_utilisateur === "Guadeloupe" || request.pays_utilisateur === "Martinique") && "ℹ️ DROM : Octroi de mer à la place de la TVA, droits douane spécifiques"}
+            {request.pays_utilisateur === "Guyane" && "ℹ️ Guyane : pas de TVA, Octroi de mer, fret depuis Europe ou Brésil"}
+            {request.pays_utilisateur === "Nouvelle-Calédonie" && "ℹ️ Nouvelle-Calédonie : hors UE, TGC locale, fret Pacifique"}
+            {request.pays_utilisateur === "Polynésie française" && "ℹ️ Polynésie : hors UE, TVA propre (13%), fret Pacifique long"}
+            {request.pays_utilisateur === "France métropolitaine" && "✓ France métro : règles EU standard, TVA 20%, fret direct"}
+          </p>
+        )}
+      </div>
+
       <Card>
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
@@ -395,7 +467,7 @@ export default function FournisseursPage() {
             placeholder="ex : 500 unités / mois" />
           <Field label="Budget disponible" value={request.budget} onChange={update("budget")}
             placeholder="ex : 5 000 € ou 3 € / unité max" />
-          <SelectField label="Pays cible" value={request.pays_cible} onChange={update("pays_cible")}
+          <SelectField label="Pays source (fournisseur)" value={request.pays_cible} onChange={update("pays_cible")}
             options={PAYS_OPTIONS} />
           <SelectField label="Délai de livraison" value={request.delai} onChange={update("delai")}
             options={DELAI_OPTIONS} />
@@ -978,7 +1050,7 @@ export default function FournisseursPage() {
 
   /* ── NAV ── */
   const canProceed = () => {
-    if (step === 1) return request.produit.trim().length > 0;
+    if (step === 1) return request.produit.trim().length > 0 && request.pays_utilisateur.trim().length > 0;
     if (step === 2) return false;
     if (step === 3) return searchResult !== null;
     if (step === 4) return true;

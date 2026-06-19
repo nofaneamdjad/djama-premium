@@ -24,6 +24,7 @@ export interface SearchRequest {
   quantite: string;
   budget: string;
   pays_cible: string;
+  pays_utilisateur: string;
   delai: string;
   qualite: string;
   type_produit: string;
@@ -55,25 +56,100 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Produit manquant." }, { status: 400 });
   }
 
-  const { produit, quantite, budget, pays_cible, delai, qualite, type_produit, criteres_speciaux } = body;
+  const { produit, quantite, budget, pays_cible, pays_utilisateur, delai, qualite, type_produit, criteres_speciaux } = body;
+
+  /* ── Contexte réglementaire selon le territoire de l'utilisateur ── */
+  const TERRITOIRE_CONTEXT: Record<string, string> = {
+    "Mayotte": `TERRITOIRE DESTINATION : Mayotte (OCT - Pays et territoire d'outre-mer, HORS union douanière UE).
+RÉGLEMENTATION SPÉCIALE :
+- Mayotte est hors champ de la TVA française et hors union douanière européenne
+- Import direct depuis Asie possible via Mombasa (Kenya) ou Dzaoudzi
+- Droits de douane locaux appliqués (taux propres à Mayotte)
+- Pas d'Octroi de mer classique (régime spécial)
+- Fret : voie maritime via La Réunion ou directement, aérien via Mamoudzou
+- Délais fret : +7 à 14 jours vs France métro
+- Adapter les prix et délais pour Mayotte spécifiquement
+- Recommander des transitaires spécialisés DOM-TOM`,
+    "La Réunion": `TERRITOIRE DESTINATION : La Réunion (DROM - Département et Région d'Outre-Mer, dans l'UE).
+RÉGLEMENTATION SPÉCIALE :
+- Hors champ TVA française mais dans l'UE pour les douanes
+- OCTROI DE MER : taxe locale sur les importations (taux variable par produit, 0-60%)
+- TVA locale réunionnaise à taux réduit (8.5% taux normal)
+- Droits douane UE s'appliquent sur les imports extra-UE
+- Fret maritime : ~15-20 jours depuis Chine via Port de La Réunion (Roland Garros)
+- Fret aérien : Aéroport Roland Garros
+- Coût fret +20-30% vs France métro
+- Recommander des transitaires spécialisés Réunion`,
+    "Guadeloupe": `TERRITOIRE DESTINATION : Guadeloupe (DROM, dans l'UE).
+RÉGLEMENTATION SPÉCIALE :
+- Hors champ TVA française, dans l'UE pour les douanes
+- OCTROI DE MER : taxe locale sur les importations (différentiel par rapport aux produits locaux)
+- TVA locale à 8.5%
+- Droits douane UE s'appliquent
+- Fret maritime : ~20-25 jours depuis Chine via Pointe-à-Pitre
+- Connexion via France métro ou directe depuis USA/Amériques
+- Transit possible par Fort-de-France (Martinique)`,
+    "Martinique": `TERRITOIRE DESTINATION : Martinique (DROM, dans l'UE).
+RÉGLEMENTATION SPÉCIALE :
+- Hors champ TVA française, dans l'UE pour les douanes
+- OCTROI DE MER : taxe locale sur les importations
+- TVA locale à 8.5%
+- Droits douane UE s'appliquent
+- Fret maritime : Fort-de-France, ~20-25 jours depuis Chine
+- Plateforme logistique caribéenne bien desservie`,
+    "Guyane": `TERRITOIRE DESTINATION : Guyane (DROM, dans l'UE mais fiscalité spéciale).
+RÉGLEMENTATION SPÉCIALE :
+- PAS DE TVA en Guyane
+- Octroi de mer applicable
+- Droits douane UE s'appliquent
+- Fret : Port de Dégrad-des-Cannes (Cayenne)
+- Accès possible via Brésil pour certains produits
+- Délais fret plus longs, coûts plus élevés
+- Contraintes spécifiques liées à l'environnement amazonien`,
+    "Nouvelle-Calédonie": `TERRITOIRE DESTINATION : Nouvelle-Calédonie (Collectivité sui generis, HORS UE).
+RÉGLEMENTATION SPÉCIALE :
+- Hors UE, propre système douanier et fiscal
+- TGC (Taxe Générale sur la Consommation) : 11% taux normal
+- Droits de douane locaux (pas les droits EU)
+- Fret Pacifique : voie maritime longue (~35-45 jours depuis Chine)
+- Fret aérien via Nouméa La Tontouta
+- Coûts logistiques très élevés (+40-60% vs France métro)
+- Transitaires spécialisés Pacifique Sud nécessaires`,
+    "Polynésie française": `TERRITOIRE DESTINATION : Polynésie française (COM, HORS UE).
+RÉGLEMENTATION SPÉCIALE :
+- Hors UE, propre système douanier
+- TVA Polynésie : 13% taux normal (+ droits douane locaux importants)
+- Droits de douane propres (parfois 10-40% selon produit)
+- Fret Pacifique : 35-50 jours depuis Asie
+- Aéroport Faa'a (Papeete) pour aérien
+- Coûts logistiques très élevés
+- Marché de niche, volumes limités`,
+  };
+
+  const territoireInfo = TERRITOIRE_CONTEXT[pays_utilisateur] ||
+    `TERRITOIRE DESTINATION : ${pays_utilisateur || "Non précisé"}.
+Adapter l'analyse logistique, les coûts de transport, les taxes et réglementations douanières au pays de destination de l'utilisateur. Si c'est un pays africain francophone, adapter les routes d'import, les droits de douane locaux, les devises et les délais.`;
 
   const prompt = `Tu es un expert en sourcing international avec 20 ans d'expérience. Effectue une recherche approfondie pour trouver les meilleurs fournisseurs pour :
 
 PRODUIT : ${produit}
 QUANTITÉ : ${quantite || "Non précisée"}
 BUDGET : ${budget || "Non précisé"}
-PAYS CIBLE : ${pays_cible || "International (optimiser"}
+PAYS SOURCE PRÉFÉRÉ : ${pays_cible || "International (optimiser)"}
 DÉLAI : ${delai || "Standard"}
 QUALITÉ : ${qualite || "Standard"}
 TYPE : ${type_produit || "Générique"}
 CRITÈRES SPÉCIAUX : ${criteres_speciaux || "Aucun"}
 
+${territoireInfo}
+
 INSTRUCTIONS :
 1. Recherche les meilleurs fournisseurs sur Alibaba, Made-in-China, Global Sources, Europages, IndiaMART selon le produit
 2. Compare les pays producteurs (Chine, Turquie, Inde, Vietnam, Europe, etc.)
-3. Estime les coûts réalistes (prix unitaire, MOQ, transport)
+3. Estime les coûts réalistes (prix unitaire, MOQ, transport) ADAPTÉS AU TERRITOIRE DE DESTINATION
 4. Analyse les risques par fournisseur et par pays
-5. Donne des recommandations concrètes et actionnables
+5. Donne des recommandations SPÉCIFIQUES au territoire de l'utilisateur (routes logistiques, taxes locales, contraintes)
+6. ADAPTE TOUTE LA LOGISTIQUE au territoire de destination (coûts fret réels, délais réels, taxes locales exactes)
 
 Réponds UNIQUEMENT en JSON valide avec ce schéma EXACT :
 {
