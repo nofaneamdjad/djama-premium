@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Building2, Upload, Brain, FileText, CheckCircle2,
@@ -329,6 +329,8 @@ export default function AppelOffrePage() {
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
 
+  useEffect(() => { setEditingDocId(null); setEditContent(""); }, [activeDocTab]);
+
   /* Verification */
   const [verifChecks, setVerifChecks] = useState<Record<string, boolean>>({});
 
@@ -336,9 +338,19 @@ export default function AppelOffrePage() {
     setCompany(c => ({ ...c, [field]: val }));
 
   /* ── File handling ── */
-  const processFile = useCallback(async (f: File): Promise<UploadedFile> => {
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+  const processFile = useCallback(async (f: File): Promise<UploadedFile | null> => {
+    if (f.size > MAX_FILE_SIZE) {
+      alert(`"${f.name}" dépasse la limite de 10 Mo. Compressez le fichier et réessayez.`);
+      return null;
+    }
+    if (f.name.endsWith(".doc") && !f.name.endsWith(".docx")) {
+      alert(`"${f.name}" est au format .doc (ancien Word binaire) qui ne peut pas être lu. Convertissez-le en .docx ou en PDF.`);
+      return null;
+    }
     const isPdf = f.type === "application/pdf";
-    const isText = f.type.startsWith("text/") || f.name.endsWith(".txt") || f.name.endsWith(".md");
+    const isText = f.type.startsWith("text/") || f.name.endsWith(".txt") || f.name.endsWith(".md") || f.name.endsWith(".docx");
     let base64: string | undefined;
     let text: string | undefined;
 
@@ -361,8 +373,8 @@ export default function AppelOffrePage() {
 
   const handleFiles = useCallback(async (fileList: FileList | File[]) => {
     const arr = Array.from(fileList);
-    const processed = await Promise.all(arr.map(processFile));
-    setFiles(prev => [...prev, ...processed]);
+    const results = await Promise.all(arr.map(processFile));
+    setFiles(prev => [...prev, ...results.filter((r): r is UploadedFile => r !== null)]);
   }, [processFile]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -447,6 +459,26 @@ export default function AppelOffrePage() {
   const cancelEdit = () => {
     setEditingDocId(null);
     setEditContent("");
+  };
+
+  const [regeneratingDocId, setRegeneratingDocId] = useState<string | null>(null);
+
+  const regenerateDoc = async (docId: string) => {
+    if (!analysis) return;
+    setRegeneratingDocId(docId);
+    try {
+      const res = await fetch("/api/sourcing/appel-offre/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ company, analysis, selectedDocs: [docId], files }),
+      });
+      const data = await res.json();
+      if (res.ok && data.documents?.[0]) {
+        setGeneratedDocs(prev => prev.map(d => d.id === docId ? data.documents[0] : d));
+      }
+    } finally {
+      setRegeneratingDocId(null);
+    }
   };
 
   const handleCopy = (id: string, content: string) => {
@@ -923,6 +955,14 @@ export default function AppelOffrePage() {
                     </>
                   ) : (
                     <>
+                      <button onClick={() => regenerateDoc(activeDoc.id)}
+                        disabled={regeneratingDocId === activeDoc.id}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition disabled:opacity-40"
+                        style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.35)" }}>
+                        {regeneratingDocId === activeDoc.id
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <RefreshCw size={12} />}
+                      </button>
                       <button onClick={() => startEdit(activeDoc)}
                         className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
                         style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)" }}>
@@ -947,7 +987,7 @@ export default function AppelOffrePage() {
                   <textarea
                     value={editContent}
                     onChange={e => setEditContent(e.target.value)}
-                    className="w-full h-full min-h-[380px] resize-none outline-none font-mono text-[0.78rem] leading-relaxed"
+                    className="w-full min-h-[380px] max-h-[540px] resize-none outline-none font-mono text-[0.78rem] leading-relaxed overflow-y-auto"
                     style={{ background: "transparent", color: "rgba(255,255,255,0.78)", caretColor: indigo }}
                     autoFocus
                   />

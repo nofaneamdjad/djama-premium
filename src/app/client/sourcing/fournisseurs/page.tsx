@@ -427,6 +427,8 @@ export default function FournisseursPage() {
   const [editContent, setEditContent] = useState("");
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
 
+  useEffect(() => { setEditingDocId(null); setEditContent(""); }, [activeDocTab]);
+
   const update = (field: keyof SearchRequest) => (val: string) =>
     setRequest(r => ({ ...r, [field]: val }));
 
@@ -512,6 +514,31 @@ export default function FournisseursPage() {
   const cancelEdit = () => {
     setEditingDocId(null);
     setEditContent("");
+  };
+
+  const [regeneratingDocId, setRegeneratingDocId] = useState<string | null>(null);
+
+  const regenerateDoc = async (docId: string) => {
+    if (!searchResult) return;
+    setRegeneratingDocId(docId);
+    try {
+      const res = await fetch("/api/sourcing/fournisseurs/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          request, searchResult, selectedDocs: [docId],
+          selectedSupplier: selectedSupplierId
+            ? searchResult.suppliers.find(s => (s.id || String(searchResult.suppliers.indexOf(s))) === selectedSupplierId) ?? null
+            : null,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.documents?.[0]) {
+        setGeneratedDocs(prev => prev.map(d => d.id === docId ? data.documents[0] : d));
+      }
+    } finally {
+      setRegeneratingDocId(null);
+    }
   };
 
   const handleCopy = (id: string, content: string) => {
@@ -1140,6 +1167,15 @@ export default function FournisseursPage() {
               );
             })}
           </div>
+          {!selectedSupplierId && (
+            <div className="flex items-center gap-2.5 rounded-xl px-4 py-3"
+              style={{ background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.2)" }}>
+              <AlertTriangle size={13} style={{ color: "#fbbf24", flexShrink: 0 }} />
+              <p className="text-[0.75rem]" style={{ color: "rgba(251,191,36,0.8)" }}>
+                Retournez à l'étape 3 et choisissez un fournisseur — les documents seront personnalisés pour lui.
+              </p>
+            </div>
+          )}
           <button onClick={runGenerate} disabled={!selectedDocs.length}
             className="w-full flex items-center justify-center gap-2.5 rounded-xl py-3.5 font-black text-[0.9rem] transition-all disabled:opacity-40"
             style={{ background: "linear-gradient(135deg,rgba(96,165,250,0.85),rgba(129,140,248,0.75))", color: "#fff" }}>
@@ -1214,6 +1250,14 @@ export default function FournisseursPage() {
                     </>
                   ) : (
                     <>
+                      <button onClick={() => regenerateDoc(activeDoc.id)}
+                        disabled={regeneratingDocId === activeDoc.id}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold transition disabled:opacity-40"
+                        style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.35)" }}>
+                        {regeneratingDocId === activeDoc.id
+                          ? <Loader2 size={11} className="animate-spin" />
+                          : <RefreshCw size={11} />}
+                      </button>
                       <button onClick={() => startEdit(activeDoc)}
                         className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold transition"
                         style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)" }}>
@@ -1238,7 +1282,7 @@ export default function FournisseursPage() {
                   <textarea
                     value={editContent}
                     onChange={e => setEditContent(e.target.value)}
-                    className="w-full h-full min-h-[320px] resize-none outline-none font-mono text-[0.77rem] leading-relaxed"
+                    className="w-full min-h-[320px] max-h-[520px] resize-none outline-none font-mono text-[0.77rem] leading-relaxed overflow-y-auto"
                     style={{ background: "transparent", color: "rgba(255,255,255,0.75)", caretColor: blue }}
                     autoFocus
                   />

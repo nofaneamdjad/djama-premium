@@ -150,6 +150,7 @@ INSTRUCTIONS :
 4. Analyse les risques par fournisseur et par pays
 5. Donne des recommandations SPÉCIFIQUES au territoire de l'utilisateur (routes logistiques, taxes locales, contraintes)
 6. ADAPTE TOUTE LA LOGISTIQUE au territoire de destination (coûts fret réels, délais réels, taxes locales exactes)
+7. Pour chaque fournisseur, inclure l'URL DIRECTE du profil sur la plateforme (ex: https://www.alibaba.com/product-detail/...). Si l'URL exacte est inconnue, construire une URL de recherche plausible sur la bonne plateforme.
 
 Réponds UNIQUEMENT en JSON valide avec ce schéma EXACT :
 {
