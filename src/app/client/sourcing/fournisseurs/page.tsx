@@ -119,11 +119,11 @@ const PAYS_OPTIONS = [
 
 const PAYS_UTILISATEUR_GROUPS = [
   {
-    groupe: "🇫🇷 France",
+    groupe: "France",
     options: ["France métropolitaine"],
   },
   {
-    groupe: "🌴 DOM-TOM / DROM-COM",
+    groupe: "DOM-TOM / DROM-COM",
     options: [
       "Mayotte", "La Réunion", "Guadeloupe", "Martinique",
       "Guyane", "Saint-Martin", "Saint-Barthélemy",
@@ -132,7 +132,7 @@ const PAYS_UTILISATEUR_GROUPS = [
     ],
   },
   {
-    groupe: "🌍 Afrique francophone",
+    groupe: "Afrique francophone",
     options: [
       "Sénégal", "Côte d'Ivoire", "Cameroun", "Madagascar",
       "Mali", "Burkina Faso", "Bénin", "Togo", "Niger",
@@ -141,7 +141,7 @@ const PAYS_UTILISATEUR_GROUPS = [
     ],
   },
   {
-    groupe: "🌐 Autres",
+    groupe: "Europe / Amériques / Autres",
     options: [
       "Belgique", "Suisse", "Luxembourg", "Monaco",
       "Canada (Québec)", "Haïti", "Maurice", "Comores", "Autre",
