@@ -627,10 +627,13 @@ export default function FacturesPage() {
   const [toast,        setToast]        = useState<ToastData|null>(null);
   const [query,        setQuery]        = useState("");
   const [filterType,   setFilterType]   = useState<"tous"|DocType>("tous");
+  const [filterStatut, setFilterStatut] = useState<"tous"|DocStatut>("tous");
+  const [sortBy,       setSortBy]       = useState<"date"|"montant"|"echeance">("date");
   const [mobileView,   setMobileView]   = useState<"list"|"editor">("list");
   const [sidebarOpen,  setSidebarOpen]  = useState(true);
   const [confirmDel,   setConfirmDel]   = useState(false);
   const [showPreview,  setShowPreview]  = useState(false);
+  const [sendingRelance, setSendingRelance] = useState(false);
 
   const [logoSize,     setLogoSize]     = useState<"sm"|"md"|"lg">(() =>
     typeof window !== "undefined" ? ((localStorage.getItem("pdf.logo_size") as "sm"|"md"|"lg") ?? "md") : "md");
@@ -1110,6 +1113,23 @@ export default function FacturesPage() {
     setEmailModal(true);
   }
 
+  function openRelanceModal() {
+    if (!draft || !selected) return;
+    const daysLate = draft.date_echeance
+      ? Math.floor((Date.now() - new Date(draft.date_echeance).getTime()) / 86_400_000)
+      : 0;
+    setEmailTo(draft.client_email || "");
+    setEmailSubject(`Relance paiement — Facture ${draft.numero} — ${draft.emetteur_nom || "DJAMA"}`);
+    setEmailMsg(
+      `Bonjour ${draft.client_nom || ""},\n\n` +
+      `Sauf erreur de notre part, nous n'avons pas encore reçu le règlement de la facture ${draft.numero} ` +
+      `d'un montant de ${fmt(totals.ttc)}` +
+      (draft.date_echeance ? `, dont l'échéance était le ${fmtDate(draft.date_echeance)}${daysLate > 0 ? ` (il y a ${daysLate} jour${daysLate > 1 ? "s" : ""})` : ""}` : "") +
+      `.\n\nPourriez-vous nous confirmer la date de règlement ou nous indiquer si vous avez besoin d'informations complémentaires ?\n\nCordialement,\n${draft.emetteur_nom || "DJAMA"}`
+    );
+    setEmailModal(true);
+  }
+
   async function handleSendEmail() {
     if (!selected || !emailTo) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTo)) {
@@ -1228,6 +1248,7 @@ export default function FacturesPage() {
   const filtered = useMemo(() => {
     let list = [...documents];
     if (filterType !== "tous") list = list.filter(d => d.type === filterType);
+    if (filterStatut !== "tous") list = list.filter(d => d.statut === filterStatut);
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter(d =>
@@ -1236,8 +1257,11 @@ export default function FacturesPage() {
         d.sujet?.toLowerCase().includes(q)
       );
     }
+    if (sortBy === "montant")   list.sort((a,b) => (b.total_ttc||0) - (a.total_ttc||0));
+    if (sortBy === "echeance")  list.sort((a,b) => (a.date_echeance||"9999") < (b.date_echeance||"9999") ? -1 : 1);
+    // sortBy === "date" uses default order (updated_at desc from DB)
     return list;
-  }, [documents, filterType, query]);
+  }, [documents, filterType, filterStatut, sortBy, query]);
 
   const activeColor = draft?.couleur || "#c9a55a";
   const devise      = draft?.devise  || "EUR";
@@ -1292,6 +1316,23 @@ export default function FacturesPage() {
           style={{ background:"rgba(255,255,255,0.01)" }}>
 
 
+          {/* KPI strip */}
+          {documents.length > 0 && (
+            <div className="grid grid-cols-3 gap-px border-b border-white/[0.07] bg-white/[0.04]">
+              {[
+                { label: "CA encaissé",  val: fmtEur(stats.ca),    color: "#4ade80", click: () => { setFilterType("facture"); setFilterStatut("payé"); } },
+                { label: "En attente",   val: stats.pending,        color: "#60a5fa", click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
+                { label: "En retard",    val: stats.overdue,        color: "#f87171", click: () => { setFilterType("facture"); setFilterStatut("en_retard"); } },
+              ].map(k => (
+                <button key={k.label} onClick={k.click}
+                  className="flex flex-col items-center gap-0.5 px-2 py-3 transition hover:bg-white/[0.04]">
+                  <span className="text-[0.85rem] font-black leading-none" style={{ color: k.color }}>{k.val}</span>
+                  <span className="text-[0.52rem] font-semibold uppercase tracking-wide text-white/25">{k.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Search + filter */}
           <div className="space-y-2.5 border-b border-white/[0.07] p-4">
             <div className="relative">
@@ -1300,6 +1341,7 @@ export default function FacturesPage() {
                 className={`w-full rounded-xl ${B} ${BH} ${BF} py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/25 outline-none transition`}/>
               {query && <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"><X size={12}/></button>}
             </div>
+            {/* Type filter */}
             <div className="flex gap-1.5">
               {(["tous","facture","devis"] as const).map(t => (
                 <button key={t} onClick={() => setFilterType(t)}
@@ -1307,6 +1349,35 @@ export default function FacturesPage() {
                   {t === "tous" ? "Tous" : t === "facture" ? "Factures" : "Devis"}
                 </button>
               ))}
+              <div className="ml-auto flex items-center gap-1">
+                <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
+                  className="appearance-none rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[0.6rem] font-bold uppercase text-white/30 outline-none hover:text-white/60 cursor-pointer">
+                  <option value="date">Date</option>
+                  <option value="montant">Montant</option>
+                  <option value="echeance">Échéance</option>
+                </select>
+              </div>
+            </div>
+            {/* Statut filter */}
+            <div className="flex flex-wrap gap-1">
+              <button onClick={() => setFilterStatut("tous")}
+                className={`rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider transition ${filterStatut === "tous" ? "bg-white/10 text-white" : "text-white/20 hover:text-white/50"}`}>
+                Tous
+              </button>
+              {(Object.keys(STATUTS) as DocStatut[]).map(s => {
+                const cfg = STATUTS[s];
+                const count = documents.filter(d => d.statut === s && (filterType === "tous" || d.type === filterType)).length;
+                if (!count && filterStatut !== s) return null;
+                return (
+                  <button key={s} onClick={() => setFilterStatut(prev => prev === s ? "tous" : s)}
+                    className={`rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider transition`}
+                    style={filterStatut === s
+                      ? { background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }
+                      : { color: "rgba(255,255,255,0.22)" }}>
+                    {cfg.label} {count > 0 && <span className="opacity-60">{count}</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -1356,10 +1427,22 @@ export default function FacturesPage() {
                           <StatutBadge statut={doc.statut}/>
                           <span className="ml-auto text-[0.6rem] text-white/20">{fmtDate(doc.date_document)}</span>
                         </div>
-                        {/* Ligne 4 : client */}
-                        {doc.client_nom && (
-                          <p className="mt-1 text-[0.65rem] text-white/30 truncate">{doc.client_nom}</p>
-                        )}
+                        {/* Ligne 4 : client + échéance */}
+                        <div className="mt-1 flex items-center justify-between gap-1">
+                          {doc.client_nom && (
+                            <p className="text-[0.65rem] text-white/30 truncate">{doc.client_nom}</p>
+                          )}
+                          {doc.date_echeance && (doc.statut === "envoyé" || doc.statut === "en_retard") && (() => {
+                            const days = Math.floor((new Date(doc.date_echeance).getTime() - Date.now()) / 86_400_000);
+                            const late = days < 0;
+                            return (
+                              <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[0.52rem] font-bold"
+                                style={{ background: late ? "rgba(248,113,113,0.12)" : "rgba(251,191,36,0.12)", color: late ? "#f87171" : "#fbbf24" }}>
+                                {late ? `−${Math.abs(days)}j` : `+${days}j`}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </div>
                       <div className="mx-4 h-px bg-white/[0.05]"/>
                     </motion.button>
@@ -1477,6 +1560,12 @@ export default function FacturesPage() {
                     <button onClick={openEmailModal}
                       className="hidden items-center gap-1.5 rounded-xl border border-sky-400/20 px-3 py-2 text-xs font-semibold text-sky-400/70 transition hover:border-sky-400/40 hover:text-sky-400 sm:flex">
                       <Mail size={13}/> Email
+                    </button>
+                  )}
+                  {selected && draft.type === "facture" && (draft.statut === "envoyé" || draft.statut === "en_retard") && (
+                    <button onClick={openRelanceModal} disabled={sendingRelance}
+                      className="hidden items-center gap-1.5 rounded-xl border border-orange-400/25 px-3 py-2 text-xs font-semibold text-orange-400/80 transition hover:border-orange-400/50 hover:text-orange-400 disabled:opacity-40 sm:flex">
+                      {sendingRelance ? <Loader2 size={13} className="animate-spin"/> : <AlertCircle size={13}/>} Relancer
                     </button>
                   )}
                   {selected && draft.type === "facture" && (
