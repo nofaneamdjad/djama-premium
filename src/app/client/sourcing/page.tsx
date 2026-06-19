@@ -81,8 +81,9 @@ const QUICKSTART = [
     bg:    "rgba(59,130,246,0.08)",
     border:"rgba(59,130,246,0.18)",
     label: "Trouver des fournisseurs",
-    desc:  "Plateformes, critères, pays sources",
-    question: "Je veux trouver des fournisseurs fiables pour mon activité. Quelles plateformes utiliser, quels critères vérifier, comment évaluer la fiabilité et comment démarcher efficacement ? Donne-moi un guide complet.",
+    desc:  "Assistant IA — sourcing mondial en 6 étapes",
+    question: "",
+    href: "/client/sourcing/fournisseurs",
   },
   {
     icon: FileText,
