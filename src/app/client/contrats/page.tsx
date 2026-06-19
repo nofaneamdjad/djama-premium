@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, FileText, Copy, Check, Plus, Trash2, X, RefreshCw,
-  Edit2, ChevronRight, ChevronLeft, Download, Eye, Send, Receipt, Users,
+  Edit2, ChevronRight, ChevronLeft, Download, Eye, Send, Receipt, Users, Files,
   Clock, CheckCircle, XCircle, AlertTriangle, Shield, Brain,
   Activity, MessageSquare, Calendar, TrendingUp, Pen, DollarSign,
   AlertOctagon, Lightbulb, Award, BarChart2, FileSignature,
@@ -724,7 +724,7 @@ function DetailPanel({
   onDownloadPDF, onViewPDF, onSendToClient, onToFacture,
   onCopy, copied, userId, userName,
   onAddSigner, onDeleteSigner, onSignContract,
-  onAddComment, onShowAI,
+  onAddComment, onShowAI, onDuplicate,
   onClose,
 }: {
   contract: Contract; signers: Signer[]; activities: CActivity[]; comments: CComment[];
@@ -734,7 +734,7 @@ function DetailPanel({
   onCopy: () => void; copied: boolean; userId: string | null; userName: string;
   onAddSigner: (name: string, email: string, role: string) => void;
   onDeleteSigner: (id: string) => void; onSignContract: (signer: Signer) => void;
-  onAddComment: (text: string) => void; onShowAI: () => void; onClose: () => void;
+  onAddComment: (text: string) => void; onShowAI: () => void; onDuplicate: () => void; onClose: () => void;
 }) {
   const [tab, setTab] = useState<"content" | "signers" | "ai" | "activity">("content");
   const [signerForm, setSignerForm] = useState({ name: "", email: "", role: "signataire" });
@@ -828,10 +828,16 @@ function DetailPanel({
                   <Icon size={11}/> {label}
                 </motion.button>
               ))}
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={onToFacture}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] transition-all">
-                <Receipt size={11}/> Facture
-              </motion.button>
+              <div className="ml-auto flex items-center gap-1.5">
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={onDuplicate}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] transition-all">
+                  <Files size={11}/> Dupliquer
+                </motion.button>
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={onToFacture}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] transition-all">
+                  <Receipt size={11}/> Facture
+                </motion.button>
+              </div>
             </div>
             <div className="flex-1 overflow-auto p-5">
                             {(contract.validation_manager != null || contract.validation_legal != null) && (
@@ -1235,6 +1241,7 @@ export default function ContratsPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<ContractStatus | "all">("all");
   const [filterType, setFilterType] = useState<ContractType | "all">("all");
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "client">("date");
 
   const [showModal, setShowModal] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -1366,6 +1373,34 @@ export default function ContratsPage() {
     window.location.href = `/client/factures?${params}`;
   }, [selected]);
 
+  const handleDuplicate = useCallback(async () => {
+    if (!selected || !userId) return;
+    const { data, error } = await supabase.from("contracts").insert({
+      user_id: userId,
+      title: `${selected.title} (copie)`,
+      client_name: selected.client_name,
+      client_email: selected.client_email,
+      client_company: selected.client_company,
+      contract_type: selected.contract_type,
+      content: selected.content,
+      status: "brouillon",
+      amount: selected.amount,
+      currency: selected.currency,
+      duration_months: selected.duration_months,
+      start_date: selected.start_date,
+      end_date: selected.end_date,
+      jurisdiction: selected.jurisdiction,
+      language: selected.language,
+      specific_clauses: selected.specific_clauses,
+    }).select().single();
+    if (error || !data) { toast("Erreur duplication", "error"); return; }
+    const dup = data as Contract;
+    setContracts((prev) => [dup, ...prev]);
+    selectContract(dup);
+    toast("Contrat dupliqué", "success");
+    await logActivity(dup.id, "created", `Dupliqué depuis « ${selected.title} »`);
+  }, [selected, userId, toast, selectContract, logActivity]);
+
   const handleCreateContract = useCallback(async (form: DraftForm, generatedContent = "") => {
     if (!form.title || !form.client_name) { toast("Titre et client requis", "error"); return; }
     if (!userId) return;
@@ -1489,12 +1524,22 @@ export default function ContratsPage() {
     URL.revokeObjectURL(url);
   }, [contracts]);
 
-  const filtered = contracts.filter((c) => {
-    if (filterStatus !== "all" && c.status !== filterStatus) return false;
-    if (filterType !== "all" && c.contract_type !== filterType) return false;
-    if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.client_name.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    const result = contracts.filter((c) => {
+      if (filterStatus !== "all" && c.status !== filterStatus) return false;
+      if (filterType !== "all" && c.contract_type !== filterType) return false;
+      if (q && !c.title.toLowerCase().includes(q) && !c.client_name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    return result.sort((a, b) => {
+      switch (sortBy) {
+        case "amount": return (b.amount ?? 0) - (a.amount ?? 0);
+        case "client": return a.client_name.localeCompare(b.client_name, "fr");
+        default: return b.created_at.localeCompare(a.created_at);
+      }
+    });
+  }, [contracts, filterStatus, filterType, search, sortBy]);
 
   return (
     <div className="min-h-screen bg-[#07080e] text-white">
@@ -1545,21 +1590,21 @@ export default function ContratsPage() {
         <div className="relative px-5 pb-4 sm:px-8">
           <div className="mx-auto max-w-7xl grid grid-cols-4 gap-2">
             {[
-              { label: "Total", value: contracts.length, icon: FileText },
-              { label: "Signés", value: contracts.filter((c) => c.status === "signé").length, icon: CheckCircle },
-              { label: "En cours", value: contracts.filter((c) => ["actif","validation","envoyé","vu"].includes(c.status)).length, icon: Clock },
-              { label: "Valeur", value: contracts.reduce((s, c) => s + (c.amount ?? 0), 0) > 0 ? fmtEur(contracts.reduce((s, c) => s + (c.amount ?? 0), 0)) : "—", icon: DollarSign },
+              { label: "Total", value: contracts.length, icon: FileText, onClick: () => { setView("list"); setFilterStatus("all"); setFilterType("all"); setSearch(""); setSortBy("date"); } },
+              { label: "Signés", value: contracts.filter((c) => c.status === "signé").length, icon: CheckCircle, onClick: () => { setView("list"); setFilterStatus("signé"); setFilterType("all"); setSearch(""); } },
+              { label: "En cours", value: contracts.filter((c) => ["actif","validation","envoyé","vu"].includes(c.status)).length, icon: Clock, onClick: () => { setView("list"); setFilterStatus("actif"); setFilterType("all"); setSearch(""); } },
+              { label: "Valeur", value: contracts.reduce((s, c) => s + (c.amount ?? 0), 0) > 0 ? fmtEur(contracts.reduce((s, c) => s + (c.amount ?? 0), 0)) : "—", icon: DollarSign, onClick: () => { setView("list"); setSortBy("amount"); setFilterStatus("all"); setFilterType("all"); setSearch(""); } },
             ].map((kpi, i) => {
               const KpiIcon = kpi.icon;
               return (
-                <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.06] bg-white/[0.03]">
+                <motion.button key={kpi.label} onClick={kpi.onClick} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.05)" }} whileTap={{ scale: 0.97 }}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.06] bg-white/[0.03] cursor-pointer transition-all text-left">
                   <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-white leading-none truncate">{kpi.value}</p>
                     <p className="text-[0.58rem] text-white/35 uppercase tracking-wide mt-0.5">{kpi.label}</p>
                   </div>
-                </motion.div>
+                </motion.button>
               );
             })}
           </div>
@@ -1595,6 +1640,12 @@ export default function ContratsPage() {
                   {CONTRACT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as "date" | "amount" | "client")}
+                className="w-full bg-[#131c30] border border-white/[0.08] rounded-xl px-2 py-1.5 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+                <option value="date">Plus récent</option>
+                <option value="amount">Montant ↓</option>
+                <option value="client">Client A→Z</option>
+              </select>
             </div>
 
             {/* List */}
@@ -1639,7 +1690,7 @@ export default function ContratsPage() {
                 onAddSigner={handleAddSigner} onDeleteSigner={handleDeleteSigner}
                 onSignContract={(signer) => setSignerToSign(signer)}
                 onAddComment={handleAddComment} onShowAI={() => setShowAIModal(true)}
-                onClose={() => setSelected(null)}
+                onDuplicate={handleDuplicate} onClose={() => setSelected(null)}
               />
             ) : (
               contracts.length > 0 && (
