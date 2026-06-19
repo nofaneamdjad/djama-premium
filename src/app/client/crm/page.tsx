@@ -1040,6 +1040,7 @@ function ContactDetail({
   onAddActivity, onDeleteActivity,
   onAddTask, onToggleTask, onDeleteTask,
   onAddTicket, onUpdateTicket, onDeleteTicket,
+  onAddOpportunity,
   allContacts,
 }: {
   contact: Contact;
@@ -1058,12 +1059,14 @@ function ContactDetail({
   onAddTicket: (data: Partial<SupportTicket>) => Promise<void>;
   onUpdateTicket: (id: string, data: Partial<SupportTicket>) => Promise<void>;
   onDeleteTicket: (id: string) => Promise<void>;
+  onAddOpportunity: (data: Partial<Opportunity>) => Promise<void>;
   allContacts: Contact[];
 }) {
   const [tab, setTab]       = useState<"infos" | "activites" | "opps" | "taches" | "tickets">("infos");
   const [editing, setEditing] = useState(false);
   const [form, setForm]     = useState<Partial<Contact>>({ ...contact });
   const [newAct, setNewAct] = useState<Partial<Activity> | null>(null);
+  const [newOpp, setNewOpp] = useState<Partial<Opportunity> | null>(null);
   const [newTask, setNewTask] = useState<Partial<CrmTask> | null>(null);
   const [newTicket, setNewTicket] = useState<Partial<SupportTicket> | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);
@@ -1367,7 +1370,40 @@ function ContactDetail({
 
                 {tab === "opps" && (
           <div className="space-y-3">
-            {opportunities.length === 0 && (
+            <button onClick={() => setNewOpp({ stage: "nouveau", amount: 0, probability: 20, contact_id: contact.id })}
+              className="flex items-center gap-2 text-[0.72rem] font-bold text-white/40 hover:text-white transition-colors">
+              <Plus size={13}/> Nouvelle opportunité
+            </button>
+
+            {newOpp !== null && (
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
+                <Input label="Titre *" placeholder="Ex: Contrat annuel SaaS" value={newOpp.title ?? ""}
+                  onChange={e => setNewOpp(o => ({ ...o, title: e.target.value }))}/>
+                <div className="grid grid-cols-2 gap-3">
+                  <Select label="Étape" value={newOpp.stage ?? "nouveau"} onChange={e => setNewOpp(o => ({ ...o, stage: e.target.value as OppStage }))}>
+                    {(["nouveau","qualifié","proposition","négociation","gagné","perdu"] as OppStage[]).map(s =>
+                      <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                  </Select>
+                  <Input label="Montant (€)" type="number" value={newOpp.amount ?? ""}
+                    onChange={e => setNewOpp(o => ({ ...o, amount: +e.target.value }))}/>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input label="Probabilité (%)" type="number" min={0} max={100} value={newOpp.probability ?? ""}
+                    onChange={e => setNewOpp(o => ({ ...o, probability: +e.target.value }))}/>
+                  <Input label="Clôture prévue" type="date" value={newOpp.close_date ?? ""}
+                    onChange={e => setNewOpp(o => ({ ...o, close_date: e.target.value || null }))}/>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setNewOpp(null)} className="flex-1 rounded-xl border border-white/[0.08] py-2 text-xs text-white/50 hover:text-white">Annuler</button>
+                  <button disabled={!newOpp.title}
+                    onClick={async () => { await onAddOpportunity(newOpp); setNewOpp(null); }}
+                    className="flex-1 rounded-xl py-2 text-xs font-bold disabled:opacity-40 transition-all hover:brightness-110"
+                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>Créer</button>
+                </div>
+              </div>
+            )}
+
+            {opportunities.length === 0 && !newOpp && (
               <p className="text-center text-white/20 text-sm py-6">Aucune opportunité</p>
             )}
             {opportunities.map(opp => (
@@ -1513,6 +1549,7 @@ export default function CRMPage() {
   const [query,         setQuery]         = useState("");
   const [filterStatus,  setFilterStatus]  = useState<ContactStatus | "tous">("tous");
   const [filterType,    setFilterType]    = useState<ContactType | "tous">("tous");
+  const [sortBy,        setSortBy]        = useState<"date" | "name" | "budget" | "relance">("date");
 
   const [addModal,      setAddModal]      = useState(false);
   const [editContact,   setEditContact]   = useState<Contact | null>(null);
@@ -1731,16 +1768,33 @@ export default function CRMPage() {
     a.click();
   }
 
-    const filtered = useMemo(() => contacts.filter(c => {
+    const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    const matchQ = !q || c.name.toLowerCase().includes(q) ||
-      (c.company ?? "").toLowerCase().includes(q) ||
-      (c.email ?? "").toLowerCase().includes(q) ||
-      (c.phone ?? "").toLowerCase().includes(q);
-    const matchStatus = filterStatus === "tous" || c.status === filterStatus;
-    const matchType   = filterType   === "tous" || c.type   === filterType;
-    return matchQ && matchStatus && matchType;
-  }), [contacts, query, filterStatus, filterType]);
+    const result = contacts.filter(c => {
+      const matchQ = !q || c.name.toLowerCase().includes(q) ||
+        (c.company ?? "").toLowerCase().includes(q) ||
+        (c.email ?? "").toLowerCase().includes(q) ||
+        (c.phone ?? "").toLowerCase().includes(q);
+      const matchStatus = filterStatus === "tous" || c.status === filterStatus;
+      const matchType   = filterType   === "tous" || c.type   === filterType;
+      return matchQ && matchStatus && matchType;
+    });
+    return result.sort((a, b) => {
+      switch (sortBy) {
+        case "name":    return a.name.localeCompare(b.name, "fr");
+        case "budget":  return (b.budget ?? 0) - (a.budget ?? 0);
+        case "relance": {
+          if (!a.next_relance && !b.next_relance) return 0;
+          if (!a.next_relance) return 1;
+          if (!b.next_relance) return -1;
+          return a.next_relance.localeCompare(b.next_relance);
+        }
+        default: return b.updated_at.localeCompare(a.updated_at);
+      }
+    });
+  }, [contacts, query, filterStatus, filterType, sortBy]);
+
+  const { page, setPage, paginated: pageItems, totalPages, totalItems } = usePagination(filtered, 20);
 
     const selectedActivities    = useMemo(() => activities.filter(a => a.contact_id === selected?.id), [activities, selected]);
   const selectedOpportunities = useMemo(() => opportunities.filter(o => o.contact_id === selected?.id), [opportunities, selected]);
@@ -1831,13 +1885,14 @@ export default function CRMPage() {
           {/* KPI strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
             {[
-              { label: "Contacts",       value: contacts.length,                                                    color: "#c9a55a", icon: Users },
-              { label: "Actifs",         value: contacts.filter(c => c.status === "actif").length,                 color: "#34d399", icon: UserCheck },
-              { label: "Pipeline",       value: fmtEur(opportunities.filter(o=>o.stage!=="perdu").reduce((s,o)=>s+(o.amount??0),0)), color: "#a78bfa", icon: TrendingUp },
-              { label: "Tâches en cours",value: tasks.filter(t => !t.done).length,                                 color: "#f59e0b", icon: CheckSquare },
+              { label: "Contacts",       value: contacts.length,                                                    color: "#c9a55a", icon: Users,       onClick: () => { setMainTab("contacts"); setFilterStatus("tous"); } },
+              { label: "Actifs",         value: contacts.filter(c => c.status === "actif").length,                 color: "#34d399", icon: UserCheck,    onClick: () => { setMainTab("contacts"); setFilterStatus("actif"); setPage(1); } },
+              { label: "Pipeline",       value: fmtEur(opportunities.filter(o=>o.stage!=="perdu").reduce((s,o)=>s+(o.amount??0),0)), color: "#a78bfa", icon: TrendingUp, onClick: () => setMainTab("pipeline") },
+              { label: "Tâches en cours",value: tasks.filter(t => !t.done).length,                                 color: "#f59e0b", icon: CheckSquare,  onClick: () => setMainTab("taches") },
             ].map(k => (
-              <motion.div key={k.label} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ type:"spring", stiffness:300, damping:30 }}
-                className="rounded-xl p-3 flex items-center gap-2.5"
+              <motion.button key={k.label} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ type:"spring", stiffness:300, damping:30 }}
+                onClick={k.onClick}
+                className="rounded-xl p-3 flex items-center gap-2.5 text-left transition-all hover:brightness-110 active:scale-[0.98]"
                 style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${k.color}18` }}>
                   <k.icon size={13} style={{ color: k.color }}/>
@@ -1846,7 +1901,7 @@ export default function CRMPage() {
                   <p className="text-[0.6rem] text-white/35">{k.label}</p>
                   <p className="text-sm font-black text-white">{k.value}</p>
                 </div>
-              </motion.div>
+              </motion.button>
             ))}
           </div>
         </div>
@@ -1892,15 +1947,22 @@ export default function CRMPage() {
                         className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-9 pr-4 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/15"/>
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                      <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ContactStatus | "tous")}
+                      <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value as ContactStatus | "tous"); setPage(1); }}
                         className="rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
                         <option value="tous">Tous statuts</option>
                         {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
-                      <select value={filterType} onChange={e => setFilterType(e.target.value as ContactType | "tous")}
+                      <select value={filterType} onChange={e => { setFilterType(e.target.value as ContactType | "tous"); setPage(1); }}
                         className="rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
                         <option value="tous">Tous types</option>
                         {Object.entries(CONTACT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                      </select>
+                      <select value={sortBy} onChange={e => { setSortBy(e.target.value as "date" | "name" | "budget" | "relance"); setPage(1); }}
+                        className="rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+                        <option value="date">Plus récent</option>
+                        <option value="name">Nom A→Z</option>
+                        <option value="budget">Budget ↓</option>
+                        <option value="relance">Prochaine relance</option>
                       </select>
                     </div>
                   </div>
@@ -1930,7 +1992,7 @@ export default function CRMPage() {
                   ) : (
                     <div className="space-y-1.5">
                       <AnimatePresence initial={false}>
-                        {filtered.map(c => {
+                        {pageItems.map(c => {
                           const typeColor = CONTACT_TYPES[c.type ?? "prospect"]?.color ?? "#60a5fa";
                           const isSelected = selected?.id === c.id;
                           const cActivities = activities.filter(a => a.contact_id === c.id).length;
@@ -2001,6 +2063,11 @@ export default function CRMPage() {
                           );
                         })}
                       </AnimatePresence>
+                      {totalPages > 1 && (
+                        <div className="pt-2">
+                          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={totalItems} pageSize={20}/>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2068,6 +2135,7 @@ export default function CRMPage() {
                 onAddTicket={addTicket}
                 onUpdateTicket={updateTicket}
                 onDeleteTicket={deleteTicket}
+                onAddOpportunity={addOpportunity}
                 allContacts={contacts}
               />
             </>
