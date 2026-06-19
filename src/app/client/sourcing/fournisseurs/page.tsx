@@ -10,6 +10,7 @@ import {
   BookOpen, Zap, FileCheck, ClipboardList, FileText,
   MessageSquare, BarChart3, Truck, Map, ShoppingBag,
   CheckCircle2, Info, ExternalLink, Flag, ChevronDown,
+  Pencil, RotateCcw, X as XIcon, Save,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -421,6 +422,8 @@ export default function FournisseursPage() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [activeDocTab, setActiveDocTab] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editingDocId, setEditingDocId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
 
   const update = (field: keyof SearchRequest) => (val: string) =>
     setRequest(r => ({ ...r, [field]: val }));
@@ -471,6 +474,34 @@ export default function FournisseursPage() {
     } finally {
       setGenerating(false);
     }
+  };
+
+  const resetWizard = () => {
+    setStep(1);
+    setRequest({ produit: "", quantite: "", budget: "", pays_cible: "", pays_utilisateur: "", delai: "", qualite: "standard", type_produit: "generique", criteres_speciaux: "" });
+    setSearchResult(null);
+    setSearchError(null);
+    setGeneratedDocs([]);
+    setGenerateError(null);
+    setSelectedDocs(DOC_OPTIONS.map(d => d.id));
+    setActiveDocTab("");
+    setEditingDocId(null);
+    setEditContent("");
+  };
+
+  const startEdit = (doc: GeneratedDoc) => {
+    setEditingDocId(doc.id);
+    setEditContent(doc.content);
+  };
+
+  const saveEdit = () => {
+    setGeneratedDocs(prev => prev.map(d => d.id === editingDocId ? { ...d, content: editContent } : d));
+    setEditingDocId(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingDocId(null);
+    setEditContent("");
   };
 
   const handleCopy = (id: string, content: string) => {
@@ -1052,24 +1083,64 @@ export default function FournisseursPage() {
           </div>
           {activeDoc && (
             <div className="flex-1 flex flex-col rounded-2xl overflow-hidden"
-              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editingDocId === activeDoc.id ? "rgba(96,165,250,0.35)" : "rgba(255,255,255,0.07)"}` }}>
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-                <span className="text-[0.8rem] font-black text-white/80">{activeDoc.title}</span>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => handleCopy(activeDoc.id, activeDoc.content)}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold transition"
-                    style={{ background: "rgba(255,255,255,0.05)", color: copiedId === activeDoc.id ? emerald : "rgba(255,255,255,0.45)" }}>
-                    {copiedId === activeDoc.id ? <><Check size={11} /> Copié</> : <><Copy size={11} /> Copier</>}
-                  </button>
-                  <button onClick={() => downloadDoc(activeDoc)}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold"
-                    style={{ background: "rgba(96,165,250,0.08)", color: blue, border: "1px solid rgba(96,165,250,0.2)" }}>
-                    <Download size={11} /> PDF
-                  </button>
+                  <span className="text-[0.8rem] font-black text-white/80">{activeDoc.title}</span>
+                  {editingDocId === activeDoc.id && (
+                    <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-black uppercase tracking-wider"
+                      style={{ background: "rgba(96,165,250,0.15)", color: blue }}>
+                      Édition
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {editingDocId === activeDoc.id ? (
+                    <>
+                      <button onClick={cancelEdit}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold transition"
+                        style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.45)" }}>
+                        <XIcon size={11} /> Annuler
+                      </button>
+                      <button onClick={saveEdit}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold"
+                        style={{ background: "rgba(96,165,250,0.15)", color: blue, border: "1px solid rgba(96,165,250,0.3)" }}>
+                        <Save size={11} /> Sauvegarder
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startEdit(activeDoc)}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold transition"
+                        style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)" }}>
+                        <Pencil size={11} /> Éditer
+                      </button>
+                      <button onClick={() => handleCopy(activeDoc.id, activeDoc.content)}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold transition"
+                        style={{ background: "rgba(255,255,255,0.05)", color: copiedId === activeDoc.id ? emerald : "rgba(255,255,255,0.45)" }}>
+                        {copiedId === activeDoc.id ? <><Check size={11} /> Copié</> : <><Copy size={11} /> Copier</>}
+                      </button>
+                      <button onClick={() => downloadDoc(activeDoc)}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold"
+                        style={{ background: "rgba(96,165,250,0.08)", color: blue, border: "1px solid rgba(96,165,250,0.2)" }}>
+                        <Download size={11} /> PDF
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-5">
-                <pre className="whitespace-pre-wrap text-[0.77rem] leading-relaxed text-white/60 font-mono">{activeDoc.content}</pre>
+                {editingDocId === activeDoc.id ? (
+                  <textarea
+                    value={editContent}
+                    onChange={e => setEditContent(e.target.value)}
+                    className="w-full h-full min-h-[320px] resize-none outline-none font-mono text-[0.77rem] leading-relaxed"
+                    style={{ background: "transparent", color: "rgba(255,255,255,0.75)", caretColor: blue }}
+                    autoFocus
+                  />
+                ) : (
+                  <pre className="whitespace-pre-wrap text-[0.77rem] leading-relaxed text-white/60 font-mono">{activeDoc.content}</pre>
+                )}
               </div>
             </div>
           )}
@@ -1214,11 +1285,20 @@ export default function FournisseursPage() {
         <div className="shrink-0 border-t px-4 py-3 sm:px-6"
           style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(7,8,14,0.95)", backdropFilter: "blur(12px)" }}>
           <div className="flex items-center justify-between max-w-3xl mx-auto gap-3">
-            <button onClick={handlePrev} disabled={step === 1}
-              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[0.82rem] font-semibold transition disabled:opacity-30"
-              style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <ChevronLeft size={16} /> Précédent
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={handlePrev} disabled={step === 1}
+                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[0.82rem] font-semibold transition disabled:opacity-30"
+                style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <ChevronLeft size={16} /> Précédent
+              </button>
+              {step > 1 && (
+                <button onClick={resetWizard}
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-semibold transition"
+                  style={{ color: "rgba(255,100,100,0.65)" }}>
+                  <RotateCcw size={13} /> Recommencer
+                </button>
+              )}
+            </div>
             <span className="text-[0.72rem] text-white/25">Étape {step} / {STEPS.length}</span>
             {step < 6 ? (
               <button onClick={handleNext} disabled={!canProceed()}

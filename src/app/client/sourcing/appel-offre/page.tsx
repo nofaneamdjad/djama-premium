@@ -9,7 +9,7 @@ import {
   Clock, TrendingUp, Phone, Mail, Globe, MapPin,
   Hash, Euro, Award, Sparkles, Copy, RefreshCw,
   Target, Users, BookOpen, Zap, FileCheck,
-  ClipboardList, Archive, Package,
+  ClipboardList, Archive, Package, Pencil, RotateCcw, Save,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -326,6 +326,8 @@ export default function AppelOffrePage() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [activeDocTab, setActiveDocTab] = useState<string>("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editingDocId, setEditingDocId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
 
   /* Verification */
   const [verifChecks, setVerifChecks] = useState<Record<string, boolean>>({});
@@ -419,6 +421,34 @@ export default function AppelOffrePage() {
   };
 
   /* ── Copy ── */
+  const resetWizard = () => {
+    setStep(1);
+    setCompany({ nom: "", siret: "", adresse: "", telephone: "", email: "", site: "", effectif: "", chiffre_affaires: "", references: "", domaines: "" });
+    setFiles([]);
+    setAnalysis(null);
+    setAnalyzeError(null);
+    setGeneratedDocs([]);
+    setSelectedDocs(DOC_OPTIONS.map(d => d.id));
+    setActiveDocTab("");
+    setEditingDocId(null);
+    setEditContent("");
+  };
+
+  const startEdit = (doc: GeneratedDoc) => {
+    setEditingDocId(doc.id);
+    setEditContent(doc.content);
+  };
+
+  const saveEdit = () => {
+    setGeneratedDocs(prev => prev.map(d => d.id === editingDocId ? { ...d, content: editContent } : d));
+    setEditingDocId(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingDocId(null);
+    setEditContent("");
+  };
+
   const handleCopy = (id: string, content: string) => {
     copyToClipboard(content);
     setCopiedId(id);
@@ -866,26 +896,66 @@ export default function AppelOffrePage() {
           {/* Content */}
           {activeDoc && (
             <div className="flex-1 flex flex-col rounded-2xl overflow-hidden"
-              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editingDocId === activeDoc.id ? "rgba(129,140,248,0.35)" : "rgba(255,255,255,0.07)"}` }}>
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-                <span className="text-[0.82rem] font-black text-white/80">{activeDoc.title}</span>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => handleCopy(activeDoc.id, activeDoc.content)}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
-                    style={{ background: "rgba(255,255,255,0.05)", color: copiedId === activeDoc.id ? emerald : "rgba(255,255,255,0.45)" }}>
-                    {copiedId === activeDoc.id ? <><Check size={12} /> Copié</> : <><Copy size={12} /> Copier</>}
-                  </button>
-                  <button onClick={() => downloadDoc(activeDoc)}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
-                    style={{ background: "rgba(129,140,248,0.08)", color: indigo, border: "1px solid rgba(129,140,248,0.2)" }}>
-                    <Download size={12} /> PDF
-                  </button>
+                  <span className="text-[0.82rem] font-black text-white/80">{activeDoc.title}</span>
+                  {editingDocId === activeDoc.id && (
+                    <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-black uppercase tracking-wider"
+                      style={{ background: "rgba(129,140,248,0.15)", color: indigo }}>
+                      Édition
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {editingDocId === activeDoc.id ? (
+                    <>
+                      <button onClick={cancelEdit}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
+                        style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.45)" }}>
+                        <X size={12} /> Annuler
+                      </button>
+                      <button onClick={saveEdit}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold"
+                        style={{ background: "rgba(129,140,248,0.15)", color: indigo, border: "1px solid rgba(129,140,248,0.3)" }}>
+                        <Save size={12} /> Sauvegarder
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startEdit(activeDoc)}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
+                        style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)" }}>
+                        <Pencil size={12} /> Éditer
+                      </button>
+                      <button onClick={() => handleCopy(activeDoc.id, activeDoc.content)}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
+                        style={{ background: "rgba(255,255,255,0.05)", color: copiedId === activeDoc.id ? emerald : "rgba(255,255,255,0.45)" }}>
+                        {copiedId === activeDoc.id ? <><Check size={12} /> Copié</> : <><Copy size={12} /> Copier</>}
+                      </button>
+                      <button onClick={() => downloadDoc(activeDoc)}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
+                        style={{ background: "rgba(129,140,248,0.08)", color: indigo, border: "1px solid rgba(129,140,248,0.2)" }}>
+                        <Download size={12} /> PDF
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-5">
-                <pre className="whitespace-pre-wrap text-[0.78rem] leading-relaxed text-white/65 font-mono">
-                  {activeDoc.content}
-                </pre>
+                {editingDocId === activeDoc.id ? (
+                  <textarea
+                    value={editContent}
+                    onChange={e => setEditContent(e.target.value)}
+                    className="w-full h-full min-h-[380px] resize-none outline-none font-mono text-[0.78rem] leading-relaxed"
+                    style={{ background: "transparent", color: "rgba(255,255,255,0.78)", caretColor: indigo }}
+                    autoFocus
+                  />
+                ) : (
+                  <pre className="whitespace-pre-wrap text-[0.78rem] leading-relaxed text-white/65 font-mono">
+                    {activeDoc.content}
+                  </pre>
+                )}
               </div>
             </div>
           )}
@@ -1131,14 +1201,23 @@ export default function AppelOffrePage() {
         <div className="shrink-0 border-t px-4 py-3 sm:px-6"
           style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(7,8,14,0.95)", backdropFilter: "blur(12px)" }}>
           <div className="flex items-center justify-between max-w-3xl mx-auto gap-3">
-            <button
-              onClick={handlePrev}
-              disabled={step === 1}
-              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[0.82rem] font-semibold transition disabled:opacity-30"
-              style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.07)" }}
-            >
-              <ChevronLeft size={16} /> Précédent
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrev}
+                disabled={step === 1}
+                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[0.82rem] font-semibold transition disabled:opacity-30"
+                style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.07)" }}
+              >
+                <ChevronLeft size={16} /> Précédent
+              </button>
+              {step > 1 && (
+                <button onClick={resetWizard}
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-semibold transition"
+                  style={{ color: "rgba(255,100,100,0.65)" }}>
+                  <RotateCcw size={13} /> Recommencer
+                </button>
+              )}
+            </div>
 
             <span className="text-[0.72rem] text-white/25">
               Étape {step} / {STEPS.length}
