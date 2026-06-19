@@ -14,6 +14,8 @@ import {
 import { supabase } from "@/lib/supabase";
 import { fmtDate } from "@/lib/format";
 import Toast, { type ToastData } from "@/components/ui/Toast";
+import Pagination from "@/components/client/Pagination";
+import { usePagination } from "@/hooks/usePagination";
 
 type TxType   = "income" | "expense";
 type TxStatus = "completed" | "pending" | "cancelled";
@@ -510,12 +512,13 @@ function RecurringModal({
 }
 
 function DashboardView({
-  transactions, accounts, recurring, invoices,
+  transactions, accounts, recurring, invoices, onNavigate,
 }: {
   transactions: Transaction[];
   accounts: TAccount[];
   recurring: Recurring[];
   invoices: RawDoc[];
+  onNavigate: (tab: "transactions" | "previsions") => void;
 }) {
   const now = new Date();
   const mk  = monthKey(now);
@@ -556,12 +559,12 @@ function DashboardView({
   const recent5 = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 
   const KPI = [
-    { l: "Solde total",          v: totalBalance,      c: "#c9a55a", sub: `${accounts.length} compte${accounts.length !== 1 ? "s" : ""}`, I: Wallet,        delta: null,      subColor: null },
-    { l: "Encaissements",        v: thisIncome,        c: "#10b981", sub: fmtPct(incomePct)  + " vs mois dernier", I: ArrowUpRight,  delta: incomePct,   subColor: incomePct  > 0 ? "#10b981" : incomePct  < 0 ? "#ef4444" : "#6b7280" },
-    { l: "Dépenses",             v: thisExpense,       c: "#ef4444", sub: fmtPct(expensePct) + " vs mois dernier", I: ArrowDownRight,delta: -expensePct, subColor: expensePct > 0 ? "#ef4444" : expensePct < 0 ? "#10b981" : "#6b7280" },
-    { l: "Résultat net",         v: netMonth,          c: netMonth >= 0 ? "#10b981" : "#ef4444", sub: "Ce mois", I: BarChart2,    delta: null,      subColor: null },
-    { l: "En attente",           v: Math.abs(pending), c: "#f59e0b", sub: pending >= 0 ? "à encaisser" : "à payer", I: Clock,    delta: null,      subColor: null },
-    { l: "Prévision 30 jours",   v: forecast30,        c: "#8b5cf6", sub: "Basé sur récurrents", I: Target,        delta: null,      subColor: null },
+    { l: "Solde total",          v: totalBalance,      c: "#c9a55a", sub: `${accounts.length} compte${accounts.length !== 1 ? "s" : ""}`, I: Wallet,        delta: null,      subColor: null,   nav: null },
+    { l: "Encaissements",        v: thisIncome,        c: "#10b981", sub: fmtPct(incomePct)  + " vs mois dernier", I: ArrowUpRight,  delta: incomePct,   subColor: incomePct  > 0 ? "#10b981" : incomePct  < 0 ? "#ef4444" : "#6b7280", nav: "transactions" as const },
+    { l: "Dépenses",             v: thisExpense,       c: "#ef4444", sub: fmtPct(expensePct) + " vs mois dernier", I: ArrowDownRight,delta: -expensePct, subColor: expensePct > 0 ? "#ef4444" : expensePct < 0 ? "#10b981" : "#6b7280", nav: "transactions" as const },
+    { l: "Résultat net",         v: netMonth,          c: netMonth >= 0 ? "#10b981" : "#ef4444", sub: "Ce mois", I: BarChart2,    delta: null,      subColor: null,   nav: "transactions" as const },
+    { l: "En attente",           v: Math.abs(pending), c: "#f59e0b", sub: pending >= 0 ? "à encaisser" : "à payer", I: Clock,    delta: null,      subColor: null,   nav: "transactions" as const },
+    { l: "Prévision 30 jours",   v: forecast30,        c: "#8b5cf6", sub: "Basé sur récurrents", I: Target,        delta: null,      subColor: null,   nav: "previsions"   as const },
   ];
 
   return (
@@ -589,9 +592,10 @@ function DashboardView({
       )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {KPI.map(({ l, v, c, sub, I, delta, subColor }) => (
-          <div key={l} className="rounded-2xl p-4 space-y-2"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        {KPI.map(({ l, v, c, sub, I, delta, subColor, nav }) => (
+          <button key={l} onClick={() => nav && onNavigate(nav)}
+            className="rounded-2xl p-4 space-y-2 text-left transition-all hover:brightness-110 active:scale-[0.98]"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", cursor: nav ? "pointer" : "default" }}>
             <div className="flex items-center justify-between">
               <p className="text-[0.65rem] font-medium text-white/40">{l}</p>
               <div className="flex h-6 w-6 items-center justify-center rounded-lg"
@@ -610,7 +614,7 @@ function DashboardView({
               )}
               <p className="text-[0.62rem]" style={{ color: (subColor ?? c) + "bb" }}>{sub}</p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -713,6 +717,7 @@ function TransactionsView({
   const [filterType,        setFilterType]        = useState<"" | TxType>("");
   const [filterSt,          setFilterSt]          = useState("");
   const [filterMonth,       setFilterMonth]       = useState("");
+  const [filterCat,         setFilterCat]         = useState("");
   const [showModal,         setShowModal]         = useState(false);
   const [editTx,            setEditTx]            = useState<Transaction | null>(null);
   const [confirmDeleteTxId, setConfirmDeleteTxId] = useState<string | null>(null);
@@ -723,8 +728,11 @@ function TransactionsView({
     if (filterType  && t.type         !== filterType)  return false;
     if (filterSt    && t.status       !== filterSt)    return false;
     if (filterMonth && !t.date.startsWith(filterMonth)) return false;
+    if (filterCat   && t.category     !== filterCat)   return false;
     return true;
-  }), [transactions, search, filterType, filterSt, filterMonth]);
+  }), [transactions, search, filterType, filterSt, filterMonth, filterCat]);
+
+  const { page, setPage, paginated, totalPages, totalItems } = usePagination(filtered, 25);
 
   const totalIn  = filtered.filter(t => t.type === "income"  && t.status === "completed").reduce((a, t) => a + t.amount, 0);
   const totalOut = filtered.filter(t => t.type === "expense" && t.status === "completed").reduce((a, t) => a + t.amount, 0);
@@ -738,7 +746,7 @@ function TransactionsView({
             className="flex-1 bg-transparent text-[0.78rem] text-white placeholder-white/20 outline-none" />
         </div>
         <div className="relative">
-          <select value={filterType} onChange={e => setFilterType(e.target.value as "" | TxType)}
+          <select value={filterType} onChange={e => { setFilterType(e.target.value as "" | TxType); setFilterCat(""); setPage(1); }}
             className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 pr-8 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
             <option value="">Tout</option>
             <option value="income">Encaissements</option>
@@ -747,17 +755,26 @@ function TransactionsView({
           <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
         </div>
         <div className="relative">
-          <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
+          <select value={filterCat} onChange={e => { setFilterCat(e.target.value); setPage(1); }}
+            className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 pr-8 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+            <option value="">Toutes catégories</option>
+            {filterType !== "expense" && INCOME_CATS.map(c => <option key={`i-${c.v}`} value={c.v}>{c.l}</option>)}
+            {filterType !== "income"  && EXPENSE_CATS.map(c => <option key={`e-${c.v}`} value={c.v}>{c.l}</option>)}
+          </select>
+          <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+        </div>
+        <div className="relative">
+          <select value={filterSt} onChange={e => { setFilterSt(e.target.value); setPage(1); }}
             className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 pr-8 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
             <option value="">Tous statuts</option>
             {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
           </select>
           <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
         </div>
-        <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
+        <input type="month" value={filterMonth} onChange={e => { setFilterMonth(e.target.value); setPage(1); }}
           className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 text-[0.75rem] text-white/60 outline-none [color-scheme:dark]" />
-        {(search || filterType || filterSt || filterMonth) && (
-          <button onClick={() => { setSearch(""); setFilterType(""); setFilterSt(""); setFilterMonth(""); }}
+        {(search || filterType || filterSt || filterMonth || filterCat) && (
+          <button onClick={() => { setSearch(""); setFilterType(""); setFilterSt(""); setFilterMonth(""); setFilterCat(""); setPage(1); }}
             className="flex items-center gap-1 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.72rem] text-white/35 hover:text-white/60">
             <X size={12} /> Effacer
           </button>
@@ -792,7 +809,7 @@ function TransactionsView({
       ) : (
         <div className="space-y-1.5">
           <AnimatePresence initial={false}>
-            {filtered.map(t => {
+            {paginated.map(t => {
               const ci = getCat(t.type, t.category);
               const CI = ci.I;
               return (
@@ -851,6 +868,11 @@ function TransactionsView({
               );
             })}
           </AnimatePresence>
+          {totalPages > 1 && (
+            <div className="pt-2">
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={totalItems} pageSize={25}/>
+            </div>
+          )}
         </div>
       )}
 
@@ -1651,7 +1673,7 @@ export default function TresoreriePage() {
 
           {tab === "dashboard" && (
             <motion.div key="dash" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <DashboardView transactions={transactions} accounts={accounts} recurring={recurring} invoices={invoices} />
+              <DashboardView transactions={transactions} accounts={accounts} recurring={recurring} invoices={invoices} onNavigate={t => setTab(t)} />
             </motion.div>
           )}
 
