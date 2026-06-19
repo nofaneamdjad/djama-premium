@@ -426,50 +426,26 @@ export default function AppelOffrePage() {
   };
 
   /* ── Download ── */
-  const downloadDoc = (doc: GeneratedDoc) => {
-    const blob = new Blob([doc.content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${doc.id}_${company.nom || "candidature"}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const pdfMeta = () => ({
+    mode: "appel-offre" as const,
+    entreprise: company.nom || "Candidat",
+    marche: analysis?.objet ?? analysis?.summary ?? "Appel d'offre",
+    acheteur: analysis?.pouvoir_adjudicateur ?? "",
+  });
+
+  const downloadDoc = async (doc: GeneratedDoc) => {
+    const { downloadSingleDocPDF } = await import("@/lib/sourcing-pdf");
+    downloadSingleDocPDF(doc, pdfMeta());
   };
 
-  const downloadAllDocs = () => {
-    generatedDocs.forEach(doc => downloadDoc(doc));
+  const downloadAllDocs = async () => {
+    const { downloadSourcingPDF } = await import("@/lib/sourcing-pdf");
+    downloadSourcingPDF(generatedDocs, pdfMeta());
   };
 
   const exportPDF = async () => {
-    const { jsPDF } = await import("jspdf");
-    const doc = new jsPDF({ format: "a4", unit: "mm" });
-    const pageW = doc.internal.pageSize.getWidth();
-    const margin = 20;
-    const maxW = pageW - margin * 2;
-
-    for (let i = 0; i < generatedDocs.length; i++) {
-      if (i > 0) doc.addPage();
-      const gDoc = generatedDocs[i];
-      // Title
-      doc.setFontSize(16);
-      doc.setTextColor(40, 40, 40);
-      doc.text(gDoc.title, margin, 30);
-      // Line
-      doc.setDrawColor(200, 200, 200);
-      doc.line(margin, 35, pageW - margin, 35);
-      // Content
-      doc.setFontSize(10);
-      doc.setTextColor(60, 60, 60);
-      const lines = doc.splitTextToSize(gDoc.content, maxW);
-      let y = 45;
-      for (const line of lines) {
-        if (y > 275) { doc.addPage(); y = 20; }
-        doc.text(line, margin, y);
-        y += 5;
-      }
-    }
-
-    doc.save(`dossier_candidature_${company.nom || "appel_offre"}.pdf`);
+    const { downloadSourcingPDF } = await import("@/lib/sourcing-pdf");
+    downloadSourcingPDF(generatedDocs, pdfMeta());
   };
 
   /* ─────── RENDERS ─────── */
@@ -902,7 +878,7 @@ export default function AppelOffrePage() {
                   <button onClick={() => downloadDoc(activeDoc)}
                     className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
                     style={{ background: "rgba(129,140,248,0.08)", color: indigo, border: "1px solid rgba(129,140,248,0.2)" }}>
-                    <Download size={12} /> .txt
+                    <Download size={12} /> PDF
                   </button>
                 </div>
               </div>
@@ -1022,8 +998,8 @@ export default function AppelOffrePage() {
             <Package size={22} className="text-white/40" />
           </div>
           <div className="flex-1">
-            <p className="text-[0.9rem] font-black text-white/75">Documents individuels (.txt)</p>
-            <p className="text-[0.75rem] text-white/35">Chaque document séparément, format texte éditable</p>
+            <p className="text-[0.9rem] font-black text-white/75">Documents individuels (PDF)</p>
+            <p className="text-[0.75rem] text-white/35">Chaque document dans son propre PDF professionnel</p>
           </div>
           <Download size={18} className="text-white/35" />
         </button>

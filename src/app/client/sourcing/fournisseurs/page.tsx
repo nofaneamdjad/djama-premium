@@ -479,39 +479,23 @@ export default function FournisseursPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const downloadDoc = (doc: GeneratedDoc) => {
-    const blob = new Blob([doc.content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${doc.id}_${request.produit.slice(0, 30).replace(/\s+/g, "_")}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const downloadDoc = async (doc: GeneratedDoc) => {
+    const { downloadSingleDocPDF } = await import("@/lib/sourcing-pdf");
+    downloadSingleDocPDF(doc, {
+      mode: "fournisseurs",
+      produit: request.produit,
+      territoire: request.pays_utilisateur,
+    });
   };
 
   const exportPDF = async () => {
     if (!generatedDocs.length) return;
-    const { jsPDF } = await import("jspdf");
-    const doc = new jsPDF({ format: "a4", unit: "mm" });
-    const pageW = doc.internal.pageSize.getWidth();
-    const margin = 20;
-
-    for (let i = 0; i < generatedDocs.length; i++) {
-      if (i > 0) doc.addPage();
-      const gDoc = generatedDocs[i];
-      doc.setFontSize(14); doc.setTextColor(40, 40, 40);
-      doc.text(gDoc.title, margin, 28);
-      doc.setDrawColor(200, 200, 200);
-      doc.line(margin, 33, pageW - margin, 33);
-      doc.setFontSize(9); doc.setTextColor(70, 70, 70);
-      const lines = doc.splitTextToSize(gDoc.content, pageW - margin * 2);
-      let y = 42;
-      for (const line of lines) {
-        if (y > 278) { doc.addPage(); y = 20; }
-        doc.text(line, margin, y); y += 4.5;
-      }
-    }
-    doc.save(`sourcing_${request.produit.slice(0, 30).replace(/\s+/g, "_")}.pdf`);
+    const { downloadSourcingPDF } = await import("@/lib/sourcing-pdf");
+    downloadSourcingPDF(generatedDocs, {
+      mode: "fournisseurs",
+      produit: request.produit,
+      territoire: request.pays_utilisateur,
+    });
   };
 
   /* ─────── RENDERS ─────── */
@@ -1080,7 +1064,7 @@ export default function FournisseursPage() {
                   <button onClick={() => downloadDoc(activeDoc)}
                     className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold"
                     style={{ background: "rgba(96,165,250,0.08)", color: blue, border: "1px solid rgba(96,165,250,0.2)" }}>
-                    <Download size={11} /> .txt
+                    <Download size={11} /> PDF
                   </button>
                 </div>
               </div>
@@ -1117,7 +1101,7 @@ export default function FournisseursPage() {
           </button>
         )}
         {generatedDocs.length > 0 && (
-          <button onClick={() => generatedDocs.forEach(d => downloadDoc(d))}
+          <button onClick={async () => { for (const d of generatedDocs) await downloadDoc(d); }}
             className="flex items-center gap-4 rounded-2xl p-5 text-left transition-all active:scale-[0.99]"
             style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}>
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
@@ -1125,8 +1109,8 @@ export default function FournisseursPage() {
               <Package size={22} className="text-white/40" />
             </div>
             <div className="flex-1">
-              <p className="text-[0.9rem] font-black text-white/75">Documents individuels (.txt)</p>
-              <p className="text-[0.75rem] text-white/35">Chaque document séparément, éditable</p>
+              <p className="text-[0.9rem] font-black text-white/75">Documents individuels (PDF)</p>
+              <p className="text-[0.75rem] text-white/35">Chaque document dans son propre PDF</p>
             </div>
             <Download size={18} className="text-white/35" />
           </button>
