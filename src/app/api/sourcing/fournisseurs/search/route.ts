@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 35;
+export const maxDuration = 40;
 
 const MODEL = "claude-haiku-4-5-20251001";
 
@@ -120,41 +120,47 @@ RÉGLEMENTATION SPÉCIALE :
     `TERRITOIRE DESTINATION : ${pays_utilisateur || "Non précisé"}.
 Adapter l'analyse logistique, les coûts de transport, les taxes et réglementations douanières au pays de destination de l'utilisateur. Si c'est un pays africain francophone, adapter les routes d'import, les droits de douane locaux, les devises et les délais.`;
 
-  const prompt = `Tu es un expert en sourcing international avec 20 ans d'expérience. Effectue une recherche approfondie pour trouver les meilleurs fournisseurs pour :
+  const produitEncode = encodeURIComponent(produit.replace(/ /g, "+"));
+
+  const prompt = `Expert sourcing international — génère des données RÉALISTES et PRÉCISES pour :
 
 PRODUIT : ${produit}
-QUANTITÉ : ${quantite || "Non précisée"}
-BUDGET : ${budget || "Non précisé"}
-PAYS SOURCE PRÉFÉRÉ : ${pays_cible || "International (optimiser)"}
-DÉLAI : ${delai || "Standard"}
-QUALITÉ : ${qualite || "Standard"}
-TYPE : ${type_produit || "Générique"}
-CRITÈRES SPÉCIAUX : ${criteres_speciaux || "Aucun"}
+QUANTITÉ : ${quantite || "Non précisée"} | BUDGET : ${budget || "Non précisé"}
+PAYS SOURCE : ${pays_cible || "International"} | QUALITÉ : ${qualite || "Standard"}
+DÉLAI : ${delai || "Standard"} | TYPE : ${type_produit || "Générique"}
+${criteres_speciaux ? `CRITÈRES : ${criteres_speciaux}` : ""}
 
 ${territoireInfo}
 
-Trouve exactement 3 fournisseurs. Sois TRÈS CONCIS (1 phrase max par champ texte, max 2 éléments par tableau).
+RÈGLES IMPORTANTES :
+- "url" = URL de RECHERCHE fonctionnelle sur la plateforme (pas un profil inventé)
+  Exemples valides :
+  • Alibaba : https://www.alibaba.com/trade/search?SearchText=${produitEncode}
+  • Made-in-China : https://www.made-in-china.com/products-search/hot-china-products/${produitEncode}.html
+  • Europages : https://www.europages.fr/entreprises/${produitEncode}.html
+  • IndiaMART : https://dir.indiamart.com/search.mp?ss=${produitEncode}
+- "site_web" = site officiel d'un VRAI fournisseur connu ou URL de recherche Google : https://www.google.com/search?q=${produitEncode}+supplier+manufacturer+${pays_cible || "China"}
+- "nom" = nom d'un VRAI fournisseur connu dans ta base de connaissance (si tu ne connais pas de vrai nom, mets le nom du type de fournisseur ex: "Fabricant spécialisé huile végétale - Shandong")
+- Prix, délais, douanes = données réelles 2025 basées sur ta connaissance du marché
+- Concis : 1 phrase max par texte, max 2 items par liste
 
-JSON STRICT (respecte ce schéma exactement, valeurs courtes) :
-{"suppliers":[{"id":"s1","nom":"EXEMPLE Co","pays":"Chine","ville":"Guangzhou","plateforme":"Alibaba","url":"https://www.alibaba.com/trade/search?SearchText=sunflower+oil","site_web":"https://www.exemple-co.com","prix_unite":"1.50 USD","moq":"1000 kg","delai_fab":"10-15j","delai_transport":"30-40j","niveau_confiance":80,"certifications":["ISO 9001"],"avantages":["Prix bas","Stock dispo"],"inconvenients":["Délai long"],"risques":["Vérifier qualité"],"description":"Fabricant spécialisé."},{"id":"s2","nom":"...","pays":"...","ville":"...","plateforme":"Made-in-China","url":"...","site_web":"https://...","prix_unite":"...","moq":"...","delai_fab":"...","delai_transport":"...","niveau_confiance":75,"certifications":["CE"],"avantages":["Rapide"],"inconvenients":["Prix plus élevé"],"risques":["Vérifier certifs"],"description":"..."},{"id":"s3","nom":"...","pays":"...","ville":"...","plateforme":"Europages","url":"...","site_web":"https://...","prix_unite":"...","moq":"...","delai_fab":"...","delai_transport":"...","niveau_confiance":88,"certifications":["ISO 22000"],"avantages":["Qualité UE"],"inconvenients":["MOQ élevé"],"risques":["Coût transit"],"description":"..."}],"pays_recommandes":[{"pays":"Chine","score":85,"raison":"Meilleur prix","prix_moyen":"1.20-2.00 USD","delai_moyen":"45-60j"},{"pays":"Turquie","score":72,"raison":"Délai court","prix_moyen":"1.80-2.50 USD","delai_moyen":"20-30j"}],"analyse_marche":{"prix_marche_fr":"3-6 EUR/L","prix_import_estime":"1.20-2.00 USD","marge_potentielle":"55-65%","concurrence":"Modérée","tendances":"Hausse +8%/an","conseils_marche":"Négocier volumes"},"logistique":{"fret_aerien":{"prix_estime":"5-8 USD/kg","delai":"7-10j","seuil_recommande":"<100kg","transporteurs":["DHL","FedEx"]},"fret_maritime":{"prix_estime":"900-1400 USD/20p","delai":"35-50j","seuil_recommande":">300kg","transporteurs":["CMA CGM","MSC"]},"douanes":{"taux_droits":"6.5%","tva_import":"20%","documents_requis":["Facture","BL","CO"],"code_taric":"À vérifier","montant_estime":"~27% CIF"},"cout_total_estime":"×1.4-1.6 rendu"},"risques_globaux":["Demander échantillons","Vérifier certifications"],"recommandation":"Recommandation en 1-2 phrases.","sources_recherchees":["Alibaba.com","Made-in-China.com","Europages.fr"]}
+JSON STRICT (remplace tous les ... par des vraies valeurs) :
+{"suppliers":[{"id":"s1","nom":"...","pays":"Chine","ville":"...","plateforme":"Alibaba","url":"https://www.alibaba.com/trade/search?SearchText=${produitEncode}","site_web":"https://...","prix_unite":"...","moq":"...","delai_fab":"...","delai_transport":"...","niveau_confiance":82,"certifications":["..."],"avantages":["...","..."],"inconvenients":["..."],"risques":["..."],"description":"..."},{"id":"s2","nom":"...","pays":"...","ville":"...","plateforme":"Made-in-China","url":"https://www.made-in-china.com/products-search/hot-china-products/${produitEncode}.html","site_web":"https://...","prix_unite":"...","moq":"...","delai_fab":"...","delai_transport":"...","niveau_confiance":76,"certifications":["..."],"avantages":["...","..."],"inconvenients":["..."],"risques":["..."],"description":"..."},{"id":"s3","nom":"...","pays":"...","ville":"...","plateforme":"Europages","url":"https://www.europages.fr/entreprises/${produitEncode}.html","site_web":"https://...","prix_unite":"...","moq":"...","delai_fab":"...","delai_transport":"...","niveau_confiance":85,"certifications":["..."],"avantages":["...","..."],"inconvenients":["..."],"risques":["..."],"description":"..."}],"pays_recommandes":[{"pays":"...","score":85,"raison":"...","prix_moyen":"...","delai_moyen":"..."},{"pays":"...","score":72,"raison":"...","prix_moyen":"...","delai_moyen":"..."}],"analyse_marche":{"prix_marche_fr":"...","prix_import_estime":"...","marge_potentielle":"...","concurrence":"...","tendances":"...","conseils_marche":"..."},"logistique":{"fret_aerien":{"prix_estime":"...","delai":"...","seuil_recommande":"...","transporteurs":["DHL","FedEx"]},"fret_maritime":{"prix_estime":"...","delai":"...","seuil_recommande":"...","transporteurs":["CMA CGM","MSC"]},"douanes":{"taux_droits":"...","tva_import":"...","documents_requis":["Facture","BL","CO"],"code_taric":"...","montant_estime":"..."},"cout_total_estime":"..."},"risques_globaux":["...","..."],"recommandation":"...","sources_recherchees":["Alibaba.com","Made-in-China.com","Europages.fr"]}
 
-Remplace TOUS les "..." par des vraies valeurs adaptées au produit et territoire. JSON pur.`;
+JSON pur uniquement, aucun texte autour.`;
 
   try {
-    const anthropic = new Anthropic({ apiKey, maxRetries: 0, timeout: 30_000 });
+    const anthropic = new Anthropic({ apiKey, maxRetries: 0, timeout: 35_000 });
 
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 3000,
-      system: "Tu es un expert sourcing international. Réponds UNIQUEMENT en JSON valide, sois concis (1 phrase max par description).",
-      messages: [
-        { role: "user", content: prompt },
-        { role: "assistant", content: '{"suppliers":[' },
-      ],
+      system: "Tu es un expert sourcing international. Tu génères des données réalistes et précises basées sur ta connaissance approfondie du marché mondial. Pour les URLs tu construis des vraies URLs de recherche fonctionnelles sur les plateformes. Tu réponds UNIQUEMENT en JSON valide concis.",
+      messages: [{ role: "user", content: prompt }],
     });
 
-    const rawTail = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
-    const raw = '{"suppliers":[' + rawTail;
+    const textBlock = response.content.findLast(b => b.type === "text");
+    const raw = textBlock?.type === "text" ? textBlock.text.trim() : "";
     const start = raw.indexOf("{");
     const end = raw.lastIndexOf("}");
     if (start === -1 || end === -1) {
