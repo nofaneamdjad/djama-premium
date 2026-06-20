@@ -37,6 +37,7 @@ interface Supplier {
   ville: string;
   plateforme: string;
   url?: string;
+  site_web?: string;
   prix_unite: string;
   moq: string;
   delai_fab: string;
@@ -905,6 +906,13 @@ export default function FournisseursPage() {
                               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold transition hover:scale-105"
                               style={{ background: "rgba(96,165,250,0.1)", color: blue, border: "1px solid rgba(96,165,250,0.22)" }}>
                               <ExternalLink size={11} /> {s.plateforme}
+                            </a>
+                          )}
+                          {s.site_web && (
+                            <a href={s.site_web} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold transition hover:scale-105"
+                              style={{ background: "rgba(139,92,246,0.1)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.22)" }}>
+                              <Globe size={11} /> Site web
                             </a>
                           )}
                           <a href={waLink} target="_blank" rel="noopener noreferrer"
