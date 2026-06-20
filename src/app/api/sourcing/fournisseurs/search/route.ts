@@ -1,13 +1,3 @@
-/**
- * POST /api/sourcing/fournisseurs/search
- *
- * Recherche IA de fournisseurs avec web_search (Alibaba, Made-in-China, Google…).
- * Utilise Claude claude-sonnet-4-5 avec outil web_search pour trouver de vrais fournisseurs.
- *
- * Body   : SearchRequest
- * Return : SearchResult | { error: string }
- */
-
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
@@ -156,33 +146,16 @@ Réponds UNIQUEMENT en JSON valide :
 Minimum 3 fournisseurs, 2 pays. JSON pur, aucun texte autour.`;
 
   try {
-    const anthropic = new Anthropic({ apiKey, maxRetries: 0, timeout: 55_000 });
+    const anthropic = new Anthropic({ apiKey, maxRetries: 0, timeout: 50_000 });
 
-    /* ── Tentative avec web_search (3 recherches max pour la rapidité) ── */
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 4000,
-      system: "Tu es un expert sourcing international. Tu utilises la recherche web UNIQUEMENT pour vérifier 1-2 fournisseurs clés. Tu réponds UNIQUEMENT en JSON valide, sans texte autour.",
-      tools: [
-        {
-          type: "web_search_20250305" as "web_search_20250305",
-          name: "web_search",
-          max_uses: 3,
-        } as Anthropic.Messages.WebSearchTool20250305,
-      ],
+      system: "Tu es un expert sourcing international avec 20 ans d'expérience. Tu connais parfaitement les fournisseurs mondiaux sur Alibaba, Made-in-China, Europages, IndiaMART. Tu réponds UNIQUEMENT en JSON valide, sans aucun texte autour.",
       messages: [{ role: "user", content: prompt }],
-    }).catch(async () => {
-      /* Fallback sans web_search si outil non dispo */
-      return anthropic.messages.create({
-        model: MODEL,
-        max_tokens: 4000,
-        system: "Tu es un expert sourcing international avec 20 ans d'expérience. Tu réponds UNIQUEMENT en JSON valide.",
-        messages: [{ role: "user", content: prompt }],
-      });
     });
 
-    const textBlock = response.content.findLast(b => b.type === "text");
-    const raw = textBlock?.type === "text" ? textBlock.text.trim() : "";
+    const raw = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
     const start = raw.indexOf("{");
     const end = raw.lastIndexOf("}");
     if (start === -1 || end === -1) {
