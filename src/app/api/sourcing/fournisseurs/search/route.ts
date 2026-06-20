@@ -5,9 +5,9 @@ import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 35;
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "claude-haiku-4-5-20251001";
 
 export interface SearchRequest {
   produit: string;
@@ -146,11 +146,11 @@ Réponds UNIQUEMENT en JSON valide :
 Minimum 3 fournisseurs, 2 pays. JSON pur, aucun texte autour.`;
 
   try {
-    const anthropic = new Anthropic({ apiKey, maxRetries: 0, timeout: 50_000 });
+    const anthropic = new Anthropic({ apiKey, maxRetries: 0, timeout: 30_000 });
 
     const response = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 4000,
+      max_tokens: 2500,
       system: "Tu es un expert sourcing international avec 20 ans d'expérience. Tu connais parfaitement les fournisseurs mondiaux sur Alibaba, Made-in-China, Europages, IndiaMART. Tu réponds UNIQUEMENT en JSON valide, sans aucun texte autour.",
       messages: [{ role: "user", content: prompt }],
     });
