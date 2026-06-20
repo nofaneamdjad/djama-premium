@@ -15,9 +15,9 @@ import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
-const MODEL = "claude-sonnet-4-5";
+const MODEL = "claude-sonnet-4-6";
 
 export interface SearchRequest {
   produit: string;
@@ -143,137 +143,52 @@ CRITÈRES SPÉCIAUX : ${criteres_speciaux || "Aucun"}
 
 ${territoireInfo}
 
-INSTRUCTIONS :
-1. Recherche les meilleurs fournisseurs sur Alibaba, Made-in-China, Global Sources, Europages, IndiaMART selon le produit
-2. Compare les pays producteurs (Chine, Turquie, Inde, Vietnam, Europe, etc.)
-3. Estime les coûts réalistes (prix unitaire, MOQ, transport) ADAPTÉS AU TERRITOIRE DE DESTINATION
-4. Analyse les risques par fournisseur et par pays
-5. Donne des recommandations SPÉCIFIQUES au territoire de l'utilisateur (routes logistiques, taxes locales, contraintes)
-6. ADAPTE TOUTE LA LOGISTIQUE au territoire de destination (coûts fret réels, délais réels, taxes locales exactes)
-7. Pour chaque fournisseur, inclure l'URL DIRECTE du profil sur la plateforme (ex: https://www.alibaba.com/product-detail/...). Si l'URL exacte est inconnue, construire une URL de recherche plausible sur la bonne plateforme.
+INSTRUCTIONS (concis, efficace) :
+1. Trouve les 3-4 meilleurs fournisseurs sur Alibaba, Made-in-China, Europages, IndiaMART
+2. Compare 2-3 pays producteurs adaptés au produit
+3. Estime les coûts ADAPTÉS AU TERRITOIRE DE DESTINATION
+4. URL directe ou de recherche plausible pour chaque fournisseur
+5. Logistique et douanes adaptées au territoire
 
-Réponds UNIQUEMENT en JSON valide avec ce schéma EXACT :
-{
-  "suppliers": [
-    {
-      "id": "s1",
-      "nom": "Nom du fournisseur",
-      "pays": "Chine",
-      "ville": "Guangzhou",
-      "plateforme": "Alibaba",
-      "url": "https://...",
-      "prix_unite": "2.50 USD",
-      "moq": "500 pièces",
-      "delai_fab": "15-20 jours",
-      "delai_transport": "25-35 jours (maritime)",
-      "niveau_confiance": 82,
-      "certifications": ["ISO 9001", "CE"],
-      "avantages": ["Prix compétitif", "Stock disponible"],
-      "inconvenients": ["Délai long", "Communication difficile"],
-      "risques": ["Vérifier qualité avant commande"],
-      "description": "Fabricant spécialisé depuis 2008..."
-    }
-  ],
-  "pays_recommandes": [
-    {
-      "pays": "Chine",
-      "score": 88,
-      "raison": "Meilleur rapport qualité/prix, large choix",
-      "prix_moyen": "1.80-3.50 USD/unité",
-      "delai_moyen": "40-55 jours total"
-    }
-  ],
-  "analyse_marche": {
-    "prix_marche_fr": "8-15 EUR HT",
-    "prix_import_estime": "2-4 EUR",
-    "marge_potentielle": "50-70%",
-    "concurrence": "Marché modérément concurrentiel",
-    "tendances": "Forte demande, croissance 12% / an",
-    "conseils_marche": "Différenciation par personnalisation recommandée"
-  },
-  "logistique": {
-    "fret_aerien": {
-      "prix_estime": "4-6 USD/kg",
-      "delai": "5-7 jours",
-      "seuil_recommande": "Moins de 100kg ou urgence",
-      "transporteurs": ["DHL", "FedEx", "UPS"]
-    },
-    "fret_maritime": {
-      "prix_estime": "800-1200 USD / 20 pieds",
-      "delai": "25-35 jours",
-      "seuil_recommande": "Plus de 300kg ou > 1 CBM",
-      "transporteurs": ["Maersk", "CMA CGM", "MSC"]
-    },
-    "douanes": {
-      "taux_droits": "6.5%",
-      "tva_import": "20%",
-      "documents_requis": ["Facture commerciale", "BL / LTA", "Certificat d'origine", "Packing list"],
-      "code_taric": "À vérifier sur douane.gouv.fr",
-      "montant_estime": "Environ 26.5% du prix CIF"
-    },
-    "cout_total_estime": "Prix fournisseur × 1.4 à 1.6 rendu France"
-  },
-  "risques_globaux": [
-    "Vérifier le fournisseur via Trade Assurance Alibaba",
-    "Demander échantillons avant toute commande",
-    "Utiliser un agent de contrôle qualité en Chine"
-  ],
-  "recommandation": "Synthèse et recommandation principale de l'expert",
-  "sources_recherchees": ["Alibaba.com", "Made-in-China.com", "Global Sources"]
-}
+Réponds UNIQUEMENT en JSON valide :
+{"suppliers":[{"id":"s1","nom":"...","pays":"Chine","ville":"...","plateforme":"Alibaba","url":"https://...","prix_unite":"2.50 USD","moq":"500 pcs","delai_fab":"15-20j","delai_transport":"25-35j","niveau_confiance":82,"certifications":["ISO 9001"],"avantages":["Prix compétitif"],"inconvenients":["Délai long"],"risques":["Vérifier qualité"],"description":"..."}],"pays_recommandes":[{"pays":"Chine","score":88,"raison":"...","prix_moyen":"1.80-3.50 USD","delai_moyen":"40-55j"}],"analyse_marche":{"prix_marche_fr":"8-15 EUR","prix_import_estime":"2-4 EUR","marge_potentielle":"50-70%","concurrence":"...","tendances":"...","conseils_marche":"..."},"logistique":{"fret_aerien":{"prix_estime":"4-6 USD/kg","delai":"5-7j","seuil_recommande":"<100kg","transporteurs":["DHL","FedEx"]},"fret_maritime":{"prix_estime":"800-1200 USD/20p","delai":"25-35j","seuil_recommande":">300kg","transporteurs":["Maersk","CMA CGM"]},"douanes":{"taux_droits":"6.5%","tva_import":"20%","documents_requis":["Facture","BL","CO"],"code_taric":"À vérifier","montant_estime":"~26.5% CIF"},"cout_total_estime":"×1.4-1.6 rendu destination"},"risques_globaux":["Trade Assurance","Demander échantillons"],"recommandation":"...","sources_recherchees":["Alibaba.com","Made-in-China.com"]}
 
-Minimum 4 fournisseurs, 3 pays recommandés. JSON pur, aucun texte autour.`;
+Minimum 3 fournisseurs, 2 pays. JSON pur, aucun texte autour.`;
 
   try {
-    const anthropic = new Anthropic({ apiKey, maxRetries: 1, timeout: 110_000 });
+    const anthropic = new Anthropic({ apiKey, maxRetries: 0, timeout: 55_000 });
 
-    let result: Record<string, unknown> | null = null;
-
-    /* ── Tentative avec web_search ── */
-    try {
-      const response = await anthropic.messages.create({
+    /* ── Tentative avec web_search (3 recherches max pour la rapidité) ── */
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 4000,
+      system: "Tu es un expert sourcing international. Tu utilises la recherche web UNIQUEMENT pour vérifier 1-2 fournisseurs clés. Tu réponds UNIQUEMENT en JSON valide, sans texte autour.",
+      tools: [
+        {
+          type: "web_search_20250305" as "web_search_20250305",
+          name: "web_search",
+          max_uses: 3,
+        } as Anthropic.Messages.WebSearchTool20250305,
+      ],
+      messages: [{ role: "user", content: prompt }],
+    }).catch(async () => {
+      /* Fallback sans web_search si outil non dispo */
+      return anthropic.messages.create({
         model: MODEL,
-        max_tokens: 8000,
-        system: "Tu es un expert sourcing international. Tu utilises la recherche web pour trouver de vrais fournisseurs actuels sur Alibaba, Made-in-China, Europages et autres plateformes. Tu réponds UNIQUEMENT en JSON valide.",
-        tools: [
-          {
-            type: "web_search_20250305" as "web_search_20250305",
-            name: "web_search",
-            max_uses: 8,
-          } as Anthropic.Messages.WebSearchTool20250305,
-        ],
+        max_tokens: 4000,
+        system: "Tu es un expert sourcing international avec 20 ans d'expérience. Tu réponds UNIQUEMENT en JSON valide.",
         messages: [{ role: "user", content: prompt }],
       });
+    });
 
-      const textBlock = response.content.findLast(b => b.type === "text");
-      const raw = textBlock?.type === "text" ? textBlock.text.trim() : "";
-      const start = raw.indexOf("{");
-      const end = raw.lastIndexOf("}");
-      if (start !== -1 && end !== -1) {
-        result = JSON.parse(raw.slice(start, end + 1));
-      }
-    } catch {
-      /* fallback sans web_search si non disponible */
+    const textBlock = response.content.findLast(b => b.type === "text");
+    const raw = textBlock?.type === "text" ? textBlock.text.trim() : "";
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start === -1 || end === -1) {
+      return NextResponse.json({ error: "Impossible de parser la réponse IA." }, { status: 500 });
     }
-
-    /* ── Fallback sans web_search ── */
-    if (!result) {
-      const response = await anthropic.messages.create({
-        model: MODEL,
-        max_tokens: 6000,
-        system: "Tu es un expert sourcing international avec 20 ans d'expérience. Tu connais parfaitement les fournisseurs mondiaux, les prix, délais et risques. Tu réponds UNIQUEMENT en JSON valide.",
-        messages: [{ role: "user", content: prompt }],
-      });
-
-      const raw = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
-      const start = raw.indexOf("{");
-      const end = raw.lastIndexOf("}");
-      if (start === -1 || end === -1) {
-        return NextResponse.json({ error: "Impossible de parser la réponse IA." }, { status: 500 });
-      }
-      result = JSON.parse(raw.slice(start, end + 1));
-    }
-
+    const result = JSON.parse(raw.slice(start, end + 1));
     return NextResponse.json(result);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
