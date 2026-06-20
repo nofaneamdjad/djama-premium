@@ -133,29 +133,28 @@ CRITÈRES SPÉCIAUX : ${criteres_speciaux || "Aucun"}
 
 ${territoireInfo}
 
-INSTRUCTIONS (concis, efficace) :
-1. Trouve les 3-4 meilleurs fournisseurs sur Alibaba, Made-in-China, Europages, IndiaMART
-2. Compare 2-3 pays producteurs adaptés au produit
-3. Estime les coûts ADAPTÉS AU TERRITOIRE DE DESTINATION
-4. URL directe ou de recherche plausible pour chaque fournisseur
-5. Logistique et douanes adaptées au territoire
+Trouve exactement 3 fournisseurs. Sois TRÈS CONCIS (1 phrase max par champ texte, max 2 éléments par tableau).
 
-Réponds UNIQUEMENT en JSON valide :
-{"suppliers":[{"id":"s1","nom":"...","pays":"Chine","ville":"...","plateforme":"Alibaba","url":"https://...","prix_unite":"2.50 USD","moq":"500 pcs","delai_fab":"15-20j","delai_transport":"25-35j","niveau_confiance":82,"certifications":["ISO 9001"],"avantages":["Prix compétitif"],"inconvenients":["Délai long"],"risques":["Vérifier qualité"],"description":"..."}],"pays_recommandes":[{"pays":"Chine","score":88,"raison":"...","prix_moyen":"1.80-3.50 USD","delai_moyen":"40-55j"}],"analyse_marche":{"prix_marche_fr":"8-15 EUR","prix_import_estime":"2-4 EUR","marge_potentielle":"50-70%","concurrence":"...","tendances":"...","conseils_marche":"..."},"logistique":{"fret_aerien":{"prix_estime":"4-6 USD/kg","delai":"5-7j","seuil_recommande":"<100kg","transporteurs":["DHL","FedEx"]},"fret_maritime":{"prix_estime":"800-1200 USD/20p","delai":"25-35j","seuil_recommande":">300kg","transporteurs":["Maersk","CMA CGM"]},"douanes":{"taux_droits":"6.5%","tva_import":"20%","documents_requis":["Facture","BL","CO"],"code_taric":"À vérifier","montant_estime":"~26.5% CIF"},"cout_total_estime":"×1.4-1.6 rendu destination"},"risques_globaux":["Trade Assurance","Demander échantillons"],"recommandation":"...","sources_recherchees":["Alibaba.com","Made-in-China.com"]}
+JSON STRICT (respecte ce schéma exactement, valeurs courtes) :
+{"suppliers":[{"id":"s1","nom":"EXEMPLE Co","pays":"Chine","ville":"Guangzhou","plateforme":"Alibaba","url":"https://www.alibaba.com/trade/search?fsb=y&IndexArea=product_en&CatId=&SearchText=${encodeURIComponent(produit)}","prix_unite":"1.50 USD","moq":"1000 kg","delai_fab":"10-15j","delai_transport":"30-40j","niveau_confiance":80,"certifications":["ISO 9001"],"avantages":["Prix bas","Stock dispo"],"inconvenients":["Délai long"],"risques":["Vérifier qualité"],"description":"Fabricant spécialisé."},{"id":"s2","nom":"...","pays":"...","ville":"...","plateforme":"Made-in-China","url":"...","prix_unite":"...","moq":"...","delai_fab":"...","delai_transport":"...","niveau_confiance":75,"certifications":["CE"],"avantages":["Rapide"],"inconvenients":["Prix plus élevé"],"risques":["Vérifier certifs"],"description":"..."},{"id":"s3","nom":"...","pays":"...","ville":"...","plateforme":"Europages","url":"...","prix_unite":"...","moq":"...","delai_fab":"...","delai_transport":"...","niveau_confiance":88,"certifications":["ISO 22000"],"avantages":["Qualité UE"],"inconvenients":["MOQ élevé"],"risques":["Coût transit"],"description":"..."}],"pays_recommandes":[{"pays":"Chine","score":85,"raison":"Meilleur prix","prix_moyen":"1.20-2.00 USD","delai_moyen":"45-60j"},{"pays":"Turquie","score":72,"raison":"Délai court","prix_moyen":"1.80-2.50 USD","delai_moyen":"20-30j"}],"analyse_marche":{"prix_marche_fr":"3-6 EUR/L","prix_import_estime":"1.20-2.00 USD","marge_potentielle":"55-65%","concurrence":"Modérée","tendances":"Hausse +8%/an","conseils_marche":"Négocier volumes"},"logistique":{"fret_aerien":{"prix_estime":"5-8 USD/kg","delai":"7-10j","seuil_recommande":"<100kg","transporteurs":["DHL","FedEx"]},"fret_maritime":{"prix_estime":"900-1400 USD/20p","delai":"35-50j","seuil_recommande":">300kg","transporteurs":["CMA CGM","MSC"]},"douanes":{"taux_droits":"6.5%","tva_import":"20%","documents_requis":["Facture","BL","CO"],"code_taric":"À vérifier","montant_estime":"~27% CIF"},"cout_total_estime":"×1.4-1.6 rendu"},"risques_globaux":["Demander échantillons","Vérifier certifications"],"recommandation":"Recommandation en 1-2 phrases.","sources_recherchees":["Alibaba.com","Made-in-China.com","Europages.fr"]}
 
-Minimum 3 fournisseurs, 2 pays. JSON pur, aucun texte autour.`;
+Remplace TOUS les "..." par des vraies valeurs adaptées au produit et territoire. JSON pur.`;
 
   try {
     const anthropic = new Anthropic({ apiKey, maxRetries: 0, timeout: 30_000 });
 
     const response = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 2500,
-      system: "Tu es un expert sourcing international avec 20 ans d'expérience. Tu connais parfaitement les fournisseurs mondiaux sur Alibaba, Made-in-China, Europages, IndiaMART. Tu réponds UNIQUEMENT en JSON valide, sans aucun texte autour.",
-      messages: [{ role: "user", content: prompt }],
+      max_tokens: 3000,
+      system: "Tu es un expert sourcing international. Réponds UNIQUEMENT en JSON valide, sois concis (1 phrase max par description).",
+      messages: [
+        { role: "user", content: prompt },
+        { role: "assistant", content: '{"suppliers":[' },
+      ],
     });
 
-    const raw = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
+    const rawTail = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
+    const raw = '{"suppliers":[' + rawTail;
     const start = raw.indexOf("{");
     const end = raw.lastIndexOf("}");
     if (start === -1 || end === -1) {
