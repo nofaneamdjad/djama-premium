@@ -11,6 +11,7 @@ import {
   Languages, Zap, Check, Hash, BarChart2,
   Book, Pencil, Eraser, ChevronLeft, ChevronRight,
   Undo2, AlignLeft, LayoutGrid, CalendarDays,
+  History, Link2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import NotebookCanvas, {
@@ -177,6 +178,21 @@ const getLocalFavs = (): Set<string> => {
   try { const d = localStorage.getItem(FAV_KEY); return d ? new Set(JSON.parse(d) as string[]) : new Set(); } catch { return new Set(); }
 };
 
+type NoteVersion = { ts: number; title: string; content: string };
+const VERSION_KEY   = (id: string) => `djama_note_v_${id}`;
+const MAX_VERSIONS  = 5;
+
+function pushVersion(noteId: string, title: string, content: string) {
+  try {
+    const prev = JSON.parse(localStorage.getItem(VERSION_KEY(noteId)) || "[]") as NoteVersion[];
+    const next  = [{ ts: Date.now(), title, content }, ...prev].slice(0, MAX_VERSIONS);
+    localStorage.setItem(VERSION_KEY(noteId), JSON.stringify(next));
+  } catch {}
+}
+function loadVersions(noteId: string): NoteVersion[] {
+  try { return JSON.parse(localStorage.getItem(VERSION_KEY(noteId)) || "[]") as NoteVersion[]; } catch { return []; }
+}
+
 function fmtSec(s: number) {
   const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
   return h>0 ? `${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}` : `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
@@ -274,6 +290,8 @@ export default function BlocNotesPage() {
   const [newFolderName,  setNewFolderName]  = useState("");
   const [newFolderColor, setNewFolderColor] = useState("#a78bfa");
   const [exportMenu,     setExportMenu]     = useState(false);
+  const [versionsMenu,   setVersionsMenu]   = useState(false);
+  const [noteVersions,   setNoteVersions]   = useState<NoteVersion[]>([]);
 
   /* ── Voice ── */
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
@@ -465,6 +483,8 @@ export default function BlocNotesPage() {
     setAiResult("");
     setPrevSnap(null);
     setSavedAgo("");
+    setVersionsMenu(false);
+    setNoteVersions(loadVersions(n.id));
     setMobilePanel("editor");
   }, []);
 
@@ -512,6 +532,10 @@ export default function BlocNotesPage() {
       savedNote = data as Note;
       setNotes(p => [savedNote!, ...p]);
       setSelected(savedNote);
+    }
+    if (savedNote?.id) {
+      pushVersion(savedNote.id, dTitle.trim() || "Sans titre", dContent);
+      setNoteVersions(loadVersions(savedNote.id));
     }
     setIsSaving(false); setIsDirty(false);
     setSavedAgo("il y a quelques secondes");
@@ -736,6 +760,26 @@ export default function BlocNotesPage() {
 
   const wordCnt = countWords(dContent);
   const isCanvas = false;
+
+  const outgoingRefs = useMemo(() => {
+    if (!dContent.trim()) return [];
+    const refs = new Set([...dContent.matchAll(/\[\[(.+?)\]\]/g)].map(m => m[1].trim().toLowerCase()));
+    return notes.filter(n => refs.has(n.title.toLowerCase()) && n.id !== selected?.id);
+  }, [dContent, notes, selected?.id]);
+
+  const incomingRefs = useMemo(() => {
+    if (!dTitle.trim() || !selected?.id) return [];
+    const pattern = `[[${dTitle.toLowerCase()}]]`;
+    return notes.filter(n => n.id !== selected!.id && n.content.toLowerCase().includes(pattern));
+  }, [dTitle, notes, selected]);
+
+  const backlinks = useMemo(() => {
+    const seen = new Set<string>();
+    return [...outgoingRefs, ...incomingRefs].filter(n => {
+      if (seen.has(n.id)) return false;
+      seen.add(n.id); return true;
+    });
+  }, [outgoingRefs, incomingRefs]);
 
   /* ══════════════════════════════════════════════════
      RENDER
@@ -1303,6 +1347,41 @@ export default function BlocNotesPage() {
                     <RotateCcw size={10}/> Annuler IA
                   </button>
                 )}
+                {selected?.id && noteVersions.length > 0 && (
+                  <div className="relative">
+                    <button onClick={() => setVersionsMenu(v => !v)}
+                      className="flex items-center gap-1 rounded-lg border border-white/[0.08] px-2 py-1.5 text-[0.62rem] font-bold text-white/35 transition hover:text-white/65">
+                      <History size={10}/> {noteVersions.length}v
+                    </button>
+                    <AnimatePresence>
+                      {versionsMenu && (
+                        <motion.div initial={{opacity:0,y:-5}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-5}}
+                          className="absolute right-0 top-full z-50 mt-1 w-52 overflow-hidden rounded-xl border border-white/[0.09] bg-[#0e1420] shadow-xl">
+                          <p className="border-b border-white/[0.06] px-4 py-2 text-[0.58rem] font-bold uppercase tracking-wider text-white/25">Historique</p>
+                          {noteVersions.map((v, i) => (
+                            <button key={v.ts} onClick={() => {
+                              setPrevSnap(dContent);
+                              setDContent(v.content);
+                              setDTitle(v.title);
+                              setIsDirty(true);
+                              setVersionsMenu(false);
+                              showToast("success", `Version du ${new Date(v.ts).toLocaleDateString("fr-FR")} restaurée`);
+                            }}
+                              className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition hover:bg-white/[0.05]">
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-[0.65rem] font-semibold text-white/65">{v.title}</p>
+                                <p className="mt-0.5 text-[0.55rem] text-white/28">
+                                  {new Date(v.ts).toLocaleString("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}
+                                </p>
+                              </div>
+                              {i === 0 && <span className="shrink-0 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[0.5rem] font-bold text-amber-400">Récent</span>}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
                 <div className="relative">
                   <button onClick={() => setExportMenu(v => !v)}
                     className="flex items-center gap-1 rounded-lg border border-white/[0.08] px-2 py-1.5 text-[0.62rem] font-bold text-white/35 transition hover:text-white/65">
@@ -1379,6 +1458,7 @@ export default function BlocNotesPage() {
                 { label:"☑",   fn:()=>insertLinePrefix("- [ ] ")      },
                 { label:"›",   fn:()=>insertLinePrefix("> ")          },
                 { label:"lien",fn:()=>insertFormat("[","](url)")      },
+                { label:"[[]]",fn:()=>insertFormat("[[","]]")         },
                 { label:"---", fn:()=>setDContent(c=>c+"\n\n---\n\n") },
               ].map((b,i) => (
                 <button key={i} onClick={b.fn}
@@ -1459,6 +1539,23 @@ export default function BlocNotesPage() {
                     placeholder="Lié à : client, projet, contrat…"
                     className="w-full bg-transparent text-[0.6rem] text-white/28 outline-none placeholder:text-white/14"/>
                 </div>
+
+                {/* Backlinks */}
+                {backlinks.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 border-t border-white/[0.03] px-5 py-1.5">
+                    <Link2 size={9} className="text-white/18 shrink-0"/>
+                    <span className="text-[0.54rem] font-bold uppercase tracking-wider text-white/18">Notes liées</span>
+                    {backlinks.map(n => {
+                      const ti = getTypeInfo(getNoteType(n));
+                      return (
+                        <button key={n.id} onClick={() => openNote(n)}
+                          className="flex items-center gap-1 rounded-full border border-white/[0.07] bg-white/[0.02] px-2 py-0.5 text-[0.58rem] text-white/40 transition hover:border-white/15 hover:text-white/70">
+                          <ti.Icon size={8} style={{color:ti.color}}/>{n.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* AI panel slide-in */}
