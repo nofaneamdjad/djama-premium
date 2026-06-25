@@ -11,6 +11,7 @@ import {
   AlertOctagon, Lightbulb, Award, BarChart2, FileSignature,
   ChevronDown, Globe, Lock, Star, Wrench, Monitor, ShoppingCart,
   Cloud, Home, Briefcase, File, Upload, Image as ImageIcon,
+  History, BookMarked, RotateCcw,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -181,6 +182,35 @@ const JURISDICTIONS = [
   "Fidji", "Samoa", "Tonga", "Vanuatu",
 ];
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "MAD", "CAD"];
+
+type ContractVersion  = { ts: number; content: string };
+type ContractTemplate = { id: string; name: string; type: ContractType; content: string };
+const CV_KEY   = (id: string) => `djama_cv_${id}`;
+const TMPL_KEY = "djama_ct_tmpl";
+function pushCV(id: string, content: string) {
+  try {
+    const prev = JSON.parse(localStorage.getItem(CV_KEY(id)) || "[]") as ContractVersion[];
+    const next = [{ ts: Date.now(), content }, ...prev].slice(0, 5);
+    localStorage.setItem(CV_KEY(id), JSON.stringify(next));
+  } catch {}
+}
+function loadCVs(id: string): ContractVersion[] {
+  try { return JSON.parse(localStorage.getItem(CV_KEY(id)) || "[]"); } catch { return []; }
+}
+function getTmpls(): ContractTemplate[] {
+  try { return JSON.parse(localStorage.getItem(TMPL_KEY) || "[]"); } catch { return []; }
+}
+function addTmpl(name: string, type: ContractType, content: string): ContractTemplate[] {
+  const t: ContractTemplate = { id: crypto.randomUUID(), name, type, content };
+  const next = [t, ...getTmpls()].slice(0, 12);
+  localStorage.setItem(TMPL_KEY, JSON.stringify(next));
+  return next;
+}
+function delTmpl(id: string): ContractTemplate[] {
+  const next = getTmpls().filter((t) => t.id !== id);
+  localStorage.setItem(TMPL_KEY, JSON.stringify(next));
+  return next;
+}
 
 const SUGGESTED_CLAUSES: Record<ContractType, string[]> = {
   prestation:  ["Acompte 30% à la signature", "Révisions illimitées incluses", "Propriété intellectuelle transférée", "Pénalités de retard 3%/mois", "Non-concurrence 6 mois"],
@@ -726,6 +756,7 @@ function DetailPanel({
   onAddSigner, onDeleteSigner, onSignContract,
   onAddComment, onShowAI, onDuplicate,
   onClose,
+  versions, prevContent, onRestoreVersion, onUndoRestore, onSaveTemplate,
 }: {
   contract: Contract; signers: Signer[]; activities: CActivity[]; comments: CComment[];
   editContent: string; saving: boolean; onContentChange: (v: string) => void;
@@ -735,11 +766,14 @@ function DetailPanel({
   onAddSigner: (name: string, email: string, role: string) => void;
   onDeleteSigner: (id: string) => void; onSignContract: (signer: Signer) => void;
   onAddComment: (text: string) => void; onShowAI: () => void; onDuplicate: () => void; onClose: () => void;
+  versions: ContractVersion[]; prevContent: string | null;
+  onRestoreVersion: (v: ContractVersion) => void; onUndoRestore: () => void; onSaveTemplate: () => void;
 }) {
   const [tab, setTab] = useState<"content" | "signers" | "ai" | "activity">("content");
   const [signerForm, setSignerForm] = useState({ name: "", email: "", role: "signataire" });
   const [commentText, setCommentText] = useState("");
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [versionsMenu, setVersionsMenu] = useState(false);
   const t = CONTRACT_TYPES.find((x) => x.value === contract.contract_type);
 
   const allTimeline = [
@@ -802,6 +836,27 @@ function DetailPanel({
         </div>
       </div>
 
+      {/* Expiry warning */}
+      {(() => {
+        const date = contract.end_date;
+        if (!date || ["signé", "expiré", "actif"].includes(contract.status)) return null;
+        const days = Math.floor((new Date(date).getTime() - Date.now()) / 86_400_000);
+        if (days > 30) return null;
+        const late = days < 0;
+        return (
+          <div className="mx-5 my-2 flex items-center gap-2 rounded-xl border px-3 py-2.5"
+            style={{ background: late ? "rgba(248,113,113,0.07)" : "rgba(251,191,36,0.07)", borderColor: late ? "rgba(248,113,113,0.2)" : "rgba(251,191,36,0.2)" }}>
+            <AlertTriangle size={12} style={{ color: late ? "#f87171" : "#fbbf24" }}/>
+            <span className="text-xs" style={{ color: late ? "#f87171" : "#fbbf24" }}>
+              {late
+                ? `Contrat expiré depuis ${Math.abs(days)} jour${Math.abs(days) > 1 ? "s" : ""}`
+                : days === 0 ? "Contrat expire aujourd'hui !"
+                : `Expire dans ${days} jour${days > 1 ? "s" : ""} — le ${new Date(date).toLocaleDateString("fr-FR")}`}
+            </span>
+          </div>
+        );
+      })()}
+
             <div className="flex border-b border-white/[0.06] px-5 gap-1">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setTab(key)}
@@ -828,6 +883,47 @@ function DetailPanel({
                   <Icon size={11}/> {label}
                 </motion.button>
               ))}
+              {/* Versions dropdown */}
+              {versions.length > 0 && (
+                <div className="relative">
+                  <motion.button onClick={() => setVersionsMenu((v) => !v)}
+                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] transition-all">
+                    <History size={11}/> {versions.length}v
+                  </motion.button>
+                  <AnimatePresence>
+                    {versionsMenu && (
+                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute left-0 top-full z-50 mt-1 w-52 rounded-xl border border-white/[0.08] overflow-hidden shadow-2xl"
+                        style={{ background: "#0d1117" }}>
+                        {versions.map((v) => (
+                          <button key={v.ts} onClick={() => { onRestoreVersion(v); setVersionsMenu(false); }}
+                            className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-white/60 hover:bg-white/[0.06] hover:text-white/80 transition-all text-left">
+                            <History size={10} className="shrink-0 text-white/30"/>
+                            {new Date(v.ts).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+              {/* Save as template */}
+              <motion.button onClick={onSaveTemplate}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] transition-all">
+                <BookMarked size={11}/> Modèle
+              </motion.button>
+              {/* Undo version restore */}
+              {prevContent !== null && (
+                <motion.button onClick={onUndoRestore}
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+                  style={{ background: "rgba(251,191,36,0.07)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)" }}>
+                  <RotateCcw size={11}/> Annuler
+                </motion.button>
+              )}
               <div className="ml-auto flex items-center gap-1.5">
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={onDuplicate}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] transition-all">
@@ -1250,6 +1346,10 @@ export default function ContratsPage() {
   const [deleting, setDeleting] = useState(false);
   const [signerToSign, setSignerToSign] = useState<Signer | null>(null);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [contractVersions, setContractVersions] = useState<ContractVersion[]>([]);
+  const [prevEditContent, setPrevEditContent] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<ContractTemplate[]>(() => getTmpls());
+  const [tmplModal, setTmplModal] = useState(false);
 
   // Load contracts
   useEffect(() => {
@@ -1273,6 +1373,8 @@ export default function ContratsPage() {
   useEffect(() => {
     if (!selected || !userId) return;
     setEditContent(selected.content ?? "");
+    setContractVersions(loadCVs(selected.id));
+    setPrevEditContent(null);
     setSigners([]);
     setActivities([]);
     setComments([]);
@@ -1309,6 +1411,8 @@ export default function ContratsPage() {
       if (!error) {
         setContracts((prev) => prev.map((c) => c.id === selected.id ? { ...c, content: value } : c));
         setSelected((prev) => prev ? { ...prev, content: value } : prev);
+        pushCV(selected.id, value);
+        setContractVersions(loadCVs(selected.id));
       }
     }, 2000);
   }, [selected]);
@@ -1330,6 +1434,43 @@ export default function ContratsPage() {
     setTimeout(() => setCopied(false), 2000);
     toast("Copié !", "success");
   }, [editContent, toast]);
+
+  const handleSaveTemplate = useCallback(() => {
+    if (!selected || !editContent.trim()) { toast("Contenu vide", "error"); return; }
+    const name = window.prompt("Nom du modèle", selected.title) ?? "";
+    if (!name.trim()) return;
+    const next = addTmpl(name.trim(), selected.contract_type, editContent);
+    setTemplates(next);
+    toast("Modèle sauvegardé", "success");
+  }, [selected, editContent, toast]);
+
+  const handleRestoreVersion = useCallback((v: ContractVersion) => {
+    setPrevEditContent(editContent);
+    handleContentChange(v.content);
+    toast(`Version du ${new Date(v.ts).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} restaurée`, "success");
+  }, [editContent, handleContentChange, toast]);
+
+  const handleUndoRestore = useCallback(() => {
+    if (prevEditContent === null) return;
+    handleContentChange(prevEditContent);
+    setPrevEditContent(null);
+    toast("Restauration annulée", "success");
+  }, [prevEditContent, handleContentChange, toast]);
+
+  const handleCreateFromTemplate = useCallback(async (t: ContractTemplate) => {
+    if (!userId) return;
+    setTmplModal(false);
+    const { data, error } = await supabase.from("contracts").insert({
+      user_id: userId, title: t.name, client_name: "", client_email: "",
+      client_company: "", contract_type: t.type, content: t.content,
+      status: "brouillon", amount: null,
+    }).select().single();
+    if (error || !data) { toast("Erreur création", "error"); return; }
+    const c = data as Contract;
+    setContracts((prev) => [c, ...prev]);
+    selectContract(c);
+    toast("Contrat créé depuis le modèle", "success");
+  }, [userId, selectContract, toast]);
 
   const getPDFData = useCallback(() => {
     if (!selected) return null;
@@ -1574,6 +1715,13 @@ export default function ContratsPage() {
                   </button>
                 ))}
               </div>
+              {templates.length > 0 && (
+                <button onClick={() => setTmplModal(true)}
+                  className="h-8 flex items-center gap-1.5 px-3 rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all text-xs font-medium"
+                  title="Mes modèles">
+                  <BookMarked size={13}/> {templates.length}
+                </button>
+              )}
               <button onClick={exportCSV} className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all" title="Exporter CSV">
                 <Download size={14}/>
               </button>
@@ -1691,6 +1839,9 @@ export default function ContratsPage() {
                 onSignContract={(signer) => setSignerToSign(signer)}
                 onAddComment={handleAddComment} onShowAI={() => setShowAIModal(true)}
                 onDuplicate={handleDuplicate} onClose={() => setSelected(null)}
+                versions={contractVersions} prevContent={prevEditContent}
+                onRestoreVersion={handleRestoreVersion} onUndoRestore={handleUndoRestore}
+                onSaveTemplate={handleSaveTemplate}
               />
             ) : (
               contracts.length > 0 && (
@@ -1721,6 +1872,54 @@ export default function ContratsPage() {
         )}
         {showAIModal && selected && (
           <AIModal contract={selected} onClose={() => setShowAIModal(false)}/>
+        )}
+      </AnimatePresence>
+
+      {/* Templates modal */}
+      <AnimatePresence>
+        {tmplModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setTmplModal(false)}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md mx-4 rounded-2xl border border-white/[0.08] overflow-hidden"
+              style={{ background: "#0d1117" }}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <BookMarked size={15} style={{ color: gold }}/>
+                  <h3 className="text-sm font-bold text-white">Mes modèles</h3>
+                </div>
+                <button onClick={() => setTmplModal(false)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/70">
+                  <X size={14}/>
+                </button>
+              </div>
+              <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
+                {templates.length === 0 ? (
+                  <p className="text-center py-6 text-white/30 text-xs">Aucun modèle sauvegardé</p>
+                ) : templates.map((t) => (
+                  <div key={t.id} className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-white/80 truncate">{t.name}</p>
+                      <p className="text-[10px] text-white/35 mt-0.5">{TYPE_MAP[t.type]}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                        onClick={() => handleCreateFromTemplate(t)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
+                        style={{ background: gold + "20", color: gold, border: `1px solid ${gold}40` }}>
+                        <Plus size={9}/> Utiliser
+                      </motion.button>
+                      <button onClick={() => { const next = delTmpl(t.id); setTemplates(next); }}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/25 hover:text-red-400 transition-all">
+                        <Trash2 size={11}/>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
