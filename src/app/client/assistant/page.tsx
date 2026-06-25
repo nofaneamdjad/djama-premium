@@ -6,6 +6,7 @@ import {
   AlertTriangle, PenLine, Loader2, RefreshCw,
   Copy, Sparkles, Clock, CreditCard, Receipt, ListTodo,
   UserCheck, ChevronRight, Menu, X, Send,
+  Download, Volume2, VolumeX, BookMarked,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -284,6 +285,7 @@ function InsightsPanel({ insights, loading }: { insights: LiveInsights | null; l
 
 function SidebarInner({
   convs, activeConv, onNew, onSend, onSelect, onClose,
+  memNote, onMemChange,
 }: {
   convs: Conv[];
   activeConv: string | null;
@@ -291,6 +293,8 @@ function SidebarInner({
   onSend: (prompt: string) => void;
   onSelect: (id: string) => void;
   onClose?: () => void;
+  memNote: string;
+  onMemChange: (v: string) => void;
 }) {
   return (
     <>
@@ -349,6 +353,26 @@ function SidebarInner({
             </p>
           </button>
         ))}
+      </div>
+
+      {/* Mémoire persistante */}
+      <div className="shrink-0 border-t border-white/[0.06] px-3 py-3">
+        <div className="flex items-center gap-1.5 mb-2">
+          <BookMarked size={11} style={{ color: CYAN }} />
+          <p className="text-[0.63rem] font-semibold text-white/35">Contexte mémorisé</p>
+        </div>
+        <textarea
+          value={memNote}
+          onChange={e => onMemChange(e.target.value)}
+          placeholder="Ex: Freelance à Paris, TJM 450€, client principal Acme Corp…"
+          rows={3}
+          className="w-full resize-none rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-[0.66rem] text-white/65 placeholder:text-white/20 outline-none focus:border-cyan-500/30 transition scrollbar-none"
+        />
+        {memNote.trim() && (
+          <p className="mt-1 text-[0.56rem] px-0.5" style={{ color: CYAN + "90" }}>
+            ✓ Inclus dans chaque conversation
+          </p>
+        )}
       </div>
     </>
   );
@@ -421,6 +445,10 @@ export default function AssistantPage() {
   const [insLoading,   setInsLoading]   = useState(true);
   const [toastData,    setToastData]    = useState<ToastData | null>(null);
   const [userId,       setUserId]       = useState<string>("");
+  const [speakingId,   setSpeakingId]   = useState<string | null>(null);
+  const [mem,          setMem]          = useState<string>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("djama_ai_mem") || "" : ""
+  );
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLTextAreaElement>(null);
@@ -429,6 +457,42 @@ export default function AssistantPage() {
     setToastData({ msg, type });
     setTimeout(() => setToastData(null), 3000);
   }, []);
+
+  useEffect(() => { localStorage.setItem("djama_ai_mem", mem); }, [mem]);
+
+  function exportConv() {
+    if (!msgs.length) return;
+    const title = convs.find(c => c.id === activeConv)?.title ?? "conversation";
+    const text = msgs
+      .map(m => `**${m.role === "user" ? "Vous" : "DJAMA AI"}** :\n${m.content}`)
+      .join("\n\n---\n\n");
+    const blob = new Blob([`# ${title}\n\n${text}`], { type: "text/markdown;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url;
+    a.download = `${title.slice(0, 40).replace(/[^a-zA-Z0-9]/g, "-")}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("Conversation exportée !");
+  }
+
+  function speakMsg(content: string, id: string) {
+    if (!("speechSynthesis" in window)) { toast("TTS non supporté sur ce navigateur", "error"); return; }
+    if (speakingId === id) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const clean = content.replace(/\*\*/g, "").replace(/^#{1,3}\s/gm, "");
+    const utter = new SpeechSynthesisUtterance(clean);
+    utter.lang = "fr-FR";
+    utter.rate = 1.05;
+    utter.onend  = () => setSpeakingId(null);
+    utter.onerror = () => setSpeakingId(null);
+    setSpeakingId(id);
+    window.speechSynthesis.speak(utter);
+  }
 
   const loadConvs = useCallback(async () => {
     const { data } = await supabase
@@ -539,6 +603,9 @@ export default function AssistantPage() {
     setConsulting(["…"]);
     const uid = userId || (await supabase.auth.getUser()).data.user?.id || "";
     const { ctx, modules } = await buildContext(trimmed, uid);
+    const sysCtx = mem.trim()
+      ? `${ctx}\n\n[CONTEXTE MÉMORISÉ UTILISATEUR]\n${mem.trim()}\n[FIN CONTEXTE]`
+      : ctx;
     setConsulting(modules.length > 0 ? modules : []);
 
     const aId = crypto.randomUUID();
@@ -548,7 +615,7 @@ export default function AssistantPage() {
       const res = await fetch("/api/notes/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "chat", content: ctx, prompt: trimmed }),
+        body: JSON.stringify({ action: "chat", content: sysCtx, prompt: trimmed }),
       });
       const d = await res.json();
       const reply = String(d.result ?? d.error ?? "Désolé, je n'ai pas pu répondre.");
@@ -629,6 +696,8 @@ export default function AssistantPage() {
                 onSend={send}
                 onSelect={selectConv}
                 onClose={() => setShowSidebar(false)}
+                memNote={mem}
+                onMemChange={setMem}
               />
             </motion.div>
           </>
@@ -642,6 +711,8 @@ export default function AssistantPage() {
           onNew={handleNew}
           onSend={send}
           onSelect={selectConv}
+          memNote={mem}
+          onMemChange={setMem}
         />
       </div>
 
@@ -675,6 +746,13 @@ export default function AssistantPage() {
                 </div>
                 <Loader2 size={14} className="animate-spin text-cyan-400 sm:hidden" />
               </div>
+            )}
+            {msgs.length > 0 && (
+              <button onClick={exportConv} title="Exporter la conversation"
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.07] px-2.5 py-2 text-xs text-white/40 hover:border-white/15 hover:text-white/70 transition">
+                <Download size={13} />
+                <span className="hidden sm:inline font-medium">Export</span>
+              </button>
             )}
                         <button
               onClick={() => setShowInsights(s => !s)}
@@ -778,6 +856,11 @@ export default function AssistantPage() {
                       <button onClick={() => copyMsg(m.content)}
                         className="flex items-center gap-1 rounded-full border border-white/[0.06] px-2.5 py-1 text-[0.62rem] text-white/30 hover:text-white/60 hover:border-white/15 transition ml-0.5">
                         <Copy size={9} /> Copier
+                      </button>
+                      <button onClick={() => speakMsg(m.content, m.id)}
+                        className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[0.62rem] transition ${speakingId === m.id ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-300" : "border-white/[0.06] text-white/30 hover:text-white/60 hover:border-white/15"}`}>
+                        {speakingId === m.id ? <VolumeX size={9} /> : <Volume2 size={9} />}
+                        {speakingId === m.id ? "Stop" : "Écouter"}
                       </button>
                     </div>
                   )}
