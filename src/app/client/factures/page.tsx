@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ReceiptText, Plus, Trash2, FileDown, Save, X, Search,
-  Loader2, ArrowLeft, ChevronDown,
+  Loader2, ArrowLeft, ChevronDown, ChevronLeft, ChevronRight,
   RefreshCw, Building2, User, FileText, Send, BadgeCheck,
   AlertTriangle, ImagePlus, Palette, Landmark, Eye, Percent,
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
@@ -20,6 +20,7 @@ import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
 import type { LogoTransform } from "@/components/invoice/LogoDragResize";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
 import type { CompanySettings } from "@/lib/pdf/companySettings";
+import { usePagination } from "@/hooks/usePagination";
 
 type DocType   = "facture" | "devis";
 type DocStatut = "brouillon" | "envoyé" | "payé" | "en_retard";
@@ -682,11 +683,11 @@ export default function FacturesPage() {
   );
 
   const stats = useMemo(() => {
-    const factures = documents.filter(d => d.type === "facture");
-    const ca       = factures.filter(d => d.statut === "payé").reduce((s,d) => s + (d.total_ttc||0), 0);
-    const pending  = factures.filter(d => d.statut === "envoyé").length;
-    const overdue  = factures.filter(d => d.statut === "en_retard").length;
-    return { ca, pending, overdue };
+    const factures  = documents.filter(d => d.type === "facture");
+    const ca         = factures.filter(d => d.statut === "payé").reduce((s,d) => s + (d.total_ttc||0), 0);
+    const pendingAmt = factures.filter(d => d.statut === "envoyé").reduce((s,d) => s + (d.total_ttc||0), 0);
+    const overdueAmt = factures.filter(d => d.statut === "en_retard").reduce((s,d) => s + (d.total_ttc||0), 0);
+    return { ca, pendingAmt, overdueAmt };
   }, [documents]);
 
   const fetchDocs = useCallback(async () => {
@@ -1263,6 +1264,10 @@ export default function FacturesPage() {
     return list;
   }, [documents, filterType, filterStatut, sortBy, query]);
 
+  const PAGE_SIZE = 20;
+  const { page: listPage, setPage: setListPage, paginated: paginatedDocs, totalPages: listTotalPages, reset: resetListPage, totalItems: listTotal } = usePagination(filtered, PAGE_SIZE);
+  useEffect(() => { resetListPage(); }, [filterType, filterStatut, sortBy, query, resetListPage]);
+
   const activeColor = draft?.couleur || "#c9a55a";
   const devise      = draft?.devise  || "EUR";
   const fmt         = (n: number) => fmtAmount(n, devise);
@@ -1320,15 +1325,17 @@ export default function FacturesPage() {
           {documents.length > 0 && (
             <div className="grid grid-cols-3 gap-px border-b border-white/[0.07] bg-white/[0.04]">
               {[
-                { label: "CA encaissé",  val: fmtEur(stats.ca),    color: "#4ade80", click: () => { setFilterType("facture"); setFilterStatut("payé"); } },
-                { label: "En attente",   val: stats.pending,        color: "#60a5fa", click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
-                { label: "En retard",    val: stats.overdue,        color: "#f87171", click: () => { setFilterType("facture"); setFilterStatut("en_retard"); } },
+                { label: "CA encaissé",  val: fmtEur(stats.ca),          color: "#4ade80", click: () => { setFilterType("facture"); setFilterStatut("payé"); } },
+                { label: "En attente",   val: fmtEur(stats.pendingAmt),  color: "#60a5fa", click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
+                { label: "En retard",    val: fmtEur(stats.overdueAmt),  color: "#f87171", click: () => { setFilterType("facture"); setFilterStatut("en_retard"); } },
               ].map(k => (
-                <button key={k.label} onClick={k.click}
+                <motion.button key={k.label} onClick={k.click}
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   className="flex flex-col items-center gap-0.5 px-2 py-3 transition hover:bg-white/[0.04]">
                   <span className="text-[0.85rem] font-black leading-none" style={{ color: k.color }}>{k.val}</span>
                   <span className="text-[0.52rem] font-semibold uppercase tracking-wide text-white/25">{k.label}</span>
-                </button>
+                </motion.button>
               ))}
             </div>
           )}
@@ -1398,7 +1405,7 @@ export default function FacturesPage() {
               </div>
             ) : (
               <AnimatePresence initial={false}>
-                {filtered.map(doc => {
+                {paginatedDocs.map(doc => {
                   const docColor = doc.couleur || "#c9a55a";
                   const isActive = selected?.id === doc.id;
                   return (
@@ -1451,6 +1458,36 @@ export default function FacturesPage() {
               </AnimatePresence>
             )}
           </div>
+
+          {/* Pagination */}
+          {listTotalPages > 1 && (
+            <div className="shrink-0 flex items-center justify-between gap-2 border-t border-white/[0.07] px-4 py-2">
+              <p className="text-[0.58rem] text-white/25">
+                {(listPage-1)*PAGE_SIZE+1}–{Math.min(listPage*PAGE_SIZE, listTotal)} / {listTotal}
+              </p>
+              <div className="flex items-center gap-0.5">
+                <button onClick={() => setListPage(p => Math.max(1,p-1))} disabled={listPage===1}
+                  className="h-6 w-6 flex items-center justify-center rounded-lg border border-white/[0.08] text-white/30 transition hover:bg-white/[0.06] hover:text-white/60 disabled:opacity-20">
+                  <ChevronLeft size={11}/>
+                </button>
+                {(listTotalPages <= 7
+                  ? Array.from({length: listTotalPages}, (_,i) => i+1)
+                  : [1, ...(listPage > 3 ? ["…"] : []), ...Array.from({length:3}, (_,i) => Math.max(2,listPage-1)+i).filter(p => p > 1 && p < listTotalPages), ...(listPage < listTotalPages-2 ? ["…"] : []), listTotalPages]
+                ).map((p, i) => p === "…" ? (
+                  <span key={`e${i}`} className="px-1 text-[0.6rem] text-white/20">…</span>
+                ) : (
+                  <button key={p} onClick={() => setListPage(p as number)}
+                    className={`h-6 min-w-[1.5rem] px-1 rounded-lg text-[0.6rem] font-bold transition ${p===listPage ? "bg-white/10 text-white" : "text-white/30 hover:text-white/60"}`}>
+                    {p}
+                  </button>
+                ))}
+                <button onClick={() => setListPage(p => Math.min(listTotalPages,p+1))} disabled={listPage===listTotalPages}
+                  className="h-6 w-6 flex items-center justify-center rounded-lg border border-white/[0.08] text-white/30 transition hover:bg-white/[0.06] hover:text-white/60 disabled:opacity-20">
+                  <ChevronRight size={11}/>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Bouton création rapide bas de sidebar */}
           <div className="shrink-0 border-t border-white/[0.07] p-3 grid grid-cols-2 gap-2">
