@@ -12,6 +12,8 @@ import {
   Camera, ScanLine, Image as ImageIcon, Upload,
   Users, MapPin, Phone, Mail, CalendarDays,
   ShieldAlert,
+  Calculator,
+  CalendarClock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -778,11 +780,13 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState<"all" | StockState>("all");
+  const [showScanner, setShowScanner] = useState(false);
 
   const filtered = products.filter((p) => {
     if (catFilter !== "all" && p.category !== catFilter) return false;
     if (stockFilter !== "all" && getStockState(p) !== stockFilter) return false;
-    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.sku.toLowerCase().includes(search.toLowerCase())) return false;
+    const q = search.toLowerCase();
+    if (q && !p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q) && !p.barcode.toLowerCase().includes(q)) return false;
     return true;
   });
 
@@ -791,10 +795,15 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
       {/* Filter bar */}
       <div className="flex items-center gap-2 p-4 border-b border-white/[0.06] flex-wrap">
         <div className="relative flex-1 min-w-[180px]">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher produit, SKU…"
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher produit, SKU, code-barres…"
             className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/[0.18] pl-8 transition-colors"/>
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"/>
         </div>
+        <button onClick={() => setShowScanner(true)} title="Scanner un code-barres"
+          className="h-[38px] px-3 shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white transition-all flex items-center gap-1.5">
+          <ScanLine size={14}/>
+          <span className="text-xs font-semibold">Scan</span>
+        </button>
         <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
           className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
           <option value="all">Toutes catégories</option>
@@ -883,6 +892,14 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {showScanner && (
+          <ScannerOverlay
+            onScan={(code) => { setSearch(code); setShowScanner(false); }}
+            onClose={() => setShowScanner(false)}/>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1012,6 +1029,198 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
   );
 }
 
+// ─────────────────────────── PRÉVISIONS SUB-VIEW ───────────────────────────
+
+function PrevisionsSubView({ products, movements }: { products: Product[]; movements: Movement[] }) {
+  const now = Date.now();
+  const thirtyAgo = now - 30 * 86_400_000;
+
+  const rows = products.filter(p => p.is_active).map(product => {
+    const out30 = movements
+      .filter(m => m.product_id === product.id && ["sortie","perte","casse"].includes(m.type) && new Date(m.date).getTime() >= thirtyAgo)
+      .reduce((s, m) => s + m.quantity, 0);
+    const avgDaily = out30 / 30;
+    const daysLeft = avgDaily > 0 ? Math.floor(product.stock_current / avgDaily) : null;
+    return { product, out30, avgDaily, daysLeft };
+  }).sort((a, b) => {
+    if (a.daysLeft === null && b.daysLeft === null) return 0;
+    if (a.daysLeft === null) return 1;
+    if (b.daysLeft === null) return -1;
+    return a.daysLeft - b.daysLeft;
+  });
+
+  const urgent = rows.filter(r => r.daysLeft !== null && r.daysLeft <= 14);
+
+  return (
+    <div className="space-y-4">
+      {urgent.length > 0 && (
+        <div className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
+          <AlertTriangle size={14} className="text-red-400 shrink-0"/>
+          <p className="text-sm text-white/70">
+            <span className="font-bold text-red-400">{urgent.length} produit{urgent.length > 1 ? "s" : ""}</span> en rupture prévue dans moins de 14 jours.
+          </p>
+        </div>
+      )}
+
+      <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/30">
+          <span className="col-span-4">Produit</span>
+          <span className="col-span-2 text-right">Stock</span>
+          <span className="col-span-2 text-right">Sorties /30j</span>
+          <span className="col-span-2 text-right">Conso /j</span>
+          <span className="col-span-2 text-right">Jours restants</span>
+        </div>
+        {rows.length === 0 ? (
+          <p className="text-center text-white/25 text-sm py-10">Aucun produit actif</p>
+        ) : rows.map(({ product, out30, avgDaily, daysLeft }) => {
+          const isUrgent = daysLeft !== null && daysLeft <= 7;
+          const isWarn   = daysLeft !== null && daysLeft > 7 && daysLeft <= 30;
+          const daysColor = isUrgent ? "#ef4444" : isWarn ? "#f59e0b" : "#10b981";
+          const daysLabel = daysLeft === null ? "Stable" : daysLeft === 0 ? "Rupture" : `${daysLeft}j`;
+          return (
+            <motion.div key={product.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="grid grid-cols-12 gap-2 items-center px-4 py-3 border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-colors">
+              <div className="col-span-4 flex items-center gap-2.5 min-w-0">
+                <div className="h-7 w-7 shrink-0 flex items-center justify-center rounded-lg overflow-hidden bg-white/[0.05]">
+                  {product.image_url
+                    ? <img src={product.image_url} alt="" className="h-full w-full object-cover"/>
+                    : <Package size={12} className="text-white/40"/>}
+                </div>
+                <span className="text-sm text-white/80 truncate">{product.name}</span>
+              </div>
+              <div className="col-span-2 text-right">
+                <span className="text-sm font-semibold text-white/70">{product.stock_current}</span>
+                <span className="text-[10px] text-white/30 ml-1">{product.unit}</span>
+              </div>
+              <div className="col-span-2 text-right">
+                <span className="text-sm text-white/60">{out30 > 0 ? out30.toFixed(1) : "—"}</span>
+              </div>
+              <div className="col-span-2 text-right">
+                <span className="text-sm text-white/60">{avgDaily > 0 ? avgDaily.toFixed(2) : "—"}</span>
+              </div>
+              <div className="col-span-2 text-right">
+                <span className="text-sm font-bold" style={{ color: daysColor }}>{daysLabel}</span>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+      <p className="text-[10px] text-white/25 text-center">Basé sur les sorties des 30 derniers jours · Estimations indicatives</p>
+    </div>
+  );
+}
+
+// ─────────────────────────── VALORISATION SUB-VIEW ───────────────────────────
+
+function ValuationSubView({ products, movements }: { products: Product[]; movements: Movement[] }) {
+  const [method, setMethod] = useState<"cmup" | "fifo" | "lifo">("cmup");
+
+  const rows = products.filter(p => p.is_active && p.stock_current > 0).map(product => {
+    const entries = movements.filter(m =>
+      m.product_id === product.id &&
+      (m.type === "entree" || m.type === "retour") &&
+      m.unit_cost > 0
+    ).sort((a, b) => a.date.localeCompare(b.date));
+
+    const totalQty  = entries.reduce((s, m) => s + m.quantity, 0);
+    const totalCost = entries.reduce((s, m) => s + m.quantity * m.unit_cost, 0);
+    const cmupUnit  = totalQty > 0 ? totalCost / totalQty : product.purchase_price;
+
+    // FIFO: oldest out first → remaining stock = newest entries
+    let rem = product.stock_current;
+    let fifoValue = 0;
+    for (const e of [...entries].reverse()) {
+      if (rem <= 0) break;
+      const used = Math.min(rem, e.quantity);
+      fifoValue += used * e.unit_cost;
+      rem -= used;
+    }
+    if (rem > 0) fifoValue += rem * cmupUnit;
+
+    // LIFO: newest out first → remaining stock = oldest entries
+    rem = product.stock_current;
+    let lifoValue = 0;
+    for (const e of entries) {
+      if (rem <= 0) break;
+      const used = Math.min(rem, e.quantity);
+      lifoValue += used * e.unit_cost;
+      rem -= used;
+    }
+    if (rem > 0) lifoValue += rem * cmupUnit;
+
+    const cmupValue     = product.stock_current * cmupUnit;
+    const purchaseValue = product.stock_current * product.purchase_price;
+
+    return { product, cmupUnit, cmupValue, fifoValue, lifoValue, purchaseValue };
+  });
+
+  const selVal = (r: typeof rows[0]) =>
+    method === "cmup" ? r.cmupValue : method === "fifo" ? r.fifoValue : r.lifoValue;
+  const totalSel  = rows.reduce((s, r) => s + selVal(r), 0);
+  const totalPur  = rows.reduce((s, r) => s + r.purchaseValue, 0);
+  const diff      = totalSel - totalPur;
+
+  return (
+    <div className="space-y-4">
+      {/* Method selector + total */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {(["cmup", "fifo", "lifo"] as const).map(m => (
+          <button key={m} onClick={() => setMethod(m)}
+            className="px-4 py-1.5 rounded-xl text-xs font-bold border transition-all"
+            style={method === m
+              ? { background: gold + "20", color: gold, border: `1px solid ${gold}40` }
+              : { border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.35)" }}>
+            {m.toUpperCase()}
+          </button>
+        ))}
+        <div className="ml-auto text-right">
+          <p className="text-[10px] text-white/40">Valeur totale ({method.toUpperCase()})</p>
+          <p className="text-lg font-bold" style={{ color: gold }}>{fmtEur(totalSel)}</p>
+        </div>
+      </div>
+
+      {/* Delta vs prix achat */}
+      <div className="flex items-center gap-3 rounded-xl px-4 py-2.5"
+        style={{ background: diff >= 0 ? "rgba(16,185,129,0.06)" : "rgba(239,68,68,0.06)", border: `1px solid ${diff >= 0 ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}` }}>
+        <span className="text-xs text-white/50">vs. prix d'achat ({fmtEur(totalPur)}) :</span>
+        <span className="text-sm font-bold ml-auto" style={{ color: diff >= 0 ? green : "#ef4444" }}>
+          {diff >= 0 ? "+" : ""}{fmtEur(diff)}{totalPur > 0 ? ` (${((diff / totalPur) * 100).toFixed(1)}%)` : ""}
+        </span>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/30">
+          <span className="col-span-4">Produit</span>
+          <span className="col-span-2 text-right">Stock</span>
+          <span className="col-span-2 text-right">P. achat</span>
+          <span className="col-span-2 text-right">CMUP</span>
+          <span className="col-span-2 text-right">Valeur {method.toUpperCase()}</span>
+        </div>
+        {rows.length === 0 ? (
+          <p className="text-center text-white/25 text-sm py-10">Ajoutez des mouvements avec coût unitaire pour activer la valorisation</p>
+        ) : rows.map(r => (
+          <div key={r.product.id} className="grid grid-cols-12 gap-2 items-center px-4 py-3 border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-colors">
+            <div className="col-span-4 min-w-0">
+              <p className="text-sm text-white/80 truncate">{r.product.name}</p>
+              <p className="text-[10px] text-white/30">{r.product.sku || r.product.category}</p>
+            </div>
+            <div className="col-span-2 text-right text-sm text-white/60">{r.product.stock_current} <span className="text-[10px] text-white/30">{r.product.unit}</span></div>
+            <div className="col-span-2 text-right text-sm text-white/50">{fmtEur(r.product.purchase_price)}</div>
+            <div className="col-span-2 text-right text-sm text-white/70">{fmtEur(r.cmupUnit)}</div>
+            <div className="col-span-2 text-right">
+              <span className="text-sm font-bold" style={{ color: gold }}>{fmtEur(selVal(r))}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-[10px] text-white/25 text-center">
+        CMUP = Coût Moyen Unitaire Pondéré · FIFO = Premier entré, premier sorti · LIFO = Dernier entré, premier sorti
+      </p>
+    </div>
+  );
+}
+
 // ─────────────────────────── REPORT VIEW ───────────────────────────
 
 type StocksRapport = {
@@ -1026,6 +1235,7 @@ type StocksRapport = {
 
 function ReportView({ products, movements }: { products: Product[]; movements: Movement[] }) {
   const { add: toast } = useToastStack();
+  const [subView, setSubView] = useState<"inventaire" | "previsions" | "valorisation">("inventaire");
   const [rapport, setRapport]               = useState<StocksRapport | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportOpen, setRapportOpen]       = useState(false);
@@ -1107,6 +1317,29 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
 
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-5">
+
+      {/* ── Sub-view tabs ── */}
+      <div className="flex items-center gap-1 p-1 rounded-2xl w-fit" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+        {([
+          { key: "inventaire",  label: "Inventaire",   icon: BarChart2 },
+          { key: "previsions",  label: "Prévisions",   icon: CalendarClock },
+          { key: "valorisation",label: "Valorisation", icon: Calculator },
+        ] as const).map(({ key, label, icon: Icon }) => (
+          <button key={key} onClick={() => setSubView(key)}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-xl transition-all"
+            style={subView === key
+              ? { background: gold + "20", color: gold }
+              : { color: "rgba(255,255,255,0.35)" }}>
+            <Icon size={11}/>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {subView === "previsions" && <PrevisionsSubView products={products} movements={movements}/>}
+      {subView === "valorisation" && <ValuationSubView products={products} movements={movements}/>}
+
+      {subView === "inventaire" && <>
 
       {/* ── Header + bouton Analyse IA ── */}
       <div className="flex items-center justify-between">
@@ -1312,6 +1545,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }
