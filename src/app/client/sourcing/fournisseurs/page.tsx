@@ -12,6 +12,7 @@ import {
   CheckCircle2, Info, ExternalLink, Flag, ChevronDown,
   Pencil, RotateCcw, X as XIcon, Save,
   Mail, Phone, MessageCircle, BadgeCheck,
+  Bell, Paperclip, LineChart, List,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -167,7 +168,9 @@ const DOC_OPTIONS = [
   { id: "contrat", label: "Contrat fournisseur", icon: Shield, desc: "Template contrat d'achat" },
   { id: "cahier_charges", label: "Cahier des charges", icon: ClipboardList, desc: "Spécifications produit détaillées" },
   { id: "tableau_comparatif", label: "Tableau comparatif", icon: BarChart3, desc: "Comparaison fournisseurs" },
-  { id: "questions_fournisseur", label: "Questions clés", icon: Zap, desc: "Liste questions à poser" },
+  { id: "questions_fournisseur", label: "Questions clés",            icon: Zap,         desc: "Liste questions à poser" },
+  { id: "relance",              label: "Email de relance (J+7)",    icon: Bell,        desc: "Suivi si pas de réponse" },
+  { id: "appel_offre",          label: "Appel d'offre formel",      icon: ClipboardList,desc: "AO multi-fournisseurs" },
 ];
 
 /* ─────────────────────────────────────────────────────────
@@ -518,6 +521,8 @@ export default function FournisseursPage() {
   };
 
   const [regeneratingDocId, setRegeneratingDocId] = useState<string | null>(null);
+  const [supplierContracts, setSupplierContracts] = useState<Record<string, string>>({});
+  const [analyticsView, setAnalyticsView] = useState(false);
 
   const regenerateDoc = async (docId: string) => {
     if (!searchResult) return;
@@ -783,13 +788,64 @@ export default function FournisseursPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider">Fournisseurs identifiés</p>
-            {selectedSupplierId && (
-              <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.65rem] font-black"
-                style={{ background: "rgba(52,211,153,0.12)", color: emerald, border: "1px solid rgba(52,211,153,0.25)" }}>
-                <BadgeCheck size={11} /> 1 fournisseur sélectionné
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {selectedSupplierId && (
+                <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.65rem] font-black"
+                  style={{ background: "rgba(52,211,153,0.12)", color: emerald, border: "1px solid rgba(52,211,153,0.25)" }}>
+                  <BadgeCheck size={11} /> 1 sélectionné
+                </span>
+              )}
+              <div className="flex rounded-xl overflow-hidden border border-white/[0.07]">
+                <button onClick={() => setAnalyticsView(false)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-[0.65rem] font-semibold transition-all"
+                  style={{ background: !analyticsView ? "rgba(255,255,255,0.07)" : "transparent", color: !analyticsView ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.3)" }}>
+                  <List size={11}/> Liste
+                </button>
+                <button onClick={() => setAnalyticsView(true)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-[0.65rem] font-semibold transition-all"
+                  style={{ background: analyticsView ? "rgba(96,165,250,0.12)" : "transparent", color: analyticsView ? blue : "rgba(255,255,255,0.3)" }}>
+                  <LineChart size={11}/> Analytics
+                </button>
+              </div>
+            </div>
           </div>
+
+          {/* ── Analytics view ── */}
+          {analyticsView && (
+            <div className="rounded-2xl p-4 space-y-3"
+              style={{ background: "rgba(96,165,250,0.04)", border: "1px solid rgba(96,165,250,0.15)" }}>
+              <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/35">Performance comparative</p>
+              {[...suppliers].sort((a, b) => b.niveau_confiance - a.niveau_confiance).map((s, i) => {
+                const suppId = s.id || String(suppliers.indexOf(s));
+                const isSelected = selectedSupplierId === suppId;
+                const score = s.niveau_confiance;
+                const rank = ["🥇","🥈","🥉","4e","5e"][i] ?? `${i+1}e`;
+                return (
+                  <div key={suppId} className="flex items-center gap-3 cursor-pointer"
+                    onClick={() => setSelectedSupplierId(prev => prev === suppId ? null : suppId)}>
+                    <span className="w-6 text-center text-[0.75rem]">{rank}</span>
+                    <div className="w-28 shrink-0">
+                      <p className="text-[0.72rem] font-semibold text-white/75 truncate">{s.nom}</p>
+                      <p className="text-[0.6rem] text-white/35">{s.pays}</p>
+                    </div>
+                    <div className="flex-1 h-2 rounded-full overflow-hidden bg-white/[0.06]">
+                      <motion.div className="h-full rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${score}%` }}
+                        transition={{ duration: 0.7, ease: "easeOut", delay: i * 0.08 }}
+                        style={{ background: isSelected ? `linear-gradient(90deg,${emerald},${blue})` : `linear-gradient(90deg,${blue}80,${indigo}80)` }} />
+                    </div>
+                    <span className="w-10 text-right text-[0.72rem] font-black shrink-0"
+                      style={{ color: score >= 80 ? emerald : score >= 70 ? amber : "rgba(255,255,255,0.45)" }}>
+                      {score}%
+                    </span>
+                    {isSelected && <BadgeCheck size={13} style={{ color: emerald, flexShrink: 0 }}/>}
+                  </div>
+                );
+              })}
+              <p className="text-[0.6rem] text-white/25 pt-1">Cliquez sur un fournisseur pour le sélectionner</p>
+            </div>
+          )}
           {suppliers.map((s, i) => {
             const isSelected = selectedSupplierId === (s.id || String(i));
             const suppId = s.id || String(i);
@@ -926,6 +982,20 @@ export default function FournisseursPage() {
                             <Mail size={11} /> Email RFQ
                           </a>
                         </div>
+
+                        {/* Upload contrat */}
+                        <label className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold cursor-pointer transition hover:scale-105"
+                          style={supplierContracts[suppId]
+                            ? { background: "rgba(52,211,153,0.08)", color: emerald, border: "1px solid rgba(52,211,153,0.22)" }
+                            : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.38)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                          <Paperclip size={11}/>
+                          {supplierContracts[suppId] ? supplierContracts[suppId].slice(0, 16) + "…" : "Joindre contrat"}
+                          <input type="file" className="hidden" accept=".pdf,.doc,.docx,.txt"
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) setSupplierContracts(prev => ({ ...prev, [suppId]: f.name }));
+                            }}/>
+                        </label>
 
                         {/* Bouton sélection */}
                         <button
@@ -1342,6 +1412,65 @@ export default function FournisseursPage() {
             <Download size={18} className="text-white/35" />
           </button>
         )}
+        {/* Export appel d'offre */}
+        {searchResult && (
+          <button onClick={() => {
+            const s = searchResult;
+            const lines = [
+              `APPEL D'OFFRE — ${request.produit.toUpperCase()}`,
+              "=".repeat(56),
+              `Date : ${new Date().toLocaleDateString("fr-FR")}`,
+              `Référence : AO-${Date.now().toString().slice(-6)}`,
+              `Territoire : ${request.pays_utilisateur || "Non précisé"}`,
+              "",
+              "1. DESCRIPTION DU BESOIN",
+              `   Produit     : ${request.produit}`,
+              `   Quantité    : ${request.quantite || "À définir"}`,
+              `   Budget max  : ${request.budget || "À discuter"}`,
+              `   Qualité     : ${request.qualite}`,
+              `   Délai       : ${request.delai || "Standard"}`,
+              "",
+              "2. FOURNISSEURS CONSULTÉS",
+              ...s.suppliers.map((sup, i) =>
+                `   ${i+1}. ${sup.nom} (${sup.pays}) — Score : ${sup.niveau_confiance}% — Prix : ${sup.prix_unite} — MOQ : ${sup.moq}`
+              ),
+              "",
+              "3. CRITÈRES D'ÉVALUATION",
+              "   Prix (40%) · Qualité (25%) · Délais (20%) · Fiabilité (15%)",
+              "",
+              "4. ANALYSE MARCHÉ",
+              `   Prix marché France : ${s.analyse_marche?.prix_marche_fr || "—"}`,
+              `   Prix import estimé : ${s.analyse_marche?.prix_import_estime || "—"}`,
+              `   Marge potentielle  : ${s.analyse_marche?.marge_potentielle || "—"}`,
+              "",
+              "5. LOGISTIQUE",
+              `   Coût total estimé : ${s.logistique?.cout_total_estime || "—"}`,
+              "",
+              "6. DATE LIMITE DE RÉPONSE",
+              `   ${new Date(Date.now() + 14 * 86_400_000).toLocaleDateString("fr-FR")} (J+14)`,
+            ];
+            const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `appel-offre-${request.produit.replace(/\s+/g, "-").toLowerCase().slice(0, 30)}-${new Date().toISOString().slice(0, 10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+            className="flex items-center gap-4 rounded-2xl p-5 text-left transition-all active:scale-[0.99]"
+            style={{ background: "rgba(129,140,248,0.07)", border: "1px solid rgba(129,140,248,0.22)" }}>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+              style={{ background: "rgba(129,140,248,0.15)" }}>
+              <ClipboardList size={22} style={{ color: indigo }} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[0.9rem] font-black text-white/85">Appel d'offre formel</p>
+              <p className="text-[0.75rem] text-white/40">Document AO structuré — envoi multi-fournisseurs</p>
+            </div>
+            <Download size={18} style={{ color: indigo }} />
+          </button>
+        )}
+
         {generatedDocs.length === 0 && (
           <div className="text-center py-10 text-white/30">
             <FileText size={32} className="mx-auto mb-3 opacity-30" />

@@ -167,6 +167,27 @@ Organiser en catégories :
 7. Questions anti-arnaques (vérification légale, Trade Assurance, échantillons)
 Minimum 5 questions par catégorie. Chaque question : courte, précise, professionnelle.`,
   },
+  relance: {
+    title: "Email de relance (J+7)",
+    prompt: `Rédige un email de relance professionnel à envoyer 7 jours après la demande de devis initiale, sans réponse du fournisseur.
+Structure : Objet accrocheur ("Suite à notre demande du [date]"), rappel courtois de la demande initiale, réaffirmation de l'intérêt et du projet, demande de confirmation de réception, nouvelle proposition de contact (appel WhatsApp ou email), délai de réponse souhaité.
+Ton : Professionnel, insistant sans être agressif, montrant que l'acheteur est sérieux et prêt à commander rapidement.
+Garder sous 200 mots. Inclure une version courte WhatsApp (<80 mots) à la fin.`,
+  },
+  appel_offre: {
+    title: "Appel d'offre formel",
+    prompt: `Rédige un appel d'offre formel (AO) complet pour ce sourcing.
+Structure obligatoire :
+1. EN-TÊTE : Titre "Appel d'offre — [produit]", date, référence AO, acheteur
+2. PRÉSENTATION DU PROJET : contexte, objectif, volume annuel estimé
+3. DESCRIPTION DU BESOIN : spécifications techniques, quantités, qualité, délais
+4. CONDITIONS DE PARTICIPATION : critères de qualification, documents requis
+5. CRITÈRES D'ÉVALUATION : prix (40%), qualité (25%), délais (20%), fiabilité (15%)
+6. OFFRE FINANCIÈRE ATTENDUE : structure de prix demandée, Incoterms, devise
+7. CALENDRIER AO : date limite de soumission, date de sélection, date de démarrage
+8. CONTACT ET SOUMISSION : email de réponse, format attendu
+Format professionnel, structuré, officiel. Ce document sera envoyé à plusieurs fournisseurs simultanément.`,
+  },
 };
 
 export async function POST(req: NextRequest) {
