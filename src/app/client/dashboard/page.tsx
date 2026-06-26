@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ReceiptText, Users, FileText, Search,
-  TrendingUp,
+  TrendingUp, Download, ArrowUpRight, Bell,
   AlertTriangle,
   FileBarChart2, X, ShieldCheck, Lightbulb,
   CheckCircle2, CircleDot, Send, Lock,
@@ -117,6 +118,11 @@ export default function DashboardPage() {
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapport,        setRapport]        = useState<Rapport | null>(null);
   const [showAlert,      setShowAlert]      = useState(true);
+  const [annualRev,      setAnnualRev]      = useState<{ label: string; cur: number; prev: number }[]>([]);
+  const [annualLoad,     setAnnualLoad]     = useState(true);
+  const [pendingReports, setPendingReports] = useState(0);
+
+  const router = useRouter();
 
   useEffect(() => {
     async function loadAll() {
@@ -208,6 +214,22 @@ export default function DashboardPage() {
 
       const { data: overdueDocs } = await supabase.from("documents").select("id,numero,client_nom,total_ttc,date_echeance").eq("user_id", user.id).eq("type","facture").eq("statut","en_retard").order("date_echeance",{ascending:true}).limit(5);
       setOverdue((overdueDocs ?? []) as OverdueInvoice[]);
+
+      // Annual comparison (current year vs previous year)
+      const curYear = today.getFullYear();
+      const prevYear = curYear - 1;
+      const [{ data: curYearRev }, { data: prevYearRev }, { count: pendingCnt }] = await Promise.all([
+        supabase.from("documents").select("total_ttc,date_document").eq("user_id",user.id).eq("type","facture").eq("statut","payé").gte("date_document",`${curYear}-01-01`),
+        supabase.from("documents").select("total_ttc,date_document").eq("user_id",user.id).eq("type","facture").eq("statut","payé").gte("date_document",`${prevYear}-01-01`).lte("date_document",`${prevYear}-12-31`),
+        supabase.from("expense_reports").select("id",{ count:"exact", head:true }).eq("user_id",user.id).eq("status","submitted"),
+      ]);
+      setAnnualRev(SHORT_MONTHS.map((label, mo) => ({
+        label,
+        cur:  (curYearRev  ?? []).filter(r => new Date((r.date_document as string)+"T12:00:00").getMonth()===mo).reduce((s,r) => s+((r.total_ttc as number)??0), 0),
+        prev: (prevYearRev ?? []).filter(r => new Date((r.date_document as string)+"T12:00:00").getMonth()===mo).reduce((s,r) => s+((r.total_ttc as number)??0), 0),
+      })));
+      setPendingReports(pendingCnt ?? 0);
+      setAnnualLoad(false);
       setChartsLoading(false);
     }
     loadAll();
@@ -231,6 +253,26 @@ export default function DashboardPage() {
   const ca       = stats?.caThisMois    ?? 0;
   const dep      = stats?.depensesMois  ?? 0;
   const netMois  = ca - dep;
+
+  const exportData = useCallback(() => {
+    const lines: (string | number)[][] = [
+      ["Type","Label","Montant (€)"],
+      ...revenues.map(r    => ["Revenu mensuel",   r.label,  r.amount]),
+      ...monthlyExp.map(e  => ["Dépense mensuelle", e.label, e.amount]),
+      ...topClients.map(c  => ["Top client",        c.name,  c.amount]),
+      ["Stat","CA ce mois",          ca],
+      ["Stat","Dépenses ce mois",    dep],
+      ["Stat","Résultat net",        netMois],
+      ["Stat","Heures cette semaine",stats?.heuresSemaine ?? 0],
+      ["Stat","Contacts actifs",     stats?.contactsActifs ?? 0],
+    ];
+    const csv  = lines.map(r => r.join(";")).join("\n");
+    const blob = new Blob(["﻿" + csv], { type:"text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `djama-dashboard-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }, [revenues, monthlyExp, topClients, ca, dep, netMois, stats]);
 
   /* ─────────────────────────────────────────────────
      RENDU
@@ -306,6 +348,17 @@ export default function DashboardPage() {
                 : <FileBarChart2 size={12}/>}
               Rapport IA
             </motion.button>
+            <motion.button
+              initial={{ opacity:0, scale:0.88 }} animate={{ opacity:1, scale:1 }}
+              transition={{ duration:0.35, delay:0.22, ease }}
+              whileHover={{ scale:1.04, y:-1 }} whileTap={{ scale:0.92 }}
+              onClick={exportData}
+              title="Exporter les données"
+              className="flex mt-1 shrink-0 items-center justify-center rounded-2xl px-3 py-2.5 transition"
+              style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.45)" }}
+            >
+              <Download size={13}/>
+            </motion.button>
           </motion.div>
 
           {/* ── 4 metric cards ── */}
@@ -314,9 +367,10 @@ export default function DashboardPage() {
             transition={{ duration:0.45, delay:0.07, ease }}
             className="grid grid-cols-2 gap-3 mb-4"
           >
-            {([
+            {[
               {
                 label: "Entrées",
+                href: "/client/factures",
                 sub: new Date().toLocaleDateString("fr-FR",{month:"short",year:"numeric"}),
                 value: statsLoading ? null : fmtEurInt(ca),
                 valueColor: "white",
@@ -325,6 +379,7 @@ export default function DashboardPage() {
               },
               {
                 label: "Sorties",
+                href: "/client/depenses",
                 sub: "Dépenses · ce mois",
                 value: statsLoading ? null : fmtEurInt(dep),
                 valueColor: dep > 0 ? "#f87171" : "white",
@@ -333,6 +388,7 @@ export default function DashboardPage() {
               },
               {
                 label: "Résultat net",
+                href: "/client/tresorerie",
                 sub: "Entrées − Sorties",
                 value: statsLoading ? null : ((netMois >= 0 ? "+" : "") + fmtEurInt(netMois)),
                 valueColor: netMois >= 0 ? "#4ade80" : "#f87171",
@@ -341,20 +397,23 @@ export default function DashboardPage() {
               },
               {
                 label: "Heures · sem.",
+                href: "/client/chrono",
                 sub: "Time tracking",
                 value: statsLoading ? null : (stats?.heuresSemaine ? fmtDuration(stats.heuresSemaine) : "0h"),
                 valueColor: "#60a5fa",
                 sparkData: [] as number[],
                 sparkColor: "#60a5fa",
               },
-            ] as const).map((card, i) => (
+            ].map((card, i) => (
               <motion.div
                 key={card.label}
                 initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
                 transition={{ duration:0.3, delay:0.12+i*0.07, ease }}
-                className="rounded-2xl p-4"
+                onClick={() => router.push(card.href)}
+                className="group relative cursor-pointer rounded-2xl p-4 transition-all hover:scale-[1.02] hover:brightness-110"
                 style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", backdropFilter:"blur(12px)" }}
               >
+                <ArrowUpRight size={11} className="absolute top-3 right-3 opacity-0 group-hover:opacity-40 transition-opacity text-white" />
                 <div className="flex items-start justify-between mb-2">
                   <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-white/30">{card.label}</p>
                   <Sparkline data={card.sparkData as number[]} color={card.sparkColor} />
@@ -414,30 +473,74 @@ export default function DashboardPage() {
       ══════════════════════════════════════════ */}
       <div className="mx-auto max-w-4xl px-4 pb-14 pt-3 sm:px-6">
 
-        {/* ── Alerte retard ── */}
-        <AnimatePresence>
-          {!chartsLoading && overdue.length > 0 && showAlert && (
-            <motion.div
-              initial={{ opacity:0, y:-8, height:0 }} animate={{ opacity:1, y:0, height:"auto" }}
-              exit={{ opacity:0, y:-8, height:0 }} transition={{ duration:0.28, ease }}
-              className="overflow-hidden mb-4"
-            >
-              <div className="flex items-center gap-3 rounded-2xl px-4 py-3"
-                style={{ background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.2)" }}>
-                <AlertTriangle size={15} className="shrink-0 text-red-400"/>
-                <p className="flex-1 text-[12px] font-semibold text-red-400">
-                  {overdue.length} facture{overdue.length>1?"s":""} en retard de paiement
-                </p>
-                <Link href="/client/tresorerie" className="shrink-0 text-[11px] font-bold text-red-400 underline underline-offset-2">
-                  Voir
-                </Link>
-                <button onClick={()=>setShowAlert(false)} className="shrink-0 text-red-400/60 hover:text-red-400 transition-colors ml-1">
-                  <X size={13}/>
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* ── Alertes urgentes ── */}
+        {(() => {
+          const alerts = [
+            ...(overdue.length > 0 ? [{
+              key: "overdue",
+              icon: AlertTriangle,
+              color: "#f87171",
+              bg: "rgba(248,113,113,0.07)",
+              msg: `${overdue.length} facture${overdue.length>1?"s":""} en retard de paiement`,
+              href: "/client/tresorerie",
+              cta: "Voir",
+            }] : []),
+            ...(!statsLoading && netMois < 0 && ca > 0 ? [{
+              key: "net",
+              icon: TrendingUp,
+              color: "#fbbf24",
+              bg: "rgba(251,191,36,0.07)",
+              msg: `Résultat net négatif ce mois (${fmtEurInt(netMois)})`,
+              href: "/client/depenses",
+              cta: "Dépenses",
+            }] : []),
+            ...(pendingReports > 0 ? [{
+              key: "reports",
+              icon: FileText,
+              color: "#fbbf24",
+              bg: "rgba(251,191,36,0.07)",
+              msg: `${pendingReports} note${pendingReports>1?"s":""} de frais en attente d'approbation`,
+              href: "/client/depenses",
+              cta: "Notes",
+            }] : []),
+          ];
+          if (alerts.length === 0) return null;
+          return (
+            <AnimatePresence>
+              {showAlert && (
+                <motion.div
+                  initial={{ opacity:0, y:-8, height:0 }} animate={{ opacity:1, y:0, height:"auto" }}
+                  exit={{ opacity:0, y:-8, height:0 }} transition={{ duration:0.28, ease }}
+                  className="overflow-hidden mb-4"
+                >
+                  <div className="overflow-hidden rounded-2xl" style={{ border:"1px solid rgba(255,255,255,0.08)" }}>
+                    <div className="flex items-center justify-between px-4 py-2.5"
+                      style={{ background:"rgba(239,68,68,0.1)", borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="flex items-center gap-2">
+                        <Bell size={12} className="text-red-400"/>
+                        <span className="text-[11px] font-bold text-red-400">
+                          Alertes urgentes · {alerts.length}
+                        </span>
+                      </div>
+                      <button onClick={()=>setShowAlert(false)} className="text-red-400/50 hover:text-red-400 transition-colors">
+                        <X size={13}/>
+                      </button>
+                    </div>
+                    {alerts.map(({ key, icon: Icon, color, bg, msg, href, cta }) => (
+                      <div key={key} className="flex items-center gap-3 px-4 py-2.5" style={{ background:bg, borderBottom:"1px solid rgba(255,255,255,0.04)" }}>
+                        <Icon size={13} className="shrink-0" style={{ color }}/>
+                        <p className="flex-1 text-[12px]" style={{ color }}>{msg}</p>
+                        <Link href={href} className="shrink-0 text-[11px] font-bold underline underline-offset-2" style={{ color }}>
+                          {cta}
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          );
+        })()}
 
         {/* ── Rapport modal ── */}
         <AnimatePresence>
@@ -628,6 +731,74 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-[0.58rem] font-medium" style={{ color: isLast ? GOLD : "rgba(255,255,255,0.25)" }}>
                           {r.label}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* ── Graphique annuel comparatif ── */}
+        <motion.div
+          initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
+          transition={{ duration:0.38, delay:0.17, ease }}
+          className="mb-4"
+        >
+          <div className="rounded-2xl border border-white/6 bg-white/4 p-5 backdrop-blur-sm shadow-lg shadow-black/30">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-bold text-white">Revenus annuels</p>
+                <p className="text-[11px] text-white/40">{new Date().getFullYear()} vs {new Date().getFullYear()-1}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-2 rounded-full" style={{ background:GOLD }}/>
+                  <span className="text-[10px] text-white/40">{new Date().getFullYear()}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-2 rounded-full bg-white/20"/>
+                  <span className="text-[10px] text-white/40">{new Date().getFullYear()-1}</span>
+                </div>
+              </div>
+            </div>
+            {annualLoad ? (
+              <div className="flex items-end gap-1 h-24">
+                {Array.from({length:12}).map((_,i)=>(
+                  <div key={i} className="flex flex-1 items-end gap-px">
+                    <div className="flex-1 animate-pulse rounded-t-sm" style={{ height:`${25+i*4}%`, background:"rgba(201,165,90,0.1)" }}/>
+                    <div className="flex-1 animate-pulse rounded-t-sm" style={{ height:`${18+i*3}%`, background:"rgba(255,255,255,0.05)" }}/>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-end gap-1 h-24">
+                {(()=>{
+                  const max = Math.max(...annualRev.map(m=>Math.max(m.cur,m.prev)), 1);
+                  return annualRev.map((m, i) => {
+                    const curPct  = Math.max((m.cur  / max)*100, m.cur  > 0 ? 4 : 0);
+                    const prevPct = Math.max((m.prev / max)*100, m.prev > 0 ? 4 : 0);
+                    const isCur   = i === new Date().getMonth();
+                    return (
+                      <div key={m.label} className="group flex flex-1 flex-col items-center gap-0.5">
+                        <div className="flex w-full items-end gap-px" style={{ height:"84px" }}>
+                          <motion.div
+                            initial={{ height:0 }} animate={{ height:`${curPct}%` }}
+                            transition={{ duration:0.6, delay:0.25+i*0.03, ease }}
+                            className="flex-1 rounded-t-sm"
+                            style={{ background: m.cur > 0 ? (isCur ? `rgba(201,165,90,0.85)` : `rgba(201,165,90,${0.35+0.4*(m.cur/max)})`) : "rgba(255,255,255,0.04)" }}
+                          />
+                          <motion.div
+                            initial={{ height:0 }} animate={{ height:`${prevPct}%` }}
+                            transition={{ duration:0.6, delay:0.27+i*0.03, ease }}
+                            className="flex-1 rounded-t-sm"
+                            style={{ background: m.prev > 0 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.03)" }}
+                          />
+                        </div>
+                        <span className="text-[0.45rem] font-medium" style={{ color: isCur ? GOLD : "rgba(255,255,255,0.18)" }}>
+                          {m.label}
                         </span>
                       </div>
                     );
