@@ -146,6 +146,27 @@ const fmtEur = (n: number) =>
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
+function computeLeadScore(c: Contact, activitiesCount: number): number {
+  let s = 0;
+  s += c.priority === "urgent" ? 25 : c.priority === "high" ? 15 : c.priority === "normal" ? 5 : 0;
+  s += Math.min((c.interest_level ?? 0) * 6, 30);
+  if (c.budget && c.budget > 0) s += Math.min(Math.floor(c.budget / 1000) * 2, 15);
+  s += Math.min(activitiesCount * 3, 15);
+  if (c.email) s += 5;
+  if (c.phone) s += 5;
+  if (c.status === "actif") s += 5;
+  if (c.status === "perdu") s = Math.max(0, s - 20);
+  return Math.min(s, 100);
+}
+
+const EMAIL_TEMPLATES = [
+  { id: "relance",      label: "Relance J+7",          subject: "Suite à notre échange",               body: "Bonjour {nom},\n\nJe me permets de revenir vers vous suite à notre dernier échange.\n\nAvez-vous eu l'occasion d'étudier notre proposition ? Je reste disponible pour répondre à vos questions.\n\nCordialement" },
+  { id: "proposition",  label: "Envoi proposition",     subject: "Notre proposition — {société}",        body: "Bonjour {nom},\n\nComme convenu, veuillez trouver ci-joint notre proposition commerciale.\n\nN'hésitez pas à me contacter pour en discuter.\n\nCordialement" },
+  { id: "remerciement", label: "Remerciement réunion",  subject: "Merci pour notre réunion",             body: "Bonjour {nom},\n\nMerci pour le temps que vous nous avez accordé.\n\nComme évoqué, nous revenons vers vous rapidement.\n\nBonne journée," },
+  { id: "suivi",        label: "Suivi mensuel",         subject: "Point mensuel — {société}",            body: "Bonjour {nom},\n\nJ'espère que tout se passe bien de votre côté.\n\nN'hésitez pas à nous faire part de vos retours ou besoins.\n\nCordialement" },
+  { id: "bienvenue",    label: "Bienvenue client",      subject: "Bienvenue !",                          body: "Bonjour {nom},\n\nNous sommes ravis de vous accueillir parmi nos clients.\n\nNous restons à votre disposition pour toute question.\n\nL'équipe" },
+] as const;
+
 function Badge({ label, color, bg }: { label: string; color: string; bg?: string }) {
   return (
     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
@@ -207,9 +228,11 @@ function PipelineView({
   onAdd: (data: Partial<Opportunity>) => Promise<void>;
   loading: boolean;
 }) {
-  const [addModal, setAddModal]   = useState<OppStage | null>(null);
-  const [editOpp, setEditOpp]     = useState<Opportunity | null>(null);
-  const [form, setForm]           = useState<Partial<Opportunity>>({});
+  const [addModal, setAddModal]     = useState<OppStage | null>(null);
+  const [editOpp, setEditOpp]       = useState<Opportunity | null>(null);
+  const [form, setForm]             = useState<Partial<Opportunity>>({});
+  const [draggedId, setDraggedId]   = useState<string | null>(null);
+  const [dragOver, setDragOver]     = useState<OppStage | null>(null);
 
   const stageKeys = Object.keys(STAGES) as OppStage[];
   const byStage = useMemo(() => {
@@ -262,7 +285,21 @@ function PipelineView({
 
             <div className="flex gap-3 overflow-x-auto pb-3">
         {stageKeys.map(stage => (
-          <div key={stage} className="shrink-0 w-64 rounded-2xl border border-white/[0.06] bg-white/[0.02] flex flex-col">
+          <div key={stage}
+          className="shrink-0 w-64 rounded-2xl border flex flex-col transition-colors"
+          style={{
+            background: dragOver === stage ? `${STAGES[stage].color}08` : "rgba(255,255,255,0.02)",
+            borderColor: dragOver === stage ? `${STAGES[stage].color}50` : "rgba(255,255,255,0.06)",
+          }}
+          onDragOver={e => { e.preventDefault(); setDragOver(stage); }}
+          onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
+          onDrop={async e => {
+            e.preventDefault(); setDragOver(null);
+            if (!draggedId) return;
+            const opp = opportunities.find(o => o.id === draggedId);
+            if (opp && opp.stage !== stage) await onUpdate(draggedId, { stage, probability: STAGES[stage].prob });
+            setDraggedId(null);
+          }}>
                         <div className="flex items-center justify-between p-3 border-b border-white/[0.05]">
               <div>
                 <span className="text-[0.65rem] font-black uppercase tracking-widest"
@@ -279,7 +316,11 @@ function PipelineView({
                         <div className="flex flex-col gap-2 p-2 flex-1 min-h-[100px]">
               {byStage[stage].map(opp => (
                 <motion.div key={opp.id} layout
-                  className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 cursor-pointer hover:border-white/10 transition-all group"
+                  draggable
+                  onDragStart={e => { e.stopPropagation(); setDraggedId(opp.id); }}
+                  onDragEnd={() => setDraggedId(null)}
+                  className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 cursor-grab active:cursor-grabbing hover:border-white/10 transition-all group"
+                  style={draggedId === opp.id ? { opacity: 0.45 } : {}}
                   onClick={() => openEdit(opp)}>
                   <div className="flex items-start justify-between gap-1">
                     <p className="text-[0.72rem] font-semibold text-white leading-tight">{opp.title}</p>
@@ -1533,6 +1574,88 @@ function ContactDetail({
   );
 }
 
+function EmailComposeModal({ contact, onClose, onSent }: {
+  contact: Contact;
+  onClose: () => void;
+  onSent: (subject: string, body: string) => void;
+}) {
+  const [subject, setSubject] = useState("");
+  const [body,    setBody]    = useState("");
+  const [sending, setSending] = useState(false);
+
+  const fill = (tmpl: typeof EMAIL_TEMPLATES[number]) => {
+    const r = (s: string) => s
+      .replace("{nom}",    contact.name.split(" ")[0])
+      .replace("{société}", contact.company || "votre entreprise");
+    setSubject(r(tmpl.subject));
+    setBody(r(tmpl.body));
+  };
+
+  const send = async () => {
+    if (!subject.trim() || !body.trim()) return;
+    setSending(true);
+    await new Promise(res => setTimeout(res, 600));
+    onSent(subject, body);
+    setSending(false);
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="w-full max-w-lg rounded-3xl border border-white/[0.08] p-6 space-y-4 max-h-[92vh] overflow-y-auto"
+        style={{ background: "rgba(7,8,14,0.98)" }}
+        onClick={e => e.stopPropagation()}>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: "#60a5fa18", border: "1px solid #60a5fa30" }}>
+              <Mail size={14} style={{ color: "#60a5fa" }}/>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Composer un email</h3>
+              <p className="text-[0.62rem] text-white/40">{contact.email || "Aucun email enregistré"}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors"><X size={16}/></button>
+        </div>
+
+        <div>
+          <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25 mb-2">Templates</p>
+          <div className="flex flex-wrap gap-1.5">
+            {EMAIL_TEMPLATES.map(tmpl => (
+              <button key={tmpl.id} onClick={() => fill(tmpl)}
+                className="px-2.5 py-1 rounded-lg text-[0.65rem] font-semibold border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-white/60 hover:text-white transition-all">
+                {tmpl.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Input label="Objet" placeholder="Objet de l'email…" value={subject} onChange={e => setSubject(e.target.value)}/>
+
+        <div className="space-y-1">
+          <label className="block text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Message</label>
+          <textarea value={body} onChange={e => setBody(e.target.value)} rows={8} placeholder="Votre message…"
+            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 resize-none transition-colors"/>
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white transition-colors">Annuler</button>
+          <button onClick={send} disabled={sending || !subject.trim() || !body.trim() || !contact.email}
+            className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all flex items-center justify-center gap-2"
+            style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)", color: "#fff" }}>
+            {sending ? <Loader2 size={13} className="animate-spin"/> : <Send size={13}/>}
+            {sending ? "Envoi…" : contact.email ? "Envoyer" : "Pas d'email"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function CRMPage() {
   const router = useRouter();
 
@@ -1549,10 +1672,11 @@ export default function CRMPage() {
   const [query,         setQuery]         = useState("");
   const [filterStatus,  setFilterStatus]  = useState<ContactStatus | "tous">("tous");
   const [filterType,    setFilterType]    = useState<ContactType | "tous">("tous");
-  const [sortBy,        setSortBy]        = useState<"date" | "name" | "budget" | "relance">("date");
+  const [sortBy,        setSortBy]        = useState<"date" | "name" | "budget" | "relance" | "score">("date");
 
   const [addModal,      setAddModal]      = useState(false);
   const [editContact,   setEditContact]   = useState<Contact | null>(null);
+  const [emailContact,  setEmailContact]  = useState<Contact | null>(null);
   const [form,          setForm]          = useState<Partial<Contact>>({ status: "prospect", type: "prospect" });
   const [formErrors,    setFormErrors]    = useState<Record<string, string>>({});
   const [saveError,     setSaveError]     = useState("");
@@ -1789,10 +1913,15 @@ export default function CRMPage() {
           if (!b.next_relance) return -1;
           return a.next_relance.localeCompare(b.next_relance);
         }
+        case "score": {
+          const sa = computeLeadScore(a, activities.filter(x => x.contact_id === a.id).length);
+          const sb = computeLeadScore(b, activities.filter(x => x.contact_id === b.id).length);
+          return sb - sa;
+        }
         default: return b.updated_at.localeCompare(a.updated_at);
       }
     });
-  }, [contacts, query, filterStatus, filterType, sortBy]);
+  }, [contacts, query, filterStatus, filterType, sortBy, activities]);
 
   const { page, setPage, paginated: pageItems, totalPages, totalItems } = usePagination(filtered, 20);
 
@@ -1957,12 +2086,13 @@ export default function CRMPage() {
                         <option value="tous">Tous types</option>
                         {Object.entries(CONTACT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
-                      <select value={sortBy} onChange={e => { setSortBy(e.target.value as "date" | "name" | "budget" | "relance"); setPage(1); }}
+                      <select value={sortBy} onChange={e => { setSortBy(e.target.value as "date" | "name" | "budget" | "relance" | "score"); setPage(1); }}
                         className="rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
                         <option value="date">Plus récent</option>
                         <option value="name">Nom A→Z</option>
                         <option value="budget">Budget ↓</option>
                         <option value="relance">Prochaine relance</option>
+                        <option value="score">Score lead ↓</option>
                       </select>
                     </div>
                   </div>
@@ -1997,6 +2127,8 @@ export default function CRMPage() {
                           const isSelected = selected?.id === c.id;
                           const cActivities = activities.filter(a => a.contact_id === c.id).length;
                           const cOpps = opportunities.filter(o => o.contact_id === c.id && o.stage !== "perdu").length;
+                          const score = computeLeadScore(c, cActivities);
+                          const scoreColor = score >= 70 ? "#34d399" : score >= 40 ? "#f59e0b" : "#94a3b8";
                           return (
                             <motion.div key={c.id} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, height: 0, marginBottom: 0 }}
@@ -2008,6 +2140,10 @@ export default function CRMPage() {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-[0.82rem] font-bold text-white truncate">{c.name}</span>
                                   <Badge label={STATUSES[c.status].label} color={STATUSES[c.status].color} bg={STATUSES[c.status].bg}/>
+                                  <span className="text-[0.58rem] font-black px-1.5 py-0.5 rounded-full hidden sm:inline-flex items-center gap-0.5"
+                                    style={{ color: scoreColor, background: `${scoreColor}18`, border: `1px solid ${scoreColor}30` }}>
+                                    <Target size={7}/>{score}
+                                  </span>
                                   {c.priority === "high" && <Flag size={10} className="text-orange-400"/>}
                                   {c.priority === "urgent" && <Flag size={10} className="text-red-400"/>}
                                 </div>
@@ -2041,10 +2177,10 @@ export default function CRMPage() {
                                 )}
                                 <div className="flex gap-1">
                                   {c.email && (
-                                    <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} title={c.email}
+                                    <button onClick={e => { e.stopPropagation(); setEmailContact(c); }} title={`Email : ${c.email}`}
                                       className="h-7 w-7 rounded-lg flex items-center justify-center text-white/20 hover:text-blue-400 hover:bg-blue-400/10 transition-all">
                                       <Mail size={11}/>
-                                    </a>
+                                    </button>
                                   )}
                                   {c.phone && (
                                     <a href={`tel:${c.phone}`} onClick={e => e.stopPropagation()} title={c.phone}
@@ -2238,6 +2374,26 @@ export default function CRMPage() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {emailContact && (
+          <EmailComposeModal
+            contact={emailContact}
+            onClose={() => setEmailContact(null)}
+            onSent={async (subject, body) => {
+              await addActivity(emailContact.id, {
+                type: "email",
+                title: subject,
+                description: body,
+                activity_date: new Date().toISOString().split("T")[0],
+                duration_min: 0,
+              });
+              toast(`Email envoyé à ${emailContact.email}`, "success");
+              setEmailContact(null);
+            }}
+          />
         )}
       </AnimatePresence>
     </div>
