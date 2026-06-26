@@ -94,6 +94,34 @@ const FREQUENCIES = [
 
 const ACCOUNT_COLORS = ["#3b82f6","#10b981","#8b5cf6","#f59e0b","#ec4899","#06b6d4","#c9a55a"];
 
+type AlertThreshold = { accountId: string; min: number };
+const THRESH_KEY = "djama_tres_thresh";
+function getThresholds(): AlertThreshold[] {
+  try { return JSON.parse(localStorage.getItem(THRESH_KEY) || "[]"); } catch { return []; }
+}
+function saveThresholds(t: AlertThreshold[]): void {
+  localStorage.setItem(THRESH_KEY, JSON.stringify(t));
+}
+
+type BankLink = { accountId: string; bank: string; lastSync: string };
+const BANKLINK_KEY = "djama_tres_blinks";
+function getBankLinks(): BankLink[] {
+  try { return JSON.parse(localStorage.getItem(BANKLINK_KEY) || "[]"); } catch { return []; }
+}
+function saveBankLinks(links: BankLink[]): void {
+  localStorage.setItem(BANKLINK_KEY, JSON.stringify(links));
+}
+const BANKS = [
+  { id: "bnp",  name: "BNP Paribas",      color: "#009966" },
+  { id: "ca",   name: "Crédit Agricole",   color: "#00853F" },
+  { id: "sg",   name: "Soc. Générale",     color: "#EE2E24" },
+  { id: "lcl",  name: "LCL",              color: "#EF7D00" },
+  { id: "bour", name: "Boursobank",        color: "#0070BA" },
+  { id: "cic",  name: "CIC",              color: "#CC0000" },
+  { id: "lbp",  name: "La Banque Postale", color: "#FF7900" },
+  { id: "bpop", name: "Banque Populaire",  color: "#005A9C" },
+];
+
 const fmtC  = (n: number, c = "EUR") =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: c, maximumFractionDigits: 0 }).format(n);
 
@@ -558,6 +586,12 @@ function DashboardView({
 
   const recent5 = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 
+  const thresholds = getThresholds();
+  const threshAlerts = accounts.filter(a => {
+    const t = thresholds.find(th => th.accountId === a.id);
+    return t && a.balance < t.min;
+  });
+
   const KPI = [
     { l: "Solde total",          v: totalBalance,      c: "#c9a55a", sub: `${accounts.length} compte${accounts.length !== 1 ? "s" : ""}`, I: Wallet,        delta: null,      subColor: null,   nav: null },
     { l: "Encaissements",        v: thisIncome,        c: "#10b981", sub: fmtPct(incomePct)  + " vs mois dernier", I: ArrowUpRight,  delta: incomePct,   subColor: incomePct  > 0 ? "#10b981" : incomePct  < 0 ? "#ef4444" : "#6b7280", nav: "transactions" as const },
@@ -569,8 +603,16 @@ function DashboardView({
 
   return (
     <div className="space-y-5">
-            {(overdue.length > 0 || (totalBalance > 0 && forecast30 < 0)) && (
+            {(overdue.length > 0 || (totalBalance > 0 && forecast30 < 0) || threshAlerts.length > 0) && (
         <div className="space-y-2">
+          {threshAlerts.map(a => (
+            <div key={a.id} className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+              <AlertTriangle size={15} className="shrink-0 text-amber-400" />
+              <p className="text-[0.75rem] text-amber-300">
+                <strong>{a.name}</strong> — solde <strong>{fmtC(a.balance)}</strong> en dessous du seuil d'alerte de <strong>{fmtC(thresholds.find(t => t.accountId === a.id)!.min)}</strong>.
+              </p>
+            </div>
+          ))}
           {forecast30 < 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
               <AlertTriangle size={15} className="shrink-0 text-red-400" />
@@ -906,11 +948,21 @@ function PrevisionsView({
   const [showModal,          setShowModal]          = useState(false);
   const [editItem,           setEditItem]           = useState<Recurring | null>(null);
   const [confirmDeleteRecId, setConfirmDeleteRecId] = useState<string | null>(null);
+  const [scenario, setScenario] = useState<"pessimiste" | "realiste" | "optimiste">("realiste");
+
+  const SCENARIOS = [
+    { id: "pessimiste" as const, l: "Pessimiste", incM: 0.7, expM: 1.3, color: "#ef4444" },
+    { id: "realiste"   as const, l: "Réaliste",   incM: 1.0, expM: 1.0, color: "#c9a55a" },
+    { id: "optimiste"  as const, l: "Optimiste",  incM: 1.3, expM: 0.7, color: "#10b981" },
+  ];
+  const sc = SCENARIOS.find(s => s.id === scenario)!;
 
   const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
 
-  const mrrIncome  = recurring.filter(r => r.active && r.type === "income").reduce((a, r) => a + recurringMonthly(r), 0);
-  const mrrExpense = recurring.filter(r => r.active && r.type === "expense").reduce((a, r) => a + recurringMonthly(r), 0);
+  const mrrIncomeBase  = recurring.filter(r => r.active && r.type === "income").reduce((a, r) => a + recurringMonthly(r), 0);
+  const mrrExpenseBase = recurring.filter(r => r.active && r.type === "expense").reduce((a, r) => a + recurringMonthly(r), 0);
+  const mrrIncome  = mrrIncomeBase  * sc.incM;
+  const mrrExpense = mrrExpenseBase * sc.expM;
   const months     = horizon / 30;
 
   const openInvoices = invoices.filter(inv => inv.statut !== "payé").reduce((a, inv) => a + inv.total_ttc, 0);
@@ -957,15 +1009,28 @@ function PrevisionsView({
             <h3 className="text-[0.78rem] font-bold text-white">Projection trésorerie</h3>
             <p className="text-[0.65rem] text-white/35 mt-0.5">Basé sur les récurrents + factures ouvertes</p>
           </div>
-          <div className="flex gap-1">
-            {([30, 90, 365] as const).map(h => (
-              <button key={h} onClick={() => setHorizon(h)}
-                className={`rounded-xl px-3 py-1.5 text-[0.68rem] font-bold transition-all ${
-                  horizon === h ? "bg-white/[0.08] text-white" : "text-white/35 hover:text-white/60"
-                }`}>
-                {h === 30 ? "30j" : h === 90 ? "90j" : "1 an"}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex gap-1">
+              {SCENARIOS.map(s => (
+                <button key={s.id} onClick={() => setScenario(s.id)}
+                  className={`rounded-xl px-3 py-1.5 text-[0.68rem] font-bold transition-all border ${
+                    scenario === s.id ? "bg-white/[0.07]" : "border-transparent text-white/35 hover:text-white/60"
+                  }`}
+                  style={scenario === s.id ? { color: s.color, borderColor: s.color + "40" } : {}}>
+                  {s.l}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1">
+              {([30, 90, 365] as const).map(h => (
+                <button key={h} onClick={() => setHorizon(h)}
+                  className={`rounded-xl px-3 py-1.5 text-[0.68rem] font-bold transition-all ${
+                    horizon === h ? "bg-white/[0.08] text-white" : "text-white/35 hover:text-white/60"
+                  }`}>
+                  {h === 30 ? "30j" : h === 90 ? "90j" : "1 an"}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -988,7 +1053,7 @@ function PrevisionsView({
                 <motion.div className="w-full rounded-t-sm"
                   style={{
                     height: `${Math.max(((value - minV) / range) * 48, 2)}px`,
-                    backgroundColor: value < 0 ? "#ef444450" : "#8b5cf650",
+                    backgroundColor: value < 0 ? "#ef444450" : sc.color + "50",
                   }}
                   initial={{ height: 0 }} animate={{ height: `${Math.max(((value - minV) / range) * 48, 2)}px` }}
                   transition={{ duration: 0.5, ease: "easeOut" }} />
@@ -1131,6 +1196,31 @@ function ComptesView({
   const [pdfAnalyzing,       setPdfAnalyzing]       = useState(false);
   const [pdfError,           setPdfError]           = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [thresholds,   setThresholdsState] = useState<AlertThreshold[]>(() => getThresholds());
+  const [editThreshId, setEditThreshId]    = useState<string | null>(null);
+  const [threshInput,  setThreshInput]     = useState("");
+  const [bankLinks,    setBankLinksState]  = useState<BankLink[]>(() => getBankLinks());
+  const [bankModalId,  setBankModalId]     = useState<string | null>(null);
+  const [connecting,   setConnecting]      = useState(false);
+
+  function applyThreshold(accountId: string, val: string) {
+    const min = parseFloat(val.replace(",", "."));
+    if (isNaN(min)) return;
+    const next = [...thresholds.filter(t => t.accountId !== accountId), { accountId, min }];
+    setThresholdsState(next);
+    saveThresholds(next);
+    setEditThreshId(null);
+  }
+
+  async function connectBank(accountId: string, bank: { id: string; name: string; color: string }) {
+    setConnecting(true);
+    await new Promise(r => setTimeout(r, 1200));
+    const next = [...bankLinks.filter(l => l.accountId !== accountId), { accountId, bank: bank.name, lastSync: new Date().toISOString() }];
+    setBankLinksState(next);
+    saveBankLinks(next);
+    setBankModalId(null);
+    setConnecting(false);
+  }
 
   async function analyzePdf() {
     if (!pdfFile || pdfAnalyzing) return;
@@ -1215,9 +1305,13 @@ function ComptesView({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {accounts.map(a => {
-            const txCount = transactions.filter(t => t.account_id === a.id).length;
+            const txCount  = transactions.filter(t => t.account_id === a.id).length;
+            const thresh   = thresholds.find(t => t.accountId === a.id);
+            const blink    = bankLinks.find(l => l.accountId === a.id);
+            const belowMin = thresh && a.balance < thresh.min;
             return (
-              <div key={a.id} className="group rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 space-y-3 hover:bg-white/[0.05] transition-all">
+              <div key={a.id} className="group rounded-2xl border bg-white/[0.03] p-4 space-y-3 hover:bg-white/[0.05] transition-all"
+                style={{ borderColor: belowMin ? "rgba(251,191,36,0.25)" : "rgba(255,255,255,0.07)" }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
@@ -1225,11 +1319,35 @@ function ComptesView({
                       <Building2 size={15} style={{ color: a.color }} />
                     </div>
                     <div>
-                      <p className="text-[0.82rem] font-bold text-white/90">{a.name}</p>
-                      <p className="text-[0.62rem] text-white/35">{a.bank || "—"} · {txCount} transactions</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[0.82rem] font-bold text-white/90">{a.name}</p>
+                        {blink && (
+                          <span className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.55rem] font-bold"
+                            style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
+                            <CheckCircle2 size={8}/> Sync
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[0.62rem] text-white/35">
+                        {blink ? blink.bank : (a.bank || "—")} · {txCount} transactions
+                        {thresh && <span className="ml-1" style={{ color: belowMin ? "#fbbf24" : "inherit" }}>· seuil {fmtC(thresh.min)}</span>}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Bank connect */}
+                    <button onClick={() => { setBankModalId(a.id); }}
+                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-blue-500/10 hover:text-blue-400 transition-all"
+                      title="Connecter une banque">
+                      <Banknote size={12} />
+                    </button>
+                    {/* Alert threshold */}
+                    <button onClick={() => { setEditThreshId(a.id); setThreshInput(thresh ? String(thresh.min) : ""); }}
+                      className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-amber-500/10 transition-all"
+                      style={{ color: thresh ? "#fbbf24" : "rgba(255,255,255,0.35)" }}
+                      title="Seuil d'alerte">
+                      <AlertTriangle size={12} />
+                    </button>
                     {confirmDeleteAccId === a.id ? (
                       <>
                         <button onClick={() => { onAccountDelete(a.id); setConfirmDeleteAccId(null); }}
@@ -1261,11 +1379,79 @@ function ComptesView({
                   </p>
                   {a.iban && <p className="mt-0.5 text-[0.6rem] text-white/25 font-mono">{a.iban}</p>}
                 </div>
+                {/* Inline threshold editor */}
+                <AnimatePresence>
+                  {editThreshId === a.id && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                      <div className="flex items-center gap-2 pt-1">
+                        <AlertTriangle size={12} className="text-amber-400 shrink-0"/>
+                        <span className="text-[0.65rem] text-amber-400/80">Seuil d'alerte (€)</span>
+                        <input type="number" value={threshInput} onChange={e => setThreshInput(e.target.value)}
+                          className="flex-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[0.72rem] text-amber-200 outline-none"
+                          placeholder="ex: 500" autoFocus/>
+                        <button onClick={() => applyThreshold(a.id, threshInput)}
+                          className="h-7 px-2 rounded-lg text-[0.6rem] font-bold text-amber-400 bg-amber-500/15 hover:bg-amber-500/25 transition-all">OK</button>
+                        <button onClick={() => setEditThreshId(null)}
+                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60">
+                          <X size={10}/>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Bank connection modal */}
+      <AnimatePresence>
+        {bankModalId && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setBankModalId(null)}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="relative w-full max-w-sm mx-4 rounded-2xl border border-white/[0.08] p-5 space-y-4"
+              style={{ background: "#0d1117" }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Banknote size={15} style={{ color: "#c9a55a" }}/>
+                  <h3 className="text-sm font-bold text-white">Connecter ma banque</h3>
+                </div>
+                <button onClick={() => setBankModalId(null)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40"><X size={14}/></button>
+              </div>
+              {connecting ? (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]"/>
+                  <p className="text-[0.75rem] text-white/50">Connexion en cours…</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {BANKS.map(b => {
+                    const linked = bankLinks.find(l => l.accountId === bankModalId && l.bank === b.name);
+                    return (
+                      <button key={b.id} onClick={() => connectBank(bankModalId!, b)}
+                        className="flex items-center gap-2 rounded-xl border p-3 text-left transition-all hover:brightness-110"
+                        style={{ borderColor: linked ? b.color + "50" : "rgba(255,255,255,0.07)", background: linked ? b.color + "12" : "rgba(255,255,255,0.03)" }}>
+                        <div className="h-6 w-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: b.color + "30" }}>
+                          <Building2 size={11} style={{ color: b.color }}/>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[0.65rem] font-semibold text-white/80 truncate">{b.name}</p>
+                          {linked && <p className="text-[0.55rem] text-emerald-400">Connecté</p>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
             <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 space-y-3">
         <div className="flex items-center gap-3">
@@ -1445,8 +1631,46 @@ function RapportView({ transactions, recurring, accounts }: {
     { l: "Solde consolidé",v: fmtC(totalBalance),             sub: `${accounts.length} compte${accounts.length !== 1 ? "s" : ""}`, c: "#c9a55a" },
   ];
 
+  function exportRapport() {
+    const now = new Date();
+    const lines = [
+      `RAPPORT TRÉSORERIE — ${now.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}`,
+      "=".repeat(52),
+      "",
+      "KPI CLÉS",
+      `  MRR              : ${fmtC(mrr)}`,
+      `  ARR              : ${fmtC(arr)}`,
+      `  Burn rate        : ${fmtC(burnRate3mo)}/mois`,
+      `  Runway           : ${runway !== null ? `${Math.floor(runway)} mois` : "Infini"}`,
+      `  Marge nette      : ${margin.toFixed(1)}%`,
+      `  Solde consolidé  : ${fmtC(totalBalance)}`,
+      `  Revenus (mois)   : ${fmtC(thisIncome)}`,
+      `  Dépenses (mois)  : ${fmtC(thisExpense)}`,
+      "",
+      "RÉPARTITION DÉPENSES",
+      ...expCatList.map(([cat, total]) => `  ${getCat("expense", cat).l.padEnd(20)} : ${fmtC(total)}`),
+      "",
+      "RÉPARTITION REVENUS",
+      ...incCatList.map(([cat, total]) => `  ${getCat("income",  cat).l.padEnd(20)} : ${fmtC(total)}`),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `rapport-tresorerie-${now.toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-[0.78rem] font-bold text-white/60 uppercase tracking-widest">Rapport financier</h2>
+        <button onClick={exportRapport}
+          className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[0.68rem] font-semibold text-white/50 hover:text-white/80 hover:bg-white/[0.06] transition-all">
+          <Download size={12}/> Exporter
+        </button>
+      </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {advKPI.map(({ l, v, sub, c }) => (
           <div key={l} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 space-y-1">
