@@ -8,7 +8,7 @@ import {
   Upload, Download, Search, Car, Coffee, Monitor, Building2, Package,
   Phone, BookOpen, Megaphone, ShoppingBag, HelpCircle, CreditCard,
   Banknote, Wallet, DollarSign, CheckCircle2, XCircle,
-  Droplets, Calendar, FileCheck,
+  Droplets, Calendar, FileCheck, Landmark, ArrowLeftRight, Table2,
   AlertTriangle, Zap, ChevronDown,
 } from "lucide-react";
 import { supabase as supabaseClient } from "@/lib/supabase";
@@ -150,7 +150,8 @@ function ExpenseModal({
   const [form,      setForm]      = useState<Partial<Expense>>(expense ?? { ...BLANK });
   const [uploading, setUploading] = useState(false);
   const [saving,    setSaving]    = useState(false);
-  const [ocrHint,   setOcrHint]   = useState(false);
+  const [ocring,    setOcring]    = useState(false);
+  const [ocrFields, setOcrFields] = useState<string[]>([]);
   const [saveError, setSaveError] = useState("");
 
   const set = (k: keyof Expense, v: unknown) => setForm(f => ({ ...f, [k]: v }));
@@ -166,6 +167,7 @@ function ExpenseModal({
 
       // OCR via Claude vision (images uniquement)
       if (file.type.startsWith("image/")) {
+        setOcring(true);
         try {
           const b64 = await new Promise<string>((res, rej) => {
             const r = new FileReader();
@@ -182,12 +184,15 @@ function ExpenseModal({
             const ocr = await ocrRes.json() as {
               date?: string; amount?: number; description?: string; category?: string;
             };
-            if (ocr.date)        set("date",        ocr.date);
-            if (ocr.amount)      set("amount",      ocr.amount);
-            if (ocr.description) set("description", ocr.description);
-            if (ocr.category)    set("category",    ocr.category);
+            const filled: string[] = [];
+            if (ocr.date)        { set("date",        ocr.date);        filled.push("Date");        }
+            if (ocr.amount)      { set("amount",      ocr.amount);      filled.push("Montant");     }
+            if (ocr.description) { set("description", ocr.description); filled.push("Description"); }
+            if (ocr.category)    { set("category",    ocr.category);    filled.push("Catégorie");   }
+            if (filled.length > 0) setOcrFields(filled);
           }
-        } catch { /* OCR optionnel — echec silencieux */ }
+        } catch { /* OCR optionnel */ }
+        finally  { setOcring(false); }
       }
     } catch {
       alert("Erreur upload. Vérifiez que le bucket 'receipts' existe dans Supabase Storage.");
@@ -345,14 +350,19 @@ function ExpenseModal({
                 <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-[0.65rem] font-medium text-white/35">Justificatif</span>
-            <button type="button" onClick={() => setOcrHint(h => !h)}
-              className="flex items-center gap-1.5 text-[0.65rem] text-purple-400/60 hover:text-purple-400 transition-colors">
-              <Zap size={11} /> Scan IA
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={ocring || uploading}
+              className="flex items-center gap-1.5 text-[0.65rem] text-purple-400/60 hover:text-purple-400 transition-colors disabled:opacity-40">
+              {ocring
+                ? <div className="h-2.5 w-2.5 animate-spin rounded-full border border-purple-400/40 border-t-purple-400" />
+                : <Zap size={11} />}
+              {ocring ? "Analyse IA…" : "Scan IA"}
             </button>
           </div>
-          {ocrHint && (
-            <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-[0.65rem] text-purple-300">
-              Lecture automatique du ticket par IA — bientôt disponible.
+          {ocrFields.length > 0 && (
+            <div className="flex items-center gap-1.5 rounded-lg border border-green-500/20 bg-green-500/10 px-2.5 py-1.5 text-[0.62rem] text-green-400">
+              <CheckCircle2 size={11} className="shrink-0" />
+              <span>Extraits : {ocrFields.join(", ")}</span>
+              <button type="button" onClick={() => setOcrFields([])} className="ml-auto text-green-400/40 hover:text-green-400 transition-colors"><X size={10} /></button>
             </div>
           )}
           {form.receipt_url ? (
@@ -566,6 +576,22 @@ function BudgetView({
         </p>
       </div>
 
+      {(() => {
+        const overCats = CATS.filter(({ v }) => getBudget(v) > 0 && (spent[v] ?? 0) > getBudget(v));
+        if (overCats.length === 0) return null;
+        return (
+          <div className="flex items-start gap-2.5 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5">
+            <AlertTriangle size={14} className="shrink-0 text-red-400 mt-0.5" />
+            <div>
+              <p className="text-[0.72rem] font-semibold text-red-400">
+                {overCats.length} catégorie{overCats.length > 1 ? "s" : ""} en dépassement ({fmtMonthYear(month)})
+              </p>
+              <p className="mt-0.5 text-[0.65rem] text-red-400/70">{overCats.map(c => c.l).join(", ")}</p>
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="space-y-2">
         {CATS.map(({ v, l, I, c }) => {
           const budget = getBudget(v);
@@ -599,6 +625,57 @@ function BudgetView({
       </div>
     </div>
   );
+}
+
+type BankTx = { id: string; date: string; desc: string; amount: number; matchedId: string | null };
+
+function parseBankCSV(text: string): BankTx[] {
+  const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const sep  = lines[0].includes(";") ? ";" : ",";
+  const raw  = (s: string) => s.trim().replace(/^"|"$/g, "");
+  const hdrs = lines[0].split(sep).map(h => raw(h).toLowerCase());
+  const find = (...kw: string[]) => hdrs.findIndex(h => kw.some(k => h.includes(k)));
+  const dateI = find("date");
+  const descI = find("libel", "descr", "motif", "opér", "intit");
+  const amtI  = find("mont", "amount");
+  const debI  = find("débit", "debit");
+  const creI  = find("crédit", "credit");
+  if (dateI === -1) return [];
+  const toNum = (s: string) => parseFloat(s.replace(/[\s ]/g, "").replace(",", ".")) || 0;
+  const result: BankTx[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const c    = lines[i].split(sep).map(raw);
+    const dRaw = c[dateI] ?? "";
+    let date   = "";
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dRaw)) {
+      const [d, m, y] = dRaw.split("/"); date = `${y}-${m}-${d}`;
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(dRaw)) date = dRaw;
+    if (!date) continue;
+    let amount = 0;
+    if (amtI !== -1) amount = toNum(c[amtI] ?? "");
+    else if (debI !== -1 || creI !== -1) {
+      const deb = debI !== -1 ? toNum(c[debI] ?? "") : 0;
+      const cre = creI !== -1 ? toNum(c[creI] ?? "") : 0;
+      amount = cre - deb;
+    }
+    if (amount === 0) continue;
+    const desc = descI !== -1 ? (c[descI] ?? "") : (c[1] ?? "");
+    result.push({ id: `tx-${i}`, date, desc, amount, matchedId: null });
+  }
+  return result;
+}
+
+function autoMatch(txs: BankTx[], expenses: Expense[]): BankTx[] {
+  return txs.map(tx => {
+    if (tx.matchedId) return tx;
+    const target = Math.abs(tx.amount);
+    const match  = expenses.find(e => {
+      const diff = Math.abs(new Date(e.date).getTime() - new Date(tx.date).getTime()) / 86_400_000;
+      return diff <= 3 && target > 0 && Math.abs(e.amount - target) / target < 0.02;
+    });
+    return { ...tx, matchedId: match?.id ?? null };
+  });
 }
 
 function RapportView({ expenses }: { expenses: Expense[] }) {
@@ -772,6 +849,188 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
   );
 }
 
+function RapprochementView({ expenses }: { expenses: Expense[] }) {
+  const fileRef2 = useRef<HTMLInputElement>(null);
+  const [txs,       setTxs]       = useState<BankTx[]>([]);
+  const [showPaste, setShowPaste] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => setTxs(autoMatch(parseBankCSV(ev.target?.result as string ?? ""), expenses));
+    reader.readAsText(f, "utf-8");
+    e.target.value = "";
+  }
+
+  function handlePaste() {
+    setTxs(autoMatch(parseBankCSV(pasteText), expenses));
+    setShowPaste(false); setPasteText("");
+  }
+
+  function toggleMatch(txId: string, expId: string) {
+    setTxs(prev => prev.map(t => t.id === txId ? { ...t, matchedId: t.matchedId === expId ? null : expId } : t));
+  }
+
+  const matchedCount   = txs.filter(t => t.matchedId !== null).length;
+  const unmatchedCount = txs.filter(t => t.matchedId === null).length;
+
+  if (txs.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/[0.10] py-12 bg-white/[0.01]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl"
+            style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
+            <Landmark size={24} style={{ color: "#c9a55a66" }} />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-[0.85rem] font-semibold text-white/70">Rapprochement bancaire</p>
+            <p className="text-[0.7rem] text-white/30 max-w-xs">Importez un relevé CSV de votre banque pour rapprocher automatiquement vos transactions avec vos dépenses enregistrées.</p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => fileRef2.current?.click()}
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+              <Upload size={13} /> Importer CSV
+            </button>
+            <button onClick={() => setShowPaste(true)}
+              className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-4 py-2 text-[0.72rem] text-white/40 hover:text-white transition-colors">
+              Coller CSV
+            </button>
+          </div>
+          <input ref={fileRef2} type="file" accept=".csv,.txt" className="hidden" onChange={handleFile} />
+        </div>
+
+        {showPaste && (
+          <div className="space-y-2">
+            <textarea rows={6} value={pasteText} onChange={e => setPasteText(e.target.value)}
+              placeholder={"Collez votre relevé bancaire CSV…\n\nEx: Date;Libellé;Montant\n15/01/2025;Déjeuner client;-45.50"}
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[0.75rem] text-white/70 placeholder-white/20 outline-none focus:border-white/20 resize-none font-mono" />
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowPaste(false)} className="rounded-xl border border-white/[0.08] px-3 py-1.5 text-[0.7rem] text-white/30 hover:text-white/60 transition-colors">Annuler</button>
+              <button onClick={handlePaste} disabled={!pasteText.trim()}
+                className="rounded-xl px-4 py-1.5 text-[0.72rem] font-bold transition-all hover:brightness-110 disabled:opacity-40"
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                Analyser
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+          <p className="text-[0.65rem] font-semibold text-white/30 mb-1.5">Formats supportés</p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[0.62rem] text-white/25">
+            <span>· Date;Libellé;Montant</span>
+            <span>· Date;Description;Débit;Crédit</span>
+            <span>· Date;Motif;Montant</span>
+            <span>· DD/MM/YYYY ou YYYY-MM-DD</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex gap-2 flex-1 flex-wrap">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2 text-[0.72rem]">
+            <span className="text-white/30">Total : </span><span className="font-bold text-white">{txs.length} transactions</span>
+          </div>
+          <div className="rounded-xl border border-green-500/20 bg-green-500/10 px-3 py-2 text-[0.72rem]">
+            <span className="text-green-400/60">Rapprochées : </span><span className="font-bold text-green-400">{matchedCount}</span>
+          </div>
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[0.72rem]">
+            <span className="text-amber-400/60">Non rapprochées : </span><span className="font-bold text-amber-400">{unmatchedCount}</span>
+          </div>
+        </div>
+        <button onClick={() => setTxs([])}
+          className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.7rem] text-white/30 hover:text-red-400 hover:border-red-500/20 transition-all">
+          <Trash2 size={12} /> Réinitialiser
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {txs.map(tx => {
+          const matchedExp   = tx.matchedId ? expenses.find(e => e.id === tx.matchedId) : null;
+          const suggestions  = !tx.matchedId ? expenses.filter(e => {
+            const diff = Math.abs(new Date(e.date).getTime() - new Date(tx.date).getTime()) / 86_400_000;
+            return diff <= 7 && Math.abs(e.amount - Math.abs(tx.amount)) / Math.max(Math.abs(tx.amount), 1) < 0.1;
+          }).slice(0, 3) : [];
+          const isExpanded = expandedId === tx.id;
+
+          return (
+            <div key={tx.id} className={`rounded-xl border transition-all ${
+              tx.matchedId !== null
+                ? "border-green-500/20 bg-green-500/[0.04]"
+                : "border-white/[0.06] bg-white/[0.025]"
+            }`}>
+              <div className="flex items-center gap-3 p-3 cursor-pointer"
+                onClick={() => setExpandedId(isExpanded ? null : tx.id)}>
+                <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                  tx.matchedId !== null ? "bg-green-500/20" : "bg-white/[0.05]"
+                }`}>
+                  {tx.matchedId !== null
+                    ? <CheckCircle2 size={14} className="text-green-400" />
+                    : <ArrowLeftRight size={12} className="text-white/25" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-[0.75rem] font-medium text-white/80">{tx.desc || "—"}</p>
+                  <p className="text-[0.62rem] text-white/30">{fmtDate(tx.date)}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className={`text-[0.82rem] font-bold ${tx.amount < 0 ? "text-red-400" : "text-green-400"}`}>
+                    {tx.amount < 0 ? "−" : "+"}{fmtCur(Math.abs(tx.amount))}
+                  </p>
+                  {matchedExp && (
+                    <p className="text-[0.58rem] text-green-400/60 truncate max-w-[120px]">{matchedExp.description}</p>
+                  )}
+                </div>
+                <ChevronDown size={12} className={`shrink-0 text-white/20 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+              </div>
+
+              {isExpanded && (
+                <div className="border-t border-white/[0.04] px-3 pb-3 pt-2 space-y-2">
+                  {matchedExp ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-2.5 py-2">
+                      <CheckCircle2 size={12} className="shrink-0 text-green-400" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[0.68rem] font-semibold text-green-400">{matchedExp.description}</p>
+                        <p className="text-[0.6rem] text-green-400/60">{fmtDate(matchedExp.date)} · {fmtCur(matchedExp.amount)}</p>
+                      </div>
+                      <button onClick={e => { e.stopPropagation(); toggleMatch(tx.id, matchedExp.id); }}
+                        className="shrink-0 rounded-lg p-1 text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                        <X size={11} />
+                      </button>
+                    </div>
+                  ) : suggestions.length > 0 ? (
+                    <div className="space-y-1.5">
+                      <p className="text-[0.62rem] text-white/25">Correspondances possibles :</p>
+                      {suggestions.map(e => (
+                        <button key={e.id} onClick={ev => { ev.stopPropagation(); toggleMatch(tx.id, e.id); }}
+                          className="w-full flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2 text-left hover:border-[#c9a55a44] hover:bg-white/[0.04] transition-all">
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate text-[0.7rem] font-medium text-white/70">{e.description}</p>
+                            <p className="text-[0.6rem] text-white/30">{fmtDate(e.date)} · {getCat(e.category).l}</p>
+                          </div>
+                          <span className="shrink-0 text-[0.7rem] font-bold text-white/60">{fmtCur(e.amount, e.currency)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="py-1 text-[0.65rem] text-white/20">Aucune correspondance trouvée (±7 jours, ±10 %)</p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function DepensesPage() {
   const supabase = supabaseClient;
   const router   = useRouter();
@@ -783,7 +1042,7 @@ export default function DepensesPage() {
   const [reports,  setReports]  = useState<ExpenseReport[]>([]);
   const [budgets,  setBudgets]  = useState<ExpenseBudget[]>([]);
 
-  const [tab,             setTab]             = useState<"depenses"|"notes"|"budgets"|"rapport">("depenses");
+  const [tab,             setTab]             = useState<"depenses"|"notes"|"budgets"|"rapprochement"|"rapport">("depenses");
   const [showModal,       setShowModal]       = useState(false);
   const [editExpense,     setEditExpense]     = useState<Expense | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -929,11 +1188,50 @@ export default function DepensesPage() {
     URL.revokeObjectURL(url);
   }
 
+  function exportXLSX() {
+    const headers = ["Date","Description","Catégorie","Montant","Devise","TVA","TVA récup.","Paiement","Statut","Projet","Centre coût","N° Facture"];
+    const rows = filtered.map(e => [
+      e.date, e.description, getCat(e.category).l,
+      e.amount, e.currency, e.vat_amount, e.vat_recoverable ? "Oui" : "Non",
+      PAY_METHODS.find(m => m.v === e.payment_method)?.l ?? e.payment_method,
+      getSt(e.status).l, e.project, e.cost_center, e.invoice_number,
+    ]);
+    const cell = (v: string | number) =>
+      typeof v === "number"
+        ? `<Cell><Data ss:Type="Number">${v}</Data></Cell>`
+        : `<Cell><Data ss:Type="String">${String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</Data></Cell>`;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Worksheet ss:Name="Dépenses">
+<Table>
+<Row>${headers.map(cell).join("")}</Row>
+${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
+</Table>
+</Worksheet>
+</Workbook>`;
+    const blob = new Blob([xml], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "depenses.xls"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const budgetAlertCount = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear(); const month = now.getMonth() + 1;
+    const ym = `${year}-${String(month).padStart(2, "0")}`;
+    return CATS.filter(({ v }) => {
+      const b = budgets.find(bud => bud.category === v && bud.period === "monthly" && bud.year === year && bud.month === month);
+      if (!b || b.amount <= 0) return false;
+      return expenses.filter(e => e.category === v && e.date.startsWith(ym) && e.status !== "rejected").reduce((a, e) => a + e.amount, 0) > b.amount;
+    }).length;
+  }, [expenses, budgets]);
+
   const TABS = [
-    { id: "depenses", l: "Dépenses",      I: Receipt,   badge: expenses.length },
-    { id: "notes",    l: "Notes de frais",I: FileText,  badge: reports.filter(r => r.status === "submitted").length },
-    { id: "budgets",  l: "Budgets",       I: PiggyBank, badge: 0 },
-    { id: "rapport",  l: "Rapport",       I: BarChart2, badge: 0 },
+    { id: "depenses",      l: "Dépenses",       I: Receipt,         badge: expenses.length },
+    { id: "notes",         l: "Notes de frais", I: FileText,        badge: reports.filter(r => r.status === "submitted").length },
+    { id: "budgets",       l: "Budgets",         I: PiggyBank,       badge: budgetAlertCount },
+    { id: "rapprochement", l: "Rapprochement",   I: ArrowLeftRight,  badge: 0 },
+    { id: "rapport",       l: "Rapport",         I: BarChart2,       badge: 0 },
   ] as const;
 
   const grandTotal = expenses.filter(e => e.status !== "rejected").reduce((a, e) => a + e.amount, 0);
@@ -996,6 +1294,12 @@ export default function DepensesPage() {
               <Download size={14} />
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.22 }} onClick={exportXLSX} title="Exporter Excel"
+              className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition-all hover:text-green-400"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <Table2 size={14} />
+            </motion.button>
+            <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.25 }}
               onClick={() => { setEditExpense(null); setShowModal(true); }}
               className="flex h-8 items-center gap-2 rounded-xl px-4 text-[0.72rem] font-bold transition-all hover:brightness-110"
@@ -1031,12 +1335,18 @@ export default function DepensesPage() {
       {/* ── Tab bar ── */}
       <div className="relative shrink-0 flex border-b border-white/[0.07] px-4 sm:px-8"
         style={{ background: "rgba(7,8,14,0.8)" }}>
-        {TABS.map(({ id, l, I }) => (
+        {TABS.map(({ id, l, I, badge }) => (
           <button key={id} onClick={() => setTab(id as typeof tab)}
             className={`relative flex items-center gap-2 whitespace-nowrap px-4 py-3 text-[0.72rem] font-semibold transition-colors ${
               tab === id ? "text-white" : "text-white/30 hover:text-white/60"
             }`}>
             <I size={13} />{l}
+            {badge > 0 && (
+              <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[0.55rem] font-bold"
+                style={{ background: id === "budgets" ? "rgba(239,68,68,0.25)" : "rgba(201,165,90,0.2)", color: id === "budgets" ? "#ef4444" : "#c9a55a" }}>
+                {badge}
+              </span>
+            )}
             {tab === id && (
               <motion.div layoutId="dep-tab-indicator"
                 className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
@@ -1316,6 +1626,12 @@ export default function DepensesPage() {
                     userId={userId} onBudgetsChange={setBudgets}
                   />
                 )}
+              </motion.div>
+            )}
+
+            {tab === "rapprochement" && (
+              <motion.div key="rap2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <RapprochementView expenses={expenses} />
               </motion.div>
             )}
 
