@@ -7,6 +7,7 @@ import {
   CalendarDays, Briefcase, User, BarChart2, Target, Settings,
   Coffee, Loader2, TrendingUp, Brain, Tag, CheckCircle,
   FileText, Zap, RefreshCw, Flame, Circle,
+  Download, Users, CalendarPlus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEur } from "@/lib/format";
@@ -14,7 +15,7 @@ import Toast, { type ToastData } from "@/components/ui/Toast";
 
 type TimerMode = "classic" | "pomodoro" | "countdown" | "focus";
 type PomPhase = "work" | "break";
-type AppTab   = "timer" | "stats" | "projects" | "billing";
+type AppTab   = "timer" | "stats" | "projects" | "billing" | "rapport";
 
 interface TimeEntry {
   id: string;
@@ -109,10 +110,11 @@ const PROJECT_COLORS = [
 ];
 
 const TABS: { value: AppTab; label: string; Icon: React.ElementType }[] = [
-  { value: "timer",    label: "Chrono",    Icon: Timer    },
-  { value: "stats",    label: "Stats",     Icon: BarChart2 },
-  { value: "projects", label: "Projets",   Icon: Briefcase },
-  { value: "billing",  label: "Facturable",Icon: FileText  },
+  { value: "timer",    label: "Chrono",    Icon: Timer     },
+  { value: "stats",    label: "Stats",     Icon: BarChart2  },
+  { value: "projects", label: "Projets",   Icon: Briefcase  },
+  { value: "billing",  label: "Facturable",Icon: FileText   },
+  { value: "rapport",  label: "Rapport",   Icon: Users      },
 ];
 
 const fmt = (s: number) => {
@@ -151,6 +153,59 @@ const getCategoryColor = (cat: string | null) =>
   CATEGORIES.find(c => c.value === (cat ?? "autre"))?.color ?? "#a78bfa";
 const getCategoryLabel = (cat: string | null) =>
   CATEGORIES.find(c => c.value === (cat ?? "autre"))?.label ?? (cat ?? "Autre");
+
+function exportTimesheet(entries: TimeEntry[], from?: string, to?: string) {
+  const rows = entries
+    .filter(e => (!from || e.date >= from) && (!to || e.date <= to))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const cols = ["Date","Projet","Client","Tâche","Catégorie","Durée (min)","Durée (h)","Taux €/h","Montant €","Facturable","Mode"];
+  const lines = [cols.join(";")];
+  for (const e of rows) {
+    const earn = e.hourly_rate && (e.is_billable ?? true) ? ((e.duration_minutes / 60) * e.hourly_rate).toFixed(2) : "0";
+    lines.push([
+      e.date, e.project, e.client_name ?? "", e.task_title ?? "",
+      getCategoryLabel(e.category),
+      String(e.duration_minutes), (e.duration_minutes / 60).toFixed(2),
+      String(e.hourly_rate ?? 0), earn,
+      (e.is_billable ?? true) ? "Oui" : "Non", e.timer_mode ?? "",
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(";"));
+  }
+  const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `timesheet_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function exportICS(entries: TimeEntry[]) {
+  const pad = (n: number) => String(n).padStart(2,"0");
+  const lines = [
+    "BEGIN:VCALENDAR","VERSION:2.0",
+    "PRODID:-//DJAMA Premium//Chrono//FR","CALSCALE:GREGORIAN",
+  ];
+  for (const e of entries) {
+    const d = new Date(e.date + "T09:00:00");
+    const start = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T090000`;
+    const endMs  = d.getTime() + e.duration_minutes * 60_000;
+    const ed     = new Date(endMs);
+    const end    = `${ed.getFullYear()}${pad(ed.getMonth()+1)}${pad(ed.getDate())}T${pad(ed.getHours())}${pad(ed.getMinutes())}00`;
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${e.id}@djama-chrono`,
+      `DTSTART:${start}`,
+      `DTEND:${end}`,
+      `SUMMARY:${(e.task_title || e.project).replace(/[,;\\]/g,"")} [${fmtMin(e.duration_minutes)}]`,
+      ...(e.client_name ? [`DESCRIPTION:Client: ${e.client_name}\\nProjet: ${e.project}`] : []),
+      "END:VEVENT",
+    );
+  }
+  lines.push("END:VCALENDAR");
+  const blob = new Blob([lines.join("\r\n")], { type: "text/calendar" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "chrono_sessions.ics";
+  a.click(); URL.revokeObjectURL(url);
+}
 
 const emptyManual = (): ManualDraft => ({
   task_title:"", project:"", client_name:"", category:"autre",
@@ -489,6 +544,33 @@ export default function ChronoPage() {
   const unbilled = useMemo(()=>entries.filter(e=>(e.is_billable??true)&&!e.is_billed),[entries]);
   const unbilledAmt = useMemo(()=>unbilled.reduce((a,e)=>e.hourly_rate?a+(e.duration_minutes/60)*e.hourly_rate:a,0),[unbilled]);
 
+  const [tsFrom, setTsFrom] = useState(() => startOfMonthISO());
+  const [tsTo,   setTsTo]   = useState(() => todayISO());
+
+  const clientStats = useMemo(() => {
+    const map = new Map<string,{ minutes:number; earnings:number; billable:number; sessions:number }>();
+    for (const e of entries) {
+      const k = e.client_name?.trim() || "Sans client";
+      if (!map.has(k)) map.set(k,{ minutes:0, earnings:0, billable:0, sessions:0 });
+      const cs = map.get(k)!;
+      cs.minutes   += e.duration_minutes;
+      cs.sessions  += 1;
+      cs.billable  += (e.is_billable ?? true) ? e.duration_minutes : 0;
+      if (e.hourly_rate && (e.is_billable ?? true)) cs.earnings += (e.duration_minutes/60)*e.hourly_rate;
+    }
+    return Array.from(map.entries())
+      .map(([name,d]) => ({ name,...d }))
+      .sort((a,b) => b.minutes - a.minutes);
+  },[entries]);
+
+  const rapportEntries = useMemo(()=>entries.filter(e=>e.date>=tsFrom&&e.date<=tsTo),[entries,tsFrom,tsTo]);
+  const rapportTotals  = useMemo(()=>({
+    minutes:  rapportEntries.reduce((a,e)=>a+e.duration_minutes,0),
+    earnings: rapportEntries.reduce((a,e)=>e.hourly_rate&&(e.is_billable??true)?a+(e.duration_minutes/60)*e.hourly_rate:a,0),
+    sessions: rapportEntries.length,
+    billable: rapportEntries.filter(e=>e.is_billable??true).reduce((a,e)=>a+e.duration_minutes,0),
+  }),[rapportEntries]);
+
   const dailyGoalPct = goal ? Math.min(100,Math.round((todayStats.minutes/goal.daily_minutes)*100)) : null;
 
   const aiInsights = useMemo(()=>{
@@ -607,6 +689,14 @@ export default function ChronoPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={()=>exportICS(entries)} title="Sync calendrier (ICS)"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white/30 transition hover:border-sky-500/30 hover:text-sky-400">
+              <CalendarPlus size={15}/>
+            </button>
+            <button onClick={()=>exportTimesheet(entries)} title="Export timesheet CSV"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white/30 transition hover:border-emerald-500/30 hover:text-emerald-400">
+              <Download size={15}/>
+            </button>
             <button onClick={()=>{setGoalDraft({daily_minutes:String(goal?.daily_minutes??480),weekly_minutes:String(goal?.weekly_minutes??2400),daily_billable_minutes:String(goal?.daily_billable_minutes??360)});setGoalOpen(true)}}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white/30 transition hover:border-white/20 hover:text-white/60" title="Objectifs">
               <Target size={15}/>
@@ -697,20 +787,31 @@ export default function ChronoPage() {
               </AnimatePresence>
 
                             {mode==="pomodoro"&&(
-                <div className="flex items-center justify-between border-b border-white/6 px-6 py-3">
-                  <div className="flex items-center gap-2">
-                    {pomPhase==="work" ? <Flame size={14} style={{color:"#f87171"}}/> : <Coffee size={14} style={{color:"#34d399"}}/>}
-                    <span className="text-xs font-bold" style={{color:pomPhase==="work"?"#f87171":"#34d399"}}>
-                      {pomPhase==="work" ? "TRAVAIL" : "PAUSE"}
-                    </span>
+                <>
+                  {pomPhase==="break"&&running&&(
+                    <motion.div initial={{opacity:0}} animate={{opacity:1}}
+                      className="flex items-center justify-center gap-2 border-b border-emerald-500/20 bg-emerald-500/[0.07] px-6 py-2">
+                      <Coffee size={14} style={{color:"#34d399"}} className="animate-pulse"/>
+                      <span className="text-[11px] font-black tracking-widest uppercase" style={{color:"#34d399"}}>
+                        ☕ Pause Pomodoro — Repose-toi !
+                      </span>
+                    </motion.div>
+                  )}
+                  <div className="flex items-center justify-between border-b border-white/6 px-6 py-3">
+                    <div className="flex items-center gap-2">
+                      {pomPhase==="work" ? <Flame size={14} style={{color:"#f87171"}}/> : <Coffee size={14} style={{color:"#34d399"}}/>}
+                      <span className="text-xs font-bold" style={{color:pomPhase==="work"?"#f87171":"#34d399"}}>
+                        {pomPhase==="work" ? "TRAVAIL" : "PAUSE"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {Array.from({length:Math.min(8,pomCycle+1)},(_,i)=>(
+                        <div key={i} className="h-2 w-2 rounded-full" style={{background:i<pomCycle?"#f87171":"rgba(248,113,113,0.25)"}}/>
+                      ))}
+                      {pomCycle>0&&<span className="ml-1 text-[0.65rem] text-white/30">#{pomCycle}</span>}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    {Array.from({length:Math.min(8,pomCycle+1)},(_,i)=>(
-                      <div key={i} className="h-2 w-2 rounded-full" style={{background:i<pomCycle?"#f87171":"rgba(248,113,113,0.25)"}}/>
-                    ))}
-                    {pomCycle>0&&<span className="ml-1 text-[0.65rem] text-white/30">#{pomCycle}</span>}
-                  </div>
-                </div>
+                </>
               )}
 
               <div className="px-6 py-7 sm:px-8">
@@ -788,7 +889,7 @@ export default function ChronoPage() {
                         style={{fontSize:"3.8rem",color:timerColor,textShadow:`0 0 50px ${timerGlow}`}}>
                         {timerDisplay}
                       </motion.div>
-                      {paused&&<div className="mt-1.5 text-center"><span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[0.6rem] font-bold text-amber-400">EN PAUSE</span></div>}
+                      {paused&&<div className="mt-1.5 text-center"><span className="inline-flex items-center gap-1 rounded-full border border-amber-500/35 bg-amber-500/12 px-3 py-1 text-[0.65rem] font-black tracking-widest uppercase text-amber-400 animate-pulse"><Pause size={9}/> En pause</span></div>}
                       {sRate&&elapsed>0&&running&&(
                         <p className="mt-1 text-center text-sm font-bold" style={{color:"#c9a55a"}}>
                           {fmtEur((elapsed/3600)*parseFloat(sRate))}
@@ -1109,7 +1210,116 @@ export default function ChronoPage() {
           </div>
         )}
 
-                {tab==="billing"&&(
+                {tab==="rapport"&&(
+          <div className="space-y-5">
+
+            {/* Date range + export */}
+            <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/6 bg-white/4 p-4">
+              <div>
+                <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Du</p>
+                <input type="date" value={tsFrom} onChange={e=>setTsFrom(e.target.value)}
+                  className="rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+              </div>
+              <div>
+                <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Au</p>
+                <input type="date" value={tsTo} onChange={e=>setTsTo(e.target.value)}
+                  className="rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+              </div>
+              <div className="ml-auto flex gap-2">
+                <button onClick={()=>exportTimesheet(entries,tsFrom,tsTo)}
+                  className="flex items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-4 py-2 text-xs font-bold text-emerald-400 transition hover:bg-emerald-500/15">
+                  <Download size={12}/>Timesheet CSV
+                </button>
+                <button onClick={()=>exportICS(rapportEntries)}
+                  className="flex items-center gap-1.5 rounded-xl border border-sky-500/25 bg-sky-500/8 px-4 py-2 text-xs font-bold text-sky-400 transition hover:bg-sky-500/15">
+                  <CalendarPlus size={12}/>Sync Calendrier
+                </button>
+              </div>
+            </div>
+
+            {/* Period KPIs */}
+            <div className="grid gap-3 sm:grid-cols-4">
+              {[
+                {label:"Sessions",   value:String(rapportTotals.sessions),  color:"#a78bfa"},
+                {label:"Durée totale",value:fmtMin(rapportTotals.minutes),  color:"#60a5fa"},
+                {label:"Facturable", value:fmtMin(rapportTotals.billable),  color:"#34d399"},
+                {label:"Revenus",    value:rapportTotals.earnings>0?fmtEur(rapportTotals.earnings):"—", color:"#c9a55a"},
+              ].map((k,i)=>(
+                <div key={i} className="rounded-xl border border-white/6 bg-white/4 px-4 py-3.5">
+                  <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{k.label}</p>
+                  <p className="mt-1.5 text-xl font-bold" style={{color:k.color}}>{k.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Client breakdown */}
+            <div className="rounded-xl border border-white/6 bg-white/4 overflow-hidden">
+              <div className="flex items-center gap-2 border-b border-white/6 px-5 py-3">
+                <Users size={13} style={{color:violet}}/>
+                <p className="text-xs font-bold uppercase tracking-widest text-white/40">Temps par client</p>
+              </div>
+              {clientStats.length===0?(
+                <p className="py-8 text-center text-sm text-white/25">Aucune donnée</p>
+              ):(
+                <div className="divide-y divide-white/5">
+                  {clientStats.map((cs,i)=>{
+                    const maxMin = clientStats[0]?.minutes||1;
+                    const billPct = cs.minutes>0?Math.round((cs.billable/cs.minutes)*100):0;
+                    return (
+                      <div key={i} className="px-5 py-4">
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <User size={12} style={{color:violet}}/>
+                            <span className="text-sm font-bold text-white/85">{cs.name}</span>
+                            <span className="text-[10px] text-white/30">{cs.sessions} session{cs.sessions!==1?"s":""}</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm font-extrabold" style={{color:violet}}>{fmtMin(cs.minutes)}</span>
+                            {cs.earnings>0&&<span className="text-sm font-bold" style={{color:"#c9a55a"}}>{fmtEur(cs.earnings)}</span>}
+                            <span className="text-[10px] text-emerald-400/70">{billPct}% factu.</span>
+                          </div>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-white/6">
+                          <div className="h-full rounded-full" style={{width:`${(cs.minutes/maxMin)*100}%`,background:violet,opacity:0.65}}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Entries table for the period */}
+            {rapportEntries.length>0&&(
+              <div className="rounded-xl border border-white/6 bg-white/4 overflow-hidden">
+                <div className="flex items-center gap-2 border-b border-white/6 px-5 py-3">
+                  <FileText size={13} className="text-white/30"/>
+                  <p className="text-xs font-bold uppercase tracking-widest text-white/40">{rapportEntries.length} entrée{rapportEntries.length!==1?"s":""} sur la période</p>
+                </div>
+                <div className="max-h-72 overflow-y-auto divide-y divide-white/5">
+                  {rapportEntries.slice(0,50).map(e=>{
+                    const earn = e.hourly_rate&&(e.is_billable??true)?(e.duration_minutes/60)*e.hourly_rate:null;
+                    return (
+                      <div key={e.id} className="flex items-center gap-3 px-5 py-3">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg" style={{background:`${getCategoryColor(e.category)}18`}}>
+                          <div className="h-1.5 w-1.5 rounded-full" style={{background:getCategoryColor(e.category)}}/>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-bold text-white/80">{e.task_title||e.project}</p>
+                          <p className="text-[10px] text-white/30">{e.date} · {e.client_name||"—"}</p>
+                        </div>
+                        <span className="text-xs font-bold shrink-0" style={{color:violet}}>{fmtMin(e.duration_minutes)}</span>
+                        {earn!==null&&<span className="text-xs shrink-0" style={{color:"#c9a55a"}}>{fmtEur(earn)}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab==="billing"&&(
           <div className="space-y-4">
 
                         <div className="flex items-center justify-between rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] px-6 py-4">
