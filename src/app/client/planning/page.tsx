@@ -1,7 +1,7 @@
 "use client";
 
 import React, {
-  useState, useEffect, useCallback, useMemo,
+  useState, useEffect, useCallback, useMemo, useRef,
 } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -11,6 +11,7 @@ import {
   MapPin, Bell, Trash2, Clock, Target, Sparkles,
   CheckCircle2, Circle, AlertCircle, Zap, Video,
   Tag, AlignLeft, Calendar, Users, BarChart2, Menu,
+  Download, ExternalLink, AlertTriangle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -156,6 +157,47 @@ function newEventForm(date?: Date, hour?: number): Partial<PlanEvent> {
   };
 }
 
+function getFrenchHolidays(year: number): Record<string, string> {
+  function easterDate(y: number): Date {
+    const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4;
+    const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+    const h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4;
+    const l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+    const month=Math.floor((h+l-7*m+114)/31),day=((h+l-7*m+114)%31)+1;
+    return new Date(y,month-1,day);
+  }
+  const easter   = easterDate(year).getTime();
+  const fmt      = (ms: number) => new Date(ms).toISOString().slice(0,10);
+  const addD     = (ms: number, d: number) => fmt(ms + d*86_400_000);
+  return {
+    [`${year}-01-01`]:    "Jour de l'An",
+    [addD(easter, 1)]:    "Lundi de Pâques",
+    [`${year}-05-01`]:    "Fête du Travail",
+    [`${year}-05-08`]:    "Victoire 1945",
+    [addD(easter, 39)]:   "Ascension",
+    [addD(easter, 50)]:   "Lundi de Pentecôte",
+    [`${year}-07-14`]:    "Fête Nationale",
+    [`${year}-08-15`]:    "Assomption",
+    [`${year}-11-01`]:    "Toussaint",
+    [`${year}-11-11`]:    "Armistice",
+    [`${year}-12-25`]:    "Noël",
+  };
+}
+
+function getConflicts(evs: PlanEvent[]): Set<string> {
+  const ids = new Set<string>();
+  for (let i = 0; i < evs.length; i++) {
+    for (let j = i + 1; j < evs.length; j++) {
+      const a = evs[i], b = evs[j];
+      if (a.is_all_day || b.is_all_day) continue;
+      const aS = new Date(a.start_at).getTime(), aE = new Date(a.end_at).getTime();
+      const bS = new Date(b.start_at).getTime(), bE = new Date(b.end_at).getTime();
+      if (aS < bE && aE > bS) { ids.add(a.id); ids.add(b.id); }
+    }
+  }
+  return ids;
+}
+
 function EventChip({ ev, onClick, small = false }: {
   ev: PlanEvent; onClick: () => void; small?: boolean
 }) {
@@ -225,6 +267,20 @@ export default function PlanningPage() {
     const [aiLoading,  setAiLoading]  = useState(false);
   const [aiResult,   setAiResult]   = useState("");
   const [showAI,     setShowAI]     = useState(false);
+
+  // Drag-drop
+  const [dragEvId,    setDragEvId]    = useState<string | null>(null);
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+  const dragDurRef = useRef<number>(0);
+
+  // Conflict detection
+  const conflictIds = useMemo(() => getConflicts(events), [events]);
+
+  // French public holidays for the current and adjacent years
+  const holidays = useMemo(() => {
+    const y = current.getFullYear();
+    return { ...getFrenchHolidays(y - 1), ...getFrenchHolidays(y), ...getFrenchHolidays(y + 1) };
+  }, [current]);
 
     const load = useCallback(async () => {
     try {
@@ -414,6 +470,42 @@ export default function PlanningPage() {
     finally { setAiLoading(false); }
   }
 
+  async function updateEventTime(id: string, start: Date, end: Date) {
+    const { data, error } = await supabase.from("planning_events")
+      .update({ start_at: start.toISOString(), end_at: end.toISOString() })
+      .eq("id", id).select().single();
+    if (error) { addToast("Erreur lors du déplacement", "error"); return; }
+    if (data) {
+      setEvents(p => p.map(e => e.id === id ? parseEvent(data as Record<string,unknown>) : e));
+      addToast("Événement déplacé", "success");
+    }
+  }
+
+  function exportICS() {
+    const esc  = (s: string) => s.replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+    const fmtDT = (d: Date)  => d.toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";
+    const lines = [
+      "BEGIN:VCALENDAR","VERSION:2.0",
+      "PRODID:-//DJAMA Premium//Planning//FR","CALSCALE:GREGORIAN","METHOD:PUBLISH",
+    ];
+    for (const ev of events) {
+      lines.push("BEGIN:VEVENT");
+      lines.push(`UID:${ev.id}@djama.app`);
+      lines.push(`DTSTART:${ev.is_all_day ? new Date(ev.start_at).toISOString().slice(0,10).replace(/-/g,"") : fmtDT(new Date(ev.start_at))}`);
+      lines.push(`DTEND:${ev.is_all_day   ? new Date(ev.end_at).toISOString().slice(0,10).replace(/-/g,"") : fmtDT(new Date(ev.end_at))}`);
+      lines.push(`SUMMARY:${esc(ev.title)}`);
+      if (ev.description) lines.push(`DESCRIPTION:${esc(ev.description)}`);
+      if (ev.location)    lines.push(`LOCATION:${esc(ev.location)}`);
+      if (ev.meet_link)   lines.push(`URL:${ev.meet_link}`);
+      lines.push("END:VEVENT");
+    }
+    lines.push("END:VCALENDAR");
+    const blob = new Blob([lines.join("\r\n")], { type:"text/calendar;charset=utf-8" });
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "djama-planning.ics"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
     const today = fmtDate(new Date());
   const todayTasks = tasks.filter(t => t.due_date === today);
   const doneTasks  = todayTasks.filter(t => t.status === "done");
@@ -440,13 +532,18 @@ export default function PlanningPage() {
                   <div key={di}
                     onClick={() => openCreate(day)}
                     className={`border-r border-white/4 p-1.5 min-h-[90px] cursor-pointer transition-colors hover:bg-white/4 ${!isCurrentMonth ? "opacity-35" : ""}`}>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 text-[11px] font-bold mx-auto transition-colors
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-0.5 text-[11px] font-bold mx-auto transition-colors
                       ${isToday(day)
                         ? "text-white"
                         : "text-white/55 hover:text-white"}`}
                       style={isToday(day) ? { background: INDIGO } : {}}>
                       {day.getDate()}
                     </div>
+                    {holidays[fmtDate(day)] && (
+                      <div className="text-[7px] text-amber-400/70 truncate leading-tight px-0.5 mb-0.5" title={holidays[fmtDate(day)]}>
+                        ✦ {holidays[fmtDate(day)]}
+                      </div>
+                    )}
                     <div className="space-y-0.5">
                       {dayEvs.map(ev => (
                         <EventChip key={ev.id} ev={ev} small onClick={() => openEdit(ev)} />
@@ -474,12 +571,17 @@ export default function PlanningPage() {
                 <div className="grid border-b border-white/6" style={{ gridTemplateColumns:"50px repeat(7,1fr)" }}>
           <div />
           {days.map(d => (
-            <div key={d.toString()} className="py-2 text-center border-l border-white/4">
+            <div key={d.toString()} className="py-1.5 text-center border-l border-white/4">
               <p className="text-[10px] text-white/30 uppercase tracking-wide">{DAYS_FR[(d.getDay()+6)%7]}</p>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold mx-auto mt-0.5 ${isToday(d) ? "text-white" : "text-white/60"}`}
                 style={isToday(d) ? { background: INDIGO } : {}}>
                 {d.getDate()}
               </div>
+              {holidays[fmtDate(d)] && (
+                <div className="text-[7px] text-amber-400/60 truncate px-1 mt-0.5" title={holidays[fmtDate(d)]}>
+                  ✦ {holidays[fmtDate(d)].length > 9 ? holidays[fmtDate(d)].slice(0,8)+"…" : holidays[fmtDate(d)]}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -499,13 +601,30 @@ export default function PlanningPage() {
               const dayEvs = eventsOnDate(d).filter(e => !e.is_all_day);
               return (
                 <div key={d.toString()} className="relative border-l border-white/4">
-                                    {HOURS.map(h => (
-                    <div key={h}
-                      style={{ top: (h - START_H) * CELL_H, height: CELL_H }}
-                      className="absolute inset-x-0 border-b border-white/4 cursor-pointer hover:bg-white/4 transition-colors"
-                      onClick={() => openCreate(d, h)}
-                    />
-                  ))}
+                                    {HOURS.map(h => {
+                    const slotKey = `${fmtDate(d)}-${h}`;
+                    return (
+                      <div key={h}
+                        style={{ top: (h - START_H) * CELL_H, height: CELL_H }}
+                        className={`absolute inset-x-0 border-b border-white/4 transition-colors ${
+                          dragOverKey === slotKey
+                            ? "bg-indigo-500/20 border-indigo-500/40"
+                            : dragEvId ? "cursor-copy hover:bg-white/6" : "cursor-pointer hover:bg-white/4"
+                        }`}
+                        onDragOver={(e) => { e.preventDefault(); setDragOverKey(slotKey); }}
+                        onDragLeave={() => setDragOverKey(null)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (!dragEvId) return;
+                          const newStart = new Date(d); newStart.setHours(h, 0, 0, 0);
+                          const newEnd   = new Date(newStart.getTime() + dragDurRef.current);
+                          void updateEventTime(dragEvId, newStart, newEnd);
+                          setDragEvId(null); setDragOverKey(null);
+                        }}
+                        onClick={() => { if (!dragEvId) openCreate(d, h); }}
+                      />
+                    );
+                  })}
                                     {isToday(d) && (
                     <div className="absolute inset-0 pointer-events-none"
                       style={{ background:`${INDIGO}06` }} />
@@ -518,11 +637,30 @@ export default function PlanningPage() {
                     const top    = Math.max((sh - START_H) * CELL_H, 0);
                     const height = Math.max((eh - sh) * CELL_H, 20);
                     const hhmm   = `${String(s.getHours()).padStart(2,"0")}:${String(s.getMinutes()).padStart(2,"0")}`;
+                    const hasConflict = conflictIds.has(ev.id);
                     return (
                       <button key={ev.id}
-                        onClick={e2 => { e2.stopPropagation(); openEdit(ev); }}
-                        className="absolute left-0.5 right-0.5 rounded-lg px-1.5 overflow-hidden text-left cursor-pointer hover:opacity-90 transition-opacity z-10"
-                        style={{ top, height, background:`${ev.color}22`, borderLeft:`3px solid ${ev.color}` }}>
+                        draggable
+                        onDragStart={(e2) => {
+                          e2.stopPropagation();
+                          setDragEvId(ev.id);
+                          dragDurRef.current = new Date(ev.end_at).getTime() - new Date(ev.start_at).getTime();
+                          e2.dataTransfer.effectAllowed = "move";
+                        }}
+                        onDragEnd={() => { setDragEvId(null); setDragOverKey(null); }}
+                        onClick={e2 => { e2.stopPropagation(); if (!dragEvId) openEdit(ev); }}
+                        className="absolute left-0.5 right-0.5 rounded-lg px-1.5 overflow-hidden text-left hover:opacity-90 transition-all z-10 select-none"
+                        style={{
+                          top, height,
+                          background: `${ev.color}22`,
+                          borderLeft: `3px solid ${hasConflict ? "#f87171" : ev.color}`,
+                          cursor: dragEvId ? "grabbing" : "grab",
+                          opacity: dragEvId === ev.id ? 0.4 : 1,
+                          boxShadow: hasConflict ? "0 0 0 1px rgba(248,113,113,0.3)" : undefined,
+                        }}>
+                        {hasConflict && (
+                          <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-red-400" title="Conflit horaire" />
+                        )}
                         <p className="text-[10px] font-semibold truncate leading-tight" style={{ color: ev.color }}>
                           {ev.title}
                         </p>
@@ -777,6 +915,10 @@ export default function PlanningPage() {
               </button>
             </div>
             <h2 className="text-sm font-bold text-white mr-auto">{headerLabel}</h2>
+            <button onClick={exportICS} title="Exporter ICS (Google Calendar / Outlook)"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border border-white/8 text-white/40 hover:text-white/70 hover:border-white/20 transition-all">
+              <Download size={12}/> ICS
+            </button>
             <button onClick={() => setShowAI(p => !p)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${showAI
                 ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
@@ -793,18 +935,19 @@ export default function PlanningPage() {
 
           {/* KPI strip */}
           <div className="relative px-4 pb-2">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-2">
               {[
-                { label: "Total",       value: events.length,                                                                                                                                     icon: Calendar     },
-                { label: "Aujourd'hui", value: events.filter(e => fmtDate(new Date(e.start_at)) === today).length,                                                                                icon: Clock        },
-                { label: "Semaine",     value: events.filter(e => { const d = fmtDate(new Date(e.start_at)); const ws = fmtDate(startOfWeek(new Date())); const we = fmtDate(addDays(startOfWeek(new Date()), 6)); return d >= ws && d <= we; }).length, icon: Target       },
-                { label: "Tâches",      value: todayTasks.length,                                                                                                                                 icon: CheckCircle2 },
+                { label: "Total",       value: events.length,                                                                                                                                     icon: Calendar,      accent: "#c9a55a" },
+                { label: "Aujourd'hui", value: events.filter(e => fmtDate(new Date(e.start_at)) === today).length,                                                                                icon: Clock,         accent: "#c9a55a" },
+                { label: "Semaine",     value: events.filter(e => { const d = fmtDate(new Date(e.start_at)); const ws = fmtDate(startOfWeek(new Date())); const we = fmtDate(addDays(startOfWeek(new Date()), 6)); return d >= ws && d <= we; }).length, icon: Target,        accent: "#c9a55a" },
+                { label: "Tâches",      value: todayTasks.length,                                                                                                                                 icon: CheckCircle2,  accent: "#c9a55a" },
+                { label: "Conflits",    value: conflictIds.size,                                                                                                                                  icon: AlertTriangle, accent: conflictIds.size > 0 ? "#f87171" : "#c9a55a" },
               ].map((kpi, i) => {
                 const KpiIcon = kpi.icon;
                 return (
                   <motion.div key={kpi.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
                     className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border border-white/6 bg-white/4">
-                    <KpiIcon size={11} style={{ color: "#c9a55a" }} className="shrink-0"/>
+                    <KpiIcon size={11} style={{ color: kpi.accent }} className="shrink-0"/>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-white leading-none">{kpi.value}</p>
                       <p className="text-[0.55rem] text-white/35 uppercase tracking-wide mt-0.5 truncate">{kpi.label}</p>
@@ -1045,6 +1188,19 @@ export default function PlanningPage() {
                     <Trash2 size={13}/>Supprimer
                   </button>
                 )}
+                {editEvent && (() => {
+                  const fmtGcal = (d: string) => new Date(d).toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";
+                  const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE`
+                    + `&text=${encodeURIComponent(editEvent.title)}`
+                    + `&dates=${fmtGcal(editEvent.start_at)}/${fmtGcal(editEvent.end_at)}`
+                    + (editEvent.description ? `&details=${encodeURIComponent(editEvent.description)}` : "");
+                  return (
+                    <a href={gcalUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-white/40 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all">
+                      <ExternalLink size={12}/>Google Cal
+                    </a>
+                  );
+                })()}
                 <button onClick={() => setShowModal(false)}
                   className="ml-auto px-4 py-2 rounded-xl text-xs text-white/40 hover:text-white hover:bg-white/8 transition-all">
                   Annuler
