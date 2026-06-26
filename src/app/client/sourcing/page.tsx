@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence }                   from "framer-motion";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { motion, AnimatePresence }                            from "framer-motion";
 import {
   Search, Send, RefreshCw, X, Download, ChevronRight,
   Building2, ListChecks, Lightbulb, FileText,
   CheckCircle2, Factory, Sparkles, Package, AlertCircle,
   Brain, Star, ShieldCheck, TrendingUp,
+  History, Table2, Handshake, PlusCircle, Trash2,
+  Check, Users, ChevronDown, Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import type { GuideMessage, GuideSection, GuideItem } from "@/lib/sourcing/generateGuide";
 
 interface SourcingItem extends GuideItem {
@@ -54,6 +57,50 @@ interface ChatMsg {
   isError?:     boolean;
   retryText?:   string;
 }
+
+interface HistorySession {
+  id:       string;
+  title:    string;
+  date:     string;
+  messages: ChatMsg[];
+}
+
+type NegStatus = "En cours" | "Offre reçue" | "Accepté" | "Refusé";
+
+interface Negotiation {
+  id:        string;
+  supplier:  string;
+  status:    NegStatus;
+  notes:     string;
+  amount?:   string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const HIST_KEY = "sourcing_history_v1";
+const NEG_KEY  = "sourcing_negotiations_v1";
+
+function loadHistory(): HistorySession[] {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY) ?? "[]") as HistorySession[]; }
+  catch { return []; }
+}
+function saveHistory(s: HistorySession[]) {
+  localStorage.setItem(HIST_KEY, JSON.stringify(s.slice(0, 20)));
+}
+function loadNegs(): Negotiation[] {
+  try { return JSON.parse(localStorage.getItem(NEG_KEY) ?? "[]") as Negotiation[]; }
+  catch { return []; }
+}
+function saveNegsLS(n: Negotiation[]) {
+  localStorage.setItem(NEG_KEY, JSON.stringify(n));
+}
+
+const NEG_STATUS_STYLE: Record<NegStatus, string> = {
+  "En cours":    "bg-blue-500/12 border-blue-500/25 text-blue-400",
+  "Offre reçue": "bg-amber-500/12 border-amber-500/25 text-amber-400",
+  "Accepté":     "bg-emerald-500/12 border-emerald-500/25 text-emerald-400",
+  "Refusé":      "bg-red-500/12 border-red-500/25 text-red-400",
+};
 
 const ease = [0.16, 1, 0.3, 1] as const;
 function uid() { return Math.random().toString(36).slice(2, 10); }
@@ -473,11 +520,218 @@ function MessageBubble({
   );
 }
 
+function ComparisonMatrix({ suppliers }: { suppliers: SourcingItem[] }) {
+  if (suppliers.length < 2) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease }}
+      className="mt-6 rounded-2xl border border-indigo-500/18 bg-indigo-500/[0.04] overflow-hidden"
+    >
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-indigo-500/12">
+        <Table2 size={13} className="text-indigo-400" />
+        <p className="text-[11px] font-semibold text-indigo-400">Matrice comparative — {suppliers.length} fournisseurs</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-white/6">
+              <th className="px-4 py-2.5 text-[10px] font-semibold text-white/35 uppercase tracking-wide">Fournisseur</th>
+              <th className="px-4 py-2.5 text-[10px] font-semibold text-white/35 uppercase tracking-wide">Pays</th>
+              <th className="px-4 py-2.5 text-[10px] font-semibold text-white/35 uppercase tracking-wide">Type</th>
+              <th className="px-4 py-2.5 text-[10px] font-semibold text-white/35 uppercase tracking-wide min-w-[180px]">Point clé</th>
+            </tr>
+          </thead>
+          <tbody>
+            {suppliers.map((s, i) => (
+              <tr key={i} className="border-b border-white/4 last:border-0 hover:bg-white/[0.02] transition-colors">
+                <td className="px-4 py-3">
+                  <p className="text-[12px] font-bold text-white/85">{s.name ?? "—"}</p>
+                </td>
+                <td className="px-4 py-3">
+                  {s.country
+                    ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-semibold">{s.country}</span>
+                    : <span className="text-[11px] text-white/25">—</span>}
+                </td>
+                <td className="px-4 py-3">
+                  {s.type
+                    ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/6 border border-white/8 text-white/45">{s.type}</span>
+                    : <span className="text-[11px] text-white/25">—</span>}
+                </td>
+                <td className="px-4 py-3">
+                  <p className="text-[11px] text-white/50 leading-relaxed line-clamp-2">
+                    {s.tip ?? s.description?.slice(0, 100) ?? "—"}
+                  </p>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </motion.div>
+  );
+}
+
+function NegotiationsPanel() {
+  const [negs,        setNegs]        = useState<Negotiation[]>([]);
+  const [showForm,    setShowForm]    = useState(false);
+  const [form,        setForm]        = useState<Partial<Negotiation>>({ status: "En cours" });
+  const [editId,      setEditId]      = useState<string | null>(null);
+
+  useEffect(() => { setNegs(loadNegs()); }, []);
+
+  function saveNeg() {
+    if (!form.supplier?.trim()) return;
+    const now = new Date().toISOString();
+    let updated: Negotiation[];
+    if (editId) {
+      updated = negs.map(n => n.id === editId ? { ...n, ...form, updatedAt: now } as Negotiation : n);
+    } else {
+      const newNeg: Negotiation = {
+        id: uid(), supplier: form.supplier!, status: form.status ?? "En cours",
+        notes: form.notes ?? "", amount: form.amount ?? "",
+        createdAt: now, updatedAt: now,
+      };
+      updated = [newNeg, ...negs];
+    }
+    setNegs(updated); saveNegsLS(updated);
+    setShowForm(false); setForm({ status: "En cours" }); setEditId(null);
+  }
+
+  function deleteNeg(id: string) {
+    const updated = negs.filter(n => n.id !== id);
+    setNegs(updated); saveNegsLS(updated);
+  }
+
+  function startEdit(n: Negotiation) {
+    setForm({ supplier: n.supplier, status: n.status, notes: n.notes, amount: n.amount });
+    setEditId(n.id); setShowForm(true);
+  }
+
+  const counts: Record<NegStatus, number> = {
+    "En cours": 0, "Offre reçue": 0, "Accepté": 0, "Refusé": 0,
+  };
+  for (const n of negs) counts[n.status] = (counts[n.status] ?? 0) + 1;
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 pt-6 pb-40">
+      {/* KPI strip */}
+      <div className="grid grid-cols-4 gap-2 mb-5">
+        {(Object.entries(counts) as [NegStatus, number][]).map(([st, cnt]) => (
+          <div key={st} className={`rounded-xl border px-3 py-2.5 ${NEG_STATUS_STYLE[st]}`}>
+            <p className="text-[18px] font-black leading-none">{cnt}</p>
+            <p className="text-[10px] mt-0.5 opacity-70">{st}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Add button */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[12px] text-white/40 font-semibold">{negs.length} négociation{negs.length !== 1 ? "s" : ""}</p>
+        <button onClick={() => { setShowForm(true); setEditId(null); setForm({ status: "En cours" }); }}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/12 border border-indigo-500/25 text-indigo-400 text-[12px] font-semibold hover:bg-indigo-500/20 transition-all">
+          <PlusCircle size={13}/> Nouvelle
+        </button>
+      </div>
+
+      {/* Form */}
+      <AnimatePresence>
+        {showForm && (
+          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+            className="mb-4 rounded-2xl border border-white/10 bg-white/4 p-4 space-y-3">
+            <p className="text-[12px] font-semibold text-white/60">{editId ? "Modifier" : "Nouvelle négociation"}</p>
+            <input value={form.supplier ?? ""} onChange={e => setForm(p => ({...p, supplier: e.target.value}))}
+              placeholder="Nom du fournisseur *"
+              className="w-full rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40" />
+            <div className="grid grid-cols-2 gap-3">
+              <select value={form.status ?? "En cours"} onChange={e => setForm(p => ({...p, status: e.target.value as NegStatus}))}
+                className="rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white/70 outline-none appearance-none cursor-pointer">
+                {(["En cours","Offre reçue","Accepté","Refusé"] as NegStatus[]).map(s => (
+                  <option key={s} value={s} className="bg-[#0e1420]">{s}</option>
+                ))}
+              </select>
+              <input value={form.amount ?? ""} onChange={e => setForm(p => ({...p, amount: e.target.value}))}
+                placeholder="Montant (ex: 15 000 €)"
+                className="rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40" />
+            </div>
+            <textarea value={form.notes ?? ""} onChange={e => setForm(p => ({...p, notes: e.target.value}))}
+              placeholder="Notes, conditions, prochaines étapes…" rows={3}
+              className="w-full rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40 resize-none" />
+            <div className="flex gap-2">
+              <button onClick={saveNeg} disabled={!form.supplier?.trim()}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500 text-white text-[12px] font-semibold hover:bg-indigo-600 transition-all disabled:opacity-40">
+                <Check size={12}/> {editId ? "Mettre à jour" : "Créer"}
+              </button>
+              <button onClick={() => { setShowForm(false); setEditId(null); setForm({ status: "En cours" }); }}
+                className="px-3 py-2 rounded-xl text-[12px] text-white/40 hover:text-white hover:bg-white/8 transition-all">
+                Annuler
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* List */}
+      {negs.length === 0 && !showForm && (
+        <div className="text-center py-16">
+          <Handshake size={32} className="text-white/12 mx-auto mb-3" />
+          <p className="text-[13px] text-white/25">Aucune négociation suivie</p>
+          <p className="text-[11px] text-white/15 mt-1">Crée une entrée pour chaque fournisseur en cours</p>
+        </div>
+      )}
+      <div className="space-y-3">
+        <AnimatePresence>
+          {negs.map(n => (
+            <motion.div key={n.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }}
+              className="rounded-2xl border border-white/8 bg-white/3 p-4">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-bold text-white/88 truncate">{n.supplier}</p>
+                  {n.amount && <p className="text-[11px] text-white/35 mt-0.5">{n.amount}</p>}
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${NEG_STATUS_STYLE[n.status]}`}>{n.status}</span>
+                </div>
+              </div>
+              {n.notes && <p className="text-[12px] text-white/45 leading-relaxed mb-3 whitespace-pre-wrap line-clamp-3">{n.notes}</p>}
+              <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                <p className="text-[10px] text-white/20 flex-1">
+                  {new Date(n.updatedAt).toLocaleDateString("fr-FR", { day:"numeric", month:"short" })}
+                </p>
+                {(["En cours","Offre reçue","Accepté","Refusé"] as NegStatus[]).filter(s => s !== n.status).map(s => (
+                  <button key={s} onClick={() => {
+                    const updated = negs.map(x => x.id === n.id ? { ...x, status: s, updatedAt: new Date().toISOString() } : x);
+                    setNegs(updated); saveNegsLS(updated);
+                  }} className="text-[10px] px-2 py-1 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/6 transition-all">
+                    → {s}
+                  </button>
+                ))}
+                <button onClick={() => startEdit(n)} className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/8 transition-all">
+                  <Check size={11}/>
+                </button>
+                <button onClick={() => deleteNeg(n.id)} className="p-1.5 rounded-lg text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                  <Trash2 size={11}/>
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
 export default function SourcingPage() {
-  const [messages,    setMessages]    = useState<ChatMsg[]>([]);
-  const [input,       setInput]       = useState("");
-  const [sending,     setSending]     = useState(false);
-  const [pdfLoading,  setPdfLoading]  = useState(false);
+  const [messages,     setMessages]     = useState<ChatMsg[]>([]);
+  const [input,        setInput]        = useState("");
+  const [sending,      setSending]      = useState(false);
+  const [pdfLoading,   setPdfLoading]   = useState(false);
+  const [tab,          setTab]          = useState<"chat"|"negs">("chat");
+  const [history,      setHistory]      = useState<HistorySession[]>([]);
+  const [showHistory,  setShowHistory]  = useState(false);
+  const [crmLoading,   setCrmLoading]   = useState(false);
+  const [crmDone,      setCrmDone]      = useState(false);
 
   const bottomRef  = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLTextAreaElement>(null);
@@ -485,6 +739,17 @@ export default function SourcingPage() {
 
   useEffect(() => { msgHistory.current = messages; }, [messages]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => { setHistory(loadHistory()); }, []);
+
+  const allSuppliers = useMemo(() => {
+    const result: SourcingItem[] = [];
+    for (const msg of messages) {
+      for (const sec of msg.sections ?? []) {
+        if (sec.type === "supplier_list") result.push(...sec.items);
+      }
+    }
+    return result;
+  }, [messages]);
 
     const sendToAPI = useCallback(async (
     text:    string,
@@ -593,11 +858,44 @@ export default function SourcingPage() {
   }
 
   function newChat() {
-    setMessages([]);
-    setInput("");
-    setSending(false);
+    const validMsgs = messages.filter(m => !m.loading && !m.isError && m.content.trim());
+    if (validMsgs.length > 0) {
+      const title = messages.find(m => m.role === "user")?.content.slice(0, 65) ?? "Session";
+      const session: HistorySession = {
+        id: uid(), title, date: new Date().toISOString(),
+        messages: messages.filter(m => !m.loading),
+      };
+      const updated = [session, ...history].slice(0, 20);
+      setHistory(updated); saveHistory(updated);
+    }
+    setMessages([]); setInput(""); setSending(false);
+    setShowHistory(false); setCrmDone(false);
     if (inputRef.current) inputRef.current.style.height = "auto";
   }
+
+  const exportToCRM = useCallback(async () => {
+    if (!allSuppliers.length || crmLoading) return;
+    setCrmLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const rows = allSuppliers.filter(s => s.name).map(s => ({
+        user_id: user.id,
+        name: s.name ?? "",
+        email: "", phone: "", company: s.name ?? "",
+        country: s.country ?? "",
+        notes: [s.description, s.tip].filter(Boolean).join("\n"),
+        status: "prospect" as const,
+        type: "prospect" as const,
+        source: "Sourcing IA",
+        tags: ["fournisseur", ...(s.type ? [s.type] : [])],
+      }));
+      await supabase.from("contacts").insert(rows);
+      setCrmDone(true);
+    } finally {
+      setCrmLoading(false);
+    }
+  }, [allSuppliers, crmLoading]);
 
     const handleGeneratePdf = useCallback(async () => {
     if (pdfLoading) return;
@@ -624,6 +922,10 @@ export default function SourcingPage() {
     return (
     <div className="min-h-screen bg-[#07080e] text-white pb-40">
 
+      {showHistory && (
+        <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
+      )}
+
       {/* ── HEADER premium ── */}
       <div className="relative overflow-hidden shrink-0"
         style={{ background: "linear-gradient(160deg,#07080e,#0c0e1a,#07080e)" }}>
@@ -649,32 +951,88 @@ export default function SourcingPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* History dropdown */}
+            <div className="relative">
+              <button onClick={() => setShowHistory(v => !v)}
+                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8">
+                <History size={12}/>{history.length > 0 && <span className="text-[10px] text-indigo-400">{history.length}</span>}
+                <ChevronDown size={10}/>
+              </button>
+              <AnimatePresence>
+                {showHistory && (
+                  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                    className="absolute right-0 top-full mt-1 w-72 rounded-2xl border border-white/10 bg-[#0d1117] shadow-2xl z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-white/6">
+                      <p className="text-[11px] font-semibold text-white/50">Historique sourcings</p>
+                    </div>
+                    {history.length === 0 ? (
+                      <p className="px-4 py-4 text-[11px] text-white/25">Aucun historique</p>
+                    ) : (
+                      <div className="max-h-64 overflow-y-auto">
+                        {history.map(s => (
+                          <button key={s.id} onClick={() => {
+                            setMessages(s.messages);
+                            setShowHistory(false);
+                            setCrmDone(false);
+                          }}
+                            className="w-full flex items-start gap-3 px-4 py-3 hover:bg-white/4 transition-colors border-b border-white/4 last:border-0 text-left">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[12px] text-white/75 font-medium truncate">{s.title}</p>
+                              <p className="text-[10px] text-white/30 mt-0.5">
+                                {new Date(s.date).toLocaleDateString("fr-FR", { day:"numeric", month:"short", year:"2-digit" })}
+                              </p>
+                            </div>
+                            <ChevronRight size={11} className="text-white/20 shrink-0 mt-1" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Export CRM */}
+            {allSuppliers.length > 0 && (
+              <button onClick={() => void exportToCRM()} disabled={crmLoading || crmDone}
+                className="flex items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-3 py-2 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/15 disabled:opacity-50">
+                {crmLoading ? <Loader2 size={12} className="animate-spin"/> : crmDone ? <Check size={12}/> : <Users size={12}/>}
+                {crmDone ? "Exporté" : "→ CRM"}
+              </button>
+            )}
+
             {hasAiMsg && (
-              <button
-                onClick={handleGeneratePdf}
-                disabled={pdfLoading}
-                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/6 px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8 disabled:opacity-40"
-              >
-                {pdfLoading
-                  ? <RefreshCw size={12} className="animate-spin" />
-                  : <Download size={12} />
-                }
-                {pdfLoading ? "Génération…" : "Guide PDF"}
+              <button onClick={handleGeneratePdf} disabled={pdfLoading}
+                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/6 px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8 disabled:opacity-40">
+                {pdfLoading ? <RefreshCw size={12} className="animate-spin"/> : <Download size={12}/>}
+                {pdfLoading ? "Génération…" : "PDF"}
               </button>
             )}
             {hasMessages && (
-              <button
-                onClick={newChat}
-                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8"
-              >
-                <X size={13} />
-                Nouveau
+              <button onClick={newChat}
+                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8">
+                <X size={13}/> Nouveau
               </button>
             )}
           </div>
         </div>
       </div>
 
+      {/* Tab bar */}
+      <div className="border-b border-white/6 bg-[#07080e]">
+        <div className="max-w-2xl mx-auto px-4 flex gap-1 pt-1">
+          {([["chat","Chat IA",Search],["negs","Négociations",Handshake]] as [typeof tab, string, React.ElementType][]).map(([t,label,Icon]) => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-[12px] font-semibold border-b-2 transition-all ${
+                tab === t ? "border-indigo-500 text-white/85" : "border-transparent text-white/35 hover:text-white/55"
+              }`}>
+              <Icon size={12}/>{label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tab === "negs" ? <NegotiationsPanel /> : (
             <div className="max-w-2xl mx-auto px-4 pt-5">
 
                 <AnimatePresence>
@@ -799,13 +1157,17 @@ export default function SourcingPage() {
                 />
               ))}
             </AnimatePresence>
+            {allSuppliers.length >= 2 && (
+              <ComparisonMatrix suppliers={allSuppliers} />
+            )}
             <div ref={bottomRef} />
           </div>
         )}
         {!hasMessages && <div ref={bottomRef} />}
       </div>
+      )}
 
-            <div className="fixed bottom-0 inset-x-0 z-30 bg-[#07080e]/98 backdrop-blur-xl border-t border-white/6">
+      {tab === "chat" && <div className="fixed bottom-0 inset-x-0 z-30 bg-[#07080e]/98 backdrop-blur-xl border-t border-white/6">
         <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-end gap-2.5 rounded-2xl border border-white/8 bg-white/6 px-4 py-2.5 transition-colors focus-within:border-[rgba(129,140,248,0.3)]">
             <textarea
@@ -835,7 +1197,7 @@ export default function SourcingPage() {
             Entrée pour envoyer · Maj+Entrée pour saut de ligne · Réponse complète ~10-30s
           </p>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
