@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   CalendarRange, Plus, ChevronLeft, ChevronRight, Clock, User, Briefcase,
   Trash2, X, Loader2, CheckCircle2, AlertCircle, Send, Users, Tag, Edit2,
-  UserPlus, CalendarDays, LayoutList, Info,
+  UserPlus, CalendarDays, LayoutList, Info, AlertTriangle, FileDown, CopyPlus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -52,7 +52,7 @@ type DraftEmployee = {
   color: string;
 };
 
-type View = "grille" | "liste";
+type View = "grille" | "liste" | "mois";
 
 const ACCENT = "#38bdf8";
 const ease   = [0.16, 1, 0.3, 1] as const;
@@ -86,6 +86,23 @@ function getWeekDays(ref: Date): Date[] {
   });
 }
 
+function getMonthDays(month: Date): { date: Date; inMonth: boolean }[] {
+  const y = month.getFullYear(), m = month.getMonth();
+  const firstDay = new Date(y, m, 1);
+  const startDow = firstDay.getDay();
+  const startOffset = startDow === 0 ? 6 : startDow - 1;
+  const start = new Date(firstDay);
+  start.setDate(1 - startOffset);
+  const lastDay = new Date(y, m + 1, 0);
+  const totalDays = lastDay.getDate() + startOffset;
+  const rows = Math.ceil(totalDays / 7);
+  return Array.from({ length: rows * 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return { date: d, inMonth: d.getMonth() === m };
+  });
+}
+
 function toISO(d: Date): string { return d.toISOString().slice(0, 10); }
 function todayISO(): string { return toISO(new Date()); }
 
@@ -112,29 +129,91 @@ function typeLabel(t: string): string { return SHIFT_TYPES.find(x => x.value ===
 function emptyShift(date?: string, empId?: string): DraftShift {
   return { title: "", date: date ?? todayISO(), start_time: "09:00", end_time: "17:00", type: "tache", note: "", employee_id: empId ?? "" };
 }
-
 function emptyEmployee(color?: string): DraftEmployee {
   return { name: "", email: "", role: "", color: color ?? EMPLOYEE_COLORS[0] };
 }
 
-function ShiftCard({ shift, employee, onEdit, onDelete }: {
-  shift: Shift;
-  employee?: Employee;
-  onEdit: (s: Shift) => void;
-  onDelete: (id: string) => void;
+function detectConflicts(shiftList: Shift[]): Set<string> {
+  const result = new Set<string>();
+  const byEmpDay = new Map<string, Shift[]>();
+  for (const s of shiftList) {
+    if (!s.employee_id) continue;
+    const key = `${s.employee_id}|${s.date}`;
+    if (!byEmpDay.has(key)) byEmpDay.set(key, []);
+    byEmpDay.get(key)!.push(s);
+  }
+  for (const dayShifts of byEmpDay.values()) {
+    for (let i = 0; i < dayShifts.length; i++) {
+      for (let j = i + 1; j < dayShifts.length; j++) {
+        const a = dayShifts[i], b = dayShifts[j];
+        if (timeToMin(a.start_time) < timeToMin(b.end_time) && timeToMin(b.start_time) < timeToMin(a.end_time)) {
+          result.add(a.id); result.add(b.id);
+        }
+      }
+    }
+  }
+  return result;
+}
+
+function exportPlanningPDF(shiftList: Shift[], weekDays: Date[], empMap: Map<string, Employee>, label: string) {
+  if (shiftList.length === 0) return;
+  const sorted = [...shiftList].sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time));
+  let rows = "";
+  let lastDate = "";
+  for (const s of sorted) {
+    if (s.date !== lastDate) {
+      const d = new Date(s.date + "T00:00:00");
+      const dl = d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+      rows += `<tr><td colspan="6" style="background:#1a1a2e;color:#fff;font-size:11px;font-weight:700;padding:8px 12px;text-transform:uppercase;letter-spacing:.05em">${dl.charAt(0).toUpperCase() + dl.slice(1)}</td></tr>`;
+      lastDate = s.date;
+    }
+    const emp = s.employee_id ? empMap.get(s.employee_id) : undefined;
+    const col = typeColor(s.type);
+    rows += `<tr>
+      <td style="font-family:monospace;font-size:11px;white-space:nowrap">${s.start_time}–${s.end_time}</td>
+      <td style="font-weight:600">${s.title}</td>
+      <td><span style="background:${col}22;color:${col};padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700">${typeLabel(s.type)}</span></td>
+      <td>${emp ? `<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${emp.color}"></span>${emp.name}</span>` : '<span style="color:#f59e0b;font-weight:700">Open</span>'}</td>
+      <td style="color:#9ca3af">${shiftDur(s)}</td>
+      <td style="color:#9ca3af;max-width:200px;font-size:11px">${s.note ?? ""}</td>
+    </tr>`;
+  }
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<title>Planning — ${label}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,'Helvetica Neue',sans-serif;color:#1a1a2e;padding:32px;font-size:12px}h1{font-size:20px;font-weight:800;margin-bottom:4px}.sub{color:#666;margin-bottom:24px;font-size:13px}table{width:100%;border-collapse:collapse}th{background:#f0f4f8;text-align:left;padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280}td{padding:8px 12px;border-bottom:1px solid #e5e7eb;vertical-align:top}.footer{margin-top:24px;color:#9ca3af;font-size:10px}@media print{body{padding:16px}@page{margin:1cm}}</style>
+</head><body>
+<h1>Planning DJAMA</h1>
+<p class="sub">${label} · ${shiftList.length} shift${shiftList.length > 1 ? "s" : ""}</p>
+<table><thead><tr><th>Horaire</th><th>Titre</th><th>Type</th><th>Employé</th><th>Durée</th><th>Note</th></tr></thead>
+<tbody>${rows}</tbody></table>
+<p class="footer">Généré le ${new Date().toLocaleDateString("fr-FR", { day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit" })} · DJAMA Planning</p>
+</body></html>`;
+  const w = window.open("", "_blank");
+  if (!w) { alert("Autorisez les popups pour exporter le PDF"); return; }
+  w.document.write(html); w.document.close();
+  setTimeout(() => w.print(), 400);
+}
+
+function ShiftCard({ shift, employee, hasConflict, onEdit, onDelete }: {
+  shift: Shift; employee?: Employee; hasConflict: boolean;
+  onEdit: (s: Shift) => void; onDelete: (id: string) => void;
 }) {
   const color = typeColor(shift.type);
   return (
-    <motion.div
-      layout initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+    <motion.div layout initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.18, ease }}
       onClick={() => onEdit(shift)}
       className="group relative flex flex-col gap-0.5 rounded-xl border p-2 text-left transition cursor-pointer"
-      style={{ backgroundColor: `${color}10`, borderColor: `${color}28` }}
+      style={{ backgroundColor: `${color}10`, borderColor: hasConflict ? "#f59e0b44" : `${color}28` }}
     >
-            <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full" style={{ backgroundColor: color }} />
-            {shift.status === "published" && (
+      <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full" style={{ backgroundColor: color }} />
+      {shift.status === "published" && (
         <div className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-green-400/80" />
+      )}
+      {hasConflict && (
+        <div className="absolute right-1.5 bottom-1.5 flex items-center justify-center" title="Conflit horaire">
+          <AlertTriangle size={8} className="text-amber-400" />
+        </div>
       )}
       <div className="pl-2.5 pr-4">
         <p className="text-[0.68rem] font-bold leading-tight text-white/85 truncate">{shift.title}</p>
@@ -149,10 +228,8 @@ function ShiftCard({ shift, employee, onEdit, onDelete }: {
           </p>
         )}
       </div>
-      <button
-        onClick={e => { e.stopPropagation(); onDelete(shift.id); }}
-        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-md opacity-0 transition group-hover:opacity-100 text-white/20 hover:text-red-400"
-      >
+      <button onClick={e => { e.stopPropagation(); onDelete(shift.id); }}
+        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-md opacity-0 transition group-hover:opacity-100 text-white/20 hover:text-red-400">
         <Trash2 size={9} />
       </button>
     </motion.div>
@@ -163,32 +240,35 @@ const inputCls = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p
 const labelCls = "mb-1.5 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30";
 
 export default function PlanificationPage() {
-    const [userId,     setUserId]     = useState<string | null>(null);
-  const [employees,  setEmployees]  = useState<Employee[]>([]);
-  const [shifts,     setShifts]     = useState<Shift[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [view,       setView]       = useState<View>("grille");
-  const [weekRef,    setWeekRef]    = useState<Date>(new Date());
-  const [publishing, setPublishing] = useState(false);
+  const [userId,      setUserId]      = useState<string | null>(null);
+  const [employees,   setEmployees]   = useState<Employee[]>([]);
+  const [shifts,      setShifts]      = useState<Shift[]>([]);
+  const [monthShifts, setMonthShifts] = useState<Shift[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [monthLoading,setMonthLoading]= useState(false);
+  const [view,        setView]        = useState<View>("grille");
+  const [weekRef,     setWeekRef]     = useState<Date>(new Date());
+  const [calMonth,    setCalMonth]    = useState<Date>(() => { const d = new Date(); d.setDate(1); return d; });
+  const [publishing,  setPublishing]  = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
   const { toasts, add: addToast, remove: removeToast } = useToastStack();
 
-    const [shiftModal,  setShiftModal]  = useState(false);
+  const [shiftModal,  setShiftModal]  = useState(false);
   const [editShiftId, setEditShiftId] = useState<string | null>(null);
   const [shiftDraft,  setShiftDraft]  = useState<DraftShift>(emptyShift());
   const [savingShift, setSavingShift] = useState(false);
   const [shiftErrors, setShiftErrors] = useState<Record<string, string>>({});
 
-    const [empModal,  setEmpModal]  = useState(false);
+  const [empModal,  setEmpModal]  = useState(false);
   const [editEmpId, setEditEmpId] = useState<string | null>(null);
   const [empDraft,  setEmpDraft]  = useState<DraftEmployee>(emptyEmployee());
   const [savingEmp, setSavingEmp] = useState(false);
 
-    const [delConfirm, setDelConfirm] = useState<{ type: "shift" | "employee"; id: string } | null>(null);
+  const [delConfirm, setDelConfirm] = useState<{ type: "shift" | "employee"; id: string } | null>(null);
   const [deleting,   setDeleting]   = useState(false);
+  const [pubModal,   setPubModal]   = useState(false);
 
-    const [pubModal, setPubModal] = useState(false);
-
-    const weekDays  = useMemo(() => getWeekDays(weekRef), [weekRef]);
+  const weekDays  = useMemo(() => getWeekDays(weekRef), [weekRef]);
   const today     = todayISO();
   const weekStart = toISO(weekDays[0]);
 
@@ -197,45 +277,72 @@ export default function PlanificationPage() {
 
   const showToast = (type: "success" | "error", msg: string) => addToast(msg, type);
 
-    const fetchEmployees = useCallback(async (uid: string) => {
+  /* ── Conflict detection ── */
+  const weekConflicts  = useMemo(() => detectConflicts(shifts), [shifts]);
+  const monthConflicts = useMemo(() => detectConflicts(monthShifts), [monthShifts]);
+  const conflicts      = view === "mois" ? monthConflicts : weekConflicts;
+  const conflictCount  = conflicts.size;
+
+  const conflictEmployeeNames = useMemo(() => {
+    if (conflictCount === 0) return [];
+    const ids = new Set<string>();
+    const list = view === "mois" ? monthShifts : shifts;
+    list.forEach(s => { if (conflicts.has(s.id) && s.employee_id) ids.add(s.employee_id); });
+    return [...ids].map(id => employees.find(e => e.id === id)?.name).filter(Boolean) as string[];
+  }, [conflicts, conflictCount, shifts, monthShifts, view, employees]);
+
+  /* ── Data fetching ── */
+  const fetchEmployees = useCallback(async (uid: string) => {
     const { data, error } = await supabase.from("employees").select("*").eq("user_id", uid).order("created_at").limit(100);
     if (error) { showToast("error", "Erreur chargement employés : " + error.message); return; }
     if (data) setEmployees(data as Employee[]);
-
   }, []);
 
-    const fetchShifts = useCallback(async (uid: string, days: Date[]) => {
+  const fetchShifts = useCallback(async (uid: string, days: Date[]) => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("shifts").select("*")
-      .eq("user_id", uid)
-      .gte("date", toISO(days[0])).lte("date", toISO(days[6]))
-      .order("start_time");
+      .from("shifts").select("*").eq("user_id", uid)
+      .gte("date", toISO(days[0])).lte("date", toISO(days[6])).order("start_time");
     if (error) showToast("error", "Erreur chargement shifts : " + error.message);
     if (data) setShifts(data as Shift[]);
     setLoading(false);
-
   }, []);
 
-    useEffect(() => {
+  const fetchMonthShifts = useCallback(async (uid: string, month: Date) => {
+    setMonthLoading(true);
+    const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
+    const lastDay  = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+    const { data, error } = await supabase
+      .from("shifts").select("*").eq("user_id", uid)
+      .gte("date", toISO(firstDay)).lte("date", toISO(lastDay)).order("start_time");
+    if (data) setMonthShifts(data as Shift[]);
+    else if (error) showToast("error", error.message);
+    setMonthLoading(false);
+  }, []);
+
+  useEffect(() => {
     if (window.innerWidth < 640) setView("liste");
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
       await Promise.all([fetchEmployees(user.id), fetchShifts(user.id, weekDays)]);
     })();
-
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     if (userId) fetchShifts(userId, weekDays);
   }, [weekRef, userId, weekDays, fetchShifts]);
 
-    const shiftsByKey = useMemo(() => {
+  useEffect(() => {
+    if (userId && view === "mois") fetchMonthShifts(userId, calMonth);
+  }, [userId, view, calMonth, fetchMonthShifts]);
+
+  /* ── Derived ── */
+  const shiftsByKey = useMemo(() => {
     const map = new Map<string, Shift[]>();
     for (const s of shifts) {
       const k = `${s.employee_id ?? "open"}|${s.date}`;
@@ -248,63 +355,44 @@ export default function PlanificationPage() {
   const getShiftsFor = (empId: string | null, date: string) =>
     shiftsByKey.get(`${empId ?? "open"}|${date}`) ?? [];
 
-  const shiftIndex = useMemo(() => {
-    const idx: Record<string, Record<string, typeof shifts[0][]>> = {};
-    shifts.forEach(s => {
-      const empKey = s.employee_id ?? "__open__";
-      if (!idx[empKey]) idx[empKey] = {};
-      if (!idx[empKey][s.date]) idx[empKey][s.date] = [];
-      idx[empKey][s.date].push(s);
-    });
-    return idx;
-  }, [shifts]);
-
   const empMap = useMemo(() => {
     const m = new Map<string, Employee>();
     employees.forEach(e => m.set(e.id, e));
     return m;
   }, [employees]);
 
-    const weekStats = useMemo(() => {
+  const weekStats = useMemo(() => {
     const min = shifts.reduce((a, s) => a + Math.max(0, timeToMin(s.end_time) - timeToMin(s.start_time)), 0);
     const h = Math.floor(min / 60), m = min % 60;
     return { hours: h > 0 ? (m > 0 ? `${h}h${m}` : `${h}h`) : `${m}m`, count: shifts.length };
   }, [shifts]);
 
-    const prevWeek = () => { const d = new Date(weekRef); d.setDate(d.getDate() - 7); setWeekRef(d); };
-  const nextWeek = () => { const d = new Date(weekRef); d.setDate(d.getDate() + 7); setWeekRef(d); };
-  const goToday  = () => setWeekRef(new Date());
+  const monthDays = useMemo(() => getMonthDays(calMonth), [calMonth]);
 
-    const openAddShift = (date?: string, empId?: string) => {
-    setEditShiftId(null);
-    setShiftDraft(emptyShift(date, empId));
-    setShiftModal(true);
+  /* ── Navigation ── */
+  const prevWeek  = () => { const d = new Date(weekRef); d.setDate(d.getDate() - 7); setWeekRef(d); };
+  const nextWeek  = () => { const d = new Date(weekRef); d.setDate(d.getDate() + 7); setWeekRef(d); };
+  const goToday   = () => setWeekRef(new Date());
+  const prevMonth = () => { const d = new Date(calMonth); d.setMonth(d.getMonth() - 1); setCalMonth(d); };
+  const nextMonth = () => { const d = new Date(calMonth); d.setMonth(d.getMonth() + 1); setCalMonth(d); };
+
+  /* ── Shift CRUD ── */
+  const openAddShift = (date?: string, empId?: string) => {
+    setEditShiftId(null); setShiftDraft(emptyShift(date, empId)); setShiftModal(true);
   };
-
   const openEditShift = (s: Shift) => {
     setEditShiftId(s.id);
     setShiftDraft({ title: s.title, date: s.date, start_time: s.start_time, end_time: s.end_time, type: s.type, note: s.note ?? "", employee_id: s.employee_id ?? "" });
     setShiftModal(true);
   };
 
-    const handleSaveShift = async () => {
+  const handleSaveShift = async () => {
     const d = shiftDraft;
     if (!d.title.trim()) { showToast("error", "Titre obligatoire"); return; }
     if (timeToMin(d.end_time) <= timeToMin(d.start_time)) { showToast("error", "Fin doit être après le début"); return; }
     if (!userId) return;
     setSavingShift(true);
-
-    const payload = {
-      user_id:     userId,
-      title:       d.title.trim(),
-      date:        d.date,
-      start_time:  d.start_time,
-      end_time:    d.end_time,
-      type:        d.type,
-      note:        d.note.trim() || null,
-      employee_id: d.employee_id || null,
-    };
-
+    const payload = { user_id: userId, title: d.title.trim(), date: d.date, start_time: d.start_time, end_time: d.end_time, type: d.type, note: d.note.trim() || null, employee_id: d.employee_id || null };
     if (editShiftId) {
       const { data, error } = await supabase.from("shifts").update(payload).eq("id", editShiftId).select().single();
       if (error) { showToast("error", error.message); setSavingShift(false); return; }
@@ -315,29 +403,13 @@ export default function PlanificationPage() {
       if (error) { showToast("error", error.message); setSavingShift(false); return; }
       const newShift = data as Shift;
       setShifts(prev => [...prev, newShift]);
-
-            if (newShift.employee_id) {
+      if (newShift.employee_id) {
         const assignedEmp = employees.find(e => e.id === newShift.employee_id);
         if (assignedEmp?.email) {
           fetch("/api/planification/notify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title:      newShift.title,
-              date:       newShift.date,
-              start_time: newShift.start_time,
-              end_time:   newShift.end_time,
-              type:       newShift.type,
-              employee:   assignedEmp.name,
-              role:       assignedEmp.role ?? null,
-              note:       newShift.note ?? null,
-              to_email:   assignedEmp.email,
-            }),
-          })
-            .then(r => r.json())
-            .then(j => console.log("[planif] notify →", j))
-            .catch(e => console.error("[planif] notify erreur:", e));
-
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: newShift.title, date: newShift.date, start_time: newShift.start_time, end_time: newShift.end_time, type: newShift.type, employee: assignedEmp.name, role: assignedEmp.role ?? null, note: newShift.note ?? null, to_email: assignedEmp.email }),
+          }).then(r => r.json()).then(j => console.log("[planif] notify →", j)).catch(e => console.error("[planif] notify erreur:", e));
           showToast("success", `Shift ajouté · Email envoyé à ${assignedEmp.name}`);
         } else {
           showToast("success", "Shift ajouté");
@@ -346,12 +418,11 @@ export default function PlanificationPage() {
         showToast("success", "Shift ajouté");
       }
     }
-
-    setSavingShift(false);
-    setShiftModal(false);
+    setSavingShift(false); setShiftModal(false);
   };
 
-    const handleSaveEmployee = async () => {
+  /* ── Employee CRUD ── */
+  const handleSaveEmployee = async () => {
     const d = empDraft;
     if (!d.name.trim()) { showToast("error", "Nom obligatoire"); return; }
     if (!d.email.trim()) { showToast("error", "Email obligatoire — nécessaire pour les notifications de planning"); return; }
@@ -359,9 +430,7 @@ export default function PlanificationPage() {
     if (!emailRe.test(d.email.trim())) { showToast("error", "Adresse email invalide"); return; }
     if (!userId) return;
     setSavingEmp(true);
-
     const payload = { user_id: userId, name: d.name.trim(), email: d.email.trim(), role: d.role.trim() || null, color: d.color };
-
     if (editEmpId) {
       const { data, error } = await supabase.from("employees").update(payload).eq("id", editEmpId).select().single();
       if (error) { showToast("error", error.message); setSavingEmp(false); return; }
@@ -373,12 +442,11 @@ export default function PlanificationPage() {
       setEmployees(prev => [...prev, data as Employee]);
       showToast("success", "Employé ajouté");
     }
-
-    setSavingEmp(false);
-    setEmpModal(false);
+    setSavingEmp(false); setEmpModal(false);
   };
 
-    const handleDelete = async () => {
+  /* ── Delete ── */
+  const handleDelete = async () => {
     if (!delConfirm) return;
     setDeleting(true);
     const table = delConfirm.type === "shift" ? "shifts" : "employees";
@@ -387,14 +455,13 @@ export default function PlanificationPage() {
     if (error) { showToast("error", error.message); setDelConfirm(null); return; }
     if (delConfirm.type === "shift") setShifts(prev => prev.filter(s => s.id !== delConfirm.id));
     else setEmployees(prev => prev.filter(e => e.id !== delConfirm.id));
-    setDelConfirm(null);
-    showToast("success", "Supprimé");
+    setDelConfirm(null); showToast("success", "Supprimé");
   };
 
-    const handlePublish = async () => {
+  /* ── Publish ── */
+  const handlePublish = async () => {
     if (!userId) return;
-    setPublishing(true);
-    setPubModal(false);
+    setPublishing(true); setPubModal(false);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
@@ -406,83 +473,120 @@ export default function PlanificationPage() {
       const json = await res.json() as { published?: number; emails_sent?: number; error?: string; warning?: string; missing_email?: string[] };
       if (!res.ok || json.error) throw new Error(json.error ?? "Erreur");
       setShifts(prev => prev.map(s => ({ ...s, status: "published" as const })));
-      if (json.warning) {
-        showToast("error", `Planning publié mais : ${json.warning}`);
-      } else {
-        showToast("success", json.emails_sent
-          ? `Planning publié · ${json.emails_sent} email${json.emails_sent > 1 ? "s" : ""} envoyé${json.emails_sent > 1 ? "s" : ""}`
-          : "Planning publié (aucun email — vérifiez les adresses)");
-      }
+      if (json.warning) showToast("error", `Planning publié mais : ${json.warning}`);
+      else showToast("success", json.emails_sent ? `Planning publié · ${json.emails_sent} email${json.emails_sent > 1 ? "s" : ""} envoyé${json.emails_sent > 1 ? "s" : ""}` : "Planning publié (aucun email — vérifiez les adresses)");
     } catch (e: unknown) {
       showToast("error", e instanceof Error ? e.message : "Erreur publication");
     }
     setPublishing(false);
   };
 
-    return (
+  /* ── Duplicate week ── */
+  const handleDuplicateWeek = async () => {
+    if (!userId || shifts.length === 0) { showToast("error", "Aucun shift à dupliquer"); return; }
+    setDuplicating(true);
+    const newShifts = shifts.map(s => {
+      const d = new Date(s.date + "T00:00:00"); d.setDate(d.getDate() + 7);
+      return { user_id: userId, title: s.title, date: toISO(d), start_time: s.start_time, end_time: s.end_time, type: s.type, note: s.note, employee_id: s.employee_id, status: "draft" as const };
+    });
+    const { error } = await supabase.from("shifts").insert(newShifts);
+    setDuplicating(false);
+    if (error) { showToast("error", error.message); return; }
+    const nextWeek = new Date(weekRef); nextWeek.setDate(nextWeek.getDate() + 7);
+    setWeekRef(nextWeek);
+    showToast("success", `${newShifts.length} shifts dupliqués → semaine suivante`);
+  };
+
+  /* ── Export PDF ── */
+  const handleExportPDF = () => {
+    if (view === "mois") {
+      const label = calMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+      exportPlanningPDF(monthShifts, weekDays, empMap, label);
+    } else {
+      exportPlanningPDF(shifts, weekDays, empMap, fmtWeekRange(weekDays));
+    }
+  };
+
+  /* ═════════════════════════════════
+     RENDER
+  ═════════════════════════════════== */
+  return (
     <div className="min-h-screen bg-[#07080e]">
-            <div className="pointer-events-none fixed inset-0 z-0">
+      <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute left-[10%] top-[5%] h-[600px] w-[600px] rounded-full bg-[rgba(56,189,248,0.025)] blur-[180px]" />
       </div>
 
-            <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(8,10,15,0.92)] px-4 py-3 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
+      {/* ── Header ── */}
+      <div className="relative z-10 border-b border-white/[0.06] bg-[rgba(8,10,15,0.92)] px-4 py-3 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl border"
-                 style={{ backgroundColor: `${ACCENT}15`, borderColor: `${ACCENT}30` }}>
+              style={{ backgroundColor: `${ACCENT}15`, borderColor: `${ACCENT}30` }}>
               <CalendarRange size={16} style={{ color: ACCENT }} />
             </div>
             <div>
               <h1 className="text-base font-extrabold text-white">Planification</h1>
               <p className="text-[0.62rem] text-white/30">
-                {shifts.length > 0 ? `${weekStats.count} shifts · ${weekStats.hours}` : "Aucun shift cette semaine"}
+                {view === "mois"
+                  ? `${monthShifts.length} shifts · ${calMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`
+                  : shifts.length > 0 ? `${weekStats.count} shifts · ${weekStats.hours}` : "Aucun shift cette semaine"}
               </p>
             </div>
           </div>
 
-                    <div className="flex items-center gap-2">
-                        <div className="hidden sm:flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
-              {(["grille", "liste"] as View[]).map(v => (
+          <div className="flex flex-wrap items-center gap-2">
+            {/* View toggle */}
+            <div className="hidden sm:flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
+              {([["grille", "Grille", <CalendarDays key="g" size={11} />], ["liste", "Liste", <LayoutList key="l" size={11} />], ["mois", "Mois", <CalendarRange key="m" size={11} />]] as [View, string, React.ReactNode][]).map(([v, label, icon]) => (
                 <button key={v} onClick={() => setView(v)}
                   className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition"
-                  style={view === v ? { backgroundColor: `${ACCENT}20`, color: ACCENT } : { color: "rgba(255,255,255,0.3)" }}
-                >
-                  {v === "grille" ? <CalendarDays size={11} /> : <LayoutList size={11} />}
-                  <span className="capitalize">{v}</span>
+                  style={view === v ? { backgroundColor: `${ACCENT}20`, color: ACCENT } : { color: "rgba(255,255,255,0.3)" }}>
+                  {icon}<span className="capitalize">{label}</span>
                 </button>
               ))}
             </div>
 
-                        <button
-              onClick={() => { setEditEmpId(null); setEmpDraft(emptyEmployee(EMPLOYEE_COLORS[employees.length % EMPLOYEE_COLORS.length])); setEmpModal(true); }}
-              className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/50 transition hover:text-white/80"
-            >
+            {/* Export PDF */}
+            <button onClick={handleExportPDF}
+              disabled={(view === "mois" ? monthShifts.length : shifts.length) === 0}
+              className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/50 transition hover:text-white/80 disabled:opacity-30"
+              title="Exporter en PDF">
+              <FileDown size={13} />
+              <span className="hidden sm:inline">PDF</span>
+            </button>
+
+            {/* Dupliquer semaine */}
+            <button onClick={handleDuplicateWeek} disabled={duplicating || shifts.length === 0 || view === "mois"}
+              className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/50 transition hover:text-white/80 disabled:opacity-30"
+              title="Dupliquer la semaine en cours vers la semaine suivante">
+              {duplicating ? <Loader2 size={13} className="animate-spin" /> : <CopyPlus size={13} />}
+              <span className="hidden sm:inline">Dupliquer</span>
+            </button>
+
+            <button onClick={() => { setEditEmpId(null); setEmpDraft(emptyEmployee(EMPLOYEE_COLORS[employees.length % EMPLOYEE_COLORS.length])); setEmpModal(true); }}
+              className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/50 transition hover:text-white/80">
               <UserPlus size={13} />
               <span className="hidden sm:inline">Employé</span>
             </button>
 
-                        <button
-              onClick={() => openAddShift()}
+            <button onClick={() => openAddShift()}
               className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition"
-              style={{ backgroundColor: `${ACCENT}12`, borderColor: `${ACCENT}25`, color: ACCENT }}
-            >
+              style={{ backgroundColor: `${ACCENT}12`, borderColor: `${ACCENT}25`, color: ACCENT }}>
               <Plus size={13} />
               <span className="hidden sm:inline">Shift</span>
             </button>
 
-                        {allPublished ? (
+            {allPublished ? (
               <div className="flex items-center gap-1.5 rounded-xl border border-green-500/25 bg-green-500/10 px-3 py-2 text-xs font-bold text-green-400">
                 <CheckCircle2 size={13} />
                 <span className="hidden sm:inline">Publiée</span>
               </div>
             ) : (
-              <motion.button
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
+              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
                 onClick={() => shifts.length > 0 ? setPubModal(true) : showToast("error", "Aucun shift à publier")}
                 disabled={publishing || shifts.length === 0}
                 className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold text-white transition disabled:opacity-40"
-                style={{ background: "linear-gradient(135deg,#0ea5e9,#38bdf8)", boxShadow: "0 4px 16px rgba(56,189,248,0.25)" }}
-              >
+                style={{ background: "linear-gradient(135deg,#0ea5e9,#38bdf8)", boxShadow: "0 4px 16px rgba(56,189,248,0.25)" }}>
                 {publishing ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
                 <span className="hidden sm:inline">{publishing ? "Publication…" : "Publier"}</span>
               </motion.button>
@@ -491,28 +595,41 @@ export default function PlanificationPage() {
         </div>
       </div>
 
-            <div className="relative z-10 mx-auto max-w-screen-xl px-4 pt-4 sm:px-8">
+      {/* ── Nav bar ── */}
+      <div className="relative z-10 mx-auto max-w-screen-xl px-4 pt-4 sm:px-8">
         <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-2.5">
-          <button onClick={prevWeek}
+          <button onClick={view === "mois" ? prevMonth : prevWeek}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] text-white/40 hover:text-white/70 transition">
             <ChevronLeft size={16} />
           </button>
+
           <div className="flex flex-col items-center gap-0.5">
-            <span className="text-sm font-bold text-white/80">{fmtWeekRange(weekDays)}</span>
-            <div className="flex items-center gap-2">
-              {toISO(weekDays[0]) === toISO(getWeekDays(new Date())[0]) && (
-                <span className="text-[0.58rem] font-bold uppercase tracking-widest" style={{ color: ACCENT }}>Semaine en cours</span>
-              )}
-              {allPublished && <span className="text-[0.58rem] font-bold uppercase tracking-widest text-green-400/80">· publiée</span>}
-              {hasUnpublished && shifts.length > 0 && <span className="text-[0.58rem] font-bold uppercase tracking-widest text-amber-400/70">· brouillon</span>}
-            </div>
+            {view === "mois" ? (
+              <span className="text-sm font-bold capitalize text-white/80">
+                {calMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+              </span>
+            ) : (
+              <>
+                <span className="text-sm font-bold text-white/80">{fmtWeekRange(weekDays)}</span>
+                <div className="flex items-center gap-2">
+                  {toISO(weekDays[0]) === toISO(getWeekDays(new Date())[0]) && (
+                    <span className="text-[0.58rem] font-bold uppercase tracking-widest" style={{ color: ACCENT }}>Semaine en cours</span>
+                  )}
+                  {allPublished && <span className="text-[0.58rem] font-bold uppercase tracking-widest text-green-400/80">· publiée</span>}
+                  {hasUnpublished && shifts.length > 0 && <span className="text-[0.58rem] font-bold uppercase tracking-widest text-amber-400/70">· brouillon</span>}
+                </div>
+              </>
+            )}
           </div>
+
           <div className="flex items-center gap-2">
-            <button onClick={goToday}
-              className="hidden sm:block rounded-lg border border-white/[0.07] px-3 py-1 text-xs font-semibold text-white/40 hover:text-white/70 transition">
-              Aujourd&apos;hui
-            </button>
-            <button onClick={nextWeek}
+            {view !== "mois" && (
+              <button onClick={goToday}
+                className="hidden sm:block rounded-lg border border-white/[0.07] px-3 py-1 text-xs font-semibold text-white/40 hover:text-white/70 transition">
+                Aujourd&apos;hui
+              </button>
+            )}
+            <button onClick={view === "mois" ? nextMonth : nextWeek}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] text-white/40 hover:text-white/70 transition">
               <ChevronRight size={16} />
             </button>
@@ -520,100 +637,148 @@ export default function PlanificationPage() {
         </div>
       </div>
 
-            <div className="relative z-10 mx-auto max-w-screen-xl px-4 py-4 sm:px-8">
-        {loading ? (
-          <div className="flex items-center justify-center py-24">
-            <Loader2 size={22} className="animate-spin text-white/20" />
-          </div>
-        ) : view === "grille" ? (
-                    <div className="overflow-x-auto pb-4">
-            <div style={{ minWidth: "900px" }}>
+      {/* ── Conflict banner ── */}
+      <AnimatePresence>
+        {conflictCount > 0 && !loading && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease }}
+            className="relative z-10 mx-auto max-w-screen-xl px-4 pt-3 sm:px-8">
+            <div className="flex items-center gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/[0.06] px-4 py-3">
+              <AlertTriangle size={15} className="shrink-0 text-amber-400" />
+              <p className="text-[12px] text-amber-300/80 flex-1">
+                <span className="font-bold text-amber-400">
+                  {Math.ceil(conflictCount / 2)} conflit{Math.ceil(conflictCount / 2) > 1 ? "s" : ""} horaire{Math.ceil(conflictCount / 2) > 1 ? "s" : ""}
+                </span>
+                {conflictEmployeeNames.length > 0 && ` · ${conflictEmployeeNames.join(", ")}`}
+                {" "}— vérifiez les shifts signalés{" "}
+                <AlertTriangle size={9} className="inline text-amber-400 mb-0.5" />
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                            <div className="mb-2 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
-                <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                  <Users size={12} className="text-white/30" />
-                  <span className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Équipe</span>
-                </div>
-                {weekDays.map((day, i) => {
-                  const iso = toISO(day);
+      {/* ── Main content ── */}
+      <div className="relative z-10 mx-auto max-w-screen-xl px-4 py-4 sm:px-8">
+
+        {/* ═══ VUE MENSUELLE ═══ */}
+        {view === "mois" && (
+          monthLoading ? (
+            <div className="flex items-center justify-center py-24">
+              <Loader2 size={22} className="animate-spin text-white/20" />
+            </div>
+          ) : (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}>
+              {/* Day headers */}
+              <div className="mb-1.5 grid grid-cols-7 gap-1.5">
+                {DAY_SHORT.map(d => (
+                  <div key={d} className="py-1 text-center text-[10px] font-bold uppercase tracking-widest text-white/25">{d}</div>
+                ))}
+              </div>
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7 gap-1.5">
+                {monthDays.map(({ date, inMonth }) => {
+                  const iso = toISO(date);
                   const isToday = iso === today;
+                  const dayShifts = monthShifts.filter(s => s.date === iso);
+                  const hasConf = dayShifts.some(s => monthConflicts.has(s.id));
                   return (
-                    <div key={iso} className="rounded-xl border px-2 py-2 text-center transition"
-                         style={isToday ? { backgroundColor: `${ACCENT}12`, borderColor: `${ACCENT}28` } : { borderColor: "rgba(255,255,255,0.05)" }}>
-                      <p className="text-[0.58rem] font-bold uppercase tracking-widest"
-                         style={{ color: isToday ? ACCENT : "rgba(255,255,255,0.3)" }}>{DAY_SHORT[i]}</p>
-                      <p className="text-[0.95rem] font-black" style={{ color: isToday ? ACCENT : "rgba(255,255,255,0.6)" }}>{day.getDate()}</p>
-                      <p className="text-[0.5rem] text-white/20">{day.toLocaleDateString("fr-FR", { month: "short" })}</p>
-                    </div>
-                  );
-                })}
-              </div>
-
-                            <div className="mb-1.5 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
-                <div className="flex items-center gap-2 rounded-xl border border-dashed border-amber-500/20 bg-amber-500/[0.04] px-3 py-2">
-                  <div>
-                    <p className="text-[0.58rem] font-bold uppercase tracking-widest text-amber-400/70">Open</p>
-                    <p className="text-[0.57rem] text-white/25">Non assigné</p>
-                  </div>
-                </div>
-                {weekDays.map(day => {
-                  const iso = toISO(day);
-                  const dayShifts = getShiftsFor(null, iso);
-                  return (
-                    <div key={iso} className="min-h-[56px] rounded-xl border border-dashed border-white/[0.05] bg-white/[0.01] p-1.5">
-                      <div className="flex flex-col gap-1">
-                        <AnimatePresence initial={false}>
-                          {dayShifts.map(s => (
-                            <ShiftCard key={s.id} shift={s} onEdit={openEditShift} onDelete={id => setDelConfirm({ type: "shift", id })} />
+                    <motion.div key={iso}
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={() => { if (inMonth) { setWeekRef(date); setView("grille"); } }}
+                      className={`min-h-[72px] cursor-pointer rounded-xl border p-2 transition hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.4)] ${inMonth ? "border-white/[0.06] bg-white/[0.02]" : "pointer-events-none border-transparent opacity-20"}`}
+                      style={isToday ? { borderColor: `${ACCENT}35`, backgroundColor: `${ACCENT}08` } : hasConf && inMonth ? { borderColor: "#f59e0b25" } : {}}
+                    >
+                      <div className="flex items-start justify-between">
+                        <span className="text-xs font-bold"
+                          style={{ color: isToday ? ACCENT : inMonth ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.18)" }}>
+                          {date.getDate()}
+                        </span>
+                        {hasConf && <AlertTriangle size={8} className="text-amber-400/70" />}
+                      </div>
+                      {dayShifts.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-0.5">
+                          {dayShifts.slice(0, 4).map(s => (
+                            <div key={s.id} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: typeColor(s.type) }} title={s.title} />
                           ))}
-                        </AnimatePresence>
-                        <button onClick={() => openAddShift(iso)}
-                          className="flex h-6 w-full items-center justify-center rounded-lg border border-dashed border-white/[0.05] text-white/15 hover:border-white/15 hover:text-white/35 transition">
-                          <Plus size={10} />
-                        </button>
-                      </div>
-                    </div>
+                          {dayShifts.length > 4 && (
+                            <span className="text-[8px] font-bold text-white/25">+{dayShifts.length - 4}</span>
+                          )}
+                        </div>
+                      )}
+                      {dayShifts.length > 0 && (
+                        <p className="mt-1 text-[8.5px] text-white/25 leading-none">
+                          {dayShifts.length} shift{dayShifts.length > 1 ? "s" : ""}
+                        </p>
+                      )}
+                    </motion.div>
                   );
                 })}
               </div>
+              {/* Legend */}
+              <div className="mt-4 flex flex-wrap items-center gap-4 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-3">
+                {SHIFT_TYPES.map(t => (
+                  <div key={t.value} className="flex items-center gap-1.5 text-[10px] text-white/40">
+                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} />
+                    {t.label}
+                  </div>
+                ))}
+                <div className="ml-auto text-[10px] text-white/25">Cliquer sur un jour → vue semaine</div>
+              </div>
+            </motion.div>
+          )
+        )}
 
-                            {employees.map(emp => (
-                <div key={emp.id} className="mb-1.5 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
-                                    <div className="group flex items-center justify-between gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[0.6rem] font-black text-white"
-                           style={{ backgroundColor: `${emp.color}30` }}>
-                        {emp.name.charAt(0).toUpperCase()}
+        {/* ═══ VUE GRILLE ═══ */}
+        {view === "grille" && (
+          loading ? (
+            <div className="flex items-center justify-center py-24">
+              <Loader2 size={22} className="animate-spin text-white/20" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto pb-4">
+              <div style={{ minWidth: "900px" }}>
+                {/* Day header row */}
+                <div className="mb-2 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
+                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                    <Users size={12} className="text-white/30" />
+                    <span className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Équipe</span>
+                  </div>
+                  {weekDays.map((day, i) => {
+                    const iso = toISO(day); const isToday = iso === today;
+                    return (
+                      <div key={iso} className="rounded-xl border px-2 py-2 text-center transition"
+                        style={isToday ? { backgroundColor: `${ACCENT}12`, borderColor: `${ACCENT}28` } : { borderColor: "rgba(255,255,255,0.05)" }}>
+                        <p className="text-[0.58rem] font-bold uppercase tracking-widest"
+                          style={{ color: isToday ? ACCENT : "rgba(255,255,255,0.3)" }}>{DAY_SHORT[i]}</p>
+                        <p className="text-[0.95rem] font-black" style={{ color: isToday ? ACCENT : "rgba(255,255,255,0.6)" }}>{day.getDate()}</p>
+                        <p className="text-[0.5rem] text-white/20">{day.toLocaleDateString("fr-FR", { month: "short" })}</p>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[0.68rem] font-bold text-white/80 truncate">{emp.name}</p>
-                        {emp.role && <p className="text-[0.57rem] text-white/30 truncate">{emp.role}</p>}
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
-                      <button
-                        onClick={() => { setEditEmpId(emp.id); setEmpDraft({ name: emp.name, email: emp.email ?? "", role: emp.role ?? "", color: emp.color }); setEmpModal(true); }}
-                        className="flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 transition"
-                      ><Edit2 size={9} /></button>
-                      <button
-                        onClick={() => setDelConfirm({ type: "employee", id: emp.id })}
-                        className="flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-red-400 transition"
-                      ><Trash2 size={9} /></button>
+                    );
+                  })}
+                </div>
+
+                {/* Open row */}
+                <div className="mb-1.5 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
+                  <div className="flex items-center gap-2 rounded-xl border border-dashed border-amber-500/20 bg-amber-500/[0.04] px-3 py-2">
+                    <div>
+                      <p className="text-[0.58rem] font-bold uppercase tracking-widest text-amber-400/70">Open</p>
+                      <p className="text-[0.57rem] text-white/25">Non assigné</p>
                     </div>
                   </div>
-                                    {weekDays.map(day => {
-                    const iso = toISO(day);
-                    const dayShifts = getShiftsFor(emp.id, iso);
+                  {weekDays.map(day => {
+                    const iso = toISO(day); const dayShifts = getShiftsFor(null, iso);
                     return (
-                      <div key={iso} className="min-h-[56px] rounded-xl border border-white/[0.04] bg-white/[0.01] p-1.5">
+                      <div key={iso} className="min-h-[56px] rounded-xl border border-dashed border-white/[0.05] bg-white/[0.01] p-1.5">
                         <div className="flex flex-col gap-1">
                           <AnimatePresence initial={false}>
                             {dayShifts.map(s => (
-                              <ShiftCard key={s.id} shift={s} employee={emp} onEdit={openEditShift} onDelete={id => setDelConfirm({ type: "shift", id })} />
+                              <ShiftCard key={s.id} shift={s} hasConflict={false} onEdit={openEditShift} onDelete={id => setDelConfirm({ type: "shift", id })} />
                             ))}
                           </AnimatePresence>
-                          <button onClick={() => openAddShift(iso, emp.id)}
-                            className="flex h-6 w-full items-center justify-center rounded-lg border border-dashed border-white/[0.04] text-white/10 hover:border-white/12 hover:text-white/30 transition">
+                          <button onClick={() => openAddShift(iso)}
+                            className="flex h-6 w-full items-center justify-center rounded-lg border border-dashed border-white/[0.05] text-white/15 hover:border-white/15 hover:text-white/35 transition">
                             <Plus size={10} />
                           </button>
                         </div>
@@ -621,123 +786,172 @@ export default function PlanificationPage() {
                     );
                   })}
                 </div>
-              ))}
 
-                            {employees.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
-                  className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/[0.07] py-10 text-center"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03]">
-                    <Users size={18} className="text-white/25" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-white/50">Aucun employé</p>
-                    <p className="mt-0.5 text-xs text-white/25">Ajoutez des membres pour leur assigner des shifts</p>
-                  </div>
-                  <button
-                    onClick={() => { setEditEmpId(null); setEmpDraft(emptyEmployee()); setEmpModal(true); }}
-                    className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-4 py-2 text-xs font-semibold text-white/50 hover:text-white/80 transition"
-                  >
-                    <UserPlus size={12} /> Ajouter un employé
-                  </button>
-                </motion.div>
-              )}
-            </div>
-          </div>
-        ) : (
-                    <div className="space-y-3">
-            {weekDays.map((day, i) => {
-              const iso = toISO(day);
-              const isToday = iso === today;
-              const dayShifts = shifts.filter(s => s.date === iso).sort((a, b) => a.start_time.localeCompare(b.start_time));
-              return (
-                <motion.div key={iso}
-                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: i * 0.04, ease }}
-                  className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]"
-                >
-                                    <div className="flex items-center justify-between border-b border-white/[0.05] px-4 py-3"
-                       style={isToday ? { backgroundColor: `${ACCENT}08` } : {}}>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-sm font-black"
-                           style={isToday
-                             ? { backgroundColor: `${ACCENT}20`, borderColor: `${ACCENT}40`, color: ACCENT }
-                             : { borderColor: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.4)" }}>
-                        {day.getDate()}
+                {/* Employee rows */}
+                {employees.map(emp => (
+                  <div key={emp.id} className="mb-1.5 grid gap-1.5" style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}>
+                    <div className="group flex items-center justify-between gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[0.6rem] font-black text-white"
+                          style={{ backgroundColor: `${emp.color}30` }}>
+                          {emp.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[0.68rem] font-bold text-white/80 truncate">{emp.name}</p>
+                          {emp.role && <p className="text-[0.57rem] text-white/30 truncate">{emp.role}</p>}
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold" style={isToday ? { color: ACCENT } : { color: "rgba(255,255,255,0.7)" }}>
-                          {DAY_FULL[i]}
-                        </p>
-                        <p className="text-[0.62rem] text-white/25">
-                          {day.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
-                          {dayShifts.length > 0 && ` · ${dayShifts.length} shift${dayShifts.length > 1 ? "s" : ""}`}
-                        </p>
+                      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
+                        <button onClick={() => { setEditEmpId(emp.id); setEmpDraft({ name: emp.name, email: emp.email ?? "", role: emp.role ?? "", color: emp.color }); setEmpModal(true); }}
+                          className="flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 transition"><Edit2 size={9} /></button>
+                        <button onClick={() => setDelConfirm({ type: "employee", id: emp.id })}
+                          className="flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-red-400 transition"><Trash2 size={9} /></button>
                       </div>
                     </div>
-                    <button onClick={() => openAddShift(iso)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.07] text-white/25 hover:text-white/60 transition">
-                      <Plus size={13} />
+                    {weekDays.map(day => {
+                      const iso = toISO(day); const dayShifts = getShiftsFor(emp.id, iso);
+                      return (
+                        <div key={iso} className="min-h-[56px] rounded-xl border border-white/[0.04] bg-white/[0.01] p-1.5">
+                          <div className="flex flex-col gap-1">
+                            <AnimatePresence initial={false}>
+                              {dayShifts.map(s => (
+                                <ShiftCard key={s.id} shift={s} employee={emp} hasConflict={weekConflicts.has(s.id)}
+                                  onEdit={openEditShift} onDelete={id => setDelConfirm({ type: "shift", id })} />
+                              ))}
+                            </AnimatePresence>
+                            <button onClick={() => openAddShift(iso, emp.id)}
+                              className="flex h-6 w-full items-center justify-center rounded-lg border border-dashed border-white/[0.04] text-white/10 hover:border-white/12 hover:text-white/30 transition">
+                              <Plus size={10} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+
+                {employees.length === 0 && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
+                    className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/[0.07] py-10 text-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03]">
+                      <Users size={18} className="text-white/25" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white/50">Aucun employé</p>
+                      <p className="mt-0.5 text-xs text-white/25">Ajoutez des membres pour leur assigner des shifts</p>
+                    </div>
+                    <button onClick={() => { setEditEmpId(null); setEmpDraft(emptyEmployee()); setEmpModal(true); }}
+                      className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-4 py-2 text-xs font-semibold text-white/50 hover:text-white/80 transition">
+                      <UserPlus size={12} /> Ajouter un employé
                     </button>
-                  </div>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          )
+        )}
 
-                  {dayShifts.length === 0 ? (
-                    <div className="px-4 py-4 text-center text-xs text-white/20">Aucun shift</div>
-                  ) : (
-                    <div className="divide-y divide-white/[0.04]">
-                      <AnimatePresence initial={false}>
-                        {dayShifts.map(s => {
-                          const color = typeColor(s.type);
-                          const emp   = s.employee_id ? empMap.get(s.employee_id) : undefined;
-                          return (
-                            <motion.div key={s.id}
-                              initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
-                              transition={{ duration: 0.2, ease }}
-                              className="group flex cursor-pointer items-center gap-4 px-4 py-3 transition hover:bg-white/[0.02]"
-                              onClick={() => openEditShift(s)}
-                            >
-                              <div className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <p className="truncate text-sm font-semibold text-white/85">{s.title}</p>
-                                  {s.status === "published" && (
-                                    <span className="shrink-0 rounded-full bg-green-500/15 px-1.5 py-0.5 text-[0.55rem] font-bold text-green-400">publié</span>
-                                  )}
-                                </div>
-                                <div className="mt-0.5 flex flex-wrap items-center gap-x-2">
-                                  <span className="flex items-center gap-1 text-xs text-white/35">
-                                    <Clock size={9} /> {s.start_time}–{s.end_time}
-                                    {shiftDur(s) && <span className="text-white/20">({shiftDur(s)})</span>}
-                                  </span>
-                                  <span className="rounded-full px-1.5 py-0.5 text-[0.58rem] font-bold"
-                                        style={{ backgroundColor: `${color}18`, color }}>{typeLabel(s.type)}</span>
-                                  {emp
-                                    ? <span className="flex items-center gap-1 text-xs text-white/30">
-                                        <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: emp.color }} />
-                                        {emp.name}
-                                      </span>
-                                    : <span className="text-[0.58rem] font-bold text-amber-400/70">Open</span>}
-                                </div>
-                              </div>
-                              <button
-                                onClick={e => { e.stopPropagation(); setDelConfirm({ type: "shift", id: s.id }); }}
-                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.07] text-white/20 opacity-0 transition hover:border-red-500/30 hover:text-red-400 group-hover:opacity-100"
-                              ><Trash2 size={12} /></button>
-                            </motion.div>
-                          );
-                        })}
-                      </AnimatePresence>
+        {/* ═══ VUE LISTE ═══ */}
+        {view === "liste" && (
+          loading ? (
+            <div className="flex items-center justify-center py-24">
+              <Loader2 size={22} className="animate-spin text-white/20" />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {weekDays.map((day, i) => {
+                const iso = toISO(day); const isToday = iso === today;
+                const dayShifts = shifts.filter(s => s.date === iso).sort((a, b) => a.start_time.localeCompare(b.start_time));
+                return (
+                  <motion.div key={iso} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: i * 0.04, ease }}
+                    className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]">
+                    <div className="flex items-center justify-between border-b border-white/[0.05] px-4 py-3"
+                      style={isToday ? { backgroundColor: `${ACCENT}08` } : {}}>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-sm font-black"
+                          style={isToday ? { backgroundColor: `${ACCENT}20`, borderColor: `${ACCENT}40`, color: ACCENT } : { borderColor: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.4)" }}>
+                          {day.getDate()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold" style={isToday ? { color: ACCENT } : { color: "rgba(255,255,255,0.7)" }}>{DAY_FULL[i]}</p>
+                          <p className="text-[0.62rem] text-white/25">
+                            {day.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+                            {dayShifts.length > 0 && ` · ${dayShifts.length} shift${dayShifts.length > 1 ? "s" : ""}`}
+                          </p>
+                        </div>
+                      </div>
+                      <button onClick={() => openAddShift(iso)}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.07] text-white/25 hover:text-white/60 transition">
+                        <Plus size={13} />
+                      </button>
                     </div>
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
+                    {dayShifts.length === 0 ? (
+                      <div className="px-4 py-4 text-center text-xs text-white/20">Aucun shift</div>
+                    ) : (
+                      <div className="divide-y divide-white/[0.04]">
+                        <AnimatePresence initial={false}>
+                          {dayShifts.map(s => {
+                            const color = typeColor(s.type);
+                            const emp   = s.employee_id ? empMap.get(s.employee_id) : undefined;
+                            const conf  = weekConflicts.has(s.id);
+                            return (
+                              <motion.div key={s.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+                                transition={{ duration: 0.2, ease }}
+                                className="group flex cursor-pointer items-center gap-4 px-4 py-3 transition hover:bg-white/[0.02]"
+                                style={conf ? { backgroundColor: "rgba(245,158,11,0.04)" } : {}}
+                                onClick={() => openEditShift(s)}>
+                                <div className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="truncate text-sm font-semibold text-white/85">{s.title}</p>
+                                    {s.status === "published" && (
+                                      <span className="shrink-0 rounded-full bg-green-500/15 px-1.5 py-0.5 text-[0.55rem] font-bold text-green-400">publié</span>
+                                    )}
+                                    {conf && (
+                                      <span className="flex shrink-0 items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-1.5 py-0.5 text-[0.55rem] font-bold text-amber-400">
+                                        <AlertTriangle size={7} />conflit
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2">
+                                    <span className="flex items-center gap-1 text-xs text-white/35">
+                                      <Clock size={9} /> {s.start_time}–{s.end_time}
+                                      {shiftDur(s) && <span className="text-white/20">({shiftDur(s)})</span>}
+                                    </span>
+                                    <span className="rounded-full px-1.5 py-0.5 text-[0.58rem] font-bold"
+                                      style={{ backgroundColor: `${color}18`, color }}>{typeLabel(s.type)}</span>
+                                    {emp
+                                      ? <span className="flex items-center gap-1 text-xs text-white/30">
+                                          <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: emp.color }} />{emp.name}
+                                        </span>
+                                      : <span className="text-[0.58rem] font-bold text-amber-400/70">Open</span>}
+                                  </div>
+                                </div>
+                                <button onClick={e => { e.stopPropagation(); setDelConfirm({ type: "shift", id: s.id }); }}
+                                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.07] text-white/20 opacity-0 transition hover:border-red-500/30 hover:text-red-400 group-hover:opacity-100">
+                                  <Trash2 size={12} />
+                                </button>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          )
         )}
       </div>
 
-            <AnimatePresence>
+      {/* ══════════════════════════════
+          MODALS
+      ══════════════════════════════ */}
+
+      {/* Shift modal */}
+      <AnimatePresence>
         {shiftModal && (
           <>
             <motion.div key="sb" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -745,15 +959,14 @@ export default function PlanificationPage() {
             <motion.div key="ss"
               initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 30, stiffness: 260 }}
-              className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-[2rem] border-t border-x border-white/[0.08] bg-[#0c0e16] shadow-[0_-24px_80px_rgba(0,0,0,0.7)]"
-            >
-              <div className="flex justify-center pt-3 pb-1">
+              className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-[2rem] border-t border-x border-white/[0.08] bg-[#0c0e16] shadow-[0_-24px_80px_rgba(0,0,0,0.7)]">
+              <div className="flex justify-center pb-1 pt-3">
                 <div className="h-1 w-10 rounded-full bg-white/15" />
               </div>
               <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl border"
-                       style={{ backgroundColor: `${ACCENT}15`, borderColor: `${ACCENT}30` }}>
+                    style={{ backgroundColor: `${ACCENT}15`, borderColor: `${ACCENT}30` }}>
                     {editShiftId ? <Edit2 size={13} style={{ color: ACCENT }} /> : <Plus size={14} style={{ color: ACCENT }} />}
                   </div>
                   <h2 className="text-sm font-extrabold text-white">{editShiftId ? "Modifier le shift" : "Nouveau shift"}</h2>
@@ -763,55 +976,39 @@ export default function PlanificationPage() {
                   <X size={16} />
                 </button>
               </div>
-
               <div className="max-h-[72vh] space-y-4 overflow-y-auto px-6 py-5">
-                                <div>
+                <div>
                   <label className={labelCls}>Titre <span style={{ color: ACCENT }}>*</span></label>
-                  <input autoFocus value={shiftDraft.title}
-                    onChange={e => setShiftDraft(d => ({ ...d, title: e.target.value }))}
-                    placeholder="Ex : Réunion hebdo, Chantier Dupont…"
-                    className={inputCls}
-                  />
+                  <input autoFocus value={shiftDraft.title} onChange={e => setShiftDraft(d => ({ ...d, title: e.target.value }))}
+                    placeholder="Ex : Réunion hebdo, Chantier Dupont…" className={inputCls} />
                 </div>
-
-                                <div>
+                <div>
                   <label className={labelCls}>Type</label>
                   <div className="flex flex-wrap gap-2">
                     {SHIFT_TYPES.map(t => (
                       <button key={t.value} onClick={() => setShiftDraft(d => ({ ...d, type: t.value }))}
                         className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition"
-                        style={shiftDraft.type === t.value
-                          ? { backgroundColor: `${t.color}20`, borderColor: `${t.color}40`, color: t.color }
-                          : { borderColor: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}>
-                        <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.color }} />
-                        {t.label}
+                        style={shiftDraft.type === t.value ? { backgroundColor: `${t.color}20`, borderColor: `${t.color}40`, color: t.color } : { borderColor: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}>
+                        <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.color }} />{t.label}
                       </button>
                     ))}
                   </div>
                 </div>
-
-                                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <div>
                     <label className={labelCls}>Date <span style={{ color: ACCENT }}>*</span></label>
-                    <input type="date" value={shiftDraft.date}
-                      onChange={e => setShiftDraft(d => ({ ...d, date: e.target.value }))}
-                      className={inputCls} />
+                    <input type="date" value={shiftDraft.date} onChange={e => setShiftDraft(d => ({ ...d, date: e.target.value }))} className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls}>Début <span style={{ color: ACCENT }}>*</span></label>
-                    <input type="time" value={shiftDraft.start_time}
-                      onChange={e => setShiftDraft(d => ({ ...d, start_time: e.target.value }))}
-                      className={inputCls} />
+                    <input type="time" value={shiftDraft.start_time} onChange={e => setShiftDraft(d => ({ ...d, start_time: e.target.value }))} className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls}>Fin <span style={{ color: ACCENT }}>*</span></label>
-                    <input type="time" value={shiftDraft.end_time}
-                      onChange={e => setShiftDraft(d => ({ ...d, end_time: e.target.value }))}
-                      className={inputCls} />
+                    <input type="time" value={shiftDraft.end_time} onChange={e => setShiftDraft(d => ({ ...d, end_time: e.target.value }))} className={inputCls} />
                   </div>
                 </div>
-
-                                <div>
+                <div>
                   <label className="mb-2 flex items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">
                     <User size={10} /> Assigner à
                   </label>
@@ -821,29 +1018,21 @@ export default function PlanificationPage() {
                     <div className="flex flex-wrap gap-2">
                       <button onClick={() => setShiftDraft(d => ({ ...d, employee_id: "" }))}
                         className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition"
-                        style={shiftDraft.employee_id === ""
-                          ? { backgroundColor: "rgba(245,158,11,0.12)", borderColor: "rgba(245,158,11,0.3)", color: "#f59e0b" }
-                          : { borderColor: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}>
-                        <div className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                        Open shift
+                        style={shiftDraft.employee_id === "" ? { backgroundColor: "rgba(245,158,11,0.12)", borderColor: "rgba(245,158,11,0.3)", color: "#f59e0b" } : { borderColor: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}>
+                        <div className="h-1.5 w-1.5 rounded-full bg-amber-400" />Open shift
                       </button>
                       {employees.map(emp => (
                         <button key={emp.id} onClick={() => setShiftDraft(d => ({ ...d, employee_id: emp.id }))}
                           className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition"
-                          style={shiftDraft.employee_id === emp.id
-                            ? { backgroundColor: `${emp.color}18`, borderColor: `${emp.color}35`, color: emp.color }
-                            : { borderColor: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}>
+                          style={shiftDraft.employee_id === emp.id ? { backgroundColor: `${emp.color}18`, borderColor: `${emp.color}35`, color: emp.color } : { borderColor: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}>
                           <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: emp.color }} />
-                          {emp.name}
-                          {emp.role && <span className="opacity-50">· {emp.role}</span>}
-                          {!emp.email && (
-                            <span title="Pas d'email — aucune notification" className="ml-0.5 text-amber-400/70"></span>
-                          )}
+                          {emp.name}{emp.role && <span className="opacity-50">· {emp.role}</span>}
+                          {!emp.email && <span title="Pas d'email — aucune notification" className="ml-0.5 text-amber-400/70"></span>}
                         </button>
                       ))}
                     </div>
                   )}
-                                    {shiftDraft.employee_id && (() => {
+                  {shiftDraft.employee_id && (() => {
                     const sel = employees.find(e => e.id === shiftDraft.employee_id);
                     if (!sel || sel.email) return null;
                     return (
@@ -852,46 +1041,36 @@ export default function PlanificationPage() {
                         <p className="text-[0.62rem] text-amber-300/70">
                           <strong>{sel.name}</strong> n&apos;a pas d&apos;email — aucune notification ne sera envoyée.{" "}
                           <button onClick={() => { setShiftModal(false); setTimeout(() => { setEditEmpId(sel.id); setEmpDraft({ name: sel.name, email: "", role: sel.role ?? "", color: sel.color }); setEmpModal(true); }, 150); }}
-                            className="underline hover:text-amber-300 transition">
-                            Ajouter son email
-                          </button>
+                            className="underline hover:text-amber-300 transition">Ajouter son email</button>
                         </p>
                       </div>
                     );
                   })()}
                 </div>
-
-                                <div>
+                <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">
                     <Tag size={10} /> Note (optionnel)
                   </label>
-                  <textarea value={shiftDraft.note}
-                    onChange={e => setShiftDraft(d => ({ ...d, note: e.target.value }))}
+                  <textarea value={shiftDraft.note} onChange={e => setShiftDraft(d => ({ ...d, note: e.target.value }))}
                     placeholder="Informations complémentaires…" rows={2}
-                    className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-sky-500/40"
-                  />
+                    className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-sky-500/40" />
                 </div>
-
-                                <div className="flex items-start gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+                <div className="flex items-start gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
                   <Info size={11} className="mt-0.5 shrink-0 text-white/25" />
                   <p className="text-[0.62rem] leading-relaxed text-white/30">
-                    Un email est envoyé{" "}
-                    <strong className="text-white/50">immédiatement</strong> à l&apos;employé assigné lors de la création.
+                    Un email est envoyé <strong className="text-white/50">immédiatement</strong> à l&apos;employé assigné lors de la création.
                     La <strong className="text-white/50">publication</strong> envoie un récapitulatif complet de la semaine.
                   </p>
                 </div>
-
-                                <div className="flex gap-3 pb-2">
+                <div className="flex gap-3 pb-2">
                   <button onClick={() => setShiftModal(false)}
                     className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-semibold text-white/40 hover:text-white/60 transition">
                     Annuler
                   </button>
                   <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                    onClick={handleSaveShift}
-                    disabled={savingShift || !shiftDraft.title.trim()}
+                    onClick={handleSaveShift} disabled={savingShift || !shiftDraft.title.trim()}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white transition disabled:cursor-not-allowed disabled:opacity-40"
-                    style={{ background: `linear-gradient(135deg,${ACCENT}cc,#0ea5e9)`, boxShadow: `0 4px 16px ${ACCENT}30` }}
-                  >
+                    style={{ background: `linear-gradient(135deg,${ACCENT}cc,#0ea5e9)`, boxShadow: `0 4px 16px ${ACCENT}30` }}>
                     {savingShift && <Loader2 size={14} className="animate-spin" />}
                     {savingShift ? "Enregistrement…" : editShiftId ? "Modifier" : "Ajouter le shift"}
                   </motion.button>
@@ -902,21 +1081,20 @@ export default function PlanificationPage() {
         )}
       </AnimatePresence>
 
-            <AnimatePresence>
+      {/* Employee modal */}
+      <AnimatePresence>
         {empModal && (
           <>
             <motion.div key="eb" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setEmpModal(false)} />
-            <motion.div key="es"
-              initial={{ scale: 0.93, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
+            <motion.div key="es" initial={{ scale: 0.93, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.25, ease }}
-              className="fixed inset-0 z-50 flex items-center justify-center px-4"
-            >
+              className="fixed inset-0 z-50 flex items-center justify-center px-4">
               <div className="w-full max-w-md rounded-[1.75rem] border border-white/[0.08] bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
                 <div className="mb-5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl border"
-                         style={{ backgroundColor: `${ACCENT}15`, borderColor: `${ACCENT}30` }}>
+                      style={{ backgroundColor: `${ACCENT}15`, borderColor: `${ACCENT}30` }}>
                       <UserPlus size={13} style={{ color: ACCENT }} />
                     </div>
                     <h2 className="text-sm font-extrabold text-white">{editEmpId ? "Modifier l'employé" : "Nouvel employé"}</h2>
@@ -926,21 +1104,18 @@ export default function PlanificationPage() {
                     <X size={16} />
                   </button>
                 </div>
-
                 <div className="space-y-4">
                   <div>
                     <label className={labelCls}>Nom <span style={{ color: ACCENT }}>*</span></label>
-                    <input autoFocus value={empDraft.name}
-                      onChange={e => setEmpDraft(d => ({ ...d, name: e.target.value }))}
+                    <input autoFocus value={empDraft.name} onChange={e => setEmpDraft(d => ({ ...d, name: e.target.value }))}
                       placeholder="Marie Dupont" className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls}>
                       Email <span style={{ color: ACCENT }}>*</span>
-                      <span className="ml-1 text-white/20 normal-case tracking-normal">(requis — notifications planning)</span>
+                      <span className="ml-1 normal-case tracking-normal text-white/20">(requis — notifications planning)</span>
                     </label>
-                    <input type="email" value={empDraft.email}
-                      onChange={e => setEmpDraft(d => ({ ...d, email: e.target.value }))}
+                    <input type="email" value={empDraft.email} onChange={e => setEmpDraft(d => ({ ...d, email: e.target.value }))}
                       placeholder="marie@exemple.fr"
                       className={`${inputCls} ${empDraft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(empDraft.email) ? "border-red-500/40 focus:border-red-500/60" : ""}`} />
                     {empDraft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(empDraft.email) && (
@@ -951,8 +1126,7 @@ export default function PlanificationPage() {
                     <label className="mb-1.5 flex items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">
                       <Briefcase size={10} /> Poste / Rôle
                     </label>
-                    <input value={empDraft.role}
-                      onChange={e => setEmpDraft(d => ({ ...d, role: e.target.value }))}
+                    <input value={empDraft.role} onChange={e => setEmpDraft(d => ({ ...d, role: e.target.value }))}
                       placeholder="Chef de projet, Technicien…" className={inputCls} />
                   </div>
                   <div>
@@ -961,8 +1135,7 @@ export default function PlanificationPage() {
                       {EMPLOYEE_COLORS.map(c => (
                         <button key={c} onClick={() => setEmpDraft(d => ({ ...d, color: c }))}
                           className="h-7 w-7 rounded-lg transition"
-                          style={{ backgroundColor: c, outline: empDraft.color === c ? `2px solid ${c}` : "none", outlineOffset: "2px" }}
-                        />
+                          style={{ backgroundColor: c, outline: empDraft.color === c ? `2px solid ${c}` : "none", outlineOffset: "2px" }} />
                       ))}
                     </div>
                   </div>
@@ -975,8 +1148,7 @@ export default function PlanificationPage() {
                       onClick={handleSaveEmployee}
                       disabled={savingEmp || !empDraft.name.trim() || !empDraft.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(empDraft.email)}
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white transition disabled:opacity-40"
-                      style={{ background: `linear-gradient(135deg,${ACCENT}cc,#0ea5e9)`, boxShadow: `0 4px 16px ${ACCENT}30` }}
-                    >
+                      style={{ background: `linear-gradient(135deg,${ACCENT}cc,#0ea5e9)`, boxShadow: `0 4px 16px ${ACCENT}30` }}>
                       {savingEmp && <Loader2 size={14} className="animate-spin" />}
                       {savingEmp ? "Enregistrement…" : editEmpId ? "Modifier" : "Ajouter"}
                     </motion.button>
@@ -988,52 +1160,43 @@ export default function PlanificationPage() {
         )}
       </AnimatePresence>
 
-            <AnimatePresence>
+      {/* Publish modal */}
+      <AnimatePresence>
         {pubModal && (() => {
-                    const assignedIds = new Set(shifts.map(s => s.employee_id).filter(Boolean));
+          const assignedIds  = new Set(shifts.map(s => s.employee_id).filter(Boolean));
           const missingEmail = employees.filter(e => assignedIds.has(e.id) && !e.email);
           const canPublish   = missingEmail.length === 0;
           const willEmail    = employees.filter(e => assignedIds.has(e.id) && e.email).length;
           return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-              <motion.div
-                initial={{ scale: 0.93, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
+              <motion.div initial={{ scale: 0.93, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.25, ease }}
-                className="w-full max-w-sm rounded-[1.75rem] border border-white/[0.08] bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
-              >
+                className="w-full max-w-sm rounded-[1.75rem] border border-white/[0.08] bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
                 <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl border ${canPublish ? "border-sky-500/20 bg-sky-500/10" : "border-red-500/20 bg-red-500/10"}`}>
                   {canPublish ? <Send size={18} className="text-sky-400" /> : <AlertCircle size={18} className="text-red-400" />}
                 </div>
                 <h3 className="text-base font-extrabold text-white">Publier la semaine ?</h3>
                 <p className="mt-2 text-sm leading-relaxed text-white/40">
                   <span className="font-semibold text-white/60">{shifts.length} shift{shifts.length > 1 ? "s" : ""}</span> vont être publiés.
-                  {canPublish && willEmail > 0 && (
-                    <> Un email sera envoyé à{" "}
-                      <span className="font-semibold text-white/60">{willEmail} employé{willEmail > 1 ? "s" : ""}</span> avec leur planning personnel.
-                    </>
-                  )}
+                  {canPublish && willEmail > 0 && <> Un email sera envoyé à <span className="font-semibold text-white/60">{willEmail} employé{willEmail > 1 ? "s" : ""}</span> avec leur planning personnel.</>}
                 </p>
-
-                                {missingEmail.length > 0 && (
+                {missingEmail.length > 0 && (
                   <div className="mt-3 rounded-xl border border-red-500/25 bg-red-500/[0.07] p-3">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="mb-2 flex items-center gap-2">
                       <AlertCircle size={12} className="shrink-0 text-red-400" />
-                      <p className="text-[0.65rem] font-bold text-red-400 uppercase tracking-wider">Email manquant — publication bloquée</p>
+                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-red-400">Email manquant — publication bloquée</p>
                     </div>
-                    <p className="text-[0.62rem] text-red-300/60 mb-2">
-                      Les employés suivants ont des shifts assignés mais <strong>aucun email</strong>. Ajoutez leur email avant de publier :
-                    </p>
+                    <p className="mb-2 text-[0.62rem] text-red-300/60">Les employés suivants ont des shifts assignés mais <strong>aucun email</strong>. Ajoutez leur email avant de publier :</p>
                     <ul className="space-y-1">
                       {missingEmail.map(emp => (
                         <li key={emp.id} className="flex items-center justify-between">
                           <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold text-white/60">
                             <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: emp.color }} />
-                            {emp.name}{emp.role && <span className="text-white/30 font-normal">· {emp.role}</span>}
+                            {emp.name}{emp.role && <span className="font-normal text-white/30">· {emp.role}</span>}
                           </span>
-                          <button
-                            onClick={() => { setPubModal(false); setTimeout(() => { setEditEmpId(emp.id); setEmpDraft({ name: emp.name, email: "", role: emp.role ?? "", color: emp.color }); setEmpModal(true); }, 150); }}
-                            className="text-[0.6rem] font-bold text-sky-400 hover:text-sky-300 transition underline">
+                          <button onClick={() => { setPubModal(false); setTimeout(() => { setEditEmpId(emp.id); setEmpDraft({ name: emp.name, email: "", role: emp.role ?? "", color: emp.color }); setEmpModal(true); }, 150); }}
+                            className="text-[0.6rem] font-bold text-sky-400 underline transition hover:text-sky-300">
                             Ajouter email
                           </button>
                         </li>
@@ -1041,10 +1204,9 @@ export default function PlanificationPage() {
                     </ul>
                   </div>
                 )}
-
                 <div className="mt-5 flex gap-3">
                   <button onClick={() => setPubModal(false)}
-                    className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-semibold text-white/50 hover:border-white/15 transition">
+                    className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/15">
                     Annuler
                   </button>
                   <button onClick={handlePublish} disabled={!canPublish}
@@ -1059,15 +1221,14 @@ export default function PlanificationPage() {
         })()}
       </AnimatePresence>
 
-            <AnimatePresence>
+      {/* Delete confirm modal */}
+      <AnimatePresence>
         {delConfirm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div
-              initial={{ scale: 0.93, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
+            <motion.div initial={{ scale: 0.93, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.25, ease }}
-              className="w-full max-w-sm rounded-[1.75rem] border border-white/[0.08] bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
-            >
+              className="w-full max-w-sm rounded-[1.75rem] border border-white/[0.08] bg-[#0f1117] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10">
                 <Trash2 size={18} className="text-red-400" />
               </div>
@@ -1080,11 +1241,11 @@ export default function PlanificationPage() {
               )}
               <div className="mt-5 flex gap-3">
                 <button onClick={() => setDelConfirm(null)}
-                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-semibold text-white/50 hover:border-white/15 transition">
+                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/15">
                   Annuler
                 </button>
                 <button onClick={handleDelete} disabled={deleting}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/80 py-2.5 text-sm font-bold text-white hover:bg-red-500 disabled:opacity-50 transition">
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-red-500 disabled:opacity-50">
                   {deleting && <Loader2 size={13} className="animate-spin" />}
                   Supprimer
                 </button>
@@ -1094,7 +1255,7 @@ export default function PlanificationPage() {
         )}
       </AnimatePresence>
 
-            <ToastStack toasts={toasts} remove={removeToast} />
+      <ToastStack toasts={toasts} remove={removeToast} />
     </div>
   );
 }
