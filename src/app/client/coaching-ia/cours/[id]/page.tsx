@@ -35,6 +35,63 @@ const FALLBACK_TITLES: Record<string, string> = {
   "20": "Projet final — votre assistant IA",
 };
 
+/* ─── Video Player ──────────────────────────────────────────────── */
+
+function VideoPlayer({ title, courseColor }: { title: string; courseColor: string }) {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease }}
+      className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/8 cursor-pointer group"
+      style={{ background: `linear-gradient(135deg, #0a0f1e 0%, ${courseColor}18 100%)` }}
+      onClick={() => setPlaying(p => !p)}
+    >
+      <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 80% 60% at 50% 50%, ${courseColor}12, transparent)` }} />
+      {/* Grid lines */}
+      <div className="pointer-events-none absolute inset-0 opacity-20" style={{
+        backgroundImage: `linear-gradient(${courseColor}20 1px, transparent 1px), linear-gradient(90deg, ${courseColor}20 1px, transparent 1px)`,
+        backgroundSize: "40px 40px",
+      }} />
+      {!playing ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <motion.div
+            whileHover={{ scale: 1.12 }}
+            className="flex h-16 w-16 items-center justify-center rounded-full border-2 shadow-lg transition-shadow"
+            style={{ borderColor: courseColor + "70", background: courseColor + "28", boxShadow: `0 0 30px ${courseColor}30` }}
+          >
+            <Play size={24} fill={courseColor} style={{ color: courseColor, marginLeft: 3 }} />
+          </motion.div>
+          <p className="text-sm font-bold text-white/80">{title}</p>
+          <span className="rounded-full px-3 py-1 text-[0.6rem] font-bold" style={{ background: courseColor + "22", color: courseColor, border: `1px solid ${courseColor}35` }}>
+            Voir la leçon vidéo
+          </span>
+        </div>
+      ) : (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <motion.div
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="flex h-16 w-16 items-center justify-center rounded-full"
+            style={{ background: courseColor + "30", border: `2px solid ${courseColor}60` }}
+          >
+            <div className="flex gap-2">
+              <div className="h-5 w-1.5 rounded-full" style={{ background: courseColor }} />
+              <div className="h-5 w-1.5 rounded-full" style={{ background: courseColor }} />
+            </div>
+          </motion.div>
+          <p className="text-xs text-white/50">Vidéo en cours — cliquez pour pauser</p>
+        </div>
+      )}
+      {/* Duration badge */}
+      <div className="absolute bottom-3 right-3 rounded-lg bg-black/60 px-2.5 py-1 text-[0.6rem] font-bold text-white/70 backdrop-blur-sm">
+        15:30
+      </div>
+    </motion.div>
+  );
+}
+
 const COURS_DATA: Record<string, {
   title: string; subtitle: string; duration: string; level: string;
   color: string; done?: boolean; active?: boolean;
@@ -313,6 +370,397 @@ Analyse de marché express :
       { q: "Dans la méthode RCTC, que signifie la lettre R ?", opts: ["Résultat", "Rôle", "Répétition", "Requête"], correct: 1 },
     ],
   },
+  "05": {
+    title: "Automatiser son travail avec l'IA",
+    subtitle: "Déléguer les tâches répétitives pour se concentrer sur l'essentiel",
+    duration: "40 min", level: "Intermédiaire", color: "#f59e0b",
+    chapters: [
+      {
+        title: "Identifier les tâches automatisables",
+        content: `L'automatisation IA commence par un audit simple : quelles tâches faites-vous chaque semaine de façon répétitive ?
+
+Classez vos tâches en 3 catégories :
+- Tâches cognitives légères — rédaction, tri d'emails, réponses types, résumés
+- Tâches de transformation — convertir un format en un autre, extraire des données, traduire
+- Tâches de surveillance — suivre des indicateurs, alertes, rapports périodiques
+
+Un entrepreneur typique perd 15 à 20 heures par semaine sur des tâches automatisables. L'IA peut en récupérer 10 à 15.`,
+        concepts: [
+          { term: "Audit IA", def: "Cartographie de toutes vos tâches pour identifier ce qui peut être délégué à l'IA" },
+          { term: "Tâche cognitive", def: "Tâche qui nécessite de la réflexion mais suit un pattern répétitif — idéale pour l'IA" },
+          { term: "ROI temps", def: "Le ratio entre le temps investi à configurer une automatisation et le temps économisé" },
+        ],
+      },
+      {
+        title: "Les outils d'automatisation IA",
+        content: `Zapier + ChatGPT — le duo le plus accessible
+Connectez vos apps sans coder. Zapier déclenche une action, ChatGPT la traite.
+Exemple : email reçu → résumé automatique → réponse draft → envoi si approbation.
+
+Make (ex-Integromat) — plus puissant que Zapier
+Scénarios complexes, logique conditionnelle, transformations de données avancées.
+
+n8n — open source et auto-hébergeable
+Idéal pour la confidentialité des données — tourne sur votre propre serveur.
+
+Notion AI + Zapier — gestion de contenu automatisée
+Création automatique de fiches projets, comptes-rendus, briefs à partir d'un email.`,
+        concepts: [
+          { term: "Trigger", def: "L'événement qui déclenche une automatisation (email reçu, formulaire soumis, etc.)" },
+          { term: "Workflow", def: "La séquence d'actions automatisées de A à Z" },
+          { term: "Webhook", def: "Un lien URL qui permet à une app d'envoyer des données à une autre en temps réel" },
+        ],
+      },
+      {
+        title: "Construire votre premier workflow IA",
+        content: `Étape 1 — Choisissez une tâche simple (ex: résumer les emails importants)
+Étape 2 — Identifiez le déclencheur (nouvel email avec mot-clé "urgent")
+Étape 3 — Configurez l'action IA (prompt ChatGPT : "résume cet email en 3 points")
+Étape 4 — Définissez la sortie (envoyer le résumé dans Slack)
+Étape 5 — Testez et ajustez le prompt
+
+Conseil DJAMA : commencez PETIT. Un workflow parfait sur une tâche vaut mieux que 10 workflows bancals. Une fois maîtrisé, dupliquez le pattern sur d'autres tâches.`,
+        concepts: [
+          { term: "Itération", def: "Tester, ajuster, ré-tester — l'automatisation se perfectionne avec le temps" },
+          { term: "Prompt système", def: "Instructions permanentes données à l'IA dans l'automatisation (ton, format, règles)" },
+          { term: "Fallback", def: "Ce qui se passe si l'IA échoue — toujours prévoir un plan B dans vos workflows" },
+        ],
+      },
+    ],
+    exercise: {
+      title: "Exercice : Votre premier workflow",
+      desc: "Créez un workflow Zapier (version gratuite) qui résume automatiquement un email important et envoie le résumé dans Notion ou Slack.",
+      exemple: "WORKFLOW EXEMPLE :\n1. Trigger : Nouveau Gmail avec label 'Important'\n2. Action : ChatGPT — prompt : 'Résume cet email en 3 bullets points : titre + action requise + deadline'\n3. Action : Créer une page Notion avec le résumé\n\nTemps de setup : 20 minutes · Temps économisé : 1-2h/semaine",
+    },
+    quiz: [
+      { q: "Quel outil d'automatisation est open source et auto-hébergeable ?", opts: ["Zapier", "Make", "n8n", "IFTTT"], correct: 2 },
+      { q: "Qu'est-ce qu'un 'trigger' dans une automatisation ?", opts: ["Le résultat final", "L'événement qui déclenche l'automatisation", "Le modèle IA utilisé", "Le format de sortie"], correct: 1 },
+    ],
+  },
+  "06": {
+    title: "Génération de texte professionnelle",
+    subtitle: "Produire des contenus de qualité en 10x moins de temps",
+    duration: "38 min", level: "Intermédiaire", color: "#38bdf8",
+    chapters: [
+      {
+        title: "Rédiger pour les entreprises avec l'IA",
+        content: `La génération de texte IA ne remplace pas votre expertise — elle l'amplifie. Votre valeur ajoutée reste le jugement, la stratégie et la relation client. L'IA gère la production.
+
+Les 6 types de contenus B2B les plus générés par l'IA aujourd'hui :
+1. Emails commerciaux et de relance
+2. Propositions commerciales et devis narratifs
+3. Articles de blog et newsletters
+4. Fiches produits et descriptions
+5. Rapports et comptes-rendus
+6. Scripts de démonstration et présentation
+
+Gain moyen constaté : 70% de réduction du temps de rédaction.`,
+        concepts: [
+          { term: "Ghostwriting IA", def: "L'IA rédige dans votre voix — vous relisez, ajustez et validez" },
+          { term: "Voix de marque", def: "Le style, le ton et les valeurs que votre contenu doit toujours refléter" },
+          { term: "First draft", def: "Le premier brouillon généré par l'IA — toujours à améliorer avant envoi" },
+        ],
+      },
+      {
+        title: "Techniques pour des textes professionnels",
+        content: `Technique 1 — Donner votre contexte métier précis
+"Mon entreprise est une agence de comptabilité B2B. Je parle à des dirigeants de PME de 10 à 50 salariés."
+
+Technique 2 — Fournir un exemple de votre style
+"Voici un email que j'ai écrit et qui a bien fonctionné : [COLLER EMAIL]. Écris dans ce même style."
+
+Technique 3 — Itérer par petites touches
+Ne corrigez pas tout d'un coup. Demandez : "Rends le paragraphe 2 plus direct" ou "Raccourcis de 30%".
+
+Technique 4 — Utiliser les variations
+"Génère 3 versions de cet email : formelle, décontractée, urgente." Testez les 3 et combinez le meilleur.`,
+        concepts: [
+          { term: "Style matching", def: "Analyser et reproduire le style d'écriture d'un humain avec l'IA" },
+          { term: "A/B testing", def: "Tester deux versions d'un texte pour identifier celle qui convertit le mieux" },
+          { term: "Tone calibration", def: "Ajuster précisément le registre (formel, chaleureux, urgent) dans le prompt" },
+        ],
+      },
+      {
+        title: "Eviter les pièges du texte IA",
+        content: `Piège 1 — Le texte trop générique
+Symptôme : "Notre entreprise est leader dans son domaine et s'engage pour la satisfaction client."
+Solution : Injectez des données réelles, des noms, des chiffres spécifiques.
+
+Piège 2 — L'hallucination de faits
+L'IA peut inventer des statistiques ou mal citer des sources.
+Solution : Vérifiez systématiquement tous les chiffres et citations.
+
+Piège 3 — Le style robotique
+Symptôme : phrases longues, structure toujours identique, manque de personnalité.
+Solution : Demandez "rends ce texte plus humain, ajoute une anecdote courte."
+
+Piège 4 — La sur-utilisation de superlatifs
+"Extraordinaire, exceptionnel, révolutionnaire" — les acheteurs B2B n'y croient plus.`,
+        concepts: [
+          { term: "Fact-checking", def: "Vérification obligatoire de toute donnée factuelle générée par l'IA" },
+          { term: "Humanisation", def: "Ajouter des éléments personnels, anecdotes, détails concrets pour sortir du générique" },
+          { term: "Relecture critique", def: "Lire le texte IA avec l'oeil d'un lecteur skeptique avant de l'envoyer" },
+        ],
+      },
+    ],
+    exercise: {
+      title: "Exercice : Rédigez une proposition commerciale",
+      desc: "Utilisez l'IA pour générer une proposition commerciale d'une page pour un client fictif. Appliquez les 4 techniques vues dans le module.",
+      exemple: "PROMPT DE BASE :\n'Tu es un expert en rédaction commerciale B2B. Rédige une proposition pour [CLIENT] dans [SECTEUR]. Budget estimé : [X]€. Notre valeur ajoutée : [Y]. Ton : professionnel et direct. Structure : problème / solution / bénéfices / investissement / prochaine étape. Max 400 mots.'\n\nEnsuite : demandez 3 variations, choisissez les meilleurs éléments de chaque.",
+    },
+    quiz: [
+      { q: "Quelle est la réduction de temps constatée grâce à l'IA pour la rédaction ?", opts: ["30%", "50%", "70%", "90%"], correct: 2 },
+      { q: "Comment éviter le texte IA trop générique ?", opts: ["Changer de modèle IA", "Injecter des données réelles, noms et chiffres spécifiques", "Utiliser un prompt plus long", "Activer le mode créatif"], correct: 1 },
+    ],
+  },
+  "07": {
+    title: "Créer des images avec l'IA",
+    subtitle: "Midjourney, DALL-E, Stable Diffusion — maîtrisez la création visuelle",
+    duration: "42 min", level: "Intermédiaire", color: "#f472b6",
+    chapters: [
+      {
+        title: "Les outils de génération d'images",
+        content: `La génération d'images par IA a révolutionné la création visuelle. En 2024, des millions d'entrepreneurs utilisent ces outils pour leurs visuels marketing, sans budget agence.
+
+Les 3 grands outils :
+
+Midjourney — Le roi du réalisme artistique
+Accès via Discord. Idéal pour les visuels premium, photographies IA, illustrations stylisées.
+Abonnement : 10-60€/mois selon usage.
+
+DALL-E 3 (intégré dans ChatGPT)
+Le plus simple d'accès. Excellent pour les illustrations et visuels conceptuels.
+Inclus dans ChatGPT Plus (20€/mois).
+
+Stable Diffusion — Open source et gratuit
+Le plus puissant techniquement. Tourne en local. Courbe d'apprentissage plus élevée.`,
+        concepts: [
+          { term: "Prompt visuel", def: "La description textuelle qui guide la génération d'image — précision = qualité" },
+          { term: "Style transfer", def: "Appliquer le style d'un artiste ou d'une esthétique particulière à une génération" },
+          { term: "Seed", def: "Un nombre qui fixe l'aléatoire — permet de reproduire exactement la même image" },
+        ],
+      },
+      {
+        title: "Écrire des prompts images efficaces",
+        content: `Structure d'un prompt image parfait :
+
+[Sujet principal] + [Style/Ambiance] + [Technique/Médium] + [Paramètres techniques]
+
+Exemple Midjourney :
+"Professional entrepreneur woman at modern desk, natural light, Canon 5D, shallow depth of field, warm tones, editorial photography style --ar 16:9 --q 2"
+
+Exemples par usage :
+• Photo produit : "Product shot of [PRODUIT], white background, studio lighting, 8K, commercial photography"
+• Portrait professionnel : "[DESCRIPTION], LinkedIn headshot, professional suit, soft bokeh, neutral background"
+• Visuel marketing : "Bold minimalist poster for [MARQUE], geometric shapes, [COULEURS], sans-serif typography"
+
+Règle d'or : soyez ultra-précis sur ce que vous voulez voir, et ajoutez le style artistique souhaité.`,
+        concepts: [
+          { term: "Aspect ratio", def: "Format de l'image — 16:9 pour bannières, 1:1 pour réseaux, 4:5 pour Instagram" },
+          { term: "Negative prompt", def: "Ce que vous ne voulez PAS voir dans l'image (ex: 'no text, no watermark')" },
+          { term: "Upscaling", def: "Augmenter la résolution d'une image générée pour l'impression ou affichage HD" },
+        ],
+      },
+      {
+        title: "Cas d'usage pour entrepreneurs",
+        content: `1. Visuels réseaux sociaux
+Posts Instagram, couvertures LinkedIn, thumbnails YouTube — générés en 2 minutes vs 2 heures avec un graphiste.
+
+2. Images pour site web et landing pages
+Hero images, illustrations de sections, avatars et icônes — cohérents avec votre charte.
+
+3. Maquettes produit
+Visualiser un produit qui n'existe pas encore, tester des coloris, présenter à des investisseurs.
+
+4. Contenu marketing
+Visuels pour publicités Meta/Google, newsletters, brochures — A/B test rapide de concepts visuels.
+
+5. Branding et identité visuelle
+Explorer des directions artistiques, tester des ambiances de marque, créer des moodboards.
+
+Budget économisé vs agence : 500 à 5 000€/mois selon volume.`,
+        concepts: [
+          { term: "Consistance visuelle", def: "Garder le même style, couleurs et ambiance dans toutes vos images générées" },
+          { term: "Moodboard IA", def: "Série d'images générées pour définir l'ambiance visuelle d'une marque ou projet" },
+          { term: "Brand kit", def: "Ensemble de visuels cohérents (couleurs, styles, typographies) générés et validés" },
+        ],
+      },
+    ],
+    exercise: {
+      title: "Exercice : Créez 3 visuels pour votre marque",
+      desc: "Utilisez DALL-E 3 (via ChatGPT) pour créer 3 visuels cohérents : un visuel hero, un visuel produit, un visuel réseaux sociaux.",
+      exemple: "PROMPT HERO :\n'Minimalist hero image for a premium business coaching brand. Dark background with gold accents, abstract geometric shapes, professional and aspirational mood, wide format 16:9'\n\nPROMPT RÉSEAUX :\n'Square social media post for business coaching, inspirational quote overlay space, dark navy and gold color palette, modern typography, Instagram-ready 1:1'\n\nAstuce : utilisez le même style artistique dans les 3 pour la cohérence.",
+    },
+    quiz: [
+      { q: "Quel outil de génération d'images est inclus dans ChatGPT Plus ?", opts: ["Midjourney", "Stable Diffusion", "DALL-E 3", "Adobe Firefly"], correct: 2 },
+      { q: "Que signifie 'negative prompt' en génération d'images ?", opts: ["Un prompt qui génère des images sombres", "Spécifier ce qu'on ne veut pas voir dans l'image", "Un feedback négatif sur l'image", "Un type d'image en noir et blanc"], correct: 1 },
+    ],
+  },
+  "08": {
+    title: "Analyser des données avec l'IA",
+    subtitle: "Transformer vos données en insights actionnables sans être data scientist",
+    duration: "45 min", level: "Intermédiaire", color: "#4ade80",
+    chapters: [
+      {
+        title: "L'analyse de données accessible à tous",
+        content: `Analyser ses données était autrefois réservé aux data scientists. Aujourd'hui, avec ChatGPT Advanced Data Analysis (anciennement Code Interpreter), vous pouvez analyser n'importe quel fichier CSV ou Excel en quelques secondes.
+
+Ce que l'IA peut analyser pour vous :
+- Ventes et chiffre d'affaires (tendances, saisonnalité, clients top)
+- Données clients (segmentation, comportement, rétention)
+- Performances marketing (CPL, ROI par canal, conversion)
+- Opérations (délais, coûts, efficacité)
+- Finances (trésorerie, marges, prévisions)
+
+Avant l'IA : 4 à 8 heures avec Excel avancé. Avec l'IA : 10 à 30 minutes.`,
+        concepts: [
+          { term: "Data Analysis", def: "Fonctionnalité ChatGPT qui permet d'uploader des fichiers et d'analyser les données" },
+          { term: "Insight", def: "Une découverte actionnable tirée de l'analyse — pas juste un chiffre, mais une décision" },
+          { term: "Corrélation", def: "Relation statistique entre deux variables (ex: température et ventes de glaces)" },
+        ],
+      },
+      {
+        title: "Prompts d'analyse de données",
+        content: `Une fois votre fichier uploadé dans ChatGPT, utilisez ces prompts :
+
+Analyse générale :
+"Analyse ce fichier de ventes. Donne-moi les 5 insights les plus importants avec des graphiques."
+
+Segmentation clients :
+"Segmente mes clients en groupes selon leur valeur (CA, fréquence, ancienneté). Donne un nom et une stratégie pour chaque segment."
+
+Prévisions :
+"En te basant sur mes ventes des 18 derniers mois, génère une prévision pour les 6 prochains mois avec 3 scénarios."
+
+Anomalies :
+"Y a-t-il des valeurs aberrantes dans mes données ? Des mois anormaux ? Des clients outliers ?"
+
+Recommandations :
+"Quelles sont tes 3 recommandations concrètes basées sur cette analyse ?"`,
+        concepts: [
+          { term: "Segmentation RFM", def: "Classer clients par Récence, Fréquence et Montant d'achat pour les cibler" },
+          { term: "Outlier", def: "Valeur qui s'écarte significativement des autres — peut signaler un problème ou opportunité" },
+          { term: "Prévision", def: "Projection des données futures basée sur les tendances historiques" },
+        ],
+      },
+      {
+        title: "Construire des tableaux de bord automatisés",
+        content: `Au-delà de l'analyse ponctuelle, l'IA peut vous aider à construire des systèmes de suivi automatisés.
+
+Option 1 — Google Sheets + Gemini
+Données auto-actualisées + analyse IA intégrée directement dans vos feuilles.
+
+Option 2 — Notion + ChatGPT
+Dashboard Notion avec rapports IA générés chaque semaine sur vos KPIs.
+
+Option 3 — Airtable + Zapier + ChatGPT
+Données structurées, alertes automatiques si un KPI passe sous le seuil.
+
+KPIs essentiels pour un entrepreneur :
+CA mensuel / MRR · Taux de conversion · CAC · LTV · NPS · Trésorerie prévisionnelle
+
+Conseil : analysez d'abord avec l'IA, puis construisez le dashboard une fois que vous savez quels KPIs comptent vraiment.`,
+        concepts: [
+          { term: "KPI", def: "Key Performance Indicator — indicateur clé pour mesurer la santé de votre activité" },
+          { term: "MRR", def: "Monthly Recurring Revenue — revenu récurrent mensuel (essentiel pour abonnements)" },
+          { term: "LTV", def: "Lifetime Value — revenu total généré par un client sur toute sa durée de vie" },
+        ],
+      },
+    ],
+    exercise: {
+      title: "Exercice : Analysez vos données réelles",
+      desc: "Exportez 3 mois de données depuis votre outil de facturation ou tableau de bord (en CSV). Uploadez-les dans ChatGPT Advanced Data Analysis et demandez les 5 insights principaux.",
+      exemple: "PROMPTS À UTILISER :\n1. 'Analyse ce fichier. Quelles sont les 5 découvertes les plus importantes ?'\n2. 'Crée un graphique de tendance du CA par mois'\n3. 'Qui sont mes 10 meilleurs clients ? Quelles caractéristiques partagent-ils ?'\n4. 'Y a-t-il des patterns dans mes meilleures semaines de vente ?'\n5. 'Génère 3 recommandations concrètes basées sur ces données'",
+    },
+    quiz: [
+      { q: "Que signifie LTV dans l'analyse client ?", opts: ["Long Term Vision", "Lifetime Value", "Lead To Value", "Learning Transfer Value"], correct: 1 },
+      { q: "Quelle fonctionnalité ChatGPT permet d'analyser des fichiers CSV ?", opts: ["ChatGPT Plugins", "Advanced Data Analysis", "Custom GPTs", "Memory Mode"], correct: 1 },
+    ],
+  },
+  "09": {
+    title: "L'IA pour les entrepreneurs",
+    subtitle: "Stratégie complète pour intégrer l'IA dans votre business",
+    duration: "50 min", level: "Avancé", color: "#a78bfa",
+    chapters: [
+      {
+        title: "Construire votre stack IA personnel",
+        content: `Un "stack IA" c'est l'ensemble des outils IA que vous utilisez au quotidien. En 2025, un entrepreneur optimisé a généralement 3 à 6 outils IA dans son quotidien.
+
+Stack recommandé par DJAMA :
+Cerveau — ChatGPT GPT-4o (rédaction, analyse, stratégie)
+Images — DALL-E 3 ou Midjourney (visuels marketing)
+Audio — Whisper (transcription) + ElevenLabs (voix IA)
+Vidéo — Captions ou HeyGen (édition et présentations IA)
+Automatisation — Zapier ou Make (flux de travail)
+Spécialisé — Notion AI (notes) ou Perplexity (recherche)
+
+Budget indicatif : 80 à 200€/mois pour un stack complet pro.
+ROI typique : 15 à 30 heures économisées par semaine.`,
+        concepts: [
+          { term: "Stack IA", def: "L'ensemble des outils IA intégrés dans votre workflow au quotidien" },
+          { term: "Orchestration", def: "Faire travailler plusieurs IA ensemble pour accomplir une tâche complexe" },
+          { term: "Single source of truth", def: "Un outil central (Notion, Airtable) où toutes les données convergent" },
+        ],
+      },
+      {
+        title: "Nouvelles offres de services rendues possibles par l'IA",
+        content: `L'IA ne fait pas que vous rendre plus efficace — elle crée de nouvelles sources de revenus.
+
+Services que vous pouvez maintenant proposer :
+
+1. Création de contenu scalable
+Gérer 10 clients en contenu avec l'IA au lieu de 3. Tarif maintenu, marge multipliée.
+
+2. Conseil en stratégie IA
+Aider d'autres entrepreneurs à implémenter l'IA dans leur activité. 200-500€/heure.
+
+3. Produits digitaux IA
+E-books, formations, templates prompt — créés 5x plus vite, vendus en automatique.
+
+4. Automatisation pour clients
+Construire et maintenir des workflows IA pour d'autres businesses. MRR prévisible.
+
+5. Agence de contenu IA
+Production de contenu à grande échelle (articles, posts, newsletters) pour plusieurs clients.`,
+        concepts: [
+          { term: "Scalabilité", def: "Capacité à augmenter les revenus sans augmenter proportionnellement le temps de travail" },
+          { term: "MRR", def: "Revenu mensuel récurrent — le Saint-Graal de l'entrepreneur qui sert plusieurs clients" },
+          { term: "Productisation", def: "Transformer un service personnalisé en offre standardisée et scalable" },
+        ],
+      },
+      {
+        title: "Rester compétitif à l'ère de l'IA",
+        content: `L'IA ne remplace pas les entrepreneurs — elle écarte ceux qui ne s'adaptent pas.
+
+Les 3 compétences qui restent humaines (et donc précieuses) :
+1. Jugement et vision stratégique — décider QUOI faire, l'IA exécute le COMMENT
+2. Relation client — l'empathie, la confiance, la compréhension profonde des besoins
+3. Créativité originale — les idées vraiment nouvelles viennent encore de l'expérience humaine
+
+Comment rester à jour :
+- Suivre 3-5 newsletters IA (The Rundown AI, TLDR AI, Superhuman)
+- Tester un nouvel outil par mois
+- Rejoindre des communautés d'entrepreneurs IA
+- Consacrer 30 min par semaine à l'expérimentation
+
+L'avantage concurrentiel de demain : la capacité à combiner expertise métier + maîtrise IA.`,
+        concepts: [
+          { term: "Veille IA", def: "Processus régulier pour suivre les évolutions des outils et modèles IA" },
+          { term: "Avantage compétitif", def: "Ce que vous faites mieux que vos concurrents — combinaison expertise + IA" },
+          { term: "Upskilling", def: "Se former continuellement pour maintenir ses compétences à niveau dans un domaine en évolution rapide" },
+        ],
+      },
+    ],
+    exercise: {
+      title: "Exercice : Construisez votre roadmap IA 90 jours",
+      desc: "Créez un plan concret sur 90 jours pour intégrer l'IA dans votre activité : 3 outils à tester, 2 workflows à construire, 1 nouvelle offre à explorer.",
+      exemple: "ROADMAP EXEMPLE :\n\nMois 1 — Fondations\n• Tester ChatGPT Pro 30 jours\n• Automatiser réponses emails avec Zapier\n• Créer 5 templates prompts pour tâches récurrentes\n\nMois 2 — Amplification\n• Lancer Midjourney pour visuels marketing\n• Construire workflow contenu social (rédaction + images)\n• Analyser ses données clients avec Data Analysis\n\nMois 3 — Monétisation\n• Proposer un audit IA à 2 clients existants\n• Créer un lead magnet (guide) généré à 80% par IA\n• Mesurer le gain de temps et ROI",
+    },
+    quiz: [
+      { q: "Quel est le budget mensuel indicatif pour un stack IA complet pour entrepreneur ?", opts: ["10-20€", "50-80€", "80-200€", "500-1000€"], correct: 2 },
+      { q: "Parmi ces compétences, laquelle reste irremplaçable par l'IA ?", opts: ["Rédaction de base", "Analyse de données simples", "Jugement et vision stratégique", "Génération d'images"], correct: 2 },
+    ],
+  },
 };
 
 /* ─── Types ─────────────────────────────────────────────────────── */
@@ -509,6 +957,14 @@ export default function CoursDetailPage() {
   const [answers,      setAnswers]      = useState<number[]>([]);
   const [quizDone,     setQuizDone]     = useState(false);
 
+  // Fallback (modules 10-20) state — always declared to respect hooks rules
+  const [fbChap,        setFbChap]        = useState(0);
+  const [fbQuizStarted, setFbQuizStarted] = useState(false);
+  const [fbQIndex,      setFbQIndex]      = useState(0);
+  const [fbSelected,    setFbSelected]    = useState<number | null>(null);
+  const [fbAnswers,     setFbAnswers]     = useState<number[]>([]);
+  const [fbQuizDone,    setFbQuizDone]    = useState(false);
+
   async function saveProgress(score: number) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -547,11 +1003,53 @@ export default function CoursDetailPage() {
   const prevId = numId > 1  ? String(numId - 1).padStart(2, "0") : null;
   const nextId = numId < 20 ? String(numId + 1).padStart(2, "0") : null;
 
-  /* ── Cours 05-20 : page Prof IA simple ── */
+  /* ── Modules 10-20 : contenu structuré + Prof IA ── */
   if (!cours) {
     const title = FALLBACK_TITLES[id] ?? `Module ${id}`;
+    const fallbackColor = "#d946ef";
+    const FALLBACK_CHAPTERS = [
+      { label: "Concepts fondamentaux", icon: BookOpen },
+      { label: "Mise en pratique",      icon: Target   },
+      { label: "Cas avancés",           icon: Zap      },
+    ];
+    const fbQuiz = [
+      { q: `Quelle est la principale utilité de "${title}" pour un entrepreneur ?`, opts: ["Remplacer ses employés", "Gagner du temps et améliorer la qualité", "Créer une app mobile", "Gérer sa comptabilité"], correct: 1 },
+      { q: "Quel est le premier réflexe avant d'utiliser un outil IA sur un nouveau domaine ?", opts: ["Le tester sans lire la doc", "Identifier précisément le cas d'usage et le résultat attendu", "Choisir le modèle le plus cher", "Attendre qu'il soit parfait"], correct: 1 },
+    ];
+
+    function fbHandleAnswer(idx: number) {
+      if (fbSelected !== null) return;
+      setFbSelected(idx);
+      setTimeout(() => {
+        const next = [...fbAnswers, idx];
+        setFbAnswers(next);
+        if (fbQIndex + 1 >= fbQuiz.length) {
+          setFbQuizDone(true);
+          const score = next.filter((a, i) => a === fbQuiz[i].correct).length;
+          void (async () => {
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) return;
+              await supabase.from("coaching_progress").upsert({
+                user_id: user.id, cours_id: id,
+                completed: score === fbQuiz.length,
+                quiz_score: score,
+                completed_at: score === fbQuiz.length ? new Date().toISOString() : null,
+              }, { onConflict: "user_id,cours_id" });
+            } catch {}
+          })();
+        } else {
+          setFbQIndex(q => q + 1);
+          setFbSelected(null);
+        }
+      }, 900);
+    }
+
+    const fbScore = fbAnswers.filter((a, i) => a === fbQuiz[i].correct).length;
+
     return (
       <div className="min-h-screen bg-[#0a0f1e]">
+        {/* Sub-header */}
         <div className="relative z-10 border-b border-white/6 bg-white/[0.025] px-5 py-3.5 backdrop-blur-xl sm:px-8">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -561,36 +1059,163 @@ export default function CoursDetailPage() {
               <span className="text-white/15">·</span>
               <span className="text-xs font-bold text-fuchsia-400">Module {id}</span>
             </div>
+            <span className="rounded-full border border-fuchsia-500/30 px-2.5 py-0.5 text-[0.6rem] font-bold text-fuchsia-400">Avancé</span>
           </div>
         </div>
+
         <div className="relative z-10 mx-auto max-w-3xl space-y-6 px-5 py-6 sm:px-8">
+          {/* Hero */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease }}
             className="relative overflow-hidden rounded-2xl border bg-white/[0.025] p-6"
             style={{ borderColor: "rgba(217,70,239,0.25)" }}
           >
             <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(217,70,239,0.5), transparent)" }} />
             <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(217,70,239,0.06) 0%, transparent 60%)" }} />
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-[rgba(217,70,239,0.15)]" style={{ borderColor: "rgba(217,70,239,0.3)" }}>
-                <GraduationCap size={24} className="text-fuchsia-400" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-fuchsia-400">Module {id} / 20</p>
-                <h1 className="mt-0.5 text-xl font-extrabold text-white">{title}</h1>
-                <p className="mt-1 text-sm text-white/40">Le contenu structuré arrive bientôt — le Prof IA peut déjà t'enseigner ce sujet !</p>
-              </div>
+            <div className="relative">
+              <p className="text-[0.65rem] font-medium text-fuchsia-400">Module {id} / 20</p>
+              <h1 className="mt-1 text-2xl font-bold text-white">{title}</h1>
+              <p className="mt-1 text-sm text-white/40">Formation avancée — posez vos questions au Prof IA pour approfondir chaque concept.</p>
             </div>
           </motion.div>
 
-          <ProfIAPanel
-            coursId={id}
-            coursTitle={title}
-            chapterTitle=""
-            chapterContent=""
-          />
+          {/* Video player */}
+          <VideoPlayer title={`Leçon vidéo — ${title}`} courseColor={fallbackColor} />
+
+          {/* Chapter tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {FALLBACK_CHAPTERS.map((ch, i) => {
+              const ChIcon = ch.icon;
+              return (
+                <button key={i} onClick={() => setFbChap(i)}
+                  className={`relative shrink-0 flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all whitespace-nowrap ${fbChap === i ? "text-white" : "text-white/35 hover:text-white/60 border border-white/6 bg-white/3"}`}>
+                  {fbChap === i && (
+                    <motion.div layoutId="fb-chap-bg" className="absolute inset-0 rounded-xl"
+                      style={{ background: "rgba(217,70,239,0.18)", border: "1px solid rgba(217,70,239,0.4)" }}
+                      transition={{ duration: 0.2 }} />
+                  )}
+                  <ChIcon size={11} className="relative" />
+                  <span className="relative">{i + 1}. {ch.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Chapter content */}
+          <AnimatePresence mode="wait">
+            <motion.div key={fbChap}
+              initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.3, ease }}
+              className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.025] p-6">
+              <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 50% 40% at 0% 0%, rgba(217,70,239,0.07) 0%, transparent 60%)" }} />
+              <div className="relative">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[rgba(217,70,239,0.15)] border border-[rgba(217,70,239,0.3)]">
+                    {fbChap === 0 ? <BookOpen size={14} className="text-fuchsia-400" /> : fbChap === 1 ? <Target size={14} className="text-fuchsia-400" /> : <Zap size={14} className="text-fuchsia-400" />}
+                  </div>
+                  <h2 className="text-base font-extrabold text-white">{FALLBACK_CHAPTERS[fbChap].label} — {title}</h2>
+                </div>
+                <p className="text-sm leading-relaxed text-white/55">
+                  {fbChap === 0 && `Ce module couvre les concepts fondamentaux de "${title}" appliqués au contexte entrepreneurial. Posez vos questions au Prof IA ci-dessous pour obtenir des explications personnalisées adaptées à votre activité.`}
+                  {fbChap === 1 && `La mise en pratique de "${title}" commence par identifier 2 à 3 cas d'usage concrets dans votre activité. Utilisez le Prof IA pour construire votre premier exercice pratique guidé et obtenir des retours en temps réel.`}
+                  {fbChap === 2 && `Les cas avancés de "${title}" permettent d'aller plus loin en combinant plusieurs approches. Le Prof IA peut vous accompagner sur des scénarios complexes propres à votre secteur d'activité.`}
+                </p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  {[
+                    { term: "Concept clé 1", def: `Base essentielle de ${title.split(" ")[0]} — demandez au Prof IA une explication détaillée` },
+                    { term: "Application pratique", def: "Identifiez comment ce concept s'applique à votre activité quotidienne" },
+                    { term: "Niveau avancé", def: "Combinez ce module avec les précédents pour des résultats exponentiels" },
+                  ].map(({ term, def }) => (
+                    <div key={term} className="relative overflow-hidden rounded-xl border border-white/6 bg-white/[0.02] p-3">
+                      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 0% 0%, rgba(217,70,239,0.07) 0%, transparent 70%)" }} />
+                      <p className="relative text-xs font-extrabold text-fuchsia-400">{term}</p>
+                      <p className="relative mt-1 text-[0.7rem] leading-relaxed text-white/40">{def}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Quiz */}
+          <div className="relative overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.2)] bg-white/[0.025] p-6">
+            <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(167,139,250,0.07) 0%, transparent 60%)" }} />
+            <div className="relative">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.12)] border border-[rgba(167,139,250,0.2)]">
+                  <Trophy size={15} className="text-[#a78bfa]" />
+                </div>
+                <div>
+                  <p className="text-sm font-extrabold text-white">Quiz du module</p>
+                  <p className="text-[0.65rem] text-white/35">2 questions · Score sauvegardé</p>
+                </div>
+              </div>
+              {!fbQuizStarted ? (
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => setFbQuizStarted(true)}
+                  className="flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-extrabold text-black shadow-[0_4px_20px_rgba(167,139,250,0.35)]"
+                  style={{ background: "linear-gradient(135deg, #a78bfa, #7c3aed)" }}>
+                  <Play size={13} fill="black" /> Lancer le quiz
+                </motion.button>
+              ) : fbQuizDone ? (
+                <div className="space-y-4 text-center py-2">
+                  <p className="text-3xl font-extrabold" style={{ color: fbScore === fbQuiz.length ? "#4ade80" : "#f59e0b" }}>
+                    {fbScore}/{fbQuiz.length}
+                  </p>
+                  <p className="text-xs text-white/40">{fbScore === fbQuiz.length ? "Parfait ! Module maîtrisé." : "Relisez et réessayez."}</p>
+                  {fbScore === fbQuiz.length && (
+                    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(74,222,128,0.12)] border border-[rgba(74,222,128,0.3)] px-3 py-1 text-xs font-bold text-[#4ade80]">
+                      <CheckCircle2 size={11} /> Module complété
+                    </motion.div>
+                  )}
+                  <button onClick={() => { setFbQIndex(0); setFbSelected(null); setFbAnswers([]); setFbQuizDone(false); setFbQuizStarted(false); }}
+                    className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white transition-colors">
+                    <RefreshCw size={11} /> Rejouer
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/40">Question {fbQIndex + 1}/{fbQuiz.length}</span>
+                    <div className="flex gap-1">
+                      {fbQuiz.map((_, i) => (
+                        <div key={i} className={`h-1.5 w-8 rounded-full transition-all ${i < fbQIndex ? "bg-[#a78bfa]" : i === fbQIndex ? "bg-[#a78bfa] opacity-50" : "bg-white/10"}`} />
+                      ))}
+                    </div>
+                  </div>
+                  <AnimatePresence mode="wait">
+                    <motion.div key={fbQIndex} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}>
+                      <p className="text-sm font-bold text-white mb-3">{fbQuiz[fbQIndex].q}</p>
+                      <div className="space-y-2">
+                        {fbQuiz[fbQIndex].opts.map((opt, i) => {
+                          const isCorrect = i === fbQuiz[fbQIndex].correct;
+                          const isSelected = fbSelected === i;
+                          const revealed = fbSelected !== null;
+                          return (
+                            <motion.button key={i} whileHover={!revealed ? { x: 3 } : {}}
+                              onClick={() => fbHandleAnswer(i)} disabled={revealed}
+                              className={`w-full rounded-xl border px-4 py-2.5 text-left text-xs font-semibold transition-all ${
+                                !revealed ? "border-white/8 bg-white/4 text-white/65 hover:border-white/20 hover:text-white" :
+                                isCorrect ? "border-[rgba(74,222,128,0.4)] bg-[rgba(74,222,128,0.1)] text-[#4ade80]" :
+                                isSelected ? "border-[rgba(248,113,113,0.4)] bg-[rgba(248,113,113,0.1)] text-[#f87171]" :
+                                "border-white/4 bg-white/2 text-white/20"
+                              }`}>
+                              <span className="mr-2 font-semibold">{String.fromCharCode(65 + i)}.</span>{opt}
+                              {revealed && isCorrect && <CheckCircle2 size={12} className="inline ml-2 text-[#4ade80]" />}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <ProfIAPanel coursId={id} coursTitle={title} chapterTitle={FALLBACK_CHAPTERS[fbChap].label} chapterContent="" />
 
           <div className="flex items-center justify-between pt-2">
             {prevId ? (
@@ -655,6 +1280,9 @@ export default function CoursDetailPage() {
             <p className="mt-1 text-sm text-white/45">{cours.subtitle}</p>
           </div>
         </motion.div>
+
+        {/* Video player */}
+        <VideoPlayer title={`Leçon vidéo — ${cours.title}`} courseColor={cours.color} />
 
         {/* Chapter nav */}
         <motion.div
