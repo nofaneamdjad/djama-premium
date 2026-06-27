@@ -7,8 +7,9 @@ import { createLogger } from "@/lib/logger";
 const log = createLogger("checkout");
 
 const CheckoutSchema = z.object({
-  userId:    z.string().uuid().optional(),
-  userEmail: z.string().email().optional(),
+  userId:        z.string().uuid().optional(),
+  userEmail:     z.string().email().optional(),
+  promotionCode: z.string().max(50).optional(),
 }).optional();
 
 /* ─────────────────────────────────────────────────────────────
@@ -71,19 +72,39 @@ export async function POST(req: Request) {
   /* Récupérer et valider le body (optionnel) */
   let userId: string | undefined;
   let userEmail: string | undefined;
+  let promotionCode: string | undefined;
   try {
     const raw = await req.json();
     const parsed = CheckoutSchema.safeParse(raw);
     if (parsed.success && parsed.data) {
-      userId    = parsed.data.userId;
-      userEmail = parsed.data.userEmail;
+      userId        = parsed.data.userId;
+      userEmail     = parsed.data.userEmail;
+      promotionCode = parsed.data.promotionCode;
     }
   } catch {
     /* body absent ou non-JSON → pas grave, on continue sans */
   }
 
   try {
-    const stripe  = getStripe();
+    const stripe = getStripe();
+
+    /* Résoudre le code promo en ID Stripe si fourni */
+    let promotionCodeId: string | undefined;
+    if (promotionCode) {
+      const codes = await stripe.promotionCodes.list({
+        code: promotionCode.trim().toUpperCase(),
+        active: true,
+        limit: 1,
+      });
+      if (codes.data.length === 0) {
+        return NextResponse.json(
+          { error: "Code promo invalide ou expiré." },
+          { status: 400 }
+        );
+      }
+      promotionCodeId = codes.data[0].id;
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
@@ -97,6 +118,11 @@ export async function POST(req: Request) {
       /* Lier le paiement au compte utilisateur existant */
       ...(userId    && { client_reference_id: userId }),
       ...(userEmail && { customer_email: userEmail }),
+
+      /* Code promo : pré-appliqué si fourni, sinon champ libre */
+      ...(promotionCodeId
+        ? { discounts: [{ promotion_code: promotionCodeId }] }
+        : { allow_promotion_codes: true }),
 
       /* Redirections */
       success_url: `${origin}/paiement-confirme?session_id={CHECKOUT_SESSION_ID}`,
