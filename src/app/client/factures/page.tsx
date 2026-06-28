@@ -10,6 +10,7 @@ import {
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
   TrendingUp, Clock, AlertCircle, DollarSign, Settings2,
   PanelLeftClose, PanelLeftOpen,
+  Repeat2, PenLine, Upload, BellRing,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEur, fmtDate } from "@/lib/format";
@@ -229,6 +230,52 @@ const EMPTY_DRAFT = (): DraftDoc => ({
   couleur:"#c9a55a",
   template:"modern" as TemplateType,
 });
+
+const RECUR_FREQS = [
+  { val: "hebdo",       label: "Hebdomadaire", days: 7   },
+  { val: "mensuel",     label: "Mensuel",      days: 30  },
+  { val: "trimestriel", label: "Trimestriel",  days: 90  },
+  { val: "annuel",      label: "Annuel",       days: 365 },
+] as const;
+type RecurFreq = typeof RECUR_FREQS[number]["val"];
+
+function nextRecurDate(from: string, freq: RecurFreq): string {
+  const d = new Date(from);
+  const days = RECUR_FREQS.find(f => f.val === freq)?.days ?? 30;
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function lsGet(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function lsSet(key: string, val: string | null) {
+  if (typeof window === "undefined") return;
+  try { if (val === null) localStorage.removeItem(key); else localStorage.setItem(key, val); } catch { /* ignore */ }
+}
+
+function parseCSV(text: string): { nom: string; email: string; societe?: string; telephone?: string }[] {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const sep  = lines[0].includes(";") ? ";" : ",";
+  const hdrs = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
+  const get  = (row: string[], ...keys: string[]) => {
+    for (const k of keys) { const i = hdrs.indexOf(k); if (i >= 0 && row[i]) return row[i].trim().replace(/^"|"$/g, ""); }
+    return "";
+  };
+  return lines.slice(1).map(l => {
+    const row = l.split(sep);
+    const nom  = get(row, "nom", "name", "prenom_nom", "prénom_nom") || get(row, "prenom", "prénom");
+    const email = get(row, "email", "mail", "e-mail", "e_mail", "courriel");
+    return {
+      nom,
+      email,
+      societe:   get(row, "societe", "société", "company", "entreprise") || undefined,
+      telephone: get(row, "telephone", "téléphone", "tel", "phone", "portable") || undefined,
+    };
+  }).filter(r => r.nom || r.email);
+}
 
 async function exportPDFWithTemplate(
   draft:          DraftDoc,
@@ -674,6 +721,28 @@ export default function FacturesPage() {
   const [crmClients,    setCrmClients]    = useState<CrmClient[]>([]);
   const [crmLoading,    setCrmLoading]    = useState(false);
 
+  // ── Récurrence ──────────────────────────────────────────────────────────────
+  const [recurModal,    setRecurModal]    = useState(false);
+  const [recurFreq,     setRecurFreq]     = useState<RecurFreq>("mensuel");
+  const [docRecurCfg,   setDocRecurCfg]   = useState<{ freq: RecurFreq; next_date: string } | null>(null);
+
+  // ── Signature électronique ──────────────────────────────────────────────────
+  const [sigModal,      setSigModal]      = useState(false);
+  const [sigDrawing,    setSigDrawing]    = useState(false);
+  const sigCanvasRef   = useRef<HTMLCanvasElement>(null);
+  const sigLastPos     = useRef<{ x: number; y: number } | null>(null);
+  const [docSignature,  setDocSignature]  = useState<string | null>(null);
+
+  // ── Import CSV ──────────────────────────────────────────────────────────────
+  const [csvModal,      setCsvModal]      = useState(false);
+  const [csvRows,       setCsvRows]       = useState<{ nom: string; email: string; societe?: string; telephone?: string }[]>([]);
+  const [csvImporting,  setCsvImporting]  = useState(false);
+  const csvInputRef    = useRef<HTMLInputElement>(null);
+
+  // ── Rappels groupés ─────────────────────────────────────────────────────────
+  const [remindersModal, setRemindersModal] = useState(false);
+  const [sendingBulk,    setSendingBulk]   = useState(false);
+
   // ── Paramètres entreprise (pré-remplissage) ───────────────────────────────
   const [companyDefaults, setCompanyDefaults] = useState<CompanySettings | null>(null);
 
@@ -689,6 +758,11 @@ export default function FacturesPage() {
     const overdueAmt = factures.filter(d => d.statut === "en_retard").reduce((s,d) => s + (d.total_ttc||0), 0);
     return { ca, pendingAmt, overdueAmt };
   }, [documents]);
+
+  const overdueWithEmail = useMemo(
+    () => documents.filter(d => d.type === "facture" && d.statut === "en_retard" && d.client_email),
+    [documents]
+  );
 
   const fetchDocs = useCallback(async () => {
     setLoadingAll(true);
@@ -737,6 +811,14 @@ export default function FacturesPage() {
     autoSaveTimer.current = setTimeout(() => { handleSaveRef.current(); }, 2000);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [dirty, selected]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Charger signature + récurrence depuis localStorage au changement de document
+  useEffect(() => {
+    if (!selected) { setDocSignature(null); setDocRecurCfg(null); return; }
+    setDocSignature(lsGet(`sig:${selected.id}`));
+    const raw = lsGet(`recur:${selected.id}`);
+    try { setDocRecurCfg(raw ? (JSON.parse(raw) as { freq: RecurFreq; next_date: string }) : null); } catch { setDocRecurCfg(null); }
+  }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
 
@@ -1246,6 +1328,166 @@ export default function FacturesPage() {
     setCrmModal(false);
   }
 
+  // ── Récurrence ──────────────────────────────────────────────────────────────
+  function activateRecur() {
+    if (!selected || !draft) return;
+    const base = draft.date_echeance || draft.date_document || new Date().toISOString().slice(0, 10);
+    const cfg = { freq: recurFreq, next_date: nextRecurDate(base, recurFreq) };
+    lsSet(`recur:${selected.id}`, JSON.stringify(cfg));
+    setDocRecurCfg(cfg);
+    setRecurModal(false);
+    showToast("success", `Récurrence ${RECUR_FREQS.find(f => f.val === recurFreq)?.label ?? ""} activée.`);
+  }
+
+  async function handleDuplicateRecur(freq: RecurFreq, nextDate: string) {
+    if (!selected || !draft) return;
+    setDuplicating(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setDuplicating(false); return; }
+    const newNum = newNumero(draft.type, documents);
+    const { data: newDoc, error } = await supabase.from("documents").insert({
+      user_id: user.id, type: draft.type, numero: newNum, statut: "brouillon",
+      sujet: draft.sujet,
+      emetteur_nom: draft.emetteur_nom, emetteur_email: draft.emetteur_email,
+      emetteur_adresse: draft.emetteur_adresse, emetteur_ville: draft.emetteur_ville,
+      emetteur_code_postal: draft.emetteur_code_postal, emetteur_pays: draft.emetteur_pays,
+      emetteur_siret: draft.emetteur_siret, emetteur_tva: draft.emetteur_tva, emetteur_logo: draft.emetteur_logo,
+      client_nom: draft.client_nom, client_societe: draft.client_societe, client_email: draft.client_email,
+      client_telephone: draft.client_telephone, client_adresse: draft.client_adresse,
+      client_ville: draft.client_ville, client_code_postal: draft.client_code_postal,
+      client_pays: draft.client_pays, client_tva: draft.client_tva,
+      date_document: nextDate,
+      date_echeance: nextRecurDate(nextDate, freq),
+      remise_pct: draft.remise_pct, acompte: 0,
+      devise: draft.devise || "EUR",
+      rib_titulaire: draft.rib_titulaire, rib_iban: draft.rib_iban, rib_bic: draft.rib_bic, rib_banque: draft.rib_banque,
+      notes: draft.notes, conditions: draft.conditions, mentions_legales: draft.mentions_legales,
+      couleur: draft.couleur, template: draft.template ?? "modern",
+      total_ht: totals.ht, total_tva: totals.tva, total_ttc: totals.ttc,
+    }).select().single();
+    if (error || !newDoc) { showToast("error", "Erreur création récurrence."); setDuplicating(false); return; }
+    if (items.length) {
+      await supabase.from("document_items").insert(
+        items.map((it, i) => ({
+          document_id: (newDoc as Document).id, position: i,
+          description: [it.description, it.sub_description].filter(Boolean).join("\n"),
+          unit: it.unit || "", quantity: it.quantity, unit_price: it.unit_price,
+          vat_rate: it.vat_rate, remise_pct: it.remise_pct || 0,
+        }))
+      );
+    }
+    const newCfg = { freq, next_date: nextRecurDate(nextDate, freq) };
+    lsSet(`recur:${selected.id}`, JSON.stringify(newCfg));
+    setDocRecurCfg(newCfg);
+    setDuplicating(false);
+    showToast("success", `Prochaine facture → ${newNum}`);
+    await fetchDocs();
+    openDoc(newDoc as Document);
+  }
+
+  // ── Signature électronique ──────────────────────────────────────────────────
+  function sigGetPointer(nativeEvent: MouseEvent | TouchEvent, canvas: HTMLCanvasElement) {
+    const rect = canvas.getBoundingClientRect();
+    const src  = "touches" in nativeEvent ? nativeEvent.touches[0] : nativeEvent as MouseEvent;
+    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+  }
+  function sigStart(e: React.MouseEvent<HTMLCanvasElement>) {
+    setSigDrawing(true);
+    const canvas = sigCanvasRef.current; if (!canvas) return;
+    sigLastPos.current = sigGetPointer(e.nativeEvent, canvas);
+  }
+  function sigStartTouch(e: React.TouchEvent<HTMLCanvasElement>) {
+    setSigDrawing(true);
+    const canvas = sigCanvasRef.current; if (!canvas) return;
+    sigLastPos.current = sigGetPointer(e.nativeEvent, canvas);
+  }
+  function sigDraw(nativeEvent: MouseEvent | TouchEvent) {
+    if (!sigDrawing || !sigCanvasRef.current || !sigLastPos.current) return;
+    const canvas = sigCanvasRef.current;
+    const ctx = canvas.getContext("2d"); if (!ctx) return;
+    const pos = sigGetPointer(nativeEvent, canvas);
+    ctx.beginPath();
+    ctx.moveTo(sigLastPos.current.x, sigLastPos.current.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = "#c9a55a"; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.stroke();
+    sigLastPos.current = pos;
+  }
+  function sigEnd() { setSigDrawing(false); sigLastPos.current = null; }
+  function sigClear() {
+    const canvas = sigCanvasRef.current; if (!canvas) return;
+    canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  function sigSave() {
+    if (!sigCanvasRef.current || !selected) return;
+    const dataUrl = sigCanvasRef.current.toDataURL("image/png");
+    lsSet(`sig:${selected.id}`, dataUrl);
+    setDocSignature(dataUrl);
+    setSigModal(false);
+    showToast("success", "Signature enregistrée.");
+  }
+  function sigDelete() {
+    if (!selected) return;
+    lsSet(`sig:${selected.id}`, null);
+    setDocSignature(null);
+    showToast("success", "Signature supprimée.");
+  }
+
+  // ── Import CSV ──────────────────────────────────────────────────────────────
+  function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const rows = parseCSV(ev.target?.result as string);
+      setCsvRows(rows);
+      setCsvModal(true);
+    };
+    reader.readAsText(file, "utf-8");
+    e.target.value = "";
+  }
+  async function handleCsvImport() {
+    if (!csvRows.length) return;
+    setCsvImporting(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setCsvImporting(false); return; }
+    const rows = csvRows.map(r => ({
+      user_id: user.id, nom: r.nom || r.email, email: r.email || null,
+      societe: r.societe || null, telephone: r.telephone || null,
+    }));
+    const { error } = await supabase.from("clients_crm").upsert(rows, { onConflict: "email", ignoreDuplicates: true });
+    setCsvImporting(false);
+    if (error) { showToast("error", `Erreur : ${error.message}`); return; }
+    showToast("success", `${rows.length} contact${rows.length > 1 ? "s" : ""} importé${rows.length > 1 ? "s" : ""}.`);
+    setCsvRows([]); setCsvModal(false);
+  }
+
+  // ── Rappels groupés ─────────────────────────────────────────────────────────
+  async function handleBulkReminders() {
+    if (!overdueWithEmail.length) return;
+    setSendingBulk(true);
+    let sent = 0;
+    for (const doc of overdueWithEmail) {
+      try {
+        const daysLate = doc.date_echeance
+          ? Math.floor((Date.now() - new Date(doc.date_echeance).getTime()) / 86_400_000)
+          : 0;
+        const res = await fetch("/api/factures/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            document_id: doc.id, to_email: doc.client_email, to_name: doc.client_nom,
+            subject: `Relance paiement — Facture ${doc.numero}`,
+            message: `Bonjour ${doc.client_nom || ""},\n\nSauf erreur, nous n'avons pas reçu le règlement de la facture ${doc.numero} d'un montant de ${fmtEur(doc.total_ttc)}${daysLate > 0 ? `, en retard de ${daysLate} jour${daysLate > 1 ? "s" : ""}` : ""}.\n\nMerci de procéder au règlement dans les meilleurs délais.\n\nCordialement`,
+          }),
+        });
+        if (res.ok) sent++;
+      } catch { /* continue */ }
+    }
+    setSendingBulk(false);
+    setRemindersModal(false);
+    showToast("success", `${sent} relance${sent > 1 ? "s" : ""} envoyée${sent > 1 ? "s" : ""}.`);
+  }
+
   const filtered = useMemo(() => {
     let list = [...documents];
     if (filterType !== "tous") list = list.filter(d => d.type === filterType);
@@ -1312,6 +1554,26 @@ export default function FacturesPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Bandeau rappels en retard ── */}
+      <AnimatePresence>
+        {overdueWithEmail.length > 0 && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="shrink-0 overflow-hidden border-b border-red-500/[0.12] bg-[rgba(239,68,68,0.04)]">
+            <div className="flex items-center gap-3 px-5 py-2 sm:px-8">
+              <BellRing size={13} className="shrink-0 text-red-400/70"/>
+              <p className="flex-1 text-xs text-red-300/60">
+                <strong className="text-red-300/90">{overdueWithEmail.length}</strong> facture{overdueWithEmail.length > 1 ? "s" : ""} en retard avec email
+              </p>
+              <button onClick={() => setRemindersModal(true)}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-500/25 px-3 py-1 text-[0.68rem] font-semibold text-red-400 transition hover:bg-red-500/[0.08]">
+                Envoyer relances
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Body ── */}
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 overflow-hidden px-5 py-5 sm:px-5">
@@ -1870,6 +2132,81 @@ export default function FacturesPage() {
                     <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
                   </div>
 
+                  {/* ── Facturation récurrente ── */}
+                  {selected && draft.type === "facture" && (
+                    <div className="space-y-3">
+                      <SectionLabel icon={<Repeat2 size={10}/>} label="Facturation récurrente"/>
+                      <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                        {docRecurCfg ? (
+                          <>
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)]">
+                              <Repeat2 size={14} style={{ color:"#c9a55a" }}/>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-white">{RECUR_FREQS.find(f => f.val === docRecurCfg.freq)?.label}</p>
+                              <p className="text-[0.65rem] text-white/40">Prochaine : {fmtDate(docRecurCfg.next_date)}</p>
+                            </div>
+                            <button onClick={() => { setRecurFreq(docRecurCfg.freq); setRecurModal(true); }}
+                              className="shrink-0 text-[0.65rem] text-white/30 transition hover:text-white/60">Modifier</button>
+                            <button onClick={() => { lsSet(`recur:${selected.id}`, null); setDocRecurCfg(null); showToast("success", "Récurrence désactivée."); }}
+                              className="shrink-0 text-[0.65rem] text-red-400/50 transition hover:text-red-400">Désactiver</button>
+                            <button onClick={() => handleDuplicateRecur(docRecurCfg.freq, docRecurCfg.next_date)} disabled={duplicating}
+                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-[0.65rem] font-bold transition hover:bg-[rgba(201,165,90,0.08)] disabled:opacity-40"
+                              style={{ color:"#c9a55a" }}>
+                              {duplicating ? <Loader2 size={9} className="animate-spin"/> : <Repeat2 size={9}/>} Créer prochaine
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03]">
+                              <Repeat2 size={14} className="text-white/25"/>
+                            </div>
+                            <p className="flex-1 text-[0.65rem] text-white/30">Aucune récurrence configurée</p>
+                            <button onClick={() => setRecurModal(true)}
+                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-[0.65rem] font-semibold transition hover:bg-[rgba(201,165,90,0.08)]"
+                              style={{ color:"#c9a55a" }}>
+                              <Plus size={9}/> Activer
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Signature électronique ── */}
+                  {selected && (
+                    <div className="space-y-3">
+                      <SectionLabel icon={<PenLine size={10}/>} label="Signature électronique"/>
+                      <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                        {docSignature ? (
+                          <>
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08]">
+                              <BadgeCheck size={15} className="text-emerald-400"/>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-emerald-400">Document signé</p>
+                              <img src={docSignature} alt="Signature" className="mt-1 h-8 w-auto max-w-[120px] opacity-80"/>
+                            </div>
+                            <button onClick={sigDelete}
+                              className="shrink-0 text-[0.65rem] text-red-400/50 transition hover:text-red-400">Supprimer</button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03]">
+                              <PenLine size={14} className="text-white/25"/>
+                            </div>
+                            <p className="flex-1 text-[0.65rem] text-white/30">Aucune signature</p>
+                            <button onClick={() => setSigModal(true)}
+                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-[0.65rem] font-semibold transition hover:bg-[rgba(201,165,90,0.08)]"
+                              style={{ color:"#c9a55a" }}>
+                              <PenLine size={9}/> Signer
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Mobile actions */}
                   <div className="flex flex-wrap gap-3 sm:hidden">
                     {selected?.type === "devis" && (
@@ -1992,7 +2329,13 @@ export default function FacturesPage() {
                   </div>
                   <h3 className="text-sm font-extrabold text-white">Importer depuis le CRM</h3>
                 </div>
-                <button onClick={() => setCrmModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { setCrmModal(false); csvInputRef.current?.click(); }}
+                    className="flex items-center gap-1.5 rounded-xl border border-white/[0.09] px-2.5 py-1.5 text-[0.65rem] font-semibold text-white/40 transition hover:text-white/70">
+                    <Upload size={11}/> CSV
+                  </button>
+                  <button onClick={() => setCrmModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+                </div>
               </div>
               <div className="relative mb-3">
                 <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25"/>
@@ -2193,6 +2536,218 @@ export default function FacturesPage() {
                   </div>
                 </div>
               ) : null}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Input CSV caché */}
+      <input ref={csvInputRef} type="file" accept=".csv,text/csv" onChange={handleCsvFile} className="hidden"/>
+
+      {/* ── Modal Récurrence ── */}
+      <AnimatePresence>
+        {recurModal && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
+              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
+              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)]">
+                    <Repeat2 size={15} style={{ color:"#c9a55a" }}/>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">Facturation récurrente</h3>
+                    <p className="text-[0.62rem] text-white/30">Génère la prochaine facture automatiquement</p>
+                  </div>
+                </div>
+                <button onClick={() => setRecurModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-[0.65rem] font-medium text-white/35">Fréquence</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {RECUR_FREQS.map(f => (
+                      <button key={f.val} onClick={() => setRecurFreq(f.val)}
+                        className="rounded-xl border px-3 py-2.5 text-sm font-semibold transition"
+                        style={recurFreq === f.val
+                          ? { color:"#0a0a0a", background:"linear-gradient(135deg,#c9a55a,#b08d45)", borderColor:"transparent" }
+                          : { color:"rgba(255,255,255,0.45)", background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.09)" }}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {draft?.date_echeance && (
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                    <p className="text-[0.65rem] text-white/35">Prochaine facture le</p>
+                    <p className="mt-0.5 text-sm font-bold text-white">{fmtDate(nextRecurDate(draft.date_echeance, recurFreq))}</p>
+                  </div>
+                )}
+              </div>
+              <div className="mt-5 flex gap-3">
+                <button onClick={() => setRecurModal(false)}
+                  className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20">Annuler</button>
+                <button onClick={activateRecur}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition hover:opacity-90"
+                  style={{ background:"linear-gradient(135deg,#c9a55a,#b08d45)", color:"#0a0a0a" }}>
+                  <Repeat2 size={13}/> Activer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Modal Signature ── */}
+      <AnimatePresence>
+        {sigModal && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
+              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
+              className="w-full max-w-md rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)]">
+                    <PenLine size={15} style={{ color:"#c9a55a" }}/>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">Signature électronique</h3>
+                    <p className="text-[0.62rem] text-white/30">Signez avec votre souris ou votre doigt</p>
+                  </div>
+                </div>
+                <button onClick={() => { setSigModal(false); sigClear(); }} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-white/[0.09] bg-white/[0.02]" style={{ touchAction:"none" }}>
+                <canvas
+                  ref={sigCanvasRef}
+                  width={440} height={160}
+                  style={{ display:"block", width:"100%", height:"160px", cursor:"crosshair", touchAction:"none" }}
+                  onMouseDown={sigStart}
+                  onMouseMove={e => sigDraw(e.nativeEvent)}
+                  onMouseUp={sigEnd}
+                  onMouseLeave={sigEnd}
+                  onTouchStart={sigStartTouch}
+                  onTouchMove={e => { e.preventDefault(); sigDraw(e.nativeEvent); }}
+                  onTouchEnd={sigEnd}
+                />
+              </div>
+              <p className="mt-2 text-center text-[0.6rem] text-white/20">Signez dans la zone ci-dessus</p>
+              <div className="mt-4 flex gap-3">
+                <button onClick={sigClear}
+                  className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/40 transition hover:text-white/60">Effacer</button>
+                <button onClick={sigSave}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition hover:opacity-90"
+                  style={{ background:"linear-gradient(135deg,#c9a55a,#b08d45)", color:"#0a0a0a" }}>
+                  <BadgeCheck size={13}/> Valider la signature
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Modal Import CSV ── */}
+      <AnimatePresence>
+        {csvModal && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
+              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
+              className="w-full max-w-lg rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-400/25 bg-blue-400/[0.08]">
+                    <Upload size={15} className="text-blue-400"/>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">Import CSV — {csvRows.length} contact{csvRows.length !== 1 ? "s" : ""}</h3>
+                    <p className="text-[0.62rem] text-white/30">Colonnes reconnues : nom, email, societe, telephone</p>
+                  </div>
+                </div>
+                <button onClick={() => { setCsvModal(false); setCsvRows([]); }} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+              </div>
+              {csvRows.length === 0 ? (
+                <p className="py-6 text-center text-sm text-white/30">Aucun contact valide détecté.</p>
+              ) : (
+                <div className="mb-4 max-h-60 space-y-1.5 overflow-y-auto">
+                  {csvRows.slice(0, 50).map((r, i) => (
+                    <div key={i} className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-blue-400/20 bg-blue-400/[0.07] text-[0.62rem] font-bold text-blue-400">
+                        {(r.nom || r.email || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-white truncate">{r.nom || "(sans nom)"}</p>
+                        {r.societe && <p className="text-[0.6rem] text-white/35 truncate">{r.societe}</p>}
+                      </div>
+                      {r.email && <span className="shrink-0 max-w-[140px] truncate text-[0.6rem] text-white/30">{r.email}</span>}
+                    </div>
+                  ))}
+                  {csvRows.length > 50 && <p className="text-center text-[0.6rem] text-white/25">+{csvRows.length - 50} autres…</p>}
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button onClick={() => { setCsvModal(false); setCsvRows([]); }}
+                  className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20">Annuler</button>
+                <button onClick={handleCsvImport} disabled={csvImporting || csvRows.length === 0}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500 disabled:opacity-50">
+                  {csvImporting ? <Loader2 size={13} className="animate-spin"/> : <Upload size={13}/>}
+                  {csvImporting ? "Import…" : `Importer ${csvRows.length} contact${csvRows.length !== 1 ? "s" : ""}`}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Modal Rappels groupés ── */}
+      <AnimatePresence>
+        {remindersModal && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
+              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
+              className="w-full max-w-md rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/[0.08]">
+                    <BellRing size={15} className="text-red-400"/>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">Rappels automatiques</h3>
+                    <p className="text-[0.62rem] text-white/30">{overdueWithEmail.length} facture{overdueWithEmail.length !== 1 ? "s" : ""} en retard avec email</p>
+                  </div>
+                </div>
+                <button onClick={() => setRemindersModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+              </div>
+              <div className="mb-4 max-h-52 space-y-1.5 overflow-y-auto">
+                {overdueWithEmail.map(doc => {
+                  const daysLate = doc.date_echeance
+                    ? Math.floor((Date.now() - new Date(doc.date_echeance).getTime()) / 86_400_000)
+                    : 0;
+                  return (
+                    <div key={doc.id} className="flex items-center gap-3 rounded-xl border border-red-500/[0.09] bg-red-500/[0.04] px-3 py-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-white truncate">{doc.client_nom} — {doc.numero}</p>
+                        <p className="text-[0.6rem] text-white/35">{doc.client_email}</p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-[0.6rem] font-bold text-red-400">+{daysLate}j</span>
+                      <span className="shrink-0 text-sm font-bold text-red-300/80">{fmtEur(doc.total_ttc)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setRemindersModal(false)}
+                  className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20">Annuler</button>
+                <button onClick={handleBulkReminders} disabled={sendingBulk}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-red-500 disabled:opacity-50">
+                  {sendingBulk ? <Loader2 size={13} className="animate-spin"/> : <BellRing size={13}/>}
+                  {sendingBulk ? "Envoi…" : `Envoyer ${overdueWithEmail.length} relance${overdueWithEmail.length !== 1 ? "s" : ""}`}
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
