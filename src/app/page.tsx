@@ -392,6 +392,7 @@ function HomeContent() {
   const data                  = getSiteData();
   useLanguage();
   const { settings }          = useSiteSettings();
+  const [parAn, setParAn]     = useState(false);
 
 
   return (
@@ -960,6 +961,32 @@ function HomeContent() {
             </span>
             <h2 className="mt-2 text-[1.8rem] font-black text-gray-900">Simple et transparent</h2>
             <p className="mt-2 text-[0.85rem] text-gray-500">Deux offres claires. Sans frais cachés, sans engagement.</p>
+
+            {/* Toggle Par an / Par mois */}
+            <div className="mt-5 flex items-center justify-center gap-3">
+              <span className={`text-sm font-semibold transition-colors ${parAn ? "text-gray-900" : "text-gray-400"}`}>
+                Par an
+                {parAn && (
+                  <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider text-emerald-700">
+                    −2 mois offerts
+                  </span>
+                )}
+              </span>
+              <button
+                onClick={() => setParAn(!parAn)}
+                aria-label="Basculer facturation annuelle / mensuelle"
+                className="relative h-6 w-11 rounded-full transition-colors duration-300"
+                style={{ background: parAn ? "#3d2b6d" : "#d1d5db" }}
+              >
+                <span
+                  className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-300"
+                  style={{ transform: parAn ? "translateX(22px)" : "translateX(2px)" }}
+                />
+              </button>
+              <span className={`text-sm font-semibold transition-colors ${!parAn ? "text-gray-900" : "text-gray-400"}`}>
+                Par mois
+              </span>
+            </div>
           </div>
 
           {/* 2 cartes */}
@@ -1007,10 +1034,14 @@ function HomeContent() {
               <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-widest text-white/40">Pro</p>
               <h3 className="mb-4 text-[1.4rem] font-black text-white">Professionnel</h3>
               <div className="mb-1 flex items-baseline gap-1">
-                <span className="text-[2.6rem] font-black leading-none text-white">11,90 €</span>
+                <span className="text-[2.6rem] font-black leading-none text-white">{parAn ? "9,90 €" : "11,90 €"}</span>
                 <span className="text-sm text-white/45">/mois</span>
               </div>
-              <p className="mb-6 mt-1 text-xs text-white/40">Facturation mensuelle · Résiliable à tout moment</p>
+              {parAn ? (
+                <p className="mb-6 mt-1 text-xs text-white/40"><span className="line-through">11,90 €/mois</span> · Facturé 118,80 €/an</p>
+              ) : (
+                <p className="mb-6 mt-1 text-xs text-white/40">Facturation mensuelle · Résiliable à tout moment</p>
+              )}
               <ul className="mb-7 flex-1 space-y-3">
                 {["Tout le plan Gratuit", "20 outils professionnels", "IA Business & Coaching", "Création de comptes employés", "Gestion des rôles et permissions", "Support prioritaire"].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-[0.82rem] text-white/88">
