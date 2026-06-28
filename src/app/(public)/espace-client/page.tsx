@@ -684,17 +684,6 @@ export default function EspaceClientPage() {
         </div>
       </section>
 
-      {/* ══ FOOTER ═════════════════════════════════════════ */}
-      <footer className="border-t border-gray-200 bg-white py-6">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-6 sm:flex-row">
-          <p className="text-[0.68rem] text-gray-300">© 2025 DJAMA · Tous droits réservés</p>
-          <div className="flex items-center gap-5 text-[0.68rem] text-gray-400">
-            <a href="mailto:contact@djama.space" className="transition hover:text-[#c9a55a]">contact@djama.space</a>
-            <Link href="/login" className="transition hover:text-[#c9a55a]">Se connecter</Link>
-            <Link href="/" className="transition hover:text-gray-600">Accueil</Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

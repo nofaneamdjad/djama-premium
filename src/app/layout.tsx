@@ -232,7 +232,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      style={{ colorScheme: "dark", backgroundColor: "#09090b" }}
+      style={{ colorScheme: "dark", backgroundColor: "#071525" }}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
