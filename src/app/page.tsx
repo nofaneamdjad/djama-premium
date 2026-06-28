@@ -883,151 +883,90 @@ function HomeContent() {
       <PartnerLogosSection />
       <TestimonialsSection dynamic />
 
-      {/* ── Formation IA ────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-[#f0f2f5] py-12 sm:py-16">
+      {/* ── Formation IA — compact ──────────────────────────── */}
+      <section className="bg-[#f0f2f5] py-10 sm:py-14">
         <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={staggerContainer}
-          className="relative z-10 mx-auto max-w-4xl px-5"
+          initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport} transition={{ duration: 0.5, ease }}
+          className="mx-auto max-w-4xl px-5"
         >
-          {/* Header */}
-          <div className="mb-8 text-center">
-            <motion.div variants={fadeIn}
-              className="mb-3 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,.35)] bg-[rgba(167,139,250,.09)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
-              style={{ color: "#7c5cbf" }}
-            >
-              <Brain size={10} /> Formation Intelligence Artificielle
-            </motion.div>
-            <motion.h2 variants={fadeIn} className="text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]">
-              Maîtrisez l&apos;IA,{" "}
-              <span style={{ color: "#a78bfa" }}>transformez votre activité</span>.
-            </motion.h2>
-            <motion.p variants={fadeIn} className="mt-3 text-[0.9rem] text-gray-500">
-              6 modules · 20 chapitres · 4h d&apos;accompagnement expert · Accès 3 mois
-            </motion.p>
-          </div>
-
-          {/* Card principale */}
-          <motion.div variants={cardReveal}
-            className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_6px_30px_rgba(0,0,0,.10)]"
-          >
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_4px_24px_rgba(0,0,0,.08)]">
             <div className="h-1 w-full bg-gradient-to-r from-[#a78bfa] via-[#7c5cbf] to-[#6366f1]" />
 
             <div className="grid gap-0 sm:grid-cols-2">
 
-              {/* ── Gauche : ce que vous allez savoir faire ── */}
-              <div className="p-6 sm:border-r border-gray-100">
-                <p className="mb-4 text-[0.65rem] font-black uppercase tracking-[.18em] text-[#a78bfa]">Ce que vous allez maîtriser</p>
-
-                <ul className="space-y-3">
+              {/* Gauche — infos */}
+              <div className="flex flex-col justify-center gap-4 p-6 sm:border-r sm:border-gray-100">
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[rgba(167,139,250,.35)] bg-[rgba(167,139,250,.09)] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[.18em]" style={{ color: "#7c5cbf" }}>
+                  <Brain size={9} /> Formation IA
+                </div>
+                <div>
+                  <h2 className="text-[1.45rem] font-extrabold leading-tight text-gray-900">
+                    Maîtrisez l&apos;IA,{" "}
+                    <span style={{ color: "#a78bfa" }}>transformez votre activité</span>.
+                  </h2>
+                  <p className="mt-1.5 text-[0.78rem] text-gray-400">6 modules · 20 chapitres · 4h d&apos;accompagnement · Accès 3 mois</p>
+                </div>
+                <ul className="space-y-2">
                   {([
-                    { icon: Sparkles,      color: "#a78bfa", text: "Générer emails, devis et contrats en 30 secondes" },
-                    { icon: Brain,         color: "#60a5fa", text: "Gagner 5 à 15h de travail par semaine avec l'IA" },
-                    { icon: Users2,        color: "#f9a826", text: "Prospecter et trouver des clients grâce à l'IA" },
-                    { icon: BarChart3,     color: "#4ade80", text: "Créer du contenu marketing 10× plus vite" },
-                    { icon: Briefcase,     color: "#f472b6", text: "Analyser vos données business en quelques secondes" },
-                    { icon: HeartHandshake,color: "#34d399", text: "Déléguer vos tâches répétitives à des agents IA" },
-                  ] as const).map(({ icon: Icon, color, text }) => (
-                    <li key={text} className="flex items-start gap-2.5 text-[0.78rem] text-gray-600">
-                      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: `${color}18` }}>
-                        <Icon size={11} style={{ color }} />
-                      </div>
+                    { color: "#a78bfa", text: "Générer emails & contrats en 30 secondes" },
+                    { color: "#60a5fa", text: "Gagner 5 à 15h de travail par semaine" },
+                    { color: "#4ade80", text: "Créer du contenu marketing 10× plus vite" },
+                    { color: "#f9a826", text: "Déléguer vos tâches répétitives à l'IA" },
+                  ] as const).map(({ color, text }) => (
+                    <li key={text} className="flex items-center gap-2 text-[0.76rem] text-gray-600">
+                      <CheckCircle2 size={13} style={{ color }} className="shrink-0" />
                       {text}
                     </li>
                   ))}
                 </ul>
-
-                {/* Inclus */}
-                <div className="mt-5 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3.5">
-                  <p className="mb-2 text-[0.62rem] font-bold uppercase tracking-widest text-gray-400">Inclus dans la formation</p>
-                  <ul className="space-y-1.5">
-                    {[
-                      "Assistant IA pédagogique disponible 24h/7j",
-                      "Quiz, résumés IA et fiches PDF pour chaque cours",
-                      "Bibliothèque de prompts prêts à l'emploi",
-                      "Comparateur interactif : ChatGPT, Claude, Gemini…",
-                      "Plan d'action IA personnalisé par module",
-                    ].map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-[0.73rem] text-gray-500">
-                        <CheckCircle2 size={11} className="mt-0.5 shrink-0" style={{ color: "#a78bfa" }} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mt-3 flex items-center gap-2 rounded-xl border border-[rgba(74,222,128,.25)] bg-[rgba(74,222,128,.07)] px-3 py-2">
-                  <Shield size={11} style={{ color: "#4ade80" }} />
-                  <span className="text-[0.68rem] font-semibold text-emerald-600">Satisfait ou remboursé — 7 jours, sans justification</span>
+                <div className="flex items-center gap-2 rounded-xl border border-[rgba(74,222,128,.25)] bg-[rgba(74,222,128,.07)] px-3 py-2">
+                  <Shield size={10} style={{ color: "#4ade80" }} />
+                  <span className="text-[0.65rem] font-semibold text-emerald-600">Satisfait ou remboursé — 7 jours</span>
                 </div>
               </div>
 
-              {/* ── Droite : tarification ── */}
+              {/* Droite — tarifs */}
               <div className="flex flex-col gap-3 p-6">
-
-                {/* Option ABONNÉ — mis en avant */}
-                <div
-                  className="relative overflow-hidden rounded-2xl p-5"
-                  style={{ background: "linear-gradient(135deg,rgba(167,139,250,0.10) 0%,rgba(99,102,241,0.08) 100%)", border: "1.5px solid rgba(167,139,250,.4)" }}
-                >
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <div className="inline-flex items-center gap-1.5 rounded-full bg-[#a78bfa] px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-wide text-white">
-                      <Sparkles size={9} /> Abonnés DJAMA Pro
-                    </div>
-                    <span className="text-[0.65rem] font-bold text-[#4ade80]">✓ Accès immédiat</span>
+                {/* Abonné */}
+                <div className="rounded-2xl p-4" style={{ background: "linear-gradient(135deg,rgba(167,139,250,0.10),rgba(99,102,241,0.08))", border: "1.5px solid rgba(167,139,250,.4)" }}>
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="inline-flex items-center gap-1 rounded-full bg-[#a78bfa] px-2.5 py-1 text-[0.58rem] font-black uppercase text-white"><Sparkles size={8} /> Abonnés DJAMA Pro</div>
+                    <span className="text-[0.6rem] font-bold text-[#4ade80]">✓ Accès immédiat</span>
                   </div>
-
-                  <div className="flex items-end gap-2 mb-1">
-                    <span className="text-[2.4rem] font-black leading-none" style={{ color: "#a78bfa" }}>GRATUIT</span>
-                    <span className="mb-1.5 text-[0.7rem] font-semibold text-gray-400 line-through">190€</span>
+                  <div className="flex items-end gap-2">
+                    <span className="text-[2rem] font-black leading-none" style={{ color: "#a78bfa" }}>GRATUIT</span>
+                    <span className="mb-1 text-[0.68rem] text-gray-400 line-through">190€</span>
                   </div>
-                  <p className="text-[0.75rem] text-gray-500">
-                    Inclus avec l&apos;abonnement{" "}
-                    <span className="font-bold text-gray-700">DJAMA Pro</span>{" "}
-                    à seulement{" "}
-                    <span className="font-bold" style={{ color: GOLD }}>11,90€/mois</span>
-                  </p>
-                  <p className="mt-1 text-[0.68rem] text-gray-400">
-                    + 20 outils pros inclus · Sans engagement · Résiliable à tout moment
-                  </p>
-
-                  <Link
-                    href="/espace-client"
-                    className="mt-4 flex items-center justify-center gap-2 rounded-xl py-3 text-[0.875rem] font-bold text-white shadow-lg transition-all duration-200 hover:opacity-90 active:scale-[.98]"
-                    style={{ background: "linear-gradient(135deg,#a78bfa,#7c5cbf)" }}
-                  >
+                  <p className="mt-1 text-[0.72rem] text-gray-500">Inclus avec <strong>DJAMA Pro</strong> à <span className="font-bold" style={{ color: GOLD }}>11,90€/mois</span></p>
+                  <Link href="/espace-client" className="mt-3 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.85rem] font-bold text-white transition hover:opacity-90" style={{ background: "linear-gradient(135deg,#a78bfa,#7c5cbf)" }}>
                     S&apos;abonner — Formation offerte <ArrowRight size={13} />
                   </Link>
                 </div>
 
                 {/* Séparateur */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <div className="h-px flex-1 bg-gray-100" />
-                  <span className="text-[0.6rem] font-bold text-gray-300 uppercase tracking-wide">ou</span>
+                  <span className="text-[0.58rem] font-bold uppercase tracking-wide text-gray-300">ou</span>
                   <div className="h-px flex-1 bg-gray-100" />
                 </div>
 
-                {/* Option SEUL */}
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                  <p className="text-[0.68rem] font-bold uppercase tracking-wide text-gray-400">Achat individuel</p>
-                  <div className="mt-1.5 flex items-end gap-2">
-                    <span className="text-[1.6rem] font-extrabold leading-none text-gray-800">190€</span>
-                    <div className="mb-1 flex flex-col">
-                      <span className="text-[0.62rem] font-bold text-gray-400 line-through">350€</span>
-                      <span className="text-[0.6rem] text-gray-400">paiement unique · accès 3 mois</span>
+                {/* Individuel */}
+                <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div>
+                    <p className="text-[0.62rem] font-bold uppercase text-gray-400">Achat individuel</p>
+                    <div className="flex items-end gap-1.5">
+                      <span className="text-[1.4rem] font-extrabold text-gray-800">190€</span>
+                      <span className="mb-0.5 text-[0.6rem] text-gray-400 line-through">350€</span>
                     </div>
                   </div>
-                  <Link
-                    href="/services/coaching-ia"
-                    className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[0.8rem] font-bold text-gray-600 transition hover:border-[rgba(167,139,250,.4)] hover:text-[#a78bfa]"
-                  >
-                    Voir la formation <ArrowRight size={12} />
+                  <Link href="/services/coaching-ia" className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.75rem] font-bold text-gray-600 transition hover:text-[#a78bfa]">
+                    Voir <ArrowRight size={11} />
                   </Link>
                 </div>
-
               </div>
             </div>
-          </motion.div>
+          </div>
         </motion.div>
       </section>
 
