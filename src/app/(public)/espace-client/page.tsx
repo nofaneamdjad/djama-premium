@@ -518,165 +518,231 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══ ABONNEMENT ═════════════════════════════════════ */}
-      <section id="abonnement" className="bg-white py-16 sm:py-24">
+      <section id="abonnement" className="bg-[#f5f5f8] py-16 sm:py-28">
         <div className="mx-auto max-w-5xl px-6">
 
-          {/* Titre Caveat */}
+          {/* En-tête */}
           <motion.div
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.6, ease }}
-            className="mb-10 text-center"
+            viewport={viewport} transition={{ duration: 0.55, ease }}
+            className="mb-4 text-center"
           >
-            <h2
-              className="text-[2.6rem] font-black text-gray-900 sm:text-[3.4rem]"
-              style={{ fontFamily: "'Caveat', cursive" }}
-            >
-              Vous ne{" "}
-              <span className="relative inline-block">
-                rêvez pas&nbsp;!
-                <svg aria-hidden="true" className="absolute -bottom-1 left-0 w-full overflow-visible" viewBox="0 0 140 8" preserveAspectRatio="none" style={{ height: "7px" }}>
-                  <path d="M2,5 Q35,1 70,5.5 Q105,9.5 138,4" stroke="#f87171" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-                </svg>
-              </span>
+            <span className="mb-4 inline-block rounded-full border border-[rgba(61,43,109,0.18)] bg-[rgba(61,43,109,0.07)] px-4 py-1.5 text-[0.65rem] font-bold uppercase tracking-widest text-[#3d2b6d]">
+              Tarifs
+            </span>
+            <h2 className="mt-3 text-3xl font-black text-gray-900 sm:text-4xl">
+              Un plan pour chaque étape
             </h2>
+            <p className="mt-3 text-sm text-gray-500">
+              Sans frais cachés, sans surprise. Changez ou résiliez à tout moment.
+            </p>
           </motion.div>
 
-          {/* Toggle Par an / Par mois */}
+          {/* Toggle Par mois / Par an */}
           <motion.div
             initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
-            viewport={viewport} transition={{ duration: 0.4, delay: 0.1 }}
-            className="mb-10 flex items-center justify-center gap-4"
+            viewport={viewport} transition={{ duration: 0.4, delay: 0.15 }}
+            className="mb-14 flex items-center justify-center gap-3"
           >
-            <span className={`text-sm font-semibold transition ${!parAn ? "text-gray-400" : "text-gray-900"}`}>Par an</span>
+            <span className={`text-sm font-semibold transition-colors ${parAn ? "text-gray-900" : "text-gray-400"}`}>
+              Par an
+              {parAn && (
+                <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-emerald-700">
+                  −2 mois offerts
+                </span>
+              )}
+            </span>
             <button
               onClick={() => setParAn(!parAn)}
-              aria-label="Basculer facturation annuelle/mensuelle"
-              className="relative h-7 w-[52px] rounded-full bg-[#1a1a2e] transition-colors"
+              aria-label="Basculer entre facturation annuelle et mensuelle"
+              className="relative h-6 w-11 rounded-full transition-colors duration-300"
+              style={{ background: parAn ? "#3d2b6d" : "#d1d5db" }}
             >
               <span
-                className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform duration-300"
-                style={{ transform: parAn ? "translateX(2px)" : "translateX(26px)" }}
+                className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-300"
+                style={{ transform: parAn ? "translateX(22px)" : "translateX(2px)" }}
               />
             </button>
-            <span className={`text-sm font-semibold transition ${parAn ? "text-gray-400" : "text-gray-900"}`}>Par mois</span>
+            <span className={`text-sm font-semibold transition-colors ${!parAn ? "text-gray-900" : "text-gray-400"}`}>
+              Par mois
+            </span>
           </motion.div>
 
           {/* 3 Cards */}
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
-            className="grid gap-5 sm:grid-cols-3"
+            className="grid items-end gap-4 sm:grid-cols-3"
           >
-            {/* ── Card 1 : Découverte ── */}
+
+            {/* ── Gratuit ── */}
             <motion.div
-              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
-              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+              variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
+              className="flex flex-col rounded-2xl border border-gray-200 bg-white p-7 shadow-sm"
             >
-              <div className="h-[4px] bg-[#60a5fa]" />
-              <div className="flex h-full flex-col p-7">
-                <h3 className="mb-5 text-xl font-bold text-gray-900">Une App Gratuite</h3>
-                <div className="mb-1 flex items-start">
-                  <span className="mt-2 text-lg font-bold text-[#60a5fa]">€</span>
-                  <span className="text-[3.8rem] font-black leading-none text-[#60a5fa]">0</span>
-                </div>
-                <p className="mb-7 text-sm text-gray-400">/mois</p>
-                <ul className="mb-8 flex-1 space-y-2.5">
-                  <li className="text-sm text-gray-700"><strong>1 outil</strong> au choix, utilisateurs illimités</li>
-                  <li className="text-sm text-gray-600">DJAMA Online</li>
-                </ul>
-                <Link
-                  href="/contact"
-                  className="block w-full rounded-lg bg-[#3d2b6d] py-3 text-center text-xs font-bold uppercase tracking-wider text-white transition hover:opacity-90"
-                >
-                  Démarrer maintenant
-                </Link>
+              <p className="mb-1 text-[0.7rem] font-bold uppercase tracking-widest text-gray-400">Gratuit</p>
+              <h3 className="mb-5 text-2xl font-black text-gray-900">Découverte</h3>
+              <div className="mb-1 flex items-end gap-1">
+                <span className="text-[3.2rem] font-black leading-none text-gray-900">0 €</span>
+                <span className="mb-1 text-sm text-gray-400">/mois</span>
               </div>
+              <p className="mb-7 text-xs text-gray-400">Pour découvrir DJAMA gratuitement.</p>
+              <ul className="mb-8 flex-1 space-y-3">
+                {[
+                  "Factures & devis (5 max.)",
+                  "Planning",
+                  "Bloc-notes",
+                  "1 utilisateur",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-gray-700">
+                    <Check size={14} className="mt-0.5 shrink-0 text-gray-400" strokeWidth={2.5} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/register"
+                className="block w-full rounded-xl border border-gray-300 bg-white py-3 text-center text-sm font-bold text-gray-700 transition hover:border-gray-400 hover:text-gray-900"
+              >
+                Commencer gratuitement
+              </Link>
             </motion.div>
 
-            {/* ── Card 2 : Standard ── */}
+            {/* ── PRO — carte mise en avant ── */}
             <motion.div
-              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
-              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+              variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease, delay: 0.08 } } }}
+              className="relative flex flex-col rounded-2xl p-7 sm:py-10"
+              style={{
+                background: "linear-gradient(160deg, #3d2b6d 0%, #2a1d4e 100%)",
+                boxShadow: "0 24px 64px rgba(61,43,109,0.40), 0 4px 16px rgba(61,43,109,0.25)",
+              }}
             >
-              <div className="h-[4px] bg-[#f87171]" />
-              <div className="flex h-full flex-col p-7">
-                <h3 className="mb-5 text-xl font-bold text-gray-900">Standard</h3>
-                <div className="mb-1 flex items-start gap-2">
-                  <div className="flex items-start">
-                    <span className="mt-2 text-lg font-bold text-[#f87171]">€</span>
-                    <span className="text-[3.8rem] font-black leading-none text-[#f87171]">
-                      {parAn ? "9" : "11"}
-                    </span>
-                    <span className="mt-3 text-[1.6rem] font-black text-[#f87171]">,{parAn ? "90" : "90"}</span>
-                  </div>
-                  <div className="mt-3 flex flex-col">
-                    <span className="text-sm text-gray-400 line-through">{parAn ? "11,90 €" : "14,90 €"} *</span>
-                    <span className="text-xs text-gray-400">/ utilisateur / mois</span>
-                  </div>
-                </div>
-                <ul className="mb-8 flex-1 space-y-2.5">
-                  <li className="text-sm font-bold text-gray-900">Toutes les apps</li>
-                  <li className="text-sm text-gray-600">DJAMA Online</li>
-                  <li className="text-sm text-gray-600">{TOOL_COUNT} outils professionnels</li>
-                  <li className="text-sm text-gray-600">Coach Business IA</li>
-                </ul>
-                <StripeButton label="COMMENCER MAINTENANT" />
-                <Link
-                  href="/contact"
-                  className="mt-3 block text-center text-[0.7rem] font-bold uppercase tracking-wider text-gray-400 transition hover:text-gray-600"
-                >
-                  Essai gratuit
-                </Link>
+              {/* Badge */}
+              <div
+                className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-[0.65rem] font-black uppercase tracking-wider text-white shadow-lg"
+                style={{ background: "linear-gradient(135deg, #c9a55a, #b08d45)" }}
+              >
+                ★ Recommandé
               </div>
+
+              <p className="mb-1 text-[0.7rem] font-bold uppercase tracking-widest text-[rgba(255,255,255,0.45)]">Pro</p>
+              <h3 className="mb-5 text-2xl font-black text-white">Professionnel</h3>
+
+              <div className="mb-1 flex items-end gap-1">
+                <span className="text-[3.2rem] font-black leading-none text-white">
+                  {parAn ? "9,90 €" : "11,90 €"}
+                </span>
+                <span className="mb-1 text-sm text-[rgba(255,255,255,0.5)]">/mois</span>
+              </div>
+              {parAn && (
+                <p className="mb-1 text-xs text-[rgba(255,255,255,0.45)] line-through">11,90 €/mois</p>
+              )}
+              <p className="mb-7 text-xs text-[rgba(255,255,255,0.45)]">
+                {parAn ? "Facturé 118,80 €/an — 2 mois offerts." : "Facturation mensuelle, sans engagement."}
+              </p>
+
+              <ul className="mb-8 flex-1 space-y-3">
+                {[
+                  "Tout le plan Gratuit",
+                  `${TOOL_COUNT} outils professionnels`,
+                  "IA Business & Coaching",
+                  "Espace Entreprise (équipe, rôles)",
+                  "Support prioritaire",
+                  "Utilisateurs illimités",
+                  "Résiliable à tout moment",
+                  "Sans engagement",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-[rgba(255,255,255,0.85)]">
+                    <CheckCircle2 size={14} className="mt-0.5 shrink-0" style={{ color: GOLD }} strokeWidth={2} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              <StripeButton label="Commencer maintenant →" />
+
+              <p className="mt-4 text-center text-[0.65rem] text-[rgba(255,255,255,0.35)]">
+                Paiement sécurisé · Accès immédiat
+              </p>
             </motion.div>
 
-            {/* ── Card 3 : Personnalisé ── */}
+            {/* ── Personnalisé ── */}
             <motion.div
-              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
-              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+              variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease, delay: 0.16 } } }}
+              className="flex flex-col rounded-2xl border border-gray-200 bg-white p-7 shadow-sm"
             >
-              <div className="h-[4px] bg-[#34d399]" />
-              <div className="flex h-full flex-col p-7">
-                <h3 className="mb-5 text-xl font-bold text-gray-900">Personnalisé</h3>
-                <div className="mb-1 flex items-start gap-2">
-                  <div className="flex items-start">
-                    <span className="mt-2 text-lg font-bold text-[#34d399]">€</span>
-                    <span className="text-[3.8rem] font-black leading-none text-[#34d399]">
-                      {parAn ? "14" : "17"}
-                    </span>
-                    <span className="mt-3 text-[1.6rem] font-black text-[#34d399]">,{parAn ? "90" : "90"}</span>
-                  </div>
-                  <div className="mt-3 flex flex-col">
-                    <span className="text-sm text-gray-400 line-through">{parAn ? "17,90 €" : "22,40 €"} *</span>
-                    <span className="text-xs text-gray-400">/ utilisateur / mois</span>
-                  </div>
-                </div>
-                <ul className="mb-8 flex-1 space-y-2.5">
-                  <li className="text-sm font-bold text-gray-900">Toutes les apps</li>
-                  <li className="text-sm text-gray-600">DJAMA Online / DJAMA.sh</li>
-                  <li className="text-sm text-gray-600">Outils personnalisés</li>
-                  <li className="text-sm text-gray-600">Pluri-entreprises</li>
-                  <li className="text-sm text-gray-600">API externe(s)</li>
-                </ul>
-                <Link
-                  href="/contact"
-                  className="block w-full rounded-lg bg-[#3d2b6d] py-3 text-center text-xs font-bold uppercase tracking-wider text-white transition hover:opacity-90"
-                >
-                  Nous contacter
-                </Link>
-                <Link
-                  href="/contact"
-                  className="mt-3 block text-center text-[0.7rem] font-bold uppercase tracking-wider text-gray-400 transition hover:text-gray-600"
-                >
-                  Essai gratuit
-                </Link>
+              <p className="mb-1 text-[0.7rem] font-bold uppercase tracking-widest text-gray-400">Sur mesure</p>
+              <h3 className="mb-5 text-2xl font-black text-gray-900">Personnalisé</h3>
+              <div className="mb-1 flex items-end gap-1">
+                <span className="text-[2rem] font-black leading-none text-gray-900">Sur devis</span>
               </div>
+              <p className="mb-7 text-xs text-gray-400">À partir de 17,90 €/utilisateur/mois.</p>
+              <ul className="mb-8 flex-1 space-y-3">
+                {[
+                  "Tout le plan PRO",
+                  "Multi-entreprises",
+                  "API & intégrations",
+                  "Outils sur mesure",
+                  "Hébergement dédié",
+                  "Accompagnement personnalisé",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-gray-700">
+                    <Check size={14} className="mt-0.5 shrink-0 text-gray-400" strokeWidth={2.5} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/contact"
+                className="block w-full rounded-xl border border-gray-300 bg-white py-3 text-center text-sm font-bold text-gray-700 transition hover:border-gray-400 hover:text-gray-900"
+              >
+                Nous contacter
+              </Link>
             </motion.div>
+
           </motion.div>
 
-          {/* Note */}
-          <p className="mt-6 text-center text-[0.68rem] text-gray-400">
-            * Prix sans engagement annuel. Résiliable à tout moment, sans préavis.
+          {/* ── Espace Entreprise callout ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.55, ease, delay: 0.1 }}
+            className="mt-12 overflow-hidden rounded-2xl border border-[rgba(61,43,109,0.14)] bg-white"
+          >
+            <div className="flex flex-col gap-6 p-7 sm:flex-row sm:items-start sm:gap-10 sm:p-9">
+              {/* Icône + titre */}
+              <div className="shrink-0">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ background: "rgba(61,43,109,0.08)" }}>
+                  <Building2 size={22} style={{ color: "#3d2b6d" }} strokeWidth={1.8} />
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="mb-1 inline-block rounded-full border border-[rgba(61,43,109,0.18)] bg-[rgba(61,43,109,0.06)] px-3 py-0.5 text-[0.6rem] font-bold uppercase tracking-widest text-[#3d2b6d]">
+                  Inclus dans PRO & Personnalisé
+                </div>
+                <h3 className="mt-2 text-lg font-black text-gray-900">Espace Entreprise</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Gérez toute votre équipe depuis un tableau de bord centralisé.
+                </p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {[
+                    { icon: Users, text: "Créez des comptes employés en quelques secondes" },
+                    { icon: Shield, text: "Gérez les rôles et permissions par outil" },
+                    { icon: LogIn, text: "Générez identifiants et mots de passe automatiquement" },
+                    { icon: Zap, text: "Invitez ou supprimez des membres à tout moment" },
+                  ].map(({ icon: Icon, text }) => (
+                    <div key={text} className="flex items-start gap-3 rounded-xl border border-gray-100 bg-[#f8f9fc] p-3.5">
+                      <Icon size={16} className="mt-0.5 shrink-0 text-[#3d2b6d]" strokeWidth={1.8} />
+                      <span className="text-xs leading-snug text-gray-700">{text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Note de bas */}
+          <p className="mt-8 text-center text-[0.65rem] text-gray-400">
+            Paiement sécurisé par Stripe · Résiliable à tout moment depuis votre espace · Sans préavis
           </p>
         </div>
       </section>
