@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import {
   ArrowRight, Mail, Users2, Shield, ShieldCheck,
   CheckCircle2, Sparkles, HeartHandshake,
-  Globe, Brain,
+  Globe, Brain, Check,
   Code2, BarChart3, Briefcase,
   Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem, Star,
   Truck, Package, ListTodo, Zap, Wallet, Building2, Banknote,
@@ -826,14 +826,13 @@ function HomeContent() {
             </p>
 
             {/* Stats */}
-            <div className="mt-8 flex justify-center gap-8 sm:gap-12">
+            <div className="mt-8 flex justify-center gap-10 sm:gap-16">
               {([
-                { val: "50+",       label: "clients accompagnés" },
-                { val: "20",        label: "outils inclus"       },
-                { val: "11,90€",    label: "par mois seulement"  },
+                { val: "20",     label: "outils inclus"      },
+                { val: "11,90€", label: "par mois seulement" },
               ] as const).map(({ val, label }) => (
                 <div key={label} className="text-center">
-                  <p className="text-[1.5rem] font-black leading-none sm:text-[1.8rem]" style={{ color: GOLD }}>{val}</p>
+                  <p className="text-[1.8rem] font-black leading-none sm:text-[2.2rem]" style={{ color: GOLD }}>{val}</p>
                   <p className="mt-1 text-[0.62rem] font-medium" style={{ color: "rgba(255,255,255,0.35)" }}>{label}</p>
                 </div>
               ))}
@@ -944,6 +943,93 @@ function HomeContent() {
               </div>
             </div>
           </div>
+        </motion.div>
+      </section>
+
+      {/* ── Tarifs — Découverte / Pro ───────────────────────── */}
+      <section className="bg-[#f5f5f8] py-12 sm:py-16">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport} transition={{ duration: 0.55, ease }}
+          className="mx-auto max-w-3xl px-6"
+        >
+          {/* Header */}
+          <div className="mb-8 text-center">
+            <span className="mb-3 inline-block rounded-full border border-[rgba(61,43,109,0.18)] bg-[rgba(61,43,109,0.07)] px-4 py-1.5 text-[0.62rem] font-bold uppercase tracking-widest text-[#3d2b6d]">
+              Tarifs
+            </span>
+            <h2 className="mt-2 text-[1.8rem] font-black text-gray-900">Simple et transparent</h2>
+            <p className="mt-2 text-[0.85rem] text-gray-500">Deux offres claires. Sans frais cachés, sans engagement.</p>
+          </div>
+
+          {/* 2 cartes */}
+          <div className="grid items-center gap-5 sm:grid-cols-2">
+
+            {/* Gratuit */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={viewport} transition={{ duration: 0.45, ease }}
+              className="flex flex-col rounded-2xl border border-gray-200 bg-white p-7 shadow-sm"
+            >
+              <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-widest text-gray-400">Gratuit</p>
+              <h3 className="mb-4 text-[1.4rem] font-black text-gray-900">Découverte</h3>
+              <div className="mb-1 flex items-baseline gap-1">
+                <span className="text-[2.6rem] font-black leading-none text-gray-900">0 €</span>
+                <span className="text-sm text-gray-400">/mois</span>
+              </div>
+              <p className="mb-6 mt-1 text-xs text-gray-400">Pour découvrir DJAMA gratuitement.</p>
+              <ul className="mb-7 flex-1 space-y-3">
+                {["Factures & devis (5 max.)", "Planning", "Bloc-notes", "1 utilisateur"].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5 text-[0.82rem] text-gray-600">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50">
+                      <Check size={11} className="text-gray-400" strokeWidth={2.5} />
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/register" className="block w-full rounded-xl border border-gray-300 bg-white py-3 text-center text-sm font-bold text-gray-700 transition hover:border-[#3d2b6d] hover:text-[#3d2b6d]">
+                Commencer gratuitement
+              </Link>
+            </motion.div>
+
+            {/* Pro */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={viewport} transition={{ duration: 0.45, ease, delay: 0.1 }}
+              className="relative flex flex-col rounded-2xl p-7 sm:p-9"
+              style={{ background: "linear-gradient(150deg,#3d2b6d 0%,#2a1d4e 100%)", boxShadow: "0 24px 64px rgba(61,43,109,0.38),0 6px 18px rgba(61,43,109,0.2)" }}
+            >
+              <div className="absolute -top-[16px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-5 py-[6px] text-[0.58rem] font-black uppercase tracking-widest text-white shadow-lg"
+                style={{ background: "linear-gradient(135deg,#c9a55a 0%,#b08d45 100%)" }}>
+                ★ Recommandé
+              </div>
+              <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-widest text-white/40">Pro</p>
+              <h3 className="mb-4 text-[1.4rem] font-black text-white">Professionnel</h3>
+              <div className="mb-1 flex items-baseline gap-1">
+                <span className="text-[2.6rem] font-black leading-none text-white">11,90 €</span>
+                <span className="text-sm text-white/45">/mois</span>
+              </div>
+              <p className="mb-6 mt-1 text-xs text-white/40">Facturation mensuelle · Résiliable à tout moment</p>
+              <ul className="mb-7 flex-1 space-y-3">
+                {["Tout le plan Gratuit", "20 outils professionnels", "IA Business & Coaching", "Création de comptes employés", "Gestion des rôles et permissions", "Support prioritaire"].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5 text-[0.82rem] text-white/88">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(201,165,90,0.22)", border: "1px solid rgba(201,165,90,0.4)" }}>
+                      <Check size={11} style={{ color: GOLD }} strokeWidth={2.5} />
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/espace-client" className="block w-full rounded-xl py-3 text-center text-sm font-black text-[#1a1000] transition hover:opacity-90"
+                style={{ background: `linear-gradient(135deg,${GOLD},#e2ba70)` }}>
+                Commencer maintenant →
+              </Link>
+              <p className="mt-3 text-center text-[0.6rem] text-white/30">Paiement sécurisé · Accès immédiat</p>
+            </motion.div>
+
+          </div>
+          <p className="mt-6 text-center text-[0.62rem] text-gray-400">Paiement sécurisé par Stripe · Sans préavis · Résiliable à tout moment</p>
         </motion.div>
       </section>
 
