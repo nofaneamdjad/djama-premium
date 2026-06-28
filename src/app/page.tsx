@@ -587,14 +587,49 @@ function HomeContent() {
               Tout ce dont vous avez besoin,{" "}
               <span style={{ color: GOLD }}>enfin réuni.</span>
             </h2>
-            <div className="mt-5">
-              <Link
-                href="/espace-client"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[0.92rem] font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
-                style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)", boxShadow: "0 4px 20px rgba(99,102,241,.30)" }}
+            <div className="mt-7 flex flex-col items-center gap-3">
+              {/* Bouton gold premium avec halo + shimmer */}
+              <motion.div
+                className="relative"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.18, ease }}
               >
-                S&apos;abonner — 11,90€/mois <ArrowRight size={15} />
-              </Link>
+                {/* Halo pulsant derrière */}
+                <motion.div
+                  animate={{ scale: [1, 1.18, 1], opacity: [0.55, 0, 0.55] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute inset-0 rounded-2xl"
+                  style={{ background: `linear-gradient(135deg, ${GOLD}, #d4aa6a)`, filter: "blur(12px)" }}
+                />
+
+                <Link
+                  href="/espace-client"
+                  className="relative flex items-center gap-2.5 overflow-hidden rounded-2xl px-8 py-4 text-[1rem] font-black text-white"
+                  style={{
+                    background: `linear-gradient(135deg, ${GOLD} 0%, #e2ba70 45%, #b08d45 100%)`,
+                    boxShadow: `0 8px 32px rgba(${GOLDR},0.50), inset 0 1px 0 rgba(255,255,255,0.22)`,
+                  }}
+                >
+                  {/* Shimmer sweep */}
+                  <motion.div
+                    animate={{ x: ["-100%", "220%"] }}
+                    transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 2.4, ease: "easeInOut" }}
+                    className="pointer-events-none absolute inset-y-0 w-1/3"
+                    style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.32),transparent)" }}
+                  />
+                  <Gem size={16} className="relative z-10 shrink-0" />
+                  <span className="relative z-10">S&apos;abonner — 11,90€/mois</span>
+                  <ArrowRight size={14} className="relative z-10 shrink-0" />
+                </Link>
+              </motion.div>
+
+              {/* Micro-garanties */}
+              <div className="flex flex-wrap justify-center gap-4 text-[0.68rem] font-medium text-gray-400">
+                {["✓ Sans engagement", "✓ Stripe sécurisé", "✓ Accès immédiat"].map((t) => (
+                  <span key={t}>{t}</span>
+                ))}
+              </div>
             </div>
           </motion.div>
 
