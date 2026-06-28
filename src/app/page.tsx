@@ -398,130 +398,143 @@ function HomeContent() {
     <div className="overflow-hidden">
 
       {/* ── Hero ───────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-white px-5 pb-14 pt-[108px] sm:pb-20 sm:pt-[132px]">
-
-        {/* ── Orbes gradient animées ── */}
+      <section
+        className="relative overflow-hidden px-5 pb-20 pt-[108px] sm:pb-28 sm:pt-[136px]"
+        style={{ background: "linear-gradient(160deg, #1e0d42 0%, #0d1829 52%, #071525 100%)" }}
+      >
+        {/* Orbes de fond */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
-          {/* Violet — haut droite */}
           <div
-            className="hero-orb-1 absolute -top-32 -right-24 h-[480px] w-[480px] rounded-full blur-[90px]"
-            style={{ background: "radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 68%)" }}
+            className="absolute -top-40 -right-28 h-[580px] w-[580px] rounded-full blur-[130px]"
+            style={{ background: "radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%)" }}
           />
-          {/* Or DJAMA — bas gauche */}
           <div
-            className="hero-orb-2 absolute -bottom-16 -left-28 h-[380px] w-[380px] rounded-full blur-[80px]"
-            style={{ background: `radial-gradient(circle, rgba(${GOLDR},0.20) 0%, transparent 68%)` }}
+            className="absolute -bottom-24 -left-32 h-[480px] w-[480px] rounded-full blur-[110px]"
+            style={{ background: `radial-gradient(circle, rgba(${GOLDR},0.20) 0%, transparent 70%)` }}
           />
-          {/* Rose — centre haut */}
           <div
-            className="hero-orb-3 absolute top-0 left-1/2 -translate-x-1/2 h-[340px] w-[560px] rounded-full blur-[100px]"
-            style={{ background: "radial-gradient(circle, rgba(168,85,247,0.09) 0%, transparent 70%)" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[700px] rounded-full blur-[120px]"
+            style={{ background: "radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 70%)" }}
           />
         </div>
 
         <motion.div
           initial="hidden" animate="visible" variants={staggerContainer}
-          className="relative z-10 mx-auto max-w-md text-center"
+          className="relative z-10 mx-auto max-w-2xl text-center"
         >
           {/* Badge */}
           <motion.div
             variants={fadeIn}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em]"
+            className="mb-7 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.20em]"
             style={{
-              borderColor: "rgba(99,102,241,0.22)",
-              background: "rgba(99,102,241,0.06)",
-              color: "#6366f1",
+              borderColor: `rgba(${GOLDR},0.38)`,
+              background: `rgba(${GOLDR},0.10)`,
+              color: GOLD,
             }}
           >
             <Sparkles size={11} />
-            Plateforme tout-en-un
+            Agence &amp; Plateforme Digitale
           </motion.div>
 
-          {/* Titre */}
+          {/* Titre Caveat */}
           <motion.h1
             variants={fadeIn}
-            className="text-[2.75rem] font-extrabold leading-[1.1] tracking-tight text-gray-900 sm:text-[3.6rem]"
+            className="text-[3.4rem] leading-[1.05] sm:text-[5rem]"
+            style={{ fontFamily: "'Caveat', cursive", fontWeight: 800, color: "#ffffff" }}
           >
-            Tout votre business<br />
-            sur{" "}
-            <span className="relative inline whitespace-nowrap">
-              {/* Marker doré — dessiné de gauche à droite */}
-              <span
-                aria-hidden
-                className="hero-marker absolute inset-x-[-2px] bottom-[2px]"
-                style={{
-                  height: "38%",
-                  background: `linear-gradient(90deg, rgba(${GOLDR},0.72) 0%, rgba(${GOLDR},0.42) 100%)`,
-                  borderRadius: "4px",
-                  zIndex: 0,
-                }}
-              />
-              <span className="relative z-10">une plateforme</span>
-            </span>.
+            Créez.{" "}
+            <span style={{ color: GOLD }}>Gérez.</span>
+            <br />
+            Grandissez.
           </motion.h1>
 
           {/* Sous-titre */}
           <motion.p
             variants={fadeIn}
-            className="mt-5 text-[1.05rem] font-medium text-gray-500"
+            className="mt-5 text-[0.97rem] font-medium leading-relaxed"
+            style={{ color: "rgba(255,255,255,0.55)" }}
           >
-            Simple, efficace, et{" "}
-            <span
-              className="font-semibold"
-              style={{
-                background: "linear-gradient(90deg,#6366f1,#a855f7)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              abordable
-            </span>{" "}!
+            Tout ce qu&apos;il faut pour bâtir, piloter et développer votre activité —
+            <br className="hidden sm:block" />
+            réuni en un seul écosystème.
           </motion.p>
 
+          {/* Pastilles d'activités */}
+          <motion.div
+            variants={fadeIn}
+            className="mt-7 flex flex-wrap justify-center gap-2"
+          >
+            {([
+              { label: "Site & E-Commerce",    color: "#60a5fa",  Icon: Globe          },
+              { label: "App Mobile",           color: "#a78bfa",  Icon: Code2          },
+              { label: "Outils SaaS",          color: GOLD,       Icon: Gem            },
+              { label: "Coaching IA",          color: "#4ade80",  Icon: Brain          },
+              { label: "Vidéo & Visuels",      color: "#f472b6",  Icon: Star           },
+              { label: "Accompagnement",       color: "#34d399",  Icon: HeartHandshake },
+            ] as const).map(({ label, color, Icon }) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.72rem] font-semibold"
+                style={{
+                  background: `${color}1a`,
+                  border: `1px solid ${color}45`,
+                  color,
+                }}
+              >
+                <Icon size={12} />
+                {label}
+              </span>
+            ))}
+          </motion.div>
+
           {/* CTAs */}
-          <motion.div variants={fadeIn} className="mt-9 flex flex-col gap-3">
+          <motion.div
+            variants={fadeIn}
+            className="mt-9 flex flex-col gap-3 sm:flex-row sm:justify-center"
+          >
             <Link
-              href="/espace-client"
-              className="hero-btn w-full rounded-2xl py-4 text-center text-[1rem] font-bold text-white shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-[1.015] active:scale-[.98]"
+              href="/services"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-[1rem] font-bold text-white shadow-xl transition-all duration-300 hover:opacity-90 hover:scale-[1.015] active:scale-[.98]"
+              style={{ background: `linear-gradient(135deg, ${GOLD} 0%, #b08d45 100%)` }}
             >
-              Lancez-vous →
+              Découvrir nos services <ArrowRight size={15} />
             </Link>
             <Link
-              href="/reserver-appel"
-              className="w-full rounded-2xl border border-gray-200 bg-white py-4 text-center text-[1rem] font-semibold text-gray-500 shadow-sm transition-all duration-200 hover:border-gray-300 hover:text-gray-700 active:scale-[.98]"
+              href="/espace-client"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-[1rem] font-semibold text-white transition-all duration-200 hover:bg-white/8 active:scale-[.98]"
+              style={{ borderColor: "rgba(255,255,255,0.20)" }}
             >
-              Rencontrer un conseiller
+              Espace client →
             </Link>
           </motion.div>
 
-          {/* Stats — 3 cards avec icônes */}
+          {/* Stats */}
           <motion.div
             variants={fadeIn}
-            className="mt-9 grid grid-cols-3 gap-3 border-t border-gray-100 pt-6"
+            className="mt-10 grid grid-cols-3 gap-3 border-t pt-8"
+            style={{ borderColor: "rgba(255,255,255,0.08)" }}
           >
             {HERO_STATS.map(({ value, label, Icon }) => (
               <div
                 key={label}
                 className="flex flex-col items-center gap-2.5 rounded-2xl px-2 py-4"
-                style={{ background: "rgba(99,102,241,0.06)" }}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
               >
-                {/* Icône */}
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-xl"
-                  style={{ background: "rgba(99,102,241,0.12)", color: "#6366f1" }}
+                  style={{ background: `rgba(${GOLDR},0.16)`, color: GOLD }}
                 >
                   <Icon size={18} />
                 </div>
-
-                {/* Valeur */}
-                <span className="text-[1.35rem] font-extrabold leading-none text-gray-900">
+                <span className="text-[1.35rem] font-extrabold leading-none text-white">
                   <SmartStat value={value} />
                 </span>
-
-                {/* Label */}
                 <span
-                  className="text-center text-[0.7rem] leading-snug text-gray-500"
-                  style={{ whiteSpace: "pre-line" }}
+                  className="text-center text-[0.7rem] leading-snug"
+                  style={{ color: "rgba(255,255,255,0.42)", whiteSpace: "pre-line" }}
                 >
                   {label}
                 </span>
@@ -529,6 +542,13 @@ function HomeContent() {
             ))}
           </motion.div>
         </motion.div>
+
+        {/* Fondu vers la section suivante */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-20"
+          style={{ background: "linear-gradient(to bottom, transparent 0%, #f0f2f5 100%)" }}
+        />
       </section>
 
       {/* ── Espace client tools ────────────────────────────── */}
