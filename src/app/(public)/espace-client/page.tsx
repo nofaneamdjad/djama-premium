@@ -597,44 +597,6 @@ export default function EspaceClientPage() {
         </div>
       </section>
 
-      {/* ══ CTA FINAL ══════════════════════════════════════ */}
-      <section
-        className="relative overflow-hidden py-16 sm:py-20"
-        style={{ background: "linear-gradient(135deg,#080c18 0%,#0f172a 60%,#130d2a 100%)" }}
-      >
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-[400px] w-[600px] rounded-full blur-[120px]" style={{ background: "rgba(201,165,90,0.08)" }} />
-        </div>
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c9a55a]/40 to-transparent" />
-
-        <div className="relative z-10 mx-auto max-w-xl px-6 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.6, ease }}
-          >
-            <p className="mb-3 text-[0.7rem] font-bold uppercase tracking-widest text-[#c9a55a]/60">Prêt à vous lancer ?</p>
-            <h2 className="text-2xl font-black text-white sm:text-3xl">
-              Rejoignez les entrepreneurs<br />
-              qui ont choisi <span style={{ color: GOLD }}>DJAMA.</span>
-            </h2>
-            <p className="mx-auto mt-4 max-w-sm text-sm text-white/45">
-              {TOOL_COUNT} outils professionnels. 11,90€/mois. Sans engagement. Accès immédiat.
-            </p>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Link href="#abonnement"
-                className="inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-[#0a0a0a] transition hover:opacity-90"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, boxShadow: "0 4px 24px rgba(201,165,90,0.4)" }}>
-                Commencer — 11,90€/mois <ArrowRight size={14} />
-              </Link>
-              <Link href="/contact"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-7 py-4 text-sm font-medium text-white/55 transition hover:bg-white/10 hover:text-white/80">
-                Nous contacter
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
       {/* ══ FOOTER ═════════════════════════════════════════ */}
       <footer className="border-t border-gray-200 bg-white py-6">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-6 sm:flex-row">
