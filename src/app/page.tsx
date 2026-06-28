@@ -789,21 +789,21 @@ function HomeContent() {
         </div>
 
         {/* ── Sunburst "Libérez votre potentiel" ── */}
-        <div className="relative flex items-center justify-center overflow-hidden py-12 sm:py-16">
+        <div className="relative flex flex-col items-center justify-center overflow-hidden px-6 pb-16 pt-10 sm:pb-20 sm:pt-14">
 
-          {/* Rayons animés */}
+          {/* Rayons */}
           {([
-            { angle: -148, h: 72,  w: 5, delay: 0.00, heart: true  },
-            { angle: -122, h: 52,  w: 4, delay: 0.05, heart: false },
-            { angle: -100, h: 88,  w: 5, delay: 0.10, heart: false },
-            { angle: -78,  h: 60,  w: 4, delay: 0.14, heart: false },
-            { angle: -56,  h: 96,  w: 5, delay: 0.18, heart: false },
-            { angle: -35,  h: 56,  w: 4, delay: 0.22, heart: false },
-            { angle: -14,  h: 82,  w: 5, delay: 0.26, heart: false },
-            { angle: 10,   h: 64,  w: 4, delay: 0.30, heart: false },
-            { angle: 35,   h: 90,  w: 5, delay: 0.34, heart: false },
-            { angle: 58,   h: 55,  w: 4, delay: 0.38, heart: true  },
-            { angle: 82,   h: 72,  w: 5, delay: 0.42, heart: false },
+            { angle: -148, h: 80,  w: 5, delay: 0.00, heart: true  },
+            { angle: -122, h: 58,  w: 4, delay: 0.05, heart: false },
+            { angle: -100, h: 96,  w: 5, delay: 0.10, heart: false },
+            { angle: -78,  h: 66,  w: 4, delay: 0.14, heart: false },
+            { angle: -56,  h: 104, w: 5, delay: 0.18, heart: false },
+            { angle: -35,  h: 62,  w: 4, delay: 0.22, heart: false },
+            { angle: -14,  h: 90,  w: 5, delay: 0.26, heart: false },
+            { angle: 10,   h: 70,  w: 4, delay: 0.30, heart: false },
+            { angle: 35,   h: 98,  w: 5, delay: 0.34, heart: true  },
+            { angle: 58,   h: 60,  w: 4, delay: 0.38, heart: false },
+            { angle: 82,   h: 80,  w: 5, delay: 0.42, heart: false },
           ] as const).map(({ angle, h, w, delay, heart }, i) => (
             <motion.div
               key={i}
@@ -813,97 +813,68 @@ function HomeContent() {
               transition={{ delay, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               style={{
                 position: "absolute",
-                top: "50%",
+                top: "28%",
                 left: "50%",
                 width: `${w}px`,
                 height: `${h}px`,
                 marginLeft: `-${w / 2}px`,
                 marginTop: `-${h}px`,
                 borderRadius: "99px",
-                background: "linear-gradient(to top, #f59e0b, #fbbf24)",
+                background: "linear-gradient(to top, #f59e0b, #fcd34d)",
                 transformOrigin: "center bottom",
                 transform: `rotate(${angle}deg)`,
               }}
             >
               {heart && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: -16,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    fontSize: "14px",
-                    lineHeight: 1,
-                  }}
-                >♥</span>
+                <span style={{ position: "absolute", top: -18, left: "50%", transform: "translateX(-50%)", fontSize: "13px", lineHeight: 1 }}>♥</span>
               )}
             </motion.div>
           ))}
 
-          {/* Texte central */}
+          {/* Texte */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.88 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 px-6 text-center"
+            className="relative z-10 text-center"
           >
             <p
-              className="leading-[1.15] text-[2.6rem] sm:text-[3.6rem]"
-              style={{
-                fontFamily: "'Caveat', cursive",
-                fontWeight: 800,
-                color: "#0f172a",
-              }}
+              className="leading-tight text-[3rem] sm:text-[4.2rem]"
+              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800, color: "#1a1a2e" }}
             >
               Libérez
             </p>
             <p
-              className="leading-[1.1] text-[2.6rem] sm:text-[3.6rem]"
-              style={{
-                fontFamily: "'Caveat', cursive",
-                fontWeight: 800,
-                color: "#0f172a",
-              }}
+              className="leading-tight text-[2.6rem] sm:text-[3.6rem]"
+              style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, color: "#1a1a2e" }}
             >
               votre{" "}
-              <span
-                style={{
-                  color: "#0d9488",
-                  textDecoration: "underline",
-                  textDecorationColor: "#0d9488",
-                  textUnderlineOffset: "4px",
-                }}
-              >
-                potentiel de
-              </span>
+              <span style={{ color: "#0d9488" }}>potentiel de croissance</span>
             </p>
-            <p
-              className="leading-[1.15] text-[2.6rem] sm:text-[3.6rem]"
-              style={{
-                fontFamily: "'Caveat', cursive",
-                fontWeight: 800,
-                color: "#0d9488",
-              }}
-            >
-              croissance
-            </p>
+          </motion.div>
 
-            {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.55, duration: 0.5 }}
-              className="mt-6"
+          {/* CTA + garanties */}
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="relative z-10 mt-8 flex flex-col items-center gap-3"
+          >
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-[1rem] font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-[.98]"
+              style={{ background: "#5c3d6e", boxShadow: "0 4px 20px rgba(92,61,110,0.30)" }}
             >
-              <Link
-                href="/services"
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-6 py-3 text-[0.88rem] font-semibold text-gray-500 transition-all hover:border-[rgba(99,102,241,.4)] hover:bg-[rgba(99,102,241,.05)] hover:text-[#6366f1]"
-              >
-                Voir tous nos services <ArrowRight size={14} />
-              </Link>
-            </motion.div>
+              Lancez-vous — C&apos;est gratuit !
+            </Link>
+
+            <div className="flex flex-col items-center gap-0.5">
+              <span style={{ color: "#5c3d6e", fontSize: "18px" }}>↑</span>
+              <p className="text-[0.72rem] text-gray-400">Aucune carte de crédit requise</p>
+              <p className="text-[0.72rem] text-gray-400">Accès instantané</p>
+            </div>
           </motion.div>
         </div>
       </section>
