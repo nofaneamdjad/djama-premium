@@ -151,6 +151,7 @@ const totalCompetitor = COMPETITORS.reduce((s, c) => s + c.price, 0);
    PAGE
 ══════════════════════════════════════════════════════ */
 export default function EspaceClientPage() {
+  const [parAn, setParAn] = useState(false);
   return (
     <div className="overflow-x-hidden bg-white text-gray-900">
       <Suspense>
@@ -517,83 +518,166 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══ ABONNEMENT ═════════════════════════════════════ */}
-      <section id="abonnement" className="border-t border-gray-100 bg-[#f8f9fa] py-16 sm:py-24">
-        <div className="mx-auto max-w-md px-6">
+      <section id="abonnement" className="bg-white py-16 sm:py-24">
+        <div className="mx-auto max-w-5xl px-6">
+
+          {/* Titre Caveat */}
           <motion.div
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport} transition={{ duration: 0.6, ease }}
+            className="mb-10 text-center"
           >
-            <div className="mb-8 text-center">
-              <h2 className="text-2xl font-black text-gray-900 sm:text-3xl">
-                Un prix simple,<br /><span style={{ color: GOLD }}>tout compris.</span>
-              </h2>
-              <p className="mt-3 text-sm text-gray-500">
-                Pas de frais cachés. Pas de surprise. Tout inclus.
-              </p>
-            </div>
-
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.30)] bg-white shadow-[0_4px_32px_rgba(0,0,0,.08)]">
-              <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
-
-              <div className="p-8">
-                <div className="mb-5 inline-flex w-fit items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.22)] bg-[rgba(201,165,90,0.08)] px-3 py-1 text-[0.6rem] font-bold uppercase tracking-widest text-[#c9a55a]">
-                  <Sparkles size={7} /> Abonnement mensuel
-                </div>
-
-                <div className="flex items-start gap-1">
-                  <span className="mt-3 text-lg font-bold text-[#c9a55a]">€</span>
-                  <span className="text-[5rem] font-black leading-none tracking-tighter text-gray-900">11,90</span>
-                </div>
-                <p className="mt-1 text-[0.72rem] text-gray-400">par mois · tout compris · sans engagement</p>
-
-                <div className="my-5 h-px w-full bg-gradient-to-r from-[#c9a55a]/20 to-transparent" />
-
-                <ul className="mb-7 grid grid-cols-2 gap-y-2 gap-x-3">
-                  {[
-                    `${TOOL_COUNT} outils inclus`,
-                    "Coach Business IA",
-                    "Factures illimitées",
-                    "CRM & contacts",
-                    "Trésorerie & dépenses",
-                    "Stocks & fournisseurs",
-                    "Équipe & planning",
-                    "Notes IA & vocal",
-                    "Contrats IA",
-                    "Mises à jour incluses",
-                    "Support réactif",
-                    "Sans engagement",
-                  ].map((f) => (
-                    <li key={f} className="flex items-center gap-1.5 text-[0.72rem] text-gray-600">
-                      <CheckCircle2 size={11} className="shrink-0 text-[#c9a55a]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <StripeButton label="Commencer maintenant →" />
-
-                <p className="mt-3 text-center text-[0.62rem] text-gray-400">
-                  Paiement sécurisé · Accès immédiat · Résiliable à tout moment
-                </p>
-
-                <div className="mt-5 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-gray-200" />
-                  <Link href="/login" className="text-[0.68rem] font-semibold text-[#c9a55a]/70 transition hover:text-[#c9a55a]">
-                    Déjà abonné ? Se connecter →
-                  </Link>
-                  <div className="h-px flex-1 bg-gray-200" />
-                </div>
-              </div>
-            </div>
-
-            {/* Garantie */}
-            <div className="mt-5 flex items-center justify-center gap-2 text-center">
-              <Shield size={13} className="text-gray-400" />
-              <p className="text-xs text-gray-400">
-                Résiliez à tout moment depuis votre espace — aucune question posée.
-              </p>
-            </div>
+            <h2
+              className="text-[2.6rem] font-black text-gray-900 sm:text-[3.4rem]"
+              style={{ fontFamily: "'Caveat', cursive" }}
+            >
+              Vous ne{" "}
+              <span className="relative inline-block">
+                rêvez pas&nbsp;!
+                <svg aria-hidden="true" className="absolute -bottom-1 left-0 w-full overflow-visible" viewBox="0 0 140 8" preserveAspectRatio="none" style={{ height: "7px" }}>
+                  <path d="M2,5 Q35,1 70,5.5 Q105,9.5 138,4" stroke="#f87171" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+                </svg>
+              </span>
+            </h2>
           </motion.div>
+
+          {/* Toggle Par an / Par mois */}
+          <motion.div
+            initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
+            viewport={viewport} transition={{ duration: 0.4, delay: 0.1 }}
+            className="mb-10 flex items-center justify-center gap-4"
+          >
+            <span className={`text-sm font-semibold transition ${!parAn ? "text-gray-400" : "text-gray-900"}`}>Par an</span>
+            <button
+              onClick={() => setParAn(!parAn)}
+              aria-label="Basculer facturation annuelle/mensuelle"
+              className="relative h-7 w-[52px] rounded-full bg-[#1a1a2e] transition-colors"
+            >
+              <span
+                className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform duration-300"
+                style={{ transform: parAn ? "translateX(2px)" : "translateX(26px)" }}
+              />
+            </button>
+            <span className={`text-sm font-semibold transition ${parAn ? "text-gray-400" : "text-gray-900"}`}>Par mois</span>
+          </motion.div>
+
+          {/* 3 Cards */}
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
+            className="grid gap-5 sm:grid-cols-3"
+          >
+            {/* ── Card 1 : Découverte ── */}
+            <motion.div
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
+              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+            >
+              <div className="h-[4px] bg-[#60a5fa]" />
+              <div className="flex h-full flex-col p-7">
+                <h3 className="mb-5 text-xl font-bold text-gray-900">Une App Gratuite</h3>
+                <div className="mb-1 flex items-start">
+                  <span className="mt-2 text-lg font-bold text-[#60a5fa]">€</span>
+                  <span className="text-[3.8rem] font-black leading-none text-[#60a5fa]">0</span>
+                </div>
+                <p className="mb-7 text-sm text-gray-400">/mois</p>
+                <ul className="mb-8 flex-1 space-y-2.5">
+                  <li className="text-sm text-gray-700"><strong>1 outil</strong> au choix, utilisateurs illimités</li>
+                  <li className="text-sm text-gray-600">DJAMA Online</li>
+                </ul>
+                <Link
+                  href="/contact"
+                  className="block w-full rounded-lg bg-[#3d2b6d] py-3 text-center text-xs font-bold uppercase tracking-wider text-white transition hover:opacity-90"
+                >
+                  Démarrer maintenant
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* ── Card 2 : Standard ── */}
+            <motion.div
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
+              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+            >
+              <div className="h-[4px] bg-[#f87171]" />
+              <div className="flex h-full flex-col p-7">
+                <h3 className="mb-5 text-xl font-bold text-gray-900">Standard</h3>
+                <div className="mb-1 flex items-start gap-2">
+                  <div className="flex items-start">
+                    <span className="mt-2 text-lg font-bold text-[#f87171]">€</span>
+                    <span className="text-[3.8rem] font-black leading-none text-[#f87171]">
+                      {parAn ? "9" : "11"}
+                    </span>
+                    <span className="mt-3 text-[1.6rem] font-black text-[#f87171]">,{parAn ? "90" : "90"}</span>
+                  </div>
+                  <div className="mt-3 flex flex-col">
+                    <span className="text-sm text-gray-400 line-through">{parAn ? "11,90 €" : "14,90 €"} *</span>
+                    <span className="text-xs text-gray-400">/ utilisateur / mois</span>
+                  </div>
+                </div>
+                <ul className="mb-8 flex-1 space-y-2.5">
+                  <li className="text-sm font-bold text-gray-900">Toutes les apps</li>
+                  <li className="text-sm text-gray-600">DJAMA Online</li>
+                  <li className="text-sm text-gray-600">{TOOL_COUNT} outils professionnels</li>
+                  <li className="text-sm text-gray-600">Coach Business IA</li>
+                </ul>
+                <StripeButton label="COMMENCER MAINTENANT" />
+                <Link
+                  href="/contact"
+                  className="mt-3 block text-center text-[0.7rem] font-bold uppercase tracking-wider text-gray-400 transition hover:text-gray-600"
+                >
+                  Essai gratuit
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* ── Card 3 : Personnalisé ── */}
+            <motion.div
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
+              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+            >
+              <div className="h-[4px] bg-[#34d399]" />
+              <div className="flex h-full flex-col p-7">
+                <h3 className="mb-5 text-xl font-bold text-gray-900">Personnalisé</h3>
+                <div className="mb-1 flex items-start gap-2">
+                  <div className="flex items-start">
+                    <span className="mt-2 text-lg font-bold text-[#34d399]">€</span>
+                    <span className="text-[3.8rem] font-black leading-none text-[#34d399]">
+                      {parAn ? "14" : "17"}
+                    </span>
+                    <span className="mt-3 text-[1.6rem] font-black text-[#34d399]">,{parAn ? "90" : "90"}</span>
+                  </div>
+                  <div className="mt-3 flex flex-col">
+                    <span className="text-sm text-gray-400 line-through">{parAn ? "17,90 €" : "22,40 €"} *</span>
+                    <span className="text-xs text-gray-400">/ utilisateur / mois</span>
+                  </div>
+                </div>
+                <ul className="mb-8 flex-1 space-y-2.5">
+                  <li className="text-sm font-bold text-gray-900">Toutes les apps</li>
+                  <li className="text-sm text-gray-600">DJAMA Online / DJAMA.sh</li>
+                  <li className="text-sm text-gray-600">Outils personnalisés</li>
+                  <li className="text-sm text-gray-600">Pluri-entreprises</li>
+                  <li className="text-sm text-gray-600">API externe(s)</li>
+                </ul>
+                <Link
+                  href="/contact"
+                  className="block w-full rounded-lg bg-[#3d2b6d] py-3 text-center text-xs font-bold uppercase tracking-wider text-white transition hover:opacity-90"
+                >
+                  Nous contacter
+                </Link>
+                <Link
+                  href="/contact"
+                  className="mt-3 block text-center text-[0.7rem] font-bold uppercase tracking-wider text-gray-400 transition hover:text-gray-600"
+                >
+                  Essai gratuit
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Note */}
+          <p className="mt-6 text-center text-[0.68rem] text-gray-400">
+            * Prix sans engagement annuel. Résiliable à tout moment, sans préavis.
+          </p>
         </div>
       </section>
 
