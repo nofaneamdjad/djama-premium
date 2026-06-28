@@ -788,92 +788,69 @@ function HomeContent() {
           <div className="mx-auto h-1.5 w-20 rounded-b-xl bg-gray-300/60" />
         </div>
 
-        {/* ── Sunburst "Libérez votre potentiel" ── */}
-        <div className="relative flex flex-col items-center justify-center overflow-hidden px-6 pb-16 pt-10 sm:pb-20 sm:pt-14">
+        {/* ── CTA mid-page ── */}
+        <div
+          className="relative overflow-hidden px-6 py-14 sm:py-20"
+          style={{ background: "linear-gradient(160deg, #1e0d42 0%, #0d1829 55%, #071525 100%)" }}
+        >
+          {/* Orbes */}
+          <div className="pointer-events-none absolute -left-24 -top-20 h-64 w-64 rounded-full opacity-30" style={{ background: "radial-gradient(circle, rgba(201,165,90,0.35) 0%, transparent 70%)", filter: "blur(40px)" }} />
+          <div className="pointer-events-none absolute -right-16 bottom-0 h-56 w-56 rounded-full opacity-20" style={{ background: "radial-gradient(circle, rgba(167,139,250,0.45) 0%, transparent 70%)", filter: "blur(50px)" }} />
 
-          {/* Rayons */}
-          {([
-            { angle: -148, h: 80,  w: 5, delay: 0.00, heart: true  },
-            { angle: -122, h: 58,  w: 4, delay: 0.05, heart: false },
-            { angle: -100, h: 96,  w: 5, delay: 0.10, heart: false },
-            { angle: -78,  h: 66,  w: 4, delay: 0.14, heart: false },
-            { angle: -56,  h: 104, w: 5, delay: 0.18, heart: false },
-            { angle: -35,  h: 62,  w: 4, delay: 0.22, heart: false },
-            { angle: -14,  h: 90,  w: 5, delay: 0.26, heart: false },
-            { angle: 10,   h: 70,  w: 4, delay: 0.30, heart: false },
-            { angle: 35,   h: 98,  w: 5, delay: 0.34, heart: true  },
-            { angle: 58,   h: 60,  w: 4, delay: 0.38, heart: false },
-            { angle: 82,   h: 80,  w: 5, delay: 0.42, heart: false },
-          ] as const).map(({ angle, h, w, delay, heart }, i) => (
-            <motion.div
-              key={i}
-              initial={{ scaleY: 0, opacity: 0 }}
-              whileInView={{ scaleY: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              style={{
-                position: "absolute",
-                top: "28%",
-                left: "50%",
-                width: `${w}px`,
-                height: `${h}px`,
-                marginLeft: `-${w / 2}px`,
-                marginTop: `-${h}px`,
-                borderRadius: "99px",
-                background: "linear-gradient(to top, #f59e0b, #fcd34d)",
-                transformOrigin: "center bottom",
-                transform: `rotate(${angle}deg)`,
-              }}
-            >
-              {heart && (
-                <span style={{ position: "absolute", top: -18, left: "50%", transform: "translateX(-50%)", fontSize: "13px", lineHeight: 1 }}>♥</span>
-              )}
-            </motion.div>
-          ))}
-
-          {/* Texte */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 text-center"
-          >
-            <p
-              className="leading-tight text-[3rem] sm:text-[4.2rem]"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800, color: "#1a1a2e" }}
-            >
-              Libérez
-            </p>
-            <p
-              className="leading-tight text-[2.6rem] sm:text-[3.6rem]"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, color: "#1a1a2e" }}
-            >
-              votre{" "}
-              <span style={{ color: "#0d9488" }}>potentiel de croissance</span>
-            </p>
-          </motion.div>
-
-          {/* CTA + garanties */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="relative z-10 mt-8 flex flex-col items-center gap-3"
+            viewport={viewport}
+            transition={{ duration: 0.6, ease }}
+            className="relative z-10 mx-auto max-w-2xl text-center"
           >
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-[1rem] font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-[.98]"
-              style={{ background: "#5c3d6e", boxShadow: "0 4px 20px rgba(92,61,110,0.30)" }}
-            >
-              Lancez-vous — C&apos;est gratuit !
-            </Link>
+            {/* Badge */}
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.62rem] font-black uppercase tracking-[.22em]"
+              style={{ borderColor: `rgba(${GOLDR},.3)`, background: `rgba(${GOLDR},.08)`, color: GOLD }}>
+              <Sparkles size={9} /> Rejoignez DJAMA Pro
+            </div>
 
-            <div className="flex flex-col items-center gap-0.5">
-              <span style={{ color: "#5c3d6e", fontSize: "18px" }}>↑</span>
-              <p className="text-[0.72rem] text-gray-400">Aucune carte de crédit requise</p>
-              <p className="text-[0.72rem] text-gray-400">Accès instantané</p>
+            {/* Headline */}
+            <p className="leading-[1.05] text-[3.2rem] sm:text-[4.5rem]"
+              style={{ fontFamily: "'Caveat', cursive", fontWeight: 900, color: "#fff" }}>
+              Libérez votre
+            </p>
+            <p className="leading-[1.05] text-[3.2rem] sm:text-[4.5rem]"
+              style={{ fontFamily: "'Caveat', cursive", fontWeight: 900, color: GOLD }}>
+              potentiel de croissance
+            </p>
+
+            {/* Sous-titre */}
+            <p className="mx-auto mt-5 max-w-lg text-[0.9rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
+              20 outils pros + formation IA + accompagnement — tout ce qu&apos;il faut pour faire décoller votre activité.
+            </p>
+
+            {/* Stats */}
+            <div className="mt-8 flex justify-center gap-8 sm:gap-12">
+              {([
+                { val: "50+",       label: "clients accompagnés" },
+                { val: "20",        label: "outils inclus"       },
+                { val: "11,90€",    label: "par mois seulement"  },
+              ] as const).map(({ val, label }) => (
+                <div key={label} className="text-center">
+                  <p className="text-[1.5rem] font-black leading-none sm:text-[1.8rem]" style={{ color: GOLD }}>{val}</p>
+                  <p className="mt-1 text-[0.62rem] font-medium" style={{ color: "rgba(255,255,255,0.35)" }}>{label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-10 flex flex-col items-center gap-3">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2.5 rounded-2xl px-10 py-4 text-[1rem] font-black text-white transition-all duration-200 hover:opacity-90 active:scale-[.97]"
+                style={{ background: `linear-gradient(135deg, ${GOLD} 0%, #e2ba70 50%, #b08d45 100%)`, boxShadow: `0 8px 32px rgba(${GOLDR},.45)`, color: "#1a1000" }}
+              >
+                Commencer gratuitement <ArrowRight size={15} />
+              </Link>
+              <p className="text-[0.65rem] font-medium" style={{ color: "rgba(255,255,255,0.28)" }}>
+                ✓ Sans engagement &nbsp;·&nbsp; ✓ Accès immédiat &nbsp;·&nbsp; ✓ Stripe sécurisé
+              </p>
             </div>
           </motion.div>
         </div>
