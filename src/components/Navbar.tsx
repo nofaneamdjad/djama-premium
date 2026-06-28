@@ -191,7 +191,7 @@ export default function Navbar() {
             transition={{ duration: 0.22 }}
             className="fixed inset-0 z-40 bg-white md:hidden"
           >
-            <div className="h-[68px]" />
+            <div className="h-[88px]" />
             <motion.nav
               initial="hidden" animate="visible"
               variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.055, delayChildren: 0.08 } } }}
