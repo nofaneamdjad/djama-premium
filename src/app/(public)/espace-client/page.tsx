@@ -277,25 +277,53 @@ export default function EspaceClientPage() {
         </div>
       </section>
 
-      {/* ══ STATS ══════════════════════════════════════════ */}
-      <section className="border-y border-gray-100 bg-gray-50 py-8">
-        <div className="mx-auto max-w-4xl px-6">
+      {/* ══ OUTILS ═════════════════════════════════════════ */}
+      <section id="outils" className="relative bg-[#ededf3] pb-16 sm:pb-20">
+        {/* Arch blanc → transition depuis la section blanche au-dessus */}
+        <div
+          className="h-[70px] w-full bg-white"
+          style={{ borderRadius: "0 0 50% 50% / 0 0 70px 70px" }}
+        />
+
+        <div className="mx-auto max-w-5xl px-6 pt-10">
           <motion.div
             initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport} transition={{ duration: 0.5, ease }}
-            className="grid grid-cols-2 gap-4 sm:grid-cols-4"
+            className="mb-12 text-center"
           >
-            {[
-              { value: String(TOOL_COUNT),                   label: "Outils inclus",           color: GOLD       },
-              { value: `${totalCompetitor}€ → 11,90€`,       label: "Économie mensuelle",       color: "#10b981"  },
-              { value: "+50",                                label: "Entrepreneurs actifs",     color: "#8b5cf6"  },
-              { value: "100%",                               label: "Accès immédiat",           color: "#06b6d4"  },
-            ].map((s) => (
-              <div key={s.label} className="flex flex-col items-center gap-1 text-center">
-                <span className="text-2xl font-black" style={{ color: s.color }}>{s.value}</span>
-                <span className="text-[0.7rem] font-medium text-gray-400">{s.label}</span>
-              </div>
-            ))}
+            <p className="mb-2 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/80">
+              {TOOL_COUNT} outils inclus
+            </p>
+            <h2 className="text-xl font-black text-gray-900 sm:text-3xl">
+              Tout ce dont vous avez besoin,{" "}
+              <span style={{ color: GOLD }}>enfin réuni.</span>
+            </h2>
+          </motion.div>
+
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
+            className="grid grid-cols-3 gap-x-5 gap-y-8 sm:grid-cols-4 lg:grid-cols-6"
+          >
+            {TOOLS.map((tool) => {
+              const Icon = tool.icon;
+              return (
+                <motion.div
+                  key={tool.title}
+                  variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease } } }}
+                  className="flex flex-col items-center gap-3"
+                >
+                  <div
+                    className="flex h-[72px] w-[72px] items-center justify-center rounded-[20px] bg-white shadow-[0_3px_12px_rgba(0,0,0,0.12)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_22px_rgba(0,0,0,0.16)]"
+                  >
+                    <Icon size={30} style={{ color: tool.g1 }} strokeWidth={1.5} />
+                  </div>
+                  <p className="max-w-[88px] text-center text-[0.7rem] font-medium leading-tight text-gray-600">
+                    {tool.title}
+                  </p>
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </section>
@@ -527,57 +555,6 @@ export default function EspaceClientPage() {
                   </div>
                   <h3 className="mb-2 text-sm font-black text-gray-900">{item.title}</h3>
                   <p className="text-xs leading-relaxed text-gray-400">{item.desc}</p>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ══ OUTILS ═════════════════════════════════════════ */}
-      <section id="outils" className="relative bg-[#ededf3] pb-16 sm:pb-20">
-        {/* Arch blanc → transition depuis la section blanche au-dessus */}
-        <div
-          className="h-[70px] w-full bg-white"
-          style={{ borderRadius: "0 0 50% 50% / 0 0 70px 70px" }}
-        />
-
-        <div className="mx-auto max-w-5xl px-6 pt-10">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.5, ease }}
-            className="mb-12 text-center"
-          >
-            <p className="mb-2 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/80">
-              {TOOL_COUNT} outils inclus
-            </p>
-            <h2 className="text-xl font-black text-gray-900 sm:text-3xl">
-              Tout ce dont vous avez besoin,{" "}
-              <span style={{ color: GOLD }}>enfin réuni.</span>
-            </h2>
-          </motion.div>
-
-          <motion.div
-            initial="hidden" whileInView="visible" viewport={viewport}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
-            className="grid grid-cols-3 gap-x-5 gap-y-8 sm:grid-cols-4 lg:grid-cols-6"
-          >
-            {TOOLS.map((tool) => {
-              const Icon = tool.icon;
-              return (
-                <motion.div
-                  key={tool.title}
-                  variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease } } }}
-                  className="flex flex-col items-center gap-3"
-                >
-                  <div
-                    className="flex h-[72px] w-[72px] items-center justify-center rounded-[20px] bg-white shadow-[0_3px_12px_rgba(0,0,0,0.12)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_22px_rgba(0,0,0,0.16)]"
-                  >
-                    <Icon size={30} style={{ color: tool.g1 }} strokeWidth={1.5} />
-                  </div>
-                  <p className="max-w-[88px] text-center text-[0.7rem] font-medium leading-tight text-gray-600">
-                    {tool.title}
-                  </p>
                 </motion.div>
               );
             })}
