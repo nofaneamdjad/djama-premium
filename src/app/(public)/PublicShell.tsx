@@ -16,6 +16,7 @@ import Navbar         from "@/components/Navbar";
 import Footer         from "@/components/Footer";
 import AssistantDJAMA from "@/components/AssistantDJAMA";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import CookieBanner   from "@/components/CookieBanner";
 import { LanguageProvider } from "@/lib/language-context";
 
 /**
@@ -57,6 +58,7 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <Suspense fallback={null}>
         <AssistantDJAMA />
         <WhatsAppButton />
+        <CookieBanner />
       </Suspense>
     </LanguageProvider>
   );

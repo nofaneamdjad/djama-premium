@@ -115,17 +115,42 @@ export default function BlogPage() {
           </div>
         ) : filtered.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center gap-4 py-20 text-center"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center gap-6 py-20 text-center"
           >
-            <BookOpen size={32} className="text-gray-300" />
-            <p className="text-base font-semibold text-gray-400">
-              {articles.length === 0 ? "Aucun article publié pour l'instant" : "Aucun résultat"}
-            </p>
-            {articles.length === 0 && (
-              <p className="text-sm text-gray-400">Revenez bientôt — du contenu est en préparation !</p>
-            )}
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.06)]">
+              <BookOpen size={32} className="text-[#c9a55a]/40" />
+            </div>
+            <div>
+              <p className="text-xl font-black text-gray-800">
+                {articles.length === 0 ? "Le blog arrive bientôt" : "Aucun résultat"}
+              </p>
+              {articles.length === 0 ? (
+                <>
+                  <p className="mt-2 max-w-sm text-sm text-gray-400">
+                    Du contenu est en cours de préparation. Revenez prochainement ou contactez-nous directement.
+                  </p>
+                  <div className="mt-6 flex flex-wrap justify-center gap-3">
+                    <Link
+                      href="/contact"
+                      className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-[#0a0a0a] transition hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", boxShadow: "0 4px 16px rgba(201,165,90,0.25)" }}
+                    >
+                      Nous contacter <ArrowRight size={14} />
+                    </Link>
+                    <Link
+                      href="/services"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-600 shadow-sm transition hover:border-gray-300 hover:text-gray-800"
+                    >
+                      Voir nos services
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-gray-400">Essayez un autre filtre ou mot-clé.</p>
+              )}
+            </div>
           </motion.div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
