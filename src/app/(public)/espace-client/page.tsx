@@ -89,14 +89,14 @@ const TOOL_COUNT = TOOLS.length;
 ══════════════════════════════════════════════════════ */
 export default function EspaceClientPage() {
   return (
-    <div className="overflow-x-hidden bg-[#07080e] text-white">
+    <div className="overflow-x-hidden bg-white text-gray-900">
       <Suspense>
         <AlreadySubscribedRedirect />
         <AccessBanner />
       </Suspense>
 
       {/* ══ HERO ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pt-[110px] pb-24 sm:pt-[150px]">
+      <section className="relative overflow-hidden bg-[#07080e] pt-[110px] pb-24 sm:pt-[150px]">
         {/* Orbs */}
         <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full blur-[140px]"
           style={{ background: "rgba(201,165,90,0.09)" }} />
@@ -182,7 +182,7 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══ STATS ══════════════════════════════════════════ */}
-      <section className="border-y border-white/6 py-10">
+      <section className="border-y border-gray-100 bg-gray-50 py-10">
         <div className="mx-auto max-w-4xl px-6">
           <motion.div
             initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
@@ -197,7 +197,7 @@ export default function EspaceClientPage() {
             ].map((s) => (
               <div key={s.label} className="flex flex-col items-center gap-1 text-center">
                 <span className="text-3xl font-black" style={{ color: s.color }}>{s.value}</span>
-                <span className="text-[0.7rem] font-medium text-white/30">{s.label}</span>
+                <span className="text-[0.7rem] font-medium text-gray-400">{s.label}</span>
               </div>
             ))}
           </motion.div>
@@ -205,7 +205,7 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══ AVANTAGES ══════════════════════════════════════ */}
-      <section className="py-16 sm:py-20">
+      <section className="bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-5xl px-6">
 
           <motion.div
@@ -216,7 +216,7 @@ export default function EspaceClientPage() {
             <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.07)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-[#c9a55a]">
               <Sparkles size={9} /> Pourquoi DJAMA
             </span>
-            <h2 className="mt-4 text-2xl font-black text-white sm:text-3xl">
+            <h2 className="mt-4 text-2xl font-black text-gray-900 sm:text-3xl">
               Une plateforme conçue <span style={{ color: GOLD }}>pour les entrepreneurs.</span>
             </h2>
           </motion.div>
@@ -248,14 +248,10 @@ export default function EspaceClientPage() {
                 <motion.div
                   key={item.title}
                   variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
-                  className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.035] p-6 backdrop-blur-sm"
+                  className="rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
                 >
-                  <div className="pointer-events-none absolute inset-0 opacity-30"
-                    style={{ background: `radial-gradient(ellipse 60% 50% at 0% 0%, ${item.g2}18 0%, transparent 60%)` }} />
-                  <div className="absolute inset-x-0 top-0 h-px"
-                    style={{ background: `linear-gradient(90deg, transparent, ${item.g1}50, transparent)` }} />
                   <div
-                    className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-[16px] shadow-lg"
+                    className="mb-4 flex h-12 w-12 items-center justify-center rounded-[16px] shadow-lg"
                     style={{
                       background: `linear-gradient(145deg, ${item.g1}, ${item.g2})`,
                       boxShadow: `0 6px 20px ${item.g2}45`,
@@ -263,8 +259,8 @@ export default function EspaceClientPage() {
                   >
                     <Icon size={22} color="white" strokeWidth={1.8} />
                   </div>
-                  <h3 className="relative mb-2 text-sm font-black text-white">{item.title}</h3>
-                  <p className="relative text-xs leading-relaxed text-white/40">{item.desc}</p>
+                  <h3 className="mb-2 text-sm font-black text-gray-900">{item.title}</h3>
+                  <p className="text-xs leading-relaxed text-gray-400">{item.desc}</p>
                 </motion.div>
               );
             })}
@@ -273,7 +269,7 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══ OUTILS ═════════════════════════════════════════ */}
-      <section id="outils" className="border-t border-white/6 py-16 sm:py-20">
+      <section id="outils" className="border-t border-gray-100 bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-6">
 
           <motion.div
@@ -281,14 +277,14 @@ export default function EspaceClientPage() {
             viewport={viewport} transition={{ duration: 0.5, ease }}
             className="mb-12 text-center"
           >
-            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-white/40">
+            <p className="mb-2 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
               Ce qui est inclus
-            </span>
-            <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
+            </p>
+            <h2 className="text-xl font-black text-gray-900 sm:text-3xl">
               {TOOL_COUNT} outils,{" "}
               <span style={{ color: GOLD }}>un seul abonnement.</span>
             </h2>
-            <p className="mx-auto mt-3 max-w-sm text-sm text-white/35">
+            <p className="mx-auto mt-3 max-w-sm text-sm text-gray-400">
               Tout ce dont vous avez besoin pour piloter votre activité, réuni dans un seul espace.
             </p>
           </motion.div>
@@ -296,7 +292,7 @@ export default function EspaceClientPage() {
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
-            className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
           >
             {TOOLS.map((tool) => {
               const Icon = tool.icon;
@@ -304,22 +300,18 @@ export default function EspaceClientPage() {
                 <motion.div
                   key={tool.title}
                   variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease } } }}
-                  className="group relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl border border-white/8 bg-white/[0.035] p-5 text-center transition-all duration-300 hover:border-white/16 hover:bg-white/[0.06]"
+                  className="flex flex-col items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
                 >
-                  <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                    style={{ background: `radial-gradient(ellipse 70% 50% at 50% 0%, ${tool.g2}14 0%, transparent 70%)` }} />
                   <div
-                    className="relative flex h-[56px] w-[56px] items-center justify-center rounded-[17px] shadow-lg"
+                    className="flex h-[60px] w-[60px] items-center justify-center rounded-[18px] shadow-md"
                     style={{
                       background: `linear-gradient(145deg, ${tool.g1}, ${tool.g2})`,
-                      boxShadow: `0 6px 18px ${tool.g2}45`,
+                      boxShadow: `0 6px 16px ${tool.g2}40`,
                     }}
                   >
-                    <Icon size={24} color="white" strokeWidth={1.8} />
+                    <Icon size={26} color="white" strokeWidth={1.8} />
                   </div>
-                  <p className="relative text-[0.72rem] font-bold leading-tight text-white/65 group-hover:text-white/85 transition-colors">
-                    {tool.title}
-                  </p>
+                  <p className="text-[0.72rem] font-bold leading-tight text-gray-700">{tool.title}</p>
                 </motion.div>
               );
             })}
@@ -328,7 +320,7 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══ ABONNEMENT ═════════════════════════════════════ */}
-      <section id="abonnement" className="border-t border-white/6 py-16 sm:py-24">
+      <section id="abonnement" className="border-t border-gray-100 bg-[#f8f9fa] py-16 sm:py-24">
         <div className="mx-auto max-w-md px-6">
 
           <motion.div
@@ -336,17 +328,14 @@ export default function EspaceClientPage() {
             viewport={viewport} transition={{ duration: 0.6, ease }}
           >
             <div className="mb-8 text-center">
-              <h2 className="text-2xl font-black text-white sm:text-3xl">
+              <h2 className="text-2xl font-black text-gray-900 sm:text-3xl">
                 Un prix simple,<br /><span style={{ color: GOLD }}>tout compris.</span>
               </h2>
             </div>
 
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.3)] bg-[rgba(15,17,23,0.8)] shadow-[0_0_60px_rgba(201,165,90,0.12)] backdrop-blur-xl">
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(201,165,90,0.30)] bg-white shadow-[0_4px_32px_rgba(0,0,0,.08)]">
               {/* Accent top */}
-              <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
-              {/* Orb */}
-              <div className="pointer-events-none absolute -top-20 left-1/2 h-[200px] w-[200px] -translate-x-1/2 rounded-full blur-[80px]"
-                style={{ background: "rgba(201,165,90,0.12)" }} />
+              <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
 
               <div className="relative p-8">
                 {/* Badge */}
@@ -356,10 +345,10 @@ export default function EspaceClientPage() {
 
                 {/* Prix */}
                 <div className="flex items-start gap-1">
-                  <span className="mt-4 text-lg font-bold text-[#c9a55a]">€</span>
-                  <span className="text-[5rem] font-black leading-none tracking-tighter text-white">11,90</span>
+                  <span className="mt-3 text-lg font-bold text-[#c9a55a]">€</span>
+                  <span className="text-[5rem] font-black leading-none tracking-tighter text-gray-900">11,90</span>
                 </div>
-                <p className="mt-1 text-[0.72rem] text-white/30">par mois · tout compris · sans engagement</p>
+                <p className="mt-1 text-[0.72rem] text-gray-400">par mois · tout compris · sans engagement</p>
 
                 <div className="my-5 h-px w-full" style={{ background: "linear-gradient(90deg, rgba(201,165,90,0.3), transparent)" }} />
 
@@ -379,7 +368,7 @@ export default function EspaceClientPage() {
                     "Support réactif",
                     "Sans engagement",
                   ].map((f) => (
-                    <li key={f} className="flex items-center gap-1.5 text-[0.72rem] text-white/55">
+                    <li key={f} className="flex items-center gap-1.5 text-[0.72rem] text-gray-600">
                       <CheckCircle2 size={11} className="shrink-0 text-[#c9a55a]" />
                       {f}
                     </li>
@@ -389,17 +378,17 @@ export default function EspaceClientPage() {
                 {/* CTA Stripe */}
                 <StripeButton label="Commencer maintenant →" />
 
-                <p className="mt-3 text-center text-[0.62rem] text-white/25">
+                <p className="mt-3 text-center text-[0.62rem] text-gray-400">
                   Paiement sécurisé · Accès immédiat · Résiliable à tout moment
                 </p>
 
                 {/* Déjà abonné */}
                 <div className="mt-6 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-white/8" />
-                  <Link href="/login" className="text-[0.68rem] font-semibold text-white/30 transition hover:text-[#c9a55a]">
+                  <div className="h-px flex-1 bg-gray-200" />
+                  <Link href="/login" className="text-[0.68rem] font-semibold text-[#c9a55a]/70 transition hover:text-[#c9a55a]">
                     Déjà abonné ? Se connecter →
                   </Link>
-                  <div className="h-px flex-1 bg-white/8" />
+                  <div className="h-px flex-1 bg-gray-200" />
                 </div>
               </div>
             </div>
