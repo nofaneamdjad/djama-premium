@@ -159,76 +159,121 @@ export default function EspaceClientPage() {
       </Suspense>
 
       {/* ══ HERO ══════════════════════════════════════════ */}
-      <section
-        className="relative overflow-hidden pt-[110px] pb-20 sm:pt-[150px] sm:pb-28"
-        style={{ background: "linear-gradient(160deg,#080c18 0%,#0f172a 40%,#130d2a 100%)" }}
-      >
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c9a55a]/50 to-transparent" />
-        <div className="pointer-events-none absolute -top-40 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#c9a55a]/[0.07] blur-[120px]" />
-        <div className="pointer-events-none absolute bottom-0 left-1/4 h-[300px] w-[300px] rounded-full bg-[#8b5cf6]/[0.05] blur-[100px]" />
-        <div className="pointer-events-none absolute bottom-0 right-1/4 h-[300px] w-[300px] rounded-full bg-[#06b6d4]/[0.05] blur-[100px]" />
+      <section className="relative bg-white pt-[110px] pb-20 sm:pt-[148px] sm:pb-28">
+        <div className="mx-auto max-w-3xl px-6 text-center">
 
-        <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
+          {/* Badge */}
           <motion.div
-            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease }}
-            className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 backdrop-blur-sm"
+            initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease }}
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.28)] bg-[rgba(201,165,90,0.07)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-widest text-[#c9a55a]"
           >
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#c9a55a]/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]" />
-            </span>
-            <span className="text-[0.72rem] font-medium text-white/65 tracking-wide">Espace Client DJAMA</span>
-            <span className="rounded-full bg-[#c9a55a]/15 px-2 py-0.5 text-[0.68rem] font-bold text-[#c9a55a]">{TOOL_COUNT} outils</span>
+            <Sparkles size={10} /> {TOOL_COUNT} outils · Entrepreneurs
           </motion.div>
 
+          {/* Titre */}
           <motion.h1
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease, delay: 0.1 }}
-            className="text-[2.6rem] font-black leading-[1.08] tracking-tight text-white sm:text-[4rem]"
+            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease, delay: 0.08 }}
+            className="text-[2.8rem] font-black leading-[1.06] text-[#1a1a2e] sm:text-[5rem]"
+            style={{ fontFamily: "'Caveat', cursive" }}
           >
-            Gérez votre activité.
+            Tout votre business sur
             <br />
-            <span className="text-[#c9a55a]">Tout en un.</span>
+            <span className="relative mt-1 inline-block px-2">
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 rounded-[8px]"
+                style={{ background: "#f5c435", transform: "rotate(-1.2deg) scaleX(1.04)" }}
+              />
+              <span className="relative">une plateforme.</span>
+            </span>
           </motion.h1>
 
+          {/* Sous-titre manuscrit */}
           <motion.p
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease, delay: 0.25 }}
-            className="mx-auto mt-5 max-w-lg text-[0.95rem] leading-relaxed text-white/60"
+            transition={{ duration: 0.6, ease, delay: 0.22 }}
+            className="mt-5 text-[2rem] leading-tight text-gray-700 sm:text-[2.6rem]"
+            style={{ fontFamily: "'Caveat', cursive", fontWeight: 700 }}
           >
-            Factures, CRM, trésorerie, IA — {TOOL_COUNT} outils professionnels pour piloter
-            votre activité. Le tout pour <strong className="font-bold text-white/80">11,90€/mois</strong> au lieu de{" "}
-            <span className="line-through text-white/35">{totalCompetitor}€</span>.
+            Simple, efficace, et{" "}
+            <span className="relative inline-block">
+              abordable
+              <svg
+                aria-hidden="true"
+                className="absolute -bottom-1 left-0 w-full overflow-visible"
+                viewBox="0 0 120 8"
+                preserveAspectRatio="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ height: "8px" }}
+              >
+                <path
+                  d="M1,6 Q15,1 30,5.5 Q45,9.5 60,4.5 Q75,0 90,5 Q105,9 119,4"
+                  stroke="#3b82f6"
+                  strokeWidth="2.5"
+                  fill="none"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+            {" "}!
           </motion.p>
 
+          {/* CTAs + annotation */}
           <motion.div
-            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease, delay: 0.45 }}
-            className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease, delay: 0.42 }}
+            className="relative mt-10"
           >
-            <Link href="#abonnement"
-              className="group flex items-center gap-2.5 rounded-2xl px-8 py-4 text-sm font-bold text-[#0a0a0a] transition-all hover:opacity-90"
-              style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, boxShadow: "0 4px 28px rgba(201,165,90,0.45)" }}>
-              Commencer maintenant — 11,90€/mois
-              <ChevronRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link href="/login"
-              className="flex items-center gap-2 rounded-2xl border border-white/12 bg-white/[0.06] px-7 py-4 text-sm font-medium text-white/55 backdrop-blur-sm transition hover:bg-white/10 hover:text-white/80">
-              <LogIn size={14} /> Déjà abonné
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="#abonnement"
+                className="rounded-[14px] px-7 py-3.5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+                style={{ background: "#3d2b6d", boxShadow: "0 4px 22px rgba(61,43,109,0.3)" }}
+              >
+                Lancez-vous — C&apos;est gratuit
+              </Link>
+              <Link
+                href="/contact"
+                className="rounded-[14px] border border-gray-200 bg-white px-7 py-3.5 text-sm font-semibold text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700"
+              >
+                Rencontrer un conseiller
+              </Link>
+            </div>
+
+            {/* Annotation manuscrite — desktop uniquement */}
+            <div
+              className="pointer-events-none absolute hidden items-start gap-1 sm:flex"
+              style={{ left: "calc(50% + 215px)", top: "50%", transform: "translateY(-50%) rotate(-4deg)" }}
+            >
+              <svg width="50" height="44" viewBox="0 0 50 44" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+                <path d="M44,5 Q26,4 16,18 Q9,28 12,37" stroke="#9ca3af" strokeWidth="1.6" strokeLinecap="round"/>
+                <path d="M8,34 L12,38 L16,33" stroke="#9ca3af" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <p
+                className="text-left leading-snug text-gray-500"
+                style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: "1.1rem" }}
+              >
+                11,90 € / mois<br />
+                pour TOUTES les apps
+              </p>
+            </div>
           </motion.div>
 
+          {/* Garanties */}
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="mt-6 flex flex-wrap items-center justify-center gap-5"
+            transition={{ duration: 0.5, delay: 0.65 }}
+            className="mt-10 flex flex-wrap items-center justify-center gap-5"
           >
             {["Sans engagement", "Stripe sécurisé", "Accès immédiat", "Support réactif"].map((t) => (
-              <span key={t} className="flex items-center gap-1.5 text-[0.72rem] text-white/40">
+              <span key={t} className="flex items-center gap-1.5 text-[0.72rem] text-gray-400">
                 <CheckCircle2 size={10} className="text-[#c9a55a]/60" /> {t}
               </span>
             ))}
           </motion.div>
+
         </div>
       </section>
 
