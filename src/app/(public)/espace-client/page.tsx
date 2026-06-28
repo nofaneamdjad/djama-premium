@@ -535,14 +535,20 @@ export default function EspaceClientPage() {
       </section>
 
       {/* ══ OUTILS ═════════════════════════════════════════ */}
-      <section id="outils" className="border-t border-gray-100 bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-6xl px-6">
+      <section id="outils" className="relative bg-[#ededf3] pb-16 sm:pb-20">
+        {/* Arch blanc → transition depuis la section blanche au-dessus */}
+        <div
+          className="h-[70px] w-full bg-white"
+          style={{ borderRadius: "0 0 50% 50% / 0 0 70px 70px" }}
+        />
+
+        <div className="mx-auto max-w-5xl px-6 pt-10">
           <motion.div
             initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport} transition={{ duration: 0.5, ease }}
             className="mb-12 text-center"
           >
-            <p className="mb-2 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/70">
+            <p className="mb-2 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-[#c9a55a]/80">
               {TOOL_COUNT} outils inclus
             </p>
             <h2 className="text-xl font-black text-gray-900 sm:text-3xl">
@@ -554,7 +560,7 @@ export default function EspaceClientPage() {
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
-            className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+            className="grid grid-cols-3 gap-x-5 gap-y-8 sm:grid-cols-4 lg:grid-cols-6"
           >
             {TOOLS.map((tool) => {
               const Icon = tool.icon;
@@ -562,21 +568,16 @@ export default function EspaceClientPage() {
                 <motion.div
                   key={tool.title}
                   variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease } } }}
-                  className="group flex flex-col items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)]"
+                  className="flex flex-col items-center gap-3"
                 >
                   <div
-                    className="flex h-[58px] w-[58px] items-center justify-center rounded-[17px] shadow-md transition-transform duration-300 group-hover:scale-105"
-                    style={{
-                      background: `linear-gradient(145deg, ${tool.g1}, ${tool.g2})`,
-                      boxShadow: `0 6px 16px ${tool.g2}40`,
-                    }}
+                    className="flex h-[72px] w-[72px] items-center justify-center rounded-[20px] bg-white shadow-[0_3px_12px_rgba(0,0,0,0.12)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_22px_rgba(0,0,0,0.16)]"
                   >
-                    <Icon size={25} color="white" strokeWidth={1.8} />
+                    <Icon size={30} style={{ color: tool.g1 }} strokeWidth={1.5} />
                   </div>
-                  <div>
-                    <p className="text-[0.72rem] font-bold leading-tight text-gray-700">{tool.title}</p>
-                    <p className="mt-0.5 text-[0.62rem] leading-snug text-gray-400">{tool.desc}</p>
-                  </div>
+                  <p className="max-w-[88px] text-center text-[0.7rem] font-medium leading-tight text-gray-600">
+                    {tool.title}
+                  </p>
                 </motion.div>
               );
             })}
