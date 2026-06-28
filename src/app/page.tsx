@@ -566,85 +566,71 @@ function HomeContent() {
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 h-20"
-          style={{ background: "linear-gradient(to bottom, transparent 0%, #ffffff 100%)" }}
+          style={{ background: "linear-gradient(to bottom, transparent 0%, #ededf3 100%)" }}
         />
       </section>
 
-      {/* ── Espace client tools — style Odoo ───────────────── */}
-      <section className="bg-white py-16 sm:py-24">
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={staggerContainer}
-          className="mx-auto max-w-6xl px-6"
-        >
+      {/* ── Espace client tools — style espace-client ──────── */}
+      <section id="outils" className="bg-[#ededf3] pb-16 sm:pb-20">
+        <div className="mx-auto max-w-5xl px-6 pt-10">
+
           {/* Header */}
-          <div className="mb-12 flex flex-col items-center gap-3 text-center">
-            <motion.div
-              variants={fadeIn}
-              className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
-              style={{ borderColor: "rgba(99,102,241,.25)", background: "rgba(99,102,241,.07)", color: "#6366f1" }}
-            >
-              <Gem size={11} /> Espace client DJAMA
-            </motion.div>
-
-            <motion.h2
-              variants={fadeIn}
-              className="text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]"
-            >
-              20 outils pros,{" "}
-              <span style={{ color: "#6366f1" }}>1 abonnement</span>.
-            </motion.h2>
-
-            <motion.p variants={fadeIn} className="max-w-sm text-[0.9rem] text-gray-500">
-              Tout ce dont vous avez besoin pour piloter votre activité.
-            </motion.p>
-
-            <motion.div variants={fadeIn}>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.5, ease }}
+            className="mb-12 text-center"
+          >
+            <p className="mb-2 text-[0.68rem] font-bold uppercase tracking-[0.22em]" style={{ color: `${GOLD}cc` }}>
+              20 outils inclus
+            </p>
+            <h2 className="text-xl font-black text-gray-900 sm:text-3xl">
+              Tout ce dont vous avez besoin,{" "}
+              <span style={{ color: GOLD }}>enfin réuni.</span>
+            </h2>
+            <div className="mt-5">
               <Link
                 href="/espace-client"
-                className="mt-1 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[0.92rem] font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
-                style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)", boxShadow: "0 4px 20px rgba(99,102,241,.35)" }}
+                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[0.92rem] font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
+                style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)", boxShadow: "0 4px 20px rgba(99,102,241,.30)" }}
               >
                 S&apos;abonner — 11,90€/mois <ArrowRight size={15} />
               </Link>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
 
-          {/* Grille Odoo */}
+          {/* Grille style espace-client */}
           <motion.div
-            variants={staggerContainerFast}
-            className="grid grid-cols-4 gap-4 sm:grid-cols-5"
+            initial="hidden" whileInView="visible" viewport={viewport}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
+            className="grid grid-cols-3 gap-x-5 gap-y-8 sm:grid-cols-4 lg:grid-cols-5"
           >
-            {ESPACE_TOOLS.map(({ title }, i) => (
+            {ESPACE_TOOLS.map(({ icon: Icon, color, title }) => (
               <motion.div
                 key={title}
-                variants={cardReveal}
-                whileHover={{ y: -4, transition: { duration: 0.18 } }}
-                whileTap={{ scale: 0.96 }}
+                variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease } } }}
+                className="flex flex-col items-center gap-3"
               >
-                <Link
-                  href="/espace-client"
-                  className="group flex flex-col items-center gap-3 rounded-2xl border border-gray-100 bg-white px-3 py-6 shadow-sm transition-all duration-200 hover:border-[rgba(99,102,241,.40)] hover:shadow-[0_8px_28px_rgba(99,102,241,.13)]"
-                >
-                  <div className="h-[68px] w-[68px] overflow-hidden rounded-2xl">
-                    {PUBLIC_APP_ICONS[i]}
+                <Link href="/espace-client" className="block">
+                  <div className="flex h-[72px] w-[72px] items-center justify-center rounded-[20px] bg-white shadow-[0_3px_12px_rgba(0,0,0,0.12)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_22px_rgba(0,0,0,0.16)]">
+                    <Icon size={30} style={{ color }} strokeWidth={1.5} />
                   </div>
-                  <span className="text-center text-[11px] font-semibold leading-tight text-gray-600 transition-colors duration-200 group-hover:text-[#6366f1]">
-                    {title}
-                  </span>
                 </Link>
+                <p className="max-w-[88px] text-center text-[0.7rem] font-medium leading-tight text-gray-600">
+                  {title}
+                </p>
               </motion.div>
             ))}
           </motion.div>
 
-          {/* Barre récapitulatif */}
+          {/* Récap */}
           <motion.div
-            variants={fadeIn}
-            className="mt-8 flex flex-wrap items-center justify-center gap-6 rounded-2xl border border-gray-100 bg-gray-50 px-6 py-4 sm:gap-12"
+            initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.5, ease, delay: 0.2 }}
+            className="mt-12 flex flex-wrap items-center justify-center gap-6 rounded-2xl border border-white/60 bg-white px-6 py-4 shadow-sm sm:gap-12"
           >
             {([
               { val: "20",     label: "outils inclus",  color: "#6366f1" },
-              { val: "11,90€", label: "/ mois",         color: "#c9a55a" },
+              { val: "11,90€", label: "/ mois",         color: GOLD      },
               { val: "Sans",   label: "engagement",     color: "#10b981" },
               { val: "✓",      label: "accès immédiat", color: "#f59e0b" },
             ] as const).map(({ val, label, color }) => (
@@ -654,7 +640,7 @@ function HomeContent() {
               </div>
             ))}
           </motion.div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── Services ticker ────────────────────────────────── */}
