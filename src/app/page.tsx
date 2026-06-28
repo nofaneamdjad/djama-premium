@@ -905,14 +905,14 @@ function HomeContent() {
                     Maîtrisez l&apos;IA,{" "}
                     <span style={{ color: "#a78bfa" }}>transformez votre activité</span>.
                   </h2>
-                  <p className="mt-1.5 text-[0.78rem] text-gray-400">6 modules · 20 chapitres · 4h d&apos;accompagnement · Accès 3 mois</p>
+                  <p className="mt-1.5 text-[0.78rem] text-gray-400">20 cours vidéo · Quiz &amp; activités · Jeux IA · Accès 3 mois</p>
                 </div>
                 <ul className="space-y-2">
                   {([
-                    { color: "#a78bfa", text: "Générer emails & contrats en 30 secondes" },
-                    { color: "#60a5fa", text: "Gagner 5 à 15h de travail par semaine" },
-                    { color: "#4ade80", text: "Créer du contenu marketing 10× plus vite" },
-                    { color: "#f9a826", text: "Déléguer vos tâches répétitives à l'IA" },
+                    { color: "#a78bfa", text: "Prompt engineering & maîtrise ChatGPT / Claude" },
+                    { color: "#60a5fa", text: "Automatisation — gagner 5 à 15h par semaine" },
+                    { color: "#4ade80", text: "Contenu, images IA & agents autonomes" },
+                    { color: "#f9a826", text: "Marketing, business en ligne & projets réels" },
                   ] as const).map(({ color, text }) => (
                     <li key={text} className="flex items-center gap-2 text-[0.76rem] text-gray-600">
                       <CheckCircle2 size={13} style={{ color }} className="shrink-0" />
