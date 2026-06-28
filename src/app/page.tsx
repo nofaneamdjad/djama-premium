@@ -459,31 +459,50 @@ function HomeContent() {
             réuni en un seul écosystème.
           </motion.p>
 
-          {/* Pastilles d'activités */}
+          {/* Pastilles d'activités — liens cliquables */}
           <motion.div
             variants={fadeIn}
-            className="mt-7 flex flex-wrap justify-center gap-2"
+            className="mt-7 flex flex-wrap justify-center gap-2.5"
           >
             {([
-              { label: "Site & E-Commerce",    color: "#60a5fa",  Icon: Globe          },
-              { label: "App Mobile",           color: "#a78bfa",  Icon: Code2          },
-              { label: "Outils SaaS",          color: GOLD,       Icon: Gem            },
-              { label: "Coaching IA",          color: "#4ade80",  Icon: Brain          },
-              { label: "Vidéo & Visuels",      color: "#f472b6",  Icon: Star           },
-              { label: "Accompagnement",       color: "#34d399",  Icon: HeartHandshake },
-            ] as const).map(({ label, color, Icon }) => (
-              <span
+              { label: "Site & E-Commerce",  color: "#60a5fa",  Icon: Globe,           href: "/services/site-vitrine"               },
+              { label: "App Mobile",         color: "#a78bfa",  Icon: Code2,           href: "/services/application-mobile"         },
+              { label: "Outils SaaS",        color: GOLD,       Icon: Gem,             href: "/espace-client"                       },
+              { label: "Coaching IA",        color: "#4ade80",  Icon: Brain,           href: "/services/coaching-ia"                },
+              { label: "Vidéo & Visuels",    color: "#f472b6",  Icon: Star,            href: "/services/montage-video"              },
+              { label: "Accompagnement",     color: "#34d399",  Icon: HeartHandshake,  href: "/services/assistance-administrative"  },
+            ] as const).map(({ label, color, Icon, href }) => (
+              <motion.div
                 key={label}
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.72rem] font-semibold"
-                style={{
-                  background: `${color}1a`,
-                  border: `1px solid ${color}45`,
-                  color,
-                }}
+                whileHover={{ scale: 1.06, y: -2 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ duration: 0.18, ease }}
               >
-                <Icon size={12} />
-                {label}
-              </span>
+                <Link
+                  href={href}
+                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[0.75rem] font-semibold transition-all duration-200"
+                  style={{
+                    background: `${color}18`,
+                    border: `1px solid ${color}40`,
+                    color,
+                    boxShadow: `0 2px 12px ${color}18`,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = `${color}30`;
+                    (e.currentTarget as HTMLElement).style.borderColor = `${color}70`;
+                    (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 20px ${color}30`;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = `${color}18`;
+                    (e.currentTarget as HTMLElement).style.borderColor = `${color}40`;
+                    (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 12px ${color}18`;
+                  }}
+                >
+                  <Icon size={13} strokeWidth={1.8} />
+                  {label}
+                  <ArrowRight size={10} style={{ opacity: 0.6 }} />
+                </Link>
+              </motion.div>
             ))}
           </motion.div>
 
