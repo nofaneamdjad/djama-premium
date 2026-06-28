@@ -9,7 +9,7 @@ import {
   TrendingUp, Download, ArrowUpRight, Bell,
   AlertTriangle,
   FileBarChart2, X, ShieldCheck, Lightbulb,
-  CheckCircle2, CircleDot, Send, Lock,
+  CheckCircle2, CircleDot, Send, Lock, Pencil,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { APP_ICONS } from "@/components/AppIcons";
@@ -121,6 +121,10 @@ export default function DashboardPage() {
   const [annualRev,      setAnnualRev]      = useState<{ label: string; cur: number; prev: number }[]>([]);
   const [annualLoad,     setAnnualLoad]     = useState(true);
   const [pendingReports, setPendingReports] = useState(0);
+  const [goalAmount,  setGoalAmount]  = useState(0);
+  const [goalEdit,    setGoalEdit]    = useState(false);
+  const [goalInput,   setGoalInput]   = useState("");
+  const [hoveredBar,  setHoveredBar]  = useState<number | null>(null);
 
   const router = useRouter();
 
@@ -235,7 +239,12 @@ export default function DashboardPage() {
     loadAll();
   }, []);
 
-  async function runRapport() {
+  useEffect(() => {
+    const saved = localStorage.getItem("djama_monthly_goal");
+    if (saved) setGoalAmount(Number(saved));
+  }, []);
+
+  const runRapport = useCallback(async () => {
     const now = new Date();
     setRapportLoading(true); setRapportOpen(true); setRapport(null);
     try {
@@ -248,7 +257,7 @@ export default function DashboardPage() {
       setRapport(await res.json());
     } catch { setRapportOpen(false); }
     finally { setRapportLoading(false); }
-  }
+  }, []);
 
   const ca       = stats?.caThisMois    ?? 0;
   const dep      = stats?.depensesMois  ?? 0;
@@ -273,6 +282,18 @@ export default function DashboardPage() {
     a.href = url; a.download = `djama-dashboard-${new Date().toISOString().slice(0,10)}.csv`; a.click();
     URL.revokeObjectURL(url);
   }, [revenues, monthlyExp, topClients, ca, dep, netMois, stats]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") { setRapportOpen(false); return; }
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if ((e.key === "r" || e.key === "R") && !e.ctrlKey && !e.metaKey) void runRapport();
+      if ((e.key === "e" || e.key === "E") && !e.ctrlKey && !e.metaKey) exportData();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [runRapport, exportData]);
 
   /* ─────────────────────────────────────────────────
      RENDU
@@ -654,6 +675,98 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
+        {/* ── Objectif mensuel + Contacts actifs ── */}
+        <motion.div
+          initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
+          transition={{ duration:0.35, delay:0.1, ease }}
+          className="flex gap-3 mb-4"
+        >
+          {/* Objectif mensuel */}
+          <div className="flex-1 rounded-2xl p-3.5"
+            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)" }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-white/30">Objectif du mois</p>
+              <button
+                onClick={() => { setGoalInput(goalAmount > 0 ? String(goalAmount) : ""); setGoalEdit(true); }}
+                className="text-white/20 hover:text-white/50 transition-colors">
+                <Pencil size={10}/>
+              </button>
+            </div>
+            {goalEdit ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  autoFocus type="number" value={goalInput}
+                  onChange={e => setGoalInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") {
+                      const v = Math.max(0, Number(goalInput));
+                      setGoalAmount(v);
+                      localStorage.setItem("djama_monthly_goal", String(v));
+                      setGoalEdit(false);
+                    }
+                    if (e.key === "Escape") setGoalEdit(false);
+                  }}
+                  onBlur={() => {
+                    const v = Math.max(0, Number(goalInput));
+                    setGoalAmount(v);
+                    localStorage.setItem("djama_monthly_goal", String(v));
+                    setGoalEdit(false);
+                  }}
+                  className="w-full rounded-lg bg-white/8 px-2 py-1 text-[0.75rem] font-bold text-white outline-none border border-white/15"
+                  placeholder="Ex: 5000"
+                />
+                <span className="text-[0.6rem] text-white/30 shrink-0">€</span>
+              </div>
+            ) : goalAmount > 0 ? (
+              <>
+                <div className="flex items-baseline gap-1.5 mb-2">
+                  <span className="text-[1.15rem] font-black" style={{ color: ca >= goalAmount ? "#4ade80" : GOLD }}>
+                    {Math.min(100, Math.round((ca / goalAmount) * 100))}%
+                  </span>
+                  <span className="text-[0.6rem] text-white/30">{fmtEurInt(ca)} / {fmtEurInt(goalAmount)}</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/8">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, (ca / goalAmount) * 100)}%` }}
+                    transition={{ duration: 1, delay: 0.3 }}
+                    className="h-full rounded-full"
+                    style={{ background: ca >= goalAmount ? "#4ade80" : `linear-gradient(90deg,${GOLD},#b08d45)` }}
+                  />
+                </div>
+              </>
+            ) : (
+              <button
+                onClick={() => { setGoalInput(""); setGoalEdit(true); }}
+                className="text-[0.68rem] text-white/25 hover:text-white/50 transition-colors">
+                Définir un objectif →
+              </button>
+            )}
+          </div>
+
+          {/* Contacts actifs */}
+          <div
+            className="rounded-2xl p-3.5 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] hover:brightness-110"
+            onClick={() => router.push("/client/crm")}
+            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", minWidth:"110px" }}>
+            <div className="flex items-start justify-between">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-white/30">Contacts actifs</p>
+              <ArrowUpRight size={11} className="opacity-0 group-hover:opacity-40 text-white transition-opacity"/>
+            </div>
+            {statsLoading ? (
+              <div className="h-7 w-14 rounded-lg animate-pulse mt-2" style={{ background:"rgba(255,255,255,0.08)" }}/>
+            ) : (
+              <p className="text-[1.35rem] font-black leading-tight tabular-nums text-white mt-1">
+                {stats?.contactsActifs ?? 0}
+              </p>
+            )}
+            <div className="flex items-center gap-1 mt-1">
+              <Users size={9} className="text-white/20"/>
+              <p className="text-[9px] text-white/20">CRM</p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* ── Section "Activité" — label ── */}
         <motion.div
           initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
@@ -712,7 +825,17 @@ export default function DashboardPage() {
                     const expPct = Math.max((expAmt/max)*100, expAmt>0?5:0);
                     const isLast = i===revenues.length-1;
                     return (
-                      <div key={r.label} className="group flex flex-1 flex-col items-center gap-1">
+                      <div key={r.label} className="group relative flex flex-1 flex-col items-center gap-1"
+                        onMouseEnter={() => setHoveredBar(i)}
+                        onMouseLeave={() => setHoveredBar(null)}
+                      >
+                        {hoveredBar === i && (r.amount > 0 || expAmt > 0) && (
+                          <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10 pointer-events-none rounded-lg px-2 py-1 text-center"
+                            style={{ background:"rgba(10,10,20,0.95)", border:"1px solid rgba(255,255,255,0.1)", whiteSpace:"nowrap" }}>
+                            {r.amount > 0 && <p className="text-[0.55rem] font-bold text-emerald-400">+{fmtEurInt(r.amount)}</p>}
+                            {expAmt > 0 && <p className="text-[0.55rem] font-bold text-red-400">−{fmtEurInt(expAmt)}</p>}
+                          </div>
+                        )}
                         <div className="flex w-full items-end gap-0.5" style={{ height:"96px" }}>
                           {/* Barre Entrées (verte) */}
                           <motion.div
