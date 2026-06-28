@@ -11,7 +11,7 @@ import {
   Languages, Zap, Check, Hash, BarChart2,
   Book, Pencil, Eraser, ChevronLeft, ChevronRight,
   Undo2, AlignLeft, LayoutGrid, CalendarDays,
-  History, Link2,
+  History, Link2, Maximize2, Minimize2, Copy,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import NotebookCanvas, {
@@ -292,6 +292,7 @@ export default function BlocNotesPage() {
   const [exportMenu,     setExportMenu]     = useState(false);
   const [versionsMenu,   setVersionsMenu]   = useState(false);
   const [noteVersions,   setNoteVersions]   = useState<NoteVersion[]>([]);
+  const [focusMode,      setFocusMode]      = useState(false);
 
   /* ── Voice ── */
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
@@ -544,6 +545,28 @@ export default function BlocNotesPage() {
 
   saveRef.current = handleSave;
 
+  /* ── Keyboard shortcuts ── */
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        void saveRef.current();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+        e.preventDefault();
+        createNote("texte");
+      }
+      if (e.key === "Escape") {
+        setAiPanel(p => { if (p) setAiResult(""); return false; });
+        setExportMenu(false);
+        setVersionsMenu(false);
+        setFocusMode(false);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [createNote]);
+
   useEffect(() => {
     if (!isDirty) return;
     if (debRef.current) clearTimeout(debRef.current);
@@ -567,6 +590,32 @@ export default function BlocNotesPage() {
     setFavSet(s);
     setNotes(p => p.map(n => n.id === id ? { ...n, is_favorite: newVal } : n));
     void supabase.from("notes").update({ is_favorite: newVal }).eq("id", id);
+  }
+
+  async function duplicateNote() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data, error } = await supabase.from("notes").insert({
+      user_id: user.id,
+      title: `${dTitle || "Sans titre"} (copie)`,
+      content: dContent,
+      note_type: dType,
+      category: dType,
+      folder_id: dFolderId,
+      tags: [...dTags],
+      linked_entity: dLinked.trim(),
+      word_count: countWords(dContent),
+    }).select().single();
+    if (error) { showToast("error", "Erreur duplication"); return; }
+    const dup = data as Note;
+    setNotes(p => [dup, ...p]);
+    showToast("success", "Note dupliquée");
+    openNote(dup);
+  }
+
+  function copyToClipboard() {
+    const text = dTitle ? `${dTitle}\n\n${dContent}` : dContent;
+    void navigator.clipboard.writeText(text).then(() => showToast("success", "Copié dans le presse-papiers"));
   }
 
   async function toggleArchive() {
@@ -759,6 +808,7 @@ export default function BlocNotesPage() {
   }), [notes, favSet]);
 
   const wordCnt = countWords(dContent);
+  const readingTime = Math.max(1, Math.ceil(wordCnt / 200));
   const isCanvas = false;
 
   const outgoingRefs = useMemo(() => {
@@ -788,7 +838,7 @@ export default function BlocNotesPage() {
     <div className="flex h-[calc(100vh-56px)] overflow-hidden bg-[#07080e]">
 
       {/* ══ SIDEBAR (desktop only) ══ */}
-      <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-[#0e1420] border-r border-white/[0.06]">
+      <aside className={`hidden lg:flex w-[220px] shrink-0 flex-col bg-[#0e1420] border-r border-white/[0.06] ${focusMode ? "!hidden" : ""}`}>
         <div className="flex flex-col h-full p-3 gap-0">
 
           {/* Brand */}
@@ -867,7 +917,7 @@ export default function BlocNotesPage() {
       {/* ══ LIST PANEL ══ */}
       <div className={`flex-col bg-[#12151c] border-r border-white/[0.06]
         shrink-0 w-full lg:w-80
-        ${mobilePanel === "editor" ? "hidden lg:flex" : "flex"}`}>
+        ${focusMode ? "!hidden" : mobilePanel === "editor" ? "hidden lg:flex" : "flex"}`}>
 
         {/* ─ CANVAS: notebooks grid ─ */}
         {isCanvas ? (
@@ -1391,7 +1441,7 @@ export default function BlocNotesPage() {
                     {exportMenu && (
                       <motion.div initial={{opacity:0,y:-5}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-5}}
                         className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border border-white/[0.09] bg-[#0e1420] shadow-xl">
-                        {[{label:"PDF",fn:exportPDF},{label:"Markdown (.md)",fn:exportMarkdown},{label:"Texte (.txt)",fn:exportTXT}].map(opt => (
+                        {[{label:"PDF",fn:exportPDF},{label:"Markdown (.md)",fn:exportMarkdown},{label:"Texte (.txt)",fn:exportTXT},{label:"Copier",fn:async()=>copyToClipboard()}].map(opt => (
                           <button key={opt.label} onClick={() => { void opt.fn(); setExportMenu(false); }}
                             className="flex w-full items-center px-4 py-2.5 text-xs font-semibold text-white/55 transition hover:bg-white/[0.05] hover:text-white/85">
                             {opt.label}
@@ -1401,6 +1451,16 @@ export default function BlocNotesPage() {
                     )}
                   </AnimatePresence>
                 </div>
+                <button onClick={() => void duplicateNote()}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.08] text-white/28 transition hover:text-white/65"
+                  title="Dupliquer la note">
+                  <Copy size={12}/>
+                </button>
+                <button onClick={() => setFocusMode(v => !v)}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.08] text-white/28 transition hover:text-white/65"
+                  title={focusMode ? "Quitter le mode focus" : "Mode focus"}>
+                  {focusMode ? <Minimize2 size={12}/> : <Maximize2 size={12}/>}
+                </button>
                 <button onClick={() => void toggleArchive()}
                   className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.08] text-white/28 transition hover:text-white/65"
                   title={selected.is_archived ? "Désarchiver" : "Archiver"}>
@@ -1506,6 +1566,7 @@ export default function BlocNotesPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-[0.58rem] text-white/18">{wordCnt} mot{wordCnt!==1?"s":""}</span>
                     <span className="text-[0.58rem] text-white/18">{dContent.length} car.</span>
+                    {wordCnt > 0 && <span className="text-[0.58rem] text-white/18">~{readingTime} min</span>}
                     {isDirty && <span className="text-[0.58rem] text-amber-400/55">— non sauvegardé</span>}
                   </div>
                   <div className="flex items-center gap-2">
