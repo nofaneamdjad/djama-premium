@@ -31,13 +31,14 @@ const COLUMNS: Column[] = [
     ],
   },
   {
-    title: "Entreprise", titleEn: "Company",
+    title: "Plateforme", titleEn: "Platform",
     items: [
-      { label: "À propos",    labelEn: "About us", href: "/a-propos"     },
-      { label: "Nos projets", labelEn: "Projects", href: "/realisations" },
-      { label: "Blog",        labelEn: "Blog",     href: "/blog"         },
-      { label: "Offres",      labelEn: "Pricing",  href: "/offres"       },
-      { label: "Contact",     labelEn: "Contact",  href: "/contact"      },
+      { label: "Espace client",    labelEn: "Client area",    href: "/espace-client"       },
+      { label: "Formation IA",     labelEn: "AI Training",    href: "/coaching-ia"          },
+      { label: "Nos réalisations", labelEn: "Portfolio",      href: "/realisations"         },
+      { label: "Réserver un appel",labelEn: "Book a call",   href: "/reserver-appel"       },
+      { label: "Blog",             labelEn: "Blog",           href: "/blog"                 },
+      { label: "Contact",          labelEn: "Contact",        href: "/contact"              },
     ],
   },
   {
