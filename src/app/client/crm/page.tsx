@@ -1930,6 +1930,12 @@ export default function CRMPage() {
   const selectedTasks         = useMemo(() => tasks.filter(t => t.contact_id === selected?.id), [tasks, selected]);
   const selectedTickets       = useMemo(() => tickets.filter(t => t.contact_id === selected?.id), [tickets, selected]);
 
+  const todayStr = new Date().toISOString().split("T")[0];
+  const overdueRelances = useMemo(() =>
+    contacts.filter(c => c.next_relance && c.next_relance < todayStr && c.status !== "perdu"),
+  [contacts, todayStr]);
+  const [relanceBannerDismissed, setRelanceBannerDismissed] = useState(false);
+
   const MAIN_TABS = [
     { id: "contacts", label: "Contacts",  icon: Users,       badge: contacts.length },
     { id: "pipeline", label: "Pipeline",  icon: TrendingUp,  badge: opportunities.filter(o => o.stage !== "perdu").length },
@@ -1937,6 +1943,22 @@ export default function CRMPage() {
     { id: "tickets",  label: "Tickets",   icon: Ticket,      badge: tickets.filter(t => t.status === "ouvert" || t.status === "en_cours").length },
     { id: "rapport",  label: "Rapport",   icon: BarChart2,   badge: 0 },
   ] as const;
+
+  /* ── Keyboard shortcuts ── */
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && selected) { setSelected(null); return; }
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if ((e.key === "n" || e.key === "N") && !e.ctrlKey && !e.metaKey) {
+        setForm({ status: "prospect", type: "prospect" });
+        setEditContact(null);
+        setAddModal(true);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected]);
 
   async function handleImportCSV(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -2068,6 +2090,38 @@ export default function CRMPage() {
             <>
                             {mainTab === "contacts" && (
                 <div className="space-y-4">
+
+                  {/* ── Overdue relances banner ── */}
+                  {overdueRelances.length > 0 && !relanceBannerDismissed && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                      className="rounded-2xl border border-orange-500/20 bg-orange-500/[0.06] px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2.5">
+                          <Bell size={13} className="mt-0.5 shrink-0 text-orange-400"/>
+                          <div>
+                            <p className="text-[0.72rem] font-bold text-orange-300">
+                              {overdueRelances.length} relance{overdueRelances.length > 1 ? "s" : ""} en retard
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                              {overdueRelances.slice(0, 5).map(c => (
+                                <button key={c.id} onClick={() => setSelected(c)}
+                                  className="flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-[0.6rem] font-semibold text-orange-300/80 hover:bg-orange-500/25 transition-colors">
+                                  {c.name} · {fmtDate(c.next_relance)}
+                                </button>
+                              ))}
+                              {overdueRelances.length > 5 && (
+                                <span className="text-[0.6rem] text-orange-400/60">+{overdueRelances.length - 5} autres</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <button onClick={() => setRelanceBannerDismissed(true)} className="shrink-0 text-orange-400/50 hover:text-orange-300 transition-colors">
+                          <X size={13}/>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
                                     <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
                       <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25"/>
@@ -2188,6 +2242,15 @@ export default function CRMPage() {
                                       <Phone size={11}/>
                                     </a>
                                   )}
+                                  <button onClick={e => {
+                                    e.stopPropagation();
+                                    const d = new Date(); d.setDate(d.getDate() + 7);
+                                    void updateContact(c.id, { next_relance: d.toISOString().split("T")[0] });
+                                    toast("Relance planifiée dans 7 jours", "success");
+                                  }} title="Planifier relance +7j"
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/20 hover:text-orange-400 hover:bg-orange-400/10 transition-all">
+                                    <Bell size={11}/>
+                                  </button>
                                   <button onClick={e => { e.stopPropagation(); setForm({ ...c }); setEditContact(c); setAddModal(true); }}
                                     className="h-7 w-7 rounded-lg flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 transition-all">
                                     <Pencil size={11}/>
