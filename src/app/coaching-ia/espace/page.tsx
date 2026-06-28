@@ -78,6 +78,229 @@ function CopyButton({ text, className = "" }: { text: string; className?: string
 }
 
 /* ─────────────────────────────────────────────────────────
+   GAMIFICATION
+───────────────────────────────────────────────────────── */
+const STREAK_KEY     = "djama_coaching_streak";
+const STREAK_DAY_KEY = "djama_coaching_streak_day";
+const XP_PER_CHAPTER = 50;
+
+const LEVEL_DATA = [
+  { name: "Novice",    min: 0,    color: "#94a3b8" },
+  { name: "Apprenti",  min: 300,  color: "#60a5fa" },
+  { name: "Praticien", min: 700,  color: "#a78bfa" },
+  { name: "Expert IA", min: 1400, color: "#f59e0b" },
+  { name: "Maître IA", min: 2500, color: "#d946ef" },
+];
+
+function getLevel(xp: number) {
+  let idx = 0;
+  for (let i = 0; i < LEVEL_DATA.length; i++) { if (xp >= LEVEL_DATA[i].min) idx = i; }
+  const next = LEVEL_DATA[idx + 1];
+  const pct  = next ? Math.min(100, Math.round(((xp - LEVEL_DATA[idx].min) / (next.min - LEVEL_DATA[idx].min)) * 100)) : 100;
+  return { ...LEVEL_DATA[idx], pct, xpNext: next ? next.min - xp : 0, nextName: next?.name };
+}
+
+function loadStreak(): { streak: number; updatedToday: boolean } {
+  if (typeof window === "undefined") return { streak: 0, updatedToday: false };
+  try {
+    const today   = new Date().toDateString();
+    const lastDay = localStorage.getItem(STREAK_DAY_KEY);
+    const stored  = parseInt(localStorage.getItem(STREAK_KEY) ?? "0", 10);
+    if (!lastDay) return { streak: 0, updatedToday: false };
+    if (lastDay === today) return { streak: stored, updatedToday: true };
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    return { streak: lastDay === yesterday.toDateString() ? stored : 0, updatedToday: false };
+  } catch { return { streak: 0, updatedToday: false }; }
+}
+
+function bumpStreak() {
+  if (typeof window === "undefined") return;
+  const today = new Date().toDateString();
+  const { updatedToday, streak } = loadStreak();
+  if (updatedToday) return;
+  localStorage.setItem(STREAK_KEY, String(streak + 1));
+  localStorage.setItem(STREAK_DAY_KEY, today);
+}
+
+/* ─────────────────────────────────────────────────────────
+   VIDEO PLAYER
+───────────────────────────────────────────────────────── */
+function VideoPlayer({ title, color }: { title: string; color: string }) {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+      className="mb-7 relative aspect-video w-full overflow-hidden rounded-2xl border border-white/8 cursor-pointer"
+      style={{ background: `linear-gradient(135deg, #07080e, ${color}18)` }}
+      onClick={() => setPlaying(p => !p)}
+    >
+      <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 80% 60% at 50% 50%, ${color}10, transparent)` }} />
+      <div className="pointer-events-none absolute inset-0 opacity-15" style={{ backgroundImage: `linear-gradient(${color}18 1px, transparent 1px), linear-gradient(90deg, ${color}18 1px, transparent 1px)`, backgroundSize: "44px 44px" }} />
+      {!playing ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <motion.div whileHover={{ scale: 1.1 }}
+            className="flex h-16 w-16 items-center justify-center rounded-full border-2"
+            style={{ borderColor: color + "70", background: color + "25", boxShadow: `0 0 32px ${color}28` }}>
+            <Play size={24} fill={color} style={{ color, marginLeft: 3 }} />
+          </motion.div>
+          <p className="text-sm font-bold text-white/80">{title}</p>
+          <span className="rounded-full px-3 py-1 text-[0.6rem] font-bold" style={{ background: color + "20", color, border: `1px solid ${color}35` }}>Voir la leçon vidéo</span>
+        </div>
+      ) : (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <motion.div animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
+            className="flex h-16 w-16 items-center justify-center rounded-full border-2"
+            style={{ background: color + "28", borderColor: color + "60" }}>
+            <div className="flex gap-2">
+              <div className="h-5 w-1.5 rounded-full" style={{ background: color }} />
+              <div className="h-5 w-1.5 rounded-full" style={{ background: color }} />
+            </div>
+          </motion.div>
+          <p className="text-xs text-white/40">Cliquez pour pauser</p>
+        </div>
+      )}
+      <div className="absolute bottom-3 right-3 rounded-lg bg-black/60 px-2.5 py-1 text-[0.6rem] font-bold text-white/60 backdrop-blur-sm">12:30</div>
+    </motion.div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   QUIZ PAR MODULE (chapitres type="quiz")
+───────────────────────────────────────────────────────── */
+const MODULE_QUIZ: Record<string, { q: string; opts: string[]; correct: number }[]> = {
+  "1": [
+    { q: "Que signifie 'hallucination' dans le contexte d'un LLM ?", opts: ["Un bug d'affichage", "L'IA invente des infos fausses", "Un modèle créatif", "Une image générée"], correct: 1 },
+    { q: "Que signifie LLM ?", opts: ["Light Learning Module", "Large Language Model", "Linked Logic Machine", "Language Learning Method"], correct: 1 },
+    { q: "Quelle architecture a lancé l'ère des LLMs modernes ?", opts: ["CNN (1998)", "RNN (2014)", "Transformer (2017)", "Encoder/Decoder (2010)"], correct: 2 },
+  ],
+  "2": [
+    { q: "Quelle méthode force l'IA à raisonner étape par étape ?", opts: ["Persona prompting", "Chain of Thought", "Few-shot learning", "RAG"], correct: 1 },
+    { q: "Dans la méthode RCTC, que signifie le R ?", opts: ["Résultat", "Rôle", "Réponse", "Référence"], correct: 1 },
+    { q: "Qu'est-ce que le 'few-shot' prompting ?", opts: ["Un prompt très court", "Donner des exemples dans le prompt", "Une IA entraînée peu de temps", "Un prompt en plusieurs messages"], correct: 1 },
+  ],
+  "3": [
+    { q: "Quel modèle est développé par Anthropic ?", opts: ["GPT-4", "Gemini", "Claude", "Mistral"], correct: 2 },
+    { q: "Que signifie RAG ?", opts: ["Random AI Generator", "Retrieval-Augmented Generation", "Reinforced Agent Guide", "Real AI Gateway"], correct: 1 },
+    { q: "Quelle entreprise a créé ChatGPT ?", opts: ["Google", "Meta", "Anthropic", "OpenAI"], correct: 3 },
+  ],
+  "4": [
+    { q: "Quel outil ChatGPT permet d'analyser des fichiers CSV ?", opts: ["Code Interpreter", "Advanced Data Analysis", "Plugin Data", "CSV Reader"], correct: 1 },
+    { q: "Que signifie KPI ?", opts: ["Key Performance Indicator", "Knowledge Processing Index", "Key Product Interface", "Key Process Integration"], correct: 0 },
+    { q: "Quel outil d'automatisation sans code est le plus utilisé ?", opts: ["Python", "Zapier", "Docker", "GitHub Actions"], correct: 1 },
+  ],
+  "5": [
+    { q: "Quel outil de génération d'images est intégré à ChatGPT Plus ?", opts: ["Midjourney", "DALL-E 3", "Stable Diffusion", "Adobe Firefly"], correct: 1 },
+    { q: "Que signifie 'negative prompt' en génération d'images ?", opts: ["Un prompt pessimiste", "Ce qu'on ne veut pas voir", "Un prompt d'erreur", "Un raccourci clavier"], correct: 1 },
+    { q: "Quelle commande Midjourney définit le format de l'image ?", opts: ["--quality", "--ar", "--style", "--version"], correct: 1 },
+  ],
+  "6": [
+    { q: "Qu'est-ce qu'un agent IA ?", opts: ["Un modèle qui répond aux questions", "Un modèle qui effectue des actions autonomes", "Un chatbot basique", "Un réseau de neurones"], correct: 1 },
+    { q: "Quel outil permet d'héberger un LLM localement ?", opts: ["Zapier", "Ollama", "Vercel", "HuggingChat"], correct: 1 },
+    { q: "Que signifie Fine-tuning ?", opts: ["Ajuster la température", "Réentraîner un modèle sur des données spécifiques", "Nettoyer le prompt", "Accélérer l'inférence"], correct: 1 },
+  ],
+  "7": [
+    { q: "Budget mensuel typique d'un stack IA complet pour entrepreneur ?", opts: ["10-20€", "50-80€", "80-200€", "500€+"], correct: 2 },
+    { q: "Quelle compétence reste irremplaçable par l'IA ?", opts: ["Rédaction de base", "Analyse de données simples", "Jugement et vision stratégique", "Traduction"], correct: 2 },
+    { q: "Gain de productivité moyen estimé avec l'IA ?", opts: ["30 min/jour", "1h/jour", "2–4h/jour", "8h/jour"], correct: 2 },
+  ],
+};
+
+function InlineModuleQuiz({ moduleId, onComplete }: { moduleId: string; onComplete: () => void }) {
+  const questions = MODULE_QUIZ[moduleId] ?? MODULE_QUIZ["1"]!;
+  const [started,  setStarted]  = useState(false);
+  const [qIdx,     setQIdx]     = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [answers,  setAnswers]  = useState<number[]>([]);
+  const [done,     setDone]     = useState(false);
+
+  const score = answers.filter((a, i) => a === questions[i]!.correct).length;
+  const threshold = Math.ceil(questions.length / 2);
+
+  function handleAnswer(idx: number) {
+    if (selected !== null) return;
+    setSelected(idx);
+    setTimeout(() => {
+      const next = [...answers, idx];
+      setAnswers(next);
+      if (qIdx + 1 >= questions.length) {
+        setDone(true);
+        if (next.filter((a, i) => a === questions[i]!.correct).length >= threshold) onComplete();
+      } else { setQIdx(q => q + 1); setSelected(null); }
+    }, 900);
+  }
+
+  function reset() { setQIdx(0); setSelected(null); setAnswers([]); setDone(false); setStarted(false); }
+
+  return (
+    <div className="mb-8 overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.22)] bg-[rgba(167,139,250,0.05)]">
+      <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.15)]"><Trophy size={14} className="text-[#a78bfa]" /></div>
+        <div>
+          <p className="text-sm font-extrabold text-white">Quiz de validation</p>
+          <p className="text-[0.62rem] text-white/35">{questions.length} questions · Validé si ≥ {threshold}/{questions.length}</p>
+        </div>
+      </div>
+      <div className="p-5">
+        {!started ? (
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            onClick={() => setStarted(true)}
+            className="flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-extrabold text-black"
+            style={{ background: "linear-gradient(135deg, #a78bfa, #7c3aed)" }}>
+            <Play size={13} fill="black" /> Lancer le quiz
+          </motion.button>
+        ) : done ? (
+          <div className="space-y-3 text-center py-2">
+            <p className="text-3xl font-extrabold" style={{ color: score >= threshold ? "#34d399" : "#f59e0b" }}>{score}/{questions.length}</p>
+            <p className="text-xs text-white/40">{score >= threshold ? "Module validé ! Progression sauvegardée." : "Relisez le cours et réessayez."}</p>
+            {score >= threshold && (
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.1)] px-3 py-1 text-xs font-bold text-[#34d399]">
+                <CheckCircle2 size={11} /> Quiz validé
+              </motion.div>
+            )}
+            <button onClick={reset} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white transition-colors">
+              <RotateCcw size={11} /> Rejouer
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-white/40">Question {qIdx + 1}/{questions.length}</span>
+              <div className="flex gap-1">{questions.map((_, i) => <div key={i} className={`h-1.5 w-8 rounded-full transition-all ${i < qIdx ? "bg-[#a78bfa]" : i === qIdx ? "bg-[#a78bfa] opacity-50" : "bg-white/10"}`} />)}</div>
+            </div>
+            <AnimatePresence mode="wait">
+              <motion.div key={qIdx} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}>
+                <p className="text-sm font-bold text-white mb-3">{questions[qIdx]!.q}</p>
+                <div className="space-y-2">
+                  {questions[qIdx]!.opts.map((opt, i) => {
+                    const isCorrect = i === questions[qIdx]!.correct;
+                    const isSel = selected === i;
+                    const rev = selected !== null;
+                    return (
+                      <motion.button key={i} whileHover={!rev ? { x: 3 } : {}}
+                        onClick={() => handleAnswer(i)} disabled={rev}
+                        className={`w-full rounded-xl border px-4 py-2.5 text-left text-xs font-semibold transition-all ${
+                          !rev ? "border-white/8 bg-white/4 text-white/65 hover:border-white/20 hover:text-white" :
+                          isCorrect ? "border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.1)] text-[#34d399]" :
+                          isSel ? "border-[rgba(248,113,113,0.4)] bg-[rgba(248,113,113,0.1)] text-[#f87171]" :
+                          "border-white/4 bg-white/2 text-white/20"
+                        }`}>
+                        <span className="mr-2 font-black">{String.fromCharCode(65 + i)}.</span>{opt}
+                        {rev && isCorrect && <CheckCircle2 size={12} className="inline ml-2 text-[#34d399]" />}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    COMPOSANT — AI Tools Bar
 ───────────────────────────────────────────────────────── */
 function AiToolsBar({
@@ -563,6 +786,9 @@ function ChapterViewer({
         </div>
       </div>
 
+      {/* ── Vidéo ── */}
+      <VideoPlayer title={chapter.title} color={`rgb(${module.rgb})`} />
+
       {/* ── AI Tools Bar ── */}
       <AiToolsBar chapter={chapter} module={module} onOpenAssistant={onAskAssistant} />
 
@@ -697,6 +923,11 @@ function ChapterViewer({
             ))}
           </ul>
         </div>
+      )}
+
+      {/* ── Quiz interactif (chapitres type="quiz") ── */}
+      {chapter.type === "quiz" && (
+        <InlineModuleQuiz moduleId={module.id} onComplete={onComplete} />
       )}
 
       {/* ── Actions nav ── */}
@@ -1770,6 +2001,20 @@ function DashboardPanel({
   const totalModules   = COACHING_MODULES.length;
   const doneModules    = COACHING_MODULES.filter((m) => m.chapters.every((c) => completed.has(c.id))).length;
 
+  /* ─ Gamification ─ */
+  const xp         = completedCount * XP_PER_CHAPTER;
+  const levelInfo  = getLevel(xp);
+  const { streak } = loadStreak();
+
+  const BADGES = [
+    { id: "first",   label: "Premier pas",    icon: "🌱", desc: "1er chapitre terminé",     earned: completedCount >= 1   },
+    { id: "week",    label: "7 jours de suite",icon: "🔥", desc: `Streak actuel : ${streak}j`, earned: streak >= 7           },
+    { id: "halfway", label: "Mi-parcours",     icon: "⚡", desc: "50% du programme validé",   earned: overallPct >= 50      },
+    { id: "module1", label: "Module Expert",   icon: "🧠", desc: "1 module complété à 100%",  earned: doneModules >= 1      },
+    { id: "quizmaster", label: "Quiz Master",  icon: "🏆", desc: "5 chapitres quiz validés",  earned: COACHING_MODULES.flatMap(m => m.chapters).filter(c => c.type === "quiz" && completed.has(c.id)).length >= 5 },
+    { id: "certified",  label: "Certifié IA",  icon: "🎓", desc: "100% du programme !",       earned: overallPct === 100    },
+  ];
+
   /* Prochain chapitre non terminé */
   let nextModule:  Module  | null = null;
   let nextChapter: Chapter | null = null;
@@ -1791,12 +2036,72 @@ function DashboardPanel({
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-8">
 
       {/* ── En-tête ── */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Tableau de bord</p>
+          <h1 className="mt-1 text-2xl font-extrabold text-white">
+            {userName ? `Bonjour, ${userName.split(" ")[0]}` : "Bienvenue dans votre espace"}
+          </h1>
+          <p className="mt-1 text-sm text-white/40">Votre progression Coaching IA DJAMA</p>
+        </div>
+        {/* Streak */}
+        <div className="flex items-center gap-2 rounded-2xl border border-[rgba(249,168,38,0.25)] bg-[rgba(249,168,38,0.07)] px-4 py-2.5">
+          <span className="text-xl">🔥</span>
+          <div>
+            <p className="text-sm font-extrabold text-[#f9a826]">{streak} jour{streak !== 1 ? "s" : ""}</p>
+            <p className="text-[0.58rem] text-white/30">Série en cours</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Niveau XP ── */}
+      <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
+              style={{ background: levelInfo.color + "20", border: `1px solid ${levelInfo.color}35` }}>
+              {levelInfo.name === "Novice" ? "🌱" : levelInfo.name === "Apprenti" ? "📚" : levelInfo.name === "Praticien" ? "⚡" : levelInfo.name === "Expert IA" ? "🧠" : "🎓"}
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-white">{levelInfo.name}</p>
+              <p className="text-[0.6rem] text-white/35">{xp} XP total</p>
+            </div>
+          </div>
+          {levelInfo.nextName && (
+            <div className="text-right">
+              <p className="text-[0.58rem] text-white/30">Prochain niveau</p>
+              <p className="text-xs font-bold" style={{ color: levelInfo.color }}>{levelInfo.xpNext} XP → {levelInfo.nextName}</p>
+            </div>
+          )}
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-white/[0.07]">
+          <motion.div className="h-full rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${levelInfo.pct}%` }}
+            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            style={{ background: `linear-gradient(90deg, ${levelInfo.color}aa, ${levelInfo.color})` }} />
+        </div>
+        <p className="mt-1.5 text-[0.58rem] text-white/25">{levelInfo.pct}% vers {levelInfo.nextName ?? "niveau maximum"}</p>
+      </div>
+
+      {/* ── Badges ── */}
       <div>
-        <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Tableau de bord</p>
-        <h1 className="mt-1 text-2xl font-extrabold text-white">
-          {userName ? `Bonjour, ${userName.split(" ")[0]}` : "Bienvenue dans votre espace"}
-        </h1>
-        <p className="mt-1 text-sm text-white/40">Votre progression Coaching IA DJAMA</p>
+        <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Badges & Récompenses</p>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {BADGES.map((b) => (
+            <motion.div key={b.id}
+              whileHover={{ scale: 1.05 }}
+              className={`flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all ${
+                b.earned
+                  ? "border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.08)]"
+                  : "border-white/[0.05] bg-white/[0.02] opacity-40 grayscale"
+              }`}>
+              <span className="text-2xl">{b.icon}</span>
+              <p className="text-[0.6rem] font-bold text-white leading-tight">{b.label}</p>
+              <p className="text-[0.52rem] text-white/30 leading-snug">{b.desc}</p>
+            </motion.div>
+          ))}
+        </div>
       </div>
 
       {/* ── Progression globale ── */}
@@ -1865,11 +2170,35 @@ function DashboardPanel({
       )}
 
       {overallPct === 100 && (
-        <div className="rounded-2xl border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.06)] p-6 text-center">
-          <Award size={40} className="mx-auto mb-3 text-[#34d399]" />
-          <h3 className="text-lg font-extrabold text-white">Félicitations — Formation terminée !</h3>
-          <p className="mt-1.5 text-sm text-white/45">Vous avez complété l'intégralité du programme Coaching IA DJAMA.</p>
-        </div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          className="overflow-hidden rounded-2xl border border-[rgba(52,211,153,0.35)] bg-gradient-to-br from-[rgba(52,211,153,0.08)] to-[rgba(52,211,153,0.03)] p-7 text-center">
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.1)] shadow-[0_0_40px_rgba(52,211,153,0.2)]">
+            <Award size={40} className="text-[#34d399]" />
+          </div>
+          <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#34d399] mb-2">Certificat de réussite</p>
+          <h3 className="text-xl font-extrabold text-white">Formation Coaching IA DJAMA</h3>
+          <p className="mt-2 text-sm text-white/40">Complétée le {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</p>
+          <div className="mx-auto mt-5 flex w-fit flex-wrap justify-center gap-3">
+            <div className="rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.06)] px-4 py-2 text-xs font-bold text-[#34d399]">
+              {totalChapters} chapitres validés
+            </div>
+            <div className="rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.06)] px-4 py-2 text-xs font-bold text-[#34d399]">
+              {xp} XP obtenu
+            </div>
+            <div className="rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.06)] px-4 py-2 text-xs font-bold text-[#34d399]">
+              Maître IA 🎓
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const text = `🎓 Certificat Coaching IA DJAMA\n${userName ?? "Apprenant"} a terminé l'intégralité du programme Coaching IA DJAMA (${totalChapters} chapitres · ${xp} XP).\n\nFélicitations !`;
+              navigator.clipboard.writeText(text).catch(() => {});
+            }}
+            className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#34d399] to-[#10b981] px-6 py-3 text-sm font-bold text-black transition hover:opacity-90"
+          >
+            <Trophy size={14} /> Partager mon certificat
+          </button>
+        </motion.div>
       )}
 
       {/* ── Modules ── */}
@@ -2020,6 +2349,7 @@ export default function EspaceCoachingIA() {
     next.add(selectedChapterId);
     setCompleted(next);
     saveProgress(next);
+    bumpStreak();
   }
 
   function toggleFavorite() {

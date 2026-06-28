@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, ListChecks, Activity, Target, ArrowRight, Loader2, Plus,
   Play, Square, CornerDownLeft, AlertTriangle, Sparkles, FileText,
+  Link2, LayoutTemplate, Network,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -62,7 +63,7 @@ interface Task {
   estimated_minutes: number; time_spent: number;
   timer_started_at: string | null;
   is_recurring: boolean; recurrence: string;
-  linked_module: string; created_at: string;
+  linked_module: string; dependencies: string[]; created_at: string;
 }
 
 type Form = Omit<Task, "id" | "created_at">;
@@ -71,8 +72,102 @@ const BLANK: Form = {
   title: "", description: "", priority: "normal", status: "todo",
   category: "", due_date: "", due_time: "", responsible: "", assignees: [],
   subtasks: [], tags: [], estimated_minutes: 30, time_spent: 0,
-  timer_started_at: null, is_recurring: false, recurrence: "none", linked_module: "",
+  timer_started_at: null, is_recurring: false, recurrence: "none",
+  linked_module: "", dependencies: [],
 };
+
+const TASK_TEMPLATES: { icon: string; label: string; desc: string; form: Partial<Form> }[] = [
+  {
+    icon: "🚀", label: "Lancement produit",
+    desc: "Tâche de déploiement avec checklist complète",
+    form: {
+      title: "Lancement produit v1.0", category: "Développement", priority: "high",
+      estimated_minutes: 120,
+      tags: ["lancement", "prod"],
+      subtasks: [
+        { id: crypto.randomUUID(), title: "Tests de régression", done: false },
+        { id: crypto.randomUUID(), title: "Mise à jour documentation", done: false },
+        { id: crypto.randomUUID(), title: "Notifier l'équipe", done: false },
+        { id: crypto.randomUUID(), title: "Surveillance post-déploiement", done: false },
+      ],
+    },
+  },
+  {
+    icon: "📞", label: "Appel client",
+    desc: "Préparation et suivi d'un appel client",
+    form: {
+      title: "Appel client — suivi projet", category: "Commercial", priority: "high",
+      estimated_minutes: 60,
+      tags: ["client", "réunion"],
+      subtasks: [
+        { id: crypto.randomUUID(), title: "Préparer l'ordre du jour", done: false },
+        { id: crypto.randomUUID(), title: "Réviser les notes précédentes", done: false },
+        { id: crypto.randomUUID(), title: "Envoyer le compte-rendu", done: false },
+      ],
+    },
+  },
+  {
+    icon: "🐛", label: "Correction bug",
+    desc: "Résolution d'un bug en production",
+    form: {
+      title: "Corriger le bug : [description]", category: "Développement", priority: "urgent",
+      estimated_minutes: 90,
+      tags: ["bug", "hotfix"],
+      subtasks: [
+        { id: crypto.randomUUID(), title: "Reproduire le bug", done: false },
+        { id: crypto.randomUUID(), title: "Identifier la cause racine", done: false },
+        { id: crypto.randomUUID(), title: "Implémenter le fix", done: false },
+        { id: crypto.randomUUID(), title: "Tester la correction", done: false },
+      ],
+    },
+  },
+  {
+    icon: "📝", label: "Article de blog",
+    desc: "Rédaction d'un article de contenu",
+    form: {
+      title: "Rédiger article : [sujet]", category: "Marketing", priority: "normal",
+      estimated_minutes: 180,
+      tags: ["contenu", "blog"],
+      subtasks: [
+        { id: crypto.randomUUID(), title: "Recherche et plan", done: false },
+        { id: crypto.randomUUID(), title: "Premier brouillon", done: false },
+        { id: crypto.randomUUID(), title: "Révision et SEO", done: false },
+        { id: crypto.randomUUID(), title: "Publication", done: false },
+      ],
+    },
+  },
+  {
+    icon: "🎨", label: "Design UI",
+    desc: "Création d'un composant ou écran",
+    form: {
+      title: "Design : [composant]", category: "Design", priority: "normal",
+      estimated_minutes: 120,
+      tags: ["design", "ui"],
+      subtasks: [
+        { id: crypto.randomUUID(), title: "Wireframe rapide", done: false },
+        { id: crypto.randomUUID(), title: "Maquette haute fidélité", done: false },
+        { id: crypto.randomUUID(), title: "Revue design", done: false },
+        { id: crypto.randomUUID(), title: "Handoff développeur", done: false },
+      ],
+    },
+  },
+  {
+    icon: "📊", label: "Rapport mensuel",
+    desc: "Préparation du rapport de performance",
+    form: {
+      title: "Rapport mensuel — [mois]", category: "Finance", priority: "high",
+      estimated_minutes: 90,
+      recurrence: "monthly", is_recurring: true,
+      tags: ["rapport", "kpi"],
+      subtasks: [
+        { id: crypto.randomUUID(), title: "Collecter les données", done: false },
+        { id: crypto.randomUUID(), title: "Mettre à jour les KPIs", done: false },
+        { id: crypto.randomUUID(), title: "Rédiger le commentaire", done: false },
+        { id: crypto.randomUUID(), title: "Envoyer à la direction", done: false },
+      ],
+    },
+  },
+];
 
 function parseTask(r: Record<string, unknown>): Task {
   let subtasks: Sub[] = [];
@@ -99,6 +194,7 @@ function parseTask(r: Record<string, unknown>): Task {
     is_recurring: Boolean(r.is_recurring),
     recurrence: String(r.recurrence ?? "none"),
     linked_module: String(r.linked_module ?? ""),
+    dependencies: Array.isArray(r.dependencies) ? r.dependencies.map(String) : [],
     created_at: String(r.created_at ?? ""),
   };
 }
@@ -205,15 +301,31 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
         {task.title}
       </p>
 
-            {task.category && (
-        <span className="inline-block rounded-full bg-violet-500/10 px-2 py-0.5 text-[0.58rem] text-violet-300/80 mb-2">
-          {task.category}
-        </span>
-      )}
+            <div className="flex flex-wrap gap-1 mb-2">
+        {task.category && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[0.58rem] text-violet-300/80">
+            {task.category}
+          </span>
+        )}
+        {task.tags.slice(0, 3).map(tag => (
+          <span key={tag} className="inline-flex items-center gap-0.5 rounded-full bg-white/6 px-2 py-0.5 text-[0.55rem] text-white/40 border border-white/8">
+            #{tag}
+          </span>
+        ))}
+        {task.tags.length > 3 && (
+          <span className="text-[0.55rem] text-white/25">+{task.tags.length - 3}</span>
+        )}
+      </div>
 
             <div className="mb-2">
         <PBadge p={task.priority} />
       </div>
+
+      {task.dependencies.length > 0 && (
+        <div className="mb-1.5 flex items-center gap-1 text-[0.58rem] text-amber-400/70">
+          <Link2 size={9} /> Bloqué par {task.dependencies.length} tâche{task.dependencies.length > 1 ? "s" : ""}
+        </div>
+      )}
 
             <SubBar subs={task.subtasks} />
 
@@ -370,6 +482,8 @@ export default function ProductivitePage() {
   const [userId,          setUserId]          = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting,        setDeleting]        = useState(false);
+  const [showTemplates,   setShowTemplates]   = useState(false);
+  const [depSearch,       setDepSearch]       = useState("");
 
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
@@ -423,6 +537,7 @@ export default function ProductivitePage() {
       estimated_minutes: t.estimated_minutes, time_spent: t.time_spent,
       timer_started_at: t.timer_started_at, is_recurring: t.is_recurring,
       recurrence: t.recurrence, linked_module: t.linked_module,
+      dependencies: [...t.dependencies],
     });
     setEditId(t.id); setShowModal(true);
     loadComments(t.id);
@@ -447,7 +562,7 @@ export default function ProductivitePage() {
       estimated_minutes: form.estimated_minutes, time_spent: form.time_spent,
       timer_started_at: form.timer_started_at,
       is_recurring: form.is_recurring, recurrence: form.recurrence,
-      linked_module: form.linked_module,
+      linked_module: form.linked_module, dependencies: form.dependencies,
     };
     if (editId) {
       const { error } = await supabase.from("productivity_tasks").update(payload).eq("id", editId);
@@ -542,6 +657,21 @@ export default function ProductivitePage() {
     setNewAssignee("");
   };
 
+  const applyTemplate = (tpl: typeof TASK_TEMPLATES[0]) => {
+    setForm(f => ({ ...f, ...tpl.form }));
+    setShowTemplates(false);
+    setShowModal(true);
+  };
+
+  const toggleDependency = (taskId: string) => {
+    setForm(f => ({
+      ...f,
+      dependencies: f.dependencies.includes(taskId)
+        ? f.dependencies.filter(d => d !== taskId)
+        : [...f.dependencies, taskId],
+    }));
+  };
+
   const filtered = tasks.filter(t => {
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (fprio  && t.priority !== fprio) return false;
@@ -600,6 +730,12 @@ export default function ProductivitePage() {
                   ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
                   : "border-white/8 text-white/50 hover:border-violet-500/30 hover:text-violet-300"}`}>
                 <Sparkles size={13}/> IA
+              </button>
+              <button onClick={() => setShowTemplates(s => !s)}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${showTemplates
+                  ? "border-amber-500/50 bg-amber-500/20 text-amber-300"
+                  : "border-white/8 text-white/50 hover:border-amber-500/30 hover:text-amber-300"}`}>
+                <LayoutTemplate size={13}/> Templates
               </button>
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={() => openNew()}
@@ -1042,6 +1178,44 @@ export default function ProductivitePage() {
                   </div>
                 </div>
 
+                {/* ── Dépendances ── */}
+                <div>
+                  <label className="text-[0.68rem] text-white/40 mb-1.5 block flex items-center gap-1.5">
+                    <Link2 size={11} className="text-amber-400" /> Dépendances — tâches bloquantes ({form.dependencies.length})
+                  </label>
+                  {form.dependencies.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {form.dependencies.map(depId => {
+                        const dep = tasks.find(t => t.id === depId);
+                        return dep ? (
+                          <span key={depId} className="flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/8 pl-2 pr-1.5 py-0.5 text-[0.62rem] text-amber-300">
+                            <Network size={9}/> {dep.title.slice(0, 30)}{dep.title.length > 30 ? "…" : ""}
+                            <button onClick={() => toggleDependency(depId)} className="text-amber-400/60 hover:text-red-400 transition ml-0.5">×</button>
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                  <div className="rounded-xl border border-white/8 bg-white/4 overflow-hidden">
+                    <input value={depSearch} onChange={e => setDepSearch(e.target.value)}
+                      placeholder="🔍 Rechercher une tâche à lier…"
+                      className="w-full bg-transparent px-3 py-2 text-xs text-white/60 outline-none placeholder:text-white/25 border-b border-white/6" />
+                    <div className="max-h-28 overflow-y-auto p-1">
+                      {tasks.filter(t => t.id !== editId && (depSearch === "" || t.title.toLowerCase().includes(depSearch.toLowerCase()))).slice(0, 6).map(t => (
+                        <button key={t.id} onClick={() => toggleDependency(t.id)}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition ${form.dependencies.includes(t.id) ? "bg-amber-500/15 text-amber-300" : "text-white/55 hover:bg-white/5"}`}>
+                          <span className="h-2 w-2 rounded-full shrink-0" style={{ background: STAT[t.status].col }} />
+                          <span className="flex-1 truncate">{t.title}</span>
+                          {form.dependencies.includes(t.id) && <span className="text-amber-400 text-[0.6rem]">✓ Liée</span>}
+                        </button>
+                      ))}
+                      {tasks.filter(t => t.id !== editId).length === 0 && (
+                        <p className="text-center text-[0.62rem] text-white/20 py-3">Aucune autre tâche</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                                 {editId && (
                   <div className="border-t border-white/6 pt-5">
                     <label className="text-[0.68rem] text-white/40 mb-3 block">
@@ -1107,6 +1281,54 @@ export default function ProductivitePage() {
 
             <AnimatePresence>
         {showAI && <AiPanel tasks={tasks} onClose={() => setShowAI(false)} />}
+      </AnimatePresence>
+
+      {/* ── Templates panel ── */}
+      <AnimatePresence>
+        {showTemplates && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowTemplates(false)}>
+            <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              className="w-full max-w-2xl rounded-3xl border border-white/8 bg-[#0e1420] shadow-2xl overflow-hidden"
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/25">
+                    <LayoutTemplate size={15} className="text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Templates de tâches</p>
+                    <p className="text-[0.62rem] text-white/35">Cliquez pour pré-remplir le formulaire</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowTemplates(false)} className="text-white/30 hover:text-white/70 text-xl leading-none">×</button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 p-5">
+                {TASK_TEMPLATES.map(tpl => (
+                  <motion.button key={tpl.label} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    onClick={() => { setForm({ ...BLANK, ...tpl.form }); setEditId(null); setComments([]); setShowModal(true); setShowTemplates(false); }}
+                    className="flex items-start gap-3 rounded-2xl border border-white/8 bg-white/4 p-4 text-left transition hover:border-amber-500/30 hover:bg-amber-500/5">
+                    <span className="text-2xl shrink-0">{tpl.icon}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-white">{tpl.label}</p>
+                      <p className="text-[0.65rem] text-white/40 mt-0.5 leading-snug">{tpl.desc}</p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {tpl.form.tags?.map(tag => (
+                          <span key={tag} className="rounded-full bg-white/6 px-2 py-0.5 text-[0.55rem] text-white/40">#{tag}</span>
+                        ))}
+                        <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[0.55rem] text-amber-400">
+                          {tpl.form.subtasks?.length ?? 0} sous-tâches
+                        </span>
+                      </div>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <ToastStack toasts={toasts} remove={removeToast} />
