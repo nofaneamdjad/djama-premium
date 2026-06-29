@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { staggerContainer, cardReveal, fadeIn, viewport } from "@/lib/animations";
 import type { ElementType, ReactNode } from "react";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 export interface SvcFeature {
@@ -28,6 +30,7 @@ export interface SvcPlan {
   desc: string;
   features: string[];
   hot?: boolean;
+  checkoutRoute?: string;
 }
 export interface SvcStat {
   value: string;
@@ -60,6 +63,40 @@ export interface ServicePageShellProps {
 }
 
 const ease = [0.16, 1, 0.3, 1] as const;
+
+/* ─── Checkout button pour plans individuels ────────────────────────── */
+function CheckoutPlanButton({ route, color, colorRGB, hot }: { route: string; color: string; colorRGB: string; hot: boolean }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const res = await fetch(route, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user?.id ?? null, userEmail: user?.email ?? null }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch { /* silencieux */ }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-[0.83rem] font-bold transition-all duration-200 hover:opacity-90 disabled:opacity-60"
+      style={hot
+        ? { background: color, color: "#0f172a" }
+        : { background: `rgba(${colorRGB},0.08)`, color, border: `1px solid rgba(${colorRGB},0.22)` }
+      }
+    >
+      {loading ? <><Loader2 size={13} className="animate-spin" /> Redirection…</> : <>Choisir cette offre <ArrowRight size={13} /></>}
+    </button>
+  );
+}
 
 /* ─── Shell ─────────────────────────────────────────────────────────── */
 export default function ServicePageShell({
@@ -289,7 +326,7 @@ export default function ServicePageShell({
             </motion.div>
 
             <div className={`grid gap-5 ${plans.length === 1 ? "max-w-sm mx-auto" : plans.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
-              {plans.map(({ name, price, unit, desc, features: pf, hot }) => (
+              {plans.map(({ name, price, unit, desc, features: pf, hot, checkoutRoute }) => (
                 <motion.div
                   key={name} variants={cardReveal}
                   className="relative overflow-hidden rounded-2xl border p-6 shadow-[0_4px_20px_rgba(0,0,0,.08)]"
@@ -320,16 +357,21 @@ export default function ServicePageShell({
                       </li>
                     ))}
                   </ul>
-                  <Link
-                    href={ctaHref}
-                    className="mt-5 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.83rem] font-bold transition-all duration-200 hover:opacity-90"
-                    style={hot
-                      ? { background: color, color: "#0f172a" }
-                      : { background: `rgba(${colorRGB},0.08)`, color, border: `1px solid rgba(${colorRGB},0.22)` }
-                    }
-                  >
-                    Choisir cette offre <ArrowRight size={13} />
-                  </Link>
+                  {checkoutRoute
+                    ? <CheckoutPlanButton route={checkoutRoute} color={color} colorRGB={colorRGB} hot={!!hot} />
+                    : (
+                      <Link
+                        href={ctaHref ?? "#"}
+                        className="mt-5 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.83rem] font-bold transition-all duration-200 hover:opacity-90"
+                        style={hot
+                          ? { background: color, color: "#0f172a" }
+                          : { background: `rgba(${colorRGB},0.08)`, color, border: `1px solid rgba(${colorRGB},0.22)` }
+                        }
+                      >
+                        Choisir cette offre <ArrowRight size={13} />
+                      </Link>
+                    )
+                  }
                 </motion.div>
               ))}
             </div>

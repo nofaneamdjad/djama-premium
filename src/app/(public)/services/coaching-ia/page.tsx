@@ -167,6 +167,7 @@ export default function CoachingIAPage() {
             "Satisfait ou remboursé 7j",
           ],
           hot: false,
+          checkoutRoute: "/api/checkout/coaching-ia",
         },
       ]}
     />

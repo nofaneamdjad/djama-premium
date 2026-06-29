@@ -389,6 +389,27 @@ const HERO_STATS = [
   { value: "Sans", label: "engagement",            Icon: ShieldCheck },
 ];
 
+function CoachingPayButton() {
+  const [loading, setLoading] = useState(false);
+  async function pay() {
+    setLoading(true);
+    try {
+      const { data: { user } } = await (await import("@/lib/supabase")).supabase.auth.getUser();
+      const res  = await fetch("/api/checkout/coaching-ia", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user?.id ?? null, userEmail: user?.email ?? null }) });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch { /* silencieux */ }
+    finally { setLoading(false); }
+  }
+  return (
+    <button onClick={pay} disabled={loading}
+      className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.75rem] font-bold text-gray-600 transition hover:text-[#a78bfa] disabled:opacity-60">
+      {loading ? <Gem size={11} className="animate-spin text-[#a78bfa]" /> : null}
+      {loading ? "…" : <><ArrowRight size={11} /> Acheter</>}
+    </button>
+  );
+}
+
 function HomeContent() {
   const data                  = getSiteData();
   useLanguage();
@@ -938,9 +959,7 @@ function HomeContent() {
                       <span className="mb-0.5 text-[0.6rem] text-gray-400 line-through">350€</span>
                     </div>
                   </div>
-                  <Link href="/services/coaching-ia" className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.75rem] font-bold text-gray-600 transition hover:text-[#a78bfa]">
-                    Voir <ArrowRight size={11} />
-                  </Link>
+                  <CoachingPayButton />
                 </div>
               </div>
             </div>
