@@ -24,6 +24,7 @@ import { useLanguage } from "@/lib/language-context";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import PartnerLogosSection from "@/components/PartnerLogosSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
+import StripeButton from "@/components/ui/StripeButton";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD  = "#c9a55a";
@@ -1052,10 +1053,11 @@ function HomeContent() {
                   </li>
                 ))}
               </ul>
-              <Link href="/espace-client" className="block w-full rounded-xl py-3 text-center text-sm font-black text-[#1a1000] transition hover:opacity-90"
-                style={{ background: `linear-gradient(135deg,${GOLD},#e2ba70)` }}>
-                Commencer maintenant →
-              </Link>
+              <StripeButton
+                billing={parAn ? "yearly" : "monthly"}
+                label={parAn ? "Commencer — 9,90€/mois →" : "Commencer — 11,90€/mois →"}
+                className="rounded-xl py-3 text-sm font-black"
+              />
               <p className="mt-3 text-center text-[0.6rem] text-white/30">Paiement sécurisé · Accès immédiat</p>
             </motion.div>
 

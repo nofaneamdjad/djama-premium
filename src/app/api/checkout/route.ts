@@ -10,6 +10,7 @@ const CheckoutSchema = z.object({
   userId:        z.string().uuid().optional(),
   userEmail:     z.string().email().optional(),
   promotionCode: z.string().max(50).optional(),
+  billing:       z.enum(["monthly", "yearly"]).optional(),
 }).optional();
 
 /* ─────────────────────────────────────────────────────────────
@@ -73,6 +74,7 @@ export async function POST(req: Request) {
   let userId: string | undefined;
   let userEmail: string | undefined;
   let promotionCode: string | undefined;
+  let billing: "monthly" | "yearly" = "monthly";
   try {
     const raw = await req.json();
     const parsed = CheckoutSchema.safeParse(raw);
@@ -80,6 +82,7 @@ export async function POST(req: Request) {
       userId        = parsed.data.userId;
       userEmail     = parsed.data.userEmail;
       promotionCode = parsed.data.promotionCode;
+      billing       = parsed.data.billing ?? "monthly";
     }
   } catch {
     /* body absent ou non-JSON → pas grave, on continue sans */
@@ -105,12 +108,30 @@ export async function POST(req: Request) {
       promotionCodeId = codes.data[0].id;
     }
 
+    /* Sélection du price ID selon la facturation */
+    const isYearly = billing === "yearly";
+    const priceId  = isYearly
+      ? process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY
+      : process.env.STRIPE_PRICE_ID;
+
+    if (!priceId) {
+      const missing = isYearly ? "NEXT_PUBLIC_STRIPE_PRICE_YEARLY" : "STRIPE_PRICE_ID";
+      return NextResponse.json(
+        { error: `Variable d'environnement manquante : ${missing}` },
+        { status: 500 }
+      );
+    }
+
+    const submitMessage = isYearly
+      ? "Vous serez débité de 118,80 € par an (9,90 €/mois). Sans engagement, résiliable à tout moment."
+      : "Vous serez débité de 11,90 € chaque mois. Sans engagement, résiliable à tout moment.";
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID!,
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -131,10 +152,7 @@ export async function POST(req: Request) {
       locale: "fr",
 
       custom_text: {
-        submit: {
-          message:
-            "Vous serez débité de 11,90 € chaque mois. Sans engagement, résiliable à tout moment.",
-        },
+        submit: { message: submitMessage },
       },
     });
 

@@ -14,11 +14,13 @@ import { supabase } from "@/lib/supabase";
 interface StripeButtonProps {
   label?: string;
   className?: string;
+  billing?: "monthly" | "yearly";
 }
 
 export default function StripeButton({
   label = "S'abonner pour 11,90€",
   className = "",
+  billing = "monthly",
 }: StripeButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
@@ -37,6 +39,7 @@ export default function StripeButton({
         body: JSON.stringify({
           userId:    user?.id    ?? null,
           userEmail: user?.email ?? null,
+          billing,
         }),
       });
 
