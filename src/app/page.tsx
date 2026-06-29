@@ -923,6 +923,13 @@ function HomeContent() {
                   <Shield size={10} style={{ color: "#4ade80" }} />
                   <span className="text-[0.65rem] font-semibold text-emerald-600">Satisfait ou remboursé — 7 jours</span>
                 </div>
+                <Link
+                  href="/services/coaching-ia"
+                  className="inline-flex items-center gap-1.5 text-[0.72rem] font-bold transition-colors"
+                  style={{ color: "#a78bfa" }}
+                >
+                  Voir la présentation complète <ArrowRight size={11} />
+                </Link>
               </div>
 
               {/* Droite — tarifs */}
