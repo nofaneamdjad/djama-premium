@@ -36,6 +36,7 @@ const COLUMNS: Column[] = [
     title: "Plateforme", titleEn: "Platform",
     items: [
       { label: "Espace client",     labelEn: "Client area",    href: "/espace-client"          },
+      { label: "DJAMA Pro",         labelEn: "DJAMA Pro",      href: "/abonnement"             },
       { label: "Tarifs",            labelEn: "Pricing",        href: "/abonnement"             },
       { label: "Nos réalisations",  labelEn: "Portfolio",      href: "/realisations"           },
       { label: "À propos",          labelEn: "About us",       href: "/a-propos"               },
