@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Suspense, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
-import { Eye, EyeOff, AlertCircle, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, RefreshCw, CheckCircle2, ChevronLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -34,8 +34,6 @@ function SplashScreen({ visible }: { visible: boolean }) {
           >
             <Image src="/logo-navbar.png" alt="DJAMA" width={220} height={50} className="h-[46px] w-auto object-contain" />
           </motion.div>
-
-          {/* Progress bar Odoo-style */}
           <div className="absolute bottom-12 left-8 right-8 h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.10)" }}>
             <motion.div
               className="h-full rounded-full"
@@ -69,6 +67,7 @@ function LoginPageInner() {
   const rawRedirect  = searchParams.get("redirect") ?? "/client";
   const redirectTo   = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/client";
 
+  const [step,          setStep]          = useState<"welcome"|"form">("welcome");
   const [email,         setEmail]         = useState("");
   const [password,      setPassword]      = useState("");
   const [showPwd,       setShowPwd]       = useState(false);
@@ -138,202 +137,242 @@ function LoginPageInner() {
 
   return (
     <div
-      className="relative flex min-h-screen flex-col items-center justify-center px-5 pb-10 pt-14"
+      className="relative flex min-h-screen flex-col"
       style={{ background: `linear-gradient(175deg, #1a0c35 0%, ${BG} 50%, #060c18 100%)` }}
     >
       <SplashScreen visible={showSplash} />
 
       {/* Orb */}
-      <div aria-hidden className="pointer-events-none fixed left-1/2 top-0 h-[320px] w-[320px] -translate-x-1/2 rounded-full blur-[100px] opacity-25"
-        style={{ background: `rgba(${GOLDR},0.40)` }} />
+      <div aria-hidden className="pointer-events-none fixed left-1/2 top-[-5%] h-[400px] w-[400px] -translate-x-1/2 rounded-full blur-[120px]"
+        style={{ background: `rgba(${GOLDR},0.12)` }} />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease }}
-        className="w-full max-w-[420px]"
-      >
-        {/* Logo — grand, centré */}
-        <div className="mb-12 flex justify-center">
-          <Link href="/">
-            <Image src="/logo-navbar.png" alt="DJAMA" width={240} height={54} className="h-[48px] w-auto object-contain" priority />
-          </Link>
-        </div>
+      <AnimatePresence mode="wait">
 
-        {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-3">
-
-          {/* Email */}
-          <div
-            className="rounded-2xl px-4 py-3.5"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}
+        {/* ── Écran d'accueil ── */}
+        {step === "welcome" && (
+          <motion.div
+            key="welcome"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4, ease }}
+            className="flex flex-1 flex-col items-center justify-between px-6 pb-10 pt-[15vh]"
           >
-            <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>
-              Adresse e-mail
-            </p>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="vous@exemple.com"
-              autoComplete="email"
-              required
-              autoFocus
-              className="w-full bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
-            />
-          </div>
-
-          {/* Password */}
-          <div
-            className="rounded-2xl px-4 py-3.5"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}
-          >
-            <div className="mb-0.5 flex items-center justify-between">
-              <p className="text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Mot de passe</p>
-              <Link
-                href="/forgot-password"
-                className="text-[0.68rem] font-medium transition"
+            {/* Logo + tagline */}
+            <div className="flex flex-col items-center gap-5">
+              <Link href="/">
+                <Image src="/logo-navbar.png" alt="DJAMA" width={240} height={54} className="h-[50px] w-auto object-contain" priority />
+              </Link>
+              <p
+                className="text-[0.75rem] font-black uppercase tracking-[0.22em]"
                 style={{ color: `rgba(${GOLDR},0.70)` }}
               >
-                Oublié ?
-              </Link>
+                Votre espace professionnel
+              </p>
             </div>
-            <div className="flex items-center">
-              <input
-                type={showPwd ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                required
-                className="flex-1 bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
-              />
-              <button
+
+            {/* Boutons */}
+            <div className="w-full max-w-[400px] space-y-3">
+              {/* SE CONNECTER */}
+              <motion.button
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1, ease }}
+                onClick={() => setStep("form")}
+                whileTap={{ scale: 0.97 }}
+                className="w-full rounded-full py-4 text-[1rem] font-black uppercase tracking-widest text-white transition-all"
+                style={{
+                  background: `linear-gradient(135deg, rgba(${GOLDR},0.95) 0%, rgba(${GOLDR},0.75) 100%)`,
+                  boxShadow: `0 8px 30px rgba(${GOLDR},0.30)`,
+                  letterSpacing: "0.08em",
+                }}
+              >
+                Se connecter
+              </motion.button>
+
+              {/* Créer un compte */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.18, ease }}
+              >
+                <Link
+                  href="/register"
+                  className="flex w-full items-center justify-center rounded-full py-4 text-[1rem] font-semibold transition-all"
+                  style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.80)" }}
+                >
+                  Créer un compte
+                </Link>
+              </motion.div>
+
+              {/* Google */}
+              <motion.button
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.24, ease }}
                 type="button"
-                onClick={() => setShowPwd((v) => !v)}
-                className="ml-2 shrink-0 transition"
-                style={{ color: "rgba(255,255,255,0.35)" }}
+                onClick={handleGoogleAuth}
+                disabled={googleLoading}
+                whileTap={{ scale: 0.97 }}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-[0.88rem] font-medium transition-all disabled:opacity-50"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.60)" }}
               >
-                {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+                {googleLoading ? (
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                    className="inline-block h-4 w-4 rounded-full"
+                    style={{ border: "2px solid rgba(255,255,255,0.15)", borderTopColor: "rgba(255,255,255,0.7)" }}
+                  />
+                ) : <GoogleIcon />}
+                {googleLoading ? "Connexion…" : "Continuer avec Google"}
+              </motion.button>
             </div>
-          </div>
 
-          {/* Messages */}
-          <AnimatePresence mode="wait">
-            {resendOk && (
-              <motion.div
-                key="ok"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden rounded-xl px-3.5 py-3"
-                style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.22)" }}
+            {/* Bas de page */}
+            <div className="flex flex-col items-center gap-3">
+              <Link
+                href="/espace-client"
+                className="text-[0.78rem] transition"
+                style={{ color: "rgba(255,255,255,0.28)" }}
               >
-                <div className="flex gap-2.5">
-                  <CheckCircle2 size={13} className="mt-0.5 shrink-0" style={{ color: "#10b981" }} />
-                  <p className="text-xs" style={{ color: "rgba(110,230,180,0.90)" }}>
-                    Email renvoyé à <strong>{email}</strong>. Vérifiez vos spams.
-                  </p>
+                Connexion espace équipe
+              </Link>
+              <div className="flex flex-wrap justify-center gap-4 text-[0.68rem]" style={{ color: "rgba(255,255,255,0.18)" }}>
+                <Link href="/legal/confidentialite" className="transition hover:opacity-60">Confidentialité</Link>
+                <span>·</span>
+                <Link href="/legal/cgu" className="transition hover:opacity-60">Conditions</Link>
+                <span>·</span>
+                <Link href="/contact" className="transition hover:opacity-60">Aide</Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Formulaire connexion ── */}
+        {step === "form" && (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease }}
+            className="flex flex-1 flex-col px-6 pb-10 pt-12"
+          >
+            {/* Retour */}
+            <button
+              onClick={() => { setStep("welcome"); setError(""); }}
+              className="mb-8 flex items-center gap-1.5 self-start text-[0.82rem] font-medium transition"
+              style={{ color: "rgba(255,255,255,0.45)" }}
+            >
+              <ChevronLeft size={16} />
+              Retour
+            </button>
+
+            {/* Logo + titre */}
+            <div className="mb-8 flex flex-col items-center">
+              <Link href="/">
+                <Image src="/logo-navbar.png" alt="DJAMA" width={200} height={45} className="mb-6 h-[36px] w-auto object-contain" priority />
+              </Link>
+              <h1 className="text-[1.6rem] font-extrabold text-white">Bon retour 👋</h1>
+              <p className="mt-1 text-[0.85rem]" style={{ color: "rgba(255,255,255,0.40)" }}>Connectez-vous à votre espace client</p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-3">
+              {/* Email */}
+              <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Adresse e-mail</p>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="vous@exemple.com"
+                  autoComplete="email"
+                  required
+                  autoFocus
+                  className="w-full bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                <div className="mb-0.5 flex items-center justify-between">
+                  <p className="text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Mot de passe</p>
+                  <Link href="/forgot-password" className="text-[0.68rem] font-medium transition" style={{ color: `rgba(${GOLDR},0.70)` }}>
+                    Oublié ?
+                  </Link>
                 </div>
-              </motion.div>
-            )}
-            {error && (
-              <motion.div
-                key="err"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.22 }}
-                className="overflow-hidden rounded-xl px-3.5 py-3"
-                style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.22)" }}
+                <div className="flex items-center">
+                  <input
+                    type={showPwd ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
+                    className="flex-1 bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
+                  />
+                  <button type="button" onClick={() => setShowPwd((v) => !v)} className="ml-2 shrink-0 transition" style={{ color: "rgba(255,255,255,0.35)" }}>
+                    {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <AnimatePresence mode="wait">
+                {resendOk && (
+                  <motion.div key="ok" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden rounded-xl px-3.5 py-3" style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.22)" }}>
+                    <div className="flex gap-2.5">
+                      <CheckCircle2 size={13} className="mt-0.5 shrink-0" style={{ color: "#10b981" }} />
+                      <p className="text-xs" style={{ color: "rgba(110,230,180,0.90)" }}>Email renvoyé à <strong>{email}</strong>. Vérifiez vos spams.</p>
+                    </div>
+                  </motion.div>
+                )}
+                {error && (
+                  <motion.div key="err" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.22 }}
+                    className="overflow-hidden rounded-xl px-3.5 py-3" style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.22)" }}>
+                    <div className="flex gap-2.5">
+                      <AlertCircle size={13} className="mt-0.5 shrink-0" style={{ color: "#ef4444" }} />
+                      <div>
+                        <p className="text-xs" style={{ color: "rgba(255,160,160,0.90)" }}>{error}</p>
+                        {errorType === "credentials" && (
+                          <button type="button" onClick={handleResend} disabled={resending}
+                            className="mt-1.5 flex items-center gap-1 text-[0.68rem] font-semibold underline underline-offset-2 transition disabled:opacity-50"
+                            style={{ color: "rgba(255,255,255,0.55)" }}>
+                            <RefreshCw size={9} className={resending ? "animate-spin" : ""} />
+                            {resending ? "Envoi…" : "Renvoyer l'email de confirmation"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Submit */}
+              <motion.button
+                type="submit"
+                whileTap={{ scale: 0.98 }}
+                disabled={loading || googleLoading}
+                className="w-full rounded-full py-4 text-[1rem] font-black uppercase tracking-widest text-white transition-all disabled:opacity-60"
+                style={{
+                  background: `linear-gradient(135deg, rgba(${GOLDR},0.95) 0%, rgba(${GOLDR},0.75) 100%)`,
+                  boxShadow: `0 6px 24px rgba(${GOLDR},0.28)`,
+                  letterSpacing: "0.08em",
+                }}
               >
-                <div className="flex gap-2.5">
-                  <AlertCircle size={13} className="mt-0.5 shrink-0" style={{ color: "#ef4444" }} />
-                  <div>
-                    <p className="text-xs" style={{ color: "rgba(255,160,160,0.90)" }}>{error}</p>
-                    {errorType === "credentials" && (
-                      <button
-                        type="button"
-                        onClick={handleResend}
-                        disabled={resending}
-                        className="mt-1.5 flex items-center gap-1 text-[0.68rem] font-semibold underline underline-offset-2 transition disabled:opacity-50"
-                        style={{ color: "rgba(255,255,255,0.55)" }}
-                      >
-                        <RefreshCw size={9} className={resending ? "animate-spin" : ""} />
-                        {resending ? "Envoi…" : "Renvoyer l'email de confirmation"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                {loading ? (phase === "auth" ? "Vérification…" : "Ouverture…") : "Se connecter"}
+              </motion.button>
+            </form>
 
-          {/* CTA Se connecter */}
-          <motion.button
-            type="submit"
-            whileTap={{ scale: 0.98 }}
-            disabled={loading || googleLoading}
-            className="w-full rounded-2xl py-4 text-[1rem] font-bold uppercase tracking-wide text-white transition-all disabled:opacity-60"
-            style={{
-              background: `linear-gradient(135deg, rgba(${GOLDR},0.95) 0%, rgba(${GOLDR},0.72) 100%)`,
-              boxShadow: `0 6px 24px rgba(${GOLDR},0.28)`,
-              letterSpacing: "0.06em",
-            }}
-          >
-            {loading
-              ? phase === "auth" ? "Vérification…" : "Ouverture…"
-              : "SE CONNECTER"}
-          </motion.button>
-        </form>
-
-        {/* Google */}
-        <div className="mt-3">
-          <motion.button
-            type="button"
-            onClick={handleGoogleAuth}
-            disabled={googleLoading || loading}
-            whileTap={{ scale: 0.985 }}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl py-4 text-[0.95rem] font-semibold transition-all disabled:opacity-50"
-            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.80)" }}
-          >
-            {googleLoading ? (
-              <motion.span
-                animate={{ rotate: 360 }}
-                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                className="inline-block h-5 w-5 rounded-full"
-                style={{ border: "2px solid rgba(255,255,255,0.15)", borderTopColor: "rgba(255,255,255,0.7)" }}
-              />
-            ) : <GoogleIcon />}
-            {googleLoading ? "Connexion…" : "Continuer avec Google"}
-          </motion.button>
-        </div>
-
-        {/* Créer un compte */}
-        <p className="mt-8 text-center text-[0.95rem] font-semibold" style={{ color: GOLD }}>
-          <Link href="/register" className="transition hover:opacity-75">
-            Créer un compte
-          </Link>
-        </p>
-
-        {/* Terms */}
-        <p className="mt-6 text-center text-[0.70rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.22)" }}>
-          En continuant, vous acceptez les{" "}
-          <Link href="/legal/cgu" className="underline underline-offset-2 transition hover:opacity-60">CGU</Link>{" "}
-          et la{" "}
-          <Link href="/legal/confidentialite" className="underline underline-offset-2 transition hover:opacity-60">Politique de confidentialité</Link>
-        </p>
-
-        {/* Bottom links */}
-        <div className="mt-6 flex flex-wrap justify-center gap-4 text-[0.70rem]" style={{ color: "rgba(255,255,255,0.18)" }}>
-          <Link href="/legal/confidentialite" className="transition hover:opacity-60">Confidentialité</Link>
-          <span>·</span>
-          <Link href="/legal/cgu" className="transition hover:opacity-60">Conditions</Link>
-          <span>·</span>
-          <Link href="/contact" className="transition hover:opacity-60">Besoin d&apos;aide ?</Link>
-        </div>
-      </motion.div>
+            <p className="mt-6 text-center text-[0.85rem]" style={{ color: "rgba(255,255,255,0.35)" }}>
+              Pas encore de compte ?{" "}
+              <Link href="/register" className="font-bold transition" style={{ color: GOLD }}>Créer un compte</Link>
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
