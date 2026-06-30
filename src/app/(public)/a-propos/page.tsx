@@ -10,179 +10,93 @@ import {
   CheckCircle2, Rocket, Target, FileText,
   TrendingUp, BookOpen, Brain,
 } from "lucide-react";
+import { FadeReveal } from "@/components/ui/WordReveal";
+import { staggerContainerFast, cardReveal, viewport } from "@/lib/animations";
 
-/* ═══════════════════════════════════════════════════════════
-   CONSTANTES
-═══════════════════════════════════════════════════════════ */
 const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD = "#c9a55a";
 
+/* ── Données ───────────────────────────────────────────────── */
 const STATS = [
-  { value: "2022", label: "Année de création",  sub: "fondée par Nofane AMDJAD",    color: "#c9a55a" },
-  { value: "50+",  label: "Clients accompagnés", sub: "entrepreneurs & entreprises", color: "#a78bfa" },
-  { value: "100+", label: "Projets livrés",       sub: "web, apps, design, vidéo",   color: "#38bdf8" },
-  { value: "24h",  label: "Délai de réponse",     sub: "réactivité garantie",        color: "#4ade80" },
+  { value: "2022", label: "Année de création",   sub: "fondée par Nofane AMDJAD",    color: GOLD        },
+  { value: "50+",  label: "Clients accompagnés",  sub: "entrepreneurs & entreprises", color: "#a78bfa"   },
+  { value: "100+", label: "Projets livrés",        sub: "web, apps, design, vidéo",   color: "#38bdf8"   },
+  { value: "24h",  label: "Délai de réponse",      sub: "réactivité garantie",        color: "#4ade80"   },
 ];
 
 const VALUES = [
-  { Icon: ShieldCheck,   color: "#4ade80", title: "Fiabilité",       desc: "Délais respectés, livrables soignés, communication transparente à chaque étape." },
-  { Icon: TrendingUp,    color: "#c9a55a", title: "Croissance",      desc: "Chaque solution est pensée pour augmenter concrètement votre chiffre d'affaires." },
-  { Icon: Target,        color: "#38bdf8", title: "Efficacité",      desc: "Des process optimisés pour livrer vite et bien — sans technicité inutile." },
-  { Icon: HeartHandshake,color: "#f472b6", title: "Accompagnement",  desc: "Un suivi humain et personnalisé — pas un ticket de support anonyme." },
-  { Icon: Lightbulb,     color: "#a78bfa", title: "Innovation",      desc: "Veille constante pour intégrer l'IA et les meilleures technologies disponibles." },
-  { Icon: Globe,         color: "#f97316", title: "Accessibilité",   desc: "Des solutions adaptées à tous — artisan, auto-entrepreneur, PME ou étudiant." },
+  { Icon: ShieldCheck,    color: "#4ade80", title: "Fiabilité",       desc: "Délais respectés, livrables soignés, communication transparente à chaque étape." },
+  { Icon: TrendingUp,     color: GOLD,      title: "Croissance",      desc: "Chaque solution est pensée pour augmenter concrètement votre chiffre d'affaires." },
+  { Icon: Target,         color: "#38bdf8", title: "Efficacité",      desc: "Des process optimisés pour livrer vite et bien — sans technicité inutile." },
+  { Icon: HeartHandshake, color: "#f472b6", title: "Accompagnement",  desc: "Un suivi humain et personnalisé — pas un ticket de support anonyme." },
+  { Icon: Lightbulb,      color: "#a78bfa", title: "Innovation",      desc: "Veille constante pour intégrer l'IA et les meilleures technologies disponibles." },
+  { Icon: Globe,          color: "#f97316", title: "Accessibilité",   desc: "Des solutions adaptées à tous — artisan, auto-entrepreneur, PME ou étudiant." },
 ];
 
 const TEAM = [
-  {
-    name: "Nofane AMDJAD",
-    role: "Fondateur & CEO",
-    initials: "NA",
-    color: "#c9a55a",
-    bio: "En 2022, Nofane constate que de nombreuses petites entreprises ne savent pas répondre aux marchés publics ni privés, ni accéder aux aides disponibles. Il crée DJAMA pour combler ce manque — en accompagnant les entrepreneurs sur leurs démarches, leurs fournisseurs et leur croissance.",
-    tags: ["Marchés publics & privés", "Stratégie digitale", "IA & Automatisation"],
-  },
-  {
-    name: "Pôle Analyse de Marché",
-    role: "Analystes & Rédacteurs de dossiers",
-    initials: "AM",
-    color: "#f59e0b",
-    bio: "Une équipe spécialisée dans l'étude et l'analyse de marché. Elle décrypte les appels d'offres, identifie les opportunités, et prépare des dossiers solides et convaincants pour maximiser vos chances de remporter marchés publics et privés.",
-    tags: ["Analyse de marché", "Rédaction de dossiers", "Appels d'offres"],
-  },
-  {
-    name: "Pôle Sourcing & Fournisseurs",
-    role: "Experts sourcing & Négociateurs",
-    initials: "SF",
-    color: "#4ade80",
-    bio: "Des experts qui cherchent, sélectionnent et négocient pour vous les meilleurs fournisseurs adaptés à votre activité — en France et à l'international. L'objectif : vous obtenir les meilleures conditions pour réduire vos coûts et booster votre rentabilité.",
-    tags: ["Sourcing international", "Négociation fournisseurs", "Optimisation des coûts"],
-  },
-  {
-    name: "Pôle Création",
-    role: "Développeurs, Designers & Vidéastes",
-    initials: "PC",
-    color: "#a78bfa",
-    bio: "Une équipe créative dédiée à la conception de sites web, applications, visuels et montages vidéo. Chaque livrable est pensé pour projeter une image professionnelle et générer des résultats.",
-    tags: ["Création web & app", "Design & identité", "Montage vidéo"],
-  },
-  {
-    name: "Pôle Coaching & Soutien",
-    role: "Coaches IA & Professeurs experts",
-    initials: "CS",
-    color: "#38bdf8",
-    bio: "Des coaches spécialisés en intelligence artificielle et des professeurs experts pour accompagner entrepreneurs et étudiants dans leur montée en compétences — à leur rythme.",
-    tags: ["Coaching IA", "Soutien scolaire", "Formations"],
-  },
+  { name: "Nofane AMDJAD",          role: "Fondateur & CEO",                    initials: "NA", color: GOLD,      bio: "En 2022, Nofane constate que de nombreuses petites entreprises ne savent pas répondre aux marchés publics ni privés, ni accéder aux aides disponibles. Il crée DJAMA pour combler ce manque.", tags: ["Marchés publics & privés","Stratégie digitale","IA & Automatisation"] },
+  { name: "Pôle Analyse de Marché", role: "Analystes & Rédacteurs de dossiers", initials: "AM", color: "#f59e0b", bio: "Décryptage des appels d'offres, identification des opportunités et rédaction de dossiers solides pour maximiser vos chances sur marchés publics et privés.", tags: ["Analyse de marché","Rédaction de dossiers","Appels d'offres"] },
+  { name: "Pôle Sourcing",          role: "Experts sourcing & Négociateurs",    initials: "SF", color: "#4ade80", bio: "Recherche, sélection et négociation des meilleurs fournisseurs adaptés à votre activité — en France et à l'international — pour réduire vos coûts.", tags: ["Sourcing international","Négociation fournisseurs","Optimisation coûts"] },
+  { name: "Pôle Création",          role: "Développeurs, Designers & Vidéastes",initials: "PC", color: "#a78bfa", bio: "Conception de sites web, applications, visuels et montages vidéo. Chaque livrable est pensé pour projeter une image professionnelle et générer des résultats.", tags: ["Création web & app","Design & identité","Montage vidéo"] },
+  { name: "Pôle Coaching & Soutien",role: "Coaches IA & Professeurs experts",   initials: "CS", color: "#38bdf8", bio: "Coaches spécialisés en intelligence artificielle et professeurs experts pour accompagner entrepreneurs et étudiants dans leur montée en compétences.", tags: ["Coaching IA","Soutien scolaire","Formations"] },
 ];
 
 const MILESTONES = [
-  {
-    year: "2022",
-    color: "#c9a55a",
-    title: "Naissance de DJAMA",
-    desc: "Nofane AMDJAD crée DJAMA après avoir constaté que beaucoup de petites entreprises ne savaient pas répondre aux marchés publics et privés, ni comment accéder aux aides ou trouver des fournisseurs adaptés.",
-  },
-  {
-    year: "2023",
-    color: "#a78bfa",
-    title: "Expansion des services",
-    desc: "DJAMA étend son offre : création de sites web, applications, design, montage vidéo et accompagnement administratif complet — tout pour aider les entrepreneurs à augmenter leur chiffre d'affaires.",
-  },
-  {
-    year: "2025",
-    color: "#38bdf8",
-    title: "50+ clients, 100+ projets",
-    desc: "Un cap symbolique franchi — une communauté d'entrepreneurs qui nous font confiance pour développer leur activité et décrocher de nouveaux marchés.",
-  },
-  {
-    year: "2026",
-    color: "#4ade80",
-    title: "Lancement de la plateforme DJAMA PRO",
-    desc: "Premier outil tout-en-un : factures, CRM, trésorerie, chrono, contrats IA et bien plus. En parallèle : lancement du Coaching IA et du Soutien Scolaire avec des professeurs experts.",
-  },
+  { year: "2022", color: GOLD,      title: "Naissance de DJAMA",              desc: "Nofane AMDJAD crée DJAMA après avoir constaté que beaucoup de petites entreprises ne savaient pas répondre aux marchés publics et privés, ni accéder aux aides ou trouver des fournisseurs adaptés." },
+  { year: "2023", color: "#a78bfa", title: "Expansion des services",           desc: "DJAMA étend son offre : création web, applications, design, montage vidéo et accompagnement administratif complet — tout pour aider les entrepreneurs à augmenter leur CA." },
+  { year: "2025", color: "#38bdf8", title: "50+ clients, 100+ projets",        desc: "Un cap symbolique franchi — une communauté d'entrepreneurs qui nous font confiance pour développer leur activité et décrocher de nouveaux marchés." },
+  { year: "2026", color: "#4ade80", title: "Plateforme DJAMA PRO + Coaching IA",desc: "Premier outil tout-en-un : factures, CRM, trésorerie, contrats IA. En parallèle : lancement du Coaching IA et du Soutien Scolaire avec des professeurs experts." },
 ];
 
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT PHOTO FONDATEUR
-═══════════════════════════════════════════════════════════ */
+const SERVICES = [
+  { Icon: FileText,   color: GOLD,      title: "Marchés publics & privés", desc: "Rédaction et soumission de vos réponses aux appels d'offres pour décrocher de nouveaux contrats." },
+  { Icon: TrendingUp, color: "#4ade80", title: "Aides & subventions",      desc: "Identification et accompagnement pour accéder aux aides auxquelles votre entreprise a droit." },
+  { Icon: Globe,      color: "#38bdf8", title: "Fournisseurs & sourcing",  desc: "Recherche de fournisseurs adaptés à votre activité, en France et à l'international." },
+  { Icon: Rocket,     color: "#a78bfa", title: "Création web & app",       desc: "Sites vitrines, e-commerce, applications — conçus pour générer des résultats concrets." },
+  { Icon: Brain,      color: "#f472b6", title: "Coaching IA",              desc: "Apprenez à utiliser l'IA pour automatiser vos tâches et développer votre activité plus vite." },
+  { Icon: BookOpen,   color: "#f97316", title: "Soutien scolaire",         desc: "Des cours avec des professeurs experts pour accompagner vos enfants dans leur réussite scolaire." },
+];
+
+/* ── Photo fondateur ──────────────────────────────────────── */
 function FounderPhoto() {
   const [imgError, setImgError] = useState(false);
-
   return (
-    <div className="relative w-full max-w-[340px] md:max-w-full">
-      {/* Halo doré derrière */}
-      <div
-        className="absolute -inset-4 rounded-[2.5rem] opacity-25 blur-2xl"
-        style={{ background: `radial-gradient(ellipse, ${GOLD}80, transparent 70%)` }}
-      />
-      {/* Cadre */}
-      <div
-        className="relative overflow-hidden rounded-[1.75rem]"
-        style={{ boxShadow: `0 0 0 1.5px ${GOLD}40, 0 32px 80px rgba(0,0,0,0.7)` }}
-      >
+    <div className="relative w-full max-w-[320px] md:max-w-full">
+      <div className="absolute -inset-3 rounded-[2rem] opacity-30 blur-2xl" style={{ background: `radial-gradient(ellipse, ${GOLD}80, transparent 70%)` }} />
+      <div className="relative overflow-hidden rounded-[1.75rem]" style={{ boxShadow: `0 0 0 1.5px ${GOLD}40, 0 24px 60px rgba(0,0,0,0.25)` }}>
         {imgError ? (
-          /* Fallback avatar si photo manquante */
-          <div
-            className="flex aspect-square w-full items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${GOLD}20, ${GOLD}08)` }}
-          >
+          <div className="flex aspect-square w-full items-center justify-center" style={{ background: `linear-gradient(135deg, ${GOLD}15, ${GOLD}06)` }}>
             <div className="flex flex-col items-center gap-3">
-              <span
-                className="flex h-24 w-24 items-center justify-center rounded-3xl text-4xl font-black"
-                style={{ backgroundColor: GOLD + "25", color: GOLD, border: `2px solid ${GOLD}50` }}
-              >
-                NA
-              </span>
-              <span className="text-sm font-bold text-white/40">Photo bientôt disponible</span>
+              <span className="flex h-20 w-20 items-center justify-center rounded-3xl text-3xl font-black" style={{ backgroundColor: GOLD + "20", color: GOLD, border: `2px solid ${GOLD}40` }}>NA</span>
+              <span className="text-xs font-bold text-[var(--muted)]">Photo bientôt disponible</span>
             </div>
           </div>
         ) : (
-          <Image
-            src="/founder-nofane.jpg"
-            alt="Nofane AMDJAD — Fondateur de DJAMA"
-            width={420}
-            height={420}
-            className="w-full object-cover"
-            priority
-            onError={() => setImgError(true)}
-          />
+          <Image src="/founder-nofane.jpg" alt="Nofane AMDJAD — Fondateur DJAMA" width={420} height={420} className="w-full object-cover" priority onError={() => setImgError(true)} />
         )}
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PAGE
-═══════════════════════════════════════════════════════════ */
+/* ── Page ─────────────────────────────────────────────────── */
 export default function AProposPage() {
   return (
-    <div className="min-h-screen bg-[#080a0f] text-white">
+    <main className="overflow-x-hidden bg-white">
 
-      {/* ── Ambient glows ── */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute left-[-10%] top-[-5%] h-[700px] w-[700px] rounded-full bg-[rgba(201,165,90,0.05)] blur-[180px]" />
-        <div className="absolute right-[-10%] top-[30%] h-[500px] w-[500px] rounded-full bg-[rgba(139,92,246,0.04)] blur-[150px]" />
-        <div className="absolute bottom-[10%] left-[20%] h-[400px] w-[400px] rounded-full bg-[rgba(56,189,248,0.03)] blur-[130px]" />
-      </div>
+      {/* ═══ HERO ══════════════════════════════════════════════ */}
+      <section
+        className="hero-grid relative overflow-hidden px-4 pb-20 pt-32 sm:pb-32 sm:pt-44"
+        style={{ background: "linear-gradient(160deg, #1a0e30 0%, #0d1829 50%, #071525 100%)" }}
+      >
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-0 h-[600px] w-[700px] -translate-x-1/2 -translate-y-1/3 rounded-full blur-[120px]" style={{ background: `rgba(201,165,90,0.07)` }} />
+          <div className="absolute right-0 bottom-0 h-[300px] w-[300px] rounded-full bg-[rgba(167,139,250,0.05)] blur-[80px]" />
+        </div>
 
-      {/* ════════════════════════════════════════════
-          HERO
-      ════════════════════════════════════════════ */}
-      <section className="relative z-10 overflow-hidden pb-16 pt-40 sm:pt-48">
-        <div className="mx-auto max-w-5xl px-6">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease }}
-            className="mb-6 flex justify-center"
-          >
-            <span
-              className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
-              style={{ color: GOLD, borderColor: GOLD + "35", backgroundColor: GOLD + "10" }}
-            >
+        <div className="relative mx-auto max-w-4xl text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease }}>
+            <span className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-widest" style={{ color: GOLD, borderColor: GOLD + "35", backgroundColor: GOLD + "10" }}>
               <Star size={11} fill={GOLD} style={{ color: GOLD }} />
               Notre histoire & notre équipe
             </span>
@@ -191,209 +105,131 @@ export default function AProposPage() {
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease, delay: 0.08 }}
-            className="text-center text-4xl font-black leading-[1.1] tracking-tight sm:text-5xl md:text-6xl"
+            transition={{ duration: 0.7, ease, delay: 0.1 }}
+            className="mt-6 text-4xl font-black leading-[1.1] tracking-tight text-white sm:text-5xl md:text-6xl"
           >
-            <span className="text-white">Aider les entrepreneurs</span>
-            <br />
+            Aider les entrepreneurs<br />
             <span style={{ color: GOLD }}>à aller plus loin.</span>
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease, delay: 0.16 }}
-            className="mx-auto mt-6 max-w-2xl text-center text-base leading-relaxed text-white/50 sm:text-lg"
+            transition={{ duration: 0.6, ease, delay: 0.2 }}
+            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-white/50 sm:text-lg"
           >
             Créée en 2022 par Nofane AMDJAD, DJAMA accompagne les petites entreprises
             dans leurs marchés publics et privés, leurs aides, leurs fournisseurs,
-            leur présence digitale — et depuis 2026, leur maîtrise de l'IA.
+            leur présence digitale — et depuis 2026, leur maîtrise de l&apos;IA.
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease, delay: 0.25 }}
-            className="mt-8 flex flex-wrap justify-center gap-3"
+            transition={{ duration: 0.5, ease, delay: 0.3 }}
+            className="mt-10 flex flex-wrap justify-center gap-3"
           >
-            <Link href="/contact" className="btn-primary px-6 py-3">
-              Démarrer un projet <ArrowRight size={15} />
+            <Link href="/contact" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-7 py-3.5 text-sm font-extrabold text-black shadow-[0_4px_20px_rgba(201,165,90,0.35)] transition-shadow hover:shadow-[0_8px_36px_rgba(201,165,90,0.5)]">
+              <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+              <span className="relative flex items-center gap-2">Démarrer un projet <ArrowRight size={15} /></span>
             </Link>
-            <Link
-              href="/services"
-              className="flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-6 py-3 text-sm font-semibold text-white/70 transition hover:border-white/20 hover:text-white"
-            >
+            <Link href="/services" className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-7 py-3.5 text-sm font-bold text-white/70 transition-colors hover:bg-white/10 hover:text-white">
               Nos services
             </Link>
           </motion.div>
         </div>
       </section>
 
-      {/* ════════════════════════════════════════════
-          STATS
-      ════════════════════════════════════════════ */}
-      <section className="relative z-10 pb-16">
+      {/* ═══ STATS ═════════════════════════════════════════════ */}
+      <section className="border-b border-[var(--border)] bg-[#f9f7f4] py-10">
         <div className="mx-auto max-w-5xl px-6">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {STATS.map(({ value, label, sub, color }, i) => (
               <motion.div
                 key={label}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, ease, delay: i * 0.08 }}
-                className="relative overflow-hidden rounded-2xl border border-white/8 bg-[rgba(15,17,23,0.7)] px-5 py-5 text-center"
+                viewport={viewport}
+                transition={{ duration: 0.4, ease, delay: i * 0.07 }}
+                className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-white px-5 py-5 text-center shadow-sm"
               >
-                <div className="pointer-events-none absolute inset-0 opacity-20" style={{ background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${color}30 0%, transparent 70%)` }} />
-                <p className="relative text-3xl font-black" style={{ color }}>{value}</p>
-                <p className="relative mt-1 text-xs font-bold text-white/75">{label}</p>
-                <p className="relative mt-0.5 text-[0.6rem] text-white/30">{sub}</p>
+                <p className="text-3xl font-black" style={{ color }}>{value}</p>
+                <p className="mt-1 text-xs font-bold text-[var(--ink)]">{label}</p>
+                <p className="mt-0.5 text-[0.6rem] text-[var(--muted)]">{sub}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ════════════════════════════════════════════
-          FONDATEUR — photo + bio
-      ════════════════════════════════════════════ */}
-      <section className="relative z-10 py-16">
+      {/* ═══ FONDATEUR ═════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-5xl px-6">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease }}
-            className="mb-12 text-center"
-          >
-            <span
-              className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest"
-              style={{ color: GOLD, borderColor: GOLD + "30", backgroundColor: GOLD + "0d" }}
-            >
+          <FadeReveal className="mb-12 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest" style={{ color: GOLD, borderColor: GOLD + "30", backgroundColor: GOLD + "0d" }}>
               Le fondateur
             </span>
-            <h2 className="mt-3 text-3xl font-black text-white sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-[var(--ink)] sm:text-4xl">
               La personne derrière DJAMA.
             </h2>
-          </motion.div>
+          </FadeReveal>
 
-          {/* Mobile : photo dessus, texte dessous — Desktop : côte à côte */}
           <div className="grid gap-10 md:grid-cols-2 md:items-start">
-
-            {/* ── Photo + identité ── */}
-            <motion.div
-              initial={{ opacity: 0, x: -24 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, ease }}
-              className="flex flex-col items-center md:items-start"
-            >
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={viewport} transition={{ duration: 0.6, ease }} className="flex flex-col items-center md:items-start">
               <FounderPhoto />
-
-              {/* Bloc identité */}
-              <div
-                className="relative mt-5 w-full max-w-[340px] overflow-hidden rounded-2xl border p-5 md:max-w-full"
-                style={{ borderColor: GOLD + "28", backgroundColor: GOLD + "0a" }}
-              >
+              <div className="relative mt-5 w-full max-w-[320px] overflow-hidden rounded-2xl border p-5 md:max-w-full" style={{ borderColor: GOLD + "28", backgroundColor: GOLD + "06" }}>
                 <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}50, transparent)` }} />
-                <p className="text-xl font-black text-white">Nofane AMDJAD</p>
+                <p className="text-lg font-black text-[var(--ink)]">Nofane AMDJAD</p>
                 <p className="mt-0.5 text-sm font-semibold" style={{ color: GOLD }}>Fondateur & CEO de DJAMA</p>
-                <p className="mt-2 text-xs leading-relaxed text-white/50">
+                <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">
                   "J'ai créé DJAMA pour que chaque entrepreneur ait accès aux mêmes opportunités,
                   peu importe son niveau ou son budget."
                 </p>
               </div>
             </motion.div>
 
-            {/* ── Bio structurée ── */}
-            <motion.div
-              initial={{ opacity: 0, x: 24 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, ease, delay: 0.1 }}
-              className="space-y-5"
-            >
-              <div className="rounded-2xl border border-white/7 bg-[rgba(15,17,23,0.6)] p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: GOLD + "18", border: `1px solid ${GOLD}30` }}>
-                    <Brain size={14} style={{ color: GOLD }} />
+            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={viewport} transition={{ duration: 0.6, ease, delay: 0.1 }} className="space-y-4">
+              {[
+                { color: GOLD,      Icon: Brain,   label: "Pourquoi DJAMA",   text: "En 2022, Nofane constate que des centaines de petites entreprises perdent des marchés publics et privés faute de savoir comment répondre aux appels d'offres. Elles ignorent aussi les aides disponibles et n'ont pas accès aux bons fournisseurs. DJAMA est né pour corriger cette injustice." },
+                { color: "#a78bfa", Icon: Users,   label: "À qui on s'adresse", text: "Artisans, auto-entrepreneurs, TPE, PME — toute personne qui veut développer son activité, décrocher de nouveaux clients et se professionnaliser, sans avoir besoin d'une grande structure derrière elle." },
+                { color: "#4ade80", Icon: Rocket,  label: "Ce qu'on apporte",  items: ["Réponses aux marchés publics & privés clés en main","Accès aux aides et subventions disponibles","Sourcing et négociation fournisseurs","Création web, app, design et vidéo sur mesure","Coaching IA + soutien scolaire avec experts","Plateforme d'outils professionnels tout-en-un"] },
+              ].map(({ color, Icon, label, text, items }) => (
+                <div key={label} className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm">
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: color + "15", border: `1px solid ${color}30` }}>
+                      <Icon size={14} style={{ color }} />
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest" style={{ color }}>{label}</p>
                   </div>
-                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: GOLD }}>Pourquoi DJAMA</p>
+                  {text && <p className="text-sm leading-relaxed text-[var(--muted)]">{text}</p>}
+                  {items && (
+                    <ul className="space-y-2">
+                      {items.map(item => (
+                        <li key={item} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                          <CheckCircle2 size={12} className="mt-0.5 shrink-0" style={{ color }} />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                <p className="text-sm leading-relaxed text-white/60">
-                  En 2022, Nofane constate que des centaines de petites entreprises perdent des marchés
-                  publics et privés faute de savoir comment répondre aux appels d'offres. Elles ignorent
-                  aussi les aides disponibles et n'ont pas accès aux bons fournisseurs. DJAMA est né pour
-                  corriger cette injustice.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/7 bg-[rgba(15,17,23,0.6)] p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: "#a78bfa18", border: "1px solid #a78bfa30" }}>
-                    <Users size={14} style={{ color: "#a78bfa" }} />
-                  </div>
-                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a78bfa" }}>À qui on s'adresse</p>
-                </div>
-                <p className="text-sm leading-relaxed text-white/60">
-                  Artisans, auto-entrepreneurs, TPE, PME — toute personne qui veut développer
-                  son activité, décrocher de nouveaux clients et se professionnaliser, sans avoir
-                  besoin d'une grande structure derrière elle.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/7 bg-[rgba(15,17,23,0.6)] p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: "#4ade8018", border: "1px solid #4ade8030" }}>
-                    <Rocket size={14} style={{ color: "#4ade80" }} />
-                  </div>
-                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#4ade80" }}>Ce qu'on apporte</p>
-                </div>
-                <ul className="space-y-2">
-                  {[
-                    "Réponses aux marchés publics & privés clés en main",
-                    "Accès aux aides et subventions disponibles",
-                    "Sourcing et négociation fournisseurs",
-                    "Création web, app, design et vidéo sur mesure",
-                    "Coaching IA + soutien scolaire avec experts",
-                    "Plateforme d'outils professionnels tout-en-un",
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-xs text-white/55">
-                      <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-[#4ade80]" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              ))}
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* ════════════════════════════════════════════
-          TIMELINE
-      ════════════════════════════════════════════ */}
-      <section className="relative z-10 py-16">
+      {/* ═══ TIMELINE ══════════════════════════════════════════ */}
+      <section className="bg-[#f9f7f4] py-16 sm:py-20">
         <div className="mx-auto max-w-5xl px-6">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease }}
-            className="mb-10 text-center"
-          >
-            <span
-              className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest"
-              style={{ color: GOLD, borderColor: GOLD + "30", backgroundColor: GOLD + "0d" }}
-            >
+          <FadeReveal className="mb-10 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest" style={{ color: GOLD, borderColor: GOLD + "30", backgroundColor: GOLD + "0d" }}>
               Notre parcours
             </span>
-            <h2 className="mt-3 text-3xl font-black text-white sm:text-4xl">
-              De 2022 à aujourd'hui.
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-[var(--ink)] sm:text-4xl">
+              De 2022 à aujourd&apos;hui.
             </h2>
-          </motion.div>
+          </FadeReveal>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {MILESTONES.map(({ year, color, title, desc }, i) => (
@@ -401,17 +237,17 @@ export default function AProposPage() {
                 key={year}
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                viewport={viewport}
                 transition={{ duration: 0.5, ease, delay: i * 0.1 }}
-                className="relative flex gap-4 overflow-hidden rounded-2xl border border-white/7 bg-[rgba(15,17,23,0.6)] p-4"
+                className="relative flex gap-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm"
               >
                 <div className="absolute inset-y-0 left-0 w-[3px] rounded-l-2xl" style={{ background: color }} />
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-black" style={{ backgroundColor: color + "18", color, border: `1px solid ${color}35` }}>
+                <div className="flex h-11 w-14 shrink-0 items-center justify-center rounded-xl text-xs font-black" style={{ backgroundColor: color + "15", color, border: `1px solid ${color}30` }}>
                   {year}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white/90">{title}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-white/40">{desc}</p>
+                  <p className="text-sm font-bold text-[var(--ink)]">{title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">{desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -419,211 +255,169 @@ export default function AProposPage() {
         </div>
       </section>
 
-      {/* ════════════════════════════════════════════
-          CE QU'ON FAIT
-      ════════════════════════════════════════════ */}
-      <section className="relative z-10 py-16">
+      {/* ═══ NOS SERVICES ══════════════════════════════════════ */}
+      <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-5xl px-6">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease }}
-            className="mb-10 text-center"
-          >
-            <span
-              className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest"
-              style={{ color: "#38bdf8", borderColor: "#38bdf830", backgroundColor: "#38bdf80d" }}
-            >
+          <FadeReveal className="mb-10 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(56,189,248,0.25)] bg-[rgba(56,189,248,0.06)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-[#38bdf8]">
               Ce que DJAMA fait pour vous
             </span>
-            <h2 className="mt-3 text-3xl font-black text-white sm:text-4xl">
-              Une offre complète,<br />
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-[var(--ink)] sm:text-4xl">
+              Une offre complète,{" "}
               <span style={{ color: GOLD }}>un seul interlocuteur.</span>
             </h2>
-          </motion.div>
+          </FadeReveal>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { Icon: FileText,   color: "#c9a55a", title: "Marchés publics & privés", desc: "Nous vous aidons à rédiger et soumettre vos réponses aux appels d'offres pour décrocher de nouveaux contrats." },
-              { Icon: TrendingUp, color: "#4ade80", title: "Aides & subventions",      desc: "Identification et accompagnement pour accéder aux aides auxquelles votre entreprise a droit." },
-              { Icon: Globe,      color: "#38bdf8", title: "Fournisseurs & sourcing",  desc: "Recherche de fournisseurs adaptés à votre activité, en France et à l'international." },
-              { Icon: Rocket,     color: "#a78bfa", title: "Création web & app",       desc: "Sites vitrines, e-commerce, applications web — conçus pour générer des résultats concrets." },
-              { Icon: Brain,      color: "#f472b6", title: "Coaching IA",              desc: "Apprenez à utiliser l'IA pour automatiser vos tâches et développer votre activité plus vite." },
-              { Icon: BookOpen,   color: "#f97316", title: "Soutien scolaire",         desc: "Des cours avec des professeurs experts pour accompagner vos enfants dans leur réussite scolaire." },
-            ].map(({ Icon, color, title, desc }, i) => (
+          <motion.div
+            variants={staggerContainerFast}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {SERVICES.map(({ Icon, color, title, desc }) => (
               <motion.div
                 key={title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, ease, delay: i * 0.07 }}
-                className="relative overflow-hidden rounded-2xl border border-white/8 bg-[rgba(15,17,23,0.65)] p-5"
+                variants={cardReveal}
+                whileHover={{ scale: 1.02, y: -3 }}
+                className="group relative overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
               >
-                <div className="pointer-events-none absolute inset-0 opacity-25" style={{ background: `radial-gradient(ellipse 60% 50% at 0% 0%, ${color}22 0%, transparent 60%)` }} />
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border" style={{ backgroundColor: color + "18", borderColor: color + "35" }}>
+                <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: `radial-gradient(ellipse 60% 50% at 0% 0%, ${color}0d 0%, transparent 60%)` }} />
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: color + "15", border: `1px solid ${color}30` }}>
                   <Icon size={17} style={{ color }} />
                 </div>
-                <p className="text-sm font-bold text-white/90">{title}</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-white/45">{desc}</p>
+                <p className="text-sm font-bold text-[var(--ink)]">{title}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">{desc}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* ════════════════════════════════════════════
-          VALEURS
-      ════════════════════════════════════════════ */}
-      <section className="relative z-10 py-16">
+      {/* ═══ VALEURS ═══════════════════════════════════════════ */}
+      <section className="bg-[#f5f5f8] py-16 sm:py-20">
         <div className="mx-auto max-w-5xl px-6">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease }}
-            className="mb-10 text-center"
-          >
-            <span
-              className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest"
-              style={{ color: "#a78bfa", borderColor: "#a78bfa30", backgroundColor: "#a78bfa0d" }}
-            >
+          <FadeReveal className="mb-10 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.06)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-[#a78bfa]">
               Ce en quoi nous croyons
             </span>
-            <h2 className="mt-3 text-3xl font-black text-white sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-[var(--ink)] sm:text-4xl">
               Nos valeurs, notre ADN.
             </h2>
-          </motion.div>
+          </FadeReveal>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {VALUES.map(({ Icon, color, title, desc }, i) => (
+          <motion.div
+            variants={staggerContainerFast}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {VALUES.map(({ Icon, color, title, desc }) => (
               <motion.div
                 key={title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, ease, delay: i * 0.07 }}
-                className="relative overflow-hidden rounded-2xl border border-white/8 bg-[rgba(15,17,23,0.65)] p-5"
+                variants={cardReveal}
+                whileHover={{ scale: 1.02, y: -3 }}
+                className="group relative overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm transition-all duration-300 hover:border-[rgba(var(--gold),0.3)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
               >
-                <div className="pointer-events-none absolute inset-0 opacity-30" style={{ background: `radial-gradient(ellipse 60% 50% at 0% 0%, ${color}20 0%, transparent 60%)` }} />
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border" style={{ backgroundColor: color + "18", borderColor: color + "35" }}>
+                <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: `radial-gradient(ellipse 60% 50% at 0% 0%, ${color}0d 0%, transparent 60%)` }} />
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: color + "15", border: `1px solid ${color}30` }}>
                   <Icon size={18} style={{ color }} />
                 </div>
-                <p className="text-sm font-bold text-white/90">{title}</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-white/45">{desc}</p>
+                <p className="text-sm font-bold text-[var(--ink)]">{title}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">{desc}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* ════════════════════════════════════════════
-          ÉQUIPE
-      ════════════════════════════════════════════ */}
-      <section className="relative z-10 py-16">
+      {/* ═══ ÉQUIPE ════════════════════════════════════════════ */}
+      <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-5xl px-6">
+          <FadeReveal className="mb-10 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(56,189,248,0.25)] bg-[rgba(56,189,248,0.06)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-[#38bdf8]">
+              <Users size={10} /> Les pôles de DJAMA
+            </span>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-[var(--ink)] sm:text-4xl">Notre équipe.</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-[var(--muted)]">
+              Une équipe pluridisciplinaire qui s&apos;investit dans votre réussite comme si c&apos;était la sienne.
+            </p>
+          </FadeReveal>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease }}
-            className="mb-10 text-center"
+            variants={staggerContainerFast}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
           >
-            <span
-              className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest"
-              style={{ color: "#38bdf8", borderColor: "#38bdf830", backgroundColor: "#38bdf80d" }}
-            >
-              <Users size={10} />
-              Les pôles de DJAMA
-            </span>
-            <h2 className="mt-3 text-3xl font-black text-white sm:text-4xl">
-              Notre équipe.
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-white/40">
-              Une équipe pluridisciplinaire qui s'investit dans votre réussite comme si c'était la sienne.
-            </p>
-          </motion.div>
-
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {TEAM.map(({ name, role, initials, color, bio, tags }, i) => (
+            {TEAM.map(({ name, role, initials, color, bio, tags }) => (
               <motion.div
                 key={name}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, ease, delay: i * 0.08 }}
-                className="relative overflow-hidden rounded-[1.75rem] border border-white/8 bg-[rgba(15,17,23,0.7)] p-6"
+                variants={cardReveal}
+                whileHover={{ scale: 1.015, y: -3 }}
+                className="group relative overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.07)]"
               >
-                <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 40% at 50% 0%, ${color}14 0%, transparent 60%)` }} />
-                <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}50, transparent)` }} />
-                <div className="relative mb-4 flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black" style={{ backgroundColor: color + "20", color, border: `2px solid ${color}40` }}>
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] rounded-t-[1.5rem]" style={{ background: `linear-gradient(90deg, ${color}60, ${color}20)` }} />
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black" style={{ backgroundColor: color + "18", color, border: `1.5px solid ${color}35` }}>
                     {initials}
                   </div>
                   <div>
-                    <p className="text-sm font-extrabold text-white">{name}</p>
-                    <p className="mt-0.5 text-xs text-white/40">{role}</p>
+                    <p className="text-sm font-extrabold text-[var(--ink)]">{name}</p>
+                    <p className="text-xs text-[var(--muted)]">{role}</p>
                   </div>
                 </div>
-                <p className="relative text-xs leading-relaxed text-white/45">{bio}</p>
-                <div className="relative mt-4 flex flex-wrap gap-1.5">
+                <p className="text-xs leading-relaxed text-[var(--muted)]">{bio}</p>
+                <div className="mt-4 flex flex-wrap gap-1.5">
                   {tags.map((tag) => (
-                    <span key={tag} className="rounded-full border border-white/8 bg-white/4 px-2.5 py-0.5 text-[0.6rem] font-semibold text-white/40">{tag}</span>
+                    <span key={tag} className="rounded-full border border-[var(--border)] bg-[#f5f5f8] px-2.5 py-0.5 text-[0.6rem] font-semibold text-[var(--muted)]">{tag}</span>
                   ))}
                 </div>
               </motion.div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════════
-          CTA FINAL
-      ════════════════════════════════════════════ */}
-      <section className="relative z-10 pb-24 pt-8">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, ease }}
-          >
-            <h2 className="text-3xl font-black text-white sm:text-4xl">
-              Prêt à travailler<br />
-              <span style={{ color: GOLD }}>avec nous ?</span>
-            </h2>
-            <p className="mx-auto mt-4 max-w-md text-sm text-white/45">
-              Décrivez votre projet — nous vous répondons sous 24h avec une proposition
-              claire, adaptée et sans engagement.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link href="/contact" className="btn-primary px-7 py-3.5 text-sm">
-                Démarrer un projet <ArrowRight size={15} />
-              </Link>
-              <a
-                href="https://wa.me/262693523665"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-full border border-[rgba(37,211,102,0.25)] bg-[rgba(37,211,102,0.08)] px-6 py-3.5 text-sm font-semibold text-[#25d366] transition hover:bg-[rgba(37,211,102,0.14)]"
-              >
-                <MessageCircle size={15} />
-                WhatsApp direct
-              </a>
-              <a
-                href="mailto:contact@djama.space"
-                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white/55 transition hover:border-white/20 hover:text-white/80"
-              >
-                <Mail size={14} />
-                contact@djama.space
-              </a>
-            </div>
           </motion.div>
         </div>
       </section>
 
-    </div>
+      {/* ═══ CTA FINAL ═════════════════════════════════════════ */}
+      <section
+        className="relative overflow-hidden py-20 sm:py-28"
+        style={{ background: "linear-gradient(160deg, #1a0e30 0%, #0d1829 55%, #071525 100%)" }}
+      >
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]" style={{ background: `rgba(201,165,90,0.07)` }} />
+        </div>
+        <div className="relative mx-auto max-w-2xl px-6 text-center">
+          <FadeReveal>
+            <h2 className="text-3xl font-black text-white sm:text-4xl">
+              Prêt à travailler<br />
+              <span style={{ color: GOLD }}>avec nous ?</span>
+            </h2>
+          </FadeReveal>
+          <FadeReveal delay={0.1}>
+            <p className="mx-auto mt-4 max-w-md text-sm text-white/45">
+              Décrivez votre projet — nous vous répondons sous 24h avec une proposition claire, adaptée et sans engagement.
+            </p>
+          </FadeReveal>
+          <FadeReveal delay={0.2}>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link href="/contact" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-7 py-3.5 text-sm font-extrabold text-black shadow-[0_4px_20px_rgba(201,165,90,0.35)] transition-shadow hover:shadow-[0_8px_36px_rgba(201,165,90,0.5)]">
+                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                <span className="relative flex items-center gap-2">Démarrer un projet <ArrowRight size={15} /></span>
+              </Link>
+              <a href="https://wa.me/262693523665" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-2xl border border-[rgba(37,211,102,0.25)] bg-[rgba(37,211,102,0.08)] px-6 py-3.5 text-sm font-semibold text-[#25d366] transition hover:bg-[rgba(37,211,102,0.14)]">
+                <MessageCircle size={15} /> WhatsApp direct
+              </a>
+              <a href="mailto:contact@djama.space" className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-6 py-3.5 text-sm font-semibold text-white/55 transition hover:border-white/20 hover:text-white/80">
+                <Mail size={14} /> contact@djama.space
+              </a>
+            </div>
+          </FadeReveal>
+        </div>
+      </section>
+
+    </main>
   );
 }

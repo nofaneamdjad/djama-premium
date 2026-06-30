@@ -894,10 +894,22 @@ function HomeContent() {
 
             <div className="grid gap-0 sm:grid-cols-2">
 
-              {/* Gauche — infos */}
+              {/* Gauche — image + infos */}
               <div className="flex flex-col justify-center gap-4 p-6 sm:border-r sm:border-gray-100">
-                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[rgba(167,139,250,.35)] bg-[rgba(167,139,250,.09)] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[.18em]" style={{ color: "#7c5cbf" }}>
-                  <Brain size={9} /> Formation IA
+                {/* Image de présentation */}
+                <div className="relative overflow-hidden rounded-xl" style={{ height: "160px" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=700&q=80&auto=format&fit=crop"
+                    alt="Formation IA — Coaching DJAMA"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[rgba(124,92,191,0.6)] to-transparent" />
+                  <div className="absolute bottom-3 left-3">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,.35)] bg-[rgba(167,139,250,.12)] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[.18em] backdrop-blur-sm" style={{ color: "#d8b4fe" }}>
+                      <Brain size={9} /> Formation IA
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <h2 className="text-[1.45rem] font-extrabold leading-tight text-gray-900">
