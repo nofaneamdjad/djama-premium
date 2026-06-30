@@ -269,13 +269,11 @@ function LoginPageInner() {
               Retour
             </button>
 
-            {/* Logo + titre */}
-            <div className="mb-8 flex flex-col items-center">
+            {/* Logo */}
+            <div className="mb-8 flex justify-center">
               <Link href="/">
-                <Image src="/logo-navbar.png" alt="DJAMA" width={200} height={45} className="mb-6 h-[36px] w-auto object-contain" priority />
+                <Image src="/logo-navbar.png" alt="DJAMA" width={200} height={45} className="h-[40px] w-auto object-contain" priority />
               </Link>
-              <h1 className="text-[1.6rem] font-extrabold text-white">Bon retour 👋</h1>
-              <p className="mt-1 text-[0.85rem]" style={{ color: "rgba(255,255,255,0.40)" }}>Connectez-vous à votre espace client</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-3">
@@ -365,6 +363,27 @@ function LoginPageInner() {
                 {loading ? (phase === "auth" ? "Vérification…" : "Ouverture…") : "Se connecter"}
               </motion.button>
             </form>
+
+            {/* Google */}
+            <div className="mt-4 flex items-center gap-3">
+              <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+              <span className="text-[0.72rem]" style={{ color: "rgba(255,255,255,0.22)" }}>ou</span>
+              <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+            </div>
+            <motion.button
+              type="button"
+              onClick={handleGoogleAuth}
+              disabled={googleLoading || loading}
+              whileTap={{ scale: 0.985 }}
+              className="mt-3 flex w-full items-center justify-center gap-3 rounded-full py-3.5 text-[0.92rem] font-semibold transition-all disabled:opacity-50"
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.80)" }}
+            >
+              {googleLoading ? (
+                <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                  className="inline-block h-4 w-4 rounded-full" style={{ border: "2px solid rgba(255,255,255,0.15)", borderTopColor: "rgba(255,255,255,0.7)" }} />
+              ) : <GoogleIcon />}
+              {googleLoading ? "Connexion…" : "Continuer avec Google"}
+            </motion.button>
 
             <p className="mt-6 text-center text-[0.85rem]" style={{ color: "rgba(255,255,255,0.35)" }}>
               Pas encore de compte ?{" "}
