@@ -1,16 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, AlertCircle, CheckCircle2, ChevronDown } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, CheckCircle2, ChevronDown, Search, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD  = "#c9a55a";
 const GOLDR = "201,165,90";
 const BG    = "#0d0821";
+
+/* ── Pays ── */
+type Country = { code: string; name: string; flag: string; tel: string };
+
+const COUNTRIES: Country[] = [
+  { code: "FR", name: "France",               flag: "🇫🇷", tel: "+33"  },
+  { code: "YT", name: "Mayotte",              flag: "🇾🇹", tel: "+262" },
+  { code: "RE", name: "La Réunion",           flag: "🇷🇪", tel: "+262" },
+  { code: "GP", name: "Guadeloupe",           flag: "🇬🇵", tel: "+590" },
+  { code: "MQ", name: "Martinique",           flag: "🇲🇶", tel: "+596" },
+  { code: "GF", name: "Guyane française",     flag: "🇬🇫", tel: "+594" },
+  { code: "NC", name: "Nouvelle-Calédonie",   flag: "🇳🇨", tel: "+687" },
+  { code: "PF", name: "Polynésie française",  flag: "🇵🇫", tel: "+689" },
+  { code: "BE", name: "Belgique",             flag: "🇧🇪", tel: "+32"  },
+  { code: "CH", name: "Suisse",               flag: "🇨🇭", tel: "+41"  },
+  { code: "LU", name: "Luxembourg",           flag: "🇱🇺", tel: "+352" },
+  { code: "CA", name: "Canada",               flag: "🇨🇦", tel: "+1"   },
+  { code: "MA", name: "Maroc",                flag: "🇲🇦", tel: "+212" },
+  { code: "DZ", name: "Algérie",              flag: "🇩🇿", tel: "+213" },
+  { code: "TN", name: "Tunisie",              flag: "🇹🇳", tel: "+216" },
+  { code: "SN", name: "Sénégal",              flag: "🇸🇳", tel: "+221" },
+  { code: "CI", name: "Côte d'Ivoire",        flag: "🇨🇮", tel: "+225" },
+  { code: "CM", name: "Cameroun",             flag: "🇨🇲", tel: "+237" },
+  { code: "MG", name: "Madagascar",           flag: "🇲🇬", tel: "+261" },
+  { code: "KM", name: "Comores",              flag: "🇰🇲", tel: "+269" },
+  { code: "MU", name: "Maurice",              flag: "🇲🇺", tel: "+230" },
+  { code: "ML", name: "Mali",                 flag: "🇲🇱", tel: "+223" },
+  { code: "GN", name: "Guinée",               flag: "🇬🇳", tel: "+224" },
+  { code: "BF", name: "Burkina Faso",         flag: "🇧🇫", tel: "+226" },
+  { code: "NE", name: "Niger",                flag: "🇳🇪", tel: "+227" },
+  { code: "TD", name: "Tchad",                flag: "🇹🇩", tel: "+235" },
+  { code: "CG", name: "Congo",                flag: "🇨🇬", tel: "+242" },
+  { code: "GA", name: "Gabon",                flag: "🇬🇦", tel: "+241" },
+  { code: "DJ", name: "Djibouti",             flag: "🇩🇯", tel: "+253" },
+  { code: "GB", name: "Royaume-Uni",          flag: "🇬🇧", tel: "+44"  },
+  { code: "DE", name: "Allemagne",            flag: "🇩🇪", tel: "+49"  },
+  { code: "ES", name: "Espagne",              flag: "🇪🇸", tel: "+34"  },
+  { code: "IT", name: "Italie",               flag: "🇮🇹", tel: "+39"  },
+  { code: "PT", name: "Portugal",             flag: "🇵🇹", tel: "+351" },
+  { code: "US", name: "États-Unis",           flag: "🇺🇸", tel: "+1"   },
+  { code: "BR", name: "Brésil",               flag: "🇧🇷", tel: "+55"  },
+  { code: "IN", name: "Inde",                 flag: "🇮🇳", tel: "+91"  },
+  { code: "CN", name: "Chine",                flag: "🇨🇳", tel: "+86"  },
+  { code: "JP", name: "Japon",                flag: "🇯🇵", tel: "+81"  },
+  { code: "AU", name: "Australie",            flag: "🇦🇺", tel: "+61"  },
+];
 
 /* ── Splash ── */
 function SplashScreen({ visible }: { visible: boolean }) {
@@ -33,8 +79,6 @@ function SplashScreen({ visible }: { visible: boolean }) {
           >
             <Image src="/logo-navbar.png" alt="DJAMA" width={220} height={50} className="h-[46px] w-auto object-contain" />
           </motion.div>
-
-          {/* Progress bar Odoo-style */}
           <div className="absolute bottom-12 left-8 right-8 h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.10)" }}>
             <motion.div
               className="h-full rounded-full"
@@ -50,30 +94,6 @@ function SplashScreen({ visible }: { visible: boolean }) {
   );
 }
 
-/* ── White input ── */
-function WhiteInput({
-  label, optional, suffix, ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { label?: string; optional?: boolean; suffix?: React.ReactNode }) {
-  return (
-    <div
-      className="relative rounded-2xl px-4 py-3.5"
-      style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}
-    >
-      {label && (
-        <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>
-          {label}{optional && <span className="ml-1.5 opacity-60">(optionnel)</span>}
-        </p>
-      )}
-      <input
-        {...props}
-        className="w-full bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
-        style={{ paddingRight: suffix ? "2rem" : undefined }}
-      />
-      {suffix && <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>}
-    </div>
-  );
-}
-
 /* ── Google icon ── */
 function GoogleIcon() {
   return (
@@ -86,10 +106,100 @@ function GoogleIcon() {
   );
 }
 
+/* ── Country picker modal ── */
+function CountryPicker({
+  selected, onSelect, onClose,
+}: { selected: Country; onSelect: (c: Country) => void; onClose: () => void }) {
+  const [search, setSearch] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const filtered = COUNTRIES.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.tel.includes(search) ||
+    c.code.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[999] flex items-end justify-center sm:items-center"
+      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 80, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="w-full max-w-[440px] rounded-t-3xl sm:rounded-3xl overflow-hidden"
+        style={{ background: "#141028", border: "1px solid rgba(255,255,255,0.10)", maxHeight: "70vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+          <p className="text-[0.9rem] font-bold text-white">Sélectionnez votre pays</p>
+          <button onClick={onClose} style={{ color: "rgba(255,255,255,0.40)" }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="px-4 pb-3">
+          <div className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.09)" }}>
+            <Search size={14} style={{ color: "rgba(255,255,255,0.35)" }} />
+            <input
+              ref={inputRef}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher un pays…"
+              className="flex-1 bg-transparent text-sm text-white placeholder:text-white/30 outline-none"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} style={{ color: "rgba(255,255,255,0.30)" }}>
+                <X size={13} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="overflow-y-auto pb-6" style={{ maxHeight: "calc(70vh - 120px)" }}>
+          {filtered.map((c) => (
+            <button
+              key={c.code}
+              onClick={() => { onSelect(c); onClose(); }}
+              className="flex w-full items-center gap-3 px-5 py-3 text-left transition"
+              style={{
+                background: c.code === selected.code ? "rgba(201,165,90,0.10)" : "transparent",
+                borderLeft: c.code === selected.code ? `3px solid ${GOLD}` : "3px solid transparent",
+              }}
+              onMouseEnter={(e) => { if (c.code !== selected.code) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+              onMouseLeave={(e) => { if (c.code !== selected.code) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+            >
+              <span className="text-xl">{c.flag}</span>
+              <span className="flex-1 text-[0.88rem] font-medium text-white/85">{c.name}</span>
+              <span className="text-[0.78rem]" style={{ color: "rgba(255,255,255,0.35)" }}>{c.tel}</span>
+            </button>
+          ))}
+          {filtered.length === 0 && (
+            <p className="py-8 text-center text-sm" style={{ color: "rgba(255,255,255,0.30)" }}>Aucun résultat</p>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function RegisterPage() {
+  const [country,       setCountry]       = useState<Country>(COUNTRIES[0]);
+  const [countryOpen,   setCountryOpen]   = useState(false);
   const [nom,           setNom]           = useState("");
   const [email,         setEmail]         = useState("");
-  const [telephone,     setTelephone]     = useState("");
+  const [telNumber,     setTelNumber]     = useState("");
   const [password,      setPassword]      = useState("");
   const [showPwd,       setShowPwd]       = useState(false);
   const [loading,       setLoading]       = useState(false);
@@ -97,6 +207,8 @@ export default function RegisterPage() {
   const [showSplash,    setShowSplash]    = useState(false);
   const [error,         setError]         = useState("");
   const [success,       setSuccess]       = useState(false);
+
+  const telephone = telNumber ? `${country.tel} ${telNumber}` : "";
 
   async function handleGoogleAuth() {
     setError(""); setGoogleLoading(true); setShowSplash(true);
@@ -143,7 +255,7 @@ export default function RegisterPage() {
     await supabase.from("clients").insert({
       id: userId, nom: nom.trim(),
       email: email.trim().toLowerCase(),
-      telephone: telephone.trim() || null,
+      telephone: telephone || null,
       statut: "actif",
     });
 
@@ -163,6 +275,17 @@ export default function RegisterPage() {
       style={{ background: `linear-gradient(175deg, #1a0c35 0%, ${BG} 50%, #060c18 100%)` }}
     >
       <SplashScreen visible={showSplash} />
+
+      {/* Country picker modal */}
+      <AnimatePresence>
+        {countryOpen && (
+          <CountryPicker
+            selected={country}
+            onSelect={(c) => setCountry(c)}
+            onClose={() => setCountryOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Orb */}
       <div aria-hidden className="pointer-events-none fixed left-1/2 top-0 h-[320px] w-[320px] -translate-x-1/2 rounded-full blur-[100px] opacity-30"
@@ -194,45 +317,67 @@ export default function RegisterPage() {
         {/* Form */}
         <form onSubmit={handleRegister} className="space-y-3">
 
-          <WhiteInput
-            label="Nom et prénom"
-            type="text"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            placeholder="Jean Dupont"
-            autoComplete="name"
-            required
-            autoFocus
-          />
+          {/* Nom */}
+          <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
+            <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Nom et prénom</p>
+            <input
+              type="text"
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              placeholder="Jean Dupont"
+              autoComplete="name"
+              required
+              autoFocus
+              className="w-full bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
+            />
+          </div>
 
-          <WhiteInput
-            label="Adresse e-mail"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="vous@exemple.com"
-            autoComplete="email"
-            required
-          />
+          {/* Email */}
+          <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
+            <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Adresse e-mail</p>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="vous@exemple.com"
+              autoComplete="email"
+              required
+              className="w-full bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
+            />
+          </div>
 
-          <WhiteInput
-            label="Numéro de téléphone"
-            optional
-            type="tel"
-            value={telephone}
-            onChange={(e) => setTelephone(e.target.value)}
-            placeholder="+33 6 00 00 00 00"
-            autoComplete="tel"
-          />
+          {/* Téléphone avec préfixe pays */}
+          <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
+            <p className="mb-1.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>
+              Numéro de téléphone <span className="opacity-60">(optionnel)</span>
+            </p>
+            <div className="flex items-center gap-3">
+              {/* Préfixe pays */}
+              <button
+                type="button"
+                onClick={() => setCountryOpen(true)}
+                className="flex shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-1 transition"
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}
+              >
+                <span className="text-base leading-none">{country.flag}</span>
+                <span className="text-[0.82rem] font-semibold" style={{ color: "rgba(255,255,255,0.70)" }}>{country.tel}</span>
+                <ChevronDown size={12} style={{ color: "rgba(255,255,255,0.35)" }} />
+              </button>
+              {/* Numéro */}
+              <input
+                type="tel"
+                value={telNumber}
+                onChange={(e) => setTelNumber(e.target.value)}
+                placeholder="6 00 00 00 00"
+                autoComplete="tel-national"
+                className="flex-1 bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
+              />
+            </div>
+          </div>
 
           {/* Mot de passe */}
-          <div
-            className="relative rounded-2xl px-4 py-3.5"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}
-          >
-            <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>
-              Mot de passe
-            </p>
+          <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
+            <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Mot de passe</p>
             <div className="flex items-center">
               <input
                 type={showPwd ? "text" : "password"}
@@ -243,28 +388,28 @@ export default function RegisterPage() {
                 required
                 className="flex-1 bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
               />
-              <button
-                type="button"
-                onClick={() => setShowPwd((v) => !v)}
-                className="ml-2 shrink-0 transition"
-                style={{ color: "rgba(255,255,255,0.35)" }}
-              >
+              <button type="button" onClick={() => setShowPwd((v) => !v)} className="ml-2 shrink-0 transition" style={{ color: "rgba(255,255,255,0.35)" }}>
                 {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          {/* Pays (statique) */}
-          <div
-            className="flex items-center justify-between rounded-2xl px-4 py-3.5"
+          {/* Pays */}
+          <button
+            type="button"
+            onClick={() => setCountryOpen(true)}
+            className="flex w-full items-center justify-between rounded-2xl px-4 py-3.5 transition text-left"
             style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}
           >
             <div>
               <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Pays</p>
-              <p className="text-[0.95rem] text-white/75">France</p>
+              <div className="flex items-center gap-2">
+                <span className="text-base leading-none">{country.flag}</span>
+                <span className="text-[0.95rem] text-white/85">{country.name}</span>
+              </div>
             </div>
             <ChevronDown size={16} style={{ color: "rgba(255,255,255,0.30)" }} />
-          </div>
+          </button>
 
           {/* Erreur / succès */}
           <AnimatePresence>
@@ -307,7 +452,7 @@ export default function RegisterPage() {
             <Link href="/legal/confidentialite" className="underline underline-offset-2 transition hover:opacity-70">Politique de confidentialité</Link>.
           </p>
 
-          {/* CTA principal */}
+          {/* CTA */}
           <motion.button
             type="submit"
             whileTap={{ scale: 0.98 }}
@@ -345,13 +490,10 @@ export default function RegisterPage() {
               className="inline-block h-5 w-5 rounded-full"
               style={{ border: "2px solid rgba(255,255,255,0.15)", borderTopColor: "rgba(255,255,255,0.7)" }}
             />
-          ) : (
-            <GoogleIcon />
-          )}
+          ) : <GoogleIcon />}
           {googleLoading ? "Connexion…" : "Continuer avec Google"}
         </motion.button>
 
-        {/* Se connecter */}
         <p className="mt-8 text-center text-[0.9rem]" style={{ color: "rgba(255,255,255,0.38)" }}>
           Déjà un compte ?{" "}
           <Link href="/login" className="font-bold transition" style={{ color: GOLD }}>
@@ -359,7 +501,6 @@ export default function RegisterPage() {
           </Link>
         </p>
 
-        {/* Bottom legal */}
         <div className="mt-8 flex flex-wrap justify-center gap-4 text-[0.70rem]" style={{ color: "rgba(255,255,255,0.20)" }}>
           <Link href="/legal/confidentialite" className="transition hover:opacity-60">Confidentialité</Link>
           <span>·</span>
