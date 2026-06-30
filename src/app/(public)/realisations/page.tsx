@@ -595,7 +595,7 @@ export default function RealisationsPage() {
           </FadeReveal>
 
           {/* Stats */}
-          <FadeReveal delay={0.82} className="mt-12 flex flex-wrap justify-center gap-8 border-t pt-10"
+          <div className="mt-12 flex flex-wrap justify-center gap-8 border-t pt-10"
             style={{ borderColor: "rgba(255,255,255,0.08)" }}>
             {[
               { value: "50+",   label: "Clients accompagnés", color: GOLD         },
@@ -608,7 +608,7 @@ export default function RealisationsPage() {
                 <p className="mt-0.5 text-xs text-white/35">{label}</p>
               </div>
             ))}
-          </FadeReveal>
+          </div>
         </div>
 
         {/* Fondu bas */}
