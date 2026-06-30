@@ -1,6 +1,8 @@
-// Shared layout component for legal pages — server component, no "use client"
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Scale } from "lucide-react";
+
+const GOLDR = "201,165,90";
+const GOLD  = "#c9a55a";
 
 export function LegalPage({
   title,
@@ -12,39 +14,79 @@ export function LegalPage({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-white">
-
-      {/* ── Header ── */}
-      <div className="relative overflow-hidden border-b border-gray-200 bg-[#f8f9fa] py-14 sm:py-20">
-        {/* Glow */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[200px] w-[500px] rounded-full bg-[rgba(99,102,241,.04)] blur-[80px]" />
+    <div
+      className="min-h-screen"
+      style={{ background: "linear-gradient(180deg,#0d0a1e 0%,#080d1a 45%,#060c14 100%)" }}
+    >
+      {/* ── Hero header ── */}
+      <div
+        className="relative overflow-hidden pb-14 pt-[100px] sm:pt-[120px]"
+        style={{ background: "linear-gradient(160deg,#1a0e30 0%,#0d1829 55%,#071525 100%)" }}
+      >
+        {/* Orbs */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[300px] w-[500px] rounded-full blur-[100px]"
+            style={{ background: `rgba(${GOLDR},0.07)` }} />
+          <div className="absolute right-[10%] top-[40%] h-[160px] w-[160px] rounded-full blur-[55px]"
+            style={{ background: "rgba(96,165,250,0.05)" }} />
         </div>
-        <div className="pointer-events-none absolute right-[10%] top-[30%] h-[140px] w-[200px] rounded-full bg-[rgba(201,165,90,.04)] blur-[60px]" />
 
         <div className="relative mx-auto max-w-3xl px-6">
+          {/* Back link */}
           <Link
             href="/"
-            className="mb-8 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-[0.72rem] font-semibold text-gray-500 transition-all duration-200 hover:border-[rgba(201,165,90,.4)] hover:text-[#c9a55a] shadow-[0_1px_4px_rgba(0,0,0,.06)]"
+            className="mb-10 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[0.72rem] font-semibold transition-all duration-200 hover:brightness-110"
+            style={{
+              borderColor: "rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.05)",
+              color: "rgba(255,255,255,0.45)",
+            }}
           >
             <ArrowLeft size={12} />
             Retour à l&apos;accueil
           </Link>
 
-          {/* Gold accent line */}
-          <div className="mb-5 h-[2px] w-10 rounded-full bg-gradient-to-r from-[#c9a55a] to-[#c9a55a]/40" />
+          {/* Icon + badge */}
+          <div className="mb-6 flex items-center gap-3">
+            <div
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border"
+              style={{
+                background: `rgba(${GOLDR},0.1)`,
+                borderColor: `rgba(${GOLDR},0.25)`,
+              }}
+            >
+              <Scale size={20} style={{ color: GOLD }} />
+            </div>
+            <div
+              className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em]"
+              style={{ borderColor: `rgba(${GOLDR},0.25)`, background: `rgba(${GOLDR},0.08)`, color: GOLD }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: GOLD }} />
+              Document légal
+            </div>
+          </div>
 
-          <h1 className="text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]">
+          {/* Gold accent line */}
+          <div className="mb-5 h-[2px] w-10 rounded-full" style={{ background: `linear-gradient(90deg,${GOLD},rgba(${GOLDR},0.3))` }} />
+
+          <h1 className="text-[2rem] font-extrabold leading-tight text-white sm:text-[2.6rem]">
             {title}
           </h1>
 
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3.5 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,.05)]">
-            <div className="h-1.5 w-1.5 rounded-full bg-[#c9a55a]/70" />
-            <span className="text-[0.62rem] font-bold text-gray-400">
+          <div
+            className="mt-5 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5"
+            style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)" }}
+          >
+            <div className="h-1.5 w-1.5 rounded-full" style={{ background: GOLD, opacity: 0.7 }} />
+            <span className="text-[0.62rem] font-bold text-white/30">
               Dernière mise à jour : {lastUpdated}
             </span>
           </div>
         </div>
+
+        {/* Fondu bas */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+          style={{ background: "linear-gradient(to bottom,transparent,rgba(6,12,20,0.7))" }} />
       </div>
 
       {/* ── Content ── */}
@@ -52,30 +94,45 @@ export function LegalPage({
         <div
           className={[
             "max-w-none",
-            "text-gray-600 text-[0.92rem] leading-relaxed",
             /* headings */
-            "[&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:border-b [&_h2]:border-gray-200 [&_h2]:pb-2.5",
-            "[&_h2]:text-[0.95rem] [&_h2]:font-extrabold [&_h2]:text-gray-800 [&_h2]:tracking-wide",
+            "[&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:pb-2.5",
+            "[&_h2]:border-b [&_h2]:border-white/[0.07]",
+            "[&_h2]:text-[0.95rem] [&_h2]:font-extrabold [&_h2]:tracking-wide",
             /* paragraphs */
-            "[&_p]:mt-3 [&_p]:leading-[1.85] [&_p]:text-gray-600",
+            "[&_p]:mt-3 [&_p]:leading-[1.85] [&_p]:text-[0.92rem]",
             /* lists */
             "[&_ul]:mt-3 [&_ul]:pl-5 [&_ul]:space-y-1.5",
-            "[&_li]:text-gray-600 [&_li]:leading-relaxed",
-            "[&_li::marker]:text-[#c9a55a]",
-            /* bold */
-            "[&_strong]:text-gray-800 [&_strong]:font-semibold",
+            "[&_li]:leading-relaxed [&_li]:text-[0.92rem]",
             /* links */
-            "[&_a]:text-[#6366f1] [&_a]:no-underline [&_a]:transition-opacity [&_a]:duration-150 [&_a:hover]:opacity-75",
+            "[&_a]:no-underline [&_a]:transition-opacity [&_a]:duration-150 [&_a:hover]:opacity-75",
           ].join(" ")}
+          style={{
+            color: "rgba(255,255,255,0.5)",
+          }}
         >
-          {children}
+          <style>{`
+            [data-legal] h2 { color: rgba(255,255,255,0.8); }
+            [data-legal] p  { color: rgba(255,255,255,0.5); }
+            [data-legal] li { color: rgba(255,255,255,0.5); }
+            [data-legal] li::marker { color: ${GOLD}; }
+            [data-legal] strong { color: rgba(255,255,255,0.8); font-weight: 600; }
+            [data-legal] a { color: ${GOLD}; }
+          `}</style>
+          <div data-legal>
+            {children}
+          </div>
         </div>
 
-        {/* Back to home bottom */}
-        <div className="mt-16 border-t border-gray-200 pt-10">
+        {/* Séparateur + retour */}
+        <div className="mt-16 border-t pt-10" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-semibold text-gray-500 transition-all duration-200 hover:border-[rgba(201,165,90,.4)] hover:text-[#c9a55a]"
+            className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:brightness-110"
+            style={{
+              borderColor: `rgba(${GOLDR},0.25)`,
+              background: `rgba(${GOLDR},0.07)`,
+              color: GOLD,
+            }}
           >
             <ArrowLeft size={14} />
             Retour à l&apos;accueil
