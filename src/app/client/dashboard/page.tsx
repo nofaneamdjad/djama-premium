@@ -240,8 +240,36 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem("djama_monthly_goal");
-    if (saved) setGoalAmount(Number(saved));
+    async function loadGoal() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Charger goal depuis Supabase (avec fallback localStorage)
+      const { data: goalRow } = await supabase
+        .from("user_settings")
+        .select("value")
+        .eq("user_id", user.id)
+        .eq("key", "goal_amount")
+        .maybeSingle();
+
+      if (goalRow?.value) {
+        setGoalAmount(parseFloat(goalRow.value) || 0);
+      } else {
+        // Fallback localStorage + migration auto
+        const local = localStorage.getItem("djama_monthly_goal");
+        if (local) {
+          const v = parseFloat(local) || 0;
+          setGoalAmount(v);
+          // Migrer vers Supabase
+          await supabase.from("user_settings").upsert(
+            { user_id: user.id, key: "goal_amount", value: String(v), updated_at: new Date().toISOString() },
+            { onConflict: "user_id,key" }
+          );
+          localStorage.removeItem("djama_monthly_goal");
+        }
+      }
+    }
+    loadGoal();
   }, []);
 
   const runRapport = useCallback(async () => {
@@ -697,20 +725,28 @@ export default function DashboardPage() {
                 <input
                   autoFocus type="number" value={goalInput}
                   onChange={e => setGoalInput(e.target.value)}
-                  onKeyDown={e => {
+                  onKeyDown={async e => {
                     if (e.key === "Enter") {
                       const v = Math.max(0, Number(goalInput));
                       setGoalAmount(v);
-                      localStorage.setItem("djama_monthly_goal", String(v));
                       setGoalEdit(false);
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (user) await supabase.from("user_settings").upsert(
+                        { user_id: user.id, key: "goal_amount", value: String(v), updated_at: new Date().toISOString() },
+                        { onConflict: "user_id,key" }
+                      );
                     }
                     if (e.key === "Escape") setGoalEdit(false);
                   }}
-                  onBlur={() => {
+                  onBlur={async () => {
                     const v = Math.max(0, Number(goalInput));
                     setGoalAmount(v);
-                    localStorage.setItem("djama_monthly_goal", String(v));
                     setGoalEdit(false);
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) await supabase.from("user_settings").upsert(
+                      { user_id: user.id, key: "goal_amount", value: String(v), updated_at: new Date().toISOString() },
+                      { onConflict: "user_id,key" }
+                    );
                   }}
                   className="w-full rounded-lg bg-white/8 px-2 py-1 text-[0.75rem] font-bold text-white outline-none border border-white/15"
                   placeholder="Ex: 5000"

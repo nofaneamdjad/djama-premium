@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEur, fmtDate } from "@/lib/format";
+import { exportToCSV } from "@/lib/export-csv";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
@@ -1315,6 +1316,18 @@ export default function FacturesPage() {
     a.click(); URL.revokeObjectURL(url);
   }
 
+  function handleExportCSV() {
+    exportToCSV("factures-djama", documents as unknown as Record<string, unknown>[], [
+      { key: "numero",      label: "Numéro"    },
+      { key: "client_nom",  label: "Client"    },
+      { key: "type",        label: "Type"      },
+      { key: "statut",      label: "Statut"    },
+      { key: "total_ht",    label: "HT (€)"   },
+      { key: "total_ttc",   label: "TTC (€)"  },
+      { key: "created_at",  label: "Date"      },
+    ]);
+  }
+
   function applyCrmClient(c: CrmClient) {
     setDraft(d => d ? {
       ...d,
@@ -1648,6 +1661,14 @@ export default function FacturesPage() {
                 );
               })}
             </div>
+            {/* Export CSV */}
+            {documents.length > 0 && (
+              <button onClick={handleExportCSV}
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.68rem] font-semibold transition"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" }}>
+                <FileDown size={11}/> Exporter CSV
+              </button>
+            )}
           </div>
 
           {/* Doc list */}
