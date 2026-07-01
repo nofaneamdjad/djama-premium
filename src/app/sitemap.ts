@@ -162,6 +162,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // ── Autres pages publiques ──────────────────────────────────────
     {
+      url: `${BASE}/abonnement`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.80,
+    },
+    {
+      url: `${BASE}/coaching-ia`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.75,
+    },
+    {
+      url: `${BASE}/soutien-scolaire`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.70,
+    },
+    {
       url: `${BASE}/espace-client`,
       lastModified: now,
       changeFrequency: "monthly",
