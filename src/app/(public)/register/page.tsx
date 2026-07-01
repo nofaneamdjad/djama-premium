@@ -232,7 +232,10 @@ export default function RegisterPage() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: { data: { name: nom.trim() } },
+      options: {
+        data: { name: nom.trim() },
+        emailRedirectTo: `${window.location.origin}/client`,
+      },
     });
 
     if (signUpError) {
