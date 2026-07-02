@@ -10,11 +10,10 @@ import {
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
   TrendingUp, Clock, AlertCircle, DollarSign, Settings2,
   PanelLeftClose, PanelLeftOpen,
-  Repeat2, PenLine, Upload, BellRing,
+  Repeat2, PenLine, Upload, BellRing, Share2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEur, fmtDate } from "@/lib/format";
-import { exportToCSV } from "@/lib/export-csv";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
@@ -83,6 +82,9 @@ interface Document {
   total_ttc:        number;
   created_at:       string;
   updated_at:       string;
+  share_token?:     string;
+  signed_at?:       string;
+  signed_by?:       string;
 }
 
 type DraftDoc = Omit<Document,
@@ -1316,18 +1318,6 @@ export default function FacturesPage() {
     a.click(); URL.revokeObjectURL(url);
   }
 
-  function handleExportCSV() {
-    exportToCSV("factures-djama", documents as unknown as Record<string, unknown>[], [
-      { key: "numero",      label: "Numéro"    },
-      { key: "client_nom",  label: "Client"    },
-      { key: "type",        label: "Type"      },
-      { key: "statut",      label: "Statut"    },
-      { key: "total_ht",    label: "HT (€)"   },
-      { key: "total_ttc",   label: "TTC (€)"  },
-      { key: "created_at",  label: "Date"      },
-    ]);
-  }
-
   function applyCrmClient(c: CrmClient) {
     setDraft(d => d ? {
       ...d,
@@ -1472,6 +1462,26 @@ export default function FacturesPage() {
     if (error) { showToast("error", `Erreur : ${error.message}`); return; }
     showToast("success", `${rows.length} contact${rows.length > 1 ? "s" : ""} importé${rows.length > 1 ? "s" : ""}.`);
     setCsvRows([]); setCsvModal(false);
+  }
+
+  // ── Lien de signature devis ─────────────────────────────────────────────────
+  async function handleShareDevis(docId: string) {
+    const token = crypto.randomUUID();
+    // Génère un token si pas encore présent
+    const { data } = await supabase
+      .from("documents")
+      .update({ share_token: token })
+      .eq("id", docId)
+      .select("share_token")
+      .single();
+    const existingToken = (data as { share_token?: string } | null)?.share_token || token;
+    const link = `${window.location.origin}/devis/${existingToken}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast("success", "Lien de signature copié dans le presse-papiers !");
+    } catch {
+      alert(`Lien de signature :\n${link}`);
+    }
   }
 
   // ── Rappels groupés ─────────────────────────────────────────────────────────
@@ -1661,14 +1671,6 @@ export default function FacturesPage() {
                 );
               })}
             </div>
-            {/* Export CSV */}
-            {documents.length > 0 && (
-              <button onClick={handleExportCSV}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.68rem] font-semibold transition"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" }}>
-                <FileDown size={11}/> Exporter CSV
-              </button>
-            )}
           </div>
 
           {/* Doc list */}
@@ -1898,6 +1900,12 @@ export default function FacturesPage() {
                     <button onClick={handlePortalLink} disabled={portalLoading}
                       className="hidden items-center gap-1.5 rounded-xl border border-[rgba(34,211,238,0.2)] px-3 py-2 text-xs font-semibold text-[#22d3ee]/70 transition hover:border-[rgba(34,211,238,0.4)] hover:text-[#22d3ee] disabled:opacity-40 sm:flex">
                       {portalLoading ? <Loader2 size={13} className="animate-spin"/> : <Globe size={13}/>} Portail
+                    </button>
+                  )}
+                  {selected && draft.type === "devis" && (
+                    <button onClick={() => handleShareDevis(selected.id)}
+                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.25)] px-3 py-2 text-xs font-semibold text-[#c9a55a]/70 transition hover:border-[rgba(201,165,90,0.5)] hover:text-[#c9a55a] sm:flex">
+                      <Share2 size={13}/> Copier le lien
                     </button>
                   )}
                   {selected && (
@@ -2266,6 +2274,12 @@ export default function FacturesPage() {
                       <button onClick={handlePortalLink} disabled={portalLoading}
                         className="flex items-center gap-1.5 rounded-xl border border-[rgba(34,211,238,0.2)] px-3 py-2 text-xs font-semibold text-[#22d3ee]/70 transition hover:border-[rgba(34,211,238,0.4)] hover:text-[#22d3ee] disabled:opacity-40">
                         {portalLoading ? <Loader2 size={13} className="animate-spin"/> : <Globe size={13}/>} Portail
+                      </button>
+                    )}
+                    {selected && draft.type === "devis" && (
+                      <button onClick={() => handleShareDevis(selected.id)}
+                        className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.25)] px-3 py-2 text-xs font-semibold text-[#c9a55a]/70 transition hover:border-[rgba(201,165,90,0.5)] hover:text-[#c9a55a]">
+                        <Share2 size={13}/> Copier le lien
                       </button>
                     )}
                   </div>
