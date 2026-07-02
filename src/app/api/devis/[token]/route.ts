@@ -4,9 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 // GET /api/devis/[token] — lecture publique du devis par token
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
-  const { token } = params;
+  const { token } = await params;
   if (!token) return NextResponse.json({ error: "Token manquant" }, { status: 400 });
 
   // Fetch document by token (service role bypasses RLS)
@@ -41,9 +41,9 @@ export async function GET(
 // POST /api/devis/[token] — signer le devis
 export async function POST(
   req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
-  const { token } = params;
+  const { token } = await params;
   const body = await req.json().catch(() => ({}));
   const { signed_by, signature_data } = body as { signed_by?: string; signature_data?: string };
 

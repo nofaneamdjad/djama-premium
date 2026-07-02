@@ -110,17 +110,11 @@ export async function POST(req: Request) {
 
     /* Sélection du price ID selon la facturation */
     const isYearly = billing === "yearly";
-    const priceId  = isYearly
-      ? process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY
-      : process.env.STRIPE_PRICE_ID;
+    const priceId = isYearly
+      ? (process.env.STRIPE_PRICE_YEARLY ?? process.env.STRIPE_PRICE_ID!)
+      : process.env.STRIPE_PRICE_ID!;
 
-    if (!priceId) {
-      const missing = isYearly ? "NEXT_PUBLIC_STRIPE_PRICE_YEARLY" : "STRIPE_PRICE_ID";
-      return NextResponse.json(
-        { error: `Variable d'environnement manquante : ${missing}` },
-        { status: 500 }
-      );
-    }
+    if (!priceId) throw new Error("STRIPE_PRICE_ID manquant dans les variables d'environnement");
 
     const submitMessage = isYearly
       ? "Vous serez débité de 118,80 € par an (9,90 €/mois). Sans engagement, résiliable à tout moment."

@@ -379,7 +379,7 @@ export default function AbonnementsPage() {
                     <p className="text-xs font-bold text-emerald-400">Actif</p>
                   </div>
                   <a
-                    href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL ?? "https://billing.stripe.com/p/login/test_00g00g00g"}
+                    href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL ?? "#"}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-[0.6rem] text-white/30 transition hover:text-white/60"
@@ -597,7 +597,7 @@ export default function AbonnementsPage() {
           <p className="mt-2 text-right text-[0.62rem] text-white/20">
             Factures générées par Stripe ·{" "}
             <a
-              href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL ?? "https://billing.stripe.com/p/login/test_00g00g00g"}
+              href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL ?? "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="underline transition hover:text-white/40"

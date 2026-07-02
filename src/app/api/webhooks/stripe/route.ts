@@ -59,11 +59,9 @@ async function updateDocumentStatut(
     return;
   }
 
-  const { error, count } = await query.select("id");
+  const { error } = await query.select("id");
   if (error) {
     console.error("[stripe/webhook] update error:", error);
-  } else {
-    console.log(`[stripe/webhook] ✅ ${statut} — ${documentId || reference} (${count} doc)`);
   }
 }
 
@@ -120,7 +118,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     default:
       // Ignorer les autres événements
-      console.log(`[stripe/webhook] Événement ignoré : ${event.type}`);
+      break;
   }
 
   return NextResponse.json({ received: true });

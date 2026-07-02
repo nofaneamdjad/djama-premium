@@ -68,12 +68,6 @@ export async function upsertClientRecord(opts: {
 
   if (error) {
     console.error("[SubHelpers] ❌ clients upsert error:", error.message);
-  } else {
-    console.log(
-      "[SubHelpers] ✅ Table clients →",
-      opts.subscriptionActive ? "actif" : "inactif",
-      "(", opts.email, ")"
-    );
   }
 }
 
@@ -119,7 +113,6 @@ export async function activateOrCreateUser(opts: {
     existingUser = data.user;
     userId       = data.user.id;
     isNewUser    = true;
-    console.log("[SubHelpers] 👤 Nouveau compte PayPal créé — userId:", userId);
   } else {
     userId = existingUser.id;
     await supabase.auth.admin.updateUserById(existingUser.id, {
@@ -132,7 +125,6 @@ export async function activateOrCreateUser(opts: {
         paypal_subscription_id: paypalSubscriptionId,
       },
     });
-    console.log("[SubHelpers] 🔄 Compte existant mis à jour — userId:", userId);
   }
 
   /* ── 2. Sync source de vérité unique ────────────────────── */
@@ -167,12 +159,6 @@ export async function activateOrCreateUser(opts: {
   /* ── 4. Envoyer l'email de bienvenue ─────────────────────── */
   await sendWelcomeEmail({ email, fullName, accessLink, isNewUser });
 
-  console.log(
-    "[SubHelpers] ✅ Activation PayPal complète →",
-    email,
-    isNewUser ? "(nouveau)" : "(existant)"
-  );
-
   return { userId, isNewUser, accessLink };
 }
 
@@ -195,7 +181,6 @@ export async function deactivateUserByPayPalSubId(paypalSubId: string) {
     subscriptionId: paypalSubId,
     userData:       user.user_metadata,
   });
-  console.log("[SubHelpers] 🔴 Abonnement PayPal désactivé →", user.email);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -215,7 +200,6 @@ export async function confirmActiveByPayPalSubId(paypalSubId: string) {
     subscriptionId: paypalSubId,
     userData:       user.user_metadata,
   });
-  console.log("[SubHelpers] 🔄 Renouvellement PayPal confirmé →", user.email);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -293,8 +277,4 @@ export async function syncSubscriptionAccess(opts: {
       statut:              active ? "actif" : "inactif",
     },
   });
-
-  console.log(
-    `[SubHelpers] ✅ syncSubscriptionAccess → ${email} | ${active ? "ACTIF" : "INACTIF"} | ${provider}`
-  );
 }

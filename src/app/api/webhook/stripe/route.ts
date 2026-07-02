@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { sendWelcomeEmail, sendPaymentReceivedEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendPaymentReceivedEmail, sendCoachingIAEmail } from "@/lib/email";
 import { createLogger } from "@/lib/logger";
 import { syncSubscriptionAccess } from "@/lib/subscription-helpers";
 
@@ -204,13 +204,16 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
   let isNewUser = false;
   let userId: string;
 
+  const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+
   if (!user) {
     const { data, error } = await supabase.auth.admin.createUser({
       email,
       email_confirm: true,
       user_metadata: {
-        full_name:          fullName,
-        coaching_ia_active: false,   // pas encore activé — l'admin décide
+        full_name:            fullName,
+        coaching_ia_active:   true,
+        coaching_ia_expires:  expiresAt,
       },
     });
     if (error || !data.user) {
@@ -225,19 +228,21 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
     await supabase.auth.admin.updateUserById(user.id, {
       user_metadata: {
         ...user.user_metadata,
-        full_name:          fullName ?? user.user_metadata?.full_name,
-        coaching_ia_active: false,   // pas encore activé
+        full_name:            fullName ?? user.user_metadata?.full_name,
+        coaching_ia_active:   true,
+        coaching_ia_expires:  expiresAt,
       },
     });
   }
 
-  /* Upsert clients — paiement reçu, activation manuelle requise */
+  /* Upsert clients — accès activé automatiquement */
   await supabase.from("clients").upsert(
     {
       user_id:                      userId,
       email,
       full_name:                    fullName,
-      coaching_ia_active:           false,
+      coaching_ia_active:           true,
+      coaching_ia_expires:          expiresAt,
       coaching_ia_payment_method:   "stripe",
       coaching_ia_pending_transfer: false,
       updated_at:                   new Date().toISOString(),
@@ -245,17 +250,27 @@ async function activateCoachingIA(session: Stripe.Checkout.Session) {
     { onConflict: "email" }
   );
 
-  /* Créer entrée user_access (accès non débloqué — en attente admin) */
+  /* Créer entrée user_access */
   await upsertUserAccess({
     email,
     name:   fullName,
     source: "stripe",
   });
 
-  /* Email de confirmation de paiement (PAS d'accès encore) */
-  await sendPaymentReceivedEmail({ email, fullName, service: "coaching_ia" });
+  /* Email d'accès coaching IA */
+  let accessLink = `${SITE_URL}/coaching-ia/espace`;
+  try {
+    const { data: linkData } = await supabase.auth.admin.generateLink({
+      type: isNewUser ? "invite" : "magiclink",
+      email,
+      options: { redirectTo: `${SITE_URL}/coaching-ia/espace` },
+    });
+    if (linkData?.properties?.action_link) accessLink = linkData.properties.action_link;
+  } catch { /* fallback */ }
 
-  log.info("Coaching IA paiement enregistré — en attente activation admin");
+  await sendCoachingIAEmail({ email, fullName, accessLink, isNewUser });
+
+  log.info("Coaching IA accès activé automatiquement après paiement Stripe");
 }
 
 /* ─────────────────────────────────────────────────────────────

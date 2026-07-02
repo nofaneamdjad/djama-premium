@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabase";
 import { useSubscription } from "@/lib/use-require-subscription";
 import { getToolTier } from "@/lib/plans";
 import FloatingAIAssistant from "@/components/FloatingAIAssistant";
+import OnboardingModal from "@/components/OnboardingModal";
 
 const GOLD = "#c9a55a";
 const DARK = "#111318";
@@ -145,16 +146,12 @@ function DarkNavItem({
 }
 
 /* ─────────── NOTIF BELL ─────────── */
-type OverdueDoc   = { id: string; numero: string; client_nom: string; total_ttc: number };
-type LateTask     = { id: string; title: string; due_date: string | null; priority: string };
-type LowStockItem = { id: string; name: string; stock_current: number; stock_minimum: number };
+type OverdueDoc = { id: string; numero: string; client_nom: string; total_ttc: number };
 
 function NotifBell({ ready }: { ready: boolean }) {
   const [open,    setOpen]    = useState(false);
   const [events,  setEvents]  = useState<UpcomingEvent[]>([]);
-  const [overdue,    setOverdue]    = useState<OverdueDoc[]>([]);
-  const [lateTasks,  setLateTasks]  = useState<LateTask[]>([]);
-  const [lowStock,   setLowStock]   = useState<LowStockItem[]>([]);
+  const [overdue, setOverdue] = useState<OverdueDoc[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -162,13 +159,12 @@ function NotifBell({ ready }: { ready: boolean }) {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const today = isoToday();
-      const [evtRes, overdueRes, lateRes, stockRes] = await Promise.all([
+      const [evtRes, overdueRes] = await Promise.all([
         supabase
-          .from("planning_events")
+          .from("agenda_events")
           .select("id, title, event_date, event_time, category")
           .eq("user_id", user.id)
-          .gte("event_date", today)
+          .gte("event_date", isoToday())
           .lte("event_date", isoIn7())
           .order("event_date", { ascending: true }),
         supabase
@@ -178,24 +174,9 @@ function NotifBell({ ready }: { ready: boolean }) {
           .eq("statut", "en_retard")
           .order("created_at", { ascending: false })
           .limit(5),
-        supabase
-          .from("productivity_tasks")
-          .select("id, title, due_date, priority")
-          .eq("user_id", user.id)
-          .lt("due_date", today)
-          .not("status", "in", `("done","terminé","Terminé","completed")`)
-          .limit(5),
-        supabase
-          .from("stock_products")
-          .select("id, name, stock_current, stock_minimum")
-          .eq("user_id", user.id)
-          .lte("stock_current", 0)
-          .limit(4),
       ]);
-      if (evtRes.data)     setEvents(evtRes.data as UpcomingEvent[]);
+      if (evtRes.data) setEvents(evtRes.data as UpcomingEvent[]);
       if (overdueRes.data) setOverdue(overdueRes.data as OverdueDoc[]);
-      if (lateRes.data)    setLateTasks(lateRes.data as LateTask[]);
-      if (stockRes.data)   setLowStock(stockRes.data as LowStockItem[]);
     }
     load();
     const id = setInterval(load, 60_000);
@@ -215,7 +196,7 @@ function NotifBell({ ready }: { ready: boolean }) {
   const todayEvts    = events.filter(e => e.event_date === today);
   const tomorrowEvts = events.filter(e => e.event_date === tomorrow);
   const laterEvts    = events.filter(e => e.event_date > tomorrow);
-  const totalBadge = todayEvts.length + overdue.length + lateTasks.length + lowStock.length;
+  const totalBadge   = todayEvts.length + overdue.length;
 
   return (
     <div className="relative" ref={ref}>
@@ -276,52 +257,8 @@ function NotifBell({ ready }: { ready: boolean }) {
                   <div className="mx-4 my-2 border-t border-white/[0.07]" />
                 </div>
               )}
-              {/* Late tasks */}
-              {lateTasks.length > 0 && (
-                <div>
-                  <p className="px-4 pb-1 pt-3 text-[0.6rem] font-bold uppercase tracking-wider text-amber-400/70">
-                    ⏰ Tâches en retard
-                  </p>
-                  {lateTasks.map(task => (
-                    <Link href="/client/productivite" key={task.id} onClick={() => setOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 transition hover:bg-white/[0.04]">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/15">
-                        <ListTodo size={10} className="text-amber-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-white/80">{task.title}</p>
-                        <p className="text-[0.65rem] text-amber-400/70">
-                          {task.due_date ? `Échue le ${new Date(task.due_date + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}` : "Sans date"}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                  <div className="mx-4 my-2 border-t border-white/[0.07]" />
-                </div>
-              )}
-              {/* Low stock */}
-              {lowStock.length > 0 && (
-                <div>
-                  <p className="px-4 pb-1 pt-3 text-[0.6rem] font-bold uppercase tracking-wider text-orange-400/70">
-                    📦 Stock épuisé
-                  </p>
-                  {lowStock.map(item => (
-                    <Link href="/client/stocks" key={item.id} onClick={() => setOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 transition hover:bg-white/[0.04]">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-orange-500/15">
-                        <Package size={10} className="text-orange-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-white/80">{item.name}</p>
-                        <p className="text-[0.65rem] text-orange-400/70">Stock: {item.stock_current} (min: {item.stock_minimum})</p>
-                      </div>
-                    </Link>
-                  ))}
-                  <div className="mx-4 my-2 border-t border-white/[0.07]" />
-                </div>
-              )}
               {/* Upcoming events */}
-              {events.length === 0 && overdue.length === 0 && lateTasks.length === 0 && lowStock.length === 0 ? (
+              {events.length === 0 && overdue.length === 0 ? (
                 <div className="px-4 py-8 text-center">
                   <Bell size={20} className="mx-auto mb-2 text-white/20" />
                   <p className="text-xs text-white/40">Aucune notification</p>
@@ -609,7 +546,7 @@ function PremiumGate() {
 /* ─────────── GLOBAL SEARCH MODAL ─────────── */
 type SearchResult = {
   id: string;
-  type: "document" | "event" | "contact" | "contract" | "note" | "task";
+  type: "document" | "event";
   title: string;
   subtitle: string;
   href: string;
@@ -639,28 +576,17 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user || cancelled) return;
         const q = query.trim();
-        const [docsRes, eventsRes, contactsRes, contractsRes, notesRes, tasksRes] = await Promise.all([
+        const [docsRes, eventsRes] = await Promise.all([
           supabase.from("documents")
             .select("id, numero, client_nom, type, total_ttc")
             .or(`numero.ilike.%${q}%,client_nom.ilike.%${q}%`)
-            .eq("user_id", user.id).limit(4),
-          supabase.from("planning_events")
+            .eq("user_id", user.id)
+            .limit(6),
+          supabase.from("agenda_events")
             .select("id, title, event_date")
-            .ilike("title", `%${q}%`).eq("user_id", user.id).limit(3),
-          supabase.from("contacts")
-            .select("id, nom, prenom, email, type")
-            .or(`nom.ilike.%${q}%,prenom.ilike.%${q}%,email.ilike.%${q}%`)
-            .eq("user_id", user.id).limit(3),
-          supabase.from("contracts")
-            .select("id, titre, client_nom, statut")
-            .or(`titre.ilike.%${q}%,client_nom.ilike.%${q}%`)
-            .eq("user_id", user.id).limit(3),
-          supabase.from("notes")
-            .select("id, title, note_type")
-            .ilike("title", `%${q}%`).eq("user_id", user.id).limit(3),
-          supabase.from("productivity_tasks")
-            .select("id, title, status, priority")
-            .ilike("title", `%${q}%`).eq("user_id", user.id).limit(3),
+            .ilike("title", `%${q}%`)
+            .eq("user_id", user.id)
+            .limit(4),
         ]);
         if (cancelled) return;
         const res: SearchResult[] = [];
@@ -680,41 +606,10 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           res.push({
             id: e.id as string, type: "event",
             title: e.title as string,
-            subtitle: new Date((e.event_date as string) + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }),
+            subtitle: new Date((e.event_date as string) + "T12:00:00").toLocaleDateString("fr-FR", {
+              weekday: "long", day: "numeric", month: "long",
+            }),
             href: "/client/planning",
-          });
-        });
-        (contactsRes.data ?? []).forEach((c: Record<string, unknown>) => {
-          const fullName = [(c.nom as string), (c.prenom as string)].filter(Boolean).join(" ") || (c.email as string) || "Contact";
-          res.push({
-            id: c.id as string, type: "contact",
-            title: fullName,
-            subtitle: `${(c.type as string) ?? "Contact"}${c.email ? ` · ${c.email}` : ""}`,
-            href: "/client/crm",
-          });
-        });
-        (contractsRes.data ?? []).forEach((c: Record<string, unknown>) => {
-          res.push({
-            id: c.id as string, type: "contract",
-            title: (c.titre as string) || "Contrat sans titre",
-            subtitle: `${(c.client_nom as string) || ""}${c.statut ? ` · ${c.statut}` : ""}`,
-            href: "/client/contrats",
-          });
-        });
-        (notesRes.data ?? []).forEach((n: Record<string, unknown>) => {
-          res.push({
-            id: n.id as string, type: "note",
-            title: (n.title as string) || "Note sans titre",
-            subtitle: (n.note_type as string) || "Note",
-            href: "/client/bloc-notes",
-          });
-        });
-        (tasksRes.data ?? []).forEach((t: Record<string, unknown>) => {
-          res.push({
-            id: t.id as string, type: "task",
-            title: (t.title as string) || "Tâche sans titre",
-            subtitle: `${(t.priority as string) || ""}${t.status ? ` · ${t.status}` : ""}`,
-            href: "/client/productivite",
           });
         });
         setResults(res);
@@ -791,11 +686,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
               {results.length > 0 && (
                 <div className="max-h-[52vh] overflow-y-auto py-1.5" style={{ scrollbarWidth: "none" }}>
                   {results.map((r) => {
-                    const ICONS: Record<string, React.ElementType> = {
-                      document: ReceiptText, event: Calendar, contact: Users,
-                      contract: FileText, note: StickyNote, task: ListTodo,
-                    };
-                    const Icon = ICONS[r.type] ?? ReceiptText;
+                    const Icon = r.type === "event" ? Calendar : ReceiptText;
                     return (
                       <Link key={r.id} href={r.href} onClick={close}
                         className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-white/[0.05]">
@@ -828,12 +719,8 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
                   <p className="mb-3 text-[0.58rem] font-bold uppercase tracking-wider text-white/20">Rechercher dans</p>
                   <div className="space-y-1.5">
                     {[
-                      { icon: ReceiptText, label: "Factures & devis",  desc: "Numéro, nom du client" },
-                      { icon: Calendar,    label: "Planning",           desc: "Titre de l'événement"  },
-                      { icon: Users,       label: "Contacts CRM",       desc: "Nom, prénom, email"    },
-                      { icon: FileText,    label: "Contrats",           desc: "Titre, client"         },
-                      { icon: StickyNote,  label: "Notes",              desc: "Titre de la note"      },
-                      { icon: ListTodo,    label: "Tâches",             desc: "Titre de la tâche"     },
+                      { icon: ReceiptText, label: "Factures & devis", desc: "Numéro, nom du client" },
+                      { icon: Calendar,    label: "Agenda",            desc: "Titre de l'événement"  },
                     ].map(({ icon: Icon, label, desc }) => (
                       <div key={label} className="flex items-center gap-3">
                         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
@@ -1336,6 +1223,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       {/* Mobile bottom navigation */}
       {!hasOwnMobileNav && <BottomNav pathname={pathname} dark={isDarkPage} />}
+
+      {/* Onboarding — affiché une seule fois à la première connexion */}
+      <OnboardingModal name={name?.split(" ")[0]} />
     </div>
   );
 }

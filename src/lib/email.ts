@@ -237,7 +237,6 @@ export async function sendWelcomeEmail(opts: WelcomeEmailOptions): Promise<boole
       return false;
     }
 
-    console.log("[Email] ✅ Email envoyé →", opts.email, "| id:", data?.id);
     return true;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -420,7 +419,6 @@ export async function sendCoachingIAEmail(opts: CoachingIAEmailOptions): Promise
       return false;
     }
 
-    console.log("[Email Coaching IA] ✅ Email envoyé →", opts.email, "| id:", data?.id);
     return true;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -599,13 +597,9 @@ export async function sendAccessWelcomeEmail(
     return { sent: false, reason };
   }
 
-  const keyPreview = `${key.slice(0, 7)}...${key.slice(-4)} (${key.length} chars)`;
   const fromAddr   = getFrom();
   const firstName  = opts.fullName?.split(" ")[0] ?? opts.email.split("@")[0];
   const loginUrl   = opts.loginUrl ?? `${getSite()}/acces`;
-
-  console.log("[Email Access] 🔑 Clé →", keyPreview, "| endpoint → POST https://api.resend.com/emails");
-  console.log("[Email Access] 📤 from:", fromAddr, "| to:", opts.email, "| loginUrl:", loginUrl);
 
   // ── Appel direct fetch (même pattern que /api/admin/resend-ping) ──
   try {
@@ -641,7 +635,6 @@ export async function sendAccessWelcomeEmail(
       return { sent: false, reason };
     }
 
-    console.log("[Email Access] ✅ Email envoyé →", opts.email, "| Resend id:", body.id);
     return { sent: true };
 
   } catch (err) {
@@ -781,7 +774,6 @@ export async function sendPaymentReceivedEmail(
       return false;
     }
 
-    console.log("[Email PaymentReceived] ✅ Email envoyé →", opts.email, "| id:", data?.id);
     return true;
   } catch (err) {
     console.error("[Email PaymentReceived] ❌ Exception:", err);
@@ -942,14 +934,11 @@ export async function sendAccessActivatedEmail(
     return { sent: false, reason };
   }
 
-  const keyPreview   = `${key.slice(0, 7)}...${key.slice(-4)} (${key.length} chars)`;
   const fromAddr     = getFrom();
   const firstName    = opts.fullName?.split(" ")[0] ?? opts.email.split("@")[0];
   const label        = ACCESS_TYPE_LABELS[opts.accessType];
   const defaultLogin = `${getSite()}${ACCESS_TYPE_LOGIN[opts.accessType]}`;
   const loginUrl     = opts.loginUrl ?? defaultLogin;
-
-  console.log("[Email Activated] 🔑 Clé →", keyPreview, "| from:", fromAddr, "| to:", opts.email);
 
   // ── Appel direct fetch (même pattern que /api/admin/resend-ping) ─────────
   try {
@@ -984,7 +973,6 @@ export async function sendAccessActivatedEmail(
       return { sent: false, reason };
     }
 
-    console.log("[Email Activated] ✅ Email envoyé →", opts.email, "| Resend id:", body.id);
     return { sent: true };
 
   } catch (err) {
