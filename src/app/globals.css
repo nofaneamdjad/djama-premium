@@ -859,6 +859,189 @@ a:focus:not(:focus-visible)      { outline: none; }
 }
 
 /* ══════════════════════════════════════════════
+   CLIENT APP — LIGHT MODE OVERRIDES
+   data-theme="light" on .client-app root
+   + html[data-theme="light"] pour anti-flash avant hydration
+══════════════════════════════════════════════ */
+
+/* Anti-flash: appliqué dès le premier rendu via script <head> */
+html[data-theme="light"],
+html[data-theme="light"] body {
+  background-color: #f0f2fb !important;
+  color-scheme: light !important;
+}
+html[data-theme="light"] .bg-\[\#07080e\],
+html[data-theme="light"] .bg-\[\#07090e\],
+html[data-theme="light"] .bg-\[\#0f1117\],
+html[data-theme="light"] .bg-\[\#0d1117\],
+html[data-theme="light"] .bg-\[\#0d1226\],
+html[data-theme="light"] .bg-\[\#08091c\],
+html[data-theme="light"] .bg-\[\#10162a\],
+html[data-theme="light"] .bg-\[\#090b1f\],
+html[data-theme="light"] .bg-\[\#0a0b12\],
+html[data-theme="light"] .bg-\[\#12151c\],
+html[data-theme="light"] .bg-\[\#1a1d26\] { background-color: #f4f5f9 !important; }
+html[data-theme="light"] .bg-\[\#07080e\]\/95,
+html[data-theme="light"] .bg-\[\#07080e\]\/60,
+html[data-theme="light"] .bg-\[\#0d1226\]\/95 { background-color: rgba(244,245,249,0.95) !important; }
+
+/* Body background quand mode clair actif */
+body:has(.client-app[data-theme="light"]),
+html:has(.client-app[data-theme="light"]) {
+  background-color: #f0f2fb !important;
+}
+
+/* Native controls */
+.client-app[data-theme="light"] { color-scheme: light; }
+.client-app[data-theme="light"] select {
+  color-scheme: light;
+  background-color: #f9fafb;
+  color: #111827;
+}
+.client-app[data-theme="light"] select option {
+  background-color: #f9fafb;
+  color: #111827;
+}
+
+/* ── Dark page background classes → light ── */
+.client-app[data-theme="light"] .bg-\[\#07080e\],
+.client-app[data-theme="light"] .bg-\[\#07090e\],
+.client-app[data-theme="light"] .bg-\[\#0f1117\],
+.client-app[data-theme="light"] .bg-\[\#111318\],
+.client-app[data-theme="light"] .bg-\[\#0a0b12\],
+.client-app[data-theme="light"] .bg-\[\#0d1117\],
+.client-app[data-theme="light"] .bg-\[\#0a0b0f\],
+.client-app[data-theme="light"] .bg-\[\#12151c\],
+.client-app[data-theme="light"] .bg-\[\#0d1226\],
+.client-app[data-theme="light"] .bg-\[\#08091c\],
+.client-app[data-theme="light"] .bg-\[\#0d1120\],
+.client-app[data-theme="light"] .bg-\[\#0a0f1e\],
+.client-app[data-theme="light"] .bg-\[\#1a2030\],
+.client-app[data-theme="light"] .bg-\[\#1a1d26\],
+.client-app[data-theme="light"] .bg-\[\#0d0e13\],
+.client-app[data-theme="light"] .bg-\[\#090c12\],
+.client-app[data-theme="light"] .bg-\[\#10162a\],
+.client-app[data-theme="light"] .bg-\[\#090b1f\] { background-color: #f4f5f9 !important; }
+
+/* ── Dark bg with opacity modifier (headers, navbars) ── */
+.client-app[data-theme="light"] .bg-\[\#07080e\]\/95,
+.client-app[data-theme="light"] .bg-\[\#07080e\]\/98,
+.client-app[data-theme="light"] .bg-\[\#07080e\]\/60,
+.client-app[data-theme="light"] .bg-\[\#07090e\]\/95,
+.client-app[data-theme="light"] .bg-\[\#0d1226\]\/95,
+.client-app[data-theme="light"] .bg-\[\#0d0e13\]\/60,
+.client-app[data-theme="light"] .bg-\[\#0f1117\]\/98,
+.client-app[data-theme="light"] .bg-\[\#0f1117\]\/60,
+.client-app[data-theme="light"] .bg-\[\#0d1117\]\/80,
+.client-app[data-theme="light"] .bg-\[\#0a0b12\]\/80 { background-color: rgba(244,245,249,0.95) !important; backdrop-filter: blur(12px); }
+
+/* ── Card / modal surfaces ── */
+.client-app[data-theme="light"] .bg-\[\#0e1420\],
+.client-app[data-theme="light"] .bg-\[\#161b22\] { background-color: #ffffff !important; }
+.client-app[data-theme="light"] .bg-\[\#131c30\] { background-color: #f0f2f8 !important; }
+
+/* ── bg-white/* card surfaces ── */
+.client-app[data-theme="light"] .bg-white\/\[0\.02\],
+.client-app[data-theme="light"] .bg-white\/2  { background-color: rgba(255,255,255,0.60) !important; }
+.client-app[data-theme="light"] .bg-white\/\[0\.03\],
+.client-app[data-theme="light"] .bg-white\/3  { background-color: rgba(255,255,255,0.75) !important; }
+.client-app[data-theme="light"] .bg-white\/\[0\.04\],
+.client-app[data-theme="light"] .bg-white\/4  { background-color: rgba(255,255,255,0.85) !important; }
+.client-app[data-theme="light"] .bg-white\/\[0\.05\],
+.client-app[data-theme="light"] .bg-white\/5  { background-color: rgba(255,255,255,0.92) !important; }
+.client-app[data-theme="light"] .bg-white\/\[0\.06\],
+.client-app[data-theme="light"] .bg-white\/6  { background-color: rgba(0,0,0,0.04) !important; }
+.client-app[data-theme="light"] .bg-white\/\[0\.07\],
+.client-app[data-theme="light"] .bg-white\/7  { background-color: rgba(0,0,0,0.04) !important; }
+.client-app[data-theme="light"] .bg-white\/\[0\.08\],
+.client-app[data-theme="light"] .bg-white\/8  { background-color: rgba(0,0,0,0.05) !important; }
+.client-app[data-theme="light"] .bg-white\/10  { background-color: rgba(0,0,0,0.06) !important; }
+.client-app[data-theme="light"] .bg-white\/12  { background-color: rgba(0,0,0,0.07) !important; }
+
+/* ── Text: white → dark ── */
+.client-app[data-theme="light"] .text-white     { color: #111827 !important; }
+.client-app[data-theme="light"] .text-white\/90 { color: rgba(17,24,39,0.88) !important; }
+.client-app[data-theme="light"] .text-white\/85,
+.client-app[data-theme="light"] .text-white\/82,
+.client-app[data-theme="light"] .text-white\/80,
+.client-app[data-theme="light"] .text-white\/75 { color: rgba(17,24,39,0.85) !important; }
+.client-app[data-theme="light"] .text-white\/70,
+.client-app[data-theme="light"] .text-white\/65,
+.client-app[data-theme="light"] .text-white\/60,
+.client-app[data-theme="light"] .text-white\/55 { color: rgba(17,24,39,0.65) !important; }
+.client-app[data-theme="light"] .text-white\/50,
+.client-app[data-theme="light"] .text-white\/45,
+.client-app[data-theme="light"] .text-white\/40 { color: rgba(17,24,39,0.50) !important; }
+.client-app[data-theme="light"] .text-white\/35,
+.client-app[data-theme="light"] .text-white\/30,
+.client-app[data-theme="light"] .text-white\/28,
+.client-app[data-theme="light"] .text-white\/25 { color: rgba(17,24,39,0.38) !important; }
+.client-app[data-theme="light"] .text-white\/22,
+.client-app[data-theme="light"] .text-white\/20,
+.client-app[data-theme="light"] .text-white\/18,
+.client-app[data-theme="light"] .text-white\/15,
+.client-app[data-theme="light"] .text-white\/12,
+.client-app[data-theme="light"] .text-white\/10 { color: rgba(17,24,39,0.22) !important; }
+
+/* Labels, headings, specific elements */
+.client-app[data-theme="light"] h1.text-white { color: #111827 !important; }
+.client-app[data-theme="light"] h2.text-white { color: #1f2937 !important; }
+.client-app[data-theme="light"] h3.text-white { color: #374151 !important; }
+.client-app[data-theme="light"] .uppercase.text-white,
+.client-app[data-theme="light"] .tracking-widest.text-white,
+.client-app[data-theme="light"] .tracking-wider.text-white { color: rgba(17,24,39,0.45) !important; }
+.client-app[data-theme="light"] select.text-white,
+.client-app[data-theme="light"] select.text-white\/60 { color: #374151 !important; }
+
+/* ── Borders ── */
+.client-app[data-theme="light"] .border-white\/\[0\.05\],
+.client-app[data-theme="light"] .border-white\/5  { border-color: rgba(0,0,0,0.06) !important; }
+.client-app[data-theme="light"] .border-white\/\[0\.06\],
+.client-app[data-theme="light"] .border-white\/6  { border-color: rgba(0,0,0,0.07) !important; }
+.client-app[data-theme="light"] .border-white\/\[0\.07\],
+.client-app[data-theme="light"] .border-white\/7  { border-color: rgba(0,0,0,0.07) !important; }
+.client-app[data-theme="light"] .border-white\/\[0\.08\],
+.client-app[data-theme="light"] .border-white\/8  { border-color: rgba(0,0,0,0.08) !important; }
+.client-app[data-theme="light"] .border-white\/10 { border-color: rgba(0,0,0,0.09) !important; }
+.client-app[data-theme="light"] .border-white\/12 { border-color: rgba(0,0,0,0.10) !important; }
+.client-app[data-theme="light"] .divide-white\/5  > * + * { border-color: rgba(0,0,0,0.06) !important; }
+.client-app[data-theme="light"] .divide-white\/6  > * + * { border-color: rgba(0,0,0,0.07) !important; }
+.client-app[data-theme="light"] .divide-white\/8  > * + * { border-color: rgba(0,0,0,0.08) !important; }
+
+/* ── Inputs / placeholders ── */
+.client-app[data-theme="light"] .placeholder-white\/20::placeholder { color: rgba(0,0,0,0.28) !important; }
+.client-app[data-theme="light"] .placeholder-white\/25::placeholder { color: rgba(0,0,0,0.30) !important; }
+.client-app[data-theme="light"] .placeholder-white\/30::placeholder { color: rgba(0,0,0,0.35) !important; }
+.client-app[data-theme="light"] input.bg-transparent,
+.client-app[data-theme="light"] textarea.bg-transparent { color: #111827 !important; }
+
+/* ── Inline style dark backgrounds (attribute selectors) ──
+   React normalise les hex en rgb() dans le DOM, donc on cible rgb() pas #hex.
+   #07080e → rgb(7, 8, 14)  |  #0d1117 → rgb(13, 17, 23)
+── */
+
+/* Headers de pages dark avec gradient (CRM, Dépenses, etc.) */
+.client-app[data-theme="light"] [style*="rgb(7, 8, 14)"],
+.client-app[data-theme="light"] [style*="rgb(7, 9, 14)"],
+.client-app[data-theme="light"] [style*="rgb(13, 17, 23)"],
+.client-app[data-theme="light"] [style*="rgb(9, 8, 14)"] {
+  background: linear-gradient(160deg, #e8ecf8, #edf1fc, #e8ecf8) !important;
+}
+/* Dark rgba surfaces (cards, drawers, kanban, tab bars) */
+.client-app[data-theme="light"] [style*="rgba(7, 8, 14"],
+.client-app[data-theme="light"] [style*="rgba(7,8,14"],
+.client-app[data-theme="light"] [style*="rgba(6, 8, 14"],
+.client-app[data-theme="light"] [style*="rgba(6,8,14"] {
+  background: rgba(255,255,255,0.95) !important;
+  border-color: rgba(0,0,0,0.07) !important;
+}
+/* Tab bar/section subtle overlay */
+.client-app[data-theme="light"] [style*="rgba(0, 0, 0, 0.25)"],
+.client-app[data-theme="light"] [style*="rgba(0,0,0,0.25)"] {
+  background: rgba(0,0,0,0.03) !important;
+}
+
+/* ══════════════════════════════════════════════
    PERFORMANCE — GPU & PAINT ISOLATION
 ══════════════════════════════════════════════ */
 .gpu-layer      { transform: translateZ(0); will-change: auto; }

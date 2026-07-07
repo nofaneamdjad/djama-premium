@@ -446,19 +446,28 @@ export default function AssistantPage() {
   const [toastData,    setToastData]    = useState<ToastData | null>(null);
   const [userId,       setUserId]       = useState<string>("");
   const [speakingId,   setSpeakingId]   = useState<string | null>(null);
-  const [mem,          setMem]          = useState<string>(() =>
-    typeof window !== "undefined" ? localStorage.getItem("djama_ai_mem") || "" : ""
-  );
+  const [mem,          setMem]          = useState<string>("");
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLTextAreaElement>(null);
+  const memSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const toast = useCallback((msg: string, type: ToastData["type"] = "success") => {
     setToastData({ msg, type });
     setTimeout(() => setToastData(null), 3000);
   }, []);
 
-  useEffect(() => { localStorage.setItem("djama_ai_mem", mem); }, [mem]);
+  useEffect(() => {
+    if (!userId) return;
+    if (memSaveTimer.current) clearTimeout(memSaveTimer.current);
+    memSaveTimer.current = setTimeout(() => {
+      void supabase.from("ai_memories").upsert(
+        { user_id: userId, memory_text: mem, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" }
+      );
+    }, 1500);
+    return () => { if (memSaveTimer.current) clearTimeout(memSaveTimer.current); };
+  }, [mem, userId]);
 
   function exportConv() {
     if (!msgs.length) return;
@@ -524,13 +533,15 @@ export default function AssistantPage() {
       if (!authUser) { setInsLoading(false); return; }
       setUserId(authUser.id);
       const uid = authUser.id;
-      const [tasks, inv, st, lv, ev] = await Promise.all([
+      const [tasks, inv, st, lv, ev, memRow] = await Promise.all([
         supabase.from("productivity_tasks").select("status,priority,due_date").eq("user_id", uid).limit(200),
         supabase.from("factures").select("statut,montant_ttc").eq("user_id", uid).limit(200),
         supabase.from("stock_products").select("quantity,min_quantity").eq("user_id", uid).limit(200),
         supabase.from("team_leaves").select("status").eq("user_id", uid).limit(50),
         supabase.from("planning_events").select("start_at").eq("user_id", uid).limit(50),
+        supabase.from("ai_memories").select("memory_text").eq("user_id", uid).maybeSingle(),
       ]);
+      if (memRow.data?.memory_text) setMem(memRow.data.memory_text as string);
 
       const todayStr = new Date().toDateString();
       const todayIso = new Date().toISOString().slice(0, 10);

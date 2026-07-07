@@ -22,6 +22,7 @@ import type { LogoTransform } from "@/components/invoice/LogoDragResize";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
 import type { CompanySettings } from "@/lib/pdf/companySettings";
 import { usePagination } from "@/hooks/usePagination";
+import { useTheme } from "@/lib/theme-context";
 
 type DocType   = "facture" | "devis";
 type DocStatut = "brouillon" | "envoyé" | "payé" | "en_retard";
@@ -85,6 +86,9 @@ interface Document {
   share_token?:     string;
   signed_at?:       string;
   signed_by?:       string;
+  signature_data?:  string | null;
+  recur_freq?:      string | null;
+  recur_next_date?: string | null;
 }
 
 type DraftDoc = Omit<Document,
@@ -247,15 +251,6 @@ function nextRecurDate(from: string, freq: RecurFreq): string {
   const days = RECUR_FREQS.find(f => f.val === freq)?.days ?? 30;
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
-}
-
-function lsGet(key: string): string | null {
-  if (typeof window === "undefined") return null;
-  try { return localStorage.getItem(key); } catch { return null; }
-}
-function lsSet(key: string, val: string | null) {
-  if (typeof window === "undefined") return;
-  try { if (val === null) localStorage.removeItem(key); else localStorage.setItem(key, val); } catch { /* ignore */ }
 }
 
 function parseCSV(text: string): { nom: string; email: string; societe?: string; telephone?: string }[] {
@@ -665,6 +660,7 @@ function SectionLabel({ icon, label, hint }: { icon?: React.ReactNode; label: st
 }
 
 export default function FacturesPage() {
+  const { isDark } = useTheme();
   const [documents,    setDocuments]    = useState<Document[]>([]);
   const [selected,     setSelected]     = useState<Document|null>(null);
   const [draft,        setDraft]        = useState<DraftDoc|null>(null);
@@ -815,12 +811,15 @@ export default function FacturesPage() {
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [dirty, selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Charger signature + récurrence depuis localStorage au changement de document
+  // Charger signature + récurrence depuis le document DB
   useEffect(() => {
     if (!selected) { setDocSignature(null); setDocRecurCfg(null); return; }
-    setDocSignature(lsGet(`sig:${selected.id}`));
-    const raw = lsGet(`recur:${selected.id}`);
-    try { setDocRecurCfg(raw ? (JSON.parse(raw) as { freq: RecurFreq; next_date: string }) : null); } catch { setDocRecurCfg(null); }
+    setDocSignature(selected.signature_data ?? null);
+    if (selected.recur_freq && selected.recur_next_date) {
+      setDocRecurCfg({ freq: selected.recur_freq as RecurFreq, next_date: selected.recur_next_date });
+    } else {
+      setDocRecurCfg(null);
+    }
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
@@ -1336,8 +1335,9 @@ export default function FacturesPage() {
     if (!selected || !draft) return;
     const base = draft.date_echeance || draft.date_document || new Date().toISOString().slice(0, 10);
     const cfg = { freq: recurFreq, next_date: nextRecurDate(base, recurFreq) };
-    lsSet(`recur:${selected.id}`, JSON.stringify(cfg));
     setDocRecurCfg(cfg);
+    setSelected(s => s ? { ...s, recur_freq: cfg.freq, recur_next_date: cfg.next_date } : s);
+    void supabase.from("documents").update({ recur_freq: cfg.freq, recur_next_date: cfg.next_date }).eq("id", selected.id);
     setRecurModal(false);
     showToast("success", `Récurrence ${RECUR_FREQS.find(f => f.val === recurFreq)?.label ?? ""} activée.`);
   }
@@ -1380,8 +1380,9 @@ export default function FacturesPage() {
       );
     }
     const newCfg = { freq, next_date: nextRecurDate(nextDate, freq) };
-    lsSet(`recur:${selected.id}`, JSON.stringify(newCfg));
+    void supabase.from("documents").update({ recur_freq: newCfg.freq, recur_next_date: newCfg.next_date }).eq("id", selected.id);
     setDocRecurCfg(newCfg);
+    setSelected(s => s ? { ...s, recur_freq: newCfg.freq, recur_next_date: newCfg.next_date } : s);
     setDuplicating(false);
     showToast("success", `Prochaine facture → ${newNum}`);
     await fetchDocs();
@@ -1424,15 +1425,17 @@ export default function FacturesPage() {
   function sigSave() {
     if (!sigCanvasRef.current || !selected) return;
     const dataUrl = sigCanvasRef.current.toDataURL("image/png");
-    lsSet(`sig:${selected.id}`, dataUrl);
+    void supabase.from("documents").update({ signature_data: dataUrl }).eq("id", selected.id);
     setDocSignature(dataUrl);
+    setSelected(s => s ? { ...s, signature_data: dataUrl } : s);
     setSigModal(false);
     showToast("success", "Signature enregistrée.");
   }
   function sigDelete() {
     if (!selected) return;
-    lsSet(`sig:${selected.id}`, null);
+    void supabase.from("documents").update({ signature_data: null }).eq("id", selected.id);
     setDocSignature(null);
+    setSelected(s => s ? { ...s, signature_data: null } : s);
     showToast("success", "Signature supprimée.");
   }
 
@@ -1538,17 +1541,17 @@ export default function FacturesPage() {
   const fmt         = (n: number) => fmtAmount(n, devise);
 
   return (
-    <div className="flex h-[calc(100vh-56px)] flex-col overflow-hidden bg-[#07080e]">
+    <div className={`flex h-[calc(100vh-56px)] flex-col overflow-hidden ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
 
       {/* ── Header ── */}
-      <div className="shrink-0 border-b border-white/[0.07] bg-[rgba(10,11,16,0.95)] px-5 py-4 backdrop-blur-xl sm:px-8">
+      <div className={`shrink-0 border-b px-5 py-4 backdrop-blur-xl sm:px-8 ${isDark ? "border-white/[0.07] bg-[rgba(10,11,16,0.95)]" : "border-black/[0.06] bg-white/90"}`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
               <ReceiptText size={16} style={{ color:"#c9a55a" }}/>
             </div>
             <div>
-              <h1 className="text-base font-extrabold text-white">Factures & Devis</h1>
+              <h1 className={`text-base font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>Factures & Devis</h1>
               <p className="text-[0.65rem] text-white/30">{documents.length} document{documents.length !== 1 ? "s" : ""}</p>
             </div>
           </div>
@@ -2177,7 +2180,7 @@ export default function FacturesPage() {
                             </div>
                             <button onClick={() => { setRecurFreq(docRecurCfg.freq); setRecurModal(true); }}
                               className="shrink-0 text-[0.65rem] text-white/30 transition hover:text-white/60">Modifier</button>
-                            <button onClick={() => { lsSet(`recur:${selected.id}`, null); setDocRecurCfg(null); showToast("success", "Récurrence désactivée."); }}
+                            <button onClick={() => { void supabase.from("documents").update({ recur_freq: null, recur_next_date: null }).eq("id", selected.id); setDocRecurCfg(null); setSelected(s => s ? { ...s, recur_freq: null, recur_next_date: null } : s); showToast("success", "Récurrence désactivée."); }}
                               className="shrink-0 text-[0.65rem] text-red-400/50 transition hover:text-red-400">Désactiver</button>
                             <button onClick={() => handleDuplicateRecur(docRecurCfg.freq, docRecurCfg.next_date)} disabled={duplicating}
                               className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-[0.65rem] font-bold transition hover:bg-[rgba(201,165,90,0.08)] disabled:opacity-40"

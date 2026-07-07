@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Timer, Play, Pause, Square, Plus, Trash2, X, Clock, Euro,
@@ -12,6 +13,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { fmtEur } from "@/lib/format";
 import Toast, { type ToastData } from "@/components/ui/Toast";
+import { useTheme } from "@/lib/theme-context";
 
 type TimerMode = "classic" | "pomodoro" | "countdown" | "focus";
 type PomPhase = "work" | "break";
@@ -216,6 +218,8 @@ const emptyProject = (): ProjectDraft => ({
 });
 
 export default function ChronoPage() {
+  const { isDark } = useTheme();
+  const router = useRouter();
 
     const [mode,         setMode]         = useState<TimerMode>("classic");
   const [running,      setRunning]      = useState(false);
@@ -259,6 +263,7 @@ export default function ChronoPage() {
   const [goalSaving,    setGoalSaving]    = useState(false);
   const [confirmDel,    setConfirmDel]    = useState<string|null>(null);
   const [deleting,      setDeleting]      = useState<string|null>(null);
+  const [creatingInv,   setCreatingInv]   = useState<string|null>(null);
 
     const intervalRef    = useRef<ReturnType<typeof setInterval>|null>(null);
   const modeRef        = useRef<TimerMode>("classic");
@@ -481,6 +486,70 @@ export default function ChronoPage() {
     showToast("success", `${ids.length} entrée${ids.length > 1 ? "s" : ""} marquée${ids.length > 1 ? "s" : ""} facturée${ids.length > 1 ? "s" : ""}.`);
   }
 
+  async function handleCreateInvoice(proj: string, ents: TimeEntry[]) {
+    if (creatingInv) return;
+    setCreatingInv(proj);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { showToast("error", "Non connecté."); return; }
+
+      const year = new Date().getFullYear();
+      const clientNom = ents[0]?.client_name ?? "";
+      const totalHt = ents.reduce((a, e) => e.hourly_rate ? a + (e.duration_minutes / 60) * e.hourly_rate : a, 0);
+      const tva20 = Math.round(totalHt * 0.2 * 100) / 100;
+
+      // Numéro unique : timestamp-based pour éviter les conflits
+      const suffix = Date.now().toString().slice(-5);
+      const numero = `FAC-${year}-C${suffix}`;
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      const { data: doc, error: docErr } = await supabase.from("documents").insert({
+        user_id: user.id,
+        type: "facture",
+        numero,
+        statut: "brouillon",
+        sujet: `Prestations ${proj}`,
+        client_nom: clientNom,
+        client_societe: "",
+        date_document: today,
+        devise: "EUR",
+        total_ht: totalHt,
+        total_tva: tva20,
+        total_ttc: Math.round((totalHt + tva20) * 100) / 100,
+        emetteur_nom: "", emetteur_email: "", emetteur_adresse: "", emetteur_ville: "",
+        emetteur_code_postal: "", emetteur_pays: "", emetteur_siret: "", emetteur_tva: "",
+        emetteur_logo: "", rib_titulaire: "", rib_iban: "", rib_bic: "", rib_banque: "",
+        client_email: "", client_telephone: "", client_adresse: "", client_ville: "",
+        client_code_postal: "", client_pays: "", client_tva: "",
+        remise_pct: 0, acompte: 0, notes: "", conditions: "", mentions_legales: "",
+        couleur: "#c9a55a", template: "modern",
+      }).select("id").single();
+
+      if (docErr || !doc) { showToast("error", docErr?.message ?? "Erreur création"); return; }
+
+      const rows = ents.map((e, i) => ({
+        document_id: doc.id,
+        position: i,
+        description: e.task_title || e.description || "Prestation",
+        unit: "h",
+        quantity: Math.round((e.duration_minutes / 60) * 100) / 100,
+        unit_price: e.hourly_rate ?? 0,
+        vat_rate: 20,
+        remise_pct: 0,
+      }));
+
+      await supabase.from("document_items").insert(rows);
+      await supabase.from("time_entries").update({ is_billed: true, invoice_ref: numero }).in("id", ents.map(e => e.id));
+      setEntries(p => p.map(e => ents.find(x => x.id === e.id) ? { ...e, is_billed: true, invoice_ref: numero } : e));
+
+      showToast("success", `Facture ${numero} créée — redirection…`);
+      setTimeout(() => router.push("/client/factures"), 1200);
+    } finally {
+      setCreatingInv(null);
+    }
+  }
+
     const today      = todayISO();
   const weekStart  = startOfWeekISO();
   const monthStart = startOfMonthISO();
@@ -629,7 +698,7 @@ export default function ChronoPage() {
     const isFocusActive = focusMode && (running||paused);
 
     return (
-    <div className="min-h-screen bg-[#07080e]">
+    <div className={`min-h-screen ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
 
             <AnimatePresence>
         {isFocusActive && (
@@ -667,7 +736,7 @@ export default function ChronoPage() {
       </AnimatePresence>
 
             <div className="relative z-10 overflow-hidden border-b border-white/6 px-5 py-4 sm:px-8"
-        style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#07080e)" }}>
+        style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#07080e)" : "linear-gradient(160deg,#eef0f8,#e8ebf5,#eef0f8)" }}>
         {/* Gold shimmer line */}
         <motion.div initial={{scaleX:0}} animate={{scaleX:1}} transition={{duration:0.9,ease:"easeOut"}}
           className="absolute inset-x-0 top-0 h-[2px] origin-left"
@@ -1334,7 +1403,7 @@ export default function ChronoPage() {
                     <TrendingUp size={12} style={{color:"#c9a55a"}}/>
                     <span className="text-xs font-bold" style={{color:"#c9a55a"}}>Prêt à facturer</span>
                   </div>
-                  <p className="text-[0.65rem] text-white/30">Allez dans Factures pour créer</p>
+                  <p className="text-[0.65rem] text-white/30">Cliquez "Créer facture" par projet</p>
                 </div>
               )}
             </div>
@@ -1370,6 +1439,13 @@ export default function ChronoPage() {
                             </div>
                             <div className="flex items-center gap-3">
                               {projAmt>0&&<span className="font-extrabold" style={{color:"#c9a55a"}}>{fmtEur(projAmt)}</span>}
+                              {projAmt > 0 && (
+                                <button onClick={()=>{ void handleCreateInvoice(proj, ents); }} disabled={!!creatingInv}
+                                  className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.1)] px-3 py-1.5 text-xs font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.18)] disabled:opacity-40">
+                                  {creatingInv===proj ? <Loader2 size={11} className="animate-spin"/> : <FileText size={11}/>}
+                                  Créer facture
+                                </button>
+                              )}
                               <button onClick={()=>{ void handleMarkAllBilled(ents.map(e=>e.id)); }}
                                 className="flex items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-3 py-1.5 text-xs font-bold text-emerald-400 transition hover:bg-emerald-500/15">
                                 <CheckCircle size={11}/>Tout marquer facturé

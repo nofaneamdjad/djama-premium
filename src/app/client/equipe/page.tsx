@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
+import { useTheme } from "@/lib/theme-context";
 
 type MemberRole   = "admin"|"manager"|"employee"|"accountant"|"extern";
 type MemberStatus = "active"|"away"|"leave"|"inactive";
@@ -143,20 +144,6 @@ interface Evaluation {
   notes: string;
 }
 
-const EVAL_KEY = "equipe_evaluations_v1";
-const TS_KEY   = "equipe_timesheet_v1";
-
-function loadEvals(): Evaluation[] {
-  try { return JSON.parse(localStorage.getItem(EVAL_KEY) ?? "[]") as Evaluation[]; }
-  catch { return []; }
-}
-function saveEvals(evs: Evaluation[]) { localStorage.setItem(EVAL_KEY, JSON.stringify(evs)); }
-
-function loadTimesheet(): Record<string, number> {
-  try { return JSON.parse(localStorage.getItem(TS_KEY) ?? "{}") as Record<string, number>; }
-  catch { return {}; }
-}
-function saveTimesheet(ts: Record<string, number>) { localStorage.setItem(TS_KEY, JSON.stringify(ts)); }
 
 function parseMember(r:Record<string,unknown>): TeamMember {
   return {
@@ -201,6 +188,7 @@ function Avatar({ name, color, size=36 }: { name:string; color:string; size?:num
 }
 
 export default function EquipePage() {
+  const { isDark } = useTheme();
   const router = useRouter();
     const [tab,      setTab]      = useState<AppTab>("members");
   const [members,  setMembers]  = useState<TeamMember[]>([]);
@@ -290,18 +278,30 @@ export default function EquipePage() {
       const { data:{ user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/login"); return; }
       const uid = user.id;
-      const [mR,tkR,msgR,lR,mrR] = await Promise.all([
+      setUid(uid);
+      const [mR,tkR,msgR,lR,mrR,evR,tsR] = await Promise.all([
         supabase.from("team_members").select("*").eq("user_id",uid).order("name").limit(200),
         supabase.from("team_tasks").select("*").eq("user_id",uid).order("created_at",{ascending:false}).limit(500),
         supabase.from("team_messages").select("*").eq("user_id",uid).order("created_at").limit(200),
         supabase.from("team_leaves").select("*").eq("user_id",uid).order("start_date",{ascending:false}).limit(200),
         supabase.from("team_meetings").select("*").eq("user_id",uid).order("date_at").limit(200),
+        supabase.from("employe_evaluations").select("*").eq("user_id",uid).order("date",{ascending:false}),
+        supabase.from("timesheets").select("*").eq("user_id",uid),
       ]);
       setMembers((mR.data??[]).map(r=>parseMember(r as Record<string,unknown>)));
       setTasks((tkR.data??[]).map(r=>parseTask(r as Record<string,unknown>)));
       setMessages((msgR.data??[]) as TeamMessage[]);
       setLeaves((lR.data??[]) as TeamLeave[]);
       setMeetings((mrR.data??[]) as TeamMeeting[]);
+      setEvals((evR.data??[]).map(r=>({
+        id:r.id as string, memberId:r.member_id as string, memberName:r.member_name as string,
+        date:r.date as string, score:r.score as number, notes:(r.notes as string)??'',
+      })));
+      const ts: Record<string,number> = {};
+      for (const r of (tsR.data??[])) {
+        ts[`${r.member_id as string}_${r.day_key as string}`] = r.hours as number;
+      }
+      setTsData(ts);
     } catch {
       toast("Erreur réseau — impossible de charger l'équipe", "error");
     } finally {
@@ -335,12 +335,11 @@ export default function EquipePage() {
   /* ── Timesheet ── */
   const [tsData,    setTsData]    = useState<Record<string,number>>({});
   const [tsWeekOff, setTsWeekOff] = useState(0);
+  const [uid,       setUid]       = useState<string | null>(null);
 
   /* ── Agenda absences ── */
   const [agMon,  setAgMon]  = useState(()=>new Date().getMonth());
   const [agYear, setAgYear] = useState(()=>new Date().getFullYear());
-
-  useEffect(()=>{ setEvals(loadEvals()); setTsData(loadTimesheet()); }, []);
 
   const evalsByMember = useMemo(()=>{
     const map = new Map<string,{sum:number;count:number}>();
@@ -1108,12 +1107,19 @@ export default function EquipePage() {
                               <input type="number" min={0} max={24} step={0.5}
                                 value={tsData[key] ?? ""}
                                 placeholder="—"
-                                onChange={e=>{
+                                onChange={async e=>{
                                   const v = parseFloat(e.target.value);
                                   const updated = {...tsData};
-                                  if (isNaN(v) || e.target.value==="") { delete updated[key]; }
-                                  else { updated[key] = Math.min(24, Math.max(0, v)); }
-                                  setTsData(updated); saveTimesheet(updated);
+                                  if (isNaN(v) || e.target.value==="") {
+                                    delete updated[key];
+                                    setTsData(updated);
+                                    if (uid) await supabase.from("timesheets").delete().eq("user_id",uid).eq("member_id",m.id).eq("day_key",d);
+                                  } else {
+                                    const hours = Math.min(24, Math.max(0, v));
+                                    updated[key] = hours;
+                                    setTsData(updated);
+                                    if (uid) await supabase.from("timesheets").upsert({user_id:uid,member_id:m.id,day_key:d,hours},{onConflict:"user_id,member_id,day_key"});
+                                  }
                                 }}
                                 className="w-10 text-center bg-transparent border border-transparent rounded-lg py-1 text-white/60 placeholder:text-white/15 focus:outline-none focus:border-sky-500/30 focus:bg-white/5 transition-all hover:border-white/10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
@@ -1215,25 +1221,26 @@ export default function EquipePage() {
   }
 
   function renderEvals() {
-    function saveEval() {
-      if (!evalForm.memberId) return;
+    async function saveEval() {
+      if (!evalForm.memberId || !uid) return;
       const mem  = members.find(m=>m.id===evalForm.memberId);
-      const entry: Evaluation = {
-        id: Math.random().toString(36).slice(2,10),
-        memberId:   evalForm.memberId!,
-        memberName: mem?.name ?? "",
-        date:       new Date().toISOString().slice(0,10),
-        score:      evalForm.score ?? 3,
-        notes:      evalForm.notes ?? "",
+      const payload = {
+        user_id:     uid,
+        member_id:   evalForm.memberId,
+        member_name: mem?.name ?? "",
+        date:        new Date().toISOString().slice(0,10),
+        score:       evalForm.score ?? 3,
+        notes:       evalForm.notes ?? "",
       };
-      const updated = [entry, ...evals];
-      setEvals(updated); saveEvals(updated);
+      const {data,error} = await supabase.from("employe_evaluations").insert(payload).select().single();
+      if (error) { toast("Erreur sauvegarde évaluation","error"); return; }
+      setEvals(prev=>[{id:data.id as string,memberId:data.member_id as string,memberName:data.member_name as string,date:data.date as string,score:data.score as number,notes:(data.notes as string)??''},...prev]);
       setShowEvalForm(false); setEvalForm({score:3});
     }
 
-    function deleteEval(id: string) {
-      const updated = evals.filter(e=>e.id!==id);
-      setEvals(updated); saveEvals(updated);
+    async function deleteEval(id: string) {
+      setEvals(prev=>prev.filter(e=>e.id!==id));
+      await supabase.from("employe_evaluations").delete().eq("id",id);
     }
 
     function exportEvalCSV() {
@@ -1360,11 +1367,11 @@ export default function EquipePage() {
   }
 
     return (
-    <div className="flex flex-col h-[calc(100vh-56px)] bg-[#07080e] text-white overflow-hidden">
+    <div className={`flex flex-col h-[calc(100vh-56px)] overflow-hidden ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-gray-900"}`}>
       <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* Animated header */}
-      <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#07080e)" }}>
+      <div className="relative overflow-hidden shrink-0" style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#07080e)" : "linear-gradient(160deg,#eef0f8,#e8ebf5,#eef0f8)" }}>
         <div className="pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
         <div className="pointer-events-none absolute -bottom-8 right-16 h-24 w-24 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#0ea5e9,transparent)" }}/>
 

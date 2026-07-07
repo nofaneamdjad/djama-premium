@@ -16,6 +16,7 @@ import { fmtDate } from "@/lib/format";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 import Pagination from "@/components/client/Pagination";
 import { usePagination } from "@/hooks/usePagination";
+import { useTheme } from "@/lib/theme-context";
 
 type TxType   = "income" | "expense";
 type TxStatus = "completed" | "pending" | "cancelled";
@@ -95,22 +96,7 @@ const FREQUENCIES = [
 const ACCOUNT_COLORS = ["#3b82f6","#10b981","#8b5cf6","#f59e0b","#ec4899","#06b6d4","#c9a55a"];
 
 type AlertThreshold = { accountId: string; min: number };
-const THRESH_KEY = "djama_tres_thresh";
-function getThresholds(): AlertThreshold[] {
-  try { return JSON.parse(localStorage.getItem(THRESH_KEY) || "[]"); } catch { return []; }
-}
-function saveThresholds(t: AlertThreshold[]): void {
-  localStorage.setItem(THRESH_KEY, JSON.stringify(t));
-}
-
 type BankLink = { accountId: string; bank: string; lastSync: string };
-const BANKLINK_KEY = "djama_tres_blinks";
-function getBankLinks(): BankLink[] {
-  try { return JSON.parse(localStorage.getItem(BANKLINK_KEY) || "[]"); } catch { return []; }
-}
-function saveBankLinks(links: BankLink[]): void {
-  localStorage.setItem(BANKLINK_KEY, JSON.stringify(links));
-}
 const BANKS = [
   { id: "bnp",  name: "BNP Paribas",      color: "#009966" },
   { id: "ca",   name: "Crédit Agricole",   color: "#00853F" },
@@ -540,14 +526,21 @@ function RecurringModal({
 }
 
 function DashboardView({
-  transactions, accounts, recurring, invoices, onNavigate,
+  transactions, accounts, recurring, invoices, onNavigate, userId,
 }: {
   transactions: Transaction[];
   accounts: TAccount[];
   recurring: Recurring[];
   invoices: RawDoc[];
   onNavigate: (tab: "transactions" | "previsions") => void;
+  userId: string | null;
 }) {
+  const [thresholds, setThresholds] = useState<AlertThreshold[]>([]);
+  useEffect(() => {
+    if (!userId) return;
+    void supabase.from("user_preferences").select("value").eq("user_id", userId).eq("key", "treasury_thresholds").maybeSingle()
+      .then(({ data }) => { if (data?.value) setThresholds(data.value as AlertThreshold[]); });
+  }, [userId]);
   const now = new Date();
   const mk  = monthKey(now);
   const prevMk = monthKey(new Date(now.getFullYear(), now.getMonth() - 1));
@@ -586,7 +579,6 @@ function DashboardView({
 
   const recent5 = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 
-  const thresholds = getThresholds();
   const threshAlerts = accounts.filter(a => {
     const t = thresholds.find(th => th.accountId === a.id);
     return t && a.balance < t.min;
@@ -1196,19 +1188,32 @@ function ComptesView({
   const [pdfAnalyzing,       setPdfAnalyzing]       = useState(false);
   const [pdfError,           setPdfError]           = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
-  const [thresholds,   setThresholdsState] = useState<AlertThreshold[]>(() => getThresholds());
+  const [thresholds,   setThresholdsState] = useState<AlertThreshold[]>([]);
   const [editThreshId, setEditThreshId]    = useState<string | null>(null);
   const [threshInput,  setThreshInput]     = useState("");
-  const [bankLinks,    setBankLinksState]  = useState<BankLink[]>(() => getBankLinks());
+  const [bankLinks,    setBankLinksState]  = useState<BankLink[]>([]);
   const [bankModalId,  setBankModalId]     = useState<string | null>(null);
   const [connecting,   setConnecting]      = useState(false);
+
+  useEffect(() => {
+    void Promise.all([
+      supabase.from("user_preferences").select("value").eq("user_id", userId).eq("key", "treasury_thresholds").maybeSingle(),
+      supabase.from("user_preferences").select("value").eq("user_id", userId).eq("key", "treasury_banklinks").maybeSingle(),
+    ]).then(([th, bl]) => {
+      if (th.data?.value) setThresholdsState(th.data.value as AlertThreshold[]);
+      if (bl.data?.value) setBankLinksState(bl.data.value as BankLink[]);
+    });
+  }, [userId]);
 
   function applyThreshold(accountId: string, val: string) {
     const min = parseFloat(val.replace(",", "."));
     if (isNaN(min)) return;
     const next = [...thresholds.filter(t => t.accountId !== accountId), { accountId, min }];
     setThresholdsState(next);
-    saveThresholds(next);
+    void supabase.from("user_preferences").upsert(
+      { user_id: userId, key: "treasury_thresholds", value: next, updated_at: new Date().toISOString() },
+      { onConflict: "user_id,key" }
+    );
     setEditThreshId(null);
   }
 
@@ -1217,7 +1222,10 @@ function ComptesView({
     await new Promise(r => setTimeout(r, 1200));
     const next = [...bankLinks.filter(l => l.accountId !== accountId), { accountId, bank: bank.name, lastSync: new Date().toISOString() }];
     setBankLinksState(next);
-    saveBankLinks(next);
+    void supabase.from("user_preferences").upsert(
+      { user_id: userId, key: "treasury_banklinks", value: next, updated_at: new Date().toISOString() },
+      { onConflict: "user_id,key" }
+    );
     setBankModalId(null);
     setConnecting(false);
   }
@@ -1735,6 +1743,7 @@ function RapportView({ transactions, recurring, accounts }: {
 }
 
 export default function TresoreriePage() {
+  const { isDark } = useTheme();
   const router = useRouter();
   const [userId,       setUserId]       = useState<string | null>(null);
   const [loading,      setLoading]      = useState(true);
@@ -1827,19 +1836,19 @@ export default function TresoreriePage() {
   const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
 
   if (loading) return (
-    <div className="flex h-full items-center justify-center bg-[#07080e]">
+    <div className={`flex h-full items-center justify-center ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
     </div>
   );
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-[#07080e]">
+    <div className={`flex h-full flex-col overflow-hidden ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
       <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       </AnimatePresence>
 
       <div className="relative shrink-0 overflow-hidden px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6"
-        style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#09080e)" }}>
+        style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#09080e)" : "linear-gradient(160deg,#eef0f8,#e8ebf5,#eef0f8)" }}>
         <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, ease: "easeOut" }}
           className="absolute inset-x-0 top-0 h-[2px] origin-left"
           style={{ background: "linear-gradient(90deg,#c9a55a,#e8c97a,#c9a55a44,transparent)" }} />
@@ -1897,7 +1906,7 @@ export default function TresoreriePage() {
 
           {tab === "dashboard" && (
             <motion.div key="dash" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <DashboardView transactions={transactions} accounts={accounts} recurring={recurring} invoices={invoices} onNavigate={t => setTab(t)} />
+              <DashboardView transactions={transactions} accounts={accounts} recurring={recurring} invoices={invoices} onNavigate={t => setTab(t)} userId={userId} />
             </motion.div>
           )}
 

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -69,6 +70,7 @@ function getLevel(xp: number) {
 }
 
 export default function CoachingIAPage() {
+  const { isDark } = useTheme();
   const router = useRouter();
   const [tab,       setTab]       = useState<"cours" | "activites" | "jeux">("cours");
   const [progress,  setProgress]  = useState<Record<string, boolean>>({});
@@ -82,40 +84,40 @@ export default function CoachingIAPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/login"); return; }
       setUserName(user.email?.split("@")[0] ?? "Apprenant");
-      const { data } = await supabase
-        .from("coaching_progress")
-        .select("cours_id, completed")
-        .eq("user_id", user.id)
-        .limit(50);
+      const [{ data }, { data: streakData }] = await Promise.all([
+        supabase.from("coaching_progress").select("cours_id, completed").eq("user_id", user.id).limit(50),
+        supabase.from("user_preferences").select("value").eq("user_id", user.id).eq("key", "coaching_streak").maybeSingle(),
+      ]);
       const map: Record<string, boolean> = {};
       (data ?? []).forEach(r => { if (r.completed) map[r.cours_id] = true; });
       setProgress(map);
+
+      const today = new Date().toDateString();
+      const pref = streakData?.value as { streak?: number; last_visit?: string } | null;
+      const lastVisit = pref?.last_visit ?? "";
+      const stored = pref?.streak ?? 0;
+      let newStreak: number;
+      if (!lastVisit) {
+        newStreak = 1;
+      } else if (lastVisit === today) {
+        newStreak = stored;
+      } else {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        newStreak = lastVisit === yesterday.toDateString() ? stored + 1 : 1;
+      }
+      if (!lastVisit || lastVisit !== today) {
+        void supabase.from("user_preferences").upsert(
+          { user_id: user.id, key: "coaching_streak", value: { streak: newStreak, last_visit: today }, updated_at: new Date().toISOString() },
+          { onConflict: "user_id,key" }
+        );
+      }
+      setStreak(newStreak);
     } catch {}
     finally { setLoading(false); }
   }, [router]);
 
   useEffect(() => { void loadProgress(); }, [loadProgress]);
-
-  // Streak
-  useEffect(() => {
-    const today     = new Date().toDateString();
-    const lastVisit = localStorage.getItem("coaching_last_visit");
-    const stored    = parseInt(localStorage.getItem("coaching_streak") ?? "0", 10);
-    if (!lastVisit) {
-      localStorage.setItem("coaching_streak", "1");
-      localStorage.setItem("coaching_last_visit", today);
-      setStreak(1);
-    } else if (lastVisit === today) {
-      setStreak(stored);
-    } else {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const next = lastVisit === yesterday.toDateString() ? stored + 1 : 1;
-      localStorage.setItem("coaching_streak", String(next));
-      localStorage.setItem("coaching_last_visit", today);
-      setStreak(next);
-    }
-  }, []);
 
   const doneCours   = COURS.filter(c => progress[c.num]).length;
   const progressPct = Math.round((doneCours / COURS.length) * 100);
@@ -137,13 +139,13 @@ export default function CoachingIAPage() {
   const certTeaser   = doneCours >= 10 && doneCours < 20;
 
   if (loading) return (
-    <div className="flex h-64 items-center justify-center bg-[#07080e]">
+    <div className={`flex h-64 items-center justify-center ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
       <Loader2 size={28} className="animate-spin text-fuchsia-400" />
     </div>
   );
 
   return (
-    <div className="relative min-h-screen bg-[#07080e] text-white">
+    <div className={`relative min-h-screen ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-gray-900"}`}>
       <div className="relative z-10 mx-auto max-w-4xl space-y-5 px-5 py-6 sm:px-8">
 
         {/* Header */}
@@ -153,7 +155,7 @@ export default function CoachingIAPage() {
           </div>
           <div>
             <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">Formation</p>
-            <h1 className="text-xl font-black text-white">Coaching IA</h1>
+            <h1 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>Coaching IA</h1>
             <p className="text-[0.65rem] text-white/30">Cours · Activités · Jeux · Prof IA</p>
           </div>
         </div>

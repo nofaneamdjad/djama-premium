@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToastStack, ToastStack } from "@/components/ui/ToastStack";
+import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -47,12 +48,6 @@ function avatarGradient(id: string) {
   return AVATAR_GRADIENTS[n % AVATAR_GRADIENTS.length];
 }
 
-const MSGS_KEY = (id: string) => `pm_v1_${id}`;
-const DOCS_KEY = (id: string) => `pd_v1_${id}`;
-function loadLs<T>(key: string): T[] {
-  try { return JSON.parse(localStorage.getItem(key) || "[]") as T[]; } catch { return []; }
-}
-function saveLs<T>(key: string, data: T[]) { localStorage.setItem(key, JSON.stringify(data)); }
 function fmtSize(b: number) {
   if (b < 1024) return `${b} o`;
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} Ko`;
@@ -70,6 +65,7 @@ function CopyBtn({ text }: { text: string }) {
 }
 
 export default function PortailClientPage() {
+  const { isDark } = useTheme();
   const [clients,      setClients]      = useState<Client[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [search,       setSearch]       = useState("");
@@ -129,14 +125,37 @@ export default function PortailClientPage() {
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const loadMsgs = useCallback(async (clientId: string) => {
+    const { data } = await supabase
+      .from("portail_messages")
+      .select("id, from_role, text, created_at")
+      .eq("portail_client_id", clientId)
+      .order("created_at", { ascending: true });
+    setMsgs((data ?? []).map((r: { id: string; from_role: string; text: string; created_at: string }) => ({
+      id: r.id, from: r.from_role as "admin" | "client", text: r.text, date: r.created_at,
+    })));
+  }, []);
+
+  const loadDocs = useCallback(async (clientId: string) => {
+    const { data } = await supabase
+      .from("portail_docs")
+      .select("id, name, file_type, size, url, uploaded_by, created_at")
+      .eq("portail_client_id", clientId)
+      .order("created_at", { ascending: false });
+    setDocs((data ?? []).map((r: { id: string; name: string; file_type: string; size: number; url: string; uploaded_by: string; created_at: string }) => ({
+      id: r.id, name: r.name, type: r.file_type, size: r.size, url: r.url,
+      uploadedBy: r.uploaded_by as "admin" | "client", uploadedAt: r.created_at,
+    })));
+  }, []);
+
   useEffect(() => {
     if (!drawer) return;
     setNotes(drawer.notes);
     setTab("info");
     setEditNotes(false);
     setMsgInput("");
-    setMsgs(loadLs<PortailMsg>(MSGS_KEY(drawer.id)));
-    setDocs(loadLs<PortailDoc>(DOCS_KEY(drawer.id)));
+    void loadMsgs(drawer.id);
+    void loadDocs(drawer.id);
   }, [drawer?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -192,44 +211,50 @@ export default function PortailClientPage() {
     add("Notes sauvegardées", "success");
   }
 
-  function sendMsg() {
-    if (!msgInput.trim() || !drawer) return;
-    const msg: PortailMsg = {
-      id: Math.random().toString(36).slice(2),
-      from: "admin", text: msgInput.trim(), date: new Date().toISOString(),
-    };
-    const updated = [...msgs, msg];
-    setMsgs(updated);
-    saveLs(MSGS_KEY(drawer.id), updated);
+  async function sendMsg() {
+    if (!msgInput.trim() || !drawer || !userId) return;
+    const text = msgInput.trim();
     setMsgInput("");
+    const { data, error } = await supabase
+      .from("portail_messages")
+      .insert({ portail_client_id: drawer.id, user_id: userId, from_role: "admin", text })
+      .select("id, from_role, text, created_at")
+      .single();
+    if (error) { add("Erreur envoi message", "error"); return; }
+    setMsgs(prev => [...prev, { id: data.id, from: "admin", text: data.text, date: data.created_at }]);
   }
 
   async function handleDocUpload(files: FileList | null) {
     if (!files || !drawer || !userId) return;
     setUploadingDoc(true);
-    const newDocs: PortailDoc[] = [];
+    let added = 0;
     for (const file of Array.from(files)) {
-      const path = `${userId}/${drawer.id}/${Date.now()}_${file.name}`;
-      const { error: upErr } = await supabase.storage.from("portail-docs").upload(path, file, { upsert: true });
-      let url = "";
-      if (!upErr) {
-        const { data: { publicUrl } } = supabase.storage.from("portail-docs").getPublicUrl(path);
-        url = publicUrl;
-      }
-      newDocs.push({ id: Math.random().toString(36).slice(2, 10), name: file.name, type: file.type, size: file.size, url, uploadedAt: new Date().toISOString(), uploadedBy: "admin" });
+      const storagePath = `${userId}/${drawer.id}/${Date.now()}_${file.name}`;
+      const { error: upErr } = await supabase.storage.from("portail-docs").upload(storagePath, file, { upsert: true });
+      if (upErr) continue;
+      const { data: { publicUrl } } = supabase.storage.from("portail-docs").getPublicUrl(storagePath);
+      const { error: dbErr } = await supabase.from("portail_docs").insert({
+        portail_client_id: drawer.id, user_id: userId,
+        name: file.name, file_type: file.type, size: file.size,
+        url: publicUrl, storage_path: storagePath, uploaded_by: "admin",
+      });
+      if (!dbErr) added++;
     }
-    const updated = [...newDocs, ...docs];
-    setDocs(updated);
-    saveLs(DOCS_KEY(drawer.id), updated);
     setUploadingDoc(false);
-    add(`${newDocs.length} document${newDocs.length > 1 ? "s" : ""} ajouté${newDocs.length > 1 ? "s" : ""}`, "success");
+    if (added > 0) {
+      add(`${added} document${added > 1 ? "s" : ""} ajouté${added > 1 ? "s" : ""}`, "success");
+      await loadDocs(drawer.id);
+    }
   }
 
-  function deleteDoc(docId: string) {
+  async function deleteDoc(docId: string) {
     if (!drawer) return;
-    const updated = docs.filter(d => d.id !== docId);
-    setDocs(updated);
-    saveLs(DOCS_KEY(drawer.id), updated);
+    const doc = docs.find(d => d.id === docId);
+    if (doc && (doc as PortailDoc & { storage_path?: string }).storage_path) {
+      await supabase.storage.from("portail-docs").remove([(doc as PortailDoc & { storage_path?: string }).storage_path!]);
+    }
+    await supabase.from("portail_docs").delete().eq("id", docId);
+    setDocs(prev => prev.filter(d => d.id !== docId));
   }
 
   const counts: Record<string, number> = {
@@ -248,7 +273,7 @@ export default function PortailClientPage() {
 
   /* ══════════════════════════════════════════════════════════════════ */
   return (
-    <div className="relative min-h-screen bg-[#07080e] text-white">
+    <div className={`relative min-h-screen ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-gray-900"}`}>
       <ToastStack toasts={toasts} remove={remove} />
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -257,7 +282,7 @@ export default function PortailClientPage() {
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">CRM Client</p>
-            <h1 className="text-2xl font-black text-white sm:text-3xl">Portail Client</h1>
+            <h1 className={`text-2xl font-black sm:text-3xl ${isDark ? "text-white" : "text-gray-900"}`}>Portail Client</h1>
           </div>
           <button onClick={() => setShowForm(true)}
             className="group flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#07080e] shadow-lg shadow-white/10 transition hover:scale-[1.02] hover:shadow-white/20 active:scale-[0.98]">

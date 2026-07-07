@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles, FileText, Copy, Check, Plus, Trash2, X, RefreshCw,
+  Sparkles, FileText, Copy, Check, Plus, Trash2, X, RefreshCw, Loader2,
   Edit2, ChevronRight, ChevronLeft, Download, Eye, Send, Receipt, Users, Files,
   Clock, CheckCircle, XCircle, AlertTriangle, Shield, Brain,
   Activity, MessageSquare, Calendar, TrendingUp, Pen, DollarSign,
@@ -19,6 +19,7 @@ import { downloadContractPDF, openContractPDF } from "@/lib/contract-pdf";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import { fmtDate, fmtEur } from "@/lib/format";
+import { useTheme } from "@/lib/theme-context";
 
 type ContractType = "prestation" | "freelance" | "nda" | "partenariat" | "vente" | "saas" | "location" | "cdi" | "cdd" | "devis" | "autre";
 type ContractStatus = "brouillon" | "validation" | "envoyé" | "vu" | "signé" | "refusé" | "expiré" | "actif";
@@ -185,32 +186,6 @@ const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "MAD", "CAD"];
 
 type ContractVersion  = { ts: number; content: string };
 type ContractTemplate = { id: string; name: string; type: ContractType; content: string };
-const CV_KEY   = (id: string) => `djama_cv_${id}`;
-const TMPL_KEY = "djama_ct_tmpl";
-function pushCV(id: string, content: string) {
-  try {
-    const prev = JSON.parse(localStorage.getItem(CV_KEY(id)) || "[]") as ContractVersion[];
-    const next = [{ ts: Date.now(), content }, ...prev].slice(0, 5);
-    localStorage.setItem(CV_KEY(id), JSON.stringify(next));
-  } catch {}
-}
-function loadCVs(id: string): ContractVersion[] {
-  try { return JSON.parse(localStorage.getItem(CV_KEY(id)) || "[]"); } catch { return []; }
-}
-function getTmpls(): ContractTemplate[] {
-  try { return JSON.parse(localStorage.getItem(TMPL_KEY) || "[]"); } catch { return []; }
-}
-function addTmpl(name: string, type: ContractType, content: string): ContractTemplate[] {
-  const t: ContractTemplate = { id: crypto.randomUUID(), name, type, content };
-  const next = [t, ...getTmpls()].slice(0, 12);
-  localStorage.setItem(TMPL_KEY, JSON.stringify(next));
-  return next;
-}
-function delTmpl(id: string): ContractTemplate[] {
-  const next = getTmpls().filter((t) => t.id !== id);
-  localStorage.setItem(TMPL_KEY, JSON.stringify(next));
-  return next;
-}
 
 const SUGGESTED_CLAUSES: Record<ContractType, string[]> = {
   prestation:  ["Acompte 30% à la signature", "Révisions illimitées incluses", "Propriété intellectuelle transférée", "Pénalités de retard 3%/mois", "Non-concurrence 6 mois"],
@@ -753,7 +728,7 @@ function DetailPanel({
   editContent, saving, onContentChange, onStatusChange,
   onDownloadPDF, onViewPDF, onSendToClient, onToFacture,
   onCopy, copied, userId, userName,
-  onAddSigner, onDeleteSigner, onSignContract,
+  onAddSigner, onDeleteSigner, onSignContract, onCounterSign, counterSigning,
   onAddComment, onShowAI, onDuplicate,
   onClose,
   versions, prevContent, onRestoreVersion, onUndoRestore, onSaveTemplate,
@@ -765,6 +740,7 @@ function DetailPanel({
   onCopy: () => void; copied: boolean; userId: string | null; userName: string;
   onAddSigner: (name: string, email: string, role: string) => void;
   onDeleteSigner: (id: string) => void; onSignContract: (signer: Signer) => void;
+  onCounterSign: () => void; counterSigning: boolean;
   onAddComment: (text: string) => void; onShowAI: () => void; onDuplicate: () => void; onClose: () => void;
   versions: ContractVersion[]; prevContent: string | null;
   onRestoreVersion: (v: ContractVersion) => void; onUndoRestore: () => void; onSaveTemplate: () => void;
@@ -958,6 +934,13 @@ function DetailPanel({
 
                 {tab === "signers" && (
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {/* Contre-signature admin */}
+            <button onClick={onCounterSign} disabled={counterSigning}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
+              style={{ background: gold + "18", color: gold, border: `1px solid ${gold}35` }}>
+              {counterSigning ? <Loader2 size={13} className="animate-spin"/> : <FileSignature size={13}/>}
+              Contre-signer en tant que gérant
+            </button>
             {signers.length > 0 ? (
               <div className="space-y-2">
                 {signers.map((s) => (
@@ -1314,6 +1297,7 @@ function CreateModal({
 // ─────────────────────────── MAIN PAGE ───────────────────────────
 
 export default function ContratsPage() {
+  const { isDark } = useTheme();
   const { toasts, add: toast, remove: removeToast } = useToastStack();
   const router = useRouter();
 
@@ -1344,11 +1328,12 @@ export default function ContratsPage() {
   const [creating, setCreating] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [counterSigning, setCounterSigning] = useState(false);
   const [signerToSign, setSignerToSign] = useState<Signer | null>(null);
   const [showAIModal, setShowAIModal] = useState(false);
   const [contractVersions, setContractVersions] = useState<ContractVersion[]>([]);
   const [prevEditContent, setPrevEditContent] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<ContractTemplate[]>(() => getTmpls());
+  const [templates, setTemplates] = useState<ContractTemplate[]>([]);
   const [tmplModal, setTmplModal] = useState(false);
 
   // Load contracts
@@ -1361,9 +1346,12 @@ export default function ContratsPage() {
       const meta = user.user_metadata as Record<string, string> | undefined;
       setUserName(meta?.full_name ?? meta?.name ?? "");
 
-      const { data, error } = await supabase.from("contracts").select("*")
-        .eq("user_id", user.id).order("created_at", { ascending: false }).limit(200);
-      if (!error && data) setContracts(data as Contract[]);
+      const [contractsRes, tmplRes] = await Promise.all([
+        supabase.from("contracts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
+        supabase.from("contract_templates").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
+      ]);
+      if (!contractsRes.error && contractsRes.data) setContracts(contractsRes.data as Contract[]);
+      if (!tmplRes.error && tmplRes.data) setTemplates(tmplRes.data.map(r=>({id:r.id as string, name:r.name as string, type:r.type as ContractType, content:r.content as string})));
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1373,7 +1361,7 @@ export default function ContratsPage() {
   useEffect(() => {
     if (!selected || !userId) return;
     setEditContent(selected.content ?? "");
-    setContractVersions(loadCVs(selected.id));
+    void (async()=>{ try { const {data}=await supabase.from("contract_versions").select("created_at,content").eq("contract_id",selected.id).eq("user_id",userId).order("created_at",{ascending:false}).limit(5); if(data) setContractVersions(data.map(r=>({ts:new Date(r.created_at as string).getTime(),content:r.content as string}))); } catch{} })();
     setPrevEditContent(null);
     setSigners([]);
     setActivities([]);
@@ -1411,8 +1399,9 @@ export default function ContratsPage() {
       if (!error) {
         setContracts((prev) => prev.map((c) => c.id === selected.id ? { ...c, content: value } : c));
         setSelected((prev) => prev ? { ...prev, content: value } : prev);
-        pushCV(selected.id, value);
-        setContractVersions(loadCVs(selected.id));
+        if (userId) {
+          void (async()=>{ try { await supabase.from("contract_versions").insert({user_id:userId,contract_id:selected.id,content:value}); const {data}=await supabase.from("contract_versions").select("created_at,content").eq("contract_id",selected.id).eq("user_id",userId).order("created_at",{ascending:false}).limit(5); if(data) setContractVersions(data.map(r=>({ts:new Date(r.created_at as string).getTime(),content:r.content as string}))); } catch{} })();
+        }
       }
     }, 2000);
   }, [selected]);
@@ -1435,14 +1424,15 @@ export default function ContratsPage() {
     toast("Copié !", "success");
   }, [editContent, toast]);
 
-  const handleSaveTemplate = useCallback(() => {
-    if (!selected || !editContent.trim()) { toast("Contenu vide", "error"); return; }
+  const handleSaveTemplate = useCallback(async () => {
+    if (!selected || !editContent.trim() || !userId) { toast("Contenu vide", "error"); return; }
     const name = window.prompt("Nom du modèle", selected.title) ?? "";
     if (!name.trim()) return;
-    const next = addTmpl(name.trim(), selected.contract_type, editContent);
-    setTemplates(next);
+    const {data,error} = await supabase.from("contract_templates").insert({user_id:userId,name:name.trim(),type:selected.contract_type,content:editContent}).select().single();
+    if (error) { toast("Erreur sauvegarde modèle","error"); return; }
+    setTemplates(prev=>[{id:data.id as string,name:data.name as string,type:data.type as ContractType,content:data.content as string},...prev].slice(0,12));
     toast("Modèle sauvegardé", "success");
-  }, [selected, editContent, toast]);
+  }, [selected, editContent, userId, toast]);
 
   const handleRestoreVersion = useCallback((v: ContractVersion) => {
     setPrevEditContent(editContent);
@@ -1615,6 +1605,29 @@ export default function ContratsPage() {
     setSigners((prev) => prev.filter((s) => s.id !== id));
   }, [toast]);
 
+  const handleCounterSign = useCallback(async () => {
+    if (!selected || !userId || counterSigning) return;
+    const adminName = userName || "Gérant";
+    // Check if admin already signed
+    const existing = signers.find(s => s.signer_role === "gérant" && s.signer_name === adminName);
+    if (existing) {
+      if (existing.status === "signed") { toast("Vous avez déjà signé ce contrat", "info"); return; }
+      setSignerToSign(existing);
+      return;
+    }
+    setCounterSigning(true);
+    const { data, error } = await supabase.from("contract_signatures").insert({
+      contract_id: selected.id, user_id: userId,
+      signer_name: adminName, signer_email: "", signer_role: "gérant",
+      order_index: 0, status: "pending",
+    }).select().single();
+    setCounterSigning(false);
+    if (error || !data) { toast("Erreur", "error"); return; }
+    const newSigner = data as Signer;
+    setSigners(prev => [newSigner, ...prev]);
+    setSignerToSign(newSigner);
+  }, [selected, userId, userName, signers, counterSigning, toast]);
+
   const handleSignContract = useCallback(async (sigData: string, cert: string) => {
     if (!signerToSign || !selected) return;
     const now = new Date().toISOString();
@@ -1683,11 +1696,11 @@ export default function ContratsPage() {
   }, [contracts, filterStatus, filterType, search, sortBy]);
 
   return (
-    <div className="min-h-screen bg-[#07080e] text-white">
+    <div className={`min-h-screen ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-gray-900"}`}>
       <ToastStack toasts={toasts} remove={removeToast}/>
 
       {/* Animated header */}
-      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#07080e)" }}>
+      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#07080e)" : "linear-gradient(160deg,#eef0f8,#e8ebf5,#eef0f8)" }}>
         {/* Decorative orbs */}
         <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
         <div className="pointer-events-none absolute -bottom-10 right-16 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#6366f1,transparent)" }}/>
@@ -1837,6 +1850,7 @@ export default function ContratsPage() {
                 onCopy={handleCopy} copied={copied} userId={userId} userName={userName}
                 onAddSigner={handleAddSigner} onDeleteSigner={handleDeleteSigner}
                 onSignContract={(signer) => setSignerToSign(signer)}
+                onCounterSign={handleCounterSign} counterSigning={counterSigning}
                 onAddComment={handleAddComment} onShowAI={() => setShowAIModal(true)}
                 onDuplicate={handleDuplicate} onClose={() => setSelected(null)}
                 versions={contractVersions} prevContent={prevEditContent}
@@ -1910,7 +1924,7 @@ export default function ContratsPage() {
                         style={{ background: gold + "20", color: gold, border: `1px solid ${gold}40` }}>
                         <Plus size={9}/> Utiliser
                       </motion.button>
-                      <button onClick={() => { const next = delTmpl(t.id); setTemplates(next); }}
+                      <button onClick={async () => { await supabase.from("contract_templates").delete().eq("id",t.id); setTemplates(prev=>prev.filter(x=>x.id!==t.id)); }}
                         className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/25 hover:text-red-400 transition-all">
                         <Trash2 size={11}/>
                       </button>

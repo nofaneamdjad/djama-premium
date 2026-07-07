@@ -11,7 +11,7 @@ import {
   Languages, Zap, Check, Hash, BarChart2,
   Book, Pencil, Eraser, ChevronLeft, ChevronRight,
   Undo2, AlignLeft, LayoutGrid, CalendarDays,
-  History, Link2, Maximize2, Minimize2, Copy,
+  History, Link2, Maximize2, Minimize2, Copy, Pin, Upload, Eye, EyeOff,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import NotebookCanvas, {
@@ -19,6 +19,7 @@ import NotebookCanvas, {
 } from "@/components/NotebookCanvas";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
+import { useTheme } from "@/lib/theme-context";
 
 /* ── Types ─────────────────────────────────────────── */
 type NoteType =
@@ -30,7 +31,7 @@ type AiAction =
   | "rephrase" | "translate" | "meeting-report" | "extract-actions" | "chat";
 
 type SortBy  = "date" | "alpha" | "type";
-type Section = "all" | "favorites" | "vocal" | "checklist" | "archived" | `folder:${string}`;
+type Section = "all" | "favorites" | "canvas" | "vocal" | "checklist" | "archived" | `folder:${string}`;
 
 interface Note {
   id:            string;
@@ -43,6 +44,7 @@ interface Note {
   tags:          string[] | null;
   is_archived:   boolean | null;
   is_favorite:   boolean | null;
+  is_pinned:     boolean | null;
   linked_entity: string | null;
   word_count:    number | null;
   created_at:    string;
@@ -173,25 +175,7 @@ const countWords  = (t: string) => t.trim() ? t.trim().split(/\s+/).length : 0;
 const fmtDateShort = (iso: string) =>
   new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"short"}).format(new Date(iso));
 
-const FAV_KEY = "djama_notes_favorites";
-const getLocalFavs = (): Set<string> => {
-  try { const d = localStorage.getItem(FAV_KEY); return d ? new Set(JSON.parse(d) as string[]) : new Set(); } catch { return new Set(); }
-};
-
 type NoteVersion = { ts: number; title: string; content: string };
-const VERSION_KEY   = (id: string) => `djama_note_v_${id}`;
-const MAX_VERSIONS  = 5;
-
-function pushVersion(noteId: string, title: string, content: string) {
-  try {
-    const prev = JSON.parse(localStorage.getItem(VERSION_KEY(noteId)) || "[]") as NoteVersion[];
-    const next  = [{ ts: Date.now(), title, content }, ...prev].slice(0, MAX_VERSIONS);
-    localStorage.setItem(VERSION_KEY(noteId), JSON.stringify(next));
-  } catch {}
-}
-function loadVersions(noteId: string): NoteVersion[] {
-  try { return JSON.parse(localStorage.getItem(VERSION_KEY(noteId)) || "[]") as NoteVersion[]; } catch { return []; }
-}
 
 function fmtSec(s: number) {
   const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
@@ -246,10 +230,36 @@ function ChecklistView({ content, onToggle }: { content: string; onToggle: (c: s
   );
 }
 
+function simpleMarkdown(md: string): string {
+  const lines = md.split("\n");
+  const out: string[] = [];
+  for (const line of lines) {
+    const esc = line.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const inl = esc
+      .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g,"<em>$1</em>")
+      .replace(/`(.+?)`/g,"<code>$1</code>")
+      .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
+      .replace(/\[\[(.+?)\]\]/g,'<span class="md-bl" data-bl="$1">[[$1]]</span>');
+    if      (/^### /.test(line))        out.push(`<h3>${inl.replace(/^### /,"")}</h3>`);
+    else if (/^## /.test(line))         out.push(`<h2>${inl.replace(/^## /,"")}</h2>`);
+    else if (/^# /.test(line))          out.push(`<h1>${inl.replace(/^# /,"")}</h1>`);
+    else if (/^- \[x\] /i.test(line))  out.push(`<div class="md-check done"><input type="checkbox" checked disabled/><s>${inl.replace(/^- \[x\] /i,"")}</s></div>`);
+    else if (/^- \[ \] /.test(line))   out.push(`<div class="md-check"><input type="checkbox" disabled/>${inl.replace(/^- \[ \] /,"")}</div>`);
+    else if (/^- /.test(line))          out.push(`<li>${inl.replace(/^- /,"")}</li>`);
+    else if (/^> /.test(line))          out.push(`<blockquote>${inl.replace(/^> /,"")}</blockquote>`);
+    else if (/^---$/.test(line))        out.push("<hr>");
+    else if (line.trim() === "")        out.push("<br>");
+    else                                out.push(`<p>${inl}</p>`);
+  }
+  return out.join("");
+}
+
 /* ══════════════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════════════ */
 export default function BlocNotesPage() {
+  const { isDark } = useTheme();
 
   /* ── Data state ── */
   const [notes,     setNotes]     = useState<Note[]>([]);
@@ -262,6 +272,7 @@ export default function BlocNotesPage() {
   const [search,    setSearch]    = useState("");
   const [sortBy,    setSortBy]    = useState<SortBy>("date");
   const [favSet,    setFavSet]    = useState<Set<string>>(new Set());
+  const [pinnedSet, setPinnedSet] = useState<Set<string>>(new Set());
 
   /* ── Draft editor ── */
   const [dTitle,    setDTitle]    = useState("");
@@ -293,6 +304,9 @@ export default function BlocNotesPage() {
   const [versionsMenu,   setVersionsMenu]   = useState(false);
   const [noteVersions,   setNoteVersions]   = useState<NoteVersion[]>([]);
   const [focusMode,      setFocusMode]      = useState(false);
+  const [uid,            setUid]            = useState<string|null>(null);
+  const [previewMode,     setPreviewMode]     = useState(false);
+  const [activeTagFilter, setActiveTagFilter] = useState<string|null>(null);
 
   /* ── Voice ── */
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
@@ -321,8 +335,9 @@ export default function BlocNotesPage() {
   const nbSaveTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null);
 
   /* ── Refs ── */
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const saveRef     = useRef<(s?: boolean)=>Promise<void>>(async()=>{});
+  const textareaRef  = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const saveRef      = useRef<(s?: boolean)=>Promise<void>>(async()=>{});
   const debRef      = useRef<ReturnType<typeof setTimeout>|null>(null);
   const timerRef    = useRef<ReturnType<typeof setInterval>|null>(null);
   const chunkRef    = useRef<ReturnType<typeof setInterval>|null>(null);
@@ -339,6 +354,7 @@ export default function BlocNotesPage() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
+    setUid(user.id);
     const [nRes, fRes] = await Promise.all([
       supabase.from("notes").select("*").eq("user_id",user.id).order("updated_at",{ascending:false}).limit(50),
       supabase.from("note_folders").select("*").eq("user_id",user.id).order("name"),
@@ -347,6 +363,7 @@ export default function BlocNotesPage() {
       setNotes(nRes.data as Note[]);
       setHasMore(nRes.data.length === 50);
       setFavSet(new Set((nRes.data as Note[]).filter(n => n.is_favorite).map(n => n.id)));
+      setPinnedSet(new Set((nRes.data as Note[]).filter(n => n.is_pinned).map(n => n.id)));
     }
     if (fRes.data) setFolders(fRes.data as NoteFolder[]);
     setLoading(false);
@@ -485,7 +502,8 @@ export default function BlocNotesPage() {
     setPrevSnap(null);
     setSavedAgo("");
     setVersionsMenu(false);
-    setNoteVersions(loadVersions(n.id));
+    setPreviewMode(false);
+    void (async()=>{ try { const {data}=await supabase.from("note_versions").select("created_at,title,content").eq("note_id",n.id).order("created_at",{ascending:false}).limit(5); if(data) setNoteVersions(data.map(r=>({ts:new Date(r.created_at as string).getTime(),title:r.title as string,content:r.content as string}))); } catch{} })();
     setMobilePanel("editor");
   }, []);
 
@@ -534,9 +552,9 @@ export default function BlocNotesPage() {
       setNotes(p => [savedNote!, ...p]);
       setSelected(savedNote);
     }
-    if (savedNote?.id) {
-      pushVersion(savedNote.id, dTitle.trim() || "Sans titre", dContent);
-      setNoteVersions(loadVersions(savedNote.id));
+    if (savedNote?.id && uid) {
+      const noteId = savedNote.id;
+      void (async()=>{ try { await supabase.from("note_versions").insert({user_id:uid,note_id:noteId,title:dTitle.trim()||"Sans titre",content:dContent}); const {data}=await supabase.from("note_versions").select("created_at,title,content").eq("note_id",noteId).order("created_at",{ascending:false}).limit(5); if(data) setNoteVersions(data.map(r=>({ts:new Date(r.created_at as string).getTime(),title:r.title as string,content:r.content as string}))); } catch{} })();
     }
     setIsSaving(false); setIsDirty(false);
     setSavedAgo("il y a quelques secondes");
@@ -561,6 +579,14 @@ export default function BlocNotesPage() {
         setExportMenu(false);
         setVersionsMenu(false);
         setFocusMode(false);
+        setPreviewMode(false);
+      }
+      // Textarea-only shortcuts
+      if (document.activeElement === textareaRef.current) {
+        if ((e.ctrlKey || e.metaKey) && e.key === "b") { e.preventDefault(); insertFormat("**","**"); }
+        if ((e.ctrlKey || e.metaKey) && e.key === "i") { e.preventDefault(); insertFormat("*","*"); }
+        if ((e.ctrlKey || e.metaKey) && e.key === "k") { e.preventDefault(); insertFormat("[","](url)"); }
+        if (e.key === "Tab") { e.preventDefault(); insertFormat("  ",""); }
       }
     }
     window.addEventListener("keydown", onKey);
@@ -590,6 +616,29 @@ export default function BlocNotesPage() {
     setFavSet(s);
     setNotes(p => p.map(n => n.id === id ? { ...n, is_favorite: newVal } : n));
     void supabase.from("notes").update({ is_favorite: newVal }).eq("id", id);
+  }
+
+  function togglePin(id: string) {
+    const newVal = !pinnedSet.has(id);
+    const s = new Set(pinnedSet);
+    if (newVal) s.add(id); else s.delete(id);
+    setPinnedSet(s);
+    setNotes(p => p.map(n => n.id === id ? { ...n, is_pinned: newVal } : n));
+    void supabase.from("notes").update({ is_pinned: newVal }).eq("id", id);
+  }
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const text = (ev.target?.result as string) ?? "";
+      const title = file.name.replace(/\.(txt|md)$/i, "");
+      createNote("texte", text);
+      setTimeout(() => { setDTitle(title); setIsDirty(true); }, 0);
+    };
+    reader.readAsText(file, "utf-8");
+    e.target.value = "";
   }
 
   async function duplicateNote() {
@@ -783,6 +832,9 @@ export default function BlocNotesPage() {
       if (section.startsWith("folder:")) return !arch && n.folder_id === section.slice(7);
       return !arch;
     });
+    if (activeTagFilter) {
+      ns = ns.filter(n => (n.tags ?? []).includes(activeTagFilter));
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       ns = ns.filter(n =>
@@ -792,12 +844,15 @@ export default function BlocNotesPage() {
       );
     }
     ns.sort((a,b) => {
+      const ap = pinnedSet.has(a.id) ? 1 : 0;
+      const bp = pinnedSet.has(b.id) ? 1 : 0;
+      if (ap !== bp) return bp - ap;
       if (sortBy==="alpha") return a.title.localeCompare(b.title);
       if (sortBy==="type")  return getNoteType(a).localeCompare(getNoteType(b));
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
     return ns;
-  }, [notes, section, favSet, search, sortBy]);
+  }, [notes, section, favSet, pinnedSet, search, sortBy, activeTagFilter]);
 
   const counts = useMemo(() => ({
     all:       notes.filter(n => !(n.is_archived??false)).length,
@@ -809,7 +864,7 @@ export default function BlocNotesPage() {
 
   const wordCnt = countWords(dContent);
   const readingTime = Math.max(1, Math.ceil(wordCnt / 200));
-  const isCanvas = false;
+  const isCanvas = section === "canvas";
 
   const outgoingRefs = useMemo(() => {
     if (!dContent.trim()) return [];
@@ -835,10 +890,74 @@ export default function BlocNotesPage() {
      RENDER
   ══════════════════════════════════════════════════ */
   return (
-    <div className="flex h-[calc(100vh-56px)] overflow-hidden bg-[#07080e]">
+    <div className={`flex h-[calc(100vh-56px)] overflow-hidden bg-[#08091c] ${!isDark ? "notes-light" : ""}`}>
+      {!isDark && (
+        <style>{`
+          /* ── Root ─────────────────────────── */
+          .notes-light { background-color: #f0f2fb !important; }
+
+          /* ── Panels (semantic classes) ──────── */
+          .notes-light .bg-notes-sidebar { background-color: #e3e8f7 !important; }
+          .notes-light .bg-notes-list    { background-color: #e9edf8 !important; }
+          .notes-light .bg-notes-editor  { background-color: #f5f7fe !important; }
+          .notes-light .bg-notes-surface { background-color: #ffffff !important; box-shadow: 0 8px 32px rgba(10,20,90,0.10) !important; }
+          .notes-light .bg-notes-bar     { background-color: rgba(224,230,248,0.97) !important; }
+
+          /* ── Panels (hex-class fallback for toolbars) ── */
+          .notes-light [class*="bg-[#08091c]"] { background-color: #ebeff9 !important; }
+          .notes-light [class*="bg-[#0d1226]"] { background-color: #e3e8f7 !important; }
+          .notes-light [class*="bg-[#10162a]"] { background-color: #e9edf8 !important; }
+          .notes-light [class*="bg-[#090b1f]"] { background-color: #f5f7fe !important; }
+
+          /* ── Borders ─────────────────────── */
+          .notes-light [class*="border-white/"] { border-color: rgba(12,24,100,0.09) !important; }
+
+          /* ── bg-white/* (static states) ──── */
+          .notes-light [class*="bg-white/[0.09]"] { background-color: rgba(12,24,100,0.07) !important; }
+          .notes-light [class*="bg-white/[0.07]"] { background-color: rgba(12,24,100,0.06) !important; }
+          .notes-light [class*="bg-white/[0.06]"],
+          .notes-light [class*="bg-white/[0.055]"],
+          .notes-light [class*="bg-white/[0.052]"] { background-color: rgba(12,24,100,0.055) !important; }
+          .notes-light [class*="bg-white/[0.05]"] { background-color: rgba(12,24,100,0.045) !important; }
+          .notes-light [class*="bg-white/[0.04]"] { background-color: rgba(12,24,100,0.035) !important; }
+          .notes-light [class*="bg-white/[0.03]"],
+          .notes-light [class*="bg-white/[0.025]"],
+          .notes-light [class*="bg-white/[0.02]"] { background-color: rgba(12,24,100,0.020) !important; }
+
+          /* ── bg-white/* (hover) ─────────── */
+          .notes-light [class*="hover:bg-white/"]:hover { background-color: rgba(12,24,100,0.045) !important; }
+
+          /* ── text-white/* ───────────────── */
+          .notes-light .text-white\\/90, .notes-light .text-white\\/88,
+          .notes-light .text-white\\/82 { color: rgba(12,18,50,0.88) !important; }
+          .notes-light .text-white\\/72 { color: rgba(12,18,50,0.70) !important; }
+          .notes-light .text-white\\/58, .notes-light .text-white\\/55 { color: rgba(12,18,50,0.58) !important; }
+          .notes-light .text-white\\/42, .notes-light .text-white\\/38 { color: rgba(12,18,50,0.42) !important; }
+          .notes-light .text-white\\/32, .notes-light .text-white\\/28 { color: rgba(12,18,50,0.35) !important; }
+          .notes-light .text-white\\/22, .notes-light .text-white\\/18 { color: rgba(12,18,50,0.26) !important; }
+          .notes-light .text-white\\/16, .notes-light .text-white\\/14,
+          .notes-light .text-white\\/12, .notes-light .text-white\\/9 { color: rgba(12,18,50,0.17) !important; }
+          .notes-light .text-white { color: #0e1438 !important; }
+
+          /* ── hover:text-white/* ─────────── */
+          .notes-light [class*="hover:text-white/"]:hover { color: rgba(12,18,50,0.78) !important; }
+
+          /* ── Placeholders ───────────────── */
+          .notes-light [class*="placeholder:text-white"]::placeholder { color: rgba(12,18,50,0.28) !important; }
+
+          /* ── Markdown preview ───────────── */
+          .notes-light .md-preview h1,.notes-light .md-preview h2,
+          .notes-light .md-preview h3 { color: rgba(12,18,50,0.92) !important; }
+          .notes-light .md-preview p,.notes-light .md-preview li,
+          .notes-light .md-preview strong { color: rgba(12,18,50,0.82) !important; }
+          .notes-light .md-preview em,.notes-light .md-preview .md-check { color: rgba(12,18,50,0.62) !important; }
+          .notes-light .md-preview code { background:rgba(12,24,100,0.06) !important; color:#1d4ed8 !important; }
+          .notes-light .md-preview blockquote { border-color:#c9a55a !important; color:rgba(12,18,50,0.52) !important; }
+        `}</style>
+      )}
 
       {/* ══ SIDEBAR (desktop only) ══ */}
-      <aside className={`hidden lg:flex w-[220px] shrink-0 flex-col bg-[#0e1420] border-r border-white/[0.06] ${focusMode ? "!hidden" : ""}`}>
+      <aside className={`hidden lg:flex w-[220px] shrink-0 flex-col bg-[#0d1226] bg-notes-sidebar border-r border-white/[0.06] ${focusMode ? "!hidden" : ""}`}>
         <div className="flex flex-col h-full p-3 gap-0">
 
           {/* Brand */}
@@ -851,6 +970,7 @@ export default function BlocNotesPage() {
             {([
               { key:"all",       label:"Toutes",    Icon:StickyNote,  count:counts.all       },
               { key:"favorites", label:"Favoris",   Icon:Star,        count:counts.favs      },
+              { key:"canvas",    label:"Canvas",    Icon:Pencil,      count:notebooks.length },
               { key:"checklist", label:"Checklist", Icon:CheckSquare, count:counts.checklist },
               { key:"vocal",     label:"Vocal",     Icon:Mic,         count:counts.vocal     },
               { key:"archived",  label:"Archives",  Icon:Archive,     count:counts.archived  },
@@ -915,7 +1035,7 @@ export default function BlocNotesPage() {
       </aside>
 
       {/* ══ LIST PANEL ══ */}
-      <div className={`flex-col bg-[#12151c] border-r border-white/[0.06]
+      <div className={`flex-col bg-[#10162a] bg-notes-list border-r border-white/[0.06]
         shrink-0 w-full lg:w-80
         ${focusMode ? "!hidden" : mobilePanel === "editor" ? "hidden lg:flex" : "flex"}`}>
 
@@ -1069,9 +1189,16 @@ export default function BlocNotesPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => setShowTemplates(true)}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[0.05] hover:text-white/55">
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[0.05] hover:text-white/55"
+                    title="Templates">
                     <Hash size={13}/>
                   </button>
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[0.05] hover:text-white/55"
+                    title="Importer .txt/.md">
+                    <Upload size={13}/>
+                  </button>
+                  <input ref={fileInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleImportFile}/>
                   <button onClick={() => createNote("texte")}
                     className="flex h-7 w-7 items-center justify-center rounded-xl transition active:scale-95"
                     style={{background:"rgba(245,158,11,0.11)",border:"1px solid rgba(245,158,11,0.2)",color:amber}}>
@@ -1099,12 +1226,22 @@ export default function BlocNotesPage() {
               </div>
             </div>
 
+            {/* Active tag filter */}
+            {activeTagFilter && (
+              <div className="flex items-center gap-2 border-b border-white/[0.05] px-3 py-1.5">
+                <span className="text-[0.58rem] text-white/30">Filtre tag :</span>
+                <button onClick={() => setActiveTagFilter(null)}
+                  className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[0.62rem] font-bold text-amber-400 transition hover:bg-red-500/14 hover:text-red-400">
+                  #{activeTagFilter}<X size={8}/>
+                </button>
+              </div>
+            )}
             {/* Sort tabs */}
             <div className="flex items-center border-b border-white/[0.05] px-3 pt-1.5 pb-0">
               {([{v:"date",l:"Récentes"},{v:"alpha",l:"A–Z"},{v:"type",l:"Type"}] as {v:SortBy;l:string}[]).map(s => (
                 <button key={s.v} onClick={() => setSortBy(s.v)}
                   className="relative shrink-0 px-3 pb-2 text-[0.63rem] font-bold transition-colors"
-                  style={{color:sortBy===s.v?"rgba(255,255,255,0.82)":"rgba(255,255,255,0.26)"}}>
+                  style={{color:sortBy===s.v?(isDark?"rgba(255,255,255,0.82)":"rgba(12,18,50,0.88)"):(isDark?"rgba(255,255,255,0.26)":"rgba(12,18,50,0.36)")}}>
                   {s.l}
                   {sortBy===s.v && <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full" style={{background:amber}}/>}
                 </button>
@@ -1154,9 +1291,10 @@ export default function BlocNotesPage() {
               ) : (
                 <AnimatePresence initial={false}>
                   {displayNotes.map((n,idx) => {
-                    const ti     = getTypeInfo(getNoteType(n));
-                    const isFav  = favSet.has(n.id);
-                    const tags   = n.tags ?? [];
+                    const ti      = getTypeInfo(getNoteType(n));
+                    const isFav   = favSet.has(n.id);
+                    const isPinned = pinnedSet.has(n.id);
+                    const tags    = n.tags ?? [];
                     const {total,done} = getCheckProgress(n.content);
                     const isActive = selected?.id === n.id;
                     return (
@@ -1180,13 +1318,29 @@ export default function BlocNotesPage() {
                             {n.content.replace(/^#+\s/gm,"").replace(/\[[\sx~]\]\s/g,"").replace(/\*\*/g,"").slice(0,200) || "Note vide"}
                           </p>
                           <div className="mt-2 flex items-center justify-between">
-                            <span className="text-[0.56rem] font-bold uppercase tracking-wider" style={{color:`${ti.color}68`}}>
-                              {ti.label}{getNoteType(n)==="checklist"&&total>0?` · ${done}/${total}`:""}{tags[0]?` · #${tags[0]}`:""}
-                            </span>
-                            <button onClick={e=>{e.stopPropagation();toggleFav(n.id)}}
-                              className={`transition-all duration-150 ${isFav?"text-amber-300":"text-transparent group-hover:text-white/16"}`}>
-                              <Star size={9} className={isFav?"fill-amber-300":""}/>
-                            </button>
+                            <div className="flex items-center gap-1 flex-wrap min-w-0">
+                              <span className="text-[0.56rem] font-bold uppercase tracking-wider shrink-0" style={{color:`${ti.color}68`}}>
+                                {ti.label}{getNoteType(n)==="checklist"&&total>0?` · ${done}/${total}`:""}
+                              </span>
+                              {tags.slice(0,2).map(tag => (
+                                <button key={tag} onClick={e=>{e.stopPropagation();setActiveTagFilter(activeTagFilter===tag?null:tag);}}
+                                  className="rounded-full px-1.5 py-px text-[0.5rem] font-semibold transition hover:opacity-80"
+                                  style={{background:`${ti.color}14`,color:`${ti.color}80`}}>
+                                  #{tag}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button onClick={e=>{e.stopPropagation();togglePin(n.id);}}
+                                className={`transition-all duration-150 ${isPinned?"text-amber-400":"text-transparent group-hover:text-white/14"}`}
+                                title="Épingler">
+                                <Pin size={9} className={isPinned?"fill-amber-400":""}/>
+                              </button>
+                              <button onClick={e=>{e.stopPropagation();toggleFav(n.id)}}
+                                className={`transition-all duration-150 ${isFav?"text-amber-300":"text-transparent group-hover:text-white/16"}`}>
+                                <Star size={9} className={isFav?"fill-amber-300":""}/>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </motion.div>
@@ -1209,7 +1363,7 @@ export default function BlocNotesPage() {
       </div>
 
       {/* ══ RIGHT PANEL ══ */}
-      <div className={`flex-1 flex-col overflow-hidden bg-[#0d1117]
+      <div className={`flex-1 flex-col overflow-hidden bg-[#090b1f] bg-notes-editor
         ${mobilePanel === "list" ? "hidden lg:flex" : "flex"}`}>
 
         {/* ─ CANVAS EDITOR ─ */}
@@ -1217,7 +1371,7 @@ export default function BlocNotesPage() {
           <div className="flex flex-col h-full overflow-hidden">
 
             {/* Canvas toolbar */}
-            <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#07080e] px-4 py-2.5 flex-wrap">
+            <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#08091c] px-4 py-2.5 flex-wrap">
               <button onClick={() => setActiveNb(null)}
                 className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.68rem] font-bold text-white/40 transition hover:bg-white/[0.05] hover:text-white/70">
                 <ChevronLeft size={12}/> Cahiers
@@ -1372,7 +1526,7 @@ export default function BlocNotesPage() {
           <div className="flex flex-1 flex-col overflow-hidden">
 
             {/* Mobile back bar */}
-            <div className="flex items-center gap-3 border-b border-white/[0.06] bg-[#07080e] px-4 py-2.5 lg:hidden">
+            <div className="flex items-center gap-3 border-b border-white/[0.06] bg-[#08091c] px-4 py-2.5 lg:hidden">
               <button onClick={() => { setMobilePanel("list"); setSelected(null); }}
                 className="flex items-center gap-1.5 text-xs font-bold text-white/45 transition hover:text-white/75">
                 <ArrowLeft size={14}/> Retour
@@ -1380,7 +1534,7 @@ export default function BlocNotesPage() {
             </div>
 
             {/* Editor toolbar */}
-            <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] bg-[#07080e] px-5 py-2.5 flex-wrap">
+            <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] bg-[#08091c] px-5 py-2.5 flex-wrap">
               <div className="flex items-center gap-1 flex-wrap">
                 {NOTE_TYPES.map(t => (
                   <button key={t.value} onClick={() => { setDType(t.value); setIsDirty(true); }}
@@ -1406,7 +1560,7 @@ export default function BlocNotesPage() {
                     <AnimatePresence>
                       {versionsMenu && (
                         <motion.div initial={{opacity:0,y:-5}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-5}}
-                          className="absolute right-0 top-full z-50 mt-1 w-52 overflow-hidden rounded-xl border border-white/[0.09] bg-[#0e1420] shadow-xl">
+                          className="absolute right-0 top-full z-50 mt-1 w-52 overflow-hidden rounded-xl border border-white/[0.09] bg-[#0d1226] bg-notes-surface shadow-xl">
                           <p className="border-b border-white/[0.06] px-4 py-2 text-[0.58rem] font-bold uppercase tracking-wider text-white/25">Historique</p>
                           {noteVersions.map((v, i) => (
                             <button key={v.ts} onClick={() => {
@@ -1440,7 +1594,7 @@ export default function BlocNotesPage() {
                   <AnimatePresence>
                     {exportMenu && (
                       <motion.div initial={{opacity:0,y:-5}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-5}}
-                        className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border border-white/[0.09] bg-[#0e1420] shadow-xl">
+                        className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border border-white/[0.09] bg-[#0d1226] bg-notes-surface shadow-xl">
                         {[{label:"PDF",fn:exportPDF},{label:"Markdown (.md)",fn:exportMarkdown},{label:"Texte (.txt)",fn:exportTXT},{label:"Copier",fn:async()=>copyToClipboard()}].map(opt => (
                           <button key={opt.label} onClick={() => { void opt.fn(); setExportMenu(false); }}
                             className="flex w-full items-center px-4 py-2.5 text-xs font-semibold text-white/55 transition hover:bg-white/[0.05] hover:text-white/85">
@@ -1507,7 +1661,14 @@ export default function BlocNotesPage() {
             </div>
 
             {/* Format bar */}
-            <div className="flex items-center gap-0 overflow-x-auto border-b border-white/[0.04] bg-[#07080e] px-4 py-1.5" style={{scrollbarWidth:"none"}}>
+            <div className="flex items-center gap-0 overflow-x-auto border-b border-white/[0.04] bg-[#08091c] px-4 py-1.5" style={{scrollbarWidth:"none"}}>
+              <button onClick={() => setPreviewMode(v => !v)}
+                className={`shrink-0 flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.62rem] font-bold transition mr-1 ${previewMode?"text-amber-400 bg-amber-400/10":"text-white/35 hover:bg-white/[0.05] hover:text-white/75"}`}
+                title={previewMode ? "Éditer (Échap)" : "Aperçu Markdown"}>
+                {previewMode ? <EyeOff size={10}/> : <Eye size={10}/>}
+                {previewMode ? "Éditer" : "Aperçu"}
+              </button>
+              <div className="h-4 w-px shrink-0 bg-white/[0.06] mr-1"/>
               {[
                 { label:"H1",  fn:()=>insertLinePrefix("# ")          },
                 { label:"H2",  fn:()=>insertLinePrefix("## ")         },
@@ -1554,6 +1715,42 @@ export default function BlocNotesPage() {
                         className="h-full w-full resize-none bg-transparent text-sm leading-relaxed text-white/80 outline-none placeholder:text-white/20"/>
                     )}
                   </div>
+                ) : previewMode ? (
+                  <>
+                    <style>{`
+                      .md-preview h1{font-size:1.35rem;font-weight:900;color:rgba(255,255,255,.88);margin:.75rem 0 .4rem}
+                      .md-preview h2{font-size:1.1rem;font-weight:800;color:rgba(255,255,255,.80);margin:.6rem 0 .3rem}
+                      .md-preview h3{font-size:.95rem;font-weight:700;color:rgba(255,255,255,.72);margin:.5rem 0 .25rem}
+                      .md-preview p{margin:.25rem 0;color:rgba(255,255,255,.78);line-height:1.65;font-size:.875rem}
+                      .md-preview li{margin:.15rem 0;color:rgba(255,255,255,.72);font-size:.875rem;list-style:disc;margin-left:1.2rem}
+                      .md-preview strong{font-weight:700;color:rgba(255,255,255,.90)}
+                      .md-preview em{font-style:italic;color:rgba(255,255,255,.72)}
+                      .md-preview code{font-family:monospace;background:rgba(255,255,255,.07);border-radius:4px;padding:1px 5px;font-size:.8em;color:#38bdf8}
+                      .md-preview blockquote{border-left:3px solid #c9a55a;padding-left:.75rem;margin:.5rem 0;color:rgba(255,255,255,.5);font-style:italic}
+                      .md-preview hr{border:none;border-top:1px solid rgba(255,255,255,.08);margin:.75rem 0}
+                      .md-preview a{color:#c9a55a;text-decoration:underline;opacity:.8}
+                      .md-preview .md-check{display:flex;align-items:center;gap:6px;margin:.15rem 0;font-size:.875rem;color:rgba(255,255,255,.72)}
+                      .md-preview .md-check.done{color:rgba(255,255,255,.35)}
+                      .md-preview .md-bl{color:#c9a55a;cursor:pointer;text-decoration:underline dotted;opacity:.8}
+                      .notes-light .md-preview h1,.notes-light .md-preview h2,.notes-light .md-preview h3,.notes-light .md-preview p,.notes-light .md-preview li,.notes-light .md-preview strong{color:rgba(17,24,39,.85)}
+                      .notes-light .md-preview em,.notes-light .md-preview .md-check{color:rgba(17,24,39,.65)}
+                      .notes-light .md-preview code{background:rgba(0,0,0,.06);color:#0369a1}
+                      .notes-light .md-preview blockquote{color:rgba(17,24,39,.5)}
+                    `}</style>
+                    <div
+                      className="md-preview flex-1 overflow-y-auto px-5 py-4"
+                      style={{scrollbarWidth:"none"}}
+                      dangerouslySetInnerHTML={{__html: simpleMarkdown(dContent) || '<p style="color:rgba(255,255,255,.2)">Rien à prévisualiser…</p>'}}
+                      onClick={e => {
+                        const el = e.target as HTMLElement;
+                        const bl = el.dataset.bl ?? el.closest("[data-bl]")?.getAttribute("data-bl");
+                        if (bl) {
+                          const match = notes.find(n => n.title.toLowerCase() === bl.toLowerCase());
+                          if (match) openNote(match);
+                        }
+                      }}
+                    />
+                  </>
                 ) : (
                   <textarea ref={textareaRef} value={dContent} onChange={e => { setDContent(e.target.value); setIsDirty(true); }}
                     placeholder={dType==="code" ? "// Votre code ici…" : dType==="vocal" ? "Transcription vocale…" : "Commencez à écrire…"}
@@ -1562,7 +1759,7 @@ export default function BlocNotesPage() {
                 )}
 
                 {/* Status bar + voice */}
-                <div className="flex items-center justify-between border-t border-white/[0.04] bg-[#07080e] px-5 py-2">
+                <div className="flex items-center justify-between border-t border-white/[0.04] bg-[#08091c] px-5 py-2">
                   <div className="flex items-center gap-3">
                     <span className="text-[0.58rem] text-white/18">{wordCnt} mot{wordCnt!==1?"s":""}</span>
                     <span className="text-[0.58rem] text-white/18">{dContent.length} car.</span>
@@ -1624,7 +1821,7 @@ export default function BlocNotesPage() {
                 {aiPanel && (
                   <motion.div initial={{width:0,opacity:0}} animate={{width:300,opacity:1}} exit={{width:0,opacity:0}}
                     transition={{duration:0.28,ease}}
-                    className="overflow-hidden border-l border-white/[0.06] bg-[#07080e]"
+                    className="overflow-hidden border-l border-white/[0.06] bg-[#08091c]"
                     style={{minWidth:0}}>
                     <div className="flex h-full w-[300px] flex-col p-4">
                       <div className="mb-3 flex items-center justify-between">
@@ -1690,7 +1887,7 @@ export default function BlocNotesPage() {
             </div>
 
             {/* AI actions bar */}
-            <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.05] bg-[#07080e] px-5 py-2.5" style={{scrollbarWidth:"none"}}>
+            <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.05] bg-[#08091c] px-5 py-2.5" style={{scrollbarWidth:"none"}}>
               {AI_ACTIONS.map(a => (
                 <button key={a.action}
                   onClick={() => {
@@ -1709,7 +1906,7 @@ export default function BlocNotesPage() {
       </div>
 
       {/* ══ MOBILE BOTTOM BAR ══ */}
-      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-white/[0.06] bg-[#0e1420]/95 px-2 pb-safe backdrop-blur-sm lg:hidden"
+      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-white/[0.06] bg-[#0d1226]/95 bg-notes-bar px-2 pb-safe backdrop-blur-sm lg:hidden"
         style={{paddingBottom:"max(env(safe-area-inset-bottom), 8px)", paddingTop:"8px"}}>
         <button onClick={() => setMobilePanel("list")}
           className={`flex flex-col items-center gap-1 px-4 py-1 ${mobilePanel === "list" ? "text-white" : "text-white/35"}`}>
@@ -1750,7 +1947,7 @@ export default function BlocNotesPage() {
             <motion.div key="tb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setShowTemplates(false)}/>
             <motion.div key="td" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-2xl -translate-y-1/2 rounded-2xl border border-white/[0.09] bg-[#0e1420] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-2xl -translate-y-1/2 rounded-2xl border border-white/[0.09] bg-[#0d1226] bg-notes-surface p-6 shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
               <div className="mb-5 flex items-center justify-between">
                 <h2 className="text-base font-extrabold text-white">Templates</h2>
                 <button onClick={() => setShowTemplates(false)} className="text-white/30 hover:text-white/65"><X size={15}/></button>
@@ -1781,7 +1978,7 @@ export default function BlocNotesPage() {
             <motion.div key="fb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setFolderModal(false)}/>
             <motion.div key="fd" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-2xl border border-white/[0.09] bg-[#0e1420] p-6">
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-2xl border border-white/[0.09] bg-[#0d1226] bg-notes-surface p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-extrabold text-white">Nouveau dossier</h2>
                 <button onClick={() => setFolderModal(false)} className="text-white/30 hover:text-white/65"><X size={14}/></button>
@@ -1816,7 +2013,7 @@ export default function BlocNotesPage() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm">
             <motion.div initial={{scale:0.93,y:16,opacity:0}} animate={{scale:1,y:0,opacity:1}} exit={{scale:0.95,opacity:0}}
               transition={{duration:0.25,ease}}
-              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0e1420] p-6">
+              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0d1226] bg-notes-surface p-6">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/18 bg-red-500/9">
                 <Trash2 size={16} className="text-red-400"/>
               </div>
@@ -1842,7 +2039,7 @@ export default function BlocNotesPage() {
               onClick={() => { if (!nbCreating) setCreateNbOpen(false); }}/>
             <motion.div key="nb-modal" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95}}
               transition={{duration:0.26,ease}}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-lg -translate-y-1/2 rounded-2xl border border-white/[0.08] bg-[#0e1420] p-6 shadow-[0_40px_100px_rgba(0,0,0,0.8)]">
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-lg -translate-y-1/2 rounded-2xl border border-white/[0.08] bg-[#0d1226] bg-notes-surface p-6 shadow-[0_40px_100px_rgba(0,0,0,0.8)]">
 
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">

@@ -35,8 +35,6 @@ const VIOLET = "#8b5cf6";
 const SKY    = "#0ea5e9";
 const MAX_FILES   = 4;
 const MAX_SIZE_MB = 50;
-const STATS_KEY   = "social_stats_v1";
-const MON_KEY     = "social_monitoring_v1";
 
 const PLATFORMS: {id:Platform; label:string; color:string; limit:number; Icon:React.FC<{size?:number}>}[] = [
   {id:"instagram", label:"Instagram", color:"#e1306c", limit:2200,  Icon:Camera   },
@@ -64,14 +62,19 @@ const IDEAS = [
 
 const DAYS_FR = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 
-/* ── localStorage helpers ── */
-function loadStats(): Record<string,PostStats> { try { return JSON.parse(localStorage.getItem(STATS_KEY)||"{}"); } catch { return {}; } }
-function saveStats(s:Record<string,PostStats>) { localStorage.setItem(STATS_KEY, JSON.stringify(s)); }
-function loadMon(): {keywords:string[]; mentions:Mention[]} {
-  try { return JSON.parse(localStorage.getItem(MON_KEY)||'{"keywords":[],"mentions":[]}'); }
-  catch { return {keywords:[],mentions:[]}; }
+/* ── Supabase helpers (stats + monitoring) ── */
+async function saveStatDB(uid:string, postId:string, s:PostStats) {
+  void supabase.from("social_post_stats").upsert(
+    { user_id:uid, post_id:postId, ...s, updated_at:new Date().toISOString() },
+    { onConflict:"user_id,post_id" }
+  );
 }
-function saveMon(m:{keywords:string[]; mentions:Mention[]}) { localStorage.setItem(MON_KEY, JSON.stringify(m)); }
+async function saveMonDB(uid:string, keywords:string[], mentions:Mention[]) {
+  void supabase.from("social_monitoring").upsert(
+    { user_id:uid, keywords, mentions, updated_at:new Date().toISOString() },
+    { onConflict:"user_id" }
+  );
+}
 
 /* ── Seeded stats for published posts ── */
 function seedStats(postId:string): PostStats {
@@ -275,6 +278,7 @@ export default function ReseauxSociauxPage() {
 
   const [posts,       setPosts]       = useState<SocialPost[]>([]);
   const [loading,     setLoading]     = useState(true);
+  const [userId,      setUserId]      = useState<string | null>(null);
   const [filter,      setFilter]      = useState<Platform|"tous">("tous");
   const [showIdeas,   setShowIdeas]   = useState(false);
   const [aiLoading,   setAiLoading]   = useState(false);
@@ -306,9 +310,30 @@ export default function ReseauxSociauxPage() {
 
   const postsRef = useRef(posts);
   postsRef.current = posts;
+  const userIdRef = useRef<string | null>(null);
+  userIdRef.current = userId;
 
-  // Load localStorage
-  useEffect(()=>{ setPostStats(loadStats()); const m=loadMon(); setMonKeywords(m.keywords); setMonMentions(m.mentions); },[]);
+  // Load from Supabase
+  useEffect(()=>{
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserId(user.id);
+      const [statsRes, monRes] = await Promise.all([
+        supabase.from("social_post_stats").select("post_id,likes,comments,shares,views").eq("user_id", user.id),
+        supabase.from("social_monitoring").select("keywords,mentions").eq("user_id", user.id).maybeSingle(),
+      ]);
+      if (statsRes.data?.length) {
+        const map: Record<string,PostStats> = {};
+        statsRes.data.forEach((r: Record<string,unknown>) => { map[String(r.post_id)] = { likes: Number(r.likes), comments: Number(r.comments), shares: Number(r.shares), views: Number(r.views) }; });
+        setPostStats(map);
+      }
+      if (monRes.data) {
+        setMonKeywords((monRes.data.keywords as string[]) ?? []);
+        setMonMentions((monRes.data.mentions as Mention[]) ?? []);
+      }
+    })();
+  },[]);
 
   // Auto-publish: check on mount + every 60s
   useEffect(()=>{
@@ -318,10 +343,14 @@ export default function ReseauxSociauxPage() {
       if (toPublish.length===0) return;
       await Promise.all(toPublish.map(p=>supabase.from("social_posts").update({status:"publié",published_at:now}).eq("id",p.id)));
       // Seed stats for newly published
-      const existing = loadStats();
-      const statsUp: Record<string,PostStats> = {};
-      toPublish.forEach(p=>{ if (!existing[p.id]) statsUp[p.id]=seedStats(p.id); });
-      if (Object.keys(statsUp).length>0) { const merged={...existing,...statsUp}; setPostStats(merged); saveStats(merged); }
+      const uid = userIdRef.current;
+      const statsUp: Partial<Record<string,PostStats>> = {};
+      toPublish.forEach(p=>{ if (!postStats[p.id]) statsUp[p.id]=seedStats(p.id); });
+      if (Object.keys(statsUp).length>0 && uid) {
+        const merged={...postStats,...statsUp} as Record<string,PostStats>;
+        setPostStats(merged);
+        Object.entries(statsUp).forEach(([pid, s]) => { if (s) void saveStatDB(uid, pid, s); });
+      }
       setPosts(prev=>prev.map(p=>toPublish.some(x=>x.id===p.id)?{...p,status:"publié" as PostStatus,published_at:now}:p));
       toast(`${toPublish.length} post${toPublish.length>1?"s":""} auto-publié${toPublish.length>1?"s":""}  🚀`,"success");
     };
@@ -428,9 +457,9 @@ export default function ReseauxSociauxPage() {
     const {error} = await supabase.from("social_posts").update({status:"publié",published_at:now}).eq("id",post.id);
     if (error) { toast("Erreur mise à jour statut","error"); return; }
     setPosts(p=>p.map(x=>x.id===post.id?{...x,status:"publié" as PostStatus,published_at:now}:x));
-    if (!postStats[post.id]) {
+    if (!postStats[post.id] && userId) {
       const stats=seedStats(post.id); const updated={...postStats,[post.id]:stats};
-      setPostStats(updated); saveStats(updated);
+      setPostStats(updated); void saveStatDB(userId, post.id, stats);
     }
     toast("Marqué comme publié","success");
   }
@@ -439,25 +468,25 @@ export default function ReseauxSociauxPage() {
   function addKeyword() {
     if (!keyInput.trim()||monKeywords.includes(keyInput.trim().toLowerCase())) { setKeyInput(""); return; }
     const updated=[...monKeywords,keyInput.trim().toLowerCase()];
-    setMonKeywords(updated); saveMon({keywords:updated,mentions:monMentions}); setKeyInput("");
+    setMonKeywords(updated); if(userId) void saveMonDB(userId, updated, monMentions); setKeyInput("");
   }
   function removeKeyword(k:string) {
     const updated=monKeywords.filter(x=>x!==k);
-    setMonKeywords(updated); saveMon({keywords:updated,mentions:monMentions});
+    setMonKeywords(updated); if(userId) void saveMonDB(userId, updated, monMentions);
   }
   function addMention() {
     if (!mForm.text.trim()||!mForm.keyword) return;
     const m:Mention={id:Math.random().toString(36).slice(2,10),keyword:mForm.keyword,source:mForm.source||"Web",text:mForm.text.trim(),date:new Date().toISOString().slice(0,10),read:false};
     const updated=[m,...monMentions];
-    setMonMentions(updated); saveMon({keywords:monKeywords,mentions:updated}); setMForm({keyword:"",source:"",text:""});
+    setMonMentions(updated); if(userId) void saveMonDB(userId, monKeywords, updated); setMForm({keyword:"",source:"",text:""});
   }
   function markMentionRead(id:string) {
     const updated=monMentions.map(m=>m.id===id?{...m,read:true}:m);
-    setMonMentions(updated); saveMon({keywords:monKeywords,mentions:updated});
+    setMonMentions(updated); if(userId) void saveMonDB(userId, monKeywords, updated);
   }
   function deleteMention(id:string) {
     const updated=monMentions.filter(m=>m.id!==id);
-    setMonMentions(updated); saveMon({keywords:monKeywords,mentions:updated});
+    setMonMentions(updated); if(userId) void saveMonDB(userId, monKeywords, updated);
   }
 
   /* ── Computed ── */
@@ -757,6 +786,7 @@ export default function ReseauxSociauxPage() {
                                 {icon}<span className="font-semibold text-white/55">{fmtNum(val)}</span>
                               </div>
                             ))}
+                            <span className="ml-auto rounded px-1 py-0.5 text-[8px] font-bold uppercase tracking-widest bg-amber-400/10 text-amber-400/60">sim.</span>
                           </div>
                         )}
                       </motion.div>
@@ -820,6 +850,11 @@ export default function ReseauxSociauxPage() {
           {/* ── Analytics ── */}
           {activeTab==="analytics" && (
             <div className="space-y-4">
+              {/* Simulation disclaimer */}
+              <div className="flex items-center gap-2.5 rounded-xl border border-amber-400/20 bg-amber-400/6 px-4 py-2.5">
+                <span className="shrink-0 rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-amber-400">Simulation</span>
+                <p className="text-xs text-amber-400/70">Ces statistiques sont des estimations générées automatiquement — connectez vos comptes pour voir vos vraies données.</p>
+              </div>
               {/* Global stats */}
               <div className="grid grid-cols-4 gap-3">
                 {[
@@ -954,7 +989,7 @@ export default function ReseauxSociauxPage() {
                     {unreadMentions>0 && (
                       <button onClick={()=>{
                         const updated=monMentions.map(m=>({...m,read:true}));
-                        setMonMentions(updated); saveMon({keywords:monKeywords,mentions:updated});
+                        setMonMentions(updated); if(userId) void saveMonDB(userId, monKeywords, updated);
                       }} className="text-[10px] text-white/30 hover:text-white/60 transition-colors">Tout marquer lu</button>
                     )}
                   </div>

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToastStack, ToastStack } from "@/components/ui/ToastStack";
+import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -74,28 +75,6 @@ const COT_PAT = [
 
 interface Absence { cp: number; rtt: number; maladie: number }
 
-const ABS_KEY        = "djama_absences";
-const HIST_KEY       = "djama_bulletin_hist";
-const URSSAF_DONE_KEY = "djama_urssaf_done";
-
-function loadAbsences(): Record<string, Absence> {
-  try { return JSON.parse(localStorage.getItem(ABS_KEY) ?? "{}") as Record<string, Absence>; } catch { return {}; }
-}
-function saveAbsences(a: Record<string, Absence>) {
-  try { localStorage.setItem(ABS_KEY, JSON.stringify(a)); } catch { /* noop */ }
-}
-function loadBulletinHist(): Record<string, string[]> {
-  try { return JSON.parse(localStorage.getItem(HIST_KEY) ?? "{}") as Record<string, string[]>; } catch { return {}; }
-}
-function saveBulletinHist(h: Record<string, string[]>) {
-  try { localStorage.setItem(HIST_KEY, JSON.stringify(h)); } catch { /* noop */ }
-}
-function loadUrssafDone(): string[] {
-  try { return JSON.parse(localStorage.getItem(URSSAF_DONE_KEY) ?? "[]") as string[]; } catch { return []; }
-}
-function saveUrssafDone(d: string[]) {
-  try { localStorage.setItem(URSSAF_DONE_KEY, JSON.stringify(d)); } catch { /* noop */ }
-}
 
 function generateBulletin(e: Employe) {
   const mois  = new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
@@ -156,6 +135,7 @@ function generateBulletin(e: Employe) {
 }
 
 export default function PaieRHPage() {
+  const { isDark } = useTheme();
   const [employes, setEmployes] = useState<Employe[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [search,   setSearch]   = useState("");
@@ -175,18 +155,29 @@ export default function PaieRHPage() {
   const [bulletinHist, setBulletinHist] = useState<Record<string, string[]>>({});
   const [urssafDone,   setUrssafDone]   = useState<string[]>([]);
 
-  useEffect(() => {
-    setAbsencesMap(loadAbsences());
-    setBulletinHist(loadBulletinHist());
-    setUrssafDone(loadUrssafDone());
-  }, []);
-
   const load = useCallback(async (uid?: string | null) => {
     const id = uid ?? userId;
     if (!id) return;
     setLoading(true);
-    const { data } = await supabase.from("employes").select("*").eq("user_id", id).order("created_at", { ascending: false });
-    setEmployes((data as Employe[]) ?? []);
+    const [empRes, absRes, histRes, urssafRes] = await Promise.all([
+      supabase.from("employes").select("*").eq("user_id", id).order("created_at", { ascending: false }),
+      supabase.from("employe_absences").select("*").eq("user_id", id),
+      supabase.from("payslips").select("employee_id,month_key").eq("user_id", id),
+      supabase.from("urssaf_declarations").select("month_key").eq("user_id", id).eq("done", true),
+    ]);
+    setEmployes((empRes.data as Employe[]) ?? []);
+    const absMap: Record<string, Absence> = {};
+    for (const r of (absRes.data ?? [])) {
+      absMap[r.employee_id as string] = { cp: r.cp as number, rtt: r.rtt as number, maladie: r.maladie as number };
+    }
+    setAbsencesMap(absMap);
+    const histMap: Record<string, string[]> = {};
+    for (const r of (histRes.data ?? [])) {
+      if (!histMap[r.employee_id as string]) histMap[r.employee_id as string] = [];
+      histMap[r.employee_id as string].push(r.month_key as string);
+    }
+    setBulletinHist(histMap);
+    setUrssafDone((urssafRes.data ?? []).map(r => r.month_key as string));
     setLoading(false);
   }, [userId]);
 
@@ -199,25 +190,25 @@ export default function PaieRHPage() {
     })();
   }, []);
 
-  function handleGenerateBulletin(e: Employe) {
+  async function handleGenerateBulletin(e: Employe) {
     const monthKey = new Date().toISOString().slice(0, 7);
-    setBulletinHist(prev => {
-      const updated = { ...prev, [e.id]: [...new Set([...(prev[e.id] ?? []), monthKey])] };
-      saveBulletinHist(updated);
-      return updated;
-    });
+    setBulletinHist(prev => ({ ...prev, [e.id]: [...new Set([...(prev[e.id] ?? []), monthKey])] }));
+    if (userId) {
+      try { await supabase.from("payslips").upsert({ user_id: userId, employee_id: e.id, month_key: monthKey, html_content: monthKey }, { onConflict: "user_id,employee_id,month_key" }); } catch {}
+    }
     generateBulletin(e);
     add(`Bulletin ${e.nom} généré`, "success");
   }
 
-  function toggleUrssafDone(monthKey: string) {
-    setUrssafDone(prev => {
-      const next = prev.includes(monthKey)
-        ? prev.filter(k => k !== monthKey)
-        : [...prev, monthKey];
-      saveUrssafDone(next);
-      return next;
-    });
+  async function toggleUrssafDone(monthKey: string) {
+    const isDone = urssafDone.includes(monthKey);
+    setUrssafDone(prev => isDone ? prev.filter(k => k !== monthKey) : [...prev, monthKey]);
+    if (!userId) return;
+    if (isDone) {
+      await supabase.from("urssaf_declarations").delete().eq("user_id", userId).eq("month_key", monthKey);
+    } else {
+      await supabase.from("urssaf_declarations").upsert({ user_id: userId, month_key: monthKey, done: true }, { onConflict: "user_id,month_key" });
+    }
   }
 
   async function addEmploye() {
@@ -244,13 +235,13 @@ export default function PaieRHPage() {
     await load();
   }
 
-  function updateAbsence(empId: string, field: keyof Absence, delta: number) {
-    setAbsencesMap(prev => {
-      const cur  = prev[empId] ?? { cp: 0, rtt: 0, maladie: 0 };
-      const next = { ...prev, [empId]: { ...cur, [field]: Math.max(0, cur[field] + delta) } };
-      saveAbsences(next);
-      return next;
-    });
+  async function updateAbsence(empId: string, field: keyof Absence, delta: number) {
+    const cur  = absences[empId] ?? { cp: 0, rtt: 0, maladie: 0 };
+    const next = { ...cur, [field]: Math.max(0, cur[field] + delta) };
+    setAbsencesMap(prev => ({ ...prev, [empId]: next }));
+    if (userId) {
+      try { await supabase.from("employe_absences").upsert({ user_id: userId, employee_id: empId, ...next }, { onConflict: "user_id,employee_id" }); } catch {}
+    }
   }
 
   const actifs       = employes.filter(e => e.actif);
@@ -344,7 +335,7 @@ export default function PaieRHPage() {
 
   /* ══════════════════════════════════════════════════════════════════ */
   return (
-    <div className="relative min-h-screen bg-[#07080e] text-white">
+    <div className={`relative min-h-screen ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-gray-900"}`}>
       <ToastStack toasts={toasts} remove={remove} />
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -352,19 +343,21 @@ export default function PaieRHPage() {
         {/* ── HEADER ── */}
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">Ressources Humaines</p>
-            <h1 className="text-2xl font-black text-white sm:text-3xl">Paie & RH</h1>
+            <p className={`mb-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] ${isDark ? "text-white/30" : "text-gray-400"}`}>Ressources Humaines</p>
+            <h1 className={`text-2xl font-black sm:text-3xl ${isDark ? "text-white" : "text-gray-900"}`}>Paie & RH</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {/* Vue toggle */}
-            <div className="flex gap-0.5 rounded-xl border border-white/6 bg-white/4 p-1">
+            <div className={`flex gap-0.5 rounded-xl p-1 ${isDark ? "border border-white/6 bg-white/4" : "border border-black/8 bg-white/80"}`}>
               {([
                 { id: "employes",  label: "Employés",   icon: Users      },
                 { id: "dashboard", label: "Tableau RH",  icon: BarChart2  },
               ] as const).map(({ id, label, icon: Icon }) => (
                 <button key={id} onClick={() => setView(id)}
                   className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[0.68rem] font-bold transition ${
-                    view === id ? "bg-white/12 text-white" : "text-white/35 hover:text-white/60"
+                    view === id
+                      ? isDark ? "bg-white/12 text-white" : "bg-white text-gray-900 shadow-sm"
+                      : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-700"
                   }`}>
                   <Icon size={12} /> {label}
                 </button>
@@ -372,12 +365,12 @@ export default function PaieRHPage() {
             </div>
             {actifs.length > 0 && (
               <button onClick={exportDSN}
-                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/4 px-3.5 py-2 text-[0.72rem] font-bold text-white/50 transition hover:text-white/80">
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[0.72rem] font-bold transition ${isDark ? "border border-white/8 bg-white/4 text-white/50 hover:text-white/80" : "border border-black/8 bg-white text-gray-500 hover:text-gray-800"}`}>
                 <Download size={13} /> Export DSN
               </button>
             )}
             <button onClick={() => setShowForm(true)}
-              className="group flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#07080e] shadow-lg shadow-white/10 transition hover:scale-[1.02] hover:shadow-white/20 active:scale-[0.98]">
+              className={`group flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-black transition hover:scale-[1.02] active:scale-[0.98] ${isDark ? "bg-white text-[#07080e] shadow-lg shadow-white/10 hover:shadow-white/20" : "bg-gray-900 text-white shadow-lg"}`}>
               <Plus size={16} /> Ajouter
               <ArrowUpRight size={13} className="ml-0.5 opacity-40 transition group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </button>
@@ -412,8 +405,8 @@ export default function PaieRHPage() {
                   <AlertCircle size={14} className="text-orange-400" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white">Déclaration URSSAF du mois</p>
-                  <p className="text-[0.6rem] text-white/35">{new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}</p>
+                  <p className={`text-xs font-bold ${isDark ? "text-white" : "text-gray-800"}`}>Déclaration URSSAF du mois</p>
+                  <p className={`text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -487,7 +480,7 @@ export default function PaieRHPage() {
               {/* Répartition par contrat */}
               <div className="overflow-hidden rounded-2xl border border-white/6 bg-white/4">
                 <div className="border-b border-white/6 px-5 py-4">
-                  <p className="text-xs font-bold text-white">Répartition de l&apos;effectif par contrat</p>
+                  <p className={`text-xs font-bold ${isDark ? "text-white" : "text-gray-800"}`}>Répartition de l&apos;effectif par contrat</p>
                 </div>
                 <div className="p-5 space-y-3">
                   {actifs.length === 0 ? (
@@ -557,7 +550,7 @@ export default function PaieRHPage() {
               {actifs.length > 0 && (
                 <div className="overflow-hidden rounded-2xl border border-white/6 bg-white/4">
                   <div className="border-b border-white/6 px-5 py-4">
-                    <p className="text-xs font-bold text-white">Top salaires</p>
+                    <p className={`text-xs font-bold ${isDark ? "text-white" : "text-gray-800"}`}>Top salaires</p>
                   </div>
                   <div className="divide-y divide-white/5">
                     {[...actifs].sort((a, b) => b.salaire_brut - a.salaire_brut).slice(0, 5).map((e, i) => (
@@ -585,7 +578,7 @@ export default function PaieRHPage() {
               <div className="overflow-hidden rounded-2xl border border-white/6 bg-white/4">
                 <div className="border-b border-white/6 px-5 py-4 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold text-white">Bulletins du mois</p>
+                    <p className={`text-xs font-bold ${isDark ? "text-white" : "text-gray-800"}`}>Bulletins du mois</p>
                     <p className="text-[0.6rem] text-white/30">
                       {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })} —{" "}
                       {actifs.filter(e => (bulletinHist[e.id] ?? []).includes(currentMonthKey)).length}/{actifs.length} générés
@@ -639,12 +632,12 @@ export default function PaieRHPage() {
 
               {/* Toolbar */}
               <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="flex flex-1 items-center gap-2.5 rounded-2xl border border-white/8 bg-white/4 px-4 py-3 backdrop-blur-sm">
-                  <Search size={14} className="text-white/30" />
+                <div className={`flex flex-1 items-center gap-2.5 rounded-2xl px-4 py-3 backdrop-blur-sm ${isDark ? "border border-white/8 bg-white/4" : "border border-black/8 bg-white"}`}>
+                  <Search size={14} className={isDark ? "text-white/30" : "text-gray-400"} />
                   <input value={search} onChange={e => setSearch(e.target.value)}
                     placeholder="Rechercher un employé, un poste…"
-                    className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none" />
-                  {search && <button onClick={() => setSearch("")} className="text-white/30 hover:text-white/60"><X size={13} /></button>}
+                    className={`flex-1 bg-transparent text-sm outline-none ${isDark ? "text-white placeholder-white/25" : "text-gray-800 placeholder:text-gray-400"}`} />
+                  {search && <button onClick={() => setSearch("")} className={isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}><X size={13} /></button>}
                 </div>
                 <div className="flex gap-1.5 overflow-x-auto">
                   {(["all", ...CONTRATS] as const).map(k => {

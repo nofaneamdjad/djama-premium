@@ -10,13 +10,15 @@ import {
   CalendarRange, Timer, StickyNote, Search, Zap, Star, Brain,
   Crown, Sparkles, Lock, ChevronRight, X, Menu,
   LogOut, Bell, ArrowRight, CheckCircle2, Share2, User, AlertTriangle,
-  Building2, Banknote, FolderOpen,
+  Building2, Banknote, FolderOpen, ThumbsUp, BookOpen, MessageSquare, Target,
+  Sun, Moon,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSubscription } from "@/lib/use-require-subscription";
 import { getToolTier } from "@/lib/plans";
 import FloatingAIAssistant from "@/components/FloatingAIAssistant";
 import OnboardingModal from "@/components/OnboardingModal";
+import { ThemeProvider, useTheme, ACCENT_OPTIONS } from "@/lib/theme-context";
 
 const GOLD = "#c9a55a";
 const DARK = "#111318";
@@ -49,6 +51,10 @@ const PRO_TOOLS = [
   { href: "/coaching-ia/espace",     label: "Coaching IA",       icon: Brain        },
   { href: "/client/portail",         label: "Portail Client",    icon: Building2    },
   { href: "/client/paie",            label: "Paie & RH",         icon: Banknote     },
+  { href: "/client/reputation",      label: "Réputation",        icon: ThumbsUp     },
+  { href: "/client/blog",            label: "Blog",               icon: BookOpen     },
+  { href: "/client/temoignages",     label: "Témoignages",        icon: MessageSquare},
+  { href: "/client/planification",   label: "Planification",      icon: Target       },
 ] as const;
 
 /* ─────────── PREMIUM GROUPED NAV ─────────── */
@@ -100,8 +106,12 @@ const PREMIUM_GROUPS = [
   {
     label: "Gestion",
     items: [
-      { href: "/client/portail", label: "Portail Client", icon: Building2, exact: false },
-      { href: "/client/paie",    label: "Paie & RH",      icon: Banknote,  exact: false },
+      { href: "/client/portail",         label: "Portail Client", icon: Building2,    exact: false },
+      { href: "/client/paie",            label: "Paie & RH",      icon: Banknote,     exact: false },
+      { href: "/client/reputation",      label: "Réputation",     icon: ThumbsUp,     exact: false },
+      { href: "/client/blog",            label: "Blog",            icon: BookOpen,     exact: false },
+      { href: "/client/temoignages",     label: "Témoignages",    icon: MessageSquare,exact: false },
+      { href: "/client/planification",   label: "Planification",  icon: Target,       exact: false },
     ],
   },
 ] as const;
@@ -118,12 +128,14 @@ function fmtEvtDate(iso: string) {
   return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 }
 
-/* ─────────── DARK NAV ITEM ─────────── */
+/* ─────────── NAV ITEM (dark + light mode) ─────────── */
 function DarkNavItem({
   href, label, icon: Icon, exact = false, pathname, onClick,
+  dark = true, accent = GOLD,
 }: {
   href: string; label: string; icon: React.ElementType;
   exact?: boolean; pathname: string; onClick?: () => void;
+  dark?: boolean; accent?: string;
 }) {
   const active = exact ? pathname === href : pathname.startsWith(href);
   return (
@@ -131,17 +143,96 @@ function DarkNavItem({
       href={href}
       onClick={onClick}
       className={`relative flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[0.8rem] font-medium transition-colors duration-150 ${
-        active ? "text-white" : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"
+        dark
+          ? active ? "text-white" : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"
+          : active ? "text-gray-900" : "text-gray-500 hover:text-gray-800 hover:bg-black/[0.04]"
       }`}
-      style={active ? { background: "rgba(201,165,90,0.11)" } : {}}
+      style={active ? { background: dark ? `${accent}1c` : `${accent}14` } : {}}
     >
       <span
         className="absolute left-0 top-1/2 h-3.5 w-0.5 -translate-y-1/2 rounded-r-full transition-opacity"
-        style={{ background: GOLD, opacity: active ? 1 : 0 }}
+        style={{ background: accent, opacity: active ? 1 : 0 }}
       />
-      <Icon size={14} style={{ color: active ? GOLD : undefined }} />
+      <Icon size={14} style={{ color: active ? accent : undefined }} />
       <span className="flex-1 truncate">{label}</span>
     </Link>
+  );
+}
+
+/* ─────────── THEME TOGGLE BUTTON ─────────── */
+function ThemeToggle() {
+  const { mode, accent, accentName, setMode, setAccent } = useTheme();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isDark = mode === "dark";
+
+  useEffect(() => {
+    function onOut(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onOut);
+    return () => document.removeEventListener("mousedown", onOut);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        aria-label="Thème"
+        title="Changer le thème"
+        className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+          isDark
+            ? "text-white/40 hover:bg-white/[0.07] hover:text-white/70"
+            : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+        }`}
+      >
+        {isDark ? <Moon size={15} /> : <Sun size={15} />}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute right-0 top-10 z-50 w-64 overflow-hidden rounded-2xl shadow-[0_12px_48px_rgba(0,0,0,0.4)]"
+            style={{
+              background: isDark ? "rgba(15,18,28,0.97)" : "#ffffff",
+              border: isDark ? "1px solid rgba(255,255,255,0.09)" : "1px solid rgba(0,0,0,0.09)",
+            }}
+          >
+            {/* Mode toggle */}
+            <div className="p-3" style={{ borderBottom: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }}>
+              <p className={`mb-2 text-[0.58rem] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                Mode d&apos;affichage
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {([["dark", Moon, "Sombre"], ["light", Sun, "Clair"]] as const).map(([m, Icon, lbl]) => (
+                  <button
+                    key={m}
+                    onClick={() => { setMode(m); }}
+                    className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-[0.75rem] font-semibold transition-all ${
+                      mode === m
+                        ? "text-white"
+                        : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-700"
+                    }`}
+                    style={mode === m
+                      ? { background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, boxShadow: `0 4px 16px ${accent}40` }
+                      : { background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }
+                    }
+                  >
+                    <Icon size={12} />
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -750,7 +841,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
 }
 
 /* ─────────── BOTTOM NAV (mobile only) ─────────── */
-function BottomNav({ pathname, dark = false }: { pathname: string; dark?: boolean }) {
+function BottomNav({ pathname, dark = false, accent = GOLD }: { pathname: string; dark?: boolean; accent?: string }) {
   const items = [
     { href: "/client",            label: "Accueil",    icon: Home,        exact: true  },
     { href: "/client/factures",   label: "Factures",   icon: ReceiptText, exact: false },
@@ -763,7 +854,7 @@ function BottomNav({ pathname, dark = false }: { pathname: string; dark?: boolea
     <nav
       className="fixed bottom-0 inset-x-0 z-30 lg:hidden"
       style={{
-        background: dark ? "#111318" : "#fff",
+        background: dark ? "#111318" : "#ffffff",
         borderTop: dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.07)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
         boxShadow: dark ? "0 -4px 20px rgba(0,0,0,0.24)" : "0 -4px 20px rgba(0,0,0,0.06)",
@@ -785,12 +876,12 @@ function BottomNav({ pathname, dark = false }: { pathname: string; dark?: boolea
                 <Icon
                   size={22}
                   strokeWidth={active ? 2.2 : 1.7}
-                  style={{ color: active ? GOLD : dark ? "rgba(255,255,255,0.5)" : "#6b7280" }}
+                  style={{ color: active ? accent : dark ? "rgba(255,255,255,0.5)" : "#9ca3af" }}
                 />
               </motion.div>
               <span
                 className="text-[9.5px] font-semibold"
-                style={{ color: active ? GOLD : dark ? "rgba(255,255,255,0.5)" : "#6b7280" }}
+                style={{ color: active ? accent : dark ? "rgba(255,255,255,0.5)" : "#9ca3af" }}
               >
                 {label}
               </span>
@@ -798,7 +889,7 @@ function BottomNav({ pathname, dark = false }: { pathname: string; dark?: boolea
                 <motion.div
                   layoutId="bottomNavDot"
                   className="absolute bottom-1 h-1 w-1 rounded-full"
-                  style={{ background: GOLD }}
+                  style={{ background: accent }}
                 />
               )}
             </Link>
@@ -836,16 +927,29 @@ const DARK_PAGES = [
   "/client/factures",
   "/client/paie",
   "/client/portail",
+  "/client/reputation",
+  "/client/blog",
+  "/client/temoignages",
+  "/client/planification",
 ];
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <ClientLayoutInner>{children}</ClientLayoutInner>
+    </ThemeProvider>
+  );
+}
+
+function ClientLayoutInner({ children }: { children: React.ReactNode }) {
+  const { mode, accent, isDark } = useTheme();
   const pathname     = usePathname();
   const subscription = useSubscription();
   const [sidebarOpen,  setSidebarOpen]  = useState(false);
   const [proModalOpen, setProModalOpen] = useState(false);
   const [searchOpen,   setSearchOpen]   = useState(false);
 
-  /* ── #2: detect dark pages for consistent background ── */
+  /* ── detect dark pages for consistent background ── */
   const isDarkPage = DARK_PAGES.some(p => pathname === p || pathname.startsWith(p + "/"));
 
   /* Pages with their own complete mobile nav — hide the global bottom bar */
@@ -922,7 +1026,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <div
       className="client-app flex h-screen overflow-hidden"
-      style={{ background: isDarkPage ? "#07090e" : "#f6f7f9", transition: "background 0.3s ease", colorScheme: "dark" }}
+      data-theme={mode}
+      style={{
+        background: isDark ? (isDarkPage ? "#07090e" : "#f6f7f9") : "#f4f5f9",
+        transition: "background 0.3s ease",
+        colorScheme: mode,
+      }}
     >
       {/* Global search */}
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
@@ -933,19 +1042,24 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* ── SIDEBAR DESKTOP (toujours dans le flux flex à lg+) ── */}
       <aside
         className="hidden lg:flex w-[13.625rem] flex-shrink-0 flex-col"
-        style={{ background: DARK, borderRight: "1px solid rgba(255,255,255,0.07)" }}
+        style={{
+          background: isDark ? "#111318" : "#ffffff",
+          borderRight: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)",
+          boxShadow: isDark ? "none" : "1px 0 0 rgba(0,0,0,0.04)",
+        }}
       >
         {/* Logo */}
         <div className="flex h-[52px] shrink-0 items-center px-4"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          style={{ borderBottom: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }}>
           <Link href="/client" className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-              style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}28` }}>
-              <Sparkles size={13} style={{ color: GOLD }} />
+              style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}>
+              <Sparkles size={13} style={{ color: accent }} />
             </div>
             <div className="leading-none">
-              <p className="text-[0.88rem] font-bold" style={{ color: GOLD }}>DJAMA</p>
-              <p className="mt-0.5 text-[0.5rem] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.25)" }}>
+              <p className="text-[0.88rem] font-bold" style={{ color: accent }}>DJAMA</p>
+              <p className="mt-0.5 text-[0.5rem] uppercase tracking-widest"
+                style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                 {isPremium ? "PRO · Actif" : "Plan Gratuit"}
               </p>
             </div>
@@ -957,30 +1071,30 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           {!isPremium ? (
             <>
               <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
-                style={{ color: "rgba(255,255,255,0.25)" }}>
+                style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                 Outils gratuits
               </p>
               <div className="space-y-0.5">
                 {FREE_NAV.map(item => (
-                  <DarkNavItem key={item.href} {...item} pathname={pathname} onClick={() => {}} />
+                  <DarkNavItem key={item.href} {...item} pathname={pathname} onClick={() => {}} dark={isDark} accent={accent} />
                 ))}
               </div>
-              <div className="mx-2 my-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
+              <div className="mx-2 my-4" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }} />
               <button
                 onClick={() => setProModalOpen(true)}
                 className="group w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-medium transition-all"
-                style={{ background: `${GOLD}0c`, border: `1px solid ${GOLD}1a`, color: GOLD }}
+                style={{ background: `${accent}0c`, border: `1px solid ${accent}1a`, color: accent }}
               >
                 <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
-                  style={{ background: `${GOLD}14` }}>
-                  <Lock size={9} style={{ color: GOLD }} />
+                  style={{ background: `${accent}14` }}>
+                  <Lock size={9} style={{ color: accent }} />
                 </div>
                 <span className="flex-1 text-left">Débloquer les outils PRO</span>
                 <ChevronRight size={11} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
               </button>
               <a href="/client/abonnements"
                 className="mt-2 block text-center text-[0.63rem] font-medium transition hover:opacity-70"
-                style={{ color: `${GOLD}70` }}>
+                style={{ color: `${accent}70` }}>
                 Voir DJAMA PRO →
               </a>
             </>
@@ -989,13 +1103,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               <div key={gi} className={gi > 0 ? "mt-4" : ""}>
                 {group.label && (
                   <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
-                    style={{ color: "rgba(255,255,255,0.25)" }}>
+                    style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                     {group.label}
                   </p>
                 )}
                 <div className="space-y-0.5">
                   {group.items.map(item => (
-                    <DarkNavItem key={item.href} {...item} pathname={pathname} onClick={() => {}} />
+                    <DarkNavItem key={item.href} {...item} pathname={pathname} onClick={() => {}} dark={isDark} accent={accent} />
                   ))}
                 </div>
               </div>
@@ -1004,24 +1118,24 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </nav>
 
         {/* User footer */}
-        <div className="shrink-0 p-2" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="shrink-0 p-2" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }}>
           <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2">
             <Link href="/client/profil"
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.65rem] font-bold transition hover:opacity-75"
-              style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}22`, color: GOLD }}
+              style={{ background: `${accent}14`, border: `1px solid ${accent}22`, color: accent }}
               title="Mon profil">
               {userInitial}
             </Link>
             <Link href="/client/profil" className="group min-w-0 flex-1">
-              <p className="truncate text-[0.72rem] font-medium text-white/65 transition group-hover:text-white/85">
+              <p className={`truncate text-[0.72rem] font-medium transition ${isDark ? "text-white/65 group-hover:text-white/85" : "text-gray-600 group-hover:text-gray-900"}`}>
                 {displayName}
               </p>
-              <p className="text-[0.55rem]" style={{ color: "rgba(255,255,255,0.28)" }}>
+              <p className="text-[0.55rem]" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.35)" }}>
                 {isPremium ? "DJAMA PRO" : "Plan Gratuit"}
               </p>
             </Link>
             <button onClick={handleLogout} aria-label="Se déconnecter" title="Se déconnecter"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/25 transition hover:bg-white/5 hover:text-white/60">
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition ${isDark ? "text-white/25 hover:bg-white/5 hover:text-white/60" : "text-gray-300 hover:bg-gray-100 hover:text-gray-600"}`}>
               <LogOut size={12} />
             </button>
           </div>
@@ -1044,25 +1158,29 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
               transition={{ duration: 0.25, ease: "easeOut" }}
               className="fixed inset-y-0 left-0 z-40 flex w-[13.625rem] flex-col"
-              style={{ background: DARK, borderRight: "1px solid rgba(255,255,255,0.07)" }}
+              style={{
+                background: isDark ? "#111318" : "#ffffff",
+                borderRight: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)",
+              }}
             >
               {/* Logo + bouton fermer */}
               <div className="flex h-[52px] shrink-0 items-center justify-between px-4"
-                style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                style={{ borderBottom: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }}>
                 <Link href="/client" className="flex items-center gap-2.5">
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-                    style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}28` }}>
-                    <Sparkles size={13} style={{ color: GOLD }} />
+                    style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}>
+                    <Sparkles size={13} style={{ color: accent }} />
                   </div>
                   <div className="leading-none">
-                    <p className="text-[0.88rem] font-bold" style={{ color: GOLD }}>DJAMA</p>
-                    <p className="mt-0.5 text-[0.5rem] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.25)" }}>
+                    <p className="text-[0.88rem] font-bold" style={{ color: accent }}>DJAMA</p>
+                    <p className="mt-0.5 text-[0.5rem] uppercase tracking-widest"
+                      style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                       {isPremium ? "PRO · Actif" : "Plan Gratuit"}
                     </p>
                   </div>
                 </Link>
                 <button onClick={() => setSidebarOpen(false)} aria-label="Fermer"
-                  className="text-white/25 transition hover:text-white/60">
+                  className={`transition ${isDark ? "text-white/25 hover:text-white/60" : "text-gray-300 hover:text-gray-600"}`}>
                   <X size={14} />
                 </button>
               </div>
@@ -1072,31 +1190,31 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 {!isPremium ? (
                   <>
                     <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
-                      style={{ color: "rgba(255,255,255,0.25)" }}>
+                      style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                       Outils gratuits
                     </p>
                     <div className="space-y-0.5">
                       {FREE_NAV.map(item => (
                         <DarkNavItem key={item.href} {...item} pathname={pathname}
-                          onClick={() => setSidebarOpen(false)} />
+                          onClick={() => setSidebarOpen(false)} dark={isDark} accent={accent} />
                       ))}
                     </div>
-                    <div className="mx-2 my-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
+                    <div className="mx-2 my-4" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }} />
                     <button
                       onClick={() => { setProModalOpen(true); setSidebarOpen(false); }}
                       className="group w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-medium transition-all"
-                      style={{ background: `${GOLD}0c`, border: `1px solid ${GOLD}1a`, color: GOLD }}
+                      style={{ background: `${accent}0c`, border: `1px solid ${accent}1a`, color: accent }}
                     >
                       <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
-                        style={{ background: `${GOLD}14` }}>
-                        <Lock size={9} style={{ color: GOLD }} />
+                        style={{ background: `${accent}14` }}>
+                        <Lock size={9} style={{ color: accent }} />
                       </div>
                       <span className="flex-1 text-left">Débloquer les outils PRO</span>
                       <ChevronRight size={11} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
                     </button>
                     <a href="/client/abonnements"
                       className="mt-2 block text-center text-[0.63rem] font-medium transition hover:opacity-70"
-                      style={{ color: `${GOLD}70` }}>
+                      style={{ color: `${accent}70` }}>
                       Voir DJAMA PRO →
                     </a>
                   </>
@@ -1105,14 +1223,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                     <div key={gi} className={gi > 0 ? "mt-4" : ""}>
                       {group.label && (
                         <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
-                          style={{ color: "rgba(255,255,255,0.25)" }}>
+                          style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                           {group.label}
                         </p>
                       )}
                       <div className="space-y-0.5">
                         {group.items.map(item => (
                           <DarkNavItem key={item.href} {...item} pathname={pathname}
-                            onClick={() => setSidebarOpen(false)} />
+                            onClick={() => setSidebarOpen(false)} dark={isDark} accent={accent} />
                         ))}
                       </div>
                     </div>
@@ -1121,24 +1239,24 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               </nav>
 
               {/* User footer */}
-              <div className="shrink-0 p-2" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="shrink-0 p-2" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }}>
                 <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2">
                   <Link href="/client/profil"
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.65rem] font-bold transition hover:opacity-75"
-                    style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}22`, color: GOLD }}
+                    style={{ background: `${accent}14`, border: `1px solid ${accent}22`, color: accent }}
                     title="Mon profil">
                     {userInitial}
                   </Link>
                   <Link href="/client/profil" className="group min-w-0 flex-1">
-                    <p className="truncate text-[0.72rem] font-medium text-white/65 transition group-hover:text-white/85">
+                    <p className={`truncate text-[0.72rem] font-medium transition ${isDark ? "text-white/65 group-hover:text-white/85" : "text-gray-600 group-hover:text-gray-900"}`}>
                       {displayName}
                     </p>
-                    <p className="text-[0.55rem]" style={{ color: "rgba(255,255,255,0.28)" }}>
+                    <p className="text-[0.55rem]" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.35)" }}>
                       {isPremium ? "DJAMA PRO" : "Plan Gratuit"}
                     </p>
                   </Link>
                   <button onClick={handleLogout} aria-label="Se déconnecter" title="Se déconnecter"
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/25 transition hover:bg-white/5 hover:text-white/60">
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition ${isDark ? "text-white/25 hover:bg-white/5 hover:text-white/60" : "text-gray-300 hover:bg-gray-100 hover:text-gray-600"}`}>
                     <LogOut size={12} />
                   </button>
                 </div>
@@ -1151,27 +1269,27 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* ── MAIN CONTENT ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
 
-        {/* Topbar — adapts to dark/light page (#2) */}
+        {/* Topbar */}
         <header
           className="flex h-[52px] shrink-0 items-center gap-3 px-4"
           style={
-            isDarkPage
+            isDark
               ? { background: "#111318", borderBottom: "1px solid rgba(255,255,255,0.07)" }
-              : { background: "#fff", borderBottom: "1px solid #f0f0f0", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }
+              : { background: "#ffffff", borderBottom: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }
           }
         >
           <button onClick={() => setSidebarOpen(true)} aria-label="Ouvrir le menu"
             className={`flex h-8 w-8 items-center justify-center rounded-lg transition lg:hidden ${
-              isDarkPage ? "text-white/40 hover:bg-white/[0.07] hover:text-white/70" : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+              isDark ? "text-white/40 hover:bg-white/[0.07] hover:text-white/70" : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
             }`}>
             <Menu size={16} />
           </button>
 
-          {/* Search bar (#8) */}
+          {/* Search bar */}
           <button
             onClick={() => setSearchOpen(true)}
             className={`hidden sm:flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
-              isDarkPage
+              isDark
                 ? "bg-white/[0.05] text-white/30 hover:bg-white/[0.08] hover:text-white/50 border border-white/[0.07]"
                 : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-500"
             }`}
@@ -1180,7 +1298,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             <Search size={13} />
             <span className="flex-1 text-left text-[0.78rem]">Rechercher…</span>
             <kbd className={`rounded px-1.5 py-0.5 text-[0.52rem] ${
-              isDarkPage ? "bg-white/[0.06] border border-white/[0.08] text-white/20" : "bg-white border border-gray-200 text-gray-400"
+              isDark ? "bg-white/[0.06] border border-white/[0.08] text-white/20" : "bg-white border border-gray-200 text-gray-400"
             }`}>⌘K</kbd>
           </button>
 
@@ -1189,26 +1307,27 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             onClick={() => setSearchOpen(true)}
             aria-label="Rechercher"
             className={`flex h-8 w-8 items-center justify-center rounded-lg transition sm:hidden ${
-              isDarkPage ? "text-white/40 hover:bg-white/[0.07] hover:text-white/70" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              isDark ? "text-white/40 hover:bg-white/[0.07] hover:text-white/70" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
             }`}
           >
             <Search size={16} />
           </button>
 
           <div className="flex-1" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {!isPremium && (
               <button onClick={() => setProModalOpen(true)}
                 className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.72rem] font-bold text-[#0a0a0a] transition hover:opacity-90"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
+                style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}>
                 <Crown size={11} /> Voir DJAMA PRO
               </button>
             )}
-            {!isGated && <FloatingAIAssistant isDark={isDarkPage} />}
+            {!isGated && <FloatingAIAssistant isDark={isDark} />}
+            <ThemeToggle />
             <NotifBell ready={isReady} />
             <Link href="/client/profil"
               className="flex h-7 w-7 items-center justify-center rounded-lg text-[0.65rem] font-bold transition hover:opacity-75"
-              style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}22`, color: GOLD }}
+              style={{ background: `${accent}12`, border: `1px solid ${accent}22`, color: accent }}
               title="Mon profil">
               {userInitial}
             </Link>
@@ -1222,7 +1341,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       </div>
 
       {/* Mobile bottom navigation */}
-      {!hasOwnMobileNav && <BottomNav pathname={pathname} dark={isDarkPage} />}
+      {!hasOwnMobileNav && <BottomNav pathname={pathname} dark={isDark} accent={accent} />}
 
       {/* Onboarding — affiché une seule fois à la première connexion */}
       <OnboardingModal name={name?.split(" ")[0]} />

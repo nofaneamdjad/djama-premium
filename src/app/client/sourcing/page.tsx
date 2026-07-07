@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import type { GuideMessage, GuideSection, GuideItem } from "@/lib/sourcing/generateGuide";
+import { useTheme } from "@/lib/theme-context";
 
 interface SourcingItem extends GuideItem {
   name?:        string;
@@ -77,23 +78,6 @@ interface Negotiation {
   updatedAt: string;
 }
 
-const HIST_KEY = "sourcing_history_v1";
-const NEG_KEY  = "sourcing_negotiations_v1";
-
-function loadHistory(): HistorySession[] {
-  try { return JSON.parse(localStorage.getItem(HIST_KEY) ?? "[]") as HistorySession[]; }
-  catch { return []; }
-}
-function saveHistory(s: HistorySession[]) {
-  localStorage.setItem(HIST_KEY, JSON.stringify(s.slice(0, 20)));
-}
-function loadNegs(): Negotiation[] {
-  try { return JSON.parse(localStorage.getItem(NEG_KEY) ?? "[]") as Negotiation[]; }
-  catch { return []; }
-}
-function saveNegsLS(n: Negotiation[]) {
-  localStorage.setItem(NEG_KEY, JSON.stringify(n));
-}
 
 const NEG_STATUS_STYLE: Record<NegStatus, string> = {
   "En cours":    "bg-blue-500/12 border-blue-500/25 text-blue-400",
@@ -575,33 +559,46 @@ function ComparisonMatrix({ suppliers }: { suppliers: SourcingItem[] }) {
 
 function NegotiationsPanel() {
   const [negs,        setNegs]        = useState<Negotiation[]>([]);
+  const [authUid,     setAuthUid]     = useState<string | null>(null);
   const [showForm,    setShowForm]    = useState(false);
   const [form,        setForm]        = useState<Partial<Negotiation>>({ status: "En cours" });
   const [editId,      setEditId]      = useState<string | null>(null);
 
-  useEffect(() => { setNegs(loadNegs()); }, []);
+  useEffect(() => {
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setAuthUid(user.id);
+      const { data } = await supabase.from("sourcing_negotiations").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+      if (data) setNegs(data.map((r: Record<string,unknown>) => ({
+        id: String(r.id), supplier: String(r.supplier), status: String(r.status) as NegStatus,
+        notes: String(r.notes ?? ""), amount: r.amount ? String(r.amount) : "",
+        createdAt: String(r.created_at), updatedAt: String(r.updated_at),
+      })));
+    })();
+  }, []);
 
-  function saveNeg() {
-    if (!form.supplier?.trim()) return;
+  async function saveNeg() {
+    if (!form.supplier?.trim() || !authUid) return;
     const now = new Date().toISOString();
-    let updated: Negotiation[];
     if (editId) {
-      updated = negs.map(n => n.id === editId ? { ...n, ...form, updatedAt: now } as Negotiation : n);
+      const payload = { supplier: form.supplier!, status: form.status ?? "En cours", notes: form.notes ?? "", amount: form.amount ?? "", updated_at: now };
+      const { data } = await supabase.from("sourcing_negotiations").update(payload).eq("id", editId).eq("user_id", authUid).select().single();
+      if (data) setNegs(prev => prev.map(n => n.id === editId ? { ...n, ...form, updatedAt: now } as Negotiation : n));
     } else {
-      const newNeg: Negotiation = {
-        id: uid(), supplier: form.supplier!, status: form.status ?? "En cours",
-        notes: form.notes ?? "", amount: form.amount ?? "",
-        createdAt: now, updatedAt: now,
-      };
-      updated = [newNeg, ...negs];
+      const payload = { user_id: authUid, supplier: form.supplier!, status: form.status ?? "En cours", notes: form.notes ?? "", amount: form.amount ?? "" };
+      const { data } = await supabase.from("sourcing_negotiations").insert(payload).select().single();
+      if (data) {
+        const newNeg: Negotiation = { id: String((data as Record<string,unknown>).id), supplier: form.supplier!, status: form.status ?? "En cours", notes: form.notes ?? "", amount: form.amount ?? "", createdAt: now, updatedAt: now };
+        setNegs(prev => [newNeg, ...prev]);
+      }
     }
-    setNegs(updated); saveNegsLS(updated);
     setShowForm(false); setForm({ status: "En cours" }); setEditId(null);
   }
 
-  function deleteNeg(id: string) {
-    const updated = negs.filter(n => n.id !== id);
-    setNegs(updated); saveNegsLS(updated);
+  async function deleteNeg(id: string) {
+    await supabase.from("sourcing_negotiations").delete().eq("id", id);
+    setNegs(prev => prev.filter(n => n.id !== id));
   }
 
   function startEdit(n: Negotiation) {
@@ -659,7 +656,7 @@ function NegotiationsPanel() {
               placeholder="Notes, conditions, prochaines étapes…" rows={3}
               className="w-full rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40 resize-none" />
             <div className="flex gap-2">
-              <button onClick={saveNeg} disabled={!form.supplier?.trim()}
+              <button onClick={() => { void saveNeg(); }} disabled={!form.supplier?.trim()}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500 text-white text-[12px] font-semibold hover:bg-indigo-600 transition-all disabled:opacity-40">
                 <Check size={12}/> {editId ? "Mettre à jour" : "Créer"}
               </button>
@@ -702,7 +699,8 @@ function NegotiationsPanel() {
                 {(["En cours","Offre reçue","Accepté","Refusé"] as NegStatus[]).filter(s => s !== n.status).map(s => (
                   <button key={s} onClick={() => {
                     const updated = negs.map(x => x.id === n.id ? { ...x, status: s, updatedAt: new Date().toISOString() } : x);
-                    setNegs(updated); saveNegsLS(updated);
+                    setNegs(updated);
+                    if (authUid) void supabase.from("sourcing_negotiations").update({ status: s, updated_at: new Date().toISOString() }).eq("id", n.id).eq("user_id", authUid);
                   }} className="text-[10px] px-2 py-1 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/6 transition-all">
                     → {s}
                   </button>
@@ -710,7 +708,7 @@ function NegotiationsPanel() {
                 <button onClick={() => startEdit(n)} className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/8 transition-all">
                   <Check size={11}/>
                 </button>
-                <button onClick={() => deleteNeg(n.id)} className="p-1.5 rounded-lg text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                <button onClick={() => { void deleteNeg(n.id); }} className="p-1.5 rounded-lg text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-all">
                   <Trash2 size={11}/>
                 </button>
               </div>
@@ -723,6 +721,7 @@ function NegotiationsPanel() {
 }
 
 export default function SourcingPage() {
+  const { isDark } = useTheme();
   const [messages,     setMessages]     = useState<ChatMsg[]>([]);
   const [input,        setInput]        = useState("");
   const [sending,      setSending]      = useState(false);
@@ -732,6 +731,7 @@ export default function SourcingPage() {
   const [showHistory,  setShowHistory]  = useState(false);
   const [crmLoading,   setCrmLoading]   = useState(false);
   const [crmDone,      setCrmDone]      = useState(false);
+  const [authUserId,   setAuthUserId]   = useState<string | null>(null);
 
   const bottomRef  = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLTextAreaElement>(null);
@@ -739,7 +739,15 @@ export default function SourcingPage() {
 
   useEffect(() => { msgHistory.current = messages; }, [messages]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-  useEffect(() => { setHistory(loadHistory()); }, []);
+  useEffect(() => {
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setAuthUserId(user.id);
+      const { data } = await supabase.from("sourcing_sessions").select("id,title,messages,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20);
+      if (data) setHistory(data.map((r: Record<string,unknown>) => ({ id: String(r.id), title: String(r.title), date: String(r.created_at), messages: (r.messages as ChatMsg[]) ?? [] })));
+    })();
+  }, []);
 
   const allSuppliers = useMemo(() => {
     const result: SourcingItem[] = [];
@@ -859,14 +867,16 @@ export default function SourcingPage() {
 
   function newChat() {
     const validMsgs = messages.filter(m => !m.loading && !m.isError && m.content.trim());
-    if (validMsgs.length > 0) {
+    if (validMsgs.length > 0 && authUserId) {
       const title = messages.find(m => m.role === "user")?.content.slice(0, 65) ?? "Session";
-      const session: HistorySession = {
-        id: uid(), title, date: new Date().toISOString(),
-        messages: messages.filter(m => !m.loading),
-      };
-      const updated = [session, ...history].slice(0, 20);
-      setHistory(updated); saveHistory(updated);
+      const cleanMsgs = messages.filter(m => !m.loading);
+      void supabase.from("sourcing_sessions").insert({ user_id: authUserId, title, messages: cleanMsgs }).select("id,title,created_at").single()
+        .then(({ data }) => {
+          if (data) {
+            const session: HistorySession = { id: String((data as Record<string,unknown>).id), title, date: String((data as Record<string,unknown>).created_at), messages: cleanMsgs };
+            setHistory(prev => [session, ...prev].slice(0, 20));
+          }
+        });
     }
     setMessages([]); setInput(""); setSending(false);
     setShowHistory(false); setCrmDone(false);
@@ -920,7 +930,7 @@ export default function SourcingPage() {
   const hasAiMsg    = messages.some(m => m.role === "assistant" && !m.loading);
 
     return (
-    <div className="min-h-screen bg-[#07080e] text-white pb-40">
+    <div className={`min-h-screen pb-40 ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-gray-900"}`}>
 
       {showHistory && (
         <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
@@ -928,7 +938,7 @@ export default function SourcingPage() {
 
       {/* ── HEADER premium ── */}
       <div className="relative overflow-hidden shrink-0"
-        style={{ background: "linear-gradient(160deg,#07080e,#0c0e1a,#07080e)" }}>
+        style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0c0e1a,#07080e)" : "linear-gradient(160deg,#eef0f8,#e8ebf5,#eef0f8)" }}>
         {/* Glow orbs */}
         <div className="pointer-events-none absolute -top-10 -left-8 h-36 w-36 rounded-full opacity-[0.07]"
           style={{ background: "radial-gradient(circle,#818cf8,transparent 70%)" }}/>

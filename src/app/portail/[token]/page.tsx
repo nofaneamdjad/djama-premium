@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { use } from "react";
 import {
   FileText, CheckCircle2, Clock, AlertTriangle,
   Download, Euro, Calendar, Building2,
+  MessageSquare, Send, Loader2,
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -51,7 +52,15 @@ interface Document {
 interface PortalData {
   client_nom: string;
   client_email: string;
+  emetteur_nom: string;
   documents: Document[];
+}
+
+interface Message {
+  id: string;
+  from_role: "admin" | "client";
+  text: string;
+  created_at: string;
 }
 
 function fmtEur(n: number) {
@@ -59,6 +68,9 @@ function fmtEur(n: number) {
 }
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
 const STATUT_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
@@ -71,10 +83,17 @@ const STATUT_CONFIG: Record<string, { label: string; color: string; bg: string; 
 export default function PortailPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
 
-  const [data,    setData]    = useState<PortalData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState("");
+  const [data,     setData]     = useState<PortalData | null>(null);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState("");
   const [selected, setSelected] = useState<Document | null>(null);
+
+  // Messaging
+  const [messages,   setMessages]   = useState<Message[]>([]);
+  const [msgInput,   setMsgInput]   = useState("");
+  const [sending,    setSending]    = useState(false);
+  const [msgError,   setMsgError]   = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -117,12 +136,55 @@ export default function PortailPage({ params }: { params: Promise<{ token: strin
         docsWithItems.push({ ...doc as Document, items: (items ?? []) as DocItem[] });
       }
 
-      setData({ client_nom: portal.client_nom, client_email: portal.client_email, documents: docsWithItems });
+      const emetteurNom = docsWithItems[0]?.emetteur_nom ?? "Votre prestataire";
+
+      setData({ client_nom: portal.client_nom, client_email: portal.client_email, emetteur_nom: emetteurNom, documents: docsWithItems });
       setLoading(false);
+
+      // Load messages
+      const res = await fetch(`/api/portail/messages?token=${encodeURIComponent(token)}`);
+      if (res.ok) {
+        const json = await res.json() as { messages: Message[] };
+        setMessages(json.messages);
+      }
     }
 
     load();
   }, [token]);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  async function sendMessage() {
+    if (!msgInput.trim() || sending) return;
+    const text = msgInput.trim();
+    setMsgInput("");
+    setSending(true);
+    setMsgError("");
+
+    try {
+      const res = await fetch("/api/portail/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, text }),
+      });
+      if (res.ok) {
+        const json = await res.json() as { message: Message };
+        setMessages(prev => [...prev, json.message]);
+      } else {
+        setMsgError("Erreur lors de l'envoi. Réessayez.");
+        setMsgInput(text);
+      }
+    } catch {
+      setMsgError("Erreur réseau. Réessayez.");
+      setMsgInput(text);
+    } finally {
+      setSending(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -174,7 +236,7 @@ export default function PortailPage({ params }: { params: Promise<{ token: strin
             Bonjour, {data.client_nom.split(" ")[0]}
           </h1>
           <p className="mt-1.5 text-sm text-gray-500">
-            Retrouvez ici tous vos documents. Portail sécurisé — accès privé.
+            Retrouvez ici tous vos documents et échangez directement avec {data.emetteur_nom}.
           </p>
         </motion.div>
 
@@ -305,6 +367,92 @@ export default function PortailPage({ params }: { params: Promise<{ token: strin
             })
           )}
         </div>
+
+        {/* ── Messagerie ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease, delay: 0.3 }}
+          className="mt-10"
+        >
+          <div className="mb-4 flex items-center gap-2">
+            <MessageSquare size={16} className="text-[#c9a55a]" />
+            <h2 className="text-sm font-black text-gray-800">Messages</h2>
+            {messages.length > 0 && (
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[0.6rem] font-bold text-gray-500">
+                {messages.length}
+              </span>
+            )}
+          </div>
+
+          {/* Thread */}
+          <div className="rounded-[1.25rem] border border-gray-200 bg-gray-50 overflow-hidden">
+            <div className="min-h-[120px] max-h-80 overflow-y-auto p-4 space-y-3">
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-6 text-center">
+                  <MessageSquare size={22} className="text-gray-300" />
+                  <p className="text-xs text-gray-400">Posez votre question à {data.emetteur_nom}</p>
+                </div>
+              ) : (
+                messages.map(msg => {
+                  const isClient = msg.from_role === "client";
+                  return (
+                    <div key={msg.id} className={`flex ${isClient ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
+                          isClient
+                            ? "rounded-br-sm bg-[#c9a55a] text-white"
+                            : "rounded-bl-sm border border-gray-200 bg-white text-gray-800"
+                        }`}
+                      >
+                        {!isClient && (
+                          <p className="mb-1 text-[0.55rem] font-bold uppercase tracking-wider opacity-60">
+                            {data.emetteur_nom}
+                          </p>
+                        )}
+                        <p className="text-sm leading-relaxed">{msg.text}</p>
+                        <p className={`mt-1 text-[0.58rem] ${isClient ? "text-white/60" : "text-gray-400"}`}>
+                          {fmtTime(msg.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="border-t border-gray-200 bg-white p-3">
+              {msgError && (
+                <p className="mb-2 text-[0.65rem] font-medium text-red-500">{msgError}</p>
+              )}
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={msgInput}
+                  onChange={e => setMsgInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(); }
+                  }}
+                  placeholder={`Écrire un message à ${data.emetteur_nom}…`}
+                  rows={2}
+                  className="flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:border-[#c9a55a]/40 focus:ring-2 focus:ring-[#c9a55a]/10 transition-all"
+                />
+                <button
+                  onClick={() => void sendMessage()}
+                  disabled={!msgInput.trim() || sending}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#c9a55a] text-white shadow-sm transition-all hover:bg-[#b8944a] disabled:opacity-40"
+                >
+                  {sending
+                    ? <Loader2 size={16} className="animate-spin" />
+                    : <Send size={15} />
+                  }
+                </button>
+              </div>
+              <p className="mt-1.5 text-[0.58rem] text-gray-400">Entrée pour envoyer · Maj+Entrée pour nouvelle ligne</p>
+            </div>
+          </div>
+        </motion.div>
 
         <motion.p
           initial={{ opacity: 0 }}

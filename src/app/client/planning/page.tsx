@@ -20,7 +20,7 @@ import { validate, EventSchema } from "@/lib/schemas/client";
 type EventType    = "event" | "meeting" | "task" | "reminder";
 type TaskStatus   = "todo" | "in_progress" | "done" | "late";
 type TaskPriority = "low" | "normal" | "high" | "urgent";
-type CalView      = "month" | "week" | "agenda";
+type CalView      = "month" | "week" | "agenda" | "booking";
 
 interface PlanEvent {
   id: string; title: string; description: string;
@@ -268,6 +268,18 @@ export default function PlanningPage() {
   const [aiResult,   setAiResult]   = useState("");
   const [showAI,     setShowAI]     = useState(false);
 
+  // Booking page config
+  const [bkToken,    setBkToken]    = useState<string | null>(null);
+  const [bkTitle,    setBkTitle]    = useState("Prendre un rendez-vous");
+  const [bkDesc,     setBkDesc]     = useState("");
+  const [bkDur,      setBkDur]      = useState(30);
+  const [bkDays,     setBkDays]     = useState<number[]>([1,2,3,4,5]);
+  const [bkStart,    setBkStart]    = useState(9);
+  const [bkEnd,      setBkEnd]      = useState(18);
+  const [bkLoading,  setBkLoading]  = useState(false);
+  const [bkSaving,   setBkSaving]   = useState(false);
+  const [bkCopied,   setBkCopied]   = useState(false);
+
   // Drag-drop
   const [dragEvId,    setDragEvId]    = useState<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
@@ -509,6 +521,147 @@ export default function PlanningPage() {
     const today = fmtDate(new Date());
   const todayTasks = tasks.filter(t => t.due_date === today);
   const doneTasks  = todayTasks.filter(t => t.status === "done");
+
+  async function loadBookingConfig() {
+    setBkLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setBkLoading(false); return; }
+    const { data } = await supabase.from("booking_pages").select("*").eq("user_id", user.id).order("created_at").limit(1).maybeSingle();
+    if (data) {
+      setBkToken(data.token as string);
+      setBkTitle(data.title as string);
+      setBkDesc(data.description as string);
+      setBkDur(data.duration_minutes as number);
+      setBkDays(data.available_days as number[]);
+      setBkStart(data.start_hour as number);
+      setBkEnd(data.end_hour as number);
+    }
+    setBkLoading(false);
+  }
+
+  async function saveBookingConfig() {
+    setBkSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setBkSaving(false); return; }
+    const payload = {
+      user_id: user.id,
+      title: bkTitle.trim() || "Prendre un rendez-vous",
+      description: bkDesc.trim(),
+      duration_minutes: bkDur,
+      available_days: bkDays,
+      start_hour: bkStart,
+      end_hour: bkEnd,
+      is_active: true,
+    };
+    if (bkToken) {
+      await supabase.from("booking_pages").update(payload).eq("token", bkToken);
+    } else {
+      const { data } = await supabase.from("booking_pages").insert(payload).select("token").single();
+      if (data) setBkToken(data.token as string);
+    }
+    setBkSaving(false);
+    addToast("Page de réservation sauvegardée", "success");
+  }
+
+  function renderBooking() {
+    const GOLD = "#c9a55a";
+    const bookingUrl = bkToken ? `${typeof window !== "undefined" ? window.location.origin : ""}/booking/${bkToken}` : null;
+    const DAY_NAMES = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+
+    if (bkLoading) return (
+      <div className="flex items-center justify-center flex-1 py-20">
+        <Loader2 size={24} className="animate-spin text-white/20"/>
+      </div>
+    );
+
+    return (
+      <div className="flex-1 overflow-y-auto p-5 max-w-lg mx-auto w-full space-y-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-white/30 mb-0.5">Page de réservation</p>
+          <p className="text-sm text-white/50">Partagez un lien permettant à vos clients de prendre rendez-vous directement dans votre agenda.</p>
+        </div>
+
+        {/* Config form */}
+        <div className="space-y-3">
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Titre</label>
+            <input value={bkTitle} onChange={e => setBkTitle(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/20"
+              placeholder="Prendre un rendez-vous"/>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Description</label>
+            <textarea value={bkDesc} onChange={e => setBkDesc(e.target.value)} rows={2}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 resize-none"
+              placeholder="Décrivez le type de rendez-vous…"/>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Durée (min)</label>
+              <select value={bkDur} onChange={e => setBkDur(Number(e.target.value))}
+                className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white focus:outline-none">
+                {[15,20,30,45,60,90,120].map(v => <option key={v} value={v}>{v} min</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Début</label>
+              <select value={bkStart} onChange={e => setBkStart(Number(e.target.value))}
+                className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white focus:outline-none">
+                {Array.from({length:13},(_,i)=>i+7).map(h => <option key={h} value={h}>{String(h).padStart(2,"0")}:00</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Fin</label>
+              <select value={bkEnd} onChange={e => setBkEnd(Number(e.target.value))}
+                className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white focus:outline-none">
+                {Array.from({length:13},(_,i)=>i+12).map(h => <option key={h} value={h}>{String(h).padStart(2,"0")}:00</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Jours disponibles</label>
+            <div className="flex gap-2 flex-wrap">
+              {DAY_NAMES.map((d, i) => (
+                <button key={i} onClick={() => setBkDays(prev => prev.includes(i) ? prev.filter(x=>x!==i) : [...prev, i].sort())}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border"
+                  style={bkDays.includes(i) ? { background:`${GOLD}20`, color:GOLD, borderColor:`${GOLD}40` } : { background:"rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.35)", borderColor:"rgba(255,255,255,0.08)" }}>
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <button onClick={() => void saveBookingConfig()} disabled={bkSaving}
+          className="w-full py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
+          style={{ background: GOLD, color: "#09090b" }}>
+          {bkSaving ? <Loader2 size={14} className="inline animate-spin mr-1.5"/> : null}
+          {bkToken ? "Sauvegarder" : "Créer ma page de réservation"}
+        </button>
+
+        {/* Share link */}
+        {bookingUrl && (
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 space-y-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-white/30">Lien de réservation</p>
+            <div className="flex items-center gap-2">
+              <input readOnly value={bookingUrl}
+                className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/60 focus:outline-none truncate"/>
+              <button onClick={() => { void navigator.clipboard.writeText(bookingUrl); setBkCopied(true); setTimeout(()=>setBkCopied(false), 2000); }}
+                className="shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all"
+                style={{ background:`${GOLD}18`, color:GOLD, border:`1px solid ${GOLD}30` }}>
+                {bkCopied ? <Check size={12}/> : <ExternalLink size={12}/>}
+                {bkCopied ? "Copié !" : "Copier"}
+              </button>
+            </div>
+            <a href={bookingUrl} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition">
+              <ExternalLink size={11}/> Aperçu de la page publique
+            </a>
+          </div>
+        )}
+      </div>
+    );
+  }
 
     function renderMonth() {
     const grid = getMonthGrid(current.getFullYear(), current.getMonth());
@@ -960,10 +1113,10 @@ export default function PlanningPage() {
 
           {/* View tabs */}
           <div className="relative px-4 flex gap-0.5">
-            {(["month", "week", "agenda"] as CalView[]).map((v) => (
-              <button key={v} onClick={() => setView(v)}
+            {(["month", "week", "agenda", "booking"] as CalView[]).map((v) => (
+              <button key={v} onClick={() => { setView(v); if (v === "booking" && !bkLoading) void loadBookingConfig(); }}
                 className={`relative px-3 py-2 text-xs font-semibold transition-all ${view === v ? "text-white" : "text-white/35 hover:text-white/60"}`}>
-                {v === "month" ? "Mois" : v === "week" ? "Semaine" : "Agenda"}
+                {v === "month" ? "Mois" : v === "week" ? "Semaine" : v === "agenda" ? "Agenda" : "Réservation"}
                 {view === v && (
                   <motion.div layoutId="plan-tab-indicator"
                     className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
@@ -1027,9 +1180,10 @@ export default function PlanningPage() {
           </div>
         ) : (
           <div className="flex flex-col flex-1 overflow-hidden">
-            {view === "month"  && renderMonth()}
-            {view === "week"   && renderWeek()}
-            {view === "agenda" && renderAgenda()}
+            {view === "month"   && renderMonth()}
+            {view === "week"    && renderWeek()}
+            {view === "agenda"  && renderAgenda()}
+            {view === "booking" && renderBooking()}
           </div>
         )}
       </div>

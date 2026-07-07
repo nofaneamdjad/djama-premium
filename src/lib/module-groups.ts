@@ -4,12 +4,12 @@
  */
 
 import {
-  ReceiptText, CreditCard, Wallet,
+  ReceiptText, CreditCard, Wallet, BookMarked,
   Users, FileText, Truck, Package,
   ListTodo, Calendar, CalendarRange, Timer,
-  StickyNote,
+  StickyNote, CheckSquare, ScanLine, Network,
   Search, Zap, Star, Share2, Brain,
-  Building2, Banknote,
+  Building2, Banknote, BookOpen, MessageSquare, Target,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -35,9 +35,10 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
     icon:  Wallet,
     color: "#059669",
     modules: [
-      { href: "/client/factures",   label: "Factures & Devis", sub: "Créer, envoyer, suivre vos documents",  icon: ReceiptText, color: "#2563eb", bg: "#dbeafe" },
-      { href: "/client/depenses",   label: "Dépenses",          sub: "Notes de frais et charges",             icon: CreditCard,  color: "#ea580c", bg: "#ffedd5" },
-      { href: "/client/tresorerie", label: "Trésorerie",        sub: "Cash-flow et flux consolidés",          icon: Wallet,      color: "#059669", bg: "#d1fae5" },
+      { href: "/client/factures",   label: "Factures & Devis", sub: "Créer, envoyer, suivre vos documents",  icon: ReceiptText,  color: "#2563eb", bg: "#dbeafe" },
+      { href: "/client/depenses",   label: "Dépenses",          sub: "Notes de frais et charges",             icon: CreditCard,   color: "#ea580c", bg: "#ffedd5" },
+      { href: "/client/tresorerie", label: "Trésorerie",        sub: "Cash-flow et flux consolidés",          icon: Wallet,       color: "#059669", bg: "#d1fae5" },
+      { href: "/client/comptabilite", label: "Comptabilité",     sub: "Bilan, TVA et journal comptable",       icon: BookMarked,   color: "#0891b2", bg: "#e0f2fe" },
     ],
   },
   {
@@ -67,7 +68,10 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
     icon:  StickyNote,
     color: "#92400e",
     modules: [
-      { href: "/client/bloc-notes", label: "Notes", sub: "Notes, cahiers, IA, vocal & canvas", icon: StickyNote, color: "#92400e", bg: "#fef9c3" },
+      { href: "/client/bloc-notes",  label: "Notes",       sub: "Notes, cahiers, IA, vocal & canvas", icon: StickyNote,   color: "#92400e", bg: "#fef9c3" },
+      { href: "/client/checklists",  label: "Checklists",  sub: "Listes de vérification rapides",      icon: CheckSquare,  color: "#10b981", bg: "#d1fae5" },
+      { href: "/client/scanner",     label: "Scanner",     sub: "Scanner et archiver vos documents",   icon: ScanLine,     color: "#0ea5e9", bg: "#e0f2fe" },
+      { href: "/client/mindmap",     label: "Mind Map",    sub: "Cartes mentales et brainstorm",        icon: Network,      color: "#8b5cf6", bg: "#ede9fe" },
     ],
   },
   {
@@ -87,8 +91,11 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
     icon:  Building2,
     color: "#3b82f6",
     modules: [
-      { href: "/client/portail", label: "Portail Client", sub: "Espace dédié à vos clients",   icon: Building2, color: "#3b82f6", bg: "#dbeafe" },
-      { href: "/client/paie",    label: "Paie & RH",      sub: "Salaires, contrats, effectif", icon: Banknote,  color: "#10b981", bg: "#d1fae5" },
+      { href: "/client/portail",       label: "Portail Client",  sub: "Espace dédié à vos clients",      icon: Building2,    color: "#3b82f6", bg: "#dbeafe" },
+      { href: "/client/paie",          label: "Paie & RH",       sub: "Salaires, contrats, effectif",    icon: Banknote,     color: "#10b981", bg: "#d1fae5" },
+      { href: "/client/blog",          label: "Blog",            sub: "Rédigez et gérez vos articles",   icon: BookOpen,     color: "#b45309", bg: "#fef9c3" },
+      { href: "/client/temoignages",   label: "Témoignages",     sub: "Avis clients et réputation",      icon: MessageSquare,color: "#9a3412", bg: "#ffedd5" },
+      { href: "/client/planification", label: "Planification",   sub: "OKRs et stratégie long terme",    icon: Target,       color: "#075985", bg: "#e0f2fe" },
     ],
   },
 ] as const;

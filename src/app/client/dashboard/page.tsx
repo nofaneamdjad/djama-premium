@@ -17,6 +17,7 @@ import { fmtEurInt, fmtDuration } from "@/lib/format";
 import { useSubscription } from "@/lib/use-require-subscription";
 import { MODULE_GROUPS } from "@/lib/module-groups";
 import { ModuleCard, ModuleGroupSection } from "@/components/ModuleCard";
+import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const GOLD = "#c9a55a";
@@ -103,6 +104,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
    PAGE
 ───────────────────────────────────────────────── */
 export default function DashboardPage() {
+  const { isDark } = useTheme();
   const { isPremium, isFree } = useSubscription();
   const [search,         setSearch]         = useState("");
   const [userName,      setUserName]      = useState("");
@@ -254,19 +256,6 @@ export default function DashboardPage() {
 
       if (goalRow?.value) {
         setGoalAmount(parseFloat(goalRow.value) || 0);
-      } else {
-        // Fallback localStorage + migration auto
-        const local = localStorage.getItem("djama_monthly_goal");
-        if (local) {
-          const v = parseFloat(local) || 0;
-          setGoalAmount(v);
-          // Migrer vers Supabase
-          await supabase.from("user_settings").upsert(
-            { user_id: user.id, key: "goal_amount", value: String(v), updated_at: new Date().toISOString() },
-            { onConflict: "user_id,key" }
-          );
-          localStorage.removeItem("djama_monthly_goal");
-        }
       }
     }
     loadGoal();
@@ -327,14 +316,14 @@ export default function DashboardPage() {
      RENDU
   ───────────────────────────────────────────────── */
   return (
-    <div className="relative min-h-screen bg-[#07080e] text-white">
+    <div className={`relative min-h-screen ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-gray-900"}`}>
 
       {/* ══════════════════════════════════════════
           HERO SOMBRE
       ══════════════════════════════════════════ */}
       <div
         className="relative overflow-hidden"
-        style={{ background: "linear-gradient(155deg,#07080e 0%,#0d1117 50%,#07080e 100%)" }}
+        style={{ background: isDark ? "linear-gradient(155deg,#07080e 0%,#0d1117 50%,#07080e 100%)" : "linear-gradient(155deg,#eef0f8 0%,#e6e9f5 50%,#eef0f8 100%)" }}
       >
         {/* Shimmer gold */}
         <motion.div
@@ -513,7 +502,7 @@ export default function DashboardPage() {
         {/* ── Wave ── */}
         <svg viewBox="0 0 1440 56" fill="none" preserveAspectRatio="none"
           className="w-full block" style={{ marginBottom:"-1px", height:"56px" }}>
-          <path d="M0,24 C180,56 420,6 720,28 C1020,50 1260,10 1440,32 L1440,56 L0,56 Z" fill="#07080e"/>
+          <path d="M0,24 C180,56 420,6 720,28 C1020,50 1260,10 1440,32 L1440,56 L0,56 Z" fill={isDark ? "#07080e" : "#f4f5f9"}/>
         </svg>
       </div>
 

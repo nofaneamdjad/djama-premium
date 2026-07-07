@@ -7,7 +7,7 @@ import {
   FolderOpen, Plus, X, Loader2, Trash2,
   Calendar, Tag, Clock, CheckCircle2, PauseCircle,
   XCircle, AlertCircle, Edit2, BarChart3, Flag,
-  Users, Timer, Check, ChevronRight, Circle,
+  Users, Timer, Check, ChevronRight, Circle, FileText,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -32,9 +32,6 @@ const VIOLET       = "#8b5cf6";
 const GOLD         = "#c9a55a";
 const SKY          = "#0ea5e9";
 const PX_PER_DAY   = 5;
-const TASKS_KEY    = "proj_tasks_v1";
-const MILES_KEY    = "proj_milestones_v1";
-const TEAM_KEY     = "proj_team_v1";
 
 const STATUS_CONFIG: Record<Status, { label:string; color:string; bg:string; Icon:React.ComponentType<{size?:number}> }> = {
   en_cours:   { label:"En cours",   color:"#3b82f6", bg:"rgba(59,130,246,0.12)",  Icon:Clock        },
@@ -57,14 +54,6 @@ function fmtDate(d:string|null) {
 function fmtDateShort(d:string) {
   return new Date(d).toLocaleDateString("fr-FR",{day:"numeric",month:"short"});
 }
-
-/* ── localStorage helpers ── */
-function loadTasks():    ProjTask[]               { try { return JSON.parse(localStorage.getItem(TASKS_KEY)||"[]"); } catch { return []; } }
-function saveTasks(t:    ProjTask[])              { localStorage.setItem(TASKS_KEY,  JSON.stringify(t)); }
-function loadMiles():    Milestone[]              { try { return JSON.parse(localStorage.getItem(MILES_KEY)||"[]"); } catch { return []; } }
-function saveMiles(m:    Milestone[])             { localStorage.setItem(MILES_KEY,  JSON.stringify(m)); }
-function loadTeam():     Record<string,string[]>  { try { return JSON.parse(localStorage.getItem(TEAM_KEY) ||"{}"); } catch { return {}; } }
-function saveTeam(t:     Record<string,string[]>) { localStorage.setItem(TEAM_KEY,   JSON.stringify(t)); }
 
 /* ── Gantt helpers ── */
 function getMonths(start:Date, end:Date): {label:string; days:number}[] {
@@ -90,10 +79,10 @@ function StatusBadge({ status }: { status:Status }) {
 }
 
 function ProjectCard({
-  project, onEdit, onDelete, onOpen, onChrono, tasks, miles, team,
+  project, onEdit, onDelete, onOpen, onChrono, onInvoice, creatingInv, tasks, miles, team,
 }: {
   project:Project; onEdit:(p:Project)=>void; onDelete:(id:string)=>void;
-  onOpen:(p:Project)=>void; onChrono:()=>void;
+  onOpen:(p:Project)=>void; onChrono:()=>void; onInvoice:()=>void; creatingInv:string|null;
   tasks:ProjTask[]; miles:Milestone[]; team:string[];
 }) {
   const budgetPct  = project.budget>0 ? Math.min(100,Math.round((project.spent/project.budget)*100)) : 0;
@@ -180,6 +169,13 @@ function ProjectCard({
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/8 bg-white/8 py-1.5 text-xs font-semibold text-white/60 transition hover:bg-white/12 hover:text-white">
           <Edit2 size={11}/> Modifier
         </button>
+        {project.budget > 0 && (
+          <button onClick={onInvoice} disabled={!!creatingInv}
+            title="Créer une facture depuis ce projet"
+            className="flex items-center justify-center gap-1 rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)] px-3 py-1.5 text-xs font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.15)] disabled:opacity-40">
+            {creatingInv===project.id ? <Loader2 size={11} className="animate-spin"/> : <FileText size={11}/>}
+          </button>
+        )}
         <button onClick={onChrono}
           title="Voir dans Chrono"
           className="flex items-center justify-center gap-1 rounded-xl border border-white/8 bg-white/8 px-3 py-1.5 text-xs font-semibold text-white/40 transition hover:bg-white/12 hover:text-white">
@@ -340,10 +336,12 @@ export default function ProjetsPage() {
   const [detailProj, setDetailProj] = useState<Project|null>(null);
   const [detailTab,  setDetailTab]  = useState<"tasks"|"milestones"|"team">("tasks");
 
-  // localStorage state
+  // Sub-data state
   const [projTasks,  setProjTasks]  = useState<ProjTask[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [projTeam,   setProjTeam]   = useState<Record<string,string[]>>({});
+  const [userId,     setUserId]     = useState<string | null>(null);
+  const [creatingInv, setCreatingInv] = useState<string|null>(null);
 
   // Inputs
   const [taskInput, setTaskInput]     = useState("");
@@ -351,16 +349,27 @@ export default function ProjetsPage() {
   const [mileDate,  setMileDate]      = useState("");
   const [teamInput, setTeamInput]     = useState("");
 
-  useEffect(()=>{ setProjTasks(loadTasks()); setMilestones(loadMiles()); setProjTeam(loadTeam()); }, []);
-
   const load = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/login"); return; }
-      const { data, error } = await supabase.from("projects").select("*")
-        .eq("user_id", user.id).order("created_at",{ascending:false}).limit(500);
-      if (error) { toast("Erreur réseau — impossible de charger les projets","error"); return; }
-      setProjects((data??[]) as Project[]);
+      setUserId(user.id);
+      const [projRes, tasksRes, milesRes, teamRes] = await Promise.all([
+        supabase.from("projects").select("*").eq("user_id", user.id).order("created_at",{ascending:false}).limit(500),
+        supabase.from("project_tasks").select("*").eq("user_id", user.id),
+        supabase.from("project_milestones").select("*").eq("user_id", user.id),
+        supabase.from("project_team").select("*").eq("user_id", user.id),
+      ]);
+      if (projRes.error) { toast("Erreur réseau — impossible de charger les projets","error"); return; }
+      setProjects((projRes.data??[]) as Project[]);
+      setProjTasks((tasksRes.data??[]).map(r=>({id:r.id,projectId:r.project_id,title:r.title,done:r.done})));
+      setMilestones((milesRes.data??[]).map(r=>({id:r.id,projectId:r.project_id,title:r.title,date:r.date??'',done:r.done})));
+      const team: Record<string,string[]> = {};
+      for (const r of (teamRes.data??[])) {
+        if (!team[r.project_id]) team[r.project_id] = [];
+        team[r.project_id].push(r.member_name);
+      }
+      setProjTeam(team);
     } catch { toast("Erreur réseau","error"); }
     finally { setLoading(false); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -435,42 +444,118 @@ export default function ProjetsPage() {
   }
 
   /* ── Task CRUD ── */
-  function addTask(projectId:string) {
-    if (!taskInput.trim()) return;
-    const t:ProjTask = {id:Math.random().toString(36).slice(2,10),projectId,title:taskInput.trim(),done:false};
-    const u=[t,...projTasks]; setProjTasks(u); saveTasks(u); setTaskInput("");
+  async function addTask(projectId:string) {
+    if (!taskInput.trim() || !userId) return;
+    const title = taskInput.trim();
+    setTaskInput("");
+    const {data,error} = await supabase.from("project_tasks").insert({user_id:userId,project_id:projectId,title,done:false}).select().single();
+    if (error) { toast("Erreur ajout tâche","error"); return; }
+    setProjTasks(prev=>[{id:data.id,projectId,title:data.title,done:false},...prev]);
   }
-  function toggleTask(id:string) {
-    const u=projTasks.map(t=>t.id===id?{...t,done:!t.done}:t); setProjTasks(u); saveTasks(u);
+  async function toggleTask(id:string) {
+    const task = projTasks.find(t=>t.id===id);
+    if (!task) return;
+    const done = !task.done;
+    setProjTasks(prev=>prev.map(t=>t.id===id?{...t,done}:t));
+    await supabase.from("project_tasks").update({done}).eq("id",id);
   }
-  function deleteTask(id:string) {
-    const u=projTasks.filter(t=>t.id!==id); setProjTasks(u); saveTasks(u);
+  async function deleteTask(id:string) {
+    setProjTasks(prev=>prev.filter(t=>t.id!==id));
+    await supabase.from("project_tasks").delete().eq("id",id);
   }
 
   /* ── Milestone CRUD ── */
-  function addMilestone(projectId:string) {
-    if (!mileTitle.trim()) return;
-    const m:Milestone = {id:Math.random().toString(36).slice(2,10),projectId,title:mileTitle.trim(),date:mileDate,done:false};
-    const u=[m,...milestones]; setMilestones(u); saveMiles(u); setMileTitle(""); setMileDate("");
+  async function addMilestone(projectId:string) {
+    if (!mileTitle.trim() || !userId) return;
+    const title = mileTitle.trim();
+    const date  = mileDate || null;
+    setMileTitle(""); setMileDate("");
+    const {data,error} = await supabase.from("project_milestones").insert({user_id:userId,project_id:projectId,title,date,done:false}).select().single();
+    if (error) { toast("Erreur ajout jalon","error"); return; }
+    setMilestones(prev=>[{id:data.id,projectId,title:data.title,date:data.date??'',done:false},...prev]);
   }
-  function toggleMilestone(id:string) {
-    const u=milestones.map(m=>m.id===id?{...m,done:!m.done}:m); setMilestones(u); saveMiles(u);
+  async function toggleMilestone(id:string) {
+    const m = milestones.find(x=>x.id===id);
+    if (!m) return;
+    const done = !m.done;
+    setMilestones(prev=>prev.map(x=>x.id===id?{...x,done}:x));
+    await supabase.from("project_milestones").update({done}).eq("id",id);
   }
-  function deleteMilestone(id:string) {
-    const u=milestones.filter(m=>m.id!==id); setMilestones(u); saveMiles(u);
+  async function deleteMilestone(id:string) {
+    setMilestones(prev=>prev.filter(m=>m.id!==id));
+    await supabase.from("project_milestones").delete().eq("id",id);
   }
 
   /* ── Team CRUD ── */
-  function addTeamMember(projectId:string) {
-    if (!teamInput.trim()) return;
-    const existing=projTeam[projectId]??[];
-    if (existing.includes(teamInput.trim())) { setTeamInput(""); return; }
-    const u={...projTeam,[projectId]:[...existing,teamInput.trim()]};
-    setProjTeam(u); saveTeam(u); setTeamInput("");
+  async function addTeamMember(projectId:string) {
+    if (!teamInput.trim() || !userId) return;
+    const member_name = teamInput.trim();
+    const existing = projTeam[projectId]??[];
+    if (existing.includes(member_name)) { setTeamInput(""); return; }
+    setTeamInput("");
+    const {error} = await supabase.from("project_team").insert({user_id:userId,project_id:projectId,member_name});
+    if (error) { toast("Erreur ajout membre","error"); return; }
+    setProjTeam(prev=>({...prev,[projectId]:[...(prev[projectId]??[]),member_name]}));
   }
-  function removeTeamMember(projectId:string, name:string) {
-    const u={...projTeam,[projectId]:(projTeam[projectId]??[]).filter(n=>n!==name)};
-    setProjTeam(u); saveTeam(u);
+  async function removeTeamMember(projectId:string, name:string) {
+    setProjTeam(prev=>({...prev,[projectId]:(prev[projectId]??[]).filter(n=>n!==name)}));
+    await supabase.from("project_team").delete().eq("project_id",projectId).eq("member_name",name);
+  }
+
+  async function handleCreateProjectInvoice(project: Project) {
+    if (creatingInv) return;
+    setCreatingInv(project.id);
+    try {
+      const uid = userId;
+      if (!uid) { toast("Non connecté.","error"); return; }
+
+      const amount = project.budget > 0 ? project.budget : 0;
+      const tva20  = Math.round(amount * 0.2 * 100) / 100;
+      const year   = new Date().getFullYear();
+      const suffix = Date.now().toString().slice(-5);
+      const numero = `FAC-${year}-P${suffix}`;
+      const today  = new Date().toISOString().slice(0, 10);
+
+      const { data: doc, error: docErr } = await supabase.from("documents").insert({
+        user_id: uid,
+        type: "facture",
+        numero,
+        statut: "brouillon",
+        sujet: `Projet — ${project.title}`,
+        client_nom: project.client || "",
+        client_societe: "",
+        date_document: today,
+        devise: "EUR",
+        total_ht: amount,
+        total_tva: tva20,
+        total_ttc: Math.round((amount + tva20) * 100) / 100,
+        emetteur_nom: "", emetteur_email: "", emetteur_adresse: "", emetteur_ville: "",
+        emetteur_code_postal: "", emetteur_pays: "", emetteur_siret: "", emetteur_tva: "",
+        emetteur_logo: "", rib_titulaire: "", rib_iban: "", rib_bic: "", rib_banque: "",
+        client_email: "", client_telephone: "", client_adresse: "", client_ville: "",
+        client_code_postal: "", client_pays: "", client_tva: "",
+        remise_pct: 0, acompte: 0, notes: "", conditions: "", mentions_legales: "",
+        couleur: "#c9a55a", template: "modern",
+      }).select("id").single();
+
+      if (docErr || !doc) { toast(docErr?.message ?? "Erreur création","error"); return; }
+
+      await supabase.from("document_items").insert({
+        document_id: doc.id,
+        position: 0,
+        description: project.title + (project.description ? `\n${project.description}` : ""),
+        unit: "forfait",
+        quantity: 1,
+        unit_price: amount,
+        vat_rate: 20,
+        remise_pct: 0,
+      });
+
+      toast(`Facture ${numero} créée — redirection…`,"success");
+      setTimeout(() => router.push("/client/factures"), 1200);
+    } finally {
+      setCreatingInv(null);
+    }
   }
 
   /* ── Gantt render ── */
@@ -928,6 +1013,8 @@ export default function ProjetsPage() {
                   onDelete={id=>setConfirmDel(id)}
                   onOpen={proj=>{setDetailProj(proj);setDetailTab("tasks");}}
                   onChrono={()=>router.push("/client/chrono")}
+                  onInvoice={()=>{ void handleCreateProjectInvoice(p); }}
+                  creatingInv={creatingInv}
                   tasks={projTasks.filter(t=>t.projectId===p.id)}
                   miles={milestones.filter(m=>m.projectId===p.id)}
                   team={projTeam[p.id]??[]}
