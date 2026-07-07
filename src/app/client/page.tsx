@@ -326,7 +326,7 @@ export default function CockpitPage() {
           style={{ background: "rgba(99,102,241,0.1)" }}
         />
 
-        <div className="relative mx-auto max-w-4xl px-4 pt-5 pb-8">
+        <div className="relative mx-auto max-w-7xl px-4 pt-5 pb-8 lg:px-8">
 
           {/* ── Top bar ── */}
           <motion.div
@@ -615,7 +615,7 @@ export default function CockpitPage() {
       {/* ══════════════════════════════════════════
           CONTENU CLAIR
       ══════════════════════════════════════════ */}
-      <div className="mx-auto max-w-4xl px-4 pb-14 pt-3 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 pb-14 pt-3 sm:px-6 lg:px-8">
 
         {/* ── Alerte factures en retard ── */}
         <AnimatePresence>
