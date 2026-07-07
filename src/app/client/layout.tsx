@@ -5,9 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Home, BarChart2, ReceiptText, CreditCard, Wallet,
+  Home, BarChart2, ReceiptText, CreditCard, Wallet, BookMarked,
   Users, FileText, Truck, Package, ListTodo, Calendar,
-  CalendarRange, Timer, StickyNote, Search, Zap, Star, Brain,
+  CalendarRange, Timer, StickyNote, CheckSquare, ScanLine, Network, Search, Zap, Star, Brain,
   Crown, Sparkles, Lock, ChevronRight, X, Menu,
   LogOut, Bell, ArrowRight, CheckCircle2, Share2, User, AlertTriangle,
   Building2, Banknote, FolderOpen, ThumbsUp, BookOpen, MessageSquare, Target,
@@ -38,6 +38,7 @@ const PRO_TOOLS = [
   { href: "/client/assistant",       label: "Assistant IA",      icon: Zap          },
   { href: "/client/depenses",        label: "Dépenses",          icon: CreditCard   },
   { href: "/client/tresorerie",      label: "Trésorerie",        icon: Wallet       },
+  { href: "/client/comptabilite",    label: "Comptabilité",      icon: BookMarked   },
   { href: "/client/contrats",        label: "Contrats",          icon: FileText     },
   { href: "/client/fournisseurs",    label: "Fournisseurs",      icon: Truck        },
   { href: "/client/stocks",          label: "Stocks",            icon: Package      },
@@ -45,16 +46,19 @@ const PRO_TOOLS = [
   { href: "/client/equipe",          label: "Équipe",            icon: CalendarRange},
   { href: "/client/chrono",          label: "Chrono",            icon: Timer        },
   { href: "/client/bloc-notes",      label: "Notes",             icon: StickyNote   },
+  { href: "/client/checklists",      label: "Checklists",        icon: CheckSquare  },
+  { href: "/client/scanner",         label: "Scanner",           icon: ScanLine     },
+  { href: "/client/mindmap",         label: "Mind Map",          icon: Network      },
   { href: "/client/sourcing",        label: "Sourcing IA",       icon: Search       },
-  { href: "/client/projets",          label: "Projets",           icon: FolderOpen   },
+  { href: "/client/projets",         label: "Projets",           icon: FolderOpen   },
   { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux",   icon: Share2       },
   { href: "/coaching-ia/espace",     label: "Coaching IA",       icon: Brain        },
   { href: "/client/portail",         label: "Portail Client",    icon: Building2    },
   { href: "/client/paie",            label: "Paie & RH",         icon: Banknote     },
   { href: "/client/reputation",      label: "Réputation",        icon: ThumbsUp     },
-  { href: "/client/blog",            label: "Blog",               icon: BookOpen     },
-  { href: "/client/temoignages",     label: "Témoignages",        icon: MessageSquare},
-  { href: "/client/planification",   label: "Planification",      icon: Target       },
+  { href: "/client/blog",            label: "Blog",              icon: BookOpen     },
+  { href: "/client/temoignages",     label: "Témoignages",       icon: MessageSquare},
+  { href: "/client/planification",   label: "Planification",     icon: Target       },
 ] as const;
 
 /* ─────────── PREMIUM GROUPED NAV ─────────── */
@@ -69,9 +73,10 @@ const PREMIUM_GROUPS = [
   {
     label: "Finance",
     items: [
-      { href: "/client/factures",   label: "Factures",   icon: ReceiptText, exact: false },
-      { href: "/client/depenses",   label: "Dépenses",   icon: CreditCard,  exact: false },
-      { href: "/client/tresorerie", label: "Trésorerie", icon: Wallet,      exact: false },
+      { href: "/client/factures",     label: "Factures",     icon: ReceiptText, exact: false },
+      { href: "/client/depenses",     label: "Dépenses",     icon: CreditCard,  exact: false },
+      { href: "/client/tresorerie",   label: "Trésorerie",   icon: Wallet,      exact: false },
+      { href: "/client/comptabilite", label: "Comptabilité", icon: BookMarked,  exact: false },
     ],
   },
   {
@@ -93,12 +98,20 @@ const PREMIUM_GROUPS = [
     ],
   },
   {
-    label: "Notes & IA",
+    label: "Notes",
     items: [
-      { href: "/client/bloc-notes",       label: "Notes",          icon: StickyNote, exact: false },
+      { href: "/client/bloc-notes",  label: "Notes",      icon: StickyNote,  exact: false },
+      { href: "/client/checklists",  label: "Checklists", icon: CheckSquare, exact: false },
+      { href: "/client/scanner",     label: "Scanner",    icon: ScanLine,    exact: false },
+      { href: "/client/mindmap",     label: "Mind Map",   icon: Network,     exact: false },
+    ],
+  },
+  {
+    label: "Intelligence",
+    items: [
       { href: "/client/sourcing",        label: "Sourcing IA",    icon: Search,     exact: false },
       { href: "/client/assistant",       label: "Assistant IA",   icon: Zap,        exact: false },
-      { href: "/client/projets",          label: "Projets",        icon: FolderOpen, exact: false },
+      { href: "/client/projets",         label: "Projets",        icon: FolderOpen, exact: false },
       { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux",icon: Share2,     exact: false },
       { href: "/coaching-ia/espace",     label: "Coaching IA",    icon: Brain,      exact: false },
     ],
@@ -931,6 +944,10 @@ const DARK_PAGES = [
   "/client/blog",
   "/client/temoignages",
   "/client/planification",
+  "/client/comptabilite",
+  "/client/checklists",
+  "/client/scanner",
+  "/client/mindmap",
 ];
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
