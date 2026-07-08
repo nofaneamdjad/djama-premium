@@ -614,13 +614,8 @@ export default function CockpitPage() {
                     transition={{ type: "spring", stiffness: 380, damping: 22, delay: 0.28 + i * 0.045 }}
                   >
                     <Link href={isLocked ? "/client/abonnements" : a.href} className="relative flex flex-col items-center gap-1.5 p-1.5 transition active:scale-95">
-                      <div className="relative h-[52px] w-[52px] sm:h-[56px] sm:w-[56px] overflow-hidden rounded-[14px] sm:rounded-[16px]"
-                        style={{
-                          opacity: isLocked ? 0.68 : 1,
-                          boxShadow: isDark
-                            ? "0 6px 20px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.3)"
-                            : "0 6px 20px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.10)",
-                        }}>
+                      <div className="relative h-[52px] w-[52px] sm:h-[56px] sm:w-[56px] overflow-hidden rounded-[14px] sm:rounded-[16px] [&_.icon-card-bg]:fill-transparent"
+                        style={{ opacity: isLocked ? 0.68 : 1 }}>
                         {APP_ICONS[a.iconKey]}
                       </div>
                       <span className={`text-[9.5px] font-semibold tracking-wide text-center leading-tight ${isDark ? "text-white/70" : "text-gray-600"}`}>{a.label}</span>
