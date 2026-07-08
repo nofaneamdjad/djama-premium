@@ -8,7 +8,7 @@ import {
   Users, FileText, Truck, Package,
   ListTodo, Calendar, CalendarRange, Timer,
   StickyNote, CheckSquare, ScanLine, Network,
-  Search, Zap, Star, Share2, Brain,
+  Search, Zap, Star, Share2, Brain, FolderOpen,
   Building2, Banknote, BookOpen, MessageSquare, Target,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -79,11 +79,11 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
     icon:  Brain,
     color: "#6d28d9",
     modules: [
-      { href: "/client/sourcing",        label: "Sourcing IA",        sub: "Trouver clients et partenaires", icon: Search, color: "#6d28d9", bg: "#ede9fe" },
-      { href: "/client/assistant",       label: "Assistant IA",       sub: "Relances auto et questions",     icon: Zap,    color: "#0369a1", bg: "#e0f2fe" },
-      { href: "/client/reputation",      label: "Réputation",         sub: "Avis, e-réputation, veille",     icon: Star,   color: "#b91c1c", bg: "#fee2e2" },
-      { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux IA", sub: "Planifier et créer du contenu",  icon: Share2, color: "#e1306c", bg: "#fce7f3" },
-      { href: "/coaching-ia/espace",     label: "Coaching IA",        sub: "Accompagnement personnalisé",    icon: Brain,  color: "#9d174d", bg: "#fdf2f8" },
+      { href: "/client/sourcing",        label: "Sourcing IA",        sub: "Trouver clients et partenaires", icon: Search,     color: "#6d28d9", bg: "#ede9fe" },
+      { href: "/client/assistant",       label: "Assistant IA",       sub: "Relances auto et questions",     icon: Zap,        color: "#0369a1", bg: "#e8f4fd" },
+      { href: "/client/projets",         label: "Projets",            sub: "Gestion de projets et suivi",    icon: FolderOpen, color: "#d97706", bg: "#fff3e0" },
+      { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux IA", sub: "Planifier et créer du contenu",  icon: Share2,     color: "#e1306c", bg: "#fce7f3" },
+      { href: "/coaching-ia/espace",     label: "Coaching IA",        sub: "Accompagnement personnalisé",    icon: Brain,      color: "#9d174d", bg: "#faf0ff" },
     ],
   },
   {
@@ -93,9 +93,10 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
     modules: [
       { href: "/client/portail",       label: "Portail Client",  sub: "Espace dédié à vos clients",      icon: Building2,    color: "#3b82f6", bg: "#dbeafe" },
       { href: "/client/paie",          label: "Paie & RH",       sub: "Salaires, contrats, effectif",    icon: Banknote,     color: "#10b981", bg: "#d1fae5" },
-      { href: "/client/blog",          label: "Blog",            sub: "Rédigez et gérez vos articles",   icon: BookOpen,     color: "#b45309", bg: "#fef9c3" },
+      { href: "/client/reputation",    label: "Réputation",      sub: "Avis, e-réputation, veille",      icon: Star,         color: "#b91c1c", bg: "#fef2f2" },
+      { href: "/client/blog",          label: "Blog",            sub: "Rédigez et gérez vos articles",   icon: BookOpen,     color: "#0369a1", bg: "#f0f9ff" },
       { href: "/client/temoignages",   label: "Témoignages",     sub: "Avis clients et réputation",      icon: MessageSquare,color: "#9a3412", bg: "#ffedd5" },
-      { href: "/client/planification", label: "Planification",   sub: "OKRs et stratégie long terme",    icon: Target,       color: "#075985", bg: "#e0f2fe" },
+      { href: "/client/planification", label: "Planification",   sub: "OKRs et stratégie long terme",    icon: Target,       color: "#075985", bg: "#cffafe" },
     ],
   },
 ] as const;

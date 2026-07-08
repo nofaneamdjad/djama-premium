@@ -125,7 +125,7 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 
   "/client/fournisseurs": (
-    <Card bg="#F0FDF4">
+    <Card bg="#ECFDF5">
       {/* Camion */}
       <rect x="4" y="25" width="32" height="21" rx="3.5" fill="#16A34A" />
       <path d="M36 30 H51 L55 38 V46 H36 Z" fill="#15803D" />
@@ -210,7 +210,7 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 
   "/client/chrono": (
-    <Card bg="#F5F3FF">
+    <Card bg="#EEF2FF">
       {/* Cadran */}
       <circle cx="30" cy="35" r="19" fill="#7C3AED" />
       <circle cx="30" cy="35" r="15" fill="#6D28D9" />
@@ -231,32 +231,6 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 
   /* ════════ NOTES ════════ */
-
-  "/client/notes": (
-    <Card bg="#FEFCE8">
-      <rect x="13" y="9"  width="32" height="42" rx="4" fill="#CA8A04" />
-      <rect x="13" y="9"  width="7"  height="42" rx="4" fill="#B45309" />
-      <circle cx="17" cy="18" r="3" fill="#FEF3C7" stroke="#92400E" strokeWidth="1" />
-      <circle cx="17" cy="28" r="3" fill="#FEF3C7" stroke="#92400E" strokeWidth="1" />
-      <circle cx="17" cy="38" r="3" fill="#FEF3C7" stroke="#92400E" strokeWidth="1" />
-      <rect x="24" y="16" width="16" height="2.5" rx="1.25" fill="white" opacity="0.9" />
-      <rect x="24" y="22" width="12" height="2"   rx="1"    fill="white" opacity="0.65" />
-      <rect x="24" y="28" width="14" height="2"   rx="1"    fill="white" opacity="0.65" />
-      <rect x="24" y="34" width="10" height="2"   rx="1"    fill="white" opacity="0.45" />
-    </Card>
-  ),
-
-  "/client/bloc-note": (
-    <Card bg="#FFF1F2">
-      {/* Micro — quick capture */}
-      <rect x="22" y="9"  width="16" height="24" rx="8" fill="#E11D48" />
-      <line x1="26" y1="17" x2="34" y2="17" stroke="white" strokeWidth="1.5" opacity="0.5" />
-      <line x1="26" y1="21" x2="34" y2="21" stroke="white" strokeWidth="1.5" opacity="0.5" />
-      <path d="M14 29 C14 38.5 19.5 45 30 45 C40.5 45 46 38.5 46 29" stroke="#E11D48" strokeWidth="3" strokeLinecap="round" fill="none" />
-      <line x1="30" y1="45" x2="30" y2="53" stroke="#E11D48" strokeWidth="3" strokeLinecap="round" />
-      <line x1="22" y1="53" x2="38" y2="53" stroke="#E11D48" strokeWidth="3" strokeLinecap="round" />
-    </Card>
-  ),
 
   "/client/bloc-notes": (
     <Card bg="#FEFCE8">
@@ -308,7 +282,7 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 
   "/client/mindmap": (
-    <Card bg="#F5F3FF">
+    <Card bg="#FAF5FF">
       {/* Nœud central */}
       <circle cx="30" cy="30" r="8" fill="#8B5CF6" />
       {/* Branches */}
@@ -327,6 +301,21 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
 
   /* ════════ INTELLIGENCE ════════ */
 
+  "/client/projets": (
+    <Card bg="#FFF3E0">
+      {/* Dossier */}
+      <path d="M8 22 C8 20.3 9.3 19 11 19 H23 L27 15 H49 C50.7 15 52 16.3 52 18 V44 C52 45.7 50.7 47 49 47 H11 C9.3 47 8 45.7 8 44 Z" fill="#F59E0B" />
+      <path d="M8 24 H52 V44 C52 45.7 50.7 47 49 47 H11 C9.3 47 8 45.7 8 44 Z" fill="#FBBF24" />
+      {/* Items dans le dossier */}
+      <rect x="14" y="29" width="20" height="3" rx="1.5" fill="white" opacity="0.85" />
+      <rect x="14" y="35" width="15" height="3" rx="1.5" fill="white" opacity="0.65" />
+      <rect x="14" y="41" width="18" height="3" rx="1.5" fill="white" opacity="0.45" />
+      {/* Badge check */}
+      <circle cx="46" cy="46" r="9" fill="#D97706" />
+      <path d="M42 46 L45 49 L51 43" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </Card>
+  ),
+
   "/client/sourcing": (
     <Card bg="#EDE9FE">
       {/* Loupe */}
@@ -340,7 +329,7 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 
   "/client/assistant": (
-    <Card bg="#E0F2FE">
+    <Card bg="#E8F4FD">
       {/* Éclair IA */}
       <path d="M35 9 L19 33 H31 L25 51 L43 27 H31 Z" fill="#0369A1" />
       {/* Points lumineux */}
@@ -351,16 +340,16 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 
   "/client/reputation": (
-    <Card bg="#FEFCE8">
+    <Card bg="#FEF2F2">
       {/* Étoile */}
-      <path d="M30 10 L34.5 22.5 H48 L37 29.5 L41 42 L30 35 L19 42 L23 29.5 L12 22.5 H25.5 Z" fill="#D97706" />
-      <path d="M30 15 L33 24 H43 L35.5 28.5 L38 37.5 L30 32 L22 37.5 L24.5 28.5 L17 24 H27 Z" fill="#F59E0B" />
-      <circle cx="30" cy="28" r="5" fill="#FCD34D" />
+      <path d="M30 10 L34.5 22.5 H48 L37 29.5 L41 42 L30 35 L19 42 L23 29.5 L12 22.5 H25.5 Z" fill="#DC2626" />
+      <path d="M30 15 L33 24 H43 L35.5 28.5 L38 37.5 L30 32 L22 37.5 L24.5 28.5 L17 24 H27 Z" fill="#EF4444" />
+      <circle cx="30" cy="28" r="5" fill="#FCA5A5" />
     </Card>
   ),
 
   "/client/reseaux-sociaux": (
-    <Card bg="#FDF2F8">
+    <Card bg="#FCE7F3">
       {/* 3 nœuds réseau */}
       <circle cx="30" cy="13" r="8" fill="#DB2777" />
       <circle cx="13" cy="43" r="8" fill="#EC4899" />
@@ -374,7 +363,7 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 
   "/coaching-ia/espace": (
-    <Card bg="#FDF2F8">
+    <Card bg="#FAF0FF">
       {/* Cerveau stylisé */}
       <path d="M30 11 C22 11 16 17 16 24 C16 27.5 17.5 30.5 20 32.5 L17 49 H43 L40 32.5 C42.5 30.5 44 27.5 44 24 C44 17 38 11 30 11 Z" fill="#9D174D" />
       {/* Sillon central */}
@@ -405,7 +394,7 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 
   "/client/paie": (
-    <Card bg="#F0FDF4">
+    <Card bg="#D1FAE5">
       {/* Billet */}
       <rect x="5" y="18" width="50" height="26" rx="6" fill="#16A34A" />
       <circle cx="30" cy="31" r="10" fill="#15803D" />
@@ -420,10 +409,10 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 
   "/client/blog": (
-    <Card bg="#FEFCE8">
+    <Card bg="#F0F9FF">
       {/* Livre ouvert */}
-      <rect x="8" y="13" width="44" height="35" rx="4" fill="#B45309" />
-      <line x1="30" y1="13" x2="30" y2="48" stroke="#92400E" strokeWidth="2" opacity="0.6" />
+      <rect x="8" y="13" width="44" height="35" rx="4" fill="#0369A1" />
+      <line x1="30" y1="13" x2="30" y2="48" stroke="#075985" strokeWidth="2" opacity="0.6" />
       {/* Page gauche */}
       <rect x="12" y="20" width="14" height="2.5" rx="1.25" fill="white" opacity="0.85" />
       <rect x="12" y="25" width="10" height="1.8" rx="0.9"  fill="white" opacity="0.6" />
@@ -437,7 +426,7 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
       <rect x="34" y="33" width="7"  height="1.8" rx="0.9"  fill="white" opacity="0.45" />
       <rect x="34" y="37" width="10" height="1.8" rx="0.9"  fill="white" opacity="0.45" />
       {/* Marque-page */}
-      <path d="M42 8 V21 L46 18 L50 21 V8 Z" fill="#FDE68A" />
+      <path d="M42 8 V21 L46 18 L50 21 V8 Z" fill="#BAE6FD" />
     </Card>
   ),
 
@@ -458,7 +447,7 @@ export const APP_ICONS: Record<string, React.ReactElement> = {
   ),
 
   "/client/planification": (
-    <Card bg="#E0F2FE">
+    <Card bg="#CFFAFE">
       {/* Cible OKR */}
       <circle cx="30" cy="30" r="20" stroke="#0369A1" strokeWidth="2.5" fill="#BAE6FD" opacity="0.2" />
       <circle cx="30" cy="30" r="13" stroke="#0369A1" strokeWidth="2.5" fill="#7DD3FC" opacity="0.15" />
