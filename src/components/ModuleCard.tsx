@@ -123,9 +123,9 @@ export function ModuleGroupSection({
       <div
         className="grid grid-cols-4 gap-0 rounded-2xl px-1 py-2"
         style={{
-          background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.85)",
-          border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)",
-          boxShadow: isDark ? "none" : "0 2px 12px rgba(0,0,0,0.04)",
+          background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.93)",
+          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.05)",
+          boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.20)" : "0 4px 22px rgba(0,0,0,0.07)",
         }}
       >
         {group.modules.map((mod, mi) => (

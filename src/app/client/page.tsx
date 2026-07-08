@@ -290,7 +290,10 @@ export default function CockpitPage() {
      RENDU
   ───────────────────────────────────────────────── */
   return (
-    <div className={`min-h-full overflow-x-hidden ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
+    <div
+      className="min-h-full overflow-x-hidden"
+      style={{ background: isDark ? "#07080e" : "linear-gradient(180deg, #fefcff 0%, #f7f5fb 50%, #fefcff 100%)" }}
+    >
 
       <OnboardingModal name={firstName} />
 
@@ -300,8 +303,8 @@ export default function CockpitPage() {
       <div
         className="relative overflow-hidden"
         style={{ background: isDark
-          ? "linear-gradient(155deg,#07080e 0%,#0d1117 50%,#07080e 100%)"
-          : "linear-gradient(155deg,#eef0f8 0%,#e6e9f5 50%,#eef0f8 100%)" }}
+          ? "linear-gradient(155deg,#07080e 0%,#0e1020 40%,#07080e 100%)"
+          : "linear-gradient(155deg, #fffcf5 0%, #f3efff 35%, #eef7ff 68%, #fffdf0 100%)" }}
       >
         {/* Shimmer gold line */}
         <motion.div
@@ -314,16 +317,16 @@ export default function CockpitPage() {
 
         {/* Orb ambiance */}
         <motion.div
-          animate={{ scale: [1, 1.18, 1], opacity: [0.07, 0.15, 0.07] }}
+          animate={{ scale: [1, 1.18, 1], opacity: isDark ? [0.07, 0.15, 0.07] : [0.38, 0.62, 0.38] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="pointer-events-none absolute -top-24 left-1/2 h-[360px] w-[560px] -translate-x-1/2 rounded-full blur-[100px]"
-          style={{ background: "rgba(201,165,90,0.22)" }}
+          className="pointer-events-none absolute -top-24 left-1/2 h-[400px] w-[620px] -translate-x-1/2 rounded-full blur-[110px]"
+          style={{ background: isDark ? "rgba(201,165,90,0.22)" : "rgba(201,165,90,0.18)" }}
         />
         <motion.div
-          animate={{ y: [0, 20, 0], opacity: [0.04, 0.1, 0.04] }}
+          animate={{ y: [0, 20, 0], opacity: isDark ? [0.04, 0.1, 0.04] : [0.22, 0.40, 0.22] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-          className="pointer-events-none absolute bottom-10 right-0 h-[220px] w-[320px] rounded-full blur-[80px]"
-          style={{ background: "rgba(99,102,241,0.1)" }}
+          className="pointer-events-none absolute bottom-10 right-0 h-[260px] w-[360px] rounded-full blur-[90px]"
+          style={{ background: isDark ? "rgba(99,102,241,0.1)" : "rgba(139,92,246,0.11)" }}
         />
 
         <div className="relative mx-auto max-w-7xl px-4 pt-5 pb-8 lg:px-8">
@@ -428,10 +431,13 @@ export default function CockpitPage() {
             transition={{ duration: 0.45, delay: 0.07, ease }}
             className="rounded-3xl p-5 mb-4"
             style={{
-              background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.85)",
-              border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.07)",
-              backdropFilter: "blur(16px)",
-              boxShadow: isDark ? "none" : "0 4px 24px rgba(0,0,0,0.06)",
+              background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.96)",
+              border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+              borderTopColor: "rgba(201,165,90,0.40)",
+              backdropFilter: "blur(20px)",
+              boxShadow: isDark
+                ? "0 0 40px rgba(201,165,90,0.06), inset 0 1px 0 rgba(255,255,255,0.05)"
+                : "0 8px 36px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.95)",
             }}
           >
             {/* Header */}
@@ -563,53 +569,78 @@ export default function CockpitPage() {
           )}
 
           {/* ── Quick Actions ── */}
-          <div className="flex items-center justify-between mb-1">
-            <span className={`text-[10px] font-semibold uppercase tracking-widest ${isDark ? "text-white/25" : "text-gray-400"}`}>Raccourcis</span>
-            <button
-              onClick={() => { setPickerDraft(quickActions); setEditingQA(true); }}
-              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition ${isDark ? "text-white/40 hover:text-white/70" : "text-gray-500 hover:text-gray-700"}`}
-              style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)" }}
-            >
-              <Settings2 size={10} /> Modifier
-            </button>
-          </div>
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2, ease }}
-            className="grid gap-2 sm:gap-3"
-            style={{ gridTemplateColumns: `repeat(${Math.min(quickActions.length, 6)}, 1fr)` }}
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.44, delay: 0.18, ease }}
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.90)",
+              border: isDark ? "1px solid rgba(255,255,255,0.09)" : "1px solid rgba(255,255,255,0.97)",
+              backdropFilter: "blur(22px)",
+              boxShadow: isDark
+                ? "0 8px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.06)"
+                : "0 8px 36px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,1)",
+            }}
           >
-            {quickActions.map((a, i) => {
-              const isLocked = getToolTier(a.href) === "premium" && isFree;
-              return (
-                <motion.div key={a.href + i}
-                  initial={{ opacity: 0, y: 14, scale: 0.82 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 22, delay: 0.26 + i * 0.05 }}
-                >
-                  <Link href={isLocked ? "/client/abonnements" : a.href} className="relative flex flex-col items-center gap-1.5 transition active:scale-95">
-                    <div className="relative h-[44px] w-[44px] sm:h-[52px] sm:w-[52px] overflow-hidden rounded-[12px] sm:rounded-[15px] shadow-[0_6px_18px_rgba(0,0,0,0.32)]"
-                      style={{ opacity: isLocked ? 0.68 : 1 }}>
-                      {APP_ICONS[a.iconKey]}
-                    </div>
-                    <span className={`text-[10px] font-semibold tracking-wide text-center leading-tight ${isDark ? "text-white/70" : "text-gray-600"}`}>{a.label}</span>
-                    {isLocked && (
-                      <div className="absolute top-0 right-0 flex h-[16px] w-[16px] items-center justify-center rounded-full shadow"
-                        style={{ background: GOLD, border: "1.5px solid rgba(255,255,255,0.5)" }}>
-                        <Lock size={7} color="white" strokeWidth={3} />
+            {/* Card header */}
+            <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="h-[5px] w-[5px] rounded-full" style={{ background: GOLD }} />
+                <span className={`text-[10px] font-bold uppercase tracking-[0.18em] ${isDark ? "text-white/35" : "text-gray-500"}`}>
+                  Raccourcis
+                </span>
+              </div>
+              <button
+                onClick={() => { setPickerDraft(quickActions); setEditingQA(true); }}
+                className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[9.5px] font-semibold transition ${isDark ? "text-white/40 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}
+                style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }}
+              >
+                <Settings2 size={9} /> Modifier
+              </button>
+            </div>
+
+            {/* Icons grid */}
+            <div
+              className="grid gap-0 px-3 pb-4"
+              style={{ gridTemplateColumns: `repeat(${Math.min(quickActions.length, 6)}, 1fr)` }}
+            >
+              {quickActions.map((a, i) => {
+                const isLocked = getToolTier(a.href) === "premium" && isFree;
+                return (
+                  <motion.div key={a.href + i}
+                    initial={{ opacity: 0, y: 14, scale: 0.80 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 380, damping: 22, delay: 0.28 + i * 0.045 }}
+                  >
+                    <Link href={isLocked ? "/client/abonnements" : a.href} className="relative flex flex-col items-center gap-1.5 p-1.5 transition active:scale-95">
+                      <div className="relative h-[52px] w-[52px] sm:h-[56px] sm:w-[56px] overflow-hidden rounded-[14px] sm:rounded-[16px]"
+                        style={{
+                          opacity: isLocked ? 0.68 : 1,
+                          boxShadow: isDark
+                            ? "0 6px 20px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.3)"
+                            : "0 6px 20px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.10)",
+                        }}>
+                        {APP_ICONS[a.iconKey]}
                       </div>
-                    )}
-                  </Link>
-                </motion.div>
-              );
-            })}
+                      <span className={`text-[9.5px] font-semibold tracking-wide text-center leading-tight ${isDark ? "text-white/70" : "text-gray-600"}`}>{a.label}</span>
+                      {isLocked && (
+                        <div className="absolute top-1.5 right-1.5 flex h-[16px] w-[16px] items-center justify-center rounded-full shadow"
+                          style={{ background: GOLD, border: "1.5px solid rgba(255,255,255,0.5)" }}>
+                          <Lock size={7} color="white" strokeWidth={3} />
+                        </div>
+                      )}
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
           </motion.div>
 
         </div>
 
         {/* ── Dégradé de transition ── */}
-        <div className="h-8 w-full" style={{ background: isDark ? "linear-gradient(to bottom, transparent, #0a0b0f)" : "linear-gradient(to bottom, transparent, #f4f5f9)" }} />
+        <div className="h-10 w-full" style={{ background: isDark ? "linear-gradient(to bottom, transparent, #07080e)" : "linear-gradient(to bottom, transparent, #f7f5fb)" }} />
       </div>
 
       {/* ══════════════════════════════════════════
@@ -761,7 +792,7 @@ export default function CockpitPage() {
                   border: "1px solid rgba(190,24,93,0.18)",
                   boxShadow: isDark
                     ? "0 4px 24px rgba(190,24,93,0.08), inset 0 1px 0 rgba(255,255,255,0.04)"
-                    : "0 2px 16px rgba(190,24,93,0.08), 0 1px 4px rgba(0,0,0,0.04)",
+                    : "0 6px 28px rgba(190,24,93,0.11), 0 2px 8px rgba(0,0,0,0.06)",
                 }}
               >
                 <div className="pointer-events-none absolute -top-8 -left-4 h-24 w-24 rounded-full blur-2xl"
@@ -829,7 +860,7 @@ export default function CockpitPage() {
                   border: "1px solid rgba(79,70,229,0.18)",
                   boxShadow: isDark
                     ? "0 4px 24px rgba(79,70,229,0.08), inset 0 1px 0 rgba(255,255,255,0.04)"
-                    : "0 2px 16px rgba(79,70,229,0.08), 0 1px 4px rgba(0,0,0,0.04)",
+                    : "0 6px 28px rgba(79,70,229,0.11), 0 2px 8px rgba(0,0,0,0.06)",
                 }}
               >
                 <div className="pointer-events-none absolute -top-8 -left-4 h-24 w-24 rounded-full blur-2xl"
