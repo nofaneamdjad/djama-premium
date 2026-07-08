@@ -38,7 +38,7 @@ export function ModuleCard({
           transition={{ duration: 0.12 }}
           className="relative"
         >
-          <AppModuleIcon href={mod.href} size={52} locked={isLocked} />
+          <AppModuleIcon href={mod.href} size={52} locked={isLocked} hideBackground={isDark} />
           {isLocked && (
             <div
               className="absolute -bottom-0.5 -right-0.5 flex h-[16px] w-[16px] items-center justify-center rounded-full"

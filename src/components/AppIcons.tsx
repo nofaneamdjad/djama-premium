@@ -8,7 +8,7 @@ import React from "react";
 function Card({ bg, children }: { bg: string; children: React.ReactNode }) {
   return (
     <svg viewBox="0 0 60 60" fill="none" className="h-full w-full">
-      <rect width="60" height="60" rx="14" fill={bg} />
+      <rect width="60" height="60" rx="14" fill={bg} className="icon-card-bg" />
       {children}
     </svg>
   );
@@ -526,25 +526,25 @@ export function AppModuleIcon({
   href,
   size = 52,
   locked = false,
+  hideBackground = false,
 }: {
   href: string;
   size?: number;
   locked?: boolean;
+  hideBackground?: boolean;
 }) {
   const icon = APP_ICONS[href];
   if (!icon) return null;
   return (
     <div
-      className="shrink-0 overflow-hidden"
+      className={`shrink-0 overflow-hidden${hideBackground ? " [&_.icon-card-bg]:fill-transparent" : ""}`}
       style={{
         width: size,
         height: size,
         borderRadius: Math.round(size * 0.22),
         opacity: locked ? 0.45 : 1,
-        boxShadow: locked
-          ? "none"
-          : "0 2px 8px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.07)",
-        border: "1px solid rgba(0,0,0,0.06)",
+        boxShadow: locked || hideBackground ? "none" : "0 2px 8px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.07)",
+        border: hideBackground ? "none" : "1px solid rgba(0,0,0,0.06)",
       }}
     >
       {icon}
