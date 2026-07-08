@@ -424,17 +424,12 @@ export default function CockpitPage() {
             </div>
           </motion.div>
 
-          {/* ── Hero body: 2 cols desktop, 1 col mobile ── */}
-          <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-
-          {/* Left col: KPI + net badges */}
-          <div className="mb-4 lg:mb-0">
           {/* ── KPI Hero card ── */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.07, ease }}
-            className="rounded-3xl p-5 mb-3"
+            className="rounded-3xl p-5 mb-4"
             style={{
               background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.96)",
               border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
@@ -550,7 +545,7 @@ export default function CockpitPage() {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.25, ease }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 mb-4"
             >
               <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5"
                 style={{
@@ -573,10 +568,6 @@ export default function CockpitPage() {
             </motion.div>
           )}
 
-          </div>{/* /left col */}
-
-          {/* Right col: Raccourcis */}
-          <div>
           {/* ── Quick Actions ── */}
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
@@ -645,8 +636,6 @@ export default function CockpitPage() {
               })}
             </div>
           </motion.div>
-          </div>{/* /right col */}
-          </div>{/* /2-col grid */}
 
         </div>
 
