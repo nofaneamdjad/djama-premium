@@ -66,9 +66,10 @@ export default function ComptabilitePage() {
       const { start, end } = getPeriodRange(period);
 
       const [facRes, expRes] = await Promise.all([
-        supabase.from("factures")
+        supabase.from("documents")
           .select("montant_ht, montant_tva, montant_ttc, date_emission, client_nom, numero, statut")
           .eq("user_id", user.id)
+          .eq("type", "facture")
           .gte("date_emission", start)
           .lte("date_emission", end)
           .order("date_emission", { ascending: false }),

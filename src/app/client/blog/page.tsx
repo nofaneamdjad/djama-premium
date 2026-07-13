@@ -66,6 +66,7 @@ export default function BlogPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiContentLoading, setAiContentLoading] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (msg: string, ok = true) => {
@@ -167,15 +168,34 @@ export default function BlogPage() {
     if (!draft.content?.trim()) return;
     setAiLoading(true);
     try {
-      const res = await fetch("/api/ai/generate", {
+      const res = await fetch("/api/blog/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: `Génère un résumé/extrait de 2-3 phrases pour cet article de blog:\n\n${draft.content.slice(0, 2000)}` }),
+        body: JSON.stringify({ type: "excerpt", title: draft.title, content: draft.content }),
       });
       const json = await res.json() as { result?: string };
       if (json.result) updateDraft({ excerpt: json.result });
-    } catch {}
+      else showToast("Erreur lors de la génération", false);
+    } catch { showToast("Erreur réseau", false); }
     setAiLoading(false);
+  };
+
+  const generateContent = async () => {
+    if (!draft.title?.trim()) return;
+    setAiContentLoading(true);
+    try {
+      const res = await fetch("/api/blog/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "content", title: draft.title, tags: draft.tags }),
+      });
+      const json = await res.json() as { result?: string };
+      if (json.result) {
+        updateDraft({ content: json.result });
+        showToast("Article généré !");
+      } else showToast("Erreur lors de la génération", false);
+    } catch { showToast("Erreur réseau", false); }
+    setAiContentLoading(false);
   };
 
   const filtered = articles.filter(a => {
@@ -439,7 +459,23 @@ export default function BlogPage() {
 
                   {/* Content */}
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-white/30 font-medium uppercase tracking-wider">Contenu</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] text-white/30 font-medium uppercase tracking-wider">Contenu</label>
+                      <button
+                        onClick={generateContent}
+                        disabled={aiContentLoading || !draft.title?.trim()}
+                        className="flex items-center gap-1 text-[10px] text-amber-400/60 hover:text-amber-400 transition-all disabled:opacity-30"
+                      >
+                        {aiContentLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                        {aiContentLoading ? "Génération…" : "Générer avec IA"}
+                      </button>
+                    </div>
+                    {aiContentLoading && (
+                      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
+                        <Loader2 size={12} className="animate-spin text-amber-400/60" />
+                        <span className="text-xs text-amber-400/60">Rédaction de l&apos;article en cours…</span>
+                      </div>
+                    )}
                     <textarea
                       value={draft.content ?? ""}
                       onChange={e => updateDraft({ content: e.target.value })}

@@ -1162,6 +1162,71 @@ html:has(.client-app[data-theme="light"]) {
  *    Préserve les couleurs de la charte même sous les modes d'accessibilité
  *    qui forcent une palette de 4–8 couleurs système.
  */
+/* ══════════════════════════════════════════════
+   COACHING IA — ALWAYS DARK
+   Pages that must remain dark regardless of the
+   global light/dark theme (e.g. coaching-ia).
+   Add data-coaching-dark="" to the root div.
+   Higher specificity (4 vs 3 selectors) + !important
+   overrides the light-theme rules above.
+══════════════════════════════════════════════ */
+
+/* ── Outer wrapper background ── */
+.client-app[data-theme="light"] [data-coaching-dark] {
+  background-color: #07080e !important;
+}
+
+/* ── Text colors ── */
+.client-app[data-theme="light"] [data-coaching-dark] .text-white     { color: #ffffff !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/90 { color: rgba(255,255,255,0.90) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/85,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/82,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/80,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/75 { color: rgba(255,255,255,0.75) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/70,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/65,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/60,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/55 { color: rgba(255,255,255,0.55) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/50,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/45 { color: rgba(255,255,255,0.45) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/40 { color: rgba(255,255,255,0.40) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/35,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/30,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/28 { color: rgba(255,255,255,0.30) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/25,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/22 { color: rgba(255,255,255,0.22) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/20,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/18,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/15,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/12,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/10 { color: rgba(255,255,255,0.10) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/8,
+.client-app[data-theme="light"] [data-coaching-dark] .text-white\/6  { color: rgba(255,255,255,0.06) !important; }
+
+/* ── Background surfaces ── */
+.client-app[data-theme="light"] [data-coaching-dark] .bg-white\/\[0\.025\] { background-color: rgba(255,255,255,0.025) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .bg-white\/\[0\.03\]  { background-color: rgba(255,255,255,0.030) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .bg-white\/\[0\.04\]  { background-color: rgba(255,255,255,0.040) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .bg-white\/\[0\.05\]  { background-color: rgba(255,255,255,0.050) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .bg-white\/2          { background-color: rgba(255,255,255,0.020) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .bg-white\/4          { background-color: rgba(255,255,255,0.040) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .bg-white\/6          { background-color: rgba(255,255,255,0.060) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .bg-white\/8          { background-color: rgba(255,255,255,0.080) !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .bg-white\/10         { background-color: rgba(255,255,255,0.10)  !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .bg-white\/12         { background-color: rgba(255,255,255,0.12)  !important; }
+
+/* ── Borders ── */
+.client-app[data-theme="light"] [data-coaching-dark] .border-white\/\[0\.05\],
+.client-app[data-theme="light"] [data-coaching-dark] .border-white\/5  { border-color: rgba(255,255,255,0.05)  !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .border-white\/\[0\.06\],
+.client-app[data-theme="light"] [data-coaching-dark] .border-white\/6  { border-color: rgba(255,255,255,0.06)  !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .border-white\/\[0\.07\],
+.client-app[data-theme="light"] [data-coaching-dark] .border-white\/7  { border-color: rgba(255,255,255,0.07)  !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .border-white\/\[0\.08\],
+.client-app[data-theme="light"] [data-coaching-dark] .border-white\/8  { border-color: rgba(255,255,255,0.08)  !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .border-white\/10 { border-color: rgba(255,255,255,0.10)  !important; }
+.client-app[data-theme="light"] [data-coaching-dark] .border-white\/12 { border-color: rgba(255,255,255,0.12)  !important; }
+
 @media (forced-colors: active) {
   .btn-primary {
     border: 2px solid ButtonText;

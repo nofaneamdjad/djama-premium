@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ScanLine, Upload, Camera, FileText, Trash2,
-  ArrowLeft, Download, Eye, Plus, X,
+  ArrowLeft, Download, Plus, Sparkles, Copy, CheckCheck,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -26,6 +26,9 @@ export default function ScannerPage() {
   const [active,  setActive]  = useState<ScannedDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
+  const [scanStep, setScanStep] = useState<"upload" | "ocr" | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [userId,  setUserId]  = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -53,27 +56,82 @@ export default function ScannerPage() {
   function handleFile(file: File) {
     if (!file || !userId) return;
     setScanning(true);
+    setScanStep("upload");
     const reader = new FileReader();
     reader.onload = async (e) => {
       const dataUrl = e.target?.result as string;
+      const isPdf = file.type === "application/pdf";
+      let extractedText = "";
+
+      if (!isPdf) {
+        setScanStep("ocr");
+        try {
+          // Strip the "data:<type>;base64," prefix
+          const [header, b64] = dataUrl.split(",");
+          const mediaType = header.replace("data:", "").replace(";base64", "");
+          const res = await fetch("/api/scanner/ocr", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image_base64: b64, media_type: mediaType }),
+          });
+          if (res.ok) {
+            const json = await res.json() as { text?: string };
+            extractedText = json.text ?? "";
+          }
+        } catch { /* OCR optional — continue without */ }
+      }
+
       const doc: ScannedDoc = {
         id: uid(),
         title: file.name.replace(/\.[^.]+$/, "") || "Document scanné",
-        preview: dataUrl,
-        text: "",
+        preview: isPdf ? "" : dataUrl,
+        text: extractedText,
         created_at: new Date().toISOString(),
         pages: 1,
       };
       await supabase.from("notes").insert({
         id: doc.id, user_id: userId, title: doc.title,
-        content: JSON.stringify({ preview: dataUrl, text: doc.text, pages: doc.pages }),
+        content: JSON.stringify({ preview: doc.preview, text: doc.text, pages: doc.pages }),
         note_type: "scan", updated_at: new Date().toISOString(),
       });
       setDocs(prev => [doc, ...prev]);
       setActive(doc);
       setScanning(false);
+      setScanStep(null);
     };
     reader.readAsDataURL(file);
+  }
+
+  async function runOcrOnActive() {
+    if (!active || !active.preview || extracting) return;
+    setExtracting(true);
+    try {
+      const [header, b64] = active.preview.split(",");
+      const mediaType = header.replace("data:", "").replace(";base64", "");
+      const res = await fetch("/api/scanner/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_base64: b64, media_type: mediaType }),
+      });
+      if (!res.ok) return;
+      const json = await res.json() as { text?: string };
+      const text = json.text ?? "";
+      const updated = { ...active, text };
+      setActive(updated);
+      setDocs(prev => prev.map(d => d.id === active.id ? updated : d));
+      await supabase.from("notes")
+        .update({ content: JSON.stringify({ preview: updated.preview, text, pages: updated.pages }), updated_at: new Date().toISOString() })
+        .eq("id", active.id);
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  async function copyText() {
+    if (!active?.text) return;
+    await navigator.clipboard.writeText(active.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   async function deleteDoc(id: string) {
@@ -116,7 +174,9 @@ export default function ScannerPage() {
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
                   <ScanLine size={28} style={{ color: "#38bdf8" }} />
                 </motion.div>
-                <p className="text-[11px] font-semibold text-sky-400">Traitement en cours…</p>
+                <p className="text-[11px] font-semibold text-sky-400">
+                  {scanStep === "ocr" ? "Extraction du texte…" : "Import en cours…"}
+                </p>
               </>
             ) : (
               <>
@@ -251,12 +311,52 @@ export default function ScannerPage() {
                 </div>
               )}
 
-              {active.text && (
-                <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-white/30 mb-2">Texte extrait</p>
-                  <p className="text-[12px] text-white/60 leading-relaxed whitespace-pre-wrap">{active.text}</p>
+              {/* Zone texte extrait */}
+              <div className="mt-4 rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-white/30">Texte extrait (OCR)</p>
+                  <div className="flex items-center gap-1.5">
+                    {active.text && (
+                      <button
+                        onClick={copyText}
+                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-all"
+                        style={{ background: "rgba(255,255,255,0.06)", color: copied ? "#4ade80" : "rgba(255,255,255,0.4)" }}
+                      >
+                        {copied ? <CheckCheck size={11} /> : <Copy size={11} />}
+                        {copied ? "Copié" : "Copier"}
+                      </button>
+                    )}
+                    {active.preview && !active.preview.startsWith("data:application/pdf") && (
+                      <button
+                        onClick={runOcrOnActive}
+                        disabled={extracting}
+                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-all"
+                        style={{
+                          background: "rgba(14,165,233,0.10)",
+                          border: "1px solid rgba(14,165,233,0.25)",
+                          color: extracting ? "rgba(56,189,248,0.4)" : "#38bdf8",
+                        }}
+                      >
+                        {extracting ? (
+                          <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="inline-flex">
+                            <ScanLine size={11} />
+                          </motion.span>
+                        ) : (
+                          <Sparkles size={11} />
+                        )}
+                        {extracting ? "Extraction…" : active.text ? "Relancer" : "Extraire"}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
+                {active.text ? (
+                  <p className="px-4 pb-4 text-[12px] text-white/60 leading-relaxed whitespace-pre-wrap">{active.text}</p>
+                ) : (
+                  <p className="px-4 pb-4 text-[11px] text-white/20 italic">
+                    {active.preview ? "Clique sur « Extraire » pour lancer l'OCR." : "Aperçu PDF non disponible pour l'OCR."}
+                  </p>
+                )}
+              </div>
             </div>
           </>
         )}

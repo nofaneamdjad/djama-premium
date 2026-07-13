@@ -10,6 +10,7 @@ import {
   TrendingUp, TrendingDown,
   Lock, Crown, AlertCircle, CheckCircle2, X,
   Clock, Sparkles, Activity, Settings2, Check,
+  FileText, CreditCard, Users,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
@@ -41,8 +42,10 @@ const DEFAULT_QA: QuickAction[] = [
 ];
 
 /* ── Types ── */
-interface TodayTask  { id: string; title: string; priority: string; due_date: string }
-interface NextEvent  { id: string; title: string; start_at: string; event_type: string }
+interface TodayTask   { id: string; title: string; priority: string; due_date: string }
+interface NextEvent   { id: string; title: string; start_at: string; event_type: string }
+interface LastExpense { id: string; description: string; amount: number; date: string; category: string }
+interface LastContact { id: string; nom: string; created_at: string }
 
 /* ── Helpers ── */
 function getGreeting() {
@@ -111,6 +114,8 @@ export default function CockpitPage() {
   const [overdueCount, setOverdueCount] = useState(0);
   const [nbTasks,      setNbTasks]      = useState(0);
   const [lastFac,      setLastFac]      = useState<{ numero: string; montant_ttc: number; date_emission: string; client_nom: string } | null>(null);
+  const [lastExpense,  setLastExpense]  = useState<LastExpense | null>(null);
+  const [lastContact,  setLastContact]  = useState<LastContact | null>(null);
   const [todayLoading, setTodayLoading] = useState(true);
 
   /* ── UI ── */
@@ -205,7 +210,7 @@ export default function CockpitPage() {
       setKpiLoading(false);
 
       /* ── Données "Aujourd'hui" ── */
-      const [taskRes, eventRes, overdueRes, allTasksRes, lastFacRes] = await Promise.all([
+      const [taskRes, eventRes, overdueRes, allTasksRes, lastFacRes, lastExpRes, lastContactRes] = await Promise.all([
         supabase
           .from("productivity_tasks")
           .select("id, title, priority, due_date")
@@ -241,6 +246,20 @@ export default function CockpitPage() {
           .order("date_emission", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("expenses")
+          .select("id, description, amount, date, category")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("clients_crm")
+          .select("id, nom, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       setTodayTasks((taskRes.data ?? []) as TodayTask[]);
@@ -248,6 +267,8 @@ export default function CockpitPage() {
       setOverdueCount(overdueRes.count ?? 0);
       setNbTasks(allTasksRes.count ?? 0);
       setLastFac(lastFacRes.data as typeof lastFac ?? null);
+      setLastExpense(lastExpRes.data as LastExpense | null);
+      setLastContact(lastContactRes.data as LastContact | null);
       setTodayLoading(false);
     })();
   }, []);
@@ -285,6 +306,7 @@ export default function CockpitPage() {
 
   const totalModules = allModules.length;
   const netMonth = caMonth - depensesMonth;
+  const isNewUser = !kpiLoading && caMonth === 0 && nbContacts === 0;
 
   /* ─────────────────────────────────────────────────
      RENDU
@@ -523,7 +545,7 @@ export default function CockpitPage() {
               {[
                 { label: "Contacts",   val: kpiLoading ? "—" : String(nbContacts), color: "#60a5fa" },
                 { label: "En attente", val: kpiLoading ? "—" : String(nbFactures), color: nbFactures > 0 ? "#f87171" : "#4ade80" },
-                { label: "Tâches",     val: kpiLoading ? "—" : String(nbTasks),    color: nbTasks > 0 ? "#fbbf24" : "#4ade80"   },
+                { label: "Tâches",     val: kpiLoading ? "—" : String(nbTasks),    color: nbTasks > 0 ? "#fbbf24" : isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"   },
               ].map(s => (
                 <div key={s.label}
                   className="flex flex-col items-center justify-center rounded-xl py-2.5"
@@ -800,7 +822,7 @@ export default function CockpitPage() {
                   </div>
                   {!todayLoading && (
                     <span className="text-[24px] font-black tabular-nums leading-none"
-                      style={{ color: nbTasks > 0 ? "#e879a0" : "#22c55e" }}>
+                      style={{ color: nbTasks > 0 ? "#e879a0" : isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.25)" }}>
                       {nbTasks}
                     </span>
                   )}
@@ -906,37 +928,90 @@ export default function CockpitPage() {
           </div>
         </motion.div>
 
-        {/* ── Dernière facture (activité récente) ── */}
-        {!todayLoading && lastFac && (
+        {/* ── Activité récente ── */}
+        {!todayLoading && (!isNewUser || lastFac || lastExpense || lastContact) && (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.28, delay: 0.18, ease }}
+            transition={{ duration: 0.3, delay: 0.18, ease }}
             className="mb-5"
           >
-            <Link href="/client/factures">
-              <div className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all"
-                style={{
-                  background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)",
-                  border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)",
-                  boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.2)" : "0 2px 12px rgba(0,0,0,0.05)",
-                }}>
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                  style={{ background: "rgba(37,99,235,0.08)" }}>
-                  <Activity size={15} style={{ color: "#2563eb" }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-[12px] font-bold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>
-                    Dernière facture — <span className={isDark ? "text-white/40" : "text-gray-400"}>{lastFac.client_nom || "client"}</span>
-                  </p>
-                  <p className={`text-[10.5px] ${isDark ? "text-white/35" : "text-gray-400"}`}>
-                    {lastFac.numero} · {new Date(lastFac.date_emission).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
-                  </p>
-                </div>
-                <span className={`shrink-0 text-[13px] font-black ${isDark ? "text-white" : "text-gray-900"}`}>{fmtEurInt(lastFac.montant_ttc)}</span>
-                <ChevronRight size={13} className={`shrink-0 ${isDark ? "text-gray-400" : "text-gray-400"}`} />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-1 w-1 rounded-full" style={{ background: accent }} />
+              <h2 className={`text-[12px] font-black uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-gray-400"}`}>Récent</h2>
+            </div>
+
+            {(lastFac || lastExpense || lastContact) ? (
+              <div className="space-y-2">
+                {lastFac && (
+                  <Link href="/client/factures">
+                    <div className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all active:scale-[0.98]"
+                      style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)", boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.2)" : "0 2px 12px rgba(0,0,0,0.05)" }}>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(74,222,128,0.08)" }}>
+                        <FileText size={15} style={{ color: "#4ade80" }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[12px] font-bold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>Facture · <span className={isDark ? "text-white/40" : "text-gray-400"}>{lastFac.client_nom || "client"}</span></p>
+                        <p className={`text-[10.5px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{lastFac.numero} · {new Date(lastFac.date_emission).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</p>
+                      </div>
+                      <span className={`shrink-0 text-[13px] font-black ${isDark ? "text-white" : "text-gray-900"}`}>{fmtEurInt(lastFac.montant_ttc)}</span>
+                      <ChevronRight size={13} className="shrink-0 text-gray-400" />
+                    </div>
+                  </Link>
+                )}
+                {lastExpense && (
+                  <Link href="/client/depenses">
+                    <div className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all active:scale-[0.98]"
+                      style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)", boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.2)" : "0 2px 12px rgba(0,0,0,0.05)" }}>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(248,113,113,0.08)" }}>
+                        <CreditCard size={15} style={{ color: "#f87171" }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[12px] font-bold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>Dépense · <span className={isDark ? "text-white/40" : "text-gray-400"}>{lastExpense.description || lastExpense.category}</span></p>
+                        <p className={`text-[10.5px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{new Date(lastExpense.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</p>
+                      </div>
+                      <span className="shrink-0 text-[13px] font-black text-red-400">−{fmtEurInt(lastExpense.amount)}</span>
+                      <ChevronRight size={13} className="shrink-0 text-gray-400" />
+                    </div>
+                  </Link>
+                )}
+                {lastContact && (
+                  <Link href="/client/crm">
+                    <div className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all active:scale-[0.98]"
+                      style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)", boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.2)" : "0 2px 12px rgba(0,0,0,0.05)" }}>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(96,165,250,0.08)" }}>
+                        <Users size={15} style={{ color: "#60a5fa" }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[12px] font-bold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>Contact · <span className={isDark ? "text-white/40" : "text-gray-400"}>{lastContact.nom}</span></p>
+                        <p className={`text-[10.5px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{new Date(lastContact.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</p>
+                      </div>
+                      <ChevronRight size={13} className="shrink-0 text-gray-400" />
+                    </div>
+                  </Link>
+                )}
               </div>
-            </Link>
+            ) : (
+              <div className="rounded-2xl px-4 py-4"
+                style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.8)", border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
+                <p className={`text-[11px] font-semibold mb-3 ${isDark ? "text-white/35" : "text-gray-500"}`}>Par où commencer ?</p>
+                <div className="space-y-2">
+                  {([
+                    { href: "/client/factures", label: "Créer une facture",        color: "#4ade80", bg: "rgba(74,222,128,0.08)"  },
+                    { href: "/client/depenses",  label: "Enregistrer une dépense", color: "#f87171", bg: "rgba(248,113,113,0.08)" },
+                    { href: "/client/crm",       label: "Ajouter un client",       color: "#60a5fa", bg: "rgba(96,165,250,0.08)"  },
+                  ] as { href: string; label: string; color: string; bg: string }[]).map(s => (
+                    <Link key={s.href} href={s.href}>
+                      <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all active:scale-[0.98]" style={{ background: s.bg }}>
+                        <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: s.color }} />
+                        <span className="text-[12px] font-semibold" style={{ color: s.color }}>{s.label}</span>
+                        <ChevronRight size={12} className="ml-auto shrink-0" style={{ color: s.color, opacity: 0.5 }} />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 

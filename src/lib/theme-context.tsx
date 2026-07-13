@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type ThemeMode = "dark" | "light";
+export type ThemeMode = "dark" | "light" | "auto";
 
 export interface AccentOption {
   name:  string;
@@ -35,12 +35,18 @@ interface ThemeCtx extends ThemeState {
 const Ctx = createContext<ThemeCtx | null>(null);
 const KEY = "djama-theme";
 
+function autoIsDark(): boolean {
+  const h = new Date().getHours();
+  return h >= 20 || h < 7;
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ThemeState>({
     mode:       "dark",
     accent:     "#c9a55a",
     accentName: "gold",
   });
+  const [resolvedDark, setResolvedDark] = useState(false);
 
   useEffect(() => {
     try {
@@ -49,10 +55,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
-  // Sync data-theme sur <html> pour les CSS anti-flash
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', state.mode);
-    document.documentElement.style.colorScheme = state.mode;
+    function compute() {
+      const dark = state.mode === "auto" ? autoIsDark() : state.mode === "dark";
+      setResolvedDark(dark);
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+      document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    }
+    compute();
+    if (state.mode === "auto") {
+      const interval = setInterval(compute, 60_000);
+      return () => clearInterval(interval);
+    }
   }, [state.mode]);
 
   function save(next: Partial<ThemeState>) {
@@ -66,7 +80,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       ...state,
-      isDark:    state.mode === "dark",
+      isDark:    resolvedDark,
       toggle:    () => save({ mode: state.mode === "dark" ? "light" : "dark" }),
       setMode:   (mode)               => save({ mode }),
       setAccent: (accent, accentName) => save({ accent, accentName }),

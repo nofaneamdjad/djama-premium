@@ -8,10 +8,10 @@ import {
   Home, BarChart2, ReceiptText, CreditCard, Wallet, BookMarked,
   Users, FileText, Truck, Package, ListTodo, Calendar,
   CalendarRange, Timer, StickyNote, CheckSquare, ScanLine, Network, Search, Zap, Star, Brain,
-  Crown, Sparkles, Lock, ChevronRight, X, Menu,
+  Crown, Sparkles, Lock, ChevronLeft, ChevronRight, X, Menu,
   LogOut, Bell, ArrowRight, CheckCircle2, Share2, User, AlertTriangle,
   Building2, Banknote, FolderOpen, ThumbsUp, BookOpen, MessageSquare, Target,
-  Sun, Moon,
+  Sun, Moon, SunMoon,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSubscription } from "@/lib/use-require-subscription";
@@ -52,7 +52,7 @@ const PRO_TOOLS = [
   { href: "/client/sourcing",        label: "Sourcing IA",       icon: Search       },
   { href: "/client/projets",         label: "Projets",           icon: FolderOpen   },
   { href: "/client/reseaux-sociaux", label: "Réseaux Sociaux",   icon: Share2       },
-  { href: "/coaching-ia/espace",     label: "Coaching IA",       icon: Brain        },
+  { href: "/coaching-ia/hub",          label: "Coaching IA",       icon: Brain        },
   { href: "/client/portail",         label: "Portail Client",    icon: Building2    },
   { href: "/client/paie",            label: "Paie & RH",         icon: Banknote     },
   { href: "/client/reputation",      label: "Réputation",        icon: ThumbsUp     },
@@ -174,10 +174,9 @@ function DarkNavItem({
 
 /* ─────────── THEME TOGGLE BUTTON ─────────── */
 function ThemeToggle() {
-  const { mode, accent, accentName, setMode, setAccent } = useTheme();
+  const { mode, accent, accentName, setMode, setAccent, isDark } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const isDark = mode === "dark";
 
   useEffect(() => {
     function onOut(e: MouseEvent) {
@@ -186,6 +185,8 @@ function ThemeToggle() {
     document.addEventListener("mousedown", onOut);
     return () => document.removeEventListener("mousedown", onOut);
   }, []);
+
+  const TopbarIcon = mode === "auto" ? SunMoon : isDark ? Moon : Sun;
 
   return (
     <div className="relative" ref={ref}>
@@ -199,7 +200,7 @@ function ThemeToggle() {
             : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
         }`}
       >
-        {isDark ? <Moon size={15} /> : <Sun size={15} />}
+        <TopbarIcon size={15} />
       </button>
 
       <AnimatePresence>
@@ -220,12 +221,16 @@ function ThemeToggle() {
               <p className={`mb-2 text-[0.58rem] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>
                 Mode d&apos;affichage
               </p>
-              <div className="grid grid-cols-2 gap-1.5">
-                {([["dark", Moon, "Sombre"], ["light", Sun, "Clair"]] as const).map(([m, Icon, lbl]) => (
+              <div className="grid grid-cols-3 gap-1.5">
+                {([
+                  ["dark",  Moon,    "Sombre"],
+                  ["auto",  SunMoon, "Auto"],
+                  ["light", Sun,     "Clair"],
+                ] as const).map(([m, Icon, lbl]) => (
                   <button
                     key={m}
-                    onClick={() => { setMode(m); }}
-                    className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-[0.75rem] font-semibold transition-all ${
+                    onClick={() => setMode(m)}
+                    className={`flex flex-col items-center gap-1 rounded-xl py-2.5 text-[0.68rem] font-semibold transition-all ${
                       mode === m
                         ? "text-white"
                         : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-700"
@@ -235,11 +240,16 @@ function ThemeToggle() {
                       : { background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }
                     }
                   >
-                    <Icon size={12} />
+                    <Icon size={13} />
                     {lbl}
                   </button>
                 ))}
               </div>
+              {mode === "auto" && (
+                <p className={`mt-2 text-[0.58rem] text-center ${isDark ? "text-white/20" : "text-gray-400"}`}>
+                  Sombre 20h–7h · Clair 7h–20h
+                </p>
+              )}
             </div>
 
           </motion.div>
@@ -253,6 +263,7 @@ function ThemeToggle() {
 type OverdueDoc = { id: string; numero: string; client_nom: string; total_ttc: number };
 
 function NotifBell({ ready }: { ready: boolean }) {
+  const { isDark } = useTheme();
   const [open,    setOpen]    = useState(false);
   const [events,  setEvents]  = useState<UpcomingEvent[]>([]);
   const [overdue, setOverdue] = useState<OverdueDoc[]>([]);
@@ -325,13 +336,17 @@ function NotifBell({ ready }: { ready: boolean }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 top-10 z-50 w-72 overflow-hidden rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.45)]"
-            style={{ background: "rgba(10,14,26,0.97)", border: "1px solid rgba(255,255,255,0.08)" }}
+            className="absolute right-0 top-10 z-50 w-72 overflow-hidden rounded-xl"
+            style={{
+              background: isDark ? "rgba(10,14,26,0.97)" : "#ffffff",
+              border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
+              boxShadow: isDark ? "0 8px 40px rgba(0,0,0,0.45)" : "0 8px 40px rgba(0,0,0,0.12)",
+            }}
           >
             <div className="flex items-center justify-between px-4 py-3"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-              <span className="text-xs font-semibold text-white/80">Notifications</span>
-              <button onClick={() => setOpen(false)} className="text-white/40 hover:text-white/70 transition">
+              style={{ borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}` }}>
+              <span className="text-xs font-semibold" style={{ color: isDark ? "rgba(255,255,255,0.80)" : "rgba(0,0,0,0.75)" }}>Notifications</span>
+              <button onClick={() => setOpen(false)} className="transition" style={{ color: isDark ? "rgba(255,255,255,0.40)" : "rgba(0,0,0,0.35)" }}>
                 <X size={13} />
               </button>
             </div>
@@ -344,12 +359,16 @@ function NotifBell({ ready }: { ready: boolean }) {
                   </p>
                   {overdue.map(inv => (
                     <Link href="/client/factures" key={inv.id} onClick={() => setOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 transition hover:bg-white/[0.04]">
+                      className="flex items-center gap-3 px-4 py-2 transition"
+                      style={{ ["--hover-bg" as string]: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)" }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)"; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                    >
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-red-500/15">
                         <AlertTriangle size={10} className="text-red-400" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-white/80">
+                        <p className="truncate text-xs font-medium" style={{ color: isDark ? "rgba(255,255,255,0.80)" : "rgba(0,0,0,0.75)" }}>
                           {inv.client_nom || inv.numero || "Facture"}
                         </p>
                         <p className="text-[0.65rem] text-red-400/70">
@@ -358,32 +377,35 @@ function NotifBell({ ready }: { ready: boolean }) {
                       </div>
                     </Link>
                   ))}
-                  <div className="mx-4 my-2 border-t border-white/[0.07]" />
+                  <div className="mx-4 my-2 border-t" style={{ borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }} />
                 </div>
               )}
               {/* Upcoming events */}
               {events.length === 0 && overdue.length === 0 ? (
                 <div className="px-4 py-8 text-center">
-                  <Bell size={20} className="mx-auto mb-2 text-white/20" />
-                  <p className="text-xs text-white/40">Aucune notification</p>
+                  <Bell size={20} className="mx-auto mb-2" style={{ color: isDark ? "rgba(255,255,255,0.20)" : "rgba(0,0,0,0.20)" }} />
+                  <p className="text-xs" style={{ color: isDark ? "rgba(255,255,255,0.40)" : "rgba(0,0,0,0.40)" }}>Aucune notification</p>
                 </div>
               ) : events.length > 0 && (
                 <div className="py-1">
-                  <p className="px-4 pb-1 pt-2 text-[0.6rem] font-bold uppercase tracking-wider text-white/30">Agenda</p>
+                  <p className="px-4 pb-1 pt-2 text-[0.6rem] font-bold uppercase tracking-wider" style={{ color: isDark ? "rgba(255,255,255,0.30)" : "rgba(0,0,0,0.35)" }}>Agenda</p>
                   {[
                     { label: "Aujourd'hui",   evts: todayEvts,    showDate: false },
                     { label: "Demain",        evts: tomorrowEvts, showDate: false },
                     { label: "Cette semaine", evts: laterEvts,    showDate: true  },
                   ].map(({ label, evts, showDate }) => evts.length === 0 ? null : (
                     <div key={label}>
-                      <p className="px-4 pb-1 pt-2 text-[0.6rem] font-semibold uppercase tracking-wider text-white/20">{label}</p>
+                      <p className="px-4 pb-1 pt-2 text-[0.6rem] font-semibold uppercase tracking-wider" style={{ color: isDark ? "rgba(255,255,255,0.20)" : "rgba(0,0,0,0.30)" }}>{label}</p>
                       {evts.map(ev => (
                         <Link href="/client/planning" key={ev.id} onClick={() => setOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2 transition hover:bg-white/[0.04]">
+                          className="flex items-center gap-3 px-4 py-2 transition"
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                        >
                           <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: GOLD }} />
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-medium text-white/80">{ev.title}</p>
-                            <p className="text-[0.65rem] text-white/40">
+                            <p className="truncate text-xs font-medium" style={{ color: isDark ? "rgba(255,255,255,0.80)" : "rgba(0,0,0,0.75)" }}>{ev.title}</p>
+                            <p className="text-[0.65rem]" style={{ color: isDark ? "rgba(255,255,255,0.40)" : "rgba(0,0,0,0.40)" }}>
                               {showDate ? `${fmtEvtDate(ev.event_date)} · ` : ""}{ev.event_time ?? "Sans heure"}
                             </p>
                           </div>
@@ -394,7 +416,7 @@ function NotifBell({ ready }: { ready: boolean }) {
                 </div>
               )}
             </div>
-            <div className="px-4 py-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="px-4 py-2.5" style={{ borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}` }}>
               <Link href="/client/planning" onClick={() => setOpen(false)}
                 className="flex items-center justify-center gap-1.5 text-xs font-medium transition hover:opacity-75"
                 style={{ color: GOLD }}>
@@ -1339,7 +1361,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
                 <Crown size={11} /> Voir DJAMA PRO
               </button>
             )}
-            {!isGated && <FloatingAIAssistant isDark={isDark} />}
+            {!isGated && <FloatingAIAssistant />}
             <ThemeToggle />
             <NotifBell ready={isReady} />
             <Link href="/client/profil"

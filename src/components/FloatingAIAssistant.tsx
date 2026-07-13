@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Send, RotateCcw } from "lucide-react";
+import { useTheme } from "@/lib/theme-context";
 
 const GOLD = "#c9a55a";
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -194,7 +195,8 @@ function getContext(pathname: string) {
  * Renders a small icon button meant to be placed inside the topbar.
  * The chat panel opens as a dropdown below the button.
  */
-export default function FloatingAIAssistant({ isDark = false }: { isDark?: boolean }) {
+export default function FloatingAIAssistant() {
+  const { isDark } = useTheme();
   const pathname = usePathname();
   const [open, setOpen]         = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -250,6 +252,33 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
     }
   }
 
+  /* ── Derived theme tokens ── */
+  const panelBg      = isDark ? "#0c0f1a"                      : "#ffffff";
+  const panelBorder  = isDark ? "rgba(201,165,90,0.22)"        : "rgba(201,165,90,0.25)";
+  const panelShadow  = isDark
+    ? "0 20px 60px rgba(0,0,0,0.75), 0 0 0 1px rgba(201,165,90,0.06)"
+    : "0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(201,165,90,0.06)";
+  const headerBorder = isDark ? "rgba(255,255,255,0.07)"       : "rgba(0,0,0,0.07)";
+  const titleColor   = isDark ? "rgba(255,255,255,0.90)"       : "rgba(0,0,0,0.85)";
+  const subtitleColor= isDark ? "rgba(255,255,255,0.35)"       : "rgba(0,0,0,0.40)";
+  const iconBtnColor = isDark ? "rgba(255,255,255,0.30)"       : "rgba(0,0,0,0.35)";
+  const iconBtnHover = isDark ? "rgba(255,255,255,0.06)"       : "rgba(0,0,0,0.05)";
+  const iconBtnHoverText = isDark ? "rgba(255,255,255,0.60)"  : "rgba(0,0,0,0.65)";
+  const sectionLabel = isDark ? "rgba(255,255,255,0.20)"       : "rgba(0,0,0,0.35)";
+  const suggBg       = isDark ? "rgba(255,255,255,0.04)"       : "rgba(0,0,0,0.03)";
+  const suggBorder   = isDark ? "rgba(255,255,255,0.07)"       : "rgba(0,0,0,0.07)";
+  const suggText     = isDark ? "rgba(255,255,255,0.55)"       : "rgba(0,0,0,0.50)";
+  const suggHoverText= isDark ? "rgba(255,255,255,0.90)"       : "rgba(0,0,0,0.80)";
+  const hintText     = isDark ? "rgba(255,255,255,0.20)"       : "rgba(0,0,0,0.30)";
+  const asstBg       = isDark ? "rgba(255,255,255,0.06)"       : "rgba(0,0,0,0.04)";
+  const asstBorder   = isDark ? "rgba(255,255,255,0.08)"       : "rgba(0,0,0,0.08)";
+  const asstText     = isDark ? "rgba(255,255,255,0.82)"       : "rgba(0,0,0,0.75)";
+  const inputAreaBorder = isDark ? "rgba(255,255,255,0.07)"   : "rgba(0,0,0,0.07)";
+  const inputBg      = isDark ? "rgba(255,255,255,0.05)"       : "rgba(0,0,0,0.04)";
+  const inputBorder  = isDark ? "rgba(255,255,255,0.09)"       : "rgba(0,0,0,0.09)";
+  const inputText    = isDark ? "rgba(255,255,255,1)"          : "rgba(0,0,0,0.80)";
+  const inputPlaceholder = isDark ? "rgba(255,255,255,0.20)"  : "rgba(0,0,0,0.30)";
+
   return (
     <div className="relative" ref={panelRef}>
       {/* ── Trigger button (topbar icon) ── */}
@@ -286,15 +315,15 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
             style={{
               width: 340,
               height: 460,
-              background: "#0c0f1a",
-              border: "1px solid rgba(201,165,90,0.22)",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.75), 0 0 0 1px rgba(201,165,90,0.06)",
+              background: panelBg,
+              border: `1px solid ${panelBorder}`,
+              boxShadow: panelShadow,
             }}
           >
             {/* Header */}
             <div
               className="flex shrink-0 items-center justify-between px-4 py-3"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(201,165,90,0.06)" }}
+              style={{ borderBottom: `1px solid ${headerBorder}`, background: "rgba(201,165,90,0.06)" }}
             >
               <div className="flex items-center gap-2.5">
                 <div
@@ -307,8 +336,8 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
                   <Sparkles size={12} style={{ color: GOLD }} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white/90">Assistant IA</p>
-                  <p className="text-[0.58rem] text-white/35 truncate max-w-[160px]">{ctx.name}</p>
+                  <p className="text-xs font-bold" style={{ color: titleColor }}>Assistant IA</p>
+                  <p className="text-[0.58rem] truncate max-w-[160px]" style={{ color: subtitleColor }}>{ctx.name}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -316,14 +345,20 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
                   <button
                     onClick={() => setMessages([])}
                     title="Effacer"
-                    className="flex h-6 w-6 items-center justify-center rounded-md text-white/30 transition hover:bg-white/[0.06] hover:text-white/60"
+                    className="flex h-6 w-6 items-center justify-center rounded-md transition"
+                    style={{ color: iconBtnColor }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = iconBtnHover; (e.currentTarget as HTMLElement).style.color = iconBtnHoverText; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = iconBtnColor; }}
                   >
                     <RotateCcw size={11} />
                   </button>
                 )}
                 <button
                   onClick={() => setOpen(false)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-white/30 transition hover:bg-white/[0.06] hover:text-white/60"
+                  className="flex h-6 w-6 items-center justify-center rounded-md transition"
+                  style={{ color: iconBtnColor }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = iconBtnHover; (e.currentTarget as HTMLElement).style.color = iconBtnHoverText; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = iconBtnColor; }}
                 >
                   <X size={13} />
                 </button>
@@ -334,7 +369,7 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
             <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ scrollbarWidth: "none" }}>
               {messages.length === 0 ? (
                 <div>
-                  <p className="text-[0.58rem] font-black uppercase tracking-widest text-white/20 mb-3">
+                  <p className="text-[0.58rem] font-black uppercase tracking-widest mb-3" style={{ color: sectionLabel }}>
                     Suggestions — {ctx.name}
                   </p>
                   <div className="space-y-2">
@@ -342,14 +377,16 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
                       <button
                         key={q}
                         onClick={() => send(q)}
-                        className="w-full text-left rounded-xl px-3 py-2.5 text-[0.72rem] text-white/55 transition-all hover:text-white/90"
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
+                        className="w-full text-left rounded-xl px-3 py-2.5 text-[0.72rem] transition-all"
+                        style={{ background: suggBg, border: `1px solid ${suggBorder}`, color: suggText }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = suggHoverText; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = suggText; }}
                       >
                         {q}
                       </button>
                     ))}
                   </div>
-                  <p className="mt-4 text-center text-[0.58rem] text-white/20">ou pose ta propre question</p>
+                  <p className="mt-4 text-center text-[0.58rem]" style={{ color: hintText }}>ou pose ta propre question</p>
                 </div>
               ) : (
                 messages.map((msg, i) => (
@@ -369,7 +406,7 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
                       style={
                         msg.role === "user"
                           ? { background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }
-                          : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.82)" }
+                          : { background: asstBg, border: `1px solid ${asstBorder}`, color: asstText }
                       }
                     >
                       {msg.content}
@@ -389,7 +426,7 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
                   </div>
                   <div
                     className="flex items-center gap-1.5 rounded-2xl rounded-tl-sm px-4 py-3"
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    style={{ background: asstBg, border: `1px solid ${asstBorder}` }}
                   >
                     {[0, 1, 2].map((i) => (
                       <motion.div
@@ -407,10 +444,10 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
             </div>
 
             {/* Input */}
-            <div className="shrink-0 px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="shrink-0 px-3 pb-3 pt-2" style={{ borderTop: `1px solid ${inputAreaBorder}` }}>
               <div
                 className="flex items-center gap-2 rounded-xl pl-3.5 pr-2 py-2"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
+                style={{ background: inputBg, border: `1px solid ${inputBorder}` }}
               >
                 <input
                   ref={inputRef}
@@ -422,7 +459,8 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
                   }}
                   placeholder="Pose ta question…"
                   disabled={loading}
-                  className="flex-1 bg-transparent text-[0.78rem] text-white placeholder-white/20 outline-none disabled:opacity-50"
+                  className="flex-1 bg-transparent text-[0.78rem] outline-none disabled:opacity-50"
+                  style={{ color: inputText }}
                   autoComplete="off"
                 />
                 <button
@@ -434,6 +472,9 @@ export default function FloatingAIAssistant({ isDark = false }: { isDark?: boole
                   <Send size={12} style={{ color: "#0a0a0a" }} />
                 </button>
               </div>
+              <p className="mt-1.5 text-center text-[0.56rem]" style={{ color: inputPlaceholder }}>
+                IA générative · les réponses peuvent contenir des erreurs
+              </p>
             </div>
           </motion.div>
         )}

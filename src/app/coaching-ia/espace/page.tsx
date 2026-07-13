@@ -1722,262 +1722,87 @@ const VF_Q = [
 ];
 
 function JeuxPanel() {
-  type GameId = "quiz" | "flash" | "vraifaux" | null;
-  const [game, setGame] = useState<GameId>(null);
-
-  /* Quiz */
-  const [quizIdx, setQuizIdx] = useState(0);
-  const [quizSel, setQuizSel] = useState<number | null>(null);
-  const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
-  const [quizDone, setQuizDone] = useState(false);
-  const [quizStarted, setQuizStarted] = useState(false);
-
-  /* Flash */
-  const [cardIdx, setCardIdx] = useState(0);
-  const [flipped, setFlipped] = useState(false);
-
-  /* Vrai/Faux */
-  const [vfIdx, setVfIdx] = useState(0);
-  const [vfAns, setVfAns] = useState<boolean | null>(null);
-  const [vfScore, setVfScore] = useState(0);
-  const [vfDone, setVfDone] = useState(false);
-
-  const quizScore = quizAnswers.filter((a, i) => a === QUIZ_Q[i].correct).length;
-
-  function handleQuiz(idx: number) {
-    if (quizSel !== null) return;
-    setQuizSel(idx);
-    setTimeout(() => {
-      const next = [...quizAnswers, idx];
-      setQuizAnswers(next);
-      if (quizIdx + 1 >= QUIZ_Q.length) setQuizDone(true);
-      else { setQuizIdx(q => q + 1); setQuizSel(null); }
-    }, 900);
-  }
-  function resetQuiz() { setQuizIdx(0); setQuizSel(null); setQuizAnswers([]); setQuizDone(false); setQuizStarted(false); }
-  function nextCard() { setFlipped(false); setTimeout(() => setCardIdx(i => (i + 1) % FLASH_Q.length), 150); }
-  function prevCard() { setFlipped(false); setTimeout(() => setCardIdx(i => (i - 1 + FLASH_Q.length) % FLASH_Q.length), 150); }
-  function handleVF(ans: boolean) {
-    if (vfAns !== null) return;
-    setVfAns(ans);
-    if (ans === VF_Q[vfIdx].ans) setVfScore(s => s + 1);
-    setTimeout(() => {
-      if (vfIdx + 1 >= VF_Q.length) setVfDone(true);
-      else { setVfIdx(i => i + 1); setVfAns(null); }
-    }, 1300);
-  }
-  function resetVF() { setVfIdx(0); setVfAns(null); setVfScore(0); setVfDone(false); }
-
-  const cardColor = "#a78bfa";
+  const LEVELS = [
+    { emoji: "🧠", title: "Les Bases",    color: "#22c55e" },
+    { emoji: "⚡", title: "Les Modèles",  color: "#06b6d4" },
+    { emoji: "✍️", title: "Prompting",    color: "#8b5cf6" },
+    { emoji: "🔍", title: "RAG",          color: "#f59e0b" },
+    { emoji: "🤖", title: "Agents IA",    color: "#f97316" },
+    { emoji: "💼", title: "Business",     color: "#ec4899" },
+    { emoji: "📣", title: "Marketing",    color: "#f43f5e" },
+    { emoji: "⚙️", title: "Automation",   color: "#0ea5e9" },
+    { emoji: "🎯", title: "Stratégie",    color: "#6366f1" },
+    { emoji: "👑", title: "Maîtrise",     color: "#eab308" },
+  ];
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        {game && (
-          <button onClick={() => setGame(null)} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
-            <ChevronLeft size={13} /> Jeux
-          </button>
-        )}
-        {!game && (
-          <>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.12)] border border-[rgba(167,139,250,0.2)]">
-              <Gamepad2 size={15} className="text-[#a78bfa]" />
-            </div>
-            <div>
-              <h2 className="text-base font-extrabold text-white">Jeux IA</h2>
-              <p className="text-xs text-white/35">Apprenez l'IA en jouant — 3 jeux interactifs</p>
-            </div>
-          </>
-        )}
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.12)] border border-[rgba(167,139,250,0.2)]">
+          <Gamepad2 size={15} className="text-[#a78bfa]" />
+        </div>
+        <div>
+          <h2 className="text-base font-extrabold text-white">Jeux IA — 10 Niveaux</h2>
+          <p className="text-xs text-white/35">100 étapes · 300 questions · Animations épiques</p>
+        </div>
       </div>
 
-      {/* Game selector */}
-      {!game && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            { id: "quiz",    color: "#a78bfa", title: "Quiz IA",      badge: "8 questions", desc: "Testez vos connaissances sur l'IA avec explications." },
-            { id: "flash",   color: "#38bdf8", title: "Flash Cards",  badge: "10 cartes",   desc: "10 termes clés — cliquez pour révéler la définition." },
-            { id: "vraifaux",color: "#4ade80", title: "Vrai ou Faux", badge: "6 questions", desc: "6 affirmations sur l'IA — vrai ou faux ?" },
-          ].map(({ id, color, title, badge, desc }) => (
-            <motion.button
-              key={id}
-              whileHover={{ scale: 1.03, y: -3 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setGame(id as GameId)}
-              className="relative overflow-hidden rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.65)] p-5 text-left"
-            >
-              <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 50% at 50% 0%, ${color}10 0%, transparent 60%)` }} />
-              <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
-              <div className="relative mb-3 flex items-start justify-between">
-                <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold" style={{ color, backgroundColor: color + "15", border: `1px solid ${color}25` }}>{badge}</span>
-              </div>
-              <p className="relative text-sm font-extrabold text-white">{title}</p>
-              <p className="relative mt-1.5 text-xs leading-relaxed text-white/40">{desc}</p>
-              <div className="relative mt-3 flex items-center gap-1 text-xs font-bold" style={{ color }}>
-                <Play size={9} fill={color} /> Jouer
-              </div>
-            </motion.button>
-          ))}
-        </div>
-      )}
-
-      {/* ═══ QUIZ ═══ */}
-      {game === "quiz" && (
-        <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(167,139,250,0.25)] bg-[rgba(15,17,23,0.75)] p-6">
-          <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(167,139,250,0.08) 0%, transparent 60%)" }} />
-          <div className="relative">
-            {!quizStarted ? (
-              <div className="text-center py-6 space-y-4">
-                <h3 className="text-xl font-black text-white">Quiz IA — 8 questions</h3>
-                <p className="text-sm text-white/40">Explication après chaque réponse</p>
-                <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                  onClick={() => setQuizStarted(true)}
-                  className="inline-flex items-center gap-2 rounded-2xl px-7 py-3 text-sm font-extrabold text-black shadow-[0_4px_20px_rgba(167,139,250,0.35)]"
-                  style={{ background: "linear-gradient(135deg, #a78bfa, #7c3aed)" }}>
-                  <Play size={13} fill="black" /> Commencer
-                </motion.button>
-              </div>
-            ) : quizDone ? (
-              <div className="text-center py-4 space-y-4">
-                <p className="text-2xl font-black text-white">{quizScore}/8</p>
-                <p className="text-sm text-white/40">{quizScore >= 7 ? "Excellent ! Vous maîtrisez les bases." : "Relisez les cours et réessayez."}</p>
-                <button onClick={resetQuiz} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white">
-                  <RefreshCw size={11} /> Rejouer
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/40">Question {quizIdx + 1}/8</span>
-                  <div className="flex gap-1">{QUIZ_Q.map((_, i) => <div key={i} className={`h-1.5 w-5 rounded-full ${i < quizIdx ? "bg-[#a78bfa]" : i === quizIdx ? "bg-[#a78bfa] opacity-50" : "bg-white/10"}`} />)}</div>
-                </div>
-                <AnimatePresence mode="wait">
-                  <motion.div key={quizIdx} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}>
-                    <p className="text-base font-bold text-white mb-3">{QUIZ_Q[quizIdx].q}</p>
-                    <div className="space-y-2">
-                      {QUIZ_Q[quizIdx].opts.map((opt, i) => {
-                        const isCorrect = i === QUIZ_Q[quizIdx].correct;
-                        const isSel = quizSel === i;
-                        const rev = quizSel !== null;
-                        return (
-                          <motion.button key={i} whileHover={!rev ? { x: 3 } : {}}
-                            onClick={() => handleQuiz(i)} disabled={rev}
-                            className={`w-full rounded-xl border px-4 py-2.5 text-left text-xs font-semibold transition-all ${
-                              !rev ? "border-white/8 bg-white/4 text-white/65 hover:border-white/20 hover:text-white" :
-                              isCorrect ? "border-[rgba(74,222,128,0.4)] bg-[rgba(74,222,128,0.1)] text-[#4ade80]" :
-                              isSel ? "border-[rgba(248,113,113,0.4)] bg-[rgba(248,113,113,0.1)] text-[#f87171]" :
-                              "border-white/4 bg-white/2 text-white/20"
-                            }`}>
-                            <span className="mr-2 font-black">{String.fromCharCode(65 + i)}.</span>{opt}
-                            {rev && isCorrect && <CheckCircle2 size={12} className="inline ml-2 text-[#4ade80]" />}
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                    {quizSel !== null && (
-                      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                        className="mt-3 rounded-xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.08)] px-4 py-3">
-                        <p className="text-xs font-bold text-[#a78bfa]">Explication</p>
-                        <p className="mt-1 text-xs text-white/55 leading-relaxed">{QUIZ_Q[quizIdx].expl}</p>
-                      </motion.div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ FLASH CARDS ═══ */}
-      {game === "flash" && (
-        <div className="space-y-4">
-          <p className="text-center text-xs text-white/35">Cliquez sur la carte pour révéler la définition</p>
-          <div style={{ perspective: "1000px" }} className="cursor-pointer" onClick={() => setFlipped(f => !f)}>
-            <motion.div animate={{ rotateY: flipped ? 180 : 0 }} transition={{ duration: 0.5 }} style={{ transformStyle: "preserve-3d" }} className="relative h-52">
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-[1.75rem] border border-[rgba(56,189,248,0.25)] bg-[rgba(15,17,23,0.8)] p-6 text-center" style={{ backfaceVisibility: "hidden" }}>
-                <div className="pointer-events-none absolute inset-0 rounded-[1.75rem]" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(56,189,248,0.08) 0%, transparent 70%)" }} />
-                <span className="relative text-4xl font-black text-[#38bdf8]">{FLASH_Q[cardIdx].term}</span>
-                <p className="relative text-xs text-white/25">Cliquez pour retourner</p>
-              </div>
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-[1.75rem] border border-[rgba(56,189,248,0.3)] bg-[rgba(15,20,35,0.9)] p-6 text-center" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-                <div className="pointer-events-none absolute inset-0 rounded-[1.75rem]" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(56,189,248,0.1) 0%, transparent 70%)" }} />
-                <p className="relative text-sm font-extrabold text-[#38bdf8]">{FLASH_Q[cardIdx].term}</p>
-                <p className="relative text-sm leading-relaxed text-white/65">{FLASH_Q[cardIdx].def}</p>
-              </div>
+      {/* Big CTA */}
+      <a href="/client/coaching-ia/jeux">
+        <motion.div
+          whileHover={{ scale: 1.01, y: -2 }}
+          whileTap={{ scale: 0.99 }}
+          className="relative cursor-pointer overflow-hidden rounded-[1.75rem] border p-6"
+          style={{
+            borderColor: "rgba(167,139,250,0.4)",
+            background: "linear-gradient(135deg, rgba(167,139,250,0.15), rgba(99,102,241,0.08))",
+            boxShadow: "0 8px 40px rgba(167,139,250,0.15)",
+          }}>
+          <div className="absolute inset-x-0 top-0 h-px"
+            style={{ background: "linear-gradient(90deg, transparent, rgba(167,139,250,0.8), transparent)" }} />
+          <div className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-7xl opacity-10 select-none">🎮</div>
+          <div className="relative flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[0.58rem] font-black uppercase tracking-widest text-violet-400/70 mb-1">Nouveau · Exclusif</p>
+              <p className="text-lg font-black text-white">Lancer les Jeux IA</p>
+              <p className="mt-0.5 text-xs text-white/45">Progressez niveau par niveau, gagnez des XP</p>
+            </div>
+            <motion.div
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="shrink-0 flex items-center gap-1.5 rounded-2xl px-5 py-3 text-sm font-black text-white"
+              style={{ background: "linear-gradient(135deg, #a78bfa, #7c3aed)", boxShadow: "0 4px 24px rgba(167,139,250,0.5)" }}>
+              Jouer <ArrowRight size={13} />
             </motion.div>
           </div>
-          <div className="flex items-center justify-between">
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={prevCard} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 hover:text-white">
-              <ChevronLeft size={16} />
-            </motion.button>
-            <div className="flex flex-wrap justify-center gap-1.5 max-w-sm">
-              {FLASH_Q.map((_, i) => <button key={i} onClick={() => { setFlipped(false); setTimeout(() => setCardIdx(i), 150); }} className={`h-1.5 rounded-full transition-all ${i === cardIdx ? "w-5 bg-[#38bdf8]" : "w-1.5 bg-white/15"}`} />)}
-            </div>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={nextCard} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 hover:text-white">
-              <ChevronRight size={16} />
-            </motion.button>
-          </div>
-          <p className="text-center text-xs text-white/25">{cardIdx + 1} / {FLASH_Q.length}</p>
-        </div>
-      )}
+        </motion.div>
+      </a>
 
-      {/* ═══ VRAI OU FAUX ═══ */}
-      {game === "vraifaux" && (
-        <div className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(74,222,128,0.2)] bg-[rgba(15,17,23,0.75)] p-6">
-          <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(74,222,128,0.06) 0%, transparent 60%)" }} />
-          <div className="relative">
-            {vfDone ? (
-              <div className="text-center py-4 space-y-4">
-                <p className="text-2xl font-black text-white">{vfScore}/{VF_Q.length}</p>
-                <p className="text-sm text-white/40">{vfScore >= 5 ? "Excellent !" : "Relisez les cours pour consolider vos bases."}</p>
-                <button onClick={resetVF} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white">
-                  <RefreshCw size={11} /> Rejouer
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/40">Question {vfIdx + 1}/{VF_Q.length}</span>
-                  <span className="text-xs font-bold text-[#4ade80]">Score : {vfScore}</span>
-                </div>
-                <AnimatePresence mode="wait">
-                  <motion.div key={vfIdx} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.2 }}>
-                    <p className="text-lg font-extrabold text-white text-center mb-6 leading-snug">{VF_Q[vfIdx].q}</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {([{ label: "VRAI", val: true, color: "#4ade80" }, { label: "FAUX", val: false, color: "#f87171" }] as const).map(({ label, val, color }) => {
-                        const isCor = val === VF_Q[vfIdx].ans;
-                        const isSel = vfAns === val;
-                        const rev = vfAns !== null;
-                        return (
-                          <motion.button key={label} whileHover={!rev ? { scale: 1.04 } : {}} whileTap={!rev ? { scale: 0.96 } : {}}
-                            onClick={() => handleVF(val)} disabled={rev}
-                            className={`rounded-2xl border py-5 text-base font-extrabold transition-all ${
-                              !rev ? "border-white/10 bg-white/5 text-white/70 hover:text-white" :
-                              isCor ? "border-[rgba(74,222,128,0.4)] bg-[rgba(74,222,128,0.12)] text-[#4ade80]" :
-                              isSel ? "border-[rgba(248,113,113,0.4)] bg-[rgba(248,113,113,0.1)] text-[#f87171]" :
-                              "border-white/5 bg-white/2 text-white/20"
-                            }`}>
-                            {label}
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                    {vfAns !== null && (
-                      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                        className={`mt-4 rounded-xl border px-4 py-3 ${vfAns === VF_Q[vfIdx].ans ? "border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.08)]" : "border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.08)]"}`}>
-                        <p className={`text-xs font-bold mb-1 ${vfAns === VF_Q[vfIdx].ans ? "text-[#4ade80]" : "text-[#f87171]"}`}>{vfAns === VF_Q[vfIdx].ans ? "Bonne réponse !" : "Mauvaise réponse"}</p>
-                        <p className="text-xs text-white/50 leading-relaxed">{VF_Q[vfIdx].expl}</p>
-                      </motion.div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Level grid */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {LEVELS.map(({ emoji, title, color }, i) => (
+          <a key={i} href="/client/coaching-ia/jeux">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: i * 0.04 }}
+              whileHover={{ scale: 1.06, y: -4 }}
+              whileTap={{ scale: 0.97 }}
+              className="relative overflow-hidden rounded-xl border p-3 text-center cursor-pointer"
+              style={{
+                borderColor: color + "35",
+                background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${color}18, rgba(255,255,255,0.02))`,
+              }}>
+              <div className="absolute inset-x-0 top-0 h-px"
+                style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }} />
+              <p className="text-2xl mb-1">{emoji}</p>
+              <p className="text-[0.55rem] font-black text-white/60 leading-tight">{title}</p>
+              <p className="text-[0.45rem] mt-0.5 font-bold" style={{ color }}>Niv. {i + 1}</p>
+            </motion.div>
+          </a>
+        ))}
+      </div>
     </div>
   );
 }
