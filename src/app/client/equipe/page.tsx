@@ -1197,8 +1197,7 @@ export default function EquipePage() {
                     onClick={()=>openEditMember(m)}>
                     <div className="relative">
                       <Avatar name={m.name} color={m.avatar_color} size={44}/>
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2" style={{borderColor: isDark ? "#07080e" : "#f9fafb"}}
-                        style={{background:status?.c??SKY}}/>
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2" style={{borderColor: isDark ? "#07080e" : "#f9fafb", background:status?.c??SKY}}/>
                     </div>
                     <div className="text-center min-w-0 w-full">
                       <p className={`text-[12px] font-bold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{m.name}</p>
