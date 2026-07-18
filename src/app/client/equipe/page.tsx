@@ -636,7 +636,7 @@ export default function EquipePage() {
                 <span className={`text-sm font-bold ${isDark ? "text-white/70" : "text-gray-700"}`}>{col.l}</span>
                 <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${isDark ? "bg-white/8 text-white/35" : "bg-gray-200 text-gray-500"}`}>{colTasks.length}</span>
                 <button onClick={()=>openNewTask(col.k)}
-                  className="p-1 rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-all">
+                  className={`p-1 rounded-lg transition-all ${isDark ? "text-white/25 hover:text-white hover:bg-white/10" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}>
                   <Plus size={13}/>
                 </button>
               </div>
@@ -657,7 +657,7 @@ export default function EquipePage() {
                             style={{background:prio?.c??SKY}} title={prio?.l}/>
                           <p className={`flex-1 text-sm font-medium leading-snug ${isDark ? "text-white/80" : "text-gray-800"}`}>{t.title}</p>
                           <button onClick={e=>{e.stopPropagation();deleteTask(t.id);}}
-                            className="opacity-0 group-hover:opacity-100 p-0.5 text-white/20 hover:text-red-400 transition-all">
+                            className={`opacity-0 group-hover:opacity-100 p-0.5 transition-all hover:text-red-400 ${isDark ? "text-white/20" : "text-gray-300"}`}>
                             <X size={12}/>
                           </button>
                         </div>
@@ -674,7 +674,7 @@ export default function EquipePage() {
                             </div>
                           )}
                           {t.due_date && (
-                            <span className={`ml-auto text-[10px] flex items-center gap-1 ${isLate ? "text-red-400" : "text-white/30"}`}>
+                            <span className={`ml-auto text-[10px] flex items-center gap-1 ${isLate ? "text-red-400" : isDark ? "text-white/30" : "text-gray-400"}`}>
                               <Clock size={9}/>{new Date(t.due_date).toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}
                             </span>
                           )}
@@ -859,8 +859,8 @@ export default function EquipePage() {
                 <Calendar size={15}/>Congés & Absences
               </h3>
               <button onClick={()=>{ setLForm({type:"vacation",status:"pending"}); setShowLeaveModal(true); }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-                style={{background:`${SKY}18`,border:`1px solid ${SKY}30`,color:SKY}}>
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:brightness-110"
+                style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
                 <Plus size={12}/>Demande
               </button>
             </div>
@@ -915,8 +915,8 @@ export default function EquipePage() {
                 <Video size={15}/>Réunions à venir
               </h3>
               <button onClick={()=>{ setMeetForm({status:"planned",duration_minutes:60,participants:[]}); setShowMeetModal(true); }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-                style={{background:`${SKY}18`,border:`1px solid ${SKY}30`,color:SKY}}>
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:brightness-110"
+                style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
                 <Plus size={12}/>Réunion
               </button>
             </div>
@@ -1125,7 +1125,7 @@ export default function EquipePage() {
                           );
                         })}
                         <td className="px-3 py-2 text-center font-bold"
-                          style={{color:total>0?SKY:"rgba(255,255,255,0.2)"}}>
+                          style={{color:total>0?SKY:isDark?"rgba(255,255,255,0.18)":"rgba(0,0,0,0.18)"}}>
                           {total > 0 ? `${total}h` : "—"}
                         </td>
                       </tr>
@@ -1138,7 +1138,7 @@ export default function EquipePage() {
                       const dayTotal = members.reduce((sum,m)=>(sum + (tsData[`${m.id}_${d}`] ?? 0)),0);
                       return (
                         <td key={d} className="px-1 py-2 text-center text-[11px] font-bold"
-                          style={{color:dayTotal>0?"#34d399":"rgba(255,255,255,0.15)"}}>
+                          style={{color:dayTotal>0?"#34d399":isDark?"rgba(255,255,255,0.13)":"rgba(0,0,0,0.13)"}}>
                           {dayTotal > 0 ? `${dayTotal}h` : "—"}
                         </td>
                       );
@@ -1256,8 +1256,8 @@ export default function EquipePage() {
           <div className="flex gap-2">
             {evals.length>0&&<button onClick={exportEvalCSV} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:border-white/20" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}><Download size={11}/>CSV</button>}
             <button onClick={()=>{setEvalForm({score:3});setShowEvalForm(v=>!v);}}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-              style={{background:`${SKY}18`,border:`1px solid ${SKY}30`,color:SKY}}>
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:brightness-110"
+              style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
               <Plus size={12}/>Évaluation
             </button>
           </div>
@@ -1295,8 +1295,8 @@ export default function EquipePage() {
                 className={`w-full border rounded-xl px-3 py-2 text-sm outline-none resize-none focus:border-sky-500/40 ${isDark ? "bg-white/[0.025] border-white/[0.08] text-white/70 placeholder:text-white/20" : "bg-gray-50 border-gray-200 text-gray-700 placeholder:text-gray-400"}`}/>
               <div className="flex gap-2">
                 <button onClick={saveEval} disabled={!evalForm.memberId}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-40 transition-all"
-                  style={{background:SKY}}><Check size={12}/>Enregistrer</button>
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold disabled:opacity-40 transition-all hover:brightness-110"
+                  style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}><Check size={12}/>Enregistrer</button>
                 <button onClick={()=>setShowEvalForm(false)} className={`px-3 py-2 rounded-xl text-xs transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>Annuler</button>
               </div>
             </motion.div>
@@ -1622,8 +1622,8 @@ export default function EquipePage() {
                   Annuler
                 </button>
                 <button onClick={saveMember} disabled={savingM}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold disabled:opacity-50 transition-all"
-                  style={{background:SKY,color:"#fff"}}>
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-extrabold disabled:opacity-50 transition-all hover:brightness-110"
+                  style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
                   {savingM ? <Loader2 size={12} className="animate-spin"/> : <Check size={12}/>}
                   {savingM ? "Sauvegarde…" : editMember ? "Mettre à jour" : "Ajouter"}
                 </button>
@@ -1699,8 +1699,8 @@ export default function EquipePage() {
                 )}
                 <button onClick={()=>setShowTaskModal(false)} className={`ml-auto px-4 py-2 rounded-xl text-xs transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>Annuler</button>
                 <button onClick={saveTask} disabled={savingT||!tForm.title?.trim()}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold disabled:opacity-50"
-                  style={{background:SKY,color:"#fff"}}>
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-extrabold disabled:opacity-50 hover:brightness-110 transition-all"
+                  style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
                   {savingT ? <Loader2 size={12} className="animate-spin"/> : <Check size={12}/>}
                   {savingT ? "Sauvegarde…" : editTask ? "Mettre à jour" : "Créer"}
                 </button>
@@ -1756,8 +1756,8 @@ export default function EquipePage() {
               <div className={`flex justify-end gap-2 px-5 py-4 border-t ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
                 <button onClick={()=>setShowLeaveModal(false)} className={`px-4 py-2 rounded-xl text-xs transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>Annuler</button>
                 <button onClick={saveLeave} disabled={savingL||!lForm.member_id||!lForm.start_date||!lForm.end_date}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold disabled:opacity-50"
-                  style={{background:SKY,color:"#fff"}}>
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-extrabold disabled:opacity-50 hover:brightness-110 transition-all"
+                  style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
                   {savingL ? <Loader2 size={12} className="animate-spin"/> : <Check size={12}/>}
                   {savingL ? "Envoi…" : "Envoyer"}
                 </button>
@@ -1810,8 +1810,8 @@ export default function EquipePage() {
               <div className={`flex justify-end gap-2 px-5 py-4 border-t ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
                 <button onClick={()=>setShowMeetModal(false)} className={`px-4 py-2 rounded-xl text-xs transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>Annuler</button>
                 <button onClick={saveMeeting} disabled={savingMeet||!meetForm.title?.trim()||!meetForm.date_at}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold disabled:opacity-50"
-                  style={{background:SKY,color:"#fff"}}>
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-extrabold disabled:opacity-50 hover:brightness-110 transition-all"
+                  style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
                   {savingMeet ? <Loader2 size={12} className="animate-spin"/> : <Check size={12}/>}
                   {savingMeet ? "Sauvegarde…" : "Créer la réunion"}
                 </button>
