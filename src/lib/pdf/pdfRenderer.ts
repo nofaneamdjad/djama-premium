@@ -671,12 +671,12 @@ function drawItemsTable(
   const hY = y + 5.8;
   // Ajustement XC0 si accent-bar (content start décalé de BAR)
   const offsetX = theme.variant === "accent-bar" ? BAR : 0;
-  doc.text("Designation",        XC0 + offsetX + 3,                hY);
-  doc.text("Qte",                XC1 + offsetX + COL_QTY  - 2,     hY, { align: "right" });
-  doc.text("Unite",              XC2 + offsetX + COL_UNIT - 2,     hY, { align: "right" });
-  doc.text("Prix HT",            XC3 + offsetX + COL_PRICE - 2,    hY, { align: "right" });
-  doc.text("TVA%",               XC4 + offsetX + COL_TVA  - 2,     hY, { align: "right" });
-  doc.text("Montant HT",         XC5 + offsetX + COL_TOTAL - 2,    hY, { align: "right" });
+  doc.text("Designation",        XC0 + offsetX + 3,             hY);
+  doc.text("Qte",                XC1 + offsetX + COL_QTY  - 2,  hY, { align: "right" });
+  doc.text("Unite",              XC2 + offsetX + COL_UNIT - 2,  hY, { align: "right" });
+  doc.text("Prix HT",            XC3 + offsetX + COL_PRICE - 2, hY, { align: "right" });
+  doc.text("TVA%",               XC4 + offsetX + COL_TVA  - 2,  hY, { align: "right" });
+  doc.text("Montant HT",         RX - 2,                         hY, { align: "right" });
   y += HEADER_H;
 
   // ── Lignes articles ──────────────────────────────────────────────────────
@@ -748,7 +748,7 @@ function drawItemsTable(
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     setTxt(doc, theme.tableText);
-    doc.text(fmtAmt(item.total, cur),           XC5 + ox + COL_TOTAL - 2, tY, { align: "right" });
+    doc.text(fmtAmt(item.total, cur),           RX - 2,                    tY, { align: "right" });
     doc.setFont("helvetica", "normal");
 
     y += rowH;

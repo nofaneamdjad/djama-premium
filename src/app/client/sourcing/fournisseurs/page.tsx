@@ -15,6 +15,7 @@ import {
   Bell, Paperclip, LineChart, List,
 } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "@/lib/theme-context";
 
 /* ─────────────────────────────────────────────────────────
    TYPES
@@ -192,6 +193,7 @@ function TerritoireDropdown({
   onChange: (v: string) => void;
   groups: { groupe: string; options: string[] }[];
 }) {
+  const { isDark } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -211,9 +213,11 @@ function TerritoireDropdown({
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[0.85rem] outline-none transition text-left"
         style={{
-          background: "rgba(255,255,255,0.05)",
-          border: `1px solid ${open ? "rgba(96,165,250,0.6)" : "rgba(96,165,250,0.25)"}`,
-          color: value ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
+          background: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.80)",
+          border: `1px solid ${open ? "rgba(96,165,250,0.6)" : isDark ? "rgba(96,165,250,0.25)" : "rgba(96,165,250,0.35)"}`,
+          color: value
+            ? (isDark ? "rgba(255,255,255,0.85)" : "#1a1040")
+            : (isDark ? "rgba(255,255,255,0.35)" : "rgba(12,18,50,0.38)"),
         }}
       >
         <span>{value || "Sélectionner votre territoire..."}</span>
@@ -236,9 +240,9 @@ function TerritoireDropdown({
             exit={{ opacity: 0, y: -6, scaleY: 0.95 }}
             transition={{ duration: 0.15 }}
             style={{
-              background: "#0d1117",
-              border: "1px solid rgba(96,165,250,0.2)",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.7)",
+              background: isDark ? "#0d1117" : "#ffffff",
+              border: `1px solid ${isDark ? "rgba(96,165,250,0.2)" : "rgba(96,165,250,0.25)"}`,
+              boxShadow: isDark ? "0 16px 48px rgba(0,0,0,0.7)" : "0 8px 32px rgba(12,24,100,0.12)",
               transformOrigin: "top",
             }}
             className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 rounded-2xl overflow-hidden max-h-72 overflow-y-auto"
@@ -249,9 +253,9 @@ function TerritoireDropdown({
                 <div
                   className="px-3.5 py-2 text-[0.62rem] font-black uppercase tracking-widest"
                   style={{
-                    color: "rgba(96,165,250,0.5)",
-                    background: "rgba(96,165,250,0.04)",
-                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    color: "rgba(96,165,250,0.65)",
+                    background: isDark ? "rgba(96,165,250,0.04)" : "rgba(96,165,250,0.05)",
+                    borderBottom: isDark ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(12,24,100,0.06)",
                   }}
                 >
                   {g.groupe}
@@ -265,10 +269,12 @@ function TerritoireDropdown({
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[0.83rem] transition-colors"
                     style={{
                       background: value === opt ? "rgba(96,165,250,0.10)" : "transparent",
-                      color: value === opt ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.62)",
+                      color: value === opt
+                        ? (isDark ? "rgba(255,255,255,0.92)" : "#1a1040")
+                        : (isDark ? "rgba(255,255,255,0.62)" : "rgba(12,18,50,0.70)"),
                     }}
                     onMouseEnter={e => {
-                      if (value !== opt) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)";
+                      if (value !== opt) (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.04)";
                     }}
                     onMouseLeave={e => {
                       if (value !== opt) (e.currentTarget as HTMLElement).style.background = "transparent";
@@ -294,11 +300,13 @@ function TerritoireDropdown({
    CARD
 ───────────────────────────────────────────────────────── */
 function Card({ children, className = "", accent }: { children: React.ReactNode; className?: string; accent?: boolean }) {
+  const { isDark } = useTheme();
   return (
     <div className={`rounded-2xl p-4 ${className}`}
       style={{
-        background: accent ? "rgba(96,165,250,0.04)" : "rgba(255,255,255,0.025)",
-        border: `1px solid ${accent ? "rgba(96,165,250,0.15)" : "rgba(255,255,255,0.07)"}`,
+        background: accent ? "rgba(96,165,250,0.04)" : isDark ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.75)",
+        border: `1px solid ${accent ? "rgba(96,165,250,0.15)" : isDark ? "rgba(255,255,255,0.07)" : "rgba(12,24,100,0.09)"}`,
+        boxShadow: isDark ? "none" : "0 1px 3px rgba(12,24,100,0.05)",
       }}>
       {children}
     </div>
@@ -329,6 +337,7 @@ function ConfidenceRing({ value, size = 48 }: { value: number; size?: number }) 
    STEP INDICATOR
 ───────────────────────────────────────────────────────── */
 function StepIndicator({ current }: { current: number }) {
+  const { isDark } = useTheme();
   return (
     <div className="flex items-center gap-0 overflow-x-auto scrollbar-none py-1">
       {STEPS.map((step, i) => {
@@ -340,20 +349,20 @@ function StepIndicator({ current }: { current: number }) {
             <div className="flex flex-col items-center gap-1">
               <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all"
                 style={{
-                  background: done ? "rgba(96,165,250,0.9)" : active ? "rgba(96,165,250,0.15)" : "rgba(255,255,255,0.05)",
-                  border: active ? "1.5px solid rgba(96,165,250,0.7)" : done ? "none" : "1px solid rgba(255,255,255,0.09)",
-                  color: done ? "#fff" : active ? blue : "rgba(255,255,255,0.3)",
+                  background: done ? "rgba(96,165,250,0.9)" : active ? "rgba(96,165,250,0.15)" : isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.06)",
+                  border: active ? "1.5px solid rgba(96,165,250,0.7)" : done ? "none" : `1px solid ${isDark ? "rgba(255,255,255,0.09)" : "rgba(12,24,100,0.12)"}`,
+                  color: done ? "#fff" : active ? blue : isDark ? "rgba(255,255,255,0.3)" : "rgba(12,18,50,0.35)",
                 }}>
                 {done ? <Check size={13} /> : <Icon size={13} />}
               </div>
               <span className="text-[0.6rem] font-semibold hidden sm:block"
-                style={{ color: active ? blue : done ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.25)" }}>
+                style={{ color: active ? blue : done ? (isDark ? "rgba(255,255,255,0.55)" : "rgba(12,18,50,0.60)") : (isDark ? "rgba(255,255,255,0.25)" : "rgba(12,18,50,0.30)") }}>
                 {step.short}
               </span>
             </div>
             {i < STEPS.length - 1 && (
               <div className="mx-1.5 h-[1px] w-5 sm:w-9 shrink-0"
-                style={{ background: done ? "rgba(96,165,250,0.6)" : "rgba(255,255,255,0.07)" }} />
+                style={{ background: done ? "rgba(96,165,250,0.6)" : isDark ? "rgba(255,255,255,0.07)" : "rgba(12,24,100,0.10)" }} />
             )}
           </div>
         );
@@ -376,9 +385,9 @@ function Field({ label, value, onChange, placeholder = "", required = false, hin
       </label>
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="rounded-xl px-3.5 py-2.5 text-[0.85rem] text-white/85 placeholder:text-white/22 outline-none transition"
-        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)" }}
+        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(12,24,100,0.12)" }}
         onFocus={e => (e.target.style.borderColor = "rgba(96,165,250,0.5)")}
-        onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.09)")} />
+        onBlur={e => (e.target.style.borderColor = "rgba(12,24,100,0.12)")} />
       {hint && <p className="text-[0.67rem] text-white/30">{hint}</p>}
     </div>
   );
@@ -394,7 +403,7 @@ function SelectField({ label, value, onChange, options, required }: {
       </label>
       <select value={value} onChange={e => onChange(e.target.value)}
         className="rounded-xl px-3.5 py-2.5 text-[0.85rem] text-white/75 outline-none transition"
-        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)" }}>
+        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(12,24,100,0.12)" }}>
         <option value="">Sélectionner...</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -406,6 +415,7 @@ function SelectField({ label, value, onChange, options, required }: {
    MAIN
 ───────────────────────────────────────────────────────── */
 export default function FournisseursPage() {
+  const { isDark } = useTheme();
   const [step, setStep] = useState(1);
 
   /* Form */
@@ -1512,11 +1522,31 @@ export default function FournisseursPage() {
      RENDER
   ───────────────────────────────────────────────────────── */
   return (
-    <div className="flex h-full flex-col overflow-hidden" style={{ background: "#07080e" }}>
+    <div className={`flex h-full flex-col overflow-hidden ${!isDark ? "fw-light" : ""}`}
+      style={{ background: isDark ? "#07080e" : "#f0f2fb" }}>
+      {!isDark && (
+        <style>{`
+          .fw-light [class*="border-white/"] { border-color: rgba(12,24,100,0.09) !important; }
+          .fw-light .text-white { color: #111827 !important; }
+          .fw-light .text-white\\/88,.fw-light .text-white\\/85,.fw-light .text-white\\/80 { color: rgba(12,18,50,0.88) !important; }
+          .fw-light .text-white\\/70,.fw-light .text-white\\/75 { color: rgba(12,18,50,0.72) !important; }
+          .fw-light .text-white\\/60,.fw-light .text-white\\/65 { color: rgba(12,18,50,0.65) !important; }
+          .fw-light .text-white\\/50,.fw-light .text-white\\/55,.fw-light .text-white\\/45 { color: rgba(12,18,50,0.55) !important; }
+          .fw-light .text-white\\/40,.fw-light .text-white\\/42,.fw-light .text-white\\/38,.fw-light .text-white\\/35 { color: rgba(12,18,50,0.45) !important; }
+          .fw-light .text-white\\/30,.fw-light .text-white\\/25,.fw-light .text-white\\/22 { color: rgba(12,18,50,0.35) !important; }
+          .fw-light .text-white\\/20,.fw-light .text-white\\/15,.fw-light .text-white\\/10 { color: rgba(12,18,50,0.22) !important; }
+          .fw-light [class*="hover:text-white/"]:hover { color: rgba(12,18,50,0.75) !important; }
+          .fw-light input { color: #111827 !important; }
+          .fw-light input::placeholder { color: rgba(12,18,50,0.30) !important; }
+          .fw-light textarea { color: #111827 !important; }
+          .fw-light textarea::placeholder { color: rgba(12,18,50,0.30) !important; }
+          .fw-light select { color: #111827 !important; }
+        `}</style>
+      )}
 
       {/* HEADER */}
       <div className="relative overflow-hidden shrink-0"
-        style={{ background: "linear-gradient(160deg,#07080e,#0a0f1a,#07080e)" }}>
+        style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0a0f1a,#07080e)" : "linear-gradient(160deg,#eef0f8,#e8ebf5,#eef0f8)" }}>
         <div className="pointer-events-none absolute -top-10 -left-8 h-40 w-40 rounded-full opacity-[0.06]"
           style={{ background: "radial-gradient(circle,#60a5fa,transparent 70%)" }} />
         <div className="pointer-events-none absolute -bottom-6 right-16 h-28 w-28 rounded-full opacity-[0.04]"
@@ -1568,12 +1598,12 @@ export default function FournisseursPage() {
       {/* FOOTER */}
       {step !== 2 && !searching && !generating && (
         <div className="shrink-0 border-t px-4 py-3 sm:px-6"
-          style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(7,8,14,0.95)", backdropFilter: "blur(12px)" }}>
+          style={{ borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.09)", background: isDark ? "rgba(7,8,14,0.95)" : "rgba(240,242,251,0.97)", backdropFilter: "blur(12px)" }}>
           <div className="flex items-center justify-between max-w-3xl mx-auto gap-3">
             <div className="flex items-center gap-2">
               <button onClick={handlePrev} disabled={step === 1}
                 className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[0.82rem] font-semibold transition disabled:opacity-30"
-                style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(12,24,100,0.04)", color: isDark ? "rgba(255,255,255,0.55)" : "rgba(12,18,50,0.60)", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(12,24,100,0.10)"}` }}>
                 <ChevronLeft size={16} /> Précédent
               </button>
               {step > 1 && (

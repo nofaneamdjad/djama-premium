@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -108,6 +108,9 @@ const BANKS = [
   { id: "bpop", name: "Banque Populaire",  color: "#005A9C" },
 ];
 
+const DarkCtx = createContext(true);
+const useDark = () => useContext(DarkCtx);
+
 const fmtC  = (n: number, c = "EUR") =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: c, maximumFractionDigits: 0 }).format(n);
 
@@ -128,16 +131,19 @@ const recurringMonthly = (r: Recurring) => {
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const isDark = useDark();
   return (
     <div className="space-y-1">
-      <label className="text-[0.65rem] font-medium text-white/35">{label}</label>
+      <label className={`text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>{label}</label>
       {children}
     </div>
   );
 }
 
-const inp = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all";
-const sel = "w-full rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2.5 pr-8 text-[0.8rem] text-white outline-none appearance-none [color-scheme:dark] focus:border-white/[0.15] transition-all";
+const INP_DARK = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all";
+const INP_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[0.8rem] text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300 focus:bg-gray-50 transition-all";
+const SEL_DARK = "w-full rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2.5 pr-8 text-[0.8rem] text-white outline-none appearance-none [color-scheme:dark] focus:border-white/[0.15] transition-all";
+const SEL_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 pr-8 text-[0.8rem] text-gray-900 outline-none appearance-none focus:border-gray-300 transition-all";
 
 function TxBadge({ status }: { status: TxStatus }) {
   const s = TX_STATUSES.find(x => x.v === status) ?? TX_STATUSES[0];
@@ -165,6 +171,9 @@ function TransactionModal({
   onSave: (t: Transaction) => void;
   onClose: () => void;
 }) {
+  const isDark = useDark();
+  const inp = isDark ? INP_DARK : INP_LITE;
+  const sel = isDark ? SEL_DARK : SEL_LITE;
   const [form,      setForm]      = useState<Partial<Transaction>>(tx ?? { ...BLANK_TX });
   const [saving,    setSaving]    = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -195,13 +204,13 @@ function TransactionModal({
       onClick={onClose}>
       <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/[0.1] p-5 space-y-4"
-        style={{ background: "rgba(10,14,26,0.98)" }}
+        className={`w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border p-5 space-y-4 ${isDark ? "border-white/[0.1]" : "border-gray-200"}`}
+        style={{ background: isDark ? "rgba(10,14,26,0.98)" : "rgba(255,255,255,0.98)" }}
         onClick={e => e.stopPropagation()}>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white">{tx?.id ? "Modifier" : "Nouvelle transaction"}</h2>
-          <button onClick={onClose} className="text-white/35 hover:text-white/60 transition-colors"><X size={18} /></button>
+          <h2 className={`text-base font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{tx?.id ? "Modifier" : "Nouvelle transaction"}</h2>
+          <button onClick={onClose} className={`transition-colors ${isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}><X size={18} /></button>
         </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -210,8 +219,8 @@ function TransactionModal({
               className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.78rem] font-bold border transition-all"
               style={{
                 backgroundColor: form.type === t ? (t === "income" ? "#10b98122" : "#ef444422") : "transparent",
-                borderColor:     form.type === t ? (t === "income" ? "#10b98144" : "#ef444444") : "rgba(255,255,255,0.08)",
-                color:           form.type === t ? (t === "income" ? "#10b981" : "#ef4444") : "rgba(255,255,255,0.3)",
+                borderColor:     form.type === t ? (t === "income" ? "#10b98144" : "#ef444444") : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)"),
+                color:           form.type === t ? (t === "income" ? "#10b981" : "#ef4444") : (isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.35)"),
               }}>
               {t === "income" ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
               {t === "income" ? "Encaissement" : "Dépense"}
@@ -235,7 +244,7 @@ function TransactionModal({
               <select className={sel} value={form.currency ?? "EUR"} onChange={e => set("currency", e.target.value)}>
                 {["EUR","USD","GBP","CHF","MAD"].map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
             </div>
           </Field>
         </div>
@@ -247,8 +256,8 @@ function TransactionModal({
                 className="flex flex-col items-center gap-1 rounded-xl p-2 text-[0.58rem] font-medium border transition-all"
                 style={{
                   backgroundColor: form.category === v ? c + "2a" : "transparent",
-                  borderColor:     form.category === v ? c + "55" : "rgba(255,255,255,0.06)",
-                  color:           form.category === v ? c : "rgba(255,255,255,0.35)",
+                  borderColor:     form.category === v ? c + "55" : (isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"),
+                  color:           form.category === v ? c : (isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)"),
                 }}>
                 <I size={12} /><span className="truncate w-full text-center">{l}</span>
               </button>
@@ -258,14 +267,14 @@ function TransactionModal({
 
                 <div className="grid grid-cols-3 gap-3">
           <Field label="Date">
-            <input type="date" className={`${inp} [color-scheme:dark]`} value={form.date ?? ""} onChange={e => set("date", e.target.value)} />
+            <input type="date" className={`${inp} ${isDark ? "[color-scheme:dark]" : ""}`} value={form.date ?? ""} onChange={e => set("date", e.target.value)} />
           </Field>
           <Field label="Statut">
             <div className="relative">
               <select className={sel} value={form.status ?? "completed"} onChange={e => set("status", e.target.value)}>
                 {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
               </select>
-              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
             </div>
           </Field>
           <Field label="Paiement">
@@ -273,7 +282,7 @@ function TransactionModal({
               <select className={sel} value={form.payment_method ?? "virement"} onChange={e => set("payment_method", e.target.value)}>
                 {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
               </select>
-              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
             </div>
           </Field>
         </div>
@@ -296,7 +305,7 @@ function TransactionModal({
                 <option value="">— Sans compte —</option>
                 {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.bank || "—"})</option>)}
               </select>
-              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
             </div>
           </Field>
         )}
@@ -313,7 +322,7 @@ function TransactionModal({
           </div>
         )}
         <div className="flex gap-2 pt-1">
-          <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40 hover:text-white/60 transition-colors">Annuler</button>
+          <button onClick={onClose} className={`flex-1 rounded-xl border py-2.5 text-[0.78rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
           <button onClick={save} disabled={saving}
             className="flex-1 rounded-xl py-2.5 text-[0.78rem] font-bold disabled:opacity-40 transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -336,6 +345,8 @@ function AccountModal({
   const [form,      setForm]      = useState<Partial<TAccount>>(account ?? {
     name: "", bank: "", iban: "", balance: 0, currency: "EUR", color: "#3b82f6", is_default: false,
   });
+  const isDark = useDark();
+  const inp = isDark ? INP_DARK : INP_LITE;
   const [saving,    setSaving]    = useState(false);
   const [saveError, setSaveError] = useState("");
   const set = (k: keyof TAccount, v: unknown) => setForm(f => ({ ...f, [k]: v }));
@@ -363,12 +374,12 @@ function AccountModal({
       onClick={onClose}>
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.1] p-5 space-y-4"
-        style={{ background: "rgba(10,14,26,0.98)" }}
+        className={`w-full max-w-sm rounded-2xl border p-5 space-y-4 ${isDark ? "border-white/[0.1]" : "border-gray-200"}`}
+        style={{ background: isDark ? "rgba(10,14,26,0.98)" : "rgba(255,255,255,0.98)" }}
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white">{account ? "Modifier le compte" : "Nouveau compte"}</h2>
-          <button onClick={onClose} className="text-white/35 hover:text-white/60"><X size={18} /></button>
+          <h2 className={`text-base font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{account ? "Modifier le compte" : "Nouveau compte"}</h2>
+          <button onClick={onClose} className={isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}><X size={18} /></button>
         </div>
         <Field label="Nom du compte">
           <input className={inp} placeholder="Ex: Compte principal" value={form.name ?? ""} onChange={e => set("name", e.target.value)} />
@@ -400,7 +411,7 @@ function AccountModal({
           </div>
         )}
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40 hover:text-white/60 transition-colors">Annuler</button>
+          <button onClick={onClose} className={`flex-1 rounded-xl border py-2.5 text-[0.78rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
           <button onClick={save} disabled={saving}
             className="flex-1 rounded-xl py-2.5 text-[0.78rem] font-bold disabled:opacity-40 transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -423,6 +434,9 @@ function RecurringModal({
   const [form,      setForm]      = useState<Partial<Recurring>>(item ?? {
     type: "expense", label: "", amount: 0, frequency: "monthly", category: "autre", active: true,
   });
+  const isDark = useDark();
+  const inp = isDark ? INP_DARK : INP_LITE;
+  const sel = isDark ? SEL_DARK : SEL_LITE;
   const [saving,    setSaving]    = useState(false);
   const [saveError, setSaveError] = useState("");
   const set = (k: keyof Recurring, v: unknown) => setForm(f => ({ ...f, [k]: v }));
@@ -451,12 +465,12 @@ function RecurringModal({
       onClick={onClose}>
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.1] p-5 space-y-4"
-        style={{ background: "rgba(10,14,26,0.98)" }}
+        className={`w-full max-w-sm rounded-2xl border p-5 space-y-4 ${isDark ? "border-white/[0.1]" : "border-gray-200"}`}
+        style={{ background: isDark ? "rgba(10,14,26,0.98)" : "rgba(255,255,255,0.98)" }}
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white">{item ? "Modifier" : "Nouvel élément récurrent"}</h2>
-          <button onClick={onClose} className="text-white/35 hover:text-white/60"><X size={18} /></button>
+          <h2 className={`text-base font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{item ? "Modifier" : "Nouvel élément récurrent"}</h2>
+          <button onClick={onClose} className={isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}><X size={18} /></button>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {(["income","expense"] as TxType[]).map(t => (
@@ -464,8 +478,8 @@ function RecurringModal({
               className="rounded-xl py-2 text-[0.75rem] font-bold border transition-all"
               style={{
                 backgroundColor: form.type === t ? (t === "income" ? "#10b98122" : "#ef444422") : "transparent",
-                borderColor:     form.type === t ? (t === "income" ? "#10b98144" : "#ef444444") : "rgba(255,255,255,0.08)",
-                color:           form.type === t ? (t === "income" ? "#10b981" : "#ef4444") : "rgba(255,255,255,0.3)",
+                borderColor:     form.type === t ? (t === "income" ? "#10b98144" : "#ef444444") : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)"),
+                color:           form.type === t ? (t === "income" ? "#10b981" : "#ef4444") : (isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.35)"),
               }}>
               {t === "income" ? "Revenu" : "Dépense"}
             </button>
@@ -484,7 +498,7 @@ function RecurringModal({
               <select className={sel} value={form.frequency ?? "monthly"} onChange={e => set("frequency", e.target.value)}>
                 {FREQUENCIES.map(f => <option key={f.v} value={f.v}>{f.l}</option>)}
               </select>
-              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
             </div>
           </Field>
         </div>
@@ -495,8 +509,8 @@ function RecurringModal({
                 className="flex flex-col items-center gap-1 rounded-xl p-2 text-[0.58rem] border transition-all"
                 style={{
                   backgroundColor: form.category === v ? c + "2a" : "transparent",
-                  borderColor:     form.category === v ? c + "55" : "rgba(255,255,255,0.06)",
-                  color:           form.category === v ? c : "rgba(255,255,255,0.35)",
+                  borderColor:     form.category === v ? c + "55" : (isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"),
+                  color:           form.category === v ? c : (isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)"),
                 }}>
                 <I size={12} /><span className="truncate w-full text-center">{l}</span>
               </button>
@@ -504,7 +518,7 @@ function RecurringModal({
           </div>
         </Field>
         <Field label="Prochain prélèvement">
-          <input type="date" className={`${inp} [color-scheme:dark]`} value={form.next_date ?? ""} onChange={e => set("next_date", e.target.value || null)} />
+          <input type="date" className={`${inp} ${isDark ? "[color-scheme:dark]" : ""}`} value={form.next_date ?? ""} onChange={e => set("next_date", e.target.value || null)} />
         </Field>
         {saveError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[0.7rem] text-red-400">
@@ -513,7 +527,7 @@ function RecurringModal({
           </div>
         )}
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40 hover:text-white/60 transition-colors">Annuler</button>
+          <button onClick={onClose} className={`flex-1 rounded-xl border py-2.5 text-[0.78rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
           <button onClick={save} disabled={saving}
             className="flex-1 rounded-xl py-2.5 text-[0.78rem] font-bold disabled:opacity-40 transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -535,6 +549,7 @@ function DashboardView({
   onNavigate: (tab: "transactions" | "previsions") => void;
   userId: string | null;
 }) {
+  const isDark = useDark();
   const [thresholds, setThresholds] = useState<AlertThreshold[]>([]);
   useEffect(() => {
     if (!userId) return;
@@ -629,15 +644,15 @@ function DashboardView({
         {KPI.map(({ l, v, c, sub, I, delta, subColor, nav }) => (
           <button key={l} onClick={() => nav && onNavigate(nav)}
             className="rounded-2xl p-4 space-y-2 text-left transition-all hover:brightness-110 active:scale-[0.98]"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", cursor: nav ? "pointer" : "default" }}>
+            style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)", cursor: nav ? "pointer" : "default" }}>
             <div className="flex items-center justify-between">
-              <p className="text-[0.65rem] font-medium text-white/40">{l}</p>
+              <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>{l}</p>
               <div className="flex h-6 w-6 items-center justify-center rounded-lg"
                 style={{ backgroundColor: c + "20" }}>
                 <I size={12} style={{ color: c }} />
               </div>
             </div>
-            <p className="text-xl font-bold leading-none" style={{ color: v < 0 && delta === null ? "#ef4444" : "white" }}>
+            <p className="text-xl font-bold leading-none" style={{ color: v < 0 && delta === null ? "#ef4444" : (isDark ? "white" : "#111827") }}>
               {fmtC(Math.abs(v))}{v < 0 ? " ↓" : ""}
             </p>
             <div className="flex items-center gap-1.5">
@@ -653,10 +668,10 @@ function DashboardView({
       </div>
 
             <div className="rounded-2xl p-4 space-y-3"
-        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)" }}>
         <div className="flex items-center justify-between">
-          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/35">Cashflow — 6 mois</h3>
-          <div className="flex items-center gap-3 text-[0.62rem] text-white/35">
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Cashflow — 6 mois</h3>
+          <div className={`flex items-center gap-3 text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
             <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-green-500/60" /> Entrées</span>
             <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-red-500/60" /> Sorties</span>
           </div>
@@ -672,7 +687,7 @@ function DashboardView({
                   initial={{ height: 0 }} animate={{ height: `${Math.max((exp / maxVal) * 72, exp > 0 ? 3 : 0)}px` }}
                   transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }} />
               </div>
-              <span className="text-[0.55rem] text-white/35">{label}</span>
+              <span className={`text-[0.55rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{label}</span>
             </div>
           ))}
         </div>
@@ -681,8 +696,8 @@ function DashboardView({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {upcoming30.length > 0 && (
           <div className="rounded-2xl p-4 space-y-3"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/35">Prochains paiements</h3>
+            style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)" }}>
+            <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Prochains paiements</h3>
             <div className="space-y-2">
               {upcoming30.map(r => {
                 const ci = getCat(r.type, r.category);
@@ -690,8 +705,8 @@ function DashboardView({
                 return (
                   <div key={r.id} className="flex items-center gap-3">
                     <CI size={12} style={{ color: ci.c }} className="shrink-0" />
-                    <span className="flex-1 text-[0.72rem] text-white/60 truncate">{r.label}</span>
-                    <span className="shrink-0 text-[0.65rem] text-white/35">{r.next_date ? fmtDate(r.next_date) : "—"}</span>
+                    <span className={`flex-1 text-[0.72rem] truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>{r.label}</span>
+                    <span className={`shrink-0 text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{r.next_date ? fmtDate(r.next_date) : "—"}</span>
                     <span className="shrink-0 text-[0.75rem] font-bold" style={{ color: r.type === "expense" ? "#ef4444" : "#10b981" }}>
                       {r.type === "income" ? "+" : "-"}{fmtC(r.amount)}
                     </span>
@@ -703,10 +718,10 @@ function DashboardView({
         )}
 
                 <div className="rounded-2xl p-4 space-y-3"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/35">Dernières transactions</h3>
+          style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)" }}>
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Dernières transactions</h3>
           {recent5.length === 0
-            ? <p className="py-4 text-center text-[0.72rem] text-white/25">Aucune transaction</p>
+            ? <p className={`py-4 text-center text-[0.72rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune transaction</p>
             : (
               <div className="space-y-1.5">
                 {recent5.map(t => {
@@ -719,8 +734,8 @@ function DashboardView({
                         <CI size={12} style={{ color: ci.c }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="truncate text-[0.72rem] font-medium text-white/70">{t.label}</p>
-                        <p className="text-[0.6rem] text-white/35">{fmtDate(t.date)}</p>
+                        <p className={`truncate text-[0.72rem] font-medium ${isDark ? "text-white/70" : "text-gray-700"}`}>{t.label}</p>
+                        <p className={`text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{fmtDate(t.date)}</p>
                       </div>
                       <span className={`shrink-0 text-[0.78rem] font-bold ${t.type === "income" ? "text-green-400" : "text-red-400"}`}>
                         {t.type === "income" ? "+" : "-"}{fmtC(t.amount)}
@@ -747,6 +762,7 @@ function TransactionsView({
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: TxStatus) => void;
 }) {
+  const isDark = useDark();
   const [search,            setSearch]            = useState("");
   const [filterType,        setFilterType]        = useState<"" | TxType>("");
   const [filterSt,          setFilterSt]          = useState("");
@@ -774,42 +790,42 @@ function TransactionsView({
   return (
     <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2">
-          <Search size={13} className="shrink-0 text-white/35" />
+        <div className={`flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-gray-200 bg-white"}`}>
+          <Search size={13} className={`shrink-0 ${isDark ? "text-white/35" : "text-gray-400"}`} />
           <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
-            className="flex-1 bg-transparent text-[0.78rem] text-white placeholder-white/20 outline-none" />
+            className={`flex-1 bg-transparent text-[0.78rem] outline-none ${isDark ? "text-white placeholder-white/20" : "text-gray-900 placeholder-gray-400"}`} />
         </div>
         <div className="relative">
           <select value={filterType} onChange={e => { setFilterType(e.target.value as "" | TxType); setFilterCat(""); setPage(1); }}
-            className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 pr-8 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+            className={`rounded-xl border px-3 py-2 pr-8 text-[0.75rem] outline-none appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`}>
             <option value="">Tout</option>
             <option value="income">Encaissements</option>
             <option value="expense">Dépenses</option>
           </select>
-          <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+          <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
         </div>
         <div className="relative">
           <select value={filterCat} onChange={e => { setFilterCat(e.target.value); setPage(1); }}
-            className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 pr-8 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+            className={`rounded-xl border px-3 py-2 pr-8 text-[0.75rem] outline-none appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`}>
             <option value="">Toutes catégories</option>
             {filterType !== "expense" && INCOME_CATS.map(c => <option key={`i-${c.v}`} value={c.v}>{c.l}</option>)}
             {filterType !== "income"  && EXPENSE_CATS.map(c => <option key={`e-${c.v}`} value={c.v}>{c.l}</option>)}
           </select>
-          <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+          <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
         </div>
         <div className="relative">
           <select value={filterSt} onChange={e => { setFilterSt(e.target.value); setPage(1); }}
-            className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 pr-8 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+            className={`rounded-xl border px-3 py-2 pr-8 text-[0.75rem] outline-none appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`}>
             <option value="">Tous statuts</option>
             {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
           </select>
-          <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+          <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
         </div>
         <input type="month" value={filterMonth} onChange={e => { setFilterMonth(e.target.value); setPage(1); }}
-          className="rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2 text-[0.75rem] text-white/60 outline-none [color-scheme:dark]" />
+          className={`rounded-xl border px-3 py-2 text-[0.75rem] outline-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`} />
         {(search || filterType || filterSt || filterMonth || filterCat) && (
           <button onClick={() => { setSearch(""); setFilterType(""); setFilterSt(""); setFilterMonth(""); setFilterCat(""); setPage(1); }}
-            className="flex items-center gap-1 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.72rem] text-white/35 hover:text-white/60">
+            className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-[0.72rem] ${isDark ? "border-white/[0.08] text-white/35 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
             <X size={12} /> Effacer
           </button>
         )}
@@ -821,24 +837,24 @@ function TransactionsView({
       </div>
 
             <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
-          <p className="text-[0.65rem] font-medium text-white/40">Entrées (filtré)</p>
-          <p className="mt-0.5 text-base font-bold text-green-400">{fmtC(totalIn)}</p>
+        <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Entrées (filtré)</p>
+          <p className="mt-0.5 text-base font-bold text-green-500">{fmtC(totalIn)}</p>
         </div>
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
-          <p className="text-[0.65rem] font-medium text-white/40">Sorties (filtré)</p>
-          <p className="mt-0.5 text-base font-bold text-red-400">{fmtC(totalOut)}</p>
+        <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Sorties (filtré)</p>
+          <p className="mt-0.5 text-base font-bold text-red-500">{fmtC(totalOut)}</p>
         </div>
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
-          <p className="text-[0.65rem] font-medium text-white/40">Net</p>
-          <p className={`mt-0.5 text-base font-bold ${totalIn - totalOut >= 0 ? "text-green-400" : "text-red-400"}`}>{fmtC(totalIn - totalOut)}</p>
+        <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Net</p>
+          <p className={`mt-0.5 text-base font-bold ${totalIn - totalOut >= 0 ? "text-green-500" : "text-red-500"}`}>{fmtC(totalIn - totalOut)}</p>
         </div>
       </div>
 
             {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Receipt size={32} className="text-white/25" />
-          <p className="text-[0.78rem] text-white/35">Aucune transaction trouvée</p>
+          <Receipt size={32} className={isDark ? "text-white/25" : "text-gray-300"} />
+          <p className={`text-[0.78rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Aucune transaction trouvée</p>
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -849,24 +865,24 @@ function TransactionsView({
               return (
                 <motion.div key={t.id} layout
                   initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="group flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 hover:bg-white/[0.05] transition-all">
+                  className={`group flex items-center gap-3 rounded-xl border p-3 transition-all ${isDark ? "border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.05]" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                     style={{ backgroundColor: ci.c + "22" }}>
                     <CI size={14} style={{ color: ci.c }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-[0.78rem] font-semibold text-white/90">{t.label}</p>
+                    <p className={`truncate text-[0.78rem] font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{t.label}</p>
                     <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                      <span className="text-[0.62rem] text-white/35">{fmtDate(t.date)}</span>
-                      {t.client_supplier && <span className="text-[0.6rem] text-white/35">{t.client_supplier}</span>}
+                      <span className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{fmtDate(t.date)}</span>
+                      {t.client_supplier && <span className={`text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{t.client_supplier}</span>}
                       <TxBadge status={t.status} />
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className={`text-[0.88rem] font-bold ${t.type === "income" ? "text-green-400" : "text-red-400"}`}>
+                    <p className={`text-[0.88rem] font-bold ${t.type === "income" ? "text-green-500" : "text-red-500"}`}>
                       {t.type === "income" ? "+" : "-"}{fmtC(t.amount, t.currency)}
                     </p>
-                    <p className="text-[0.6rem] text-white/25">{PAY_METHODS.find(m => m.v === t.payment_method)?.l}</p>
+                    <p className={`text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>{PAY_METHODS.find(m => m.v === t.payment_method)?.l}</p>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                     {confirmDeleteTxId === t.id ? (
@@ -876,25 +892,25 @@ function TransactionsView({
                           <Trash2 size={10} /> Oui
                         </button>
                         <button onClick={() => setConfirmDeleteTxId(null)}
-                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white/60 transition-all">
+                          className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all ${isDark ? "text-white/25 hover:bg-white/[0.08] hover:text-white/60" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"}`}>
                           <X size={10} />
                         </button>
                       </>
                     ) : (
                       <>
                         <button onClick={() => { setEditTx(t); setShowModal(true); }}
-                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-white/[0.08] hover:text-white">
+                          className={`h-7 w-7 rounded-lg flex items-center justify-center ${isDark ? "text-white/35 hover:bg-white/[0.08] hover:text-white" : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"}`}>
                           <Edit2 size={12} />
                         </button>
                         <button onClick={() => setConfirmDeleteTxId(t.id)}
-                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-red-500/10 hover:text-red-400">
+                          className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-500/10 hover:text-red-400">
                           <Trash2 size={12} />
                         </button>
                       </>
                     )}
                   </div>
                   <select value={t.status} onChange={e => onStatusChange(t.id, e.target.value as TxStatus)}
-                    className="shrink-0 cursor-pointer rounded-lg border border-white/[0.08] bg-[#131c30] px-2 py-1 text-[0.6rem] text-white/40 outline-none opacity-0 group-hover:opacity-100 transition-all appearance-none [color-scheme:dark]"
+                    className={`shrink-0 cursor-pointer rounded-lg border px-2 py-1 text-[0.6rem] outline-none opacity-0 group-hover:opacity-100 transition-all appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/40 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-500"}`}
                     style={{ minWidth: "90px" }}>
                     {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                   </select>
@@ -936,6 +952,7 @@ function PrevisionsView({
   onRecurringEdit: (r: Recurring) => void;
   onRecurringDelete: (id: string) => void;
 }) {
+  const isDark = useDark();
   const [horizon,            setHorizon]            = useState<30 | 90 | 365>(30);
   const [showModal,          setShowModal]          = useState(false);
   const [editItem,           setEditItem]           = useState<Recurring | null>(null);
@@ -974,20 +991,20 @@ function PrevisionsView({
   return (
     <div className="space-y-5">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
-          <p className="text-[0.65rem] font-medium text-white/40">Solde actuel</p>
-          <p className="mt-0.5 text-lg font-bold text-white">{fmtC(totalBalance)}</p>
+        <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Solde actuel</p>
+          <p className={`mt-0.5 text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtC(totalBalance)}</p>
         </div>
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
-          <p className="text-[0.65rem] font-medium text-white/40">MRR</p>
-          <p className="mt-0.5 text-lg font-bold text-green-400">{fmtC(mrrIncome)}</p>
+        <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>MRR</p>
+          <p className="mt-0.5 text-lg font-bold text-green-500">{fmtC(mrrIncome)}</p>
         </div>
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
-          <p className="text-[0.65rem] font-medium text-white/40">Burn rate</p>
-          <p className="mt-0.5 text-lg font-bold text-red-400">{fmtC(burnRate)}/mois</p>
+        <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Burn rate</p>
+          <p className="mt-0.5 text-lg font-bold text-red-500">{fmtC(burnRate)}/mois</p>
         </div>
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
-          <p className="text-[0.65rem] font-medium text-white/40">Runway</p>
+        <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Runway</p>
           <p className="mt-0.5 text-lg font-bold" style={{ color: runway === null ? "#6b7280" : runway < 3 ? "#ef4444" : runway < 6 ? "#f59e0b" : "#10b981" }}>
             {runway === null ? "∞" : `${runway} mois`}
           </p>
@@ -995,18 +1012,20 @@ function PrevisionsView({
       </div>
 
             <div className="rounded-2xl p-4 space-y-4"
-        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)" }}>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h3 className="text-[0.78rem] font-bold text-white">Projection trésorerie</h3>
-            <p className="text-[0.65rem] text-white/35 mt-0.5">Basé sur les récurrents + factures ouvertes</p>
+            <h3 className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Projection trésorerie</h3>
+            <p className={`text-[0.65rem] mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>Basé sur les récurrents + factures ouvertes</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex gap-1">
               {SCENARIOS.map(s => (
                 <button key={s.id} onClick={() => setScenario(s.id)}
                   className={`rounded-xl px-3 py-1.5 text-[0.68rem] font-bold transition-all border ${
-                    scenario === s.id ? "bg-white/[0.07]" : "border-transparent text-white/35 hover:text-white/60"
+                    scenario === s.id
+                      ? isDark ? "bg-white/[0.07]" : "bg-gray-100"
+                      : `border-transparent ${isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`
                   }`}
                   style={scenario === s.id ? { color: s.color, borderColor: s.color + "40" } : {}}>
                   {s.l}
@@ -1017,7 +1036,9 @@ function PrevisionsView({
               {([30, 90, 365] as const).map(h => (
                 <button key={h} onClick={() => setHorizon(h)}
                   className={`rounded-xl px-3 py-1.5 text-[0.68rem] font-bold transition-all ${
-                    horizon === h ? "bg-white/[0.08] text-white" : "text-white/35 hover:text-white/60"
+                    horizon === h
+                      ? isDark ? "bg-white/[0.08] text-white" : "bg-gray-200 text-gray-900"
+                      : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"
                   }`}>
                   {h === 30 ? "30j" : h === 90 ? "90j" : "1 an"}
                 </button>
@@ -1026,11 +1047,11 @@ function PrevisionsView({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3">
+        <div className={`flex items-center gap-3 rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.025]" : "border-gray-200 bg-gray-50"}`}>
           <Target size={16} className="shrink-0 text-purple-400" />
           <div>
-            <p className="text-[0.65rem] text-white/35">Trésorerie dans {horizon} jours</p>
-            <p className={`text-2xl font-bold ${forecast < 0 ? "text-red-400" : "text-white"}`}>{fmtC(forecast)}</p>
+            <p className={`text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Trésorerie dans {horizon} jours</p>
+            <p className={`text-2xl font-bold ${forecast < 0 ? "text-red-500" : isDark ? "text-white" : "text-gray-900"}`}>{fmtC(forecast)}</p>
           </div>
           {forecast < totalBalance
             ? <TrendingDown size={20} className="ml-auto text-red-400/60" />
@@ -1049,14 +1070,14 @@ function PrevisionsView({
                   }}
                   initial={{ height: 0 }} animate={{ height: `${Math.max(((value - minV) / range) * 48, 2)}px` }}
                   transition={{ duration: 0.5, ease: "easeOut" }} />
-                <span className="text-[0.5rem] text-white/35">{label}</span>
+                <span className={`text-[0.5rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{label}</span>
               </div>
             ))}
           </div>
         )}
 
         {openInvoices > 0 && horizon <= 90 && (
-          <p className="text-[0.65rem] text-white/35">
+          <p className={`text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
             + <span className="font-semibold text-amber-400">{fmtC(openInvoices)}</span> de factures ouvertes incluses dans la projection.
           </p>
         )}
@@ -1064,7 +1085,7 @@ function PrevisionsView({
 
             <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-[0.78rem] font-bold text-white">Éléments récurrents</h3>
+          <h3 className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Éléments récurrents</h3>
           <button onClick={() => { setEditItem(null); setShowModal(true); }}
             className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.68rem] font-semibold transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -1074,9 +1095,9 @@ function PrevisionsView({
 
         {recurring.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
-            <RefreshCw size={24} className="text-white/25" />
-            <p className="text-[0.75rem] text-white/35">Aucun élément récurrent</p>
-            <p className="text-[0.65rem] text-white/25 text-center max-w-xs">Ajoutez vos revenus et dépenses récurrents pour activer la prévision.</p>
+            <RefreshCw size={24} className={isDark ? "text-white/25" : "text-gray-300"} />
+            <p className={`text-[0.75rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Aucun élément récurrent</p>
+            <p className={`text-[0.65rem] text-center max-w-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>Ajoutez vos revenus et dépenses récurrents pour activer la prévision.</p>
           </div>
         ) : (
           <div className="space-y-1.5">
@@ -1087,10 +1108,10 @@ function PrevisionsView({
               return (
                 <div key={type} className="space-y-1">
                   <div className="flex items-center justify-between px-1 py-1">
-                    <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${type === "income" ? "text-green-400/60" : "text-red-400/60"}`}>
+                    <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${type === "income" ? "text-green-500/60" : "text-red-500/60"}`}>
                       {type === "income" ? "Revenus récurrents" : "Dépenses récurrentes"}
                     </p>
-                    <span className={`text-[0.68rem] font-bold ${type === "income" ? "text-green-400" : "text-red-400"}`}>
+                    <span className={`text-[0.68rem] font-bold ${type === "income" ? "text-green-500" : "text-red-500"}`}>
                       {type === "income" ? "+" : "-"}{fmtC(total)}/mois
                     </span>
                   </div>
@@ -1098,18 +1119,21 @@ function PrevisionsView({
                     const ci = getCat(r.type as TxType, r.category);
                     const CI = ci.I;
                     return (
-                      <div key={r.id} className={`group flex items-center gap-3 rounded-xl border p-3 transition-all ${r.active ? "border-white/[0.07] bg-white/[0.03]" : "border-white/[0.03] bg-white/[0.025] opacity-50"}`}>
+                      <div key={r.id} className={`group flex items-center gap-3 rounded-xl border p-3 transition-all ${r.active
+                        ? isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"
+                        : isDark ? "border-white/[0.03] bg-white/[0.025] opacity-50" : "border-gray-100 bg-gray-50 opacity-50"
+                      }`}>
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: ci.c + "22" }}>
                           <CI size={13} style={{ color: ci.c }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[0.75rem] font-semibold text-white/70 truncate">{r.label}</p>
+                          <p className={`text-[0.75rem] font-semibold truncate ${isDark ? "text-white/70" : "text-gray-700"}`}>{r.label}</p>
                           <div className="flex items-center gap-2">
-                            <span className="text-[0.62rem] text-white/35">{FREQUENCIES.find(f => f.v === r.frequency)?.l}</span>
-                            {r.next_date && <span className="text-[0.6rem] text-white/25">→ {fmtDate(r.next_date)}</span>}
+                            <span className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{FREQUENCIES.find(f => f.v === r.frequency)?.l}</span>
+                            {r.next_date && <span className={`text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>→ {fmtDate(r.next_date)}</span>}
                           </div>
                         </div>
-                        <span className={`shrink-0 text-[0.82rem] font-bold ${r.type === "income" ? "text-green-400" : "text-red-400"}`}>
+                        <span className={`shrink-0 text-[0.82rem] font-bold ${r.type === "income" ? "text-green-500" : "text-red-500"}`}>
                           {r.type === "income" ? "+" : "-"}{fmtC(r.amount)}
                         </span>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -1120,7 +1144,7 @@ function PrevisionsView({
                                 <Trash2 size={9} /> Oui
                               </button>
                               <button onClick={() => setConfirmDeleteRecId(null)}
-                                className="h-6 w-6 rounded-md flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white/60 transition-all">
+                                className={`h-6 w-6 rounded-md flex items-center justify-center transition-all ${isDark ? "text-white/25 hover:bg-white/[0.08] hover:text-white/60" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"}`}>
                                 <X size={9} />
                               </button>
                             </>
@@ -1129,15 +1153,15 @@ function PrevisionsView({
                               <button onClick={async () => {
                                 const { error } = await supabase.from("treasury_recurring").update({ active: !r.active }).eq("id", r.id);
                                 if (!error) onRecurringEdit({ ...r, active: !r.active });
-                              }} className="h-6 w-6 rounded-md flex items-center justify-center text-white/35 hover:text-white hover:bg-white/[0.08] transition-all text-[0.6rem]" title={r.active ? "Désactiver" : "Activer"}>
+                              }} className={`h-6 w-6 rounded-md flex items-center justify-center transition-all text-[0.6rem] ${isDark ? "text-white/35 hover:text-white hover:bg-white/[0.08]" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`} title={r.active ? "Désactiver" : "Activer"}>
                                 {r.active ? "⏸" : "▶"}
                               </button>
                               <button onClick={() => { setEditItem(r); setShowModal(true); }}
-                                className="h-6 w-6 rounded-md flex items-center justify-center text-white/35 hover:text-white hover:bg-white/[0.08]">
+                                className={`h-6 w-6 rounded-md flex items-center justify-center ${isDark ? "text-white/35 hover:text-white hover:bg-white/[0.08]" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}>
                                 <Edit2 size={11} />
                               </button>
                               <button onClick={() => setConfirmDeleteRecId(r.id)}
-                                className="h-6 w-6 rounded-md flex items-center justify-center text-white/35 hover:text-red-400 hover:bg-red-500/10">
+                                className={`h-6 w-6 rounded-md flex items-center justify-center ${isDark ? "text-white/35" : "text-gray-400"} hover:text-red-400 hover:bg-red-500/10`}>
                                 <Trash2 size={11} />
                               </button>
                             </>
@@ -1179,6 +1203,7 @@ function ComptesView({
   onAccountDelete: (id: string) => void;
   onTxImported: (txs: Transaction[]) => void;
 }) {
+  const isDark = useDark();
   const [showModal,          setShowModal]          = useState(false);
   const [editAccount,        setEditAccount]        = useState<TAccount | null>(null);
   const [csvDraft,           setCsvDraft]           = useState<Partial<Transaction>[]>([]);
@@ -1290,8 +1315,8 @@ function ComptesView({
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[0.65rem] text-white/35">Solde total consolidé</p>
-          <p className="text-2xl font-bold text-white">{fmtC(totalBalance)}</p>
+          <p className={`text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Solde total consolidé</p>
+          <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtC(totalBalance)}</p>
         </div>
         <button onClick={() => { setEditAccount(null); setShowModal(true); }}
           className="flex items-center gap-2 rounded-xl px-3 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
@@ -1302,8 +1327,8 @@ function ComptesView({
 
       {accounts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <Building2 size={32} className="text-white/25" />
-          <p className="text-[0.78rem] text-white/35">Aucun compte bancaire</p>
+          <Building2 size={32} className={isDark ? "text-white/25" : "text-gray-300"} />
+          <p className={`text-[0.78rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Aucun compte bancaire</p>
           <button onClick={() => { setEditAccount(null); setShowModal(true); }}
             className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] font-semibold transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -1318,8 +1343,8 @@ function ComptesView({
             const blink    = bankLinks.find(l => l.accountId === a.id);
             const belowMin = thresh && a.balance < thresh.min;
             return (
-              <div key={a.id} className="group rounded-2xl border bg-white/[0.03] p-4 space-y-3 hover:bg-white/[0.05] transition-all"
-                style={{ borderColor: belowMin ? "rgba(251,191,36,0.25)" : "rgba(255,255,255,0.07)" }}>
+              <div key={a.id} className={`group rounded-2xl border p-4 space-y-3 transition-all ${isDark ? "bg-white/[0.03] hover:bg-white/[0.05]" : "bg-white hover:bg-gray-50"}`}
+                style={{ borderColor: belowMin ? "rgba(251,191,36,0.25)" : isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.1)" }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
@@ -1328,7 +1353,7 @@ function ComptesView({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="text-[0.82rem] font-bold text-white/90">{a.name}</p>
+                        <p className={`text-[0.82rem] font-bold ${isDark ? "text-white/90" : "text-gray-800"}`}>{a.name}</p>
                         {blink && (
                           <span className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.55rem] font-bold"
                             style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
@@ -1336,7 +1361,7 @@ function ComptesView({
                           </span>
                         )}
                       </div>
-                      <p className="text-[0.62rem] text-white/35">
+                      <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
                         {blink ? blink.bank : (a.bank || "—")} · {txCount} transactions
                         {thresh && <span className="ml-1" style={{ color: belowMin ? "#fbbf24" : "inherit" }}>· seuil {fmtC(thresh.min)}</span>}
                       </p>
@@ -1345,14 +1370,14 @@ function ComptesView({
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {/* Bank connect */}
                     <button onClick={() => { setBankModalId(a.id); }}
-                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-blue-500/10 hover:text-blue-400 transition-all"
+                      className="h-7 w-7 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/10 transition-all"
                       title="Connecter une banque">
                       <Banknote size={12} />
                     </button>
                     {/* Alert threshold */}
                     <button onClick={() => { setEditThreshId(a.id); setThreshInput(thresh ? String(thresh.min) : ""); }}
                       className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-amber-500/10 transition-all"
-                      style={{ color: thresh ? "#fbbf24" : "rgba(255,255,255,0.35)" }}
+                      style={{ color: thresh ? "#fbbf24" : isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.3)" }}
                       title="Seuil d'alerte">
                       <AlertTriangle size={12} />
                     </button>
@@ -1363,18 +1388,18 @@ function ComptesView({
                           <Trash2 size={10} /> Oui
                         </button>
                         <button onClick={() => setConfirmDeleteAccId(null)}
-                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white/60 transition-all">
+                          className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all ${isDark ? "text-white/25 hover:bg-white/[0.08] hover:text-white/60" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"}`}>
                           <X size={10} />
                         </button>
                       </>
                     ) : (
                       <>
                         <button onClick={() => { setEditAccount(a); setShowModal(true); }}
-                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-white/[0.08] hover:text-white">
+                          className={`h-7 w-7 rounded-lg flex items-center justify-center ${isDark ? "text-white/35 hover:bg-white/[0.08] hover:text-white" : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"}`}>
                           <Edit2 size={12} />
                         </button>
                         <button onClick={() => setConfirmDeleteAccId(a.id)}
-                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/35 hover:bg-red-500/10 hover:text-red-400">
+                          className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-500/10 hover:text-red-400">
                           <Trash2 size={12} />
                         </button>
                       </>
@@ -1382,10 +1407,10 @@ function ComptesView({
                   </div>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold" style={{ color: a.balance < 0 ? "#ef4444" : "white" }}>
+                  <p className="text-2xl font-bold" style={{ color: a.balance < 0 ? "#ef4444" : isDark ? "white" : "#111827" }}>
                     {fmtC(a.balance, a.currency)}
                   </p>
-                  {a.iban && <p className="mt-0.5 text-[0.6rem] text-white/25 font-mono">{a.iban}</p>}
+                  {a.iban && <p className={`mt-0.5 text-[0.6rem] font-mono ${isDark ? "text-white/25" : "text-gray-400"}`}>{a.iban}</p>}
                 </div>
                 {/* Inline threshold editor */}
                 <AnimatePresence>
@@ -1401,7 +1426,7 @@ function ComptesView({
                         <button onClick={() => applyThreshold(a.id, threshInput)}
                           className="h-7 px-2 rounded-lg text-[0.6rem] font-bold text-amber-400 bg-amber-500/15 hover:bg-amber-500/25 transition-all">OK</button>
                         <button onClick={() => setEditThreshId(null)}
-                          className="h-7 w-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60">
+                          className={`h-7 w-7 rounded-lg flex items-center justify-center ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
                           <X size={10}/>
                         </button>
                       </div>
@@ -1422,19 +1447,19 @@ function ComptesView({
             onClick={() => setBankModalId(null)}>
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="relative w-full max-w-sm mx-4 rounded-2xl border border-white/[0.08] p-5 space-y-4"
-              style={{ background: "#0d1117" }}>
+              className={`relative w-full max-w-sm mx-4 rounded-2xl border p-5 space-y-4 ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}
+              style={{ background: isDark ? "#0d1117" : "#ffffff" }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Banknote size={15} style={{ color: "#c9a55a" }}/>
-                  <h3 className="text-sm font-bold text-white">Connecter ma banque</h3>
+                  <h3 className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Connecter ma banque</h3>
                 </div>
-                <button onClick={() => setBankModalId(null)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40"><X size={14}/></button>
+                <button onClick={() => setBankModalId(null)} className={`h-7 w-7 flex items-center justify-center rounded-lg ${isDark ? "hover:bg-white/[0.06] text-white/40" : "hover:bg-gray-100 text-gray-400"}`}><X size={14}/></button>
               </div>
               {connecting ? (
                 <div className="flex flex-col items-center gap-3 py-6">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]"/>
-                  <p className="text-[0.75rem] text-white/50">Connexion en cours…</p>
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#c9a55a]/20 border-t-[#c9a55a]"/>
+                  <p className={`text-[0.75rem] ${isDark ? "text-white/50" : "text-gray-400"}`}>Connexion en cours…</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
@@ -1443,12 +1468,12 @@ function ComptesView({
                     return (
                       <button key={b.id} onClick={() => connectBank(bankModalId!, b)}
                         className="flex items-center gap-2 rounded-xl border p-3 text-left transition-all hover:brightness-110"
-                        style={{ borderColor: linked ? b.color + "50" : "rgba(255,255,255,0.07)", background: linked ? b.color + "12" : "rgba(255,255,255,0.03)" }}>
+                        style={{ borderColor: linked ? b.color + "50" : isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.1)", background: linked ? b.color + "12" : isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}>
                         <div className="h-6 w-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: b.color + "30" }}>
                           <Building2 size={11} style={{ color: b.color }}/>
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[0.65rem] font-semibold text-white/80 truncate">{b.name}</p>
+                          <p className={`text-[0.65rem] font-semibold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{b.name}</p>
                           {linked && <p className="text-[0.55rem] text-emerald-400">Connecté</p>}
                         </div>
                       </button>
@@ -1461,12 +1486,12 @@ function ComptesView({
         )}
       </AnimatePresence>
 
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 space-y-3">
+            <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
         <div className="flex items-center gap-3">
-          <Download size={15} className="text-white/35" />
+          <Download size={15} className={isDark ? "text-white/35" : "text-gray-400"} />
           <div>
-            <h3 className="text-[0.78rem] font-semibold text-white/70">Import relevé bancaire</h3>
-            <p className="text-[0.62rem] text-white/35">CSV : date, libellé, montant, type, catégorie · PDF : analyse IA (bientôt)</p>
+            <h3 className={`text-[0.78rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>Import relevé bancaire</h3>
+            <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>CSV : date, libellé, montant, type, catégorie · PDF : analyse IA (bientôt)</p>
           </div>
         </div>
 
@@ -1491,11 +1516,11 @@ function ComptesView({
 
             {/* Aperçu pendant l'analyse */}
             {pdfAnalyzing && (
-              <div className="flex items-center gap-3 rounded-xl border border-purple-500/10 bg-white/[0.02] px-4 py-3">
+              <div className={`flex items-center gap-3 rounded-xl border border-purple-500/10 px-4 py-3 ${isDark ? "bg-white/[0.02]" : "bg-purple-50"}`}>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500/20 border-t-purple-400 shrink-0" />
                 <div>
-                  <p className="text-[0.72rem] font-medium text-white/60">Analyse en cours…</p>
-                  <p className="text-[0.62rem] text-white/30">Claude lit votre relevé et identifie les transactions</p>
+                  <p className={`text-[0.72rem] font-medium ${isDark ? "text-white/60" : "text-gray-600"}`}>Analyse en cours…</p>
+                  <p className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>Claude lit votre relevé et identifie les transactions</p>
                 </div>
               </div>
             )}
@@ -1505,7 +1530,7 @@ function ComptesView({
               <button
                 onClick={() => { setPdfFile(null); setPdfError(""); if (fileRef.current) fileRef.current.value = ""; }}
                 disabled={pdfAnalyzing}
-                className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.72rem] text-white/40 hover:text-white/60 disabled:opacity-40 transition-colors">
+                className={`flex-1 rounded-xl border py-2.5 text-[0.72rem] disabled:opacity-40 transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
                 Annuler
               </button>
               <button
@@ -1515,7 +1540,7 @@ function ComptesView({
                 style={{ background: "linear-gradient(135deg,#8b5cf6,#6d28d9)", color: "white" }}>
                 {pdfAnalyzing ? (
                   <>
-                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                     Analyse en cours…
                   </>
                 ) : (
@@ -1527,9 +1552,9 @@ function ComptesView({
             </div>
           </div>
         ) : csvDraft.length === 0 ? (
-          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.025] py-6 hover:border-white/[0.15] hover:bg-white/[0.06] transition-all">
-            <Upload size={18} className="text-white/25" />
-            <span className="text-[0.68rem] text-white/35">Cliquez pour importer · CSV ou PDF</span>
+          <label className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed py-6 transition-all ${isDark ? "border-white/[0.08] bg-white/[0.025] hover:border-white/[0.15] hover:bg-white/[0.06]" : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"}`}>
+            <Upload size={18} className={isDark ? "text-white/25" : "text-gray-300"} />
+            <span className={`text-[0.68rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Cliquez pour importer · CSV ou PDF</span>
             <input ref={fileRef} type="file" accept=".csv,.txt,.pdf,application/pdf" className="hidden"
               onChange={e => {
                 const f = e.target.files?.[0];
@@ -1550,23 +1575,23 @@ function ComptesView({
           </label>
         ) : (
           <div className="space-y-3">
-            <p className="text-[0.72rem] text-white/40">{csvDraft.length} transaction{csvDraft.length !== 1 ? "s" : ""} détectée{csvDraft.length !== 1 ? "s" : ""}</p>
+            <p className={`text-[0.72rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>{csvDraft.length} transaction{csvDraft.length !== 1 ? "s" : ""} détectée{csvDraft.length !== 1 ? "s" : ""}</p>
             <div className="max-h-40 overflow-y-auto space-y-1">
               {csvDraft.slice(0, 10).map((t, i) => (
                 <div key={i} className="flex items-center gap-2 rounded-lg px-2 py-1 text-[0.68rem]">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${t.type === "income" ? "bg-green-400" : "bg-red-400"}`} />
-                  <span className="flex-1 truncate text-white/60">{t.label}</span>
-                  <span className="shrink-0 text-white/40">{t.date}</span>
-                  <span className={`shrink-0 font-semibold ${t.type === "income" ? "text-green-400" : "text-red-400"}`}>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${t.type === "income" ? "bg-green-500" : "bg-red-500"}`} />
+                  <span className={`flex-1 truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>{t.label}</span>
+                  <span className={`shrink-0 ${isDark ? "text-white/40" : "text-gray-400"}`}>{t.date}</span>
+                  <span className={`shrink-0 font-semibold ${t.type === "income" ? "text-green-500" : "text-red-500"}`}>
                     {t.type === "income" ? "+" : "-"}{fmtC(t.amount ?? 0)}
                   </span>
                 </div>
               ))}
-              {csvDraft.length > 10 && <p className="text-center text-[0.65rem] text-white/25">+ {csvDraft.length - 10} autres…</p>}
+              {csvDraft.length > 10 && <p className={`text-center text-[0.65rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>+ {csvDraft.length - 10} autres…</p>}
             </div>
             <div className="flex gap-2">
               <button onClick={() => { setCsvDraft([]); setPdfFile(null); setPdfError(""); if (fileRef.current) fileRef.current.value = ""; }}
-                className="flex-1 rounded-xl border border-white/[0.08] py-2 text-[0.72rem] text-white/40 hover:text-white/60 transition-colors">
+                className={`flex-1 rounded-xl border py-2 text-[0.72rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
                 Annuler
               </button>
               <button onClick={importCSV} disabled={csvImporting}
@@ -1597,6 +1622,7 @@ function RapportView({ transactions, recurring, accounts }: {
   recurring: Recurring[];
   accounts: TAccount[];
 }) {
+  const isDark = useDark();
   const now   = new Date();
   const valid = transactions.filter(t => t.status === "completed");
 
@@ -1673,65 +1699,65 @@ function RapportView({ transactions, recurring, accounts }: {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-[0.78rem] font-bold text-white/60 uppercase tracking-widest">Rapport financier</h2>
+        <h2 className={`text-[0.78rem] font-bold uppercase tracking-widest ${isDark ? "text-white/60" : "text-gray-500"}`}>Rapport financier</h2>
         <button onClick={exportRapport}
-          className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[0.68rem] font-semibold text-white/50 hover:text-white/80 hover:bg-white/[0.06] transition-all">
+          className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.68rem] font-semibold transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:bg-white/[0.06]" : "border-gray-200 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
           <Download size={12}/> Exporter
         </button>
       </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {advKPI.map(({ l, v, sub, c }) => (
-          <div key={l} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 space-y-1">
-            <p className="text-[0.65rem] font-medium text-white/40">{l}</p>
-            <p className="text-xl font-bold leading-none text-white">{v}</p>
+          <div key={l} className={`rounded-2xl border p-4 space-y-1 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+            <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>{l}</p>
+            <p className={`text-xl font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{v}</p>
             <p className="text-[0.62rem]" style={{ color: c }}>{sub}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 space-y-3">
-          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/35">Répartition dépenses</h3>
+                <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Répartition dépenses</h3>
           {expCatList.length === 0
-            ? <p className="py-6 text-center text-[0.72rem] text-white/25">Aucune dépense</p>
+            ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune dépense</p>
             : expCatList.slice(0, 7).map(([cat, total]) => {
               const ci = getCat("expense", cat);
               const CI = ci.I;
               return (
                 <div key={cat} className="flex items-center gap-2">
                   <CI size={11} style={{ color: ci.c }} className="shrink-0" />
-                  <span className="w-20 shrink-0 truncate text-[0.65rem] text-white/40">{ci.l}</span>
-                  <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                  <span className={`w-20 shrink-0 truncate text-[0.65rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>{ci.l}</span>
+                  <div className={`flex-1 h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                     <motion.div className="h-full rounded-full"
                       initial={{ width: 0 }} animate={{ width: `${(total / maxExpCat) * 100}%` }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       style={{ backgroundColor: ci.c }} />
                   </div>
-                  <span className="w-16 shrink-0 text-right text-[0.65rem] font-semibold text-white/60">{fmtC(total)}</span>
+                  <span className={`w-16 shrink-0 text-right text-[0.65rem] font-semibold ${isDark ? "text-white/60" : "text-gray-600"}`}>{fmtC(total)}</span>
                 </div>
               );
             })
           }
         </div>
 
-                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 space-y-3">
-          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/35">Répartition revenus</h3>
+                <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Répartition revenus</h3>
           {incCatList.length === 0
-            ? <p className="py-6 text-center text-[0.72rem] text-white/25">Aucun revenu</p>
+            ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucun revenu</p>
             : incCatList.slice(0, 7).map(([cat, total]) => {
               const ci = getCat("income", cat);
               const CI = ci.I;
               return (
                 <div key={cat} className="flex items-center gap-2">
                   <CI size={11} style={{ color: ci.c }} className="shrink-0" />
-                  <span className="w-20 shrink-0 truncate text-[0.65rem] text-white/40">{ci.l}</span>
-                  <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                  <span className={`w-20 shrink-0 truncate text-[0.65rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>{ci.l}</span>
+                  <div className={`flex-1 h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                     <motion.div className="h-full rounded-full"
                       initial={{ width: 0 }} animate={{ width: `${(total / maxIncCat) * 100}%` }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       style={{ backgroundColor: ci.c }} />
                   </div>
-                  <span className="w-16 shrink-0 text-right text-[0.65rem] font-semibold text-white/60">{fmtC(total)}</span>
+                  <span className={`w-16 shrink-0 text-right text-[0.65rem] font-semibold ${isDark ? "text-white/60" : "text-gray-600"}`}>{fmtC(total)}</span>
                 </div>
               );
             })
@@ -1837,11 +1863,12 @@ export default function TresoreriePage() {
 
   if (loading) return (
     <div className={`flex h-full items-center justify-center ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
+      <div className={`h-8 w-8 animate-spin rounded-full border-2 border-t-[#c9a55a] ${isDark ? "border-white/10" : "border-gray-200"}`} />
     </div>
   );
 
   return (
+    <DarkCtx.Provider value={isDark}>
     <div className={`flex h-full flex-col overflow-hidden ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
       <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
@@ -1863,8 +1890,8 @@ export default function TresoreriePage() {
               <Wallet size={18} style={{ color: "#c9a55a" }} />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold tracking-tight text-white">Trésorerie</h1>
-              <p className="mt-0.5 text-[0.65rem] text-white/30">
+              <h1 className={`text-xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Trésorerie</h1>
+              <p className={`mt-0.5 text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
                 Solde : <span className={totalBalance < 0 ? "text-red-400 font-bold" : "font-semibold"} style={totalBalance >= 0 ? { color: "#c9a55a" } : {}}>{fmtC(totalBalance)}</span>
                 {" · "}{transactions.length} transactions
               </p>
@@ -1872,19 +1899,21 @@ export default function TresoreriePage() {
           </div>
           <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }} onClick={exportCSV} title="Exporter CSV"
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition-all hover:text-white"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}
+            style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
             <Download size={14} />
           </motion.button>
         </div>
       </div>
 
-      <div className="relative shrink-0 flex overflow-x-auto border-b border-white/[0.07] px-4 sm:px-8 scrollbar-none"
-        style={{ background: "rgba(6,8,14,0.5)" }}>
+      <div className={`relative shrink-0 flex overflow-x-auto border-b px-4 sm:px-8 scrollbar-none ${isDark ? "border-white/[0.07]" : "border-gray-200"}`}
+        style={{ background: isDark ? "rgba(6,8,14,0.5)" : "rgba(255,255,255,0.8)" }}>
         {TABS.map(({ id, l, I, badge }) => (
           <button key={id} onClick={() => setTab(id as typeof tab)}
             className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-3 text-[0.72rem] font-semibold transition-colors ${
-              tab === id ? "text-white" : "text-white/30 hover:text-white/60"
+              tab === id
+                ? isDark ? "text-white" : "text-gray-900"
+                : isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"
             }`}>
             <I size={13} />{l}
             {badge > 0 && (
@@ -1962,5 +1991,6 @@ export default function TresoreriePage() {
         </div>
       </div>
     </div>
+    </DarkCtx.Provider>
   );
 }

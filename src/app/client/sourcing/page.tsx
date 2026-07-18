@@ -14,6 +14,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import type { GuideMessage, GuideSection, GuideItem } from "@/lib/sourcing/generateGuide";
 import { useTheme } from "@/lib/theme-context";
+import { APP_ICONS } from "@/components/AppIcons";
 
 interface SourcingItem extends GuideItem {
   name?:        string;
@@ -360,6 +361,8 @@ function MessageBubble({
   onPdf:        () => void;
   onRetry:      (text: string) => void;
 }) {
+  const { isDark } = useTheme();
+
   if (msg.role === "user") {
     return (
       <motion.div
@@ -368,8 +371,15 @@ function MessageBubble({
         transition={{ duration: 0.22, ease }}
         className="flex justify-end"
       >
-        <div className="max-w-[82%] rounded-3xl rounded-br-lg bg-[rgba(99,102,241,0.14)] border border-[rgba(99,102,241,0.22)] px-4 py-3">
-          <p className="text-[13px] text-white/88 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+        <div className="max-w-[82%] rounded-3xl rounded-br-lg px-4 py-3"
+          style={{
+            background: isDark ? "rgba(99,102,241,0.14)" : "rgba(79,70,229,0.08)",
+            border: `1px solid ${isDark ? "rgba(99,102,241,0.22)" : "rgba(79,70,229,0.20)"}`,
+          }}>
+          <p className="text-[13px] leading-relaxed whitespace-pre-wrap"
+            style={{ color: isDark ? "rgba(255,255,255,0.88)" : "#1e1b4b" }}>
+            {msg.content}
+          </p>
         </div>
       </motion.div>
     );
@@ -558,6 +568,7 @@ function ComparisonMatrix({ suppliers }: { suppliers: SourcingItem[] }) {
 }
 
 function NegotiationsPanel() {
+  const { isDark } = useTheme();
   const [negs,        setNegs]        = useState<Negotiation[]>([]);
   const [authUid,     setAuthUid]     = useState<string | null>(null);
   const [showForm,    setShowForm]    = useState(false);
@@ -627,7 +638,8 @@ function NegotiationsPanel() {
       <div className="flex items-center justify-between mb-4">
         <p className="text-[12px] text-white/40 font-semibold">{negs.length} négociation{negs.length !== 1 ? "s" : ""}</p>
         <button onClick={() => { setShowForm(true); setEditId(null); setForm({ status: "En cours" }); }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/12 border border-indigo-500/25 text-indigo-400 text-[12px] font-semibold hover:bg-indigo-500/20 transition-all">
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all ${isDark ? "bg-indigo-500/12 border border-indigo-500/25 text-indigo-400 hover:bg-indigo-500/20" : "border text-white"}`}
+          style={!isDark ? { background: "linear-gradient(135deg,#c9a55a,#b08d45)", borderColor: "transparent", boxShadow: "0 2px 8px rgba(176,141,69,0.25)" } : undefined}>
           <PlusCircle size={13}/> Nouvelle
         </button>
       </div>
@@ -645,7 +657,7 @@ function NegotiationsPanel() {
               <select value={form.status ?? "En cours"} onChange={e => setForm(p => ({...p, status: e.target.value as NegStatus}))}
                 className="rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white/70 outline-none appearance-none cursor-pointer">
                 {(["En cours","Offre reçue","Accepté","Refusé"] as NegStatus[]).map(s => (
-                  <option key={s} value={s} className="bg-[#0e1420]">{s}</option>
+                  <option key={s} value={s} className={isDark ? "bg-[#0e1420]" : "bg-white"}>{s}</option>
                 ))}
               </select>
               <input value={form.amount ?? ""} onChange={e => setForm(p => ({...p, amount: e.target.value}))}
@@ -657,7 +669,8 @@ function NegotiationsPanel() {
               className="w-full rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40 resize-none" />
             <div className="flex gap-2">
               <button onClick={() => { void saveNeg(); }} disabled={!form.supplier?.trim()}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500 text-white text-[12px] font-semibold hover:bg-indigo-600 transition-all disabled:opacity-40">
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-[12px] font-semibold transition-all disabled:opacity-40"
+                style={{ background: isDark ? "#6366f1" : "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
                 <Check size={12}/> {editId ? "Mettre à jour" : "Créer"}
               </button>
               <button onClick={() => { setShowForm(false); setEditId(null); setForm({ status: "En cours" }); }}
@@ -930,7 +943,28 @@ export default function SourcingPage() {
   const hasAiMsg    = messages.some(m => m.role === "assistant" && !m.loading);
 
     return (
-    <div className={`min-h-screen pb-40 ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-gray-900"}`}>
+    <div className={`min-h-screen pb-40 ${isDark ? "bg-[#07080e] text-white" : "bg-[#f0f2fb] text-gray-900 sr-light"}`}>
+      {!isDark && (
+        <style>{`
+          .sr-light [class*="border-white/"] { border-color: rgba(12,24,100,0.09) !important; }
+          .sr-light .bg-white\/3  { background-color: rgba(12,24,100,0.025) !important; }
+          .sr-light .bg-white\/4  { background-color: rgba(12,24,100,0.03) !important; }
+          .sr-light [class*="bg-white/6"]  { background-color: rgba(12,24,100,0.04) !important; }
+          .sr-light [class*="bg-white/8"]  { background-color: rgba(12,24,100,0.05) !important; }
+          .sr-light .border-white\/10 { border-color: rgba(12,24,100,0.10) !important; }
+          .sr-light [class*="hover:bg-white/"]:hover { background-color: rgba(12,24,100,0.06) !important; }
+          .sr-light .text-white { color: #111827 !important; }
+          .sr-light [class*="text-white/9"],.sr-light [class*="text-white/8"] { color: rgba(12,18,50,0.82) !important; }
+          .sr-light [class*="text-white/7"] { color: rgba(12,18,50,0.65) !important; }
+          .sr-light [class*="text-white/6"],.sr-light [class*="text-white/5"] { color: rgba(12,18,50,0.52) !important; }
+          .sr-light [class*="text-white/4"],.sr-light [class*="text-white/3"] { color: rgba(12,18,50,0.35) !important; }
+          .sr-light [class*="text-white/2"],.sr-light [class*="text-white/1"] { color: rgba(12,18,50,0.20) !important; }
+          .sr-light [class*="hover:text-white/"]:hover { color: rgba(12,18,50,0.65) !important; }
+          .sr-light textarea.bg-transparent { color: #111827 !important; }
+          .sr-light textarea::placeholder { color: rgba(12,18,50,0.30) !important; }
+          .sr-light input::placeholder { color: rgba(12,18,50,0.30) !important; }
+        `}</style>
+      )}
 
       {showHistory && (
         <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
@@ -950,9 +984,8 @@ export default function SourcingPage() {
 
         <div className="relative mx-auto flex max-w-2xl items-center justify-between px-5 py-4 sm:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0"
-              style={{ background: "rgba(129,140,248,0.12)", border: "1px solid rgba(129,140,248,0.25)" }}>
-              <Search size={18} style={{ color: "#818cf8" }} />
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl">
+              {APP_ICONS["/client/sourcing"]}
             </div>
             <div>
               <h1 className="text-base font-extrabold text-white">Sourcing IA</h1>
@@ -971,7 +1004,7 @@ export default function SourcingPage() {
               <AnimatePresence>
                 {showHistory && (
                   <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                    className="absolute right-0 top-full mt-1 w-72 rounded-2xl border border-white/10 bg-[#0d1117] shadow-2xl z-50 overflow-hidden">
+                    className={`absolute right-0 top-full mt-1 w-72 rounded-2xl border border-white/10 shadow-2xl z-50 overflow-hidden ${isDark ? "bg-[#0d1117]" : "bg-white"}`}>
                     <div className="px-4 py-3 border-b border-white/6">
                       <p className="text-[11px] font-semibold text-white/50">Historique sourcings</p>
                     </div>
@@ -1029,12 +1062,14 @@ export default function SourcingPage() {
       </div>
 
       {/* Tab bar */}
-      <div className="border-b border-white/6 bg-[#07080e]">
+      <div className={`border-b border-white/6 ${isDark ? "bg-[#07080e]" : "bg-[#f0f2fb]"}`}>
         <div className="max-w-2xl mx-auto px-4 flex gap-1 pt-1">
           {([["chat","Chat IA",Search],["negs","Négociations",Handshake]] as [typeof tab, string, React.ElementType][]).map(([t,label,Icon]) => (
             <button key={t} onClick={() => setTab(t)}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-[12px] font-semibold border-b-2 transition-all ${
-                tab === t ? "border-indigo-500 text-white/85" : "border-transparent text-white/35 hover:text-white/55"
+                tab === t
+                  ? `border-indigo-500 ${isDark ? "text-white/85" : "text-indigo-700"}`
+                  : `border-transparent ${isDark ? "text-white/35 hover:text-white/55" : "text-gray-400 hover:text-gray-600"}`
               }`}>
               <Icon size={12}/>{label}
             </button>
@@ -1067,9 +1102,9 @@ export default function SourcingPage() {
                     style={{ background: "radial-gradient(circle,#818cf8,transparent 65%)" }}/>
                   <div className="relative flex h-[5.5rem] w-[5.5rem] items-center justify-center rounded-3xl"
                     style={{
-                      background: "linear-gradient(145deg,rgba(129,140,248,0.22),rgba(96,165,250,0.10))",
-                      border: "1px solid rgba(129,140,248,0.35)",
-                      boxShadow: "0 0 40px rgba(129,140,248,0.22), 0 8px 32px rgba(0,0,0,0.4)",
+                      background: isDark ? "linear-gradient(145deg,rgba(129,140,248,0.22),rgba(96,165,250,0.10))" : "linear-gradient(145deg,rgba(129,140,248,0.12),rgba(96,165,250,0.06))",
+                      border: "1px solid rgba(129,140,248,0.25)",
+                      boxShadow: isDark ? "0 0 40px rgba(129,140,248,0.22), 0 8px 32px rgba(0,0,0,0.4)" : "0 0 24px rgba(129,140,248,0.12), 0 4px 16px rgba(12,24,100,0.08)",
                     }}>
                     <Sparkles size={34} style={{ color: "#a5b4fc" }} />
                   </div>
@@ -1077,11 +1112,13 @@ export default function SourcingPage() {
 
                 {/* Title with gradient */}
                 <h2 className="text-[1.55rem] font-black tracking-tight mb-2"
-                  style={{
+                  style={isDark ? {
                     background: "linear-gradient(135deg,#e0e7ff 0%,#a5b4fc 40%,#93c5fd 100%)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
+                  } : {
+                    color: "#3730a3",
                   }}>
                   Expert Sourcing & Marchés IA
                 </h2>
@@ -1115,11 +1152,13 @@ export default function SourcingPage() {
                             <div className="grid grid-cols-2 gap-3 mb-8">
                 {QUICKSTART.map((card, i) => {
                   const cardClass = "flex flex-col items-start gap-2.5 p-4 rounded-2xl border text-left transition-all hover:scale-[1.02] active:scale-[0.99]";
-                  const cardStyle = { background: card.bg, borderColor: card.border };
+                  const cardStyle = isDark
+                    ? { background: card.bg, borderColor: card.border }
+                    : { background: "#ffffff", borderColor: card.border, boxShadow: "0 2px 12px rgba(12,24,100,0.07)" };
                   const inner = (
                     <>
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                        style={{ background: "rgba(255,255,255,0.07)" }}>
+                        style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(12,24,100,0.06)" }}>
                         <card.icon size={16} style={{ color: card.color }} />
                       </div>
                       <div>
@@ -1147,7 +1186,8 @@ export default function SourcingPage() {
                 })}
               </div>
 
-              <p className="text-center text-[11px] text-white/20 pb-4">
+              <p className="text-center text-[11px] pb-4"
+                style={{ color: isDark ? "rgba(255,255,255,0.20)" : "rgba(12,18,50,0.45)" }}>
                 Ou décris directement ta situation dans le champ ci-dessous
               </p>
             </motion.div>
@@ -1177,7 +1217,7 @@ export default function SourcingPage() {
       </div>
       )}
 
-      {tab === "chat" && <div className="fixed bottom-0 inset-x-0 z-30 bg-[#07080e]/98 backdrop-blur-xl border-t border-white/6">
+      {tab === "chat" && <div className={`fixed bottom-0 inset-x-0 z-30 backdrop-blur-xl border-t border-white/6 ${isDark ? "bg-[#07080e]/98" : "bg-[#f0f2fb]/95"}`}>
         <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-end gap-2.5 rounded-2xl border border-white/8 bg-white/6 px-4 py-2.5 transition-colors focus-within:border-[rgba(129,140,248,0.3)]">
             <textarea

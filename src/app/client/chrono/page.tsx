@@ -735,17 +735,23 @@ export default function ChronoPage() {
         )}
       </AnimatePresence>
 
-            <div className="relative z-10 overflow-hidden border-b border-white/6 px-5 py-4 sm:px-8"
+            <div className={`relative z-10 overflow-hidden border-b px-5 py-4 sm:px-8 ${isDark ? "border-white/6" : "border-gray-200"}`}
         style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#07080e)" : "linear-gradient(160deg,#eef0f8,#e8ebf5,#eef0f8)" }}>
-        {/* Gold shimmer line */}
-        <motion.div initial={{scaleX:0}} animate={{scaleX:1}} transition={{duration:0.9,ease:"easeOut"}}
-          className="absolute inset-x-0 top-0 h-[2px] origin-left"
-          style={{background:`linear-gradient(90deg,${violet},${violet}aa,${violet}22,transparent)`}}/>
-        {/* Glow orbs */}
-        <div className="pointer-events-none absolute -top-8 -right-8 h-36 w-36 rounded-full opacity-[0.07]"
-          style={{background:`radial-gradient(circle,${violet},transparent 70%)`}}/>
-        <div className="pointer-events-none absolute bottom-0 left-1/3 h-20 w-20 rounded-full opacity-[0.04]"
-          style={{background:`radial-gradient(circle,${violet},transparent 70%)`}}/>
+        {/* Violet shimmer line — dark only */}
+        {isDark && (
+          <motion.div initial={{scaleX:0}} animate={{scaleX:1}} transition={{duration:0.9,ease:"easeOut"}}
+            className="absolute inset-x-0 top-0 h-[2px] origin-left"
+            style={{background:`linear-gradient(90deg,${violet},${violet}aa,${violet}22,transparent)`}}/>
+        )}
+        {/* Glow orbs — dark only */}
+        {isDark && (
+          <>
+            <div className="pointer-events-none absolute -top-8 -right-8 h-36 w-36 rounded-full opacity-[0.07]"
+              style={{background:`radial-gradient(circle,${violet},transparent 70%)`}}/>
+            <div className="pointer-events-none absolute bottom-0 left-1/3 h-20 w-20 rounded-full opacity-[0.04]"
+              style={{background:`radial-gradient(circle,${violet},transparent 70%)`}}/>
+          </>
+        )}
         <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
@@ -753,21 +759,21 @@ export default function ChronoPage() {
               <Timer size={18} style={{color:violet}}/>
             </div>
             <div>
-              <h1 className="text-base font-extrabold text-white">Chrono Pro</h1>
-              <p className="text-[0.65rem] text-white/30">{entries.length} session{entries.length!==1?"s":""}</p>
+              <h1 className={`text-base font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>Chrono Pro</h1>
+              <p className={`text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{entries.length} session{entries.length!==1?"s":""}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={()=>exportICS(entries)} title="Sync calendrier (ICS)"
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white/30 transition hover:border-sky-500/30 hover:text-sky-400">
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition hover:border-sky-500/30 hover:text-sky-400 ${isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
               <CalendarPlus size={15}/>
             </button>
             <button onClick={()=>exportTimesheet(entries)} title="Export timesheet CSV"
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white/30 transition hover:border-emerald-500/30 hover:text-emerald-400">
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition hover:border-emerald-500/30 hover:text-emerald-400 ${isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
               <Download size={15}/>
             </button>
             <button onClick={()=>{setGoalDraft({daily_minutes:String(goal?.daily_minutes??480),weekly_minutes:String(goal?.weekly_minutes??2400),daily_billable_minutes:String(goal?.daily_billable_minutes??360)});setGoalOpen(true)}}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white/30 transition hover:border-white/20 hover:text-white/60" title="Objectifs">
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition hover:border-white/20 hover:text-white/60 ${isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`} title="Objectifs">
               <Target size={15}/>
             </button>
             <button onClick={()=>{setManualDraft(emptyManual());setManualOpen(true)}}
@@ -779,11 +785,11 @@ export default function ChronoPage() {
         </div>
       </div>
 
-            <div className="relative z-10 border-b border-white/6 bg-[#07080e]/60 px-5 sm:px-8">
+            <div className={`relative z-10 border-b px-5 sm:px-8 ${isDark ? "border-white/6 bg-[#07080e]/60" : "border-gray-200 bg-white/80"}`}>
         <div className="mx-auto flex max-w-5xl">
           {TABS.map(t=>(
             <button key={t.value} onClick={()=>setTab(t.value)}
-              className={`relative flex items-center gap-1.5 px-4 py-3 text-xs font-bold transition ${tab===t.value?"text-white":"text-white/40 hover:text-white/60"}`}>
+              className={`relative flex items-center gap-1.5 px-4 py-3 text-xs font-bold transition ${tab===t.value ? (isDark ? "text-white" : "text-gray-900") : (isDark ? "text-white/40 hover:text-white/60" : "text-gray-400 hover:text-gray-600")}`}>
               <t.Icon size={13}/>
               {t.label}
               {t.value==="billing"&&unbilled.length>0&&(
@@ -811,21 +817,21 @@ export default function ChronoPage() {
                 {label:"Revenus",value:todayStats.earnings>0?fmtEur(todayStats.earnings):"—",sub:"aujourd'hui",color:"#c9a55a"},
                 {label:"Objectif",value:dailyGoalPct!==null?`${dailyGoalPct}%`:"—",sub:goal?`/${fmtMin(goal.daily_minutes)}`:"Non défini",color:dailyGoalPct!==null&&dailyGoalPct>=100?"#34d399":"#a78bfa"},
               ].map((k,i)=>(
-                <div key={i} className="flex flex-col justify-between rounded-xl border border-white/6 bg-white/4 px-4 py-3">
-                  <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{k.label}</p>
+                <div key={i} className={`flex flex-col justify-between rounded-xl border px-4 py-3 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                  <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
                   <p className="mt-1 text-xl font-bold" style={{color:k.color}}>{k.value}</p>
-                  <p className="text-[0.65rem] text-white/30">{k.sub}</p>
+                  <p className={`text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.sub}</p>
                 </div>
               ))}
             </div>
 
                         {dailyGoalPct!==null&&(
-              <div className="overflow-hidden rounded-xl border border-white/6 bg-white/4 px-5 py-3">
+              <div className={`overflow-hidden rounded-xl border px-5 py-3 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <span className="text-xs font-bold text-white/50">Objectif quotidien</span>
+                  <span className={`text-xs font-bold ${isDark ? "text-white/50" : "text-gray-500"}`}>Objectif quotidien</span>
                   <span className="text-xs font-bold" style={{color:dailyGoalPct>=100?"#34d399":violet}}>{dailyGoalPct}%</span>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/8">
+                <div className={`h-1.5 w-full overflow-hidden rounded-full ${isDark ? "bg-white/8" : "bg-gray-200"}`}>
                   <motion.div className="h-full rounded-full" initial={{width:0}} animate={{width:`${dailyGoalPct}%`}} transition={{duration:0.8,ease:[0.16,1,0.3,1]}}
                     style={{background:dailyGoalPct>=100?"#34d399":violet}}/>
                 </div>
@@ -836,7 +842,7 @@ export default function ChronoPage() {
               {MODES.map(m=>(
                 <button key={m.value} onClick={()=>{if(!running&&!paused){setMode(m.value);modeRef.current=m.value;setElapsed(0);}}}
                   disabled={running||paused}
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed ${mode===m.value?"border-current bg-current/10":"border-white/10 bg-transparent text-white/40 hover:border-white/20 hover:text-white/60"}`}
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed ${mode===m.value ? "border-current bg-current/10" : isDark ? "border-white/10 bg-transparent text-white/40 hover:border-white/20 hover:text-white/60" : "border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600"}`}
                   style={mode===m.value?{color:m.color,borderColor:`${m.color}40`}:{}}>
                   <Circle size={7} className="fill-current"/>
                   {m.label}
@@ -845,7 +851,7 @@ export default function ChronoPage() {
             </div>
 
                         <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.4,ease}}
-              className="overflow-hidden rounded-2xl border border-white/6 bg-white/4 shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
+              className={`overflow-hidden rounded-2xl border shadow-[0_8px_40px_rgba(0,0,0,0.15)] ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
 
               <AnimatePresence>
                 {(running||paused)&&(
@@ -866,7 +872,7 @@ export default function ChronoPage() {
                       </span>
                     </motion.div>
                   )}
-                  <div className="flex items-center justify-between border-b border-white/6 px-6 py-3">
+                  <div className={`flex items-center justify-between border-b px-6 py-3 ${isDark ? "border-white/6" : "border-gray-100"}`}>
                     <div className="flex items-center gap-2">
                       {pomPhase==="work" ? <Flame size={14} style={{color:"#f87171"}}/> : <Coffee size={14} style={{color:"#34d399"}}/>}
                       <span className="text-xs font-bold" style={{color:pomPhase==="work"?"#f87171":"#34d399"}}>
@@ -877,7 +883,7 @@ export default function ChronoPage() {
                       {Array.from({length:Math.min(8,pomCycle+1)},(_,i)=>(
                         <div key={i} className="h-2 w-2 rounded-full" style={{background:i<pomCycle?"#f87171":"rgba(248,113,113,0.25)"}}/>
                       ))}
-                      {pomCycle>0&&<span className="ml-1 text-[0.65rem] text-white/30">#{pomCycle}</span>}
+                      {pomCycle>0&&<span className={`ml-1 text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>#{pomCycle}</span>}
                     </div>
                   </div>
                 </>
@@ -887,51 +893,51 @@ export default function ChronoPage() {
 
                                 {mode==="countdown"&&!running&&!paused&&(
                   <div className="mb-6 flex items-center gap-3">
-                    <span className="text-xs font-bold text-white/40">Durée :</span>
+                    <span className={`text-xs font-bold ${isDark ? "text-white/40" : "text-gray-500"}`}>Durée :</span>
                     <div className="flex items-center gap-2">
                       <input type="number" min="0" max="23" value={cdH} onChange={e=>setCdH(e.target.value)}
-                        className="w-16 rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-center text-sm font-bold text-white outline-none focus:border-[rgba(96,165,250,0.45)]"
+                        className={`w-16 rounded-xl border px-3 py-2 text-center text-sm font-bold outline-none focus:border-[rgba(96,165,250,0.45)] ${isDark ? "border-white/8 bg-white/6 text-white" : "border-gray-200 bg-gray-50 text-gray-900"}`}
                         placeholder="0"/>
-                      <span className="text-white/40 text-sm">h</span>
+                      <span className={`text-sm ${isDark ? "text-white/40" : "text-gray-500"}`}>h</span>
                       <input type="number" min="0" max="59" value={cdM} onChange={e=>setCdM(e.target.value)}
-                        className="w-16 rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-center text-sm font-bold text-white outline-none focus:border-[rgba(96,165,250,0.45)]"
+                        className={`w-16 rounded-xl border px-3 py-2 text-center text-sm font-bold outline-none focus:border-[rgba(96,165,250,0.45)] ${isDark ? "border-white/8 bg-white/6 text-white" : "border-gray-200 bg-gray-50 text-gray-900"}`}
                         placeholder="25"/>
-                      <span className="text-white/40 text-sm">min</span>
+                      <span className={`text-sm ${isDark ? "text-white/40" : "text-gray-500"}`}>min</span>
                     </div>
                   </div>
                 )}
 
                                 <div className="mb-6 grid gap-3 sm:grid-cols-4">
                   <div className="sm:col-span-2">
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Titre de la tâche</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Titre de la tâche</label>
                     <input value={sTitle} onChange={e=>setSTitle(e.target.value)} placeholder="Ex: Design landing page…"
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Projet</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Projet</label>
                     <input list="proj-list" value={sProject} onChange={e=>setSProject(e.target.value)} placeholder="Nom du projet"
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                     <datalist id="proj-list">{projects.map(p=><option key={p.id} value={p.name}/>)}</datalist>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Client</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Client</label>
                     <input value={sClient} onChange={e=>setSClient(e.target.value)} placeholder="Nom du client"
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                   </div>
                 </div>
 
                 <div className="mb-6 grid gap-3 sm:grid-cols-4">
                   <div className="sm:col-span-2">
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Catégorie</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Catégorie</label>
                     <select value={sCat} onChange={e=>setSCat(e.target.value)}
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]">
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white [color-scheme:dark]" : "border-gray-200 bg-gray-50 text-gray-900"}`}>
                       {CATEGORIES.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Taux horaire (€)</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Taux horaire (€)</label>
                     <input type="number" min="0" step="5" value={sRate} onChange={e=>setSRate(e.target.value)} placeholder="75"
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                   </div>
                   <div className="flex items-end pb-0.5">
                     <button onClick={()=>setSBillable(b=>!b)}
@@ -974,7 +980,7 @@ export default function ChronoPage() {
                           className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] shadow-[0_6px_24px_rgba(139,92,246,0.45)] transition active:scale-95 disabled:opacity-40 hover:shadow-[0_8px_32px_rgba(139,92,246,0.55)]">
                           <Play size={22} className="ml-1 fill-white text-white"/>
                         </button>
-                        <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">Démarrer</span>
+                        <span className={`text-[0.65rem] font-semibold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Démarrer</span>
                       </div>
                     ):(
                       <div className="flex items-end gap-4">
@@ -990,7 +996,7 @@ export default function ChronoPage() {
                             className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 shadow-[0_6px_24px_rgba(239,68,68,0.4)] transition active:scale-95 disabled:opacity-40">
                             {saving?<Loader2 size={20} className="animate-spin text-white"/>:<Square size={18} className="fill-white text-white"/>}
                           </button>
-                          <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">{saving?"Enreg…":"Arrêter"}</span>
+                          <span className={`text-[0.65rem] font-semibold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{saving?"Enreg…":"Arrêter"}</span>
                         </div>
                         {mode==="focus"&&(
                           <div className="flex flex-col items-center gap-1.5">
@@ -998,7 +1004,7 @@ export default function ChronoPage() {
                               className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 transition hover:bg-emerald-500/20">
                               <Zap size={16} style={{color:"#34d399"}}/>
                             </button>
-                            <span className="text-[0.6rem] font-bold uppercase text-white/30">Focus</span>
+                            <span className={`text-[0.6rem] font-bold uppercase ${isDark ? "text-white/30" : "text-gray-400"}`}>Focus</span>
                           </div>
                         )}
                       </div>
@@ -1013,44 +1019,47 @@ export default function ChronoPage() {
 
                                 <div className="mt-5">
                   <input value={sNotes} onChange={e=>setSNotes(e.target.value)} placeholder="Notes optionnelles pour cette session…"
-                    className="w-full rounded-xl border border-white/6 bg-transparent px-3.5 py-2 text-sm text-white/50 placeholder:text-white/18 outline-none focus:border-[rgba(167,139,250,0.25)]"/>
+                    className={`w-full rounded-xl border bg-transparent px-3.5 py-2 text-sm outline-none focus:border-[rgba(167,139,250,0.25)] ${isDark ? "border-white/6 text-white/50 placeholder:text-white/18" : "border-gray-200 text-gray-500 placeholder:text-gray-300"}`}/>
                 </div>
               </div>
             </motion.div>
 
                         <div>
               <div className="mb-3 flex items-center gap-2">
-                <span className="text-xs font-extrabold uppercase tracking-widest text-white/30">Historique</span>
-                {loading&&<Loader2 size={12} className="animate-spin text-white/20"/>}
+                <span className={`text-xs font-extrabold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Historique</span>
+                {loading&&<Loader2 size={12} className={`animate-spin ${isDark ? "text-white/20" : "text-gray-300"}`}/>}
               </div>
               {grouped.length===0&&!loading?(
-                <div className="flex flex-col items-center gap-4 rounded-xl border border-white/6 bg-white/4 py-14 text-center">
+                <div className={`flex flex-col items-center gap-4 rounded-xl border py-14 text-center ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(139,92,246,0.08)]">
                     <Timer size={24} style={{color:violet}}/>
                   </div>
-                  <p className="text-sm font-bold text-white/60">Aucune session — démarrez le chrono !</p>
+                  <p className={`text-sm font-bold ${isDark ? "text-white/60" : "text-gray-500"}`}>Aucune session — démarrez le chrono !</p>
                 </div>
               ):(
                 <div className="space-y-4">
                   {grouped.map(([date,day])=>(
                     <div key={date}>
                       <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5"><CalendarDays size={11} className="text-white/25"/><span className="text-xs font-bold text-white/40">{isoToLabel(date)}</span></div>
-                        <span className="text-[0.65rem] text-white/25">Total: {fmtMin(day.reduce((a,e)=>a+e.duration_minutes,0))}</span>
+                        <div className="flex items-center gap-1.5">
+                          <CalendarDays size={11} className={isDark ? "text-white/25" : "text-gray-300"}/>
+                          <span className={`text-xs font-bold ${isDark ? "text-white/40" : "text-gray-500"}`}>{isoToLabel(date)}</span>
+                        </div>
+                        <span className={`text-[0.65rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>Total: {fmtMin(day.reduce((a,e)=>a+e.duration_minutes,0))}</span>
                       </div>
-                      <div className="overflow-hidden rounded-xl border border-white/6 bg-white/4">
+                      <div className={`overflow-hidden rounded-xl border ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
                         {day.map((e,i)=>{
                           const earn = e.hourly_rate&&(e.is_billable??true)?(e.duration_minutes/60)*e.hourly_rate:null;
                           return (
-                            <div key={e.id} className={`group flex items-center gap-3 px-5 py-3.5 transition hover:bg-white/4 ${i!==day.length-1?"border-b border-white/5":""}`}>
+                            <div key={e.id} className={`group flex items-center gap-3 px-5 py-3.5 transition ${isDark ? "hover:bg-white/4" : "hover:bg-gray-50"} ${i!==day.length-1 ? (isDark ? "border-b border-white/5" : "border-b border-gray-100") : ""}`}>
                               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{background:`${getCategoryColor(e.category)}18`,border:`1px solid ${getCategoryColor(e.category)}30`}}>
                                 <Tag size={11} style={{color:getCategoryColor(e.category)}}/>
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-x-2">
-                                  <span className="truncate text-sm font-bold text-white/90">{e.task_title||e.project}</span>
-                                  {e.task_title&&<span className="text-xs text-white/30">{e.project}</span>}
-                                  {e.client_name&&<span className="flex items-center gap-1 text-xs text-white/30"><User size={9}/>{e.client_name}</span>}
+                                  <span className={`truncate text-sm font-bold ${isDark ? "text-white/90" : "text-gray-900"}`}>{e.task_title||e.project}</span>
+                                  {e.task_title&&<span className={`text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>{e.project}</span>}
+                                  {e.client_name&&<span className={`flex items-center gap-1 text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}><User size={9}/>{e.client_name}</span>}
                                   {!(e.is_billable??true)&&<span className="rounded px-1 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={{background:"rgba(148,163,184,0.1)",color:"#94a3b8"}}>NF</span>}
                                   {e.is_billed&&<span className="rounded px-1 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={{background:"rgba(52,211,153,0.1)",color:"#34d399"}}>FACTURÉ</span>}
                                 </div>
@@ -1059,7 +1068,7 @@ export default function ChronoPage() {
                                 <span className="text-sm font-extrabold" style={{color:violet}}>{fmtMin(e.duration_minutes)}</span>
                                 {earn!==null&&<p className="text-[0.65rem] font-semibold" style={{color:"rgba(201,165,90,0.8)"}}>{fmtEur(earn)}</p>}
                               </div>
-                              <button onClick={()=>setConfirmDel(e.id)} className="ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/8 text-white/20 opacity-0 transition hover:border-red-500/30 hover:text-red-400 group-hover:opacity-100">
+                              <button onClick={()=>setConfirmDel(e.id)} className={`ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border opacity-0 transition hover:border-red-500/30 hover:text-red-400 group-hover:opacity-100 ${isDark ? "border-white/8 text-white/20" : "border-gray-200 text-gray-300"}`}>
                                 <Trash2 size={11}/>
                               </button>
                             </div>
@@ -1084,25 +1093,25 @@ export default function ChronoPage() {
                 {label:"Ce mois",value:fmtMin(monthStats.minutes),sub:fmtEur(monthStats.earnings),color:"#c9a55a"},
                 {label:"Non facturé",value:fmtEur(unbilledAmt),sub:`${unbilled.length} entrée${unbilled.length!==1?"s":""}`,color:"#f87171"},
               ].map((k,i)=>(
-                <div key={i} className="rounded-xl border border-white/6 bg-white/4 px-5 py-4">
-                  <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{k.label}</p>
+                <div key={i} className={`rounded-xl border px-5 py-4 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                  <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
                   <p className="mt-2 text-2xl font-bold" style={{color:k.color}}>{k.value}</p>
-                  <p className="mt-0.5 text-xs text-white/30">{k.sub}</p>
+                  <p className={`mt-0.5 text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.sub}</p>
                 </div>
               ))}
             </div>
 
-                        <div className="rounded-xl border border-white/6 bg-white/4 p-5">
-              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-white/40">7 Derniers jours</p>
+                        <div className={`rounded-xl border p-5 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+              <p className={`mb-4 text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/40" : "text-gray-500"}`}>7 Derniers jours</p>
               {(() => {
                 const maxMin = Math.max(...dailyData.map(d=>d.minutes),1);
                 return (
                   <div className="flex items-end gap-2 h-28">
                     {dailyData.map((d,i)=>(
                       <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
-                        <span className="text-[0.6rem] font-bold text-white/40">{d.minutes>0?fmtMin(d.minutes):""}</span>
-                        <div className="w-full rounded-t-lg transition-all" style={{height:`${Math.max(4,(d.minutes/maxMin)*80)}px`,background:d.iso===today?violet:"rgba(167,139,250,0.25)"}}/>
-                        <span className="text-[0.6rem] font-bold text-white/30">{d.label}</span>
+                        <span className={`text-[0.6rem] font-bold ${isDark ? "text-white/40" : "text-gray-500"}`}>{d.minutes>0?fmtMin(d.minutes):""}</span>
+                        <div className="w-full rounded-t-lg transition-all" style={{height:`${Math.max(4,(d.minutes/maxMin)*80)}px`,background:d.iso===today?violet:isDark?"rgba(167,139,250,0.25)":"rgba(167,139,250,0.35)"}}/>
+                        <span className={`text-[0.6rem] font-bold ${isDark ? "text-white/30" : "text-gray-400"}`}>{d.label}</span>
                       </div>
                     ))}
                   </div>
@@ -1110,10 +1119,10 @@ export default function ChronoPage() {
               })()}
             </div>
 
-                        <div className="rounded-xl border border-white/6 bg-white/4 p-5">
-              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-white/40">Temps par projet</p>
+                        <div className={`rounded-xl border p-5 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+              <p className={`mb-4 text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/40" : "text-gray-500"}`}>Temps par projet</p>
               {projectStats.length===0?(
-                <p className="py-6 text-center text-sm text-white/25">Aucune donnée</p>
+                <p className={`py-6 text-center text-sm ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune donnée</p>
               ):(
                 <div className="space-y-3">
                   {projectStats.map((ps,i)=>{
@@ -1123,14 +1132,14 @@ export default function ChronoPage() {
                         <div className="mb-1 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="h-2.5 w-2.5 rounded-full" style={{background:ps.color}}/>
-                            <span className="text-xs font-bold text-white/80">{ps.name}</span>
+                            <span className={`text-xs font-bold ${isDark ? "text-white/80" : "text-gray-700"}`}>{ps.name}</span>
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-xs font-extrabold" style={{color:ps.color}}>{fmtMin(ps.minutes)}</span>
-                            {ps.earnings>0&&<span className="text-[0.65rem] text-white/30">{fmtEur(ps.earnings)}</span>}
+                            {ps.earnings>0&&<span className={`text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtEur(ps.earnings)}</span>}
                           </div>
                         </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/6">
+                        <div className={`h-1.5 w-full overflow-hidden rounded-full ${isDark ? "bg-white/6" : "bg-gray-100"}`}>
                           <div className="h-full rounded-full" style={{width:`${(ps.minutes/maxMin)*100}%`,background:ps.color,opacity:0.7}}/>
                         </div>
                       </div>
@@ -1140,23 +1149,23 @@ export default function ChronoPage() {
               )}
             </div>
 
-                        <div className="rounded-xl border border-white/6 bg-white/4 p-5">
-              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-white/40">Catégories cette semaine</p>
+                        <div className={`rounded-xl border p-5 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+              <p className={`mb-4 text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/40" : "text-gray-500"}`}>Catégories cette semaine</p>
               {catBreakdown.length===0?(
-                <p className="py-6 text-center text-sm text-white/25">Aucune donnée</p>
+                <p className={`py-6 text-center text-sm ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune donnée</p>
               ):(
                 <div className="space-y-3">
                   {catBreakdown.map((c,i)=>(
                     <div key={i} className="flex items-center gap-3">
-                      <div className="w-24 shrink-0 text-xs font-bold text-white/60">{getCategoryLabel(c.cat)}</div>
+                      <div className={`w-24 shrink-0 text-xs font-bold ${isDark ? "text-white/60" : "text-gray-600"}`}>{getCategoryLabel(c.cat)}</div>
                       <div className="flex-1">
-                        <div className="h-2 overflow-hidden rounded-full bg-white/6">
+                        <div className={`h-2 overflow-hidden rounded-full ${isDark ? "bg-white/6" : "bg-gray-100"}`}>
                           <div className="h-full rounded-full" style={{width:`${c.pct}%`,background:getCategoryColor(c.cat)}}/>
                         </div>
                       </div>
                       <div className="w-16 shrink-0 text-right">
                         <span className="text-xs font-extrabold" style={{color:getCategoryColor(c.cat)}}>{c.pct}%</span>
-                        <span className="ml-1 text-[0.6rem] text-white/25">{fmtMin(c.mins)}</span>
+                        <span className={`ml-1 text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>{fmtMin(c.mins)}</span>
                       </div>
                     </div>
                   ))}
@@ -1165,14 +1174,14 @@ export default function ChronoPage() {
             </div>
 
                         {aiInsights.length>0&&(
-              <div className="rounded-xl border border-[rgba(167,139,250,0.15)] bg-[rgba(139,92,246,0.06)] p-5">
+              <div className={`rounded-xl border p-5 ${isDark ? "border-[rgba(167,139,250,0.15)] bg-[rgba(139,92,246,0.06)]" : "border-violet-200 bg-violet-50"}`}>
                 <div className="mb-4 flex items-center gap-2">
                   <Brain size={16} style={{color:violet}}/>
                   <p className="text-xs font-bold uppercase tracking-widest" style={{color:violet}}>Analyse IA Productivité</p>
                 </div>
                 <div className="space-y-2.5">
                   {aiInsights.map((ins,i)=>(
-                    <div key={i} className="rounded-xl border border-white/6 bg-white/4 px-4 py-2.5 text-sm text-white/70">{ins}</div>
+                    <div key={i} className={`rounded-xl border px-4 py-2.5 text-sm ${isDark ? "border-white/6 bg-white/4 text-white/70" : "border-violet-100 bg-white text-gray-700"}`}>{ins}</div>
                   ))}
                 </div>
               </div>
@@ -1183,7 +1192,7 @@ export default function ChronoPage() {
                 {tab==="projects"&&(
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-extrabold uppercase tracking-widest text-white/30">{projects.length} Projet{projects.length!==1?"s":""}</p>
+              <p className={`text-xs font-extrabold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{projects.length} Projet{projects.length!==1?"s":""}</p>
               <button onClick={()=>{setProjDraft(emptyProject());setProjOpen(true)}}
                 className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
                 style={{background:violet,boxShadow:`0 4px 16px ${violet}40`}}>
@@ -1194,11 +1203,11 @@ export default function ChronoPage() {
             {loading?(
               <div className="flex items-center justify-center py-16"><Loader2 size={22} className="animate-spin text-white/20"/></div>
             ):projects.length===0?(
-              <div className="flex flex-col items-center gap-4 rounded-xl border border-white/6 bg-white/4 py-16 text-center">
+              <div className={`flex flex-col items-center gap-4 rounded-xl border py-16 text-center ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(139,92,246,0.08)]">
                   <Briefcase size={24} style={{color:violet}}/>
                 </div>
-                <p className="text-sm font-bold text-white/60">Aucun projet — créez votre premier !</p>
+                <p className={`text-sm font-bold ${isDark ? "text-white/60" : "text-gray-500"}`}>Aucun projet — créez votre premier !</p>
               </div>
             ):(
               <div className="grid gap-3 sm:grid-cols-2">
@@ -1207,7 +1216,7 @@ export default function ChronoPage() {
                   const earn = p.hourly_rate>0?(mins/60)*p.hourly_rate:0;
                   const budgetPct = p.budget_hours>0?Math.min(100,Math.round((mins/60/p.budget_hours)*100)):null;
                   return (
-                    <div key={p.id} className="rounded-xl border border-white/6 bg-white/4 p-5">
+                    <div key={p.id} className={`rounded-xl border p-5 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
                       <div className="mb-4 flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-xl" style={{background:`${p.color}20`,border:`1px solid ${p.color}40`}}>
@@ -1216,40 +1225,40 @@ export default function ChronoPage() {
                             </div>
                           </div>
                           <div>
-                            <p className="font-extrabold text-white">{p.name}</p>
-                            {p.client_name&&<p className="text-xs text-white/40">{p.client_name}</p>}
+                            <p className={`font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>{p.name}</p>
+                            {p.client_name&&<p className={`text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>{p.client_name}</p>}
                           </div>
                         </div>
                         <button onClick={()=>{setSProject(p.name);setSRate(String(p.hourly_rate||""));setTab("timer");}}
-                          className="rounded-xl border border-white/10 px-3 py-1.5 text-xs font-bold text-white/40 transition hover:border-white/20 hover:text-white/60">
+                          className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition hover:border-white/20 hover:text-white/60 ${isDark ? "border-white/10 text-white/40" : "border-gray-200 text-gray-500"}`}>
                           Chrono
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-3 mb-3">
                         <div>
-                          <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Temps total</p>
+                          <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-gray-400"}`}>Temps total</p>
                           <p className="mt-0.5 text-lg font-bold" style={{color:p.color}}>{fmtMin(mins)}</p>
                         </div>
                         {p.hourly_rate>0&&(
                           <div>
-                            <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Revenus</p>
+                            <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-gray-400"}`}>Revenus</p>
                             <p className="mt-0.5 text-lg font-bold" style={{color:"#c9a55a"}}>{fmtEur(earn)}</p>
                           </div>
                         )}
                       </div>
                       {budgetPct!==null&&(
                         <div>
-                          <div className="mb-1 flex justify-between text-[0.6rem] text-white/30">
+                          <div className={`mb-1 flex justify-between text-[0.6rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
                             <span>Budget {fmtMin(Math.round(p.budget_hours*60))}</span>
                             <span className={budgetPct>=90?"text-red-400":""}>{budgetPct}%</span>
                           </div>
-                          <div className="h-1.5 overflow-hidden rounded-full bg-white/6">
+                          <div className={`h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/6" : "bg-gray-100"}`}>
                             <div className="h-full rounded-full" style={{width:`${budgetPct}%`,background:budgetPct>=90?"#f87171":p.color}}/>
                           </div>
                         </div>
                       )}
                       {p.hourly_rate>0&&(
-                        <p className="mt-2 text-[0.65rem] text-white/25">{p.hourly_rate}€/h</p>
+                        <p className={`mt-2 text-[0.65rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>{p.hourly_rate}€/h</p>
                       )}
                     </div>
                   );
@@ -1258,18 +1267,18 @@ export default function ChronoPage() {
             )}
 
                         {projectStats.filter(ps=>!projects.find(p=>p.name===ps.name)).length>0&&(
-              <div className="rounded-xl border border-white/6 bg-white/4 p-5">
-                <p className="mb-3 text-xs font-bold uppercase tracking-widest text-white/30">Autres projets (sans fiche)</p>
+              <div className={`rounded-xl border p-5 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                <p className={`mb-3 text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Autres projets (sans fiche)</p>
                 <div className="space-y-2">
                   {projectStats.filter(ps=>!projects.find(p=>p.name===ps.name)).map((ps,i)=>(
-                    <div key={i} className="flex items-center justify-between rounded-xl border border-white/5 bg-white/4 px-4 py-2.5">
+                    <div key={i} className={`flex items-center justify-between rounded-xl border px-4 py-2.5 ${isDark ? "border-white/5 bg-white/4" : "border-gray-100 bg-gray-50"}`}>
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full" style={{background:ps.color}}/>
-                        <span className="text-sm font-bold text-white/80">{ps.name}</span>
+                        <span className={`text-sm font-bold ${isDark ? "text-white/80" : "text-gray-700"}`}>{ps.name}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-extrabold" style={{color:ps.color}}>{fmtMin(ps.minutes)}</span>
-                        {ps.earnings>0&&<span className="text-xs text-white/30">{fmtEur(ps.earnings)}</span>}
+                        {ps.earnings>0&&<span className={`text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtEur(ps.earnings)}</span>}
                       </div>
                     </div>
                   ))}
@@ -1283,16 +1292,16 @@ export default function ChronoPage() {
           <div className="space-y-5">
 
             {/* Date range + export */}
-            <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/6 bg-white/4 p-4">
+            <div className={`flex flex-wrap items-end gap-3 rounded-xl border p-4 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
               <div>
-                <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Du</p>
+                <p className={`mb-1 text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Du</p>
                 <input type="date" value={tsFrom} onChange={e=>setTsFrom(e.target.value)}
-                  className="rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                  className={`rounded-xl border px-3 py-2 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white [color-scheme:dark]" : "border-gray-200 bg-gray-50 text-gray-900"}`}/>
               </div>
               <div>
-                <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Au</p>
+                <p className={`mb-1 text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Au</p>
                 <input type="date" value={tsTo} onChange={e=>setTsTo(e.target.value)}
-                  className="rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                  className={`rounded-xl border px-3 py-2 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white [color-scheme:dark]" : "border-gray-200 bg-gray-50 text-gray-900"}`}/>
               </div>
               <div className="ml-auto flex gap-2">
                 <button onClick={()=>exportTimesheet(entries,tsFrom,tsTo)}
@@ -1314,23 +1323,23 @@ export default function ChronoPage() {
                 {label:"Facturable", value:fmtMin(rapportTotals.billable),  color:"#34d399"},
                 {label:"Revenus",    value:rapportTotals.earnings>0?fmtEur(rapportTotals.earnings):"—", color:"#c9a55a"},
               ].map((k,i)=>(
-                <div key={i} className="rounded-xl border border-white/6 bg-white/4 px-4 py-3.5">
-                  <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{k.label}</p>
+                <div key={i} className={`rounded-xl border px-4 py-3.5 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                  <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
                   <p className="mt-1.5 text-xl font-bold" style={{color:k.color}}>{k.value}</p>
                 </div>
               ))}
             </div>
 
             {/* Client breakdown */}
-            <div className="rounded-xl border border-white/6 bg-white/4 overflow-hidden">
-              <div className="flex items-center gap-2 border-b border-white/6 px-5 py-3">
+            <div className={`rounded-xl border overflow-hidden ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+              <div className={`flex items-center gap-2 border-b px-5 py-3 ${isDark ? "border-white/6" : "border-gray-100"}`}>
                 <Users size={13} style={{color:violet}}/>
-                <p className="text-xs font-bold uppercase tracking-widest text-white/40">Temps par client</p>
+                <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/40" : "text-gray-500"}`}>Temps par client</p>
               </div>
               {clientStats.length===0?(
-                <p className="py-8 text-center text-sm text-white/25">Aucune donnée</p>
+                <p className={`py-8 text-center text-sm ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune donnée</p>
               ):(
-                <div className="divide-y divide-white/5">
+                <div className={`divide-y ${isDark ? "divide-white/5" : "divide-gray-100"}`}>
                   {clientStats.map((cs,i)=>{
                     const maxMin = clientStats[0]?.minutes||1;
                     const billPct = cs.minutes>0?Math.round((cs.billable/cs.minutes)*100):0;
@@ -1339,8 +1348,8 @@ export default function ChronoPage() {
                         <div className="mb-2 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <User size={12} style={{color:violet}}/>
-                            <span className="text-sm font-bold text-white/85">{cs.name}</span>
-                            <span className="text-[10px] text-white/30">{cs.sessions} session{cs.sessions!==1?"s":""}</span>
+                            <span className={`text-sm font-bold ${isDark ? "text-white/85" : "text-gray-900"}`}>{cs.name}</span>
+                            <span className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>{cs.sessions} session{cs.sessions!==1?"s":""}</span>
                           </div>
                           <div className="flex items-center gap-4">
                             <span className="text-sm font-extrabold" style={{color:violet}}>{fmtMin(cs.minutes)}</span>
@@ -1348,7 +1357,7 @@ export default function ChronoPage() {
                             <span className="text-[10px] text-emerald-400/70">{billPct}% factu.</span>
                           </div>
                         </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-white/6">
+                        <div className={`h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/6" : "bg-gray-100"}`}>
                           <div className="h-full rounded-full" style={{width:`${(cs.minutes/maxMin)*100}%`,background:violet,opacity:0.65}}/>
                         </div>
                       </div>
@@ -1360,12 +1369,12 @@ export default function ChronoPage() {
 
             {/* Entries table for the period */}
             {rapportEntries.length>0&&(
-              <div className="rounded-xl border border-white/6 bg-white/4 overflow-hidden">
-                <div className="flex items-center gap-2 border-b border-white/6 px-5 py-3">
-                  <FileText size={13} className="text-white/30"/>
-                  <p className="text-xs font-bold uppercase tracking-widest text-white/40">{rapportEntries.length} entrée{rapportEntries.length!==1?"s":""} sur la période</p>
+              <div className={`rounded-xl border overflow-hidden ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                <div className={`flex items-center gap-2 border-b px-5 py-3 ${isDark ? "border-white/6" : "border-gray-100"}`}>
+                  <FileText size={13} className={isDark ? "text-white/30" : "text-gray-400"}/>
+                  <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/40" : "text-gray-500"}`}>{rapportEntries.length} entrée{rapportEntries.length!==1?"s":""} sur la période</p>
                 </div>
-                <div className="max-h-72 overflow-y-auto divide-y divide-white/5">
+                <div className={`max-h-72 overflow-y-auto divide-y ${isDark ? "divide-white/5" : "divide-gray-100"}`}>
                   {rapportEntries.slice(0,50).map(e=>{
                     const earn = e.hourly_rate&&(e.is_billable??true)?(e.duration_minutes/60)*e.hourly_rate:null;
                     return (
@@ -1374,8 +1383,8 @@ export default function ChronoPage() {
                           <div className="h-1.5 w-1.5 rounded-full" style={{background:getCategoryColor(e.category)}}/>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-bold text-white/80">{e.task_title||e.project}</p>
-                          <p className="text-[10px] text-white/30">{e.date} · {e.client_name||"—"}</p>
+                          <p className={`truncate text-xs font-bold ${isDark ? "text-white/80" : "text-gray-700"}`}>{e.task_title||e.project}</p>
+                          <p className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>{e.date} · {e.client_name||"—"}</p>
                         </div>
                         <span className="text-xs font-bold shrink-0" style={{color:violet}}>{fmtMin(e.duration_minutes)}</span>
                         {earn!==null&&<span className="text-xs shrink-0" style={{color:"#c9a55a"}}>{fmtEur(earn)}</span>}
@@ -1393,9 +1402,9 @@ export default function ChronoPage() {
 
                         <div className="flex items-center justify-between rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] px-6 py-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-white/40">Total non facturé</p>
+                <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/40" : "text-gray-500"}`}>Total non facturé</p>
                 <p className="mt-1 text-3xl font-bold" style={{color:"#c9a55a"}}>{fmtEur(unbilledAmt)}</p>
-                <p className="mt-0.5 text-xs text-white/30">{unbilled.length} entrée{unbilled.length!==1?"s":""}</p>
+                <p className={`mt-0.5 text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>{unbilled.length} entrée{unbilled.length!==1?"s":""}</p>
               </div>
               {unbilledAmt>0&&(
                 <div className="flex flex-col items-end gap-2">
@@ -1403,18 +1412,18 @@ export default function ChronoPage() {
                     <TrendingUp size={12} style={{color:"#c9a55a"}}/>
                     <span className="text-xs font-bold" style={{color:"#c9a55a"}}>Prêt à facturer</span>
                   </div>
-                  <p className="text-[0.65rem] text-white/30">Cliquez "Créer facture" par projet</p>
+                  <p className={`text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>Cliquez "Créer facture" par projet</p>
                 </div>
               )}
             </div>
 
             {unbilled.length===0?(
-              <div className="flex flex-col items-center gap-4 rounded-xl border border-white/6 bg-white/4 py-14 text-center">
+              <div className={`flex flex-col items-center gap-4 rounded-xl border py-14 text-center ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/8">
                   <CheckCircle size={24} className="text-emerald-400"/>
                 </div>
-                <p className="text-sm font-bold text-white/60">Aucune heure non facturée 🎉</p>
-                <p className="text-xs text-white/25">Tout est à jour !</p>
+                <p className={`text-sm font-bold ${isDark ? "text-white/60" : "text-gray-500"}`}>Aucune heure non facturée 🎉</p>
+                <p className={`text-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>Tout est à jour !</p>
               </div>
             ):(
               (() => {
@@ -1430,12 +1439,12 @@ export default function ChronoPage() {
                       const projMins = ents.reduce((a,e)=>a+e.duration_minutes,0);
                       const projAmt  = ents.reduce((a,e)=>e.hourly_rate?a+(e.duration_minutes/60)*e.hourly_rate:a,0);
                       return (
-                        <div key={proj} className="overflow-hidden rounded-xl border border-white/6 bg-white/4">
-                          <div className="flex items-center justify-between border-b border-white/6 px-5 py-3">
+                        <div key={proj} className={`overflow-hidden rounded-xl border ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                          <div className={`flex items-center justify-between border-b px-5 py-3 ${isDark ? "border-white/6" : "border-gray-100"}`}>
                             <div className="flex items-center gap-2">
                               <Briefcase size={13} style={{color:violet}}/>
-                              <span className="font-extrabold text-white">{proj}</span>
-                              <span className="text-xs text-white/30">{fmtMin(projMins)}</span>
+                              <span className={`font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>{proj}</span>
+                              <span className={`text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtMin(projMins)}</span>
                             </div>
                             <div className="flex items-center gap-3">
                               {projAmt>0&&<span className="font-extrabold" style={{color:"#c9a55a"}}>{fmtEur(projAmt)}</span>}
@@ -1455,17 +1464,17 @@ export default function ChronoPage() {
                           {ents.map((e,i)=>{
                             const earn = e.hourly_rate?(e.duration_minutes/60)*e.hourly_rate:null;
                             return (
-                              <div key={e.id} className={`flex items-center gap-3 px-5 py-3 ${i!==ents.length-1?"border-b border-white/4":""}`}>
+                              <div key={e.id} className={`flex items-center gap-3 px-5 py-3 ${i!==ents.length-1 ? (isDark ? "border-b border-white/4" : "border-b border-gray-100") : ""}`}>
                                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg" style={{background:`${getCategoryColor(e.category)}15`}}>
                                   <div className="h-1.5 w-1.5 rounded-full" style={{background:getCategoryColor(e.category)}}/>
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm text-white/80">{e.task_title||e.description||"Session"}</p>
-                                  <p className="text-[0.65rem] text-white/30">{isoToLabel(e.date)} · {e.client_name||"—"}</p>
+                                  <p className={`truncate text-sm ${isDark ? "text-white/80" : "text-gray-700"}`}>{e.task_title||e.description||"Session"}</p>
+                                  <p className={`text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{isoToLabel(e.date)} · {e.client_name||"—"}</p>
                                 </div>
                                 <div className="shrink-0 text-right">
                                   <p className="text-sm font-bold" style={{color:violet}}>{fmtMin(e.duration_minutes)}</p>
-                                  {earn!==null&&<p className="text-xs text-white/30">{fmtEur(earn)}</p>}
+                                  {earn!==null&&<p className={`text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtEur(earn)}</p>}
                                 </div>
                                 <button onClick={()=>handleMarkBilled(e.id)}
                                   className="ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-emerald-500/20 text-emerald-500/50 transition hover:border-emerald-500/40 hover:text-emerald-400">
@@ -1492,16 +1501,16 @@ export default function ChronoPage() {
               className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md" onClick={()=>setManualOpen(false)}/>
             <motion.div key="ms" initial={{y:"100%",opacity:0}} animate={{y:0,opacity:1}} exit={{y:"100%",opacity:0}}
               transition={{type:"spring",damping:30,stiffness:260}}
-              className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-[2rem] border-t border-x border-white/8 bg-[#0e1420] shadow-[0_-24px_80px_rgba(0,0,0,0.7)]">
-              <div className="flex justify-center pt-3 pb-1"><div className="h-1 w-10 rounded-full bg-white/15"/></div>
-              <div className="flex items-center justify-between border-b border-white/8 px-6 py-4">
+              className={`fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-[2rem] border-t border-x shadow-[0_-24px_80px_rgba(0,0,0,0.35)] ${isDark ? "border-white/8 bg-[#0e1420]" : "border-gray-200 bg-white"}`}>
+              <div className="flex justify-center pt-3 pb-1"><div className={`h-1 w-10 rounded-full ${isDark ? "bg-white/15" : "bg-gray-200"}`}/></div>
+              <div className={`flex items-center justify-between border-b px-6 py-4 ${isDark ? "border-white/8" : "border-gray-100"}`}>
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-[rgba(167,139,250,0.2)] bg-[rgba(139,92,246,0.1)]">
                     <Plus size={14} style={{color:violet}}/>
                   </div>
-                  <h2 className="text-sm font-extrabold text-white">Ajout manuel</h2>
+                  <h2 className={`text-sm font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>Ajout manuel</h2>
                 </div>
-                <button onClick={()=>setManualOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 transition hover:text-white/70"><X size={15}/></button>
+                <button onClick={()=>setManualOpen(false)} className={`flex h-8 w-8 items-center justify-center rounded-lg transition hover:text-white/70 ${isDark ? "text-white/30" : "text-gray-400 hover:text-gray-700"}`}><X size={15}/></button>
               </div>
               <div className="max-h-[72vh] overflow-y-auto px-6 py-5 space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -1511,58 +1520,58 @@ export default function ChronoPage() {
                       className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Projet <span style={{color:violet}}>*</span></label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Projet <span style={{color:violet}}>*</span></label>
                     <input list="mproj-list" value={manualDraft.project} onChange={e=>setManualDraft(d=>({...d,project:e.target.value}))} placeholder="Nom du projet"
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                     <datalist id="mproj-list">{projects.map(p=><option key={p.id} value={p.name}/>)}</datalist>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Client</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Client</label>
                     <input value={manualDraft.client_name} onChange={e=>setManualDraft(d=>({...d,client_name:e.target.value}))} placeholder="Nom du client"
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Catégorie</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Catégorie</label>
                     <select value={manualDraft.category} onChange={e=>setManualDraft(d=>({...d,category:e.target.value}))}
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]">
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white [color-scheme:dark]" : "border-gray-200 bg-gray-50 text-gray-900"}`}>
                       {CATEGORIES.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Date</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Date</label>
                     <input type="date" value={manualDraft.date} onChange={e=>setManualDraft(d=>({...d,date:e.target.value}))}
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white [color-scheme:dark]" : "border-gray-200 bg-gray-50 text-gray-900"}`}/>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Durée (min) <span style={{color:violet}}>*</span></label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Durée (min) <span style={{color:violet}}>*</span></label>
                     <input type="number" min="1" value={manualDraft.duration_minutes} onChange={e=>setManualDraft(d=>({...d,duration_minutes:e.target.value}))} placeholder="60"
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Taux horaire (€)</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Taux horaire (€)</label>
                     <input type="number" min="0" step="5" value={manualDraft.hourly_rate} onChange={e=>setManualDraft(d=>({...d,hourly_rate:e.target.value}))} placeholder="75"
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                   </div>
                   <div className="flex items-end">
                     <button onClick={()=>setManualDraft(d=>({...d,is_billable:!d.is_billable}))}
-                      className={`flex w-full items-center justify-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition ${manualDraft.is_billable?"border-emerald-500/30 bg-emerald-500/10 text-emerald-400":"border-white/10 text-white/30"}`}>
+                      className={`flex w-full items-center justify-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition ${manualDraft.is_billable ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
                       <CheckCircle size={13}/>{manualDraft.is_billable?"Facturable":"Non facturable"}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Notes</label>
+                  <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Notes</label>
                   <textarea value={manualDraft.notes} onChange={e=>setManualDraft(d=>({...d,notes:e.target.value}))} placeholder="Notes optionnelles…" rows={2}
-                    className="w-full resize-none rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.35)]"/>
+                    className={`w-full resize-none rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.35)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                 </div>
                 {manualDraft.hourly_rate&&manualDraft.duration_minutes&&manualDraft.is_billable&&(
                   <div className="flex items-center justify-between rounded-xl border border-[rgba(201,165,90,0.15)] bg-[rgba(201,165,90,0.06)] px-4 py-3">
-                    <span className="text-xs text-white/40">Revenus estimés</span>
+                    <span className={`text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>Revenus estimés</span>
                     <span className="text-sm font-extrabold" style={{color:"#c9a55a"}}>{fmtEur((parseInt(manualDraft.duration_minutes,10)/60)*parseFloat(manualDraft.hourly_rate))}</span>
                   </div>
                 )}
                 <div className="flex gap-3 pb-2">
-                  <button onClick={()=>setManualOpen(false)} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20">Annuler</button>
+                  <button onClick={()=>setManualOpen(false)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition hover:border-white/20 ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-500"}`}>Annuler</button>
                   <button onClick={handleManualSave} disabled={manualSaving||!manualDraft.project.trim()||!manualDraft.duration_minutes}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white transition hover:opacity-90 disabled:opacity-40"
                     style={{background:`linear-gradient(135deg, ${violet}, #7c3aed)`,boxShadow:`0 4px 16px ${violet}30`}}>
@@ -1581,45 +1590,45 @@ export default function ChronoPage() {
           <>
             <motion.div key="pb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md" onClick={()=>setProjOpen(false)}/>
             <motion.div key="pd" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95,y:10}}
-              transition={{duration:0.3,ease}} className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl border border-white/8 bg-[#0e1420] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
+              transition={{duration:0.3,ease}} className={`fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl border p-6 shadow-[0_32px_80px_rgba(0,0,0,0.35)] ${isDark ? "border-white/8 bg-[#0e1420]" : "border-gray-200 bg-white"}`}>
               <div className="mb-5 flex items-center justify-between">
-                <h2 className="text-base font-extrabold text-white">Nouveau projet</h2>
-                <button onClick={()=>setProjOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 hover:text-white/70"><X size={15}/></button>
+                <h2 className={`text-base font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>Nouveau projet</h2>
+                <button onClick={()=>setProjOpen(false)} className={`flex h-8 w-8 items-center justify-center rounded-xl transition ${isDark ? "text-white/30 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}><X size={15}/></button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Nom <span style={{color:violet}}>*</span></label>
+                  <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Nom <span style={{color:violet}}>*</span></label>
                   <input value={projDraft.name} onChange={e=>setProjDraft(d=>({...d,name:e.target.value}))} placeholder="Nom du projet"
-                    className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Client</label>
+                  <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Client</label>
                   <input value={projDraft.client_name} onChange={e=>setProjDraft(d=>({...d,client_name:e.target.value}))} placeholder="Nom du client"
-                    className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                 </div>
                 <div className="grid gap-3 grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Taux (€/h)</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Taux (€/h)</label>
                     <input type="number" min="0" step="5" value={projDraft.hourly_rate} onChange={e=>setProjDraft(d=>({...d,hourly_rate:e.target.value}))} placeholder="75"
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Budget (h)</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Budget (h)</label>
                     <input type="number" min="0" step="1" value={projDraft.budget_hours} onChange={e=>setProjDraft(d=>({...d,budget_hours:e.target.value}))} placeholder="40"
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
                   </div>
                 </div>
                 <div>
-                  <label className="mb-2 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Couleur</label>
+                  <label className={`mb-2 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Couleur</label>
                   <div className="flex flex-wrap gap-2">
                     {PROJECT_COLORS.map(c=>(
                       <button key={c} onClick={()=>setProjDraft(d=>({...d,color:c}))}
-                        className="h-7 w-7 rounded-lg transition hover:scale-110" style={{background:c,outline:projDraft.color===c?"2px solid white":"none",outlineOffset:"2px"}}/>
+                        className="h-7 w-7 rounded-lg transition hover:scale-110" style={{background:c,outline:projDraft.color===c?`2px solid ${isDark?"white":"#374151"}`:"none",outlineOffset:"2px"}}/>
                     ))}
                   </div>
                 </div>
                 <div className="flex gap-3 pt-1">
-                  <button onClick={()=>setProjOpen(false)} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/50">Annuler</button>
+                  <button onClick={()=>setProjOpen(false)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-500"}`}>Annuler</button>
                   <button onClick={handleSaveProject} disabled={projSaving||!projDraft.name.trim()}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white disabled:opacity-40"
                     style={{background:`linear-gradient(135deg, ${violet}, #7c3aed)`}}>
@@ -1638,10 +1647,10 @@ export default function ChronoPage() {
           <>
             <motion.div key="gb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md" onClick={()=>setGoalOpen(false)}/>
             <motion.div key="gd" initial={{opacity:0,scale:0.95,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95,y:10}}
-              transition={{duration:0.3,ease}} className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-3xl border border-white/8 bg-[#0e1420] p-6">
+              transition={{duration:0.3,ease}} className={`fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-3xl border p-6 ${isDark ? "border-white/8 bg-[#0e1420]" : "border-gray-200 bg-white"}`}>
               <div className="mb-5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5"><Settings size={15} style={{color:violet}}/><h2 className="text-sm font-extrabold text-white">Objectifs quotidiens</h2></div>
-                <button onClick={()=>setGoalOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 hover:text-white/70"><X size={15}/></button>
+                <div className="flex items-center gap-2.5"><Settings size={15} style={{color:violet}}/><h2 className={`text-sm font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>Objectifs quotidiens</h2></div>
+                <button onClick={()=>setGoalOpen(false)} className={`flex h-8 w-8 items-center justify-center rounded-xl transition ${isDark ? "text-white/30 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}><X size={15}/></button>
               </div>
               <div className="space-y-4">
                 {[
@@ -1650,14 +1659,14 @@ export default function ChronoPage() {
                   {label:"Heures facturables/jour (min)",key:"daily_billable_minutes",placeholder:"360"},
                 ].map(f=>(
                   <div key={f.key}>
-                    <label className="mb-1 block text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{f.label}</label>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{f.label}</label>
                     <input type="number" min="0" value={goalDraft[f.key as keyof GoalDraft]} onChange={e=>setGoalDraft(d=>({...d,[f.key]:e.target.value}))} placeholder={f.placeholder}
-                      className="w-full rounded-xl border border-white/8 bg-white/6 px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[rgba(167,139,250,0.4)]"/>
-                    <p className="mt-0.5 text-[0.6rem] text-white/25">= {fmtMin(parseInt(goalDraft[f.key as keyof GoalDraft],10)||0)}</p>
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
+                    <p className={`mt-0.5 text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>= {fmtMin(parseInt(goalDraft[f.key as keyof GoalDraft],10)||0)}</p>
                   </div>
                 ))}
                 <div className="flex gap-3 pt-1">
-                  <button onClick={()=>setGoalOpen(false)} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/50">Annuler</button>
+                  <button onClick={()=>setGoalOpen(false)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-500"}`}>Annuler</button>
                   <button onClick={handleSaveGoal} disabled={goalSaving}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white"
                     style={{background:`linear-gradient(135deg, ${violet}, #7c3aed)`}}>
@@ -1674,12 +1683,12 @@ export default function ChronoPage() {
         {confirmDel&&(
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-md">
             <motion.div initial={{scale:0.93,y:16,opacity:0}} animate={{scale:1,y:0,opacity:1}} exit={{scale:0.95,y:8,opacity:0}} transition={{duration:0.3,ease}}
-              className="w-full max-w-sm rounded-3xl border border-white/8 bg-[#0e1420] p-6">
+              className={`w-full max-w-sm rounded-3xl border p-6 ${isDark ? "border-white/8 bg-[#0e1420]" : "border-gray-200 bg-white"}`}>
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10"><Trash2 size={18} className="text-red-400"/></div>
-              <h3 className="text-base font-extrabold text-white">Supprimer cette entrée ?</h3>
-              <p className="mt-1.5 text-sm text-white/40">Cette action est irréversible.</p>
+              <h3 className={`text-base font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>Supprimer cette entrée ?</h3>
+              <p className={`mt-1.5 text-sm ${isDark ? "text-white/40" : "text-gray-500"}`}>Cette action est irréversible.</p>
               <div className="mt-5 flex gap-3">
-                <button onClick={()=>setConfirmDel(null)} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-white/60">Annuler</button>
+                <button onClick={()=>setConfirmDel(null)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold ${isDark ? "border-white/10 text-white/60" : "border-gray-200 text-gray-500"}`}>Annuler</button>
                 <button onClick={()=>handleDelete(confirmDel)} disabled={deleting===confirmDel}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-red-500 disabled:opacity-50">
                   {deleting===confirmDel&&<Loader2 size={13} className="animate-spin"/>}Supprimer

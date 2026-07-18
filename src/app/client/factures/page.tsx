@@ -105,9 +105,20 @@ interface CrmClient {
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-const B = "bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.09)]";
+const B  = "bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.09)]";
 const BH = "hover:border-[rgba(255,255,255,0.18)]";
 const BF = "focus:border-[rgba(201,165,90,0.4)]";
+function useInputTheme() {
+  const { isDark } = useTheme();
+  return {
+    iB : isDark ? "bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.09)]" : "bg-white border border-gray-200",
+    iBH: isDark ? "hover:border-[rgba(255,255,255,0.18)]" : "hover:border-gray-300",
+    iBG: isDark ? "bg-[rgba(255,255,255,0.04)]" : "bg-gray-50",
+    txt: isDark ? "text-white placeholder:text-white/20" : "text-gray-800 placeholder:text-gray-300",
+    lbl: isDark ? "text-white/35" : "text-gray-500",
+    isDark,
+  };
+}
 
 const STATUTS: Record<DocStatut,{label:string;color:string;bg:string;border:string;Icon:React.ElementType}> = {
   brouillon: { label:"Brouillon", color:"#94a3b8", bg:"rgba(148,163,184,0.1)", border:"rgba(148,163,184,0.25)", Icon:FileText     },
@@ -398,13 +409,14 @@ function StatutBadge({ statut }: { statut: DocStatut }) {
 
 function DInput({ label, value, onChange, placeholder, type="text", small }:
   { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; type?:string; small?:boolean }) {
+  const { iB, iBH, txt, lbl } = useInputTheme();
   const [focused, setFocused] = useState(false);
   const cls = small
-    ? `w-full rounded-lg ${B} ${BH} px-2.5 py-1.5 text-xs text-white placeholder:text-white/20 outline-none transition`
-    : `w-full rounded-xl ${B} ${BH} ${BF} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition`;
+    ? `w-full rounded-lg ${iB} ${iBH} px-2.5 py-1.5 text-xs ${txt} outline-none transition`
+    : `w-full rounded-xl ${iB} ${iBH} focus:border-[rgba(201,165,90,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition`;
   return (
     <div>
-      {label && <label className="mb-1 block text-[0.65rem] font-medium text-white/35">{label}</label>}
+      {label && <label className={`mb-1 block text-[0.65rem] font-medium ${lbl}`}>{label}</label>}
       <div className="relative">
         <motion.div animate={{ opacity: focused ? 1 : 0 }} transition={{ duration:0.15 }}
           className="pointer-events-none absolute inset-0 rounded-xl"
@@ -419,17 +431,19 @@ function DInput({ label, value, onChange, placeholder, type="text", small }:
 
 function DSelect({ label, value, onChange, options, small }:
   { label?:string; value:string; onChange:(v:string)=>void; options:{val:string;label:string}[]; small?:boolean }) {
+  const { iB, iBH, txt, lbl, isDark } = useInputTheme();
+  const optBg = isDark ? "#0f1117" : "#ffffff";
   const cls = small
-    ? `w-full rounded-lg ${B} ${BH} px-2 py-1.5 text-xs text-white outline-none transition appearance-none cursor-pointer`
-    : `w-full rounded-xl ${B} ${BH} ${BF} px-3.5 py-2.5 text-sm text-white outline-none transition appearance-none cursor-pointer`;
+    ? `w-full rounded-lg ${iB} ${iBH} px-2 py-1.5 text-xs ${txt} outline-none transition appearance-none cursor-pointer`
+    : `w-full rounded-xl ${iB} ${iBH} focus:border-[rgba(201,165,90,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition appearance-none cursor-pointer`;
   return (
     <div>
-      {label && <label className="mb-1 block text-[0.65rem] font-medium text-white/35">{label}</label>}
+      {label && <label className={`mb-1 block text-[0.65rem] font-medium ${lbl}`}>{label}</label>}
       <div className="relative">
         <select value={value} onChange={e => onChange(e.target.value)} className={cls}>
-          {options.map(o => <option key={o.val} value={o.val} style={{ background:"#0f1117" }}>{o.label}</option>)}
+          {options.map(o => <option key={o.val} value={o.val} style={{ background: optBg }}>{o.label}</option>)}
         </select>
-        <ChevronDown size={10} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30"/>
+        <ChevronDown size={10} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`}/>
       </div>
     </div>
   );
@@ -437,16 +451,17 @@ function DSelect({ label, value, onChange, options, small }:
 
 function DTextarea({ label, value, onChange, placeholder, rows=3, hint }:
   { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; rows?:number; hint?:string }) {
+  const { iB, iBH, txt, lbl, isDark } = useInputTheme();
   return (
     <div>
       {label && (
         <div className="mb-1 flex items-center justify-between">
-          <label className="text-[0.65rem] font-medium text-white/35">{label}</label>
-          {hint && <span className="text-[0.58rem] text-white/20">{hint}</span>}
+          <label className={`text-[0.65rem] font-medium ${lbl}`}>{label}</label>
+          {hint && <span className={`text-[0.58rem] ${isDark ? "text-white/20" : "text-gray-300"}`}>{hint}</span>}
         </div>
       )}
       <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-        className={`w-full resize-none rounded-xl ${B} ${BH} ${BF} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition`}/>
+        className={`w-full resize-none rounded-xl ${iB} ${iBH} focus:border-[rgba(201,165,90,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition`}/>
     </div>
   );
 }
@@ -527,6 +542,7 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
 function DAutoGrow({ value, onChange, placeholder }: {
   value: string; onChange: (v: string) => void; placeholder?: string;
 }) {
+  const { iB, iBH, txt } = useInputTheme();
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (!ref.current) return;
@@ -541,7 +557,7 @@ function DAutoGrow({ value, onChange, placeholder }: {
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       style={{ resize: "none", overflow: "auto", minHeight: "28px", maxHeight: "72px" }}
-      className={`w-full rounded-lg ${B} ${BH} px-2.5 py-1.5 text-xs text-white placeholder:text-white/20 outline-none transition`}
+      className={`w-full rounded-lg ${iB} ${iBH} px-2.5 py-1.5 text-xs ${txt} outline-none transition`}
     />
   );
 }
@@ -553,6 +569,7 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
   removeItem: (i: number) => void;
   activeColor: string; devise: string;
 }) {
+  const { isDark } = useTheme();
   // État local pour les sous-descriptions (évite le bug join [""] = "")
   const [subs, setSubs] = useState<string[]>(() =>
     it.sub_description ? it.sub_description.split("\n") : []
@@ -578,7 +595,7 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
   return (
     <motion.div layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
       transition={{ duration:0.2, ease }}
-      className="group rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 space-y-2">
+      className={`group rounded-xl border px-3 py-2.5 space-y-2 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
 
       {/* Ligne 1 : description + bouton supprimer */}
       <div className="flex items-start gap-2">
@@ -649,24 +666,47 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
 }
 
 function SectionLabel({ icon, label, hint }: { icon?: React.ReactNode; label: string; hint?: string }) {
+  const { isDark } = useTheme();
   return (
     <div className="flex items-center gap-2.5">
-      {icon && <span className="shrink-0 text-white/25">{icon}</span>}
-      <span className="shrink-0 text-[0.63rem] font-bold uppercase tracking-widest text-white/30">{label}</span>
-      <div className="flex-1 h-px bg-white/[0.06]"/>
-      {hint && <span className="shrink-0 text-[0.58rem] text-white/20">{hint}</span>}
+      {icon && <span className={`shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`}>{icon}</span>}
+      <span className={`shrink-0 text-[0.63rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</span>
+      <div className={`flex-1 h-px ${isDark ? "bg-white/[0.06]" : "bg-gray-200"}`}/>
+      {hint && <span className={`shrink-0 text-[0.58rem] ${isDark ? "text-white/20" : "text-gray-300"}`}>{hint}</span>}
     </div>
   );
 }
 
 export default function FacturesPage() {
   const { isDark } = useTheme();
+
+  // ── Tokens thème ─────────────────────────────────────────────────────────────
+  const tw1  = isDark ? "text-white"        : "text-gray-900";
+  const tw2  = isDark ? "text-white/60"     : "text-gray-600";
+  const tw3  = isDark ? "text-white/40"     : "text-gray-500";
+  const tw4  = isDark ? "text-white/30"     : "text-gray-400";
+  const tw5  = isDark ? "text-white/25"     : "text-gray-400";
+  const tw6  = isDark ? "text-white/20"     : "text-gray-300";
+  const tbd1 = isDark ? "border-white/[0.08]" : "border-gray-200";
+  const tbd2 = isDark ? "border-white/[0.07]" : "border-gray-100";
+  const tbg1 = isDark ? "bg-white/[0.04]"  : "bg-gray-100";
+  const tbg2 = isDark ? "bg-white/[0.03]"  : "bg-gray-50";
+  const tbg3 = isDark ? "bg-white/[0.01]"  : "bg-white";
+  const tsep = isDark ? "bg-white/[0.05]"  : "bg-gray-100";
+  const tiB  = isDark
+    ? "bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.09)]"
+    : "bg-white border border-gray-200";
+  const tiBH = isDark ? "hover:border-[rgba(255,255,255,0.18)]" : "hover:border-gray-300";
+  const headerCls = isDark
+    ? "border-white/[0.07] bg-[rgba(10,11,16,0.95)]"
+    : "border-gray-200/80 bg-white/95";
   const [documents,    setDocuments]    = useState<Document[]>([]);
   const [selected,     setSelected]     = useState<Document|null>(null);
   const [draft,        setDraft]        = useState<DraftDoc|null>(null);
   const [items,        setItems]        = useState<DocItem[]>([EMPTY_ITEM()]);
   const [dirty,        setDirty]        = useState(false);
   const [loadingAll,   setLoadingAll]   = useState(true);
+  const [uid,          setUid]          = useState<string|null>(null);
   const [saving,       setSaving]       = useState(false);
   const [deleting,     setDeleting]     = useState(false);
   const [converting,   setConverting]   = useState(false);
@@ -767,6 +807,7 @@ export default function FacturesPage() {
     setLoadingAll(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoadingAll(false); return; }
+    setUid(user.id);
     const { data, error } = await supabase.from("documents").select("*").eq("user_id", user.id).order("updated_at", { ascending:false }).limit(1000);
     if (error) { showToast("error", `Chargement impossible : ${error.message}`); setLoadingAll(false); return; }
     const docs = (data as Document[]) ?? [];
@@ -1337,7 +1378,7 @@ export default function FacturesPage() {
     const cfg = { freq: recurFreq, next_date: nextRecurDate(base, recurFreq) };
     setDocRecurCfg(cfg);
     setSelected(s => s ? { ...s, recur_freq: cfg.freq, recur_next_date: cfg.next_date } : s);
-    void supabase.from("documents").update({ recur_freq: cfg.freq, recur_next_date: cfg.next_date }).eq("id", selected.id);
+    void supabase.from("documents").update({ recur_freq: cfg.freq, recur_next_date: cfg.next_date }).eq("id", selected.id).eq("user_id", uid ?? "");
     setRecurModal(false);
     showToast("success", `Récurrence ${RECUR_FREQS.find(f => f.val === recurFreq)?.label ?? ""} activée.`);
   }
@@ -1380,7 +1421,7 @@ export default function FacturesPage() {
       );
     }
     const newCfg = { freq, next_date: nextRecurDate(nextDate, freq) };
-    void supabase.from("documents").update({ recur_freq: newCfg.freq, recur_next_date: newCfg.next_date }).eq("id", selected.id);
+    void supabase.from("documents").update({ recur_freq: newCfg.freq, recur_next_date: newCfg.next_date }).eq("id", selected.id).eq("user_id", uid ?? "");
     setDocRecurCfg(newCfg);
     setSelected(s => s ? { ...s, recur_freq: newCfg.freq, recur_next_date: newCfg.next_date } : s);
     setDuplicating(false);
@@ -1425,7 +1466,7 @@ export default function FacturesPage() {
   function sigSave() {
     if (!sigCanvasRef.current || !selected) return;
     const dataUrl = sigCanvasRef.current.toDataURL("image/png");
-    void supabase.from("documents").update({ signature_data: dataUrl }).eq("id", selected.id);
+    void supabase.from("documents").update({ signature_data: dataUrl }).eq("id", selected.id).eq("user_id", uid ?? "");
     setDocSignature(dataUrl);
     setSelected(s => s ? { ...s, signature_data: dataUrl } : s);
     setSigModal(false);
@@ -1433,7 +1474,7 @@ export default function FacturesPage() {
   }
   function sigDelete() {
     if (!selected) return;
-    void supabase.from("documents").update({ signature_data: null }).eq("id", selected.id);
+    void supabase.from("documents").update({ signature_data: null }).eq("id", selected.id).eq("user_id", uid ?? "");
     setDocSignature(null);
     setSelected(s => s ? { ...s, signature_data: null } : s);
     showToast("success", "Signature supprimée.");
@@ -1544,32 +1585,32 @@ export default function FacturesPage() {
     <div className={`flex h-[calc(100vh-56px)] flex-col overflow-hidden ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
 
       {/* ── Header ── */}
-      <div className={`shrink-0 border-b px-5 py-4 backdrop-blur-xl sm:px-8 ${isDark ? "border-white/[0.07] bg-[rgba(10,11,16,0.95)]" : "border-black/[0.06] bg-white/90"}`}>
+      <div className={`shrink-0 border-b px-5 py-4 backdrop-blur-xl sm:px-8 ${headerCls}`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
+            <div className={`h-9 w-9 flex items-center justify-center rounded-lg border ${tbd1} ${tbg1}`}>
               <ReceiptText size={16} style={{ color:"#c9a55a" }}/>
             </div>
             <div>
-              <h1 className={`text-base font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>Factures & Devis</h1>
-              <p className="text-[0.65rem] text-white/30">{documents.length} document{documents.length !== 1 ? "s" : ""}</p>
+              <h1 className={`text-base font-extrabold ${tw1}`}>Factures & Devis</h1>
+              <p className={`text-[0.65rem] ${tw4}`}>{documents.length} document{documents.length !== 1 ? "s" : ""}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {/* Paramètres */}
             <a href="/client/factures/parametres" title="Paramètres"
-              className={`flex items-center gap-1.5 rounded-xl ${B} ${BH} px-2.5 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70 sm:px-3`}>
+              className={`flex items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-2.5 py-2 text-xs font-semibold ${tw3} transition hover:${tw1} sm:px-3`}>
               <Settings2 size={12}/>
               <span className="hidden sm:inline">Paramètres</span>
             </a>
             {documents.length > 0 && (
               <button onClick={exportCSV} title="Exporter CSV"
-                className={`hidden items-center gap-1.5 rounded-xl ${B} ${BH} px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70 sm:flex`}>
+                className={`hidden items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-3 py-2 text-xs font-semibold ${tw3} transition sm:flex`}>
                 <FileDown size={12}/> CSV
               </button>
             )}
             <button onClick={() => newDoc("devis")}
-              className={`hidden items-center gap-1.5 rounded-xl ${B} ${BH} px-3 py-2 text-xs font-semibold text-white/50 transition hover:text-white/80 sm:flex`}>
+              className={`hidden items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-3 py-2 text-xs font-semibold ${tw3} transition sm:flex`}>
               <Plus size={12}/> Devis
             </button>
             <button onClick={() => newDoc("facture")}
@@ -1605,13 +1646,13 @@ export default function FacturesPage() {
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 overflow-hidden px-5 py-5 sm:px-5">
 
         {/* ── Sidebar list ── */}
-        <aside className={`flex-col overflow-hidden border-r border-white/[0.06] sm:rounded-xl sm:border sm:border-white/[0.08] transition-all duration-300 ${mobileView === "editor" ? "hidden sm:flex" : "flex"} ${sidebarOpen ? "w-full sm:w-[300px] sm:flex-none" : "hidden sm:flex sm:w-0 sm:border-0"}`}
-          style={{ background:"rgba(255,255,255,0.01)" }}>
+        <aside className={`flex-col overflow-hidden transition-all duration-300 ${isDark ? "border-r border-white/[0.06] sm:border sm:border-white/[0.08]" : "border-r border-gray-200 sm:border sm:border-gray-200"} sm:rounded-xl ${mobileView === "editor" ? "hidden sm:flex" : "flex"} ${sidebarOpen ? "w-full sm:w-[300px] sm:flex-none" : "hidden sm:flex sm:w-0 sm:border-0"}`}
+          style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#ffffff" }}>
 
 
           {/* KPI strip */}
           {documents.length > 0 && (
-            <div className="grid grid-cols-3 gap-px border-b border-white/[0.07] bg-white/[0.04]">
+            <div className={`grid grid-cols-3 gap-px border-b ${tbd2} ${tbg1}`}>
               {[
                 { label: "CA encaissé",  val: fmtEur(stats.ca),          color: "#4ade80", click: () => { setFilterType("facture"); setFilterStatut("payé"); } },
                 { label: "En attente",   val: fmtEur(stats.pendingAmt),  color: "#60a5fa", click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
@@ -1620,33 +1661,33 @@ export default function FacturesPage() {
                 <motion.button key={k.label} onClick={k.click}
                   whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className="flex flex-col items-center gap-0.5 px-2 py-3 transition hover:bg-white/[0.04]">
+                  className={`flex flex-col items-center gap-0.5 px-2 py-3 transition ${isDark ? "hover:bg-white/[0.04]" : "hover:bg-gray-50"}`}>
                   <span className="text-[0.85rem] font-black leading-none" style={{ color: k.color }}>{k.val}</span>
-                  <span className="text-[0.52rem] font-semibold uppercase tracking-wide text-white/25">{k.label}</span>
+                  <span className={`text-[0.52rem] font-semibold uppercase tracking-wide ${tw5}`}>{k.label}</span>
                 </motion.button>
               ))}
             </div>
           )}
 
           {/* Search + filter */}
-          <div className="space-y-2.5 border-b border-white/[0.07] p-4">
+          <div className={`space-y-2.5 border-b ${tbd2} p-4`}>
             <div className="relative">
-              <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25"/>
+              <Search size={13} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${tw5}`}/>
               <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Numéro, client, objet…"
-                className={`w-full rounded-xl ${B} ${BH} ${BF} py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/25 outline-none transition`}/>
-              {query && <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"><X size={12}/></button>}
+                className={`w-full rounded-xl ${tiB} ${tiBH} focus:border-[rgba(201,165,90,0.4)] py-2.5 pl-9 pr-3 text-sm ${tw1} placeholder:${tw6} outline-none transition`}/>
+              {query && <button onClick={() => setQuery("")} className={`absolute right-3 top-1/2 -translate-y-1/2 ${tw4} hover:${tw2}`}><X size={12}/></button>}
             </div>
             {/* Type filter */}
             <div className="flex gap-1.5">
               {(["tous","facture","devis"] as const).map(t => (
                 <button key={t} onClick={() => setFilterType(t)}
-                  className={`rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition ${filterType === t ? "bg-white/10 text-white" : "text-white/30 hover:text-white/60"}`}>
+                  className={`rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition ${filterType === t ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600")}`}>
                   {t === "tous" ? "Tous" : t === "facture" ? "Factures" : "Devis"}
                 </button>
               ))}
               <div className="ml-auto flex items-center gap-1">
                 <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
-                  className="appearance-none rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[0.6rem] font-bold uppercase text-white/30 outline-none hover:text-white/60 cursor-pointer">
+                  className={`appearance-none rounded-lg border ${tbd1} ${tbg1} px-2 py-0.5 text-[0.6rem] font-bold uppercase ${tw4} outline-none cursor-pointer`}>
                   <option value="date">Date</option>
                   <option value="montant">Montant</option>
                   <option value="echeance">Échéance</option>
@@ -1656,7 +1697,7 @@ export default function FacturesPage() {
             {/* Statut filter */}
             <div className="flex flex-wrap gap-1">
               <button onClick={() => setFilterStatut("tous")}
-                className={`rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider transition ${filterStatut === "tous" ? "bg-white/10 text-white" : "text-white/20 hover:text-white/50"}`}>
+                className={`rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider transition ${filterStatut === "tous" ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/20 hover:text-white/50" : "text-gray-400 hover:text-gray-600")}`}>
                 Tous
               </button>
               {(Object.keys(STATUTS) as DocStatut[]).map(s => {
@@ -1668,7 +1709,7 @@ export default function FacturesPage() {
                     className={`rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider transition`}
                     style={filterStatut === s
                       ? { background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }
-                      : { color: "rgba(255,255,255,0.22)" }}>
+                      : { color: isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.35)" }}>
                     {cfg.label} {count > 0 && <span className="opacity-60">{count}</span>}
                   </button>
                 );
@@ -1679,11 +1720,11 @@ export default function FacturesPage() {
           {/* Doc list */}
           <div className="flex-1 overflow-y-auto">
             {loadingAll ? (
-              <div className="flex items-center justify-center py-14"><Loader2 size={20} className="animate-spin text-white/20"/></div>
+              <div className="flex items-center justify-center py-14"><Loader2 size={20} className={`animate-spin ${tw6}`}/></div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-14 text-center">
-                <ReceiptText size={22} className="text-white/15"/>
-                <p className="text-sm text-white/25">{query ? "Aucun résultat" : "Aucun document"}</p>
+                <ReceiptText size={22} className={tw6}/>
+                <p className={`text-sm ${tw5}`}>{query ? "Aucun résultat" : "Aucun document"}</p>
                 {!query && (
                   <button onClick={() => newDoc("facture")}
                     className="mt-1 flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-xs font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.09)]">
@@ -1701,18 +1742,18 @@ export default function FacturesPage() {
                       initial={{ opacity:0, x:-12 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-12 }}
                       transition={{ duration:0.22, ease }}
                       onClick={() => openDoc(doc)}
-                      className={`group relative w-full text-left transition-all ${isActive ? "bg-white/[0.07]" : "hover:bg-white/[0.04]"}`}>
+                      className={`group relative w-full text-left transition-all ${isActive ? (isDark ? "bg-white/[0.07]" : "bg-gray-100") : (isDark ? "hover:bg-white/[0.04]" : "hover:bg-gray-50")}`}>
                       {/* Barre latérale couleur */}
                       <div className="absolute left-0 top-0 h-full w-[3px] rounded-r transition-all"
                         style={{ background: isActive ? docColor : "transparent", opacity: isActive ? 1 : 0 }}/>
                       <div className="px-4 py-3.5 pl-5">
                         {/* Ligne 1 : référence + montant */}
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-[0.82rem] font-extrabold text-white leading-tight truncate">{doc.numero || "(sans numéro)"}</p>
+                          <p className={`text-[0.82rem] font-extrabold leading-tight truncate ${tw1}`}>{doc.numero || "(sans numéro)"}</p>
                           <span className="shrink-0 text-sm font-black" style={{ color: docColor }}>{fmtEur(doc.total_ttc)}</span>
                         </div>
                         {/* Ligne 2 : sujet */}
-                        {doc.sujet && <p className="mt-0.5 text-[0.72rem] text-white/50 truncate">{doc.sujet}</p>}
+                        {doc.sujet && <p className={`mt-0.5 text-[0.72rem] truncate ${tw2}`}>{doc.sujet}</p>}
                         {/* Ligne 3 : badges + date */}
                         <div className="mt-2 flex items-center gap-2">
                           <span className={`rounded-full px-2 py-0.5 text-[0.55rem] font-extrabold uppercase tracking-widest ${
@@ -1720,12 +1761,12 @@ export default function FacturesPage() {
                             {doc.type}
                           </span>
                           <StatutBadge statut={doc.statut}/>
-                          <span className="ml-auto text-[0.6rem] text-white/20">{fmtDate(doc.date_document)}</span>
+                          <span className={`ml-auto text-[0.6rem] ${tw6}`}>{fmtDate(doc.date_document)}</span>
                         </div>
                         {/* Ligne 4 : client + échéance */}
                         <div className="mt-1 flex items-center justify-between gap-1">
                           {doc.client_nom && (
-                            <p className="text-[0.65rem] text-white/30 truncate">{doc.client_nom}</p>
+                            <p className={`text-[0.65rem] truncate ${tw4}`}>{doc.client_nom}</p>
                           )}
                           {doc.date_echeance && (doc.statut === "envoyé" || doc.statut === "en_retard") && (() => {
                             const days = Math.floor((new Date(doc.date_echeance).getTime() - Date.now()) / 86_400_000);
@@ -1739,7 +1780,7 @@ export default function FacturesPage() {
                           })()}
                         </div>
                       </div>
-                      <div className="mx-4 h-px bg-white/[0.05]"/>
+                      <div className={`mx-4 h-px ${tsep}`}/>
                     </motion.button>
                   );
                 })}
@@ -1749,28 +1790,28 @@ export default function FacturesPage() {
 
           {/* Pagination */}
           {listTotalPages > 1 && (
-            <div className="shrink-0 flex items-center justify-between gap-2 border-t border-white/[0.07] px-4 py-2">
-              <p className="text-[0.58rem] text-white/25">
+            <div className={`shrink-0 flex items-center justify-between gap-2 border-t ${tbd2} px-4 py-2`}>
+              <p className={`text-[0.58rem] ${tw5}`}>
                 {(listPage-1)*PAGE_SIZE+1}–{Math.min(listPage*PAGE_SIZE, listTotal)} / {listTotal}
               </p>
               <div className="flex items-center gap-0.5">
                 <button onClick={() => setListPage(p => Math.max(1,p-1))} disabled={listPage===1}
-                  className="h-6 w-6 flex items-center justify-center rounded-lg border border-white/[0.08] text-white/30 transition hover:bg-white/[0.06] hover:text-white/60 disabled:opacity-20">
+                  className={`h-6 w-6 flex items-center justify-center rounded-lg border ${tbd1} ${tw4} transition ${isDark ? "hover:bg-white/[0.06] hover:text-white/60" : "hover:bg-gray-100 hover:text-gray-600"} disabled:opacity-20`}>
                   <ChevronLeft size={11}/>
                 </button>
                 {(listTotalPages <= 7
                   ? Array.from({length: listTotalPages}, (_,i) => i+1)
                   : [1, ...(listPage > 3 ? ["…"] : []), ...Array.from({length:3}, (_,i) => Math.max(2,listPage-1)+i).filter(p => p > 1 && p < listTotalPages), ...(listPage < listTotalPages-2 ? ["…"] : []), listTotalPages]
                 ).map((p, i) => p === "…" ? (
-                  <span key={`e${i}`} className="px-1 text-[0.6rem] text-white/20">…</span>
+                  <span key={`e${i}`} className={`px-1 text-[0.6rem] ${tw6}`}>…</span>
                 ) : (
                   <button key={p} onClick={() => setListPage(p as number)}
-                    className={`h-6 min-w-[1.5rem] px-1 rounded-lg text-[0.6rem] font-bold transition ${p===listPage ? "bg-white/10 text-white" : "text-white/30 hover:text-white/60"}`}>
+                    className={`h-6 min-w-[1.5rem] px-1 rounded-lg text-[0.6rem] font-bold transition ${p===listPage ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-700")}`}>
                     {p}
                   </button>
                 ))}
                 <button onClick={() => setListPage(p => Math.min(listTotalPages,p+1))} disabled={listPage===listTotalPages}
-                  className="h-6 w-6 flex items-center justify-center rounded-lg border border-white/[0.08] text-white/30 transition hover:bg-white/[0.06] hover:text-white/60 disabled:opacity-20">
+                  className={`h-6 w-6 flex items-center justify-center rounded-lg border ${tbd1} ${tw4} transition ${isDark ? "hover:bg-white/[0.06] hover:text-white/60" : "hover:bg-gray-100 hover:text-gray-600"} disabled:opacity-20`}>
                   <ChevronRight size={11}/>
                 </button>
               </div>
@@ -1778,7 +1819,7 @@ export default function FacturesPage() {
           )}
 
           {/* Bouton création rapide bas de sidebar */}
-          <div className="shrink-0 border-t border-white/[0.07] p-3 grid grid-cols-2 gap-2">
+          <div className={`shrink-0 border-t ${tbd2} p-3 grid grid-cols-2 gap-2`}>
             <button onClick={() => newDoc("devis")}
               className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-400/20 py-2 text-[0.7rem] font-bold text-blue-400/70 transition hover:bg-blue-400/10 hover:text-blue-400">
               <Plus size={11}/> Devis
@@ -1795,13 +1836,13 @@ export default function FacturesPage() {
         <main className={`flex flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
           {!draft ? (
             <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-              className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-white/[0.08] bg-white/[0.025] p-8 text-center">
+              className={`flex h-full flex-col items-center justify-center gap-4 rounded-xl border ${tbd1} p-8 text-center ${tbg2}`}>
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)]">
                 <ReceiptText size={28} style={{ color:"#c9a55a" }}/>
               </div>
               <div>
-                <p className="text-base font-bold text-white">Sélectionnez ou créez un document</p>
-                <p className="mt-1 text-sm text-white/30">Factures et devis professionnels</p>
+                <p className={`text-base font-bold ${tw1}`}>Sélectionnez ou créez un document</p>
+                <p className={`mt-1 text-sm ${tw4}`}>Factures et devis professionnels</p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => newDoc("devis")}
@@ -1818,25 +1859,25 @@ export default function FacturesPage() {
           ) : (
             <motion.div key={selected?.id ?? "new"} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
               transition={{ duration:0.3, ease }}
-              className="flex h-full flex-col overflow-hidden rounded-none sm:rounded-xl sm:border sm:border-white/[0.08]"
-              style={{ background:"rgba(255,255,255,0.01)" }}>
+              className={`flex h-full flex-col overflow-hidden rounded-none sm:rounded-xl sm:border ${tbd1}`}
+              style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#ffffff" }}>
 
               {/* ── Toolbar ── */}
-              <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.07] px-5 py-3">
+              <div className={`flex flex-wrap items-center gap-2 border-b ${tbd2} px-5 py-3`}>
                 {/* Toggle sidebar (desktop) */}
                 <button onClick={() => setSidebarOpen(o => !o)}
                   title={sidebarOpen ? "Masquer la liste" : "Afficher la liste"}
-                  className="hidden sm:flex items-center justify-center h-7 w-7 rounded-lg border border-white/[0.08] text-white/30 transition hover:bg-white/[0.06] hover:text-white/60">
+                  className={`hidden sm:flex items-center justify-center h-7 w-7 rounded-lg border ${tbd1} ${tw4} transition ${isDark ? "hover:bg-white/[0.06] hover:text-white/60" : "hover:bg-gray-100 hover:text-gray-600"}`}>
                   {sidebarOpen ? <PanelLeftClose size={13}/> : <PanelLeftOpen size={13}/>}
                 </button>
-                <button onClick={() => setMobileView("list")} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition sm:hidden">
+                <button onClick={() => setMobileView("list")} className={`flex items-center gap-1.5 text-xs ${tw3} hover:${tw1} transition sm:hidden`}>
                   <ArrowLeft size={13}/>
                 </button>
                 {/* Type toggle */}
-                <div className={`flex rounded-xl ${B} p-0.5`}>
+                <div className={`flex rounded-xl ${tiB} p-0.5`}>
                   {(["facture","devis"] as DocType[]).map(t => (
                     <button key={t} onClick={() => { updDraft("type", t); if (!selected) setDraft(d => d ? { ...d, numero: newNumero(t, documents) } : d); }}
-                      className={`rounded-lg px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition ${draft.type === t ? "text-[#0a0a0a]" : "text-white/40 hover:text-white/70"}`}
+                      className={`rounded-lg px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition ${draft.type === t ? "text-[#0a0a0a]" : (isDark ? "text-white/40 hover:text-white/70" : "text-gray-400 hover:text-gray-700")}`}
                       style={draft.type === t ? { background:`linear-gradient(135deg,${activeColor},${activeColor}cc)` } : {}}>
                       {t}
                     </button>
@@ -1868,17 +1909,17 @@ export default function FacturesPage() {
                   )}
                   {selected && (
                     <button onClick={handleDuplicate} disabled={duplicating}
-                      className={`hidden items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/20 hover:text-white/70 disabled:opacity-40 sm:flex`}
+                      className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} disabled:opacity-40 sm:flex`}
                       title="Dupliquer ce document">
                       {duplicating ? <Loader2 size={12} className="animate-spin"/> : <CopyPlus size={12}/>} Dupliquer
                     </button>
                   )}
                   <button onClick={() => setShowPreview(true)}
-                    className={`hidden items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/20 hover:text-white/70 sm:flex`}>
+                    className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} sm:flex`}>
                     <Eye size={13}/> Aperçu
                   </button>
                   <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
-                    className={`hidden items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:border-white/20 hover:text-white/70 sm:flex`}>
+                    className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} sm:flex`}>
                     <FileDown size={13}/> PDF
                   </button>
                   {selected && (
@@ -1936,7 +1977,7 @@ export default function FacturesPage() {
                 <div className="space-y-7">
 
                   {/* Document identity card */}
-                  <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03]">
+                  <div className={`overflow-hidden rounded-2xl border ${tbd2} ${tbg2}`}>
                     {/* Barre couleur top */}
                     <div className="h-[3px]" style={{ background: activeColor }}/>
                     <div className="flex items-center gap-5 px-5 py-4">
@@ -1944,21 +1985,21 @@ export default function FacturesPage() {
                       {draft.emetteur_logo ? (
                         <img src={draft.emetteur_logo} alt="Logo" className="h-11 w-auto max-w-[80px] rounded-lg object-contain"/>
                       ) : (
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
-                          <Building2 size={16} className="text-white/30"/>
+                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${tbd1} ${tbg1}`}>
+                          <Building2 size={16} className={tw4}/>
                         </div>
                       )}
                       {/* Centre : type + référence + sujet */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-[0.5rem] font-bold uppercase tracking-[0.2em] text-white/30">{draft.type === "facture" ? "Facture" : "Devis"}</p>
-                        <p className="text-base font-extrabold text-white leading-snug truncate">{draft.numero || "(numéro)"}</p>
-                        {draft.sujet && <p className="text-[0.65rem] text-white/35 truncate">{draft.sujet}</p>}
+                        <p className={`text-[0.5rem] font-bold uppercase tracking-[0.2em] ${tw4}`}>{draft.type === "facture" ? "Facture" : "Devis"}</p>
+                        <p className={`text-base font-extrabold leading-snug truncate ${tw1}`}>{draft.numero || "(numéro)"}</p>
+                        {draft.sujet && <p className={`text-[0.65rem] truncate ${tw3}`}>{draft.sujet}</p>}
                       </div>
                       {/* Droite : montant + client */}
                       <div className="shrink-0 text-right">
                         <p className="text-xl font-black leading-none" style={{ color: activeColor }}>{fmt(totals.ttc)}</p>
-                        <p className="mt-1 text-[0.6rem] text-white/30">{fmtDate(draft.date_document)}</p>
-                        {draft.client_nom && <p className="text-[0.6rem] font-semibold text-white/50 truncate max-w-[120px]">{draft.client_nom}</p>}
+                        <p className={`mt-1 text-[0.6rem] ${tw4}`}>{fmtDate(draft.date_document)}</p>
+                        {draft.client_nom && <p className={`text-[0.6rem] font-semibold truncate max-w-[120px] ${tw2}`}>{draft.client_nom}</p>}
                       </div>
                     </div>
                   </div>
@@ -1979,10 +2020,10 @@ export default function FacturesPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2.5">
                       <User size={10} className="shrink-0 text-blue-400/60"/>
-                      <span className="shrink-0 text-[0.63rem] font-bold uppercase tracking-widest text-white/30">Client</span>
-                      <div className="flex-1 h-px bg-white/[0.06]"/>
+                      <span className={`shrink-0 text-[0.63rem] font-bold uppercase tracking-widest ${tw4}`}>Client</span>
+                      <div className={`flex-1 h-px ${tsep}`}/>
                       <a href="/client/factures/parametres" title="Infos entreprise"
-                        className="flex shrink-0 items-center gap-1 rounded-lg border border-white/[0.07] px-2 py-1 text-[0.62rem] font-semibold text-white/25 transition hover:border-white/20 hover:text-white/50">
+                        className={`flex shrink-0 items-center gap-1 rounded-lg border ${tbd2} px-2 py-1 text-[0.62rem] font-semibold ${tw5} transition ${isDark ? "hover:border-white/20 hover:text-white/50" : "hover:border-gray-300 hover:text-gray-500"}`}>
                         <Building2 size={9}/> Mon entreprise
                       </a>
                       <button onClick={openCrmModal}
@@ -2008,9 +2049,9 @@ export default function FacturesPage() {
                   {/* ── Lignes de prestation ── */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2.5">
-                      <ReceiptText size={10} className="shrink-0 text-white/25"/>
-                      <span className="shrink-0 text-[0.63rem] font-bold uppercase tracking-widest text-white/30">Lignes de prestation</span>
-                      <div className="flex-1 h-px bg-white/[0.06]"/>
+                      <ReceiptText size={10} className={`shrink-0 ${tw5}`}/>
+                      <span className={`shrink-0 text-[0.63rem] font-bold uppercase tracking-widest ${tw4}`}>Lignes de prestation</span>
+                      <div className={`flex-1 h-px ${tsep}`}/>
                       <button onClick={addItem}
                         className="flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[0.65rem] font-semibold transition hover:opacity-80"
                         style={{ color:activeColor, borderColor:`${activeColor}44`, background:`${activeColor}11` }}>
@@ -2020,7 +2061,7 @@ export default function FacturesPage() {
                     {/* Column headers */}
                     <div className="mb-1 hidden grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] gap-1.5 px-3 sm:grid">
                       {["Description","Unité","Qté","Prix HT","Remise %","TVA %","Total HT",""].map(h => (
-                        <span key={h} className="text-[0.6rem] font-bold uppercase tracking-wider text-white/25">{h}</span>
+                        <span key={h} className={`text-[0.6rem] font-bold uppercase tracking-wider ${tw5}`}>{h}</span>
                       ))}
                     </div>
                     <div className="space-y-2">
@@ -2044,32 +2085,32 @@ export default function FacturesPage() {
                   <div className="space-y-3">
                     <SectionLabel icon={<Percent size={10}/>} label="Remise & acompte"/>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                      <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
                         <Percent size={13} style={{ color:activeColor }}/>
                         <div className="flex-1">
-                          <p className="mb-1 text-[0.63rem] font-medium text-white/35">Remise globale</p>
+                          <p className={`mb-1 text-[0.63rem] font-medium ${tw3}`}>Remise globale</p>
                           <div className="flex items-center gap-2">
                             <input type="number" min="0" max="100" step="0.5"
                               value={draft.remise_pct || ""}
                               onChange={e => updDraft("remise_pct", parseFloat(e.target.value)||0)}
                               placeholder="0"
-                              className={`w-16 rounded-lg ${B} ${BH} ${BF} px-2.5 py-1.5 text-sm text-white outline-none transition`}/>
-                            <span className="text-sm text-white/40">%</span>
+                              className={`w-16 rounded-lg ${tiB} ${tiBH} focus:border-[rgba(201,165,90,0.4)] px-2.5 py-1.5 text-sm ${tw1} outline-none transition`}/>
+                            <span className={`text-sm ${tw3}`}>%</span>
                             {totals.remise > 0 && <span className="text-sm font-bold text-red-400/80">− {fmt(totals.remise)}</span>}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                      <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
                         <BadgeCheck size={13} className="text-green-400"/>
                         <div className="flex-1">
-                          <p className="mb-1 text-[0.63rem] font-medium text-white/35">Acompte versé</p>
+                          <p className={`mb-1 text-[0.63rem] font-medium ${tw3}`}>Acompte versé</p>
                           <div className="flex items-center gap-2">
                             <input type="number" min="0" step="0.01"
                               value={draft.acompte || ""}
                               onChange={e => updDraft("acompte", parseFloat(e.target.value)||0)}
                               placeholder="0.00"
-                              className={`w-24 rounded-lg ${B} ${BH} ${BF} px-2.5 py-1.5 text-sm text-white outline-none transition`}/>
-                            <span className="text-sm text-white/40">{CURRENCIES.find(c => c.val === devise)?.symbol ?? "€"}</span>
+                              className={`w-24 rounded-lg ${tiB} ${tiBH} focus:border-[rgba(201,165,90,0.4)] px-2.5 py-1.5 text-sm ${tw1} outline-none transition`}/>
+                            <span className={`text-sm ${tw3}`}>{CURRENCIES.find(c => c.val === devise)?.symbol ?? "€"}</span>
                           </div>
                         </div>
                       </div>
@@ -2078,14 +2119,14 @@ export default function FacturesPage() {
 
                   {/* Totaux */}
                   <div className="flex justify-end">
-                    <div className="w-full max-w-xs rounded-xl border border-white/[0.08] bg-white/[0.03] p-5 space-y-2">
+                    <div className={`w-full max-w-xs rounded-xl border ${tbd1} ${tbg2} p-5 space-y-2`}>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-white/40">Sous-total HT</span>
-                        <span className="text-sm font-semibold text-white/70">{fmt(totals.subtotal_ht)}</span>
+                        <span className={`text-sm ${tw3}`}>Sous-total HT</span>
+                        <span className={`text-sm font-semibold ${tw2}`}>{fmt(totals.subtotal_ht)}</span>
                       </div>
                       {totals.remise > 0 && (
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-white/40">Remise ({draft.remise_pct}%)</span>
+                          <span className={`text-sm ${tw3}`}>Remise ({draft.remise_pct}%)</span>
                           <span className="text-sm font-semibold text-red-400">− {fmt(totals.remise)}</span>
                         </div>
                       )}
@@ -2094,29 +2135,29 @@ export default function FacturesPage() {
                         .sort(([a],[b]) => a - b)
                         .map(([rate, { ht, tva }]) => rate > 0 && (
                           <div key={rate} className="flex items-center justify-between">
-                            <span className="text-sm text-white/40">TVA {rate}% <span className="text-white/20 text-xs">(HT {fmt(ht)})</span></span>
-                            <span className="text-sm font-semibold text-white/70">{fmt(tva)}</span>
+                            <span className={`text-sm ${tw3}`}>TVA {rate}% <span className={`text-xs ${tw6}`}>(HT {fmt(ht)})</span></span>
+                            <span className={`text-sm font-semibold ${tw2}`}>{fmt(tva)}</span>
                           </div>
                         ))
                       }
                       {(totals.tvaByRate.size === 0 || !Array.from(totals.tvaByRate.keys()).some(r => r > 0)) && (
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-white/40">TVA</span>
-                          <span className="text-sm font-semibold text-white/70">{fmt(totals.tva)}</span>
+                          <span className={`text-sm ${tw3}`}>TVA</span>
+                          <span className={`text-sm font-semibold ${tw2}`}>{fmt(totals.tva)}</span>
                         </div>
                       )}
-                      <div className="border-t border-white/[0.08] pt-2 flex items-center justify-between">
-                        <span className="text-base font-extrabold text-white">Total TTC</span>
+                      <div className={`border-t ${tbd1} pt-2 flex items-center justify-between`}>
+                        <span className={`text-base font-extrabold ${tw1}`}>Total TTC</span>
                         <span className="text-xl font-bold" style={{ color:activeColor }}>{fmt(totals.ttc)}</span>
                       </div>
                       {totals.acompte > 0 && (
                         <>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-white/40">Acompte versé</span>
+                            <span className={`text-sm ${tw3}`}>Acompte versé</span>
                             <span className="text-sm font-semibold text-green-400">− {fmt(totals.acompte)}</span>
                           </div>
-                          <div className="border-t border-white/[0.08] pt-2 flex items-center justify-between">
-                            <span className="text-sm font-bold text-white/60">Net à payer</span>
+                          <div className={`border-t ${tbd1} pt-2 flex items-center justify-between`}>
+                            <span className={`text-sm font-bold ${tw2}`}>Net à payer</span>
                             <span className="text-base font-bold" style={{ color:activeColor }}>{fmt(totals.ttc - totals.acompte)}</span>
                           </div>
                         </>
@@ -2134,7 +2175,7 @@ export default function FacturesPage() {
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {CONDITIONS_PRESETS.map(p => (
                             <button key={p.label} onClick={() => updDraft("conditions", p.val)}
-                              className="rounded-full border border-white/[0.08] px-2 py-0.5 text-[0.6rem] font-semibold text-white/30 transition hover:border-white/20 hover:text-white/60">
+                              className={`rounded-full border ${tbd1} px-2 py-0.5 text-[0.6rem] font-semibold ${tw4} transition ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`}>
                               {p.label}
                             </button>
                           ))}
@@ -2151,7 +2192,7 @@ export default function FacturesPage() {
                     <div className="flex flex-wrap gap-1.5">
                       {MENTIONS_PRESETS.map(p => (
                         <button key={p.label} onClick={() => updDraft("mentions_legales", draft.mentions_legales ? `${draft.mentions_legales}\n${p.val}` : p.val)}
-                          className="flex items-center gap-1 rounded-full border border-white/[0.08] px-2.5 py-1 text-[0.62rem] font-semibold text-white/30 transition hover:border-white/20 hover:text-white/60">
+                          className={`flex items-center gap-1 rounded-full border ${tbd1} px-2.5 py-1 text-[0.62rem] font-semibold ${tw4} transition ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`}>
                           <Plus size={8}/>{p.label}
                         </button>
                       ))}
@@ -2168,19 +2209,19 @@ export default function FacturesPage() {
                   {selected && draft.type === "facture" && (
                     <div className="space-y-3">
                       <SectionLabel icon={<Repeat2 size={10}/>} label="Facturation récurrente"/>
-                      <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                      <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
                         {docRecurCfg ? (
                           <>
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)]">
                               <Repeat2 size={14} style={{ color:"#c9a55a" }}/>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-white">{RECUR_FREQS.find(f => f.val === docRecurCfg.freq)?.label}</p>
-                              <p className="text-[0.65rem] text-white/40">Prochaine : {fmtDate(docRecurCfg.next_date)}</p>
+                              <p className={`text-xs font-semibold ${tw1}`}>{RECUR_FREQS.find(f => f.val === docRecurCfg.freq)?.label}</p>
+                              <p className={`text-[0.65rem] ${tw3}`}>Prochaine : {fmtDate(docRecurCfg.next_date)}</p>
                             </div>
                             <button onClick={() => { setRecurFreq(docRecurCfg.freq); setRecurModal(true); }}
-                              className="shrink-0 text-[0.65rem] text-white/30 transition hover:text-white/60">Modifier</button>
-                            <button onClick={() => { void supabase.from("documents").update({ recur_freq: null, recur_next_date: null }).eq("id", selected.id); setDocRecurCfg(null); setSelected(s => s ? { ...s, recur_freq: null, recur_next_date: null } : s); showToast("success", "Récurrence désactivée."); }}
+                              className={`shrink-0 text-[0.65rem] ${tw4} transition hover:${tw2}`}>Modifier</button>
+                            <button onClick={() => { void supabase.from("documents").update({ recur_freq: null, recur_next_date: null }).eq("id", selected.id).eq("user_id", uid ?? ""); setDocRecurCfg(null); setSelected(s => s ? { ...s, recur_freq: null, recur_next_date: null } : s); showToast("success", "Récurrence désactivée."); }}
                               className="shrink-0 text-[0.65rem] text-red-400/50 transition hover:text-red-400">Désactiver</button>
                             <button onClick={() => handleDuplicateRecur(docRecurCfg.freq, docRecurCfg.next_date)} disabled={duplicating}
                               className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-[0.65rem] font-bold transition hover:bg-[rgba(201,165,90,0.08)] disabled:opacity-40"
@@ -2190,10 +2231,10 @@ export default function FacturesPage() {
                           </>
                         ) : (
                           <>
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03]">
-                              <Repeat2 size={14} className="text-white/25"/>
+                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${tbd1} ${tbg1}`}>
+                              <Repeat2 size={14} className={tw5}/>
                             </div>
-                            <p className="flex-1 text-[0.65rem] text-white/30">Aucune récurrence configurée</p>
+                            <p className={`flex-1 text-[0.65rem] ${tw4}`}>Aucune récurrence configurée</p>
                             <button onClick={() => setRecurModal(true)}
                               className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-[0.65rem] font-semibold transition hover:bg-[rgba(201,165,90,0.08)]"
                               style={{ color:"#c9a55a" }}>
@@ -2209,7 +2250,7 @@ export default function FacturesPage() {
                   {selected && (
                     <div className="space-y-3">
                       <SectionLabel icon={<PenLine size={10}/>} label="Signature électronique"/>
-                      <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                      <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
                         {docSignature ? (
                           <>
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08]">
@@ -2224,10 +2265,10 @@ export default function FacturesPage() {
                           </>
                         ) : (
                           <>
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03]">
-                              <PenLine size={14} className="text-white/25"/>
+                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${tbd1} ${tbg1}`}>
+                              <PenLine size={14} className={tw5}/>
                             </div>
-                            <p className="flex-1 text-[0.65rem] text-white/30">Aucune signature</p>
+                            <p className={`flex-1 text-[0.65rem] ${tw4}`}>Aucune signature</p>
                             <button onClick={() => setSigModal(true)}
                               className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-[0.65rem] font-semibold transition hover:bg-[rgba(201,165,90,0.08)]"
                               style={{ color:"#c9a55a" }}>
@@ -2249,16 +2290,16 @@ export default function FacturesPage() {
                     )}
                     {selected && (
                       <button onClick={handleDuplicate} disabled={duplicating}
-                        className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70 disabled:opacity-40">
+                        className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition disabled:opacity-40`}>
                         {duplicating ? <Loader2 size={12} className="animate-spin"/> : <CopyPlus size={12}/>} Dupliquer
                       </button>
                     )}
                     <button onClick={() => setShowPreview(true)}
-                      className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70">
+                      className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition`}>
                       <Eye size={13}/> Aperçu
                     </button>
                     <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
-                      className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/40 transition hover:text-white/70">
+                      className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition`}>
                       <FileDown size={13}/> PDF
                     </button>
                     {selected && (

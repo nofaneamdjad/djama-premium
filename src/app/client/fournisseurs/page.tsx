@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { fmtDate, fmtEur } from "@/lib/format";
+import { useTheme } from "@/lib/theme-context";
 
 type OrderStatus   = "draft"|"sent"|"confirmed"|"in_delivery"|"received"|"partial"|"cancelled";
 type InvoiceStatus = "unpaid"|"partial"|"paid"|"overdue"|"disputed";
@@ -143,19 +144,37 @@ const EMPTY_INVOICE = (): Partial<FInvoice> => ({
   currency: "EUR", status: "unpaid", payment_method: "", notes: "",
 });
 
-function inp(extra = "") {
-  return `w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors ${extra}`;
+const DarkCtx = createContext(true);
+const useDark = () => useContext(DarkCtx);
+
+function useInp() {
+  const isDark = useDark();
+  return (extra = "") => isDark
+    ? `w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors ${extra}`
+    : `w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-colors ${extra}`;
 }
+
+function selStyle(isDark: boolean): React.CSSProperties {
+  return {
+    backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+    color: isDark ? "rgba(255,255,255,0.7)" : "#374151",
+    borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb",
+    colorScheme: isDark ? "dark" : "light",
+  };
+}
+
 function Lbl({ children }: { children: React.ReactNode }) {
-  return <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">{children}</label>;
+  const isDark = useDark();
+  return <label className={`mb-1.5 block text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>{children}</label>;
 }
 function Stars({ value, onChange }: { value: number; onChange?: (n: number) => void }) {
+  const isDark = useDark();
   return (
     <div className="flex gap-1">
       {[1,2,3,4,5].map((n) => (
         <button key={n} type="button" onClick={() => onChange?.(n)}
           className={`text-base transition-all ${onChange ? "cursor-pointer hover:scale-110" : "cursor-default"}`}
-          style={{ color: n <= value ? "#f59e0b" : "rgba(255,255,255,0.15)" }}>
+          style={{ color: n <= value ? "#f59e0b" : isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)" }}>
           <Star size={16} fill="currentColor" strokeWidth={1}/>
         </button>
       ))}
@@ -166,6 +185,8 @@ function Stars({ value, onChange }: { value: number; onChange?: (n: number) => v
 function FournModal({ data, onSave, onClose }: {
   data: Partial<Fournisseur>; onSave: (f: Partial<Fournisseur>) => Promise<void>; onClose: () => void;
 }) {
+  const isDark = useDark();
+  const inp = useInp();
   const [form, setForm] = useState<Partial<Fournisseur>>(data);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState(1);
@@ -177,28 +198,28 @@ function FournModal({ data, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-2xl bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+        className={`w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: violet + "18", border: `1px solid ${violet}30` }}>
               <Truck size={14} style={{ color: violet }}/>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier fournisseur" : "Nouveau fournisseur"}</h3>
-              <p className="text-[10px] text-white/30">Étape {step} / 3</p>
+              <h3 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{form.id ? "Modifier fournisseur" : "Nouveau fournisseur"}</h3>
+              <p className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>Étape {step} / 3</p>
             </div>
           </div>
-          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors"><X size={14}/></button>
+          <button onClick={onClose} className={`h-7 w-7 flex items-center justify-center rounded-lg border transition-colors ${isDark ? "border-white/10 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}><X size={14}/></button>
         </div>
-                <div className="flex gap-1 px-6 pt-4">
+        <div className="flex gap-1 px-6 pt-4">
           {[1,2,3].map((s) => (
             <div key={s} className="flex-1 h-1 rounded-full transition-all duration-300"
-              style={{ background: s <= step ? violet : "rgba(255,255,255,0.08)" }}/>
+              style={{ background: s <= step ? violet : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }}/>
           ))}
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[65vh] space-y-4">
-                    {step === 1 && (
+          {step === 1 && (
             <>
               <div><Lbl>Nom de l'entreprise *</Lbl>
                 <input value={form.company_name ?? ""} onChange={(e) => set("company_name", e.target.value)} placeholder="ACME Fournisseurs SARL" className={inp()}/>
@@ -208,7 +229,7 @@ function FournModal({ data, onSave, onClose }: {
                   <input value={form.contact_name ?? ""} onChange={(e) => set("contact_name", e.target.value)} placeholder="Prénom Nom" className={inp()}/>
                 </div>
                 <div><Lbl>Catégorie</Lbl>
-                  <select value={form.category ?? "produits"} onChange={(e) => set("category", e.target.value)} className={inp("appearance-none")}>
+                  <select value={form.category ?? "produits"} onChange={(e) => set("category", e.target.value)} className={inp("appearance-none")} style={selStyle(isDark)}>
                     {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                 </div>
@@ -230,7 +251,7 @@ function FournModal({ data, onSave, onClose }: {
                 </div>
               </div>
               <div><Lbl>Pays</Lbl>
-                <select value={form.country ?? "France"} onChange={(e) => set("country", e.target.value)} className={inp("appearance-none")}>
+                <select value={form.country ?? "France"} onChange={(e) => set("country", e.target.value)} className={inp("appearance-none")} style={selStyle(isDark)}>
                   {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -256,7 +277,7 @@ function FournModal({ data, onSave, onClose }: {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div><Lbl>Mode de paiement</Lbl>
-                  <select value={form.payment_method ?? "virement"} onChange={(e) => set("payment_method", e.target.value)} className={inp("appearance-none")}>
+                  <select value={form.payment_method ?? "virement"} onChange={(e) => set("payment_method", e.target.value)} className={inp("appearance-none")} style={selStyle(isDark)}>
                     {PAYMENT_METHODS.map((m) => <option key={m}>{m}</option>)}
                   </select>
                 </div>
@@ -264,7 +285,7 @@ function FournModal({ data, onSave, onClose }: {
                   <input value={form.payment_terms ?? "30 jours"} onChange={(e) => set("payment_terms", e.target.value)} placeholder="30 jours" className={inp()}/>
                 </div>
                 <div><Lbl>Devise</Lbl>
-                  <select value={form.currency ?? "EUR"} onChange={(e) => set("currency", e.target.value)} className={inp("appearance-none")}>
+                  <select value={form.currency ?? "EUR"} onChange={(e) => set("currency", e.target.value)} className={inp("appearance-none")} style={selStyle(isDark)}>
                     {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </div>
@@ -284,15 +305,15 @@ function FournModal({ data, onSave, onClose }: {
               <div><Lbl>Notes internes</Lbl>
                 <textarea value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} rows={4} placeholder="Informations importantes sur ce fournisseur…" className={inp("resize-none")}/>
               </div>
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 space-y-3">
-                <p className="text-xs font-bold text-white/50">Récapitulatif</p>
-                <div className="grid grid-cols-2 gap-2 text-xs text-white/60">
-                  <div><span className="text-white/30">Société : </span>{form.company_name}</div>
-                  <div><span className="text-white/30">Catégorie : </span>{CATEGORIES.find((c) => c.value === form.category)?.label}</div>
-                  <div><span className="text-white/30">Email : </span>{form.email || "—"}</div>
-                  <div><span className="text-white/30">Paiement : </span>{form.payment_terms}</div>
-                  <div><span className="text-white/30">SIRET : </span>{form.siret || "—"}</div>
-                  <div><span className="text-white/30">Devise : </span>{form.currency}</div>
+              <div className={`rounded-2xl p-4 space-y-3 border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-gray-50 border-gray-200"}`}>
+                <p className={`text-xs font-bold ${isDark ? "text-white/50" : "text-gray-500"}`}>Récapitulatif</p>
+                <div className={`grid grid-cols-2 gap-2 text-xs ${isDark ? "text-white/60" : "text-gray-700"}`}>
+                  <div><span className={isDark ? "text-white/30" : "text-gray-400"}>Société : </span>{form.company_name}</div>
+                  <div><span className={isDark ? "text-white/30" : "text-gray-400"}>Catégorie : </span>{CATEGORIES.find((c) => c.value === form.category)?.label}</div>
+                  <div><span className={isDark ? "text-white/30" : "text-gray-400"}>Email : </span>{form.email || "—"}</div>
+                  <div><span className={isDark ? "text-white/30" : "text-gray-400"}>Paiement : </span>{form.payment_terms}</div>
+                  <div><span className={isDark ? "text-white/30" : "text-gray-400"}>SIRET : </span>{form.siret || "—"}</div>
+                  <div><span className={isDark ? "text-white/30" : "text-gray-400"}>Devise : </span>{form.currency}</div>
                 </div>
               </div>
             </>
@@ -300,7 +321,7 @@ function FournModal({ data, onSave, onClose }: {
         </div>
 
         <div className="flex gap-3 px-6 pb-6 pt-2">
-          {step > 1 && <button onClick={() => setStep((s) => s - 1)} className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors"><ChevronLeft size={14}/>Retour</button>}
+          {step > 1 && <button onClick={() => setStep((s) => s - 1)} className={`flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm border transition-colors ${isDark ? "text-white/50 border-white/10 hover:bg-white/[0.04]" : "text-gray-500 border-gray-200 hover:bg-gray-100"}`}><ChevronLeft size={14}/>Retour</button>}
           {step < 3 ? (
             <button onClick={() => setStep((s) => s + 1)} disabled={!form.company_name}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
@@ -327,6 +348,8 @@ function OrderModal({ fournisseurs, order, onSave, onClose }: {
   fournisseurs: Fournisseur[]; order: Partial<FOrder>;
   onSave: (o: Partial<FOrder>) => Promise<void>; onClose: () => void;
 }) {
+  const isDark = useDark();
+  const inp = useInp();
   const [form, setForm] = useState<Partial<FOrder>>(order);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof FOrder, v: string | number | null) => setForm((p) => ({ ...p, [k]: v }));
@@ -339,10 +362,10 @@ function OrderModal({ fournisseurs, order, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier la commande" : "Nouvelle commande fournisseur"}</h3>
-          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
+        className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
+          <h3 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{form.id ? "Modifier la commande" : "Nouvelle commande fournisseur"}</h3>
+          <button onClick={onClose} className={`h-7 w-7 flex items-center justify-center rounded-lg border ${isDark ? "border-white/10 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}><X size={14}/></button>
         </div>
         <div className="p-6 space-y-3 overflow-y-auto max-h-[70vh]">
           <div><Lbl>Fournisseur *</Lbl>
@@ -350,7 +373,7 @@ function OrderModal({ fournisseurs, order, onSave, onClose }: {
               const f = fournisseurs.find((f) => f.id === e.target.value);
               set("fournisseur_id", e.target.value || null);
               set("fournisseur_name", f?.company_name ?? "");
-            }} className={inp("appearance-none")}>
+            }} className={inp("appearance-none")} style={selStyle(isDark)}>
               <option value="">Sélectionner…</option>
               {fournisseurs.map((f) => <option key={f.id} value={f.id}>{f.company_name}</option>)}
             </select>
@@ -360,7 +383,7 @@ function OrderModal({ fournisseurs, order, onSave, onClose }: {
               <input value={form.order_number ?? ""} onChange={(e) => set("order_number", e.target.value)} className={inp()}/>
             </div>
             <div><Lbl>Statut</Lbl>
-              <select value={form.status ?? "draft"} onChange={(e) => set("status", e.target.value)} className={inp("appearance-none")}>
+              <select value={form.status ?? "draft"} onChange={(e) => set("status", e.target.value)} className={inp("appearance-none")} style={selStyle(isDark)}>
                 {Object.entries(ORDER_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
             </div>
@@ -400,13 +423,13 @@ function OrderModal({ fournisseurs, order, onSave, onClose }: {
             <textarea value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} rows={2} className={inp("resize-none")}/>
           </div>
           {selectedF && (
-            <div className="bg-violet-500/5 border border-violet-500/15 rounded-xl px-3 py-2 text-xs text-white/50">
+            <div className={`rounded-xl px-3 py-2 text-xs border border-violet-500/15 bg-violet-500/5 ${isDark ? "text-white/50" : "text-gray-500"}`}>
               <span className="text-violet-400 font-semibold">{selectedF.company_name}</span> · {selectedF.payment_terms} · délai {selectedF.total_orders > 0 ? `${selectedF.total_late_orders}/${selectedF.total_orders} retards` : "nouveau fournisseur"}
             </div>
           )}
         </div>
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
+          <button onClick={onClose} className={`px-4 py-2.5 rounded-xl text-sm border transition-colors ${isDark ? "text-white/50 border-white/10 hover:bg-white/[0.04]" : "text-gray-500 border-gray-200 hover:bg-gray-100"}`}>Annuler</button>
           <button onClick={async () => { setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.fournisseur_id}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -425,6 +448,8 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
   fournisseurs: Fournisseur[]; invoice: Partial<FInvoice>;
   onSave: (i: Partial<FInvoice>) => Promise<void>; onClose: () => void;
 }) {
+  const isDark = useDark();
+  const inp = useInp();
   const [form, setForm] = useState<Partial<FInvoice>>(invoice);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof FInvoice, v: string | number | null) => setForm((p) => ({ ...p, [k]: v }));
@@ -435,10 +460,10 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier facture" : "Nouvelle facture fournisseur"}</h3>
-          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
+        className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
+          <h3 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{form.id ? "Modifier facture" : "Nouvelle facture fournisseur"}</h3>
+          <button onClick={onClose} className={`h-7 w-7 flex items-center justify-center rounded-lg border ${isDark ? "border-white/10 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}><X size={14}/></button>
         </div>
         <div className="p-6 space-y-3 overflow-y-auto max-h-[70vh]">
           <div><Lbl>Fournisseur *</Lbl>
@@ -446,7 +471,7 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
               const f = fournisseurs.find((f) => f.id === e.target.value);
               set("fournisseur_id", e.target.value || null);
               set("fournisseur_name", f?.company_name ?? "");
-            }} className={inp("appearance-none")}>
+            }} className={inp("appearance-none")} style={selStyle(isDark)}>
               <option value="">Sélectionner…</option>
               {fournisseurs.map((f) => <option key={f.id} value={f.id}>{f.company_name}</option>)}
             </select>
@@ -456,7 +481,7 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
               <input value={form.invoice_number ?? ""} onChange={(e) => set("invoice_number", e.target.value)} placeholder="FAC-2026-001" className={inp()}/>
             </div>
             <div><Lbl>Statut</Lbl>
-              <select value={form.status ?? "unpaid"} onChange={(e) => set("status", e.target.value)} className={inp("appearance-none")}>
+              <select value={form.status ?? "unpaid"} onChange={(e) => set("status", e.target.value)} className={inp("appearance-none")} style={selStyle(isDark)}>
                 {Object.entries(INV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
             </div>
@@ -489,7 +514,7 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
               <input type="number" min={0} step={0.01} value={form.paid_amount ?? 0} onChange={(e) => set("paid_amount", parseFloat(e.target.value))} className={inp()}/>
             </div>
             <div><Lbl>Mode de paiement</Lbl>
-              <select value={form.payment_method ?? ""} onChange={(e) => set("payment_method", e.target.value)} className={inp("appearance-none")}>
+              <select value={form.payment_method ?? ""} onChange={(e) => set("payment_method", e.target.value)} className={inp("appearance-none")} style={selStyle(isDark)}>
                 <option value="">Non défini</option>
                 {PAYMENT_METHODS.map((m) => <option key={m}>{m}</option>)}
               </select>
@@ -500,7 +525,7 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
           </div>
         </div>
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
+          <button onClick={onClose} className={`px-4 py-2.5 rounded-xl text-sm border transition-colors ${isDark ? "text-white/50 border-white/10 hover:bg-white/[0.04]" : "text-gray-500 border-gray-200 hover:bg-gray-100"}`}>Annuler</button>
           <button onClick={async () => { setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.fournisseur_id}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -516,6 +541,8 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
 function RatingModal({ fournisseur, onSave, onClose }: {
   fournisseur: Fournisseur; onSave: (r: { reliability: number; quality: number; price: number; delays: number; comment: string }) => Promise<void>; onClose: () => void;
 }) {
+  const isDark = useDark();
+  const inp = useInp();
   const [form, setForm] = useState({ reliability: 3, quality: 3, price: 3, delays: 3, comment: "" });
   const [saving, setSaving] = useState(false);
   const criteria = [
@@ -530,30 +557,30 @@ function RatingModal({ fournisseur, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-md bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-sm font-semibold text-white/90">Évaluer — {fournisseur.company_name}</h3>
-          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
+        className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
+          <h3 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>Évaluer — {fournisseur.company_name}</h3>
+          <button onClick={onClose} className={`h-7 w-7 flex items-center justify-center rounded-lg border ${isDark ? "border-white/10 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}><X size={14}/></button>
         </div>
         <div className="p-6 space-y-4">
           {criteria.map(({ key, label }) => (
             <div key={key} className="flex items-center justify-between">
-              <span className="text-sm text-white/70">{label}</span>
+              <span className={`text-sm ${isDark ? "text-white/70" : "text-gray-600"}`}>{label}</span>
               <Stars value={form[key]} onChange={(n) => setForm((p) => ({ ...p, [key]: n }))}/>
             </div>
           ))}
           <div><Lbl>Commentaire</Lbl>
             <textarea value={form.comment} onChange={(e) => setForm((p) => ({ ...p, comment: e.target.value }))} rows={3} placeholder="Observations…" className={inp("resize-none")}/>
           </div>
-          <div className="text-center p-3 bg-white/[0.03] rounded-xl border border-white/[0.06]">
-            <p className="text-xs text-white/40 mb-1">Score moyen</p>
+          <div className={`text-center p-3 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-gray-50 border-gray-200"}`}>
+            <p className={`text-xs mb-1 ${isDark ? "text-white/40" : "text-gray-400"}`}>Score moyen</p>
             <p className="text-2xl font-bold" style={{ color: violet }}>
               {((form.reliability + form.quality + form.price + form.delays) / 4).toFixed(1)}/5
             </p>
           </div>
         </div>
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10">Annuler</button>
+          <button onClick={onClose} className={`px-4 py-2.5 rounded-xl text-sm border ${isDark ? "text-white/50 border-white/10" : "text-gray-500 border-gray-200"}`}>Annuler</button>
           <button onClick={async () => { setSaving(true); await onSave(form); setSaving(false); }} disabled={saving}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -571,6 +598,7 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
   fournisseurs: Fournisseur[]; orders: FOrder[]; invoices: FInvoice[];
   onNew: () => void; onNewOrder: () => void; onNewInvoice: () => void;
 }) {
+  const isDark = useDark();
   const today = new Date().toISOString().split("T")[0];
   const in30 = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
 
@@ -609,13 +637,13 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpis.map((k) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 flex flex-col gap-2">
+            className={`rounded-2xl border p-4 flex flex-col gap-2 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
             <div className={`h-8 w-8 flex items-center justify-center rounded-xl ${k.bg}`}>
               <k.icon size={15} style={{ color: k.color }}/>
             </div>
             <div>
-              <div className={`font-bold text-white/90 ${k.isStr ? "text-sm" : "text-xl"}`}>{k.value}</div>
-              <div className="text-[10px] text-white/35 mt-0.5">{k.label}</div>
+              <div className={`font-bold ${isDark ? "text-white/90" : "text-gray-800"} ${k.isStr ? "text-sm" : "text-xl"}`}>{k.value}</div>
+              <div className={`text-[10px] mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{k.label}</div>
             </div>
           </motion.div>
         ))}
@@ -627,7 +655,7 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
           {alerts.map((a, i) => (
             <div key={i} className="flex items-center gap-3 rounded-xl px-4 py-2.5 border" style={{ background: a.color + "08", borderColor: a.color + "25" }}>
               <a.icon size={13} style={{ color: a.color }}/>
-              <span className="text-xs text-white/70">{a.text}</span>
+              <span className={`text-xs ${isDark ? "text-white/70" : "text-gray-600"}`}>{a.text}</span>
             </div>
           ))}
         </div>
@@ -636,19 +664,19 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Top fournisseurs */}
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><Star size={12} style={{ color: violet }}/> Top fournisseurs</h3>
-          <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
+          <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-gray-400"}`}><Star size={12} style={{ color: violet }}/> Top fournisseurs</h3>
+          <div className={`rounded-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
             {topFourn.length === 0 ? (
-              <p className="text-center text-white/25 text-sm py-8">Aucune évaluation — notez vos fournisseurs</p>
+              <p className={`text-center text-sm py-8 ${isDark ? "text-white/25" : "text-gray-300"}`}>Aucune évaluation — notez vos fournisseurs</p>
             ) : topFourn.map((f, i) => {
               const score = ((f.score_reliability + f.score_quality + f.score_price + f.score_delays) / 4);
               const cat = CATEGORIES.find((c) => c.value === f.category);
               return (
-                <div key={f.id} className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0">
-                  <span className="text-xs font-semibold text-white/20 w-4 shrink-0">{i + 1}</span>
+                <div key={f.id} className={`flex items-center gap-3 px-4 py-3 border-b last:border-0 ${isDark ? "border-white/[0.04]" : "border-gray-100"}`}>
+                  <span className={`text-xs font-semibold w-4 shrink-0 ${isDark ? "text-white/20" : "text-gray-300"}`}>{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white/80 truncate">{f.company_name}</p>
-                    <p className="text-[10px] text-white/35">{cat?.label}</p>
+                    <p className={`text-sm font-semibold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{f.company_name}</p>
+                    <p className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{cat?.label}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-bold" style={{ color: score >= 4 ? "#10b981" : score >= 3 ? violet : "#f97316" }}>{score.toFixed(1)}/5</p>
@@ -662,24 +690,24 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
 
         {/* Commandes récentes */}
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><ShoppingCart size={12} className="text-blue-400"/> Commandes récentes</h3>
-          <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
+          <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-gray-400"}`}><ShoppingCart size={12} className="text-blue-400"/> Commandes récentes</h3>
+          <div className={`rounded-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
             {orders.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <p className="text-white/25 text-sm">Aucune commande</p>
+                <p className={`text-sm ${isDark ? "text-white/25" : "text-gray-300"}`}>Aucune commande</p>
                 <button onClick={onNewOrder} className="text-xs font-semibold px-3 py-1.5 rounded-xl" style={{ background: violet + "20", color: violet, border: `1px solid ${violet}40` }}><Plus size={11} className="inline mr-1"/>Créer</button>
               </div>
             ) : orders.slice(0, 6).map((o) => {
               const s = ORDER_STATUS[o.status];
               return (
-                <div key={o.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04] last:border-0">
+                <div key={o.id} className={`flex items-center gap-3 px-4 py-2.5 border-b last:border-0 ${isDark ? "border-white/[0.04]" : "border-gray-100"}`}>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-white/80 truncate">{o.fournisseur_name}</p>
-                    <p className="text-[10px] text-white/35">{o.order_number} · {fmtDate(o.order_date)}</p>
+                    <p className={`text-xs font-semibold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{o.fournisseur_name}</p>
+                    <p className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{o.order_number} · {fmtDate(o.order_date)}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${s.color} ${s.bg}`}>{s.label}</span>
-                    <p className="text-xs font-bold text-white/60 mt-0.5">{fmtEur(o.total_amount)}</p>
+                    <p className={`text-xs font-bold mt-0.5 ${isDark ? "text-white/60" : "text-gray-500"}`}>{fmtEur(o.total_amount)}</p>
                   </div>
                 </div>
               );
@@ -693,7 +721,7 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
           <div className="h-14 w-14 flex items-center justify-center rounded-2xl" style={{ background: violet + "15", border: `1px solid ${violet}30` }}>
             <Truck size={24} style={{ color: violet }}/>
           </div>
-          <p className="text-white/50 text-sm">Aucun fournisseur — ajoutez votre premier partenaire</p>
+          <p className={`text-sm ${isDark ? "text-white/50" : "text-gray-500"}`}>Aucun fournisseur — ajoutez votre premier partenaire</p>
           <button onClick={onNew} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold" style={{ background: violet + "20", color: violet, border: `1px solid ${violet}40` }}>
             <Plus size={13}/> Ajouter un fournisseur
           </button>
@@ -709,6 +737,7 @@ function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDel
   fournisseurs: Fournisseur[]; orders: FOrder[]; invoices: FInvoice[];
   onNew: () => void; onEdit: (f: Fournisseur) => void; onDelete: (id: string) => void; onRate: (f: Fournisseur) => void;
 }) {
+  const isDark = useDark();
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
 
@@ -720,14 +749,15 @@ function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDel
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex items-center gap-2 p-4 border-b border-white/[0.06] flex-wrap">
+      <div className={`flex items-center gap-2 p-4 border-b flex-wrap ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
         <div className="relative flex-1 min-w-[180px]">
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher fournisseur…"
-            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/[0.18] pl-8 transition-colors"/>
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"/>
+            className={`w-full border rounded-xl px-3 py-2 text-sm pl-8 focus:outline-none transition-colors ${isDark ? "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/25 focus:border-white/[0.18]" : "bg-white border-gray-200 text-gray-800 placeholder:text-gray-400 focus:border-gray-400"}`}/>
+          <Search size={13} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
         </div>
         <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
-          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+          className="border rounded-xl px-3 py-2 text-xs focus:outline-none appearance-none"
+          style={selStyle(isDark)}>
           <option value="all">Toutes catégories</option>
           {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
@@ -738,19 +768,21 @@ function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDel
       </div>
       <div className="flex-1 overflow-y-auto p-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3 auto-rows-min">
         {filtered.length === 0 ? (
-          <div className="col-span-3 flex flex-col items-center gap-3 py-16 text-center"><Truck size={28} className="text-white/20"/><p className="text-white/30 text-sm">Aucun fournisseur</p></div>
+          <div className="col-span-3 flex flex-col items-center gap-3 py-16 text-center">
+            <Truck size={28} className={isDark ? "text-white/20" : "text-gray-300"}/>
+            <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucun fournisseur</p>
+          </div>
         ) : filtered.map((f) => {
           const score = f.score_reliability > 0 ? ((f.score_reliability + f.score_quality + f.score_price + f.score_delays) / 4) : null;
           const cat = CATEGORIES.find((c) => c.value === f.category);
           const fOrders = orders.filter((o) => o.fournisseur_id === f.id);
           const fInvoices = invoices.filter((i) => i.fournisseur_id === f.id);
           const totalDue = fInvoices.filter((i) => i.status !== "paid").reduce((s, i) => s + (i.total_amount - i.paid_amount), 0);
-          const today = new Date().toISOString().split("T")[0];
           const contractExpiring = f.contract_expires_at && f.contract_expires_at <= new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
 
           return (
             <motion.div key={f.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="group bg-white/[0.025] border border-white/[0.06] rounded-2xl p-5 hover:border-white/[0.14] transition-all flex flex-col gap-3">
+              className={`group border rounded-2xl p-5 transition-all flex flex-col gap-3 ${isDark ? "bg-white/[0.025] border-white/[0.06] hover:border-white/[0.14]" : "bg-white border-gray-200 hover:border-gray-300"}`}>
               {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
@@ -758,22 +790,22 @@ function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDel
                     {f.company_name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white/90">{f.company_name}</p>
-                    <p className="text-[10px] text-white/40">{cat?.label}{f.city ? ` · ${f.city}` : ""}</p>
+                    <p className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{f.company_name}</p>
+                    <p className={`text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}>{cat?.label}{f.city ? ` · ${f.city}` : ""}</p>
                   </div>
                 </div>
                 <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
-                  <button onClick={() => onRate(f)} title="Évaluer" className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-amber-500/10 text-white/30 hover:text-amber-400 transition-all"><Star size={12}/></button>
-                  <button onClick={() => onEdit(f)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/[0.08] text-white/30 hover:text-white/70 transition-all"><Edit2 size={12}/></button>
-                  <button onClick={() => onDelete(f.id)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/30 hover:text-red-400 transition-all"><Trash2 size={12}/></button>
+                  <button onClick={() => onRate(f)} title="Évaluer" className={`h-7 w-7 flex items-center justify-center rounded-lg hover:bg-amber-500/10 hover:text-amber-400 transition-all ${isDark ? "text-white/30" : "text-gray-400"}`}><Star size={12}/></button>
+                  <button onClick={() => onEdit(f)} className={`h-7 w-7 flex items-center justify-center rounded-lg transition-all ${isDark ? "hover:bg-white/[0.08] text-white/30 hover:text-white/70" : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"}`}><Edit2 size={12}/></button>
+                  <button onClick={() => onDelete(f.id)} className={`h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-400 transition-all ${isDark ? "text-white/30" : "text-gray-400"}`}><Trash2 size={12}/></button>
                 </div>
               </div>
 
               {/* Info */}
               <div className="space-y-0.5">
-                {f.email && <p className="text-xs text-white/40 truncate">{f.email}</p>}
-                {f.phone && <p className="text-xs text-white/35">{f.phone}</p>}
-                {f.contact_name && <p className="text-xs text-white/35">Contact : {f.contact_name}</p>}
+                {f.email && <p className={`text-xs truncate ${isDark ? "text-white/40" : "text-gray-500"}`}>{f.email}</p>}
+                {f.phone && <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-500"}`}>{f.phone}</p>}
+                {f.contact_name && <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-500"}`}>Contact : {f.contact_name}</p>}
               </div>
 
               {/* Score */}
@@ -785,10 +817,10 @@ function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDel
               )}
 
               {/* Stats */}
-              <div className="flex items-center gap-3 pt-3 border-t border-white/[0.06] flex-wrap">
-                <div className="flex items-center gap-1 text-[10px] text-white/30"><ShoppingCart size={10}/> {fOrders.length} commande{fOrders.length > 1 ? "s" : ""}</div>
+              <div className={`flex items-center gap-3 pt-3 border-t flex-wrap ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
+                <div className={`flex items-center gap-1 text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}><ShoppingCart size={10}/> {fOrders.length} commande{fOrders.length > 1 ? "s" : ""}</div>
                 {totalDue > 0 && <div className="flex items-center gap-1 text-[10px] text-orange-400"><DollarSign size={10}/> {fmtEur(totalDue)} dû</div>}
-                <div className="text-[10px] text-white/25 ml-auto">{f.payment_terms}</div>
+                <div className={`text-[10px] ml-auto ${isDark ? "text-white/25" : "text-gray-300"}`}>{f.payment_terms}</div>
               </div>
 
               {/* Alerts */}
@@ -811,14 +843,16 @@ function OrdersView({ orders, fournisseurs, onNew, onEdit, onDelete }: {
   orders: FOrder[]; fournisseurs: Fournisseur[];
   onNew: () => void; onEdit: (o: FOrder) => void; onDelete: (id: string) => void;
 }) {
+  const isDark = useDark();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const filtered = orders.filter((o) => statusFilter === "all" || o.status === statusFilter);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex items-center gap-2 p-4 border-b border-white/[0.06] flex-wrap">
+      <div className={`flex items-center gap-2 p-4 border-b flex-wrap ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as OrderStatus | "all")}
-          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark] flex-1 max-w-xs">
+          className="border rounded-xl px-3 py-2 text-xs focus:outline-none appearance-none flex-1 max-w-xs"
+          style={selStyle(isDark)}>
           <option value="all">Tous statuts</option>
           {Object.entries(ORDER_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
@@ -829,33 +863,36 @@ function OrdersView({ orders, fournisseurs, onNew, onEdit, onDelete }: {
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center"><ShoppingCart size={28} className="text-white/20"/><p className="text-white/30 text-sm">Aucune commande</p></div>
+          <div className="flex flex-col items-center gap-3 py-16 text-center">
+            <ShoppingCart size={28} className={isDark ? "text-white/20" : "text-gray-300"}/>
+            <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucune commande</p>
+          </div>
         ) : filtered.map((o) => {
           const s = ORDER_STATUS[o.status];
           const today = new Date().toISOString().split("T")[0];
           const isLate = o.expected_date && o.expected_date < today && !["received", "cancelled"].includes(o.status);
           return (
             <motion.div key={o.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              className="group flex items-center gap-3 bg-white/[0.025] border border-white/[0.06] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
+              className={`group flex items-center gap-3 border rounded-2xl px-4 py-3 transition-all ${isDark ? "bg-white/[0.025] border-white/[0.06] hover:border-white/[0.14]" : "bg-white border-gray-200 hover:border-gray-300"}`}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <p className="text-sm font-semibold text-white/85 truncate">{o.fournisseur_name}</p>
+                  <p className={`text-sm font-semibold truncate ${isDark ? "text-white/85" : "text-gray-800"}`}>{o.fournisseur_name}</p>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${s.color} ${s.bg}`}>{s.label}</span>
                   {isLate && <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-semibold"><AlertTriangle size={9}/>En retard</span>}
                 </div>
-                <p className="text-xs text-white/35">
+                <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>
                   {o.order_number} · Commandé le {fmtDate(o.order_date)}
                   {o.expected_date ? ` · Attendu le ${fmtDate(o.expected_date)}` : ""}
                   {o.tracking_number ? ` · Suivi : ${o.tracking_number}` : ""}
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-bold text-white/80">{fmtEur(o.total_amount)}</p>
-                <p className="text-[10px] text-white/30">HT : {fmtEur(o.subtotal)}</p>
+                <p className={`text-sm font-bold ${isDark ? "text-white/80" : "text-gray-700"}`}>{fmtEur(o.total_amount)}</p>
+                <p className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>HT : {fmtEur(o.subtotal)}</p>
               </div>
               <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all shrink-0">
-                <button onClick={() => onEdit(o)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/[0.08] text-white/30 hover:text-white/70"><Edit2 size={12}/></button>
-                <button onClick={() => onDelete(o.id)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/30 hover:text-red-400"><Trash2 size={12}/></button>
+                <button onClick={() => onEdit(o)} className={`h-7 w-7 flex items-center justify-center rounded-lg ${isDark ? "hover:bg-white/[0.08] text-white/30 hover:text-white/70" : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"}`}><Edit2 size={12}/></button>
+                <button onClick={() => onDelete(o.id)} className={`h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-400 ${isDark ? "text-white/30" : "text-gray-400"}`}><Trash2 size={12}/></button>
               </div>
             </motion.div>
           );
@@ -871,15 +908,17 @@ function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }: {
   invoices: FInvoice[]; fournisseurs: Fournisseur[];
   onNew: () => void; onEdit: (i: FInvoice) => void; onDelete: (id: string) => void;
 }) {
+  const isDark = useDark();
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">("all");
   const filtered = invoices.filter((i) => statusFilter === "all" || i.status === statusFilter);
   const totalDue = filtered.filter((i) => i.status !== "paid").reduce((s, i) => s + (i.total_amount - i.paid_amount), 0);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex items-center gap-2 p-4 border-b border-white/[0.06] flex-wrap">
+      <div className={`flex items-center gap-2 p-4 border-b flex-wrap ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as InvoiceStatus | "all")}
-          className="bg-[#131c30] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark] flex-1 max-w-xs">
+          className="border rounded-xl px-3 py-2 text-xs focus:outline-none appearance-none flex-1 max-w-xs"
+          style={selStyle(isDark)}>
           <option value="all">Tous statuts</option>
           {Object.entries(INV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
@@ -896,7 +935,10 @@ function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }: {
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center"><FileText size={28} className="text-white/20"/><p className="text-white/30 text-sm">Aucune facture</p></div>
+          <div className="flex flex-col items-center gap-3 py-16 text-center">
+            <FileText size={28} className={isDark ? "text-white/20" : "text-gray-300"}/>
+            <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucune facture</p>
+          </div>
         ) : filtered.map((inv) => {
           const s = INV_STATUS[inv.status];
           const remaining = inv.total_amount - inv.paid_amount;
@@ -904,27 +946,27 @@ function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }: {
           const overdue = inv.due_date && inv.due_date < today && inv.status !== "paid";
           return (
             <motion.div key={inv.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              className="group flex items-center gap-3 bg-white/[0.025] border border-white/[0.06] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
+              className={`group flex items-center gap-3 border rounded-2xl px-4 py-3 transition-all ${isDark ? "bg-white/[0.025] border-white/[0.06] hover:border-white/[0.14]" : "bg-white border-gray-200 hover:border-gray-300"}`}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <p className="text-sm font-semibold text-white/85 truncate">{inv.fournisseur_name}</p>
+                  <p className={`text-sm font-semibold truncate ${isDark ? "text-white/85" : "text-gray-800"}`}>{inv.fournisseur_name}</p>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${s.color} ${s.bg}`}>{s.label}</span>
                   {overdue && <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-semibold"><AlertTriangle size={9}/>Échue</span>}
                 </div>
-                <p className="text-xs text-white/35">
+                <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>
                   {inv.invoice_number || "N° non défini"} · Émise le {fmtDate(inv.issue_date)}
                   {inv.due_date ? ` · Échéance : ${fmtDate(inv.due_date)}` : ""}
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-bold text-white/80">{fmtEur(inv.total_amount)}</p>
+                <p className={`text-sm font-bold ${isDark ? "text-white/80" : "text-gray-700"}`}>{fmtEur(inv.total_amount)}</p>
                 {remaining > 0 && remaining < inv.total_amount && (
                   <p className="text-xs text-orange-400">Restant : {fmtEur(remaining)}</p>
                 )}
               </div>
               <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all shrink-0">
-                <button onClick={() => onEdit(inv)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/[0.08] text-white/30 hover:text-white/70"><Edit2 size={12}/></button>
-                <button onClick={() => onDelete(inv.id)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/30 hover:text-red-400"><Trash2 size={12}/></button>
+                <button onClick={() => onEdit(inv)} className={`h-7 w-7 flex items-center justify-center rounded-lg ${isDark ? "hover:bg-white/[0.08] text-white/30 hover:text-white/70" : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"}`}><Edit2 size={12}/></button>
+                <button onClick={() => onDelete(inv.id)} className={`h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-400 ${isDark ? "text-white/30" : "text-gray-400"}`}><Trash2 size={12}/></button>
               </div>
             </motion.div>
           );
@@ -937,6 +979,7 @@ function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }: {
 // ─────────────────────────── MAIN PAGE ───────────────────────────
 
 export default function FournisseursPage() {
+  const { isDark } = useTheme();
   const { toasts, add: toast, remove: removeToast } = useToastStack();
   const router = useRouter();
 
@@ -1091,11 +1134,12 @@ export default function FournisseursPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#07080e] text-white flex flex-col">
+    <DarkCtx.Provider value={isDark}>
+    <div className={`min-h-screen flex flex-col ${isDark ? "bg-[#07080e] text-white" : "bg-gray-50 text-gray-900"}`}>
       <ToastStack toasts={toasts} remove={removeToast}/>
 
       {/* Animated header */}
-      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#07080e)" }}>
+      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#07080e)" : "linear-gradient(160deg,#ffffff,#f8fafc,#ffffff)" }}>
         {/* Orbs */}
         <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
         <div className="pointer-events-none absolute -bottom-10 right-20 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#6366f1,transparent)" }}/>
@@ -1105,16 +1149,16 @@ export default function FournisseursPage() {
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
-                className="h-10 w-10 flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
+                className={`h-10 w-10 flex items-center justify-center rounded-xl border ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-gray-200 bg-white"}`}>
                 <Truck size={18} style={{ color: gold }}/>
               </motion.div>
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
-                <h1 className="text-base font-bold text-white tracking-tight">Fournisseurs</h1>
-                <p className="text-[0.62rem] text-white/35">Fiches · Commandes · Factures · Évaluation</p>
+                <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Fournisseurs</h1>
+                <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Fiches · Commandes · Factures · Évaluation</p>
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={exportCSV} title="Exporter CSV" className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all">
+              <button onClick={exportCSV} title="Exporter CSV" className={`h-8 w-8 flex items-center justify-center rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}>
                 <Download size={14}/>
               </button>
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -1139,11 +1183,11 @@ export default function FournisseursPage() {
               const KpiIcon = kpi.icon;
               return (
                 <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.06] bg-white/[0.03]">
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
                   <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-white leading-none truncate">{kpi.value}</p>
-                    <p className="text-[0.58rem] text-white/35 uppercase tracking-wide mt-0.5">{kpi.label}</p>
+                    <p className={`text-sm font-bold leading-none truncate ${isDark ? "text-white" : "text-gray-800"}`}>{kpi.value}</p>
+                    <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                   </div>
                 </motion.div>
               );
@@ -1155,7 +1199,7 @@ export default function FournisseursPage() {
         <div className="relative px-5 sm:px-8 flex gap-0.5">
           {TABS.map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${tab === key ? "text-white" : "text-white/35 hover:text-white/60"}`}>
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${tab === key ? (isDark ? "text-white" : "text-gray-900") : (isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600")}`}>
               <Icon size={12}/>
               {label}
               {key === "invoices" && invoices.filter((i) => i.status !== "paid").length > 0 && (
@@ -1172,14 +1216,14 @@ export default function FournisseursPage() {
           ))}
         </div>
 
-        {/* Gold bottom line */}
-        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
+        {/* Bottom line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: isDark ? "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" : "linear-gradient(90deg,transparent,rgba(201,165,90,0.3),transparent)" }}/>
       </div>
 
       {/* Content */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
-          <RefreshCw size={22} className="animate-spin text-white/30"/>
+          <RefreshCw size={22} className={`animate-spin ${isDark ? "text-white/30" : "text-gray-300"}`}/>
         </div>
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -1204,5 +1248,6 @@ export default function FournisseursPage() {
         confirmLabel="Supprimer" loading={deleting}
         onConfirm={handleDelete} onCancel={() => setConfirmDeleteId(null)}/>
     </div>
+    </DarkCtx.Provider>
   );
 }

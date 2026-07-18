@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
+import { APP_ICONS } from "@/components/AppIcons";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -21,8 +22,8 @@ interface MindMap  { id: string; title: string; center: string; nodes: MapNode[]
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
-const RADIUS_SM = 110;
-const RADIUS_LG = 140;
+const RADIUS_SM = 115;
+const RADIUS_LG = 155;
 
 export default function MindMapPage() {
   const { isDark } = useTheme();
@@ -34,8 +35,10 @@ export default function MindMapPage() {
   const [nodeDraft,   setNodeDraft]   = useState("");
   const [editingCenter, setEditingCenter] = useState(false);
   const [centerDraft,   setCenterDraft]   = useState("");
-  const [creating,   setCreating]   = useState(false);
-  const [mapDraft,   setMapDraft]   = useState("");
+  const [creating,       setCreating]       = useState(false);
+  const [mapDraft,       setMapDraft]       = useState("");
+  const [renamingTitle,  setRenamingTitle]  = useState(false);
+  const [titleDraft,     setTitleDraft]     = useState("");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapInputRef = useRef<HTMLInputElement>(null);
 
@@ -125,6 +128,16 @@ export default function MindMapPage() {
     await supabase.from("notes").delete().eq("id", id);
   }
 
+  function commitTitleEdit() {
+    if (!active) { setRenamingTitle(false); return; }
+    const newTitle = titleDraft.trim() || active.title;
+    const updated = { ...active, title: newTitle };
+    setActive(updated);
+    setMaps(prev => prev.map(m => m.id === updated.id ? updated : m));
+    setRenamingTitle(false);
+    saveMap(updated);
+  }
+
   /* Calcul positions en cercle */
   function nodePosition(i: number, total: number, isSmall: boolean) {
     const angle = (2 * Math.PI * i) / total - Math.PI / 2;
@@ -132,27 +145,43 @@ export default function MindMapPage() {
     return { x: Math.cos(angle) * r, y: Math.sin(angle) * r };
   }
 
-  const SVG_W = 340;
-  const SVG_H = 320;
+  const SVG_W = 380;
+  const SVG_H = 360;
   const CX = SVG_W / 2;
   const CY = SVG_H / 2;
-  const isSmall = active ? active.nodes.length <= 4 : false;
+  const isSmall = active ? active.nodes.length <= 5 : false;
 
   return (
-    <div className="flex h-[calc(100vh-56px)] bg-[#07080e]">
+    <div className={`flex h-[calc(100vh-56px)] ${isDark ? "bg-[#07080e]" : "bg-[#f0f2fb] mm-light"}`}>
+      {!isDark && (
+        <style>{`
+          .mm-light [class*="border-white/"] { border-color: rgba(12,24,100,0.09) !important; }
+          .mm-light [class*="bg-white/"] { background-color: rgba(12,24,100,0.04) !important; }
+          .mm-light [class*="hover:bg-white/"]:hover { background-color: rgba(12,24,100,0.06) !important; }
+          .mm-light .text-white { color: #111827 !important; }
+          .mm-light .text-white\\/80 { color: rgba(12,18,50,0.82) !important; }
+          .mm-light .text-white\\/70 { color: rgba(12,18,50,0.70) !important; }
+          .mm-light .text-white\\/60 { color: rgba(12,18,50,0.60) !important; }
+          .mm-light .text-white\\/30,.mm-light .text-white\\/25 { color: rgba(12,18,50,0.36) !important; }
+          .mm-light .text-white\\/20,.mm-light .text-white\\/15 { color: rgba(12,18,50,0.25) !important; }
+          .mm-light .text-white\\/10,.mm-light .text-white\\/8 { color: rgba(12,18,50,0.15) !important; }
+        `}</style>
+      )}
 
       {/* ── Sidebar cartes ── */}
       <div className={`flex flex-col w-full md:w-72 md:border-r border-white/6 shrink-0 ${active ? "hidden md:flex" : "flex"}`}>
         <div className="flex items-center justify-between px-4 pt-5 pb-3">
-          <div className="flex items-center gap-2">
-            <Network size={18} style={{ color: "#8b5cf6" }} />
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl">
+              {APP_ICONS["/client/mindmap"]}
+            </div>
             <h1 className="text-[16px] font-black text-white">Mind Maps</h1>
           </div>
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => { setCreating(true); setTimeout(() => mapInputRef.current?.focus(), 50); }}
             className="flex h-8 w-8 items-center justify-center rounded-full"
-            style={{ background: "linear-gradient(135deg,#8b5cf6,#6d28d9)" }}
+            style={{ background: isDark ? "linear-gradient(135deg,#8b5cf6,#6d28d9)" : "linear-gradient(135deg,#c9a55a,#b08d45)", boxShadow: isDark ? "none" : "0 4px 12px rgba(176,141,69,0.28)" }}
           >
             <Plus size={14} color="white" />
           </motion.button>
@@ -189,7 +218,7 @@ export default function MindMapPage() {
         <div className="flex-1 overflow-y-auto px-3 space-y-1.5 pb-6">
           {loading ? (
             [...Array(3)].map((_, i) => (
-              <div key={i} className="h-14 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.05)" }} />
+              <div key={i} className="h-14 rounded-2xl animate-pulse" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.05)" }} />
             ))
           ) : maps.length === 0 ? (
             <div className="flex flex-col items-center gap-2 pt-16 text-center">
@@ -205,8 +234,8 @@ export default function MindMapPage() {
                 onClick={() => setActive(map)}
                 className="group w-full rounded-2xl p-3.5 text-left transition-all"
                 style={{
-                  background: active?.id === map.id ? "rgba(139,92,246,0.10)" : "rgba(255,255,255,0.03)",
-                  border: active?.id === map.id ? "1px solid rgba(139,92,246,0.35)" : "1px solid rgba(255,255,255,0.06)",
+                  background: active?.id === map.id ? "rgba(139,92,246,0.10)" : isDark ? "rgba(255,255,255,0.03)" : "rgba(12,24,100,0.025)",
+                  border: active?.id === map.id ? "1px solid rgba(139,92,246,0.35)" : `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.07)"}`,
                 }}
               >
                 <div className="flex items-center justify-between">
@@ -236,20 +265,58 @@ export default function MindMapPage() {
           <>
             {/* Header */}
             <div className="flex items-center gap-3 px-4 pt-5 pb-3 border-b border-white/5">
-              <button onClick={() => setActive(null)} className="flex md:hidden h-8 w-8 items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <button onClick={() => { setActive(null); setRenamingTitle(false); }} className="flex md:hidden h-8 w-8 items-center justify-center rounded-full" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.06)" }}>
                 <ArrowLeft size={14} className="text-white/60" />
               </button>
-              <h2 className="flex-1 text-[15px] font-black text-white truncate">{active.title}</h2>
-              <button onClick={() => deleteMap(active.id)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-red-400"
-                style={{ background: "rgba(255,255,255,0.06)" }}>
-                <Trash2 size={13} />
-              </button>
+
+              {renamingTitle ? (
+                <div className="flex flex-1 items-center gap-2">
+                  <input
+                    autoFocus
+                    value={titleDraft}
+                    onChange={e => setTitleDraft(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") commitTitleEdit(); if (e.key === "Escape") setRenamingTitle(false); }}
+                    onBlur={commitTitleEdit}
+                    className="flex-1 rounded-xl px-3 py-1.5 text-[14px] font-black outline-none"
+                    style={{
+                      background: isDark ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.08)",
+                      border: "1.5px solid rgba(139,92,246,0.55)",
+                      color: isDark ? "white" : "#4c1d95",
+                    }}
+                  />
+                  <button onClick={commitTitleEdit}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.35)", color: "#a78bfa" }}>
+                    <Check size={13} />
+                  </button>
+                  <button onClick={() => setRenamingTitle(false)}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/30 hover:text-white/60 transition"
+                    style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.05)" }}>
+                    <X size={13} />
+                  </button>
+                </div>
+              ) : (
+                <h2
+                  className="flex-1 text-[15px] font-black text-white truncate cursor-pointer hover:opacity-70 transition-opacity"
+                  onClick={() => { setTitleDraft(active.title); setRenamingTitle(true); }}
+                  title="Cliquer pour renommer"
+                >
+                  {active.title}
+                </h2>
+              )}
+
+              {!renamingTitle && (
+                <button onClick={() => deleteMap(active.id)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-red-400"
+                  style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.06)" }}>
+                  <Trash2 size={13} />
+                </button>
+              )}
             </div>
 
             {/* Zone SVG mind map */}
             <div className="flex-1 flex flex-col items-center justify-center overflow-hidden relative">
-              <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full max-w-sm" style={{ maxHeight: "320px" }}>
+              <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full max-w-sm" style={{ maxHeight: "360px" }}>
                 {/* Lignes vers branches */}
                 {active.nodes.map((node, i) => {
                   const { x, y } = nodePosition(i, active.nodes.length || 1, isSmall);
@@ -278,10 +345,15 @@ export default function MindMapPage() {
                     </radialGradient>
                   </defs>
                   <circle cx={CX} cy={CY} r="38" fill="none" stroke="rgba(139,92,246,0.4)" strokeWidth="1.5" />
+                  <circle cx={CX} cy={CY} r="38" fill="transparent" stroke="none"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => { setCenterDraft(active.center); setEditingCenter(true); }} />
                   {editingCenter ? null : (
                     <text x={CX} y={CY} textAnchor="middle" dominantBaseline="central"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => { setCenterDraft(active.center); setEditingCenter(true); }}
                       fontSize="9" fontWeight="700" fill="white" opacity="0.9">
-                      {active.center.length > 14 ? active.center.slice(0, 13) + "…" : active.center}
+                      {active.center.length > 16 ? active.center.slice(0, 15) + "…" : active.center}
                     </text>
                   )}
                 </motion.g>
@@ -293,13 +365,15 @@ export default function MindMapPage() {
                   const ny = CY + y;
                   const isEditing = editingNode === node.id;
                   return (
-                    <motion.g key={node.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}>
-                      <ellipse cx={nx} cy={ny} rx="38" ry="18" fill={node.color} fillOpacity="0.15" />
-                      <ellipse cx={nx} cy={ny} rx="38" ry="18" fill="none" stroke={node.color} strokeWidth="1.2" strokeOpacity="0.5" />
+                    <motion.g key={node.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => { if (!isEditing) { setEditingNode(node.id); setNodeDraft(node.text); } }}>
+                      <ellipse cx={nx} cy={ny} rx="48" ry="21" fill={node.color} fillOpacity="0.18" />
+                      <ellipse cx={nx} cy={ny} rx="48" ry="21" fill="none" stroke={node.color} strokeWidth="1.5" strokeOpacity="0.55" />
                       {!isEditing && (
                         <text x={nx} y={ny} textAnchor="middle" dominantBaseline="central"
-                          fontSize="8.5" fontWeight="600" fill="white" opacity="0.85">
-                          {node.text.length > 12 ? node.text.slice(0, 11) + "…" : node.text}
+                          fontSize="8.5" fontWeight="600" fill={isDark ? "white" : "#1a1040"} opacity="0.88">
+                          {node.text.length > 15 ? node.text.slice(0, 14) + "…" : node.text}
                         </text>
                       )}
                     </motion.g>
@@ -338,7 +412,7 @@ export default function MindMapPage() {
 
               {active.nodes.map(node => (
                 <div key={node.id} className="flex items-center gap-2 rounded-xl px-3 py-2"
-                  style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${node.color}25` }}>
+                  style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(12,24,100,0.025)", border: `1px solid ${node.color}30` }}>
                   <div className="h-2 w-2 rounded-full shrink-0" style={{ background: node.color }} />
                   {editingNode === node.id ? (
                     <input

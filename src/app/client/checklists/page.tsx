@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
+import { APP_ICONS } from "@/components/AppIcons";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -168,7 +169,30 @@ export default function ChecklistsPage() {
   const doneCountGlob = doneItems;
 
   return (
-    <div className="flex h-[calc(100vh-56px)] bg-[#07080e] overflow-hidden">
+    <div className={`flex h-[calc(100vh-56px)] overflow-hidden ${isDark ? "bg-[#07080e]" : "bg-[#f0f2fb] cl-light"}`}>
+      {!isDark && (
+        <style>{`
+          .cl-light [class*="border-white/"] { border-color: rgba(12,24,100,0.09) !important; }
+          .cl-light [class*="bg-white/[0.03]"] { background-color: rgba(12,24,100,0.025) !important; }
+          .cl-light [class*="bg-white/[0.04]"] { background-color: rgba(12,24,100,0.04) !important; }
+          .cl-light [class*="bg-white/[0.05]"] { background-color: rgba(12,24,100,0.05) !important; }
+          .cl-light [class*="bg-white/[0.06]"] { background-color: rgba(12,24,100,0.055) !important; }
+          .cl-light [class*="bg-white/[0.07]"] { background-color: rgba(12,24,100,0.065) !important; }
+          .cl-light [class*="bg-white/5"]:hover  { background-color: rgba(12,24,100,0.04) !important; }
+          .cl-light .text-white                   { color: #111827 !important; }
+          .cl-light .text-white\\/80             { color: rgba(12,18,50,0.82) !important; }
+          .cl-light .text-white\\/70             { color: rgba(12,18,50,0.70) !important; }
+          .cl-light .text-white\\/60             { color: rgba(12,18,50,0.60) !important; }
+          .cl-light .text-white\\/40,.cl-light .text-white\\/35 { color: rgba(12,18,50,0.45) !important; }
+          .cl-light .text-white\\/30             { color: rgba(12,18,50,0.36) !important; }
+          .cl-light .text-white\\/25             { color: rgba(12,18,50,0.30) !important; }
+          .cl-light .text-white\\/20,.cl-light .text-white\\/15 { color: rgba(12,18,50,0.22) !important; }
+          .cl-light .text-white\\/10             { color: rgba(12,18,50,0.15) !important; }
+          .cl-light [class*="hover:text-white/"]:hover { color: rgba(12,18,50,0.70) !important; }
+          .cl-light input.bg-transparent         { color: #111827 !important; }
+          .cl-light input::placeholder           { color: rgba(12,18,50,0.30) !important; }
+        `}</style>
+      )}
 
       {/* ════════════════ SIDEBAR ════════════════ */}
       <div className={`flex flex-col w-full md:w-[280px] shrink-0 border-r border-white/[0.06] ${active ? "hidden md:flex" : "flex"}`}>
@@ -177,9 +201,8 @@ export default function ChecklistsPage() {
         <div className="px-4 pt-5 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl"
-                style={{ background: "linear-gradient(135deg,#10b981,#059669)" }}>
-                <CheckSquare size={16} color="white" />
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl">
+                {APP_ICONS["/client/checklists"]}
               </div>
               <div>
                 <h1 className="text-[15px] font-black text-white">Checklists</h1>
@@ -190,7 +213,7 @@ export default function ChecklistsPage() {
               whileTap={{ scale: 0.88 }}
               onClick={() => { setCreating(v => !v); setTimeout(() => inputRef.current?.focus(), 60); }}
               className="flex h-9 w-9 items-center justify-center rounded-xl shadow-lg"
-              style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 4px 14px rgba(16,185,129,0.35)" }}
+              style={{ background: isDark ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#c9a55a,#b08d45)", boxShadow: isDark ? "0 4px 14px rgba(16,185,129,0.35)" : "0 4px 14px rgba(176,141,69,0.28)" }}
             >
               <Plus size={16} color="white" strokeWidth={2.5} />
             </motion.button>
@@ -205,7 +228,7 @@ export default function ChecklistsPage() {
                 { label: "Faites",   val: doneCountGlob,   color: "#fbbf24" },
               ].map(s => (
                 <div key={s.label} className="flex flex-col items-center justify-center rounded-xl py-2.5"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(12,24,100,0.03)", border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.08)"}` }}>
                   <span className="text-[16px] font-black tabular-nums" style={{ color: s.color }}>{s.val}</span>
                   <span className="text-[8.5px] text-white/25 mt-0.5">{s.label}</span>
                 </div>
@@ -223,7 +246,7 @@ export default function ChecklistsPage() {
                 className="overflow-hidden mb-3"
               >
                 <div className="rounded-2xl p-3.5 space-y-3"
-                  style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.20)" }}>
+                  style={{ background: isDark ? "rgba(16,185,129,0.06)" : "rgba(16,185,129,0.05)", border: `1px solid ${isDark ? "rgba(16,185,129,0.20)" : "rgba(16,185,129,0.22)"}` }}>
                   <input
                     ref={inputRef}
                     value={draft}
@@ -249,7 +272,7 @@ export default function ChecklistsPage() {
                     </button>
                     <button onClick={() => setCreating(false)}
                       className="rounded-xl px-3 py-1.5 text-[11px] text-white/40 transition hover:text-white/60"
-                      style={{ background: "rgba(255,255,255,0.05)" }}>
+                      style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.05)" }}>
                       Annuler
                     </button>
                   </div>
@@ -262,7 +285,7 @@ export default function ChecklistsPage() {
           <button
             onClick={() => setShowTemplates(v => !v)}
             className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-semibold text-white/40 transition hover:text-white/60 mb-1"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(12,24,100,0.04)", border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.08)"}` }}
           >
             <Sparkles size={11} style={{ color: "#fbbf24" }} /> Modèles rapides
           </button>
@@ -280,7 +303,7 @@ export default function ChecklistsPage() {
                     <button key={tpl.label}
                       onClick={() => applyTemplate(tpl)}
                       className="w-full rounded-xl px-3 py-2 text-left transition hover:bg-white/5"
-                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(12,24,100,0.03)", border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.07)"}` }}>
                       <p className="text-[11px] font-semibold text-white/70">{tpl.label}</p>
                       <p className="text-[9px] text-white/30">{tpl.items.length} éléments</p>
                     </button>
@@ -295,7 +318,7 @@ export default function ChecklistsPage() {
         <div className="flex-1 overflow-y-auto px-3 pb-6 space-y-1.5">
           {loading ? (
             [...Array(4)].map((_, i) => (
-              <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
+              <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(12,24,100,0.04)" }} />
             ))
           ) : lists.length === 0 ? (
             <div className="flex flex-col items-center gap-3 pt-12 text-center px-4">
@@ -321,20 +344,20 @@ export default function ChecklistsPage() {
                   onClick={() => setActive(list)}
                   className="group relative w-full rounded-2xl p-3.5 text-left transition-all"
                   style={{
-                    background: active?.id === list.id ? `${list.color}12` : "rgba(255,255,255,0.03)",
-                    border: active?.id === list.id ? `1.5px solid ${list.color}45` : "1px solid rgba(255,255,255,0.06)",
+                    background: active?.id === list.id ? `${list.color}12` : isDark ? "rgba(255,255,255,0.03)" : "rgba(12,24,100,0.025)",
+                    border: active?.id === list.id ? `1.5px solid ${list.color}45` : `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.07)"}`,
                   }}
                 >
                   <div className="flex items-center gap-2.5 mb-2">
                     <div className="h-2.5 w-2.5 rounded-full shrink-0 transition-all"
                       style={{ background: isComplete ? "#4ade80" : list.color, boxShadow: active?.id === list.id ? `0 0 8px ${list.color}60` : "none" }} />
                     <p className="flex-1 text-[12.5px] font-semibold text-white/80 truncate">{list.title}</p>
-                    <span className="text-[10px] font-bold tabular-nums shrink-0" style={{ color: isComplete ? "#4ade80" : "rgba(255,255,255,0.25)" }}>
+                    <span className="text-[10px] font-bold tabular-nums shrink-0" style={{ color: isComplete ? "#4ade80" : isDark ? "rgba(255,255,255,0.25)" : "rgba(12,18,50,0.30)" }}>
                       {done}/{total}
                     </span>
                   </div>
                   {total > 0 && (
-                    <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                    <div className="h-1 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.07)" }}>
                       <motion.div
                         animate={{ width: `${pct}%` }}
                         transition={{ duration: 0.5, ease }}
@@ -376,7 +399,7 @@ export default function ChecklistsPage() {
               <div className="flex items-center gap-3 mb-3">
                 <button onClick={() => setActive(null)}
                   className="flex md:hidden h-8 w-8 items-center justify-center rounded-xl shrink-0"
-                  style={{ background: "rgba(255,255,255,0.06)" }}>
+                  style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.06)" }}>
                   <ArrowLeft size={14} className="text-white/60" />
                 </button>
                 <div className="flex-1 min-w-0 flex items-center gap-2.5">
@@ -387,7 +410,7 @@ export default function ChecklistsPage() {
                   {doneCount > 0 && (
                     <button onClick={clearDone}
                       className="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-white/35 transition hover:text-white/60"
-                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.04)", border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(12,24,100,0.09)"}` }}>
                       Effacer faits
                     </button>
                   )}
@@ -400,7 +423,7 @@ export default function ChecklistsPage() {
 
               {/* Barre progression + stats */}
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.07)" }}>
                   <motion.div
                     animate={{ width: `${progress}%` }}
                     transition={{ duration: 0.5, ease }}
@@ -409,7 +432,7 @@ export default function ChecklistsPage() {
                   />
                 </div>
                 <span className="text-[11px] font-bold tabular-nums shrink-0"
-                  style={{ color: progress === 100 ? "#4ade80" : "rgba(255,255,255,0.35)" }}>
+                  style={{ color: progress === 100 ? "#4ade80" : isDark ? "rgba(255,255,255,0.35)" : "rgba(12,18,50,0.40)" }}>
                   {Math.round(progress)}%
                 </span>
               </div>
@@ -421,7 +444,7 @@ export default function ChecklistsPage() {
                     className="rounded-lg px-2.5 py-1 text-[10.5px] font-semibold transition-all"
                     style={filter === f
                       ? { background: `${active.color}20`, border: `1px solid ${active.color}50`, color: active.color }
-                      : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }
+                      : { background: isDark ? "rgba(255,255,255,0.04)" : "rgba(12,24,100,0.04)", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(12,24,100,0.08)"}`, color: isDark ? "rgba(255,255,255,0.35)" : "rgba(12,18,50,0.42)" }
                     }
                   >
                     {f === "all" ? `Tous (${totalCount})` : f === "active" ? `À faire (${totalCount - doneCount})` : `Faits (${doneCount})`}
@@ -462,8 +485,8 @@ export default function ChecklistsPage() {
                         transition={{ duration: 0.18 }}
                         className="group flex items-center gap-3 rounded-xl px-3.5 py-3 transition-all"
                         style={{
-                          background: item.done ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)",
-                          border: item.done ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(255,255,255,0.07)",
+                          background: item.done ? (isDark ? "rgba(255,255,255,0.02)" : "rgba(12,24,100,0.015)") : (isDark ? "rgba(255,255,255,0.04)" : "rgba(12,24,100,0.035)"),
+                          border: item.done ? `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "rgba(12,24,100,0.055)"}` : `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(12,24,100,0.08)"}`,
                         }}
                       >
                         {/* Checkbox */}

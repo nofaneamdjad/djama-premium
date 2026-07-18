@@ -1,5 +1,5 @@
 /**
- * companySettings — Récupère les paramètres brand.* depuis site_settings.
+ * companySettings — Récupère les paramètres brand.* depuis user_settings (isolé par user).
  * Utilisé par generatePdf pour personnaliser les PDF avec les vraies infos entreprise.
  */
 
@@ -51,7 +51,7 @@ const DEFAULTS: CompanySettings = {
 
 export async function fetchCompanySettings(): Promise<CompanySettings> {
   const { data, error } = await supabase
-    .from("site_settings")
+    .from("user_settings")
     .select("key, value")
     .like("key", "brand.%");
 

@@ -19,6 +19,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -44,6 +45,8 @@ export default function ConfirmModal({
   onCancel,
   variant = "danger",
 }: ConfirmModalProps) {
+  const { isDark } = useTheme();
+
   const btnClass = variant === "danger"
     ? "bg-red-500 hover:bg-red-600 text-white"
     : "bg-amber-500 hover:bg-amber-600 text-white";
@@ -55,7 +58,7 @@ export default function ConfirmModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
           role="dialog"
           aria-modal="true"
@@ -66,12 +69,16 @@ export default function ConfirmModal({
             animate={{ scale: 1,    y: 0,  opacity: 1 }}
             exit={  { scale: 0.95,  y: 8,  opacity: 0 }}
             transition={{ duration: 0.3, ease }}
-            className="w-full max-w-sm rounded-[1.75rem] border border-gray-200 bg-white p-6 shadow-[0_8px_40px_rgba(0,0,0,0.1)]"
+            className={`w-full max-w-sm rounded-[1.75rem] border p-6 shadow-[0_8px_40px_rgba(0,0,0,0.18)] ${
+              isDark
+                ? "bg-[#0d1117] border-white/[0.08]"
+                : "bg-white border-gray-200 shadow-[0_8px_40px_rgba(0,0,0,0.1)]"
+            }`}
           >
             <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl border ${
               variant === "danger"
-                ? "border-red-200 bg-red-50"
-                : "border-amber-200 bg-amber-50"
+                ? isDark ? "border-red-500/20 bg-red-500/10" : "border-red-200 bg-red-50"
+                : isDark ? "border-amber-500/20 bg-amber-500/10" : "border-amber-200 bg-amber-50"
             }`}>
               {variant === "danger"
                 ? <Trash2 size={18} className="text-red-500" />
@@ -81,20 +88,24 @@ export default function ConfirmModal({
 
             <h3
               id="confirm-modal-title"
-              className="text-base font-extrabold text-gray-900"
+              className={`text-base font-extrabold ${isDark ? "text-white/90" : "text-gray-900"}`}
             >
               {title}
             </h3>
 
             {description && (
-              <p className="mt-1.5 text-sm text-gray-500">{description}</p>
+              <p className={`mt-1.5 text-sm ${isDark ? "text-white/45" : "text-gray-500"}`}>{description}</p>
             )}
 
             <div className="mt-5 flex gap-3">
               <button
                 onClick={onCancel}
                 disabled={loading}
-                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
+                  isDark
+                    ? "border-white/10 text-white/50 hover:bg-white/[0.04]"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
               >
                 Annuler
               </button>

@@ -20,6 +20,7 @@ import NotebookCanvas, {
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 import { useTheme } from "@/lib/theme-context";
+import { APP_ICONS } from "@/components/AppIcons";
 
 /* ── Types ─────────────────────────────────────────── */
 type NoteType =
@@ -541,7 +542,7 @@ export default function BlocNotesPage() {
     };
     let savedNote: Note | null = null;
     if (selected?.id) {
-      const { data, error } = await supabase.from("notes").update(payload).eq("id",selected.id).select().single();
+      const { data, error } = await supabase.from("notes").update(payload).eq("id",selected.id).eq("user_id",uid ?? "").select().single();
       if (error) { showToast("error",`Erreur : ${error.message}`); setIsSaving(false); return; }
       savedNote = data as Note;
       setNotes(p => p.map(n => n.id===selected.id ? savedNote! : n));
@@ -602,7 +603,7 @@ export default function BlocNotesPage() {
 
   async function handleDelete() {
     if (!selected?.id) return;
-    const { error } = await supabase.from("notes").delete().eq("id",selected.id);
+    const { error } = await supabase.from("notes").delete().eq("id",selected.id).eq("user_id",uid ?? "");
     if (error) { showToast("error",error.message); return; }
     setNotes(p => p.filter(n => n.id!==selected.id));
     setSelected(null); setMobilePanel("list"); setConfirmDel(false);
@@ -615,7 +616,7 @@ export default function BlocNotesPage() {
     if (newVal) s.add(id); else s.delete(id);
     setFavSet(s);
     setNotes(p => p.map(n => n.id === id ? { ...n, is_favorite: newVal } : n));
-    void supabase.from("notes").update({ is_favorite: newVal }).eq("id", id);
+    void supabase.from("notes").update({ is_favorite: newVal }).eq("id", id).eq("user_id", uid ?? "");
   }
 
   function togglePin(id: string) {
@@ -624,7 +625,7 @@ export default function BlocNotesPage() {
     if (newVal) s.add(id); else s.delete(id);
     setPinnedSet(s);
     setNotes(p => p.map(n => n.id === id ? { ...n, is_pinned: newVal } : n));
-    void supabase.from("notes").update({ is_pinned: newVal }).eq("id", id);
+    void supabase.from("notes").update({ is_pinned: newVal }).eq("id", id).eq("user_id", uid ?? "");
   }
 
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -670,7 +671,7 @@ export default function BlocNotesPage() {
   async function toggleArchive() {
     if (!selected?.id) return;
     const newVal = !(selected.is_archived ?? false);
-    await supabase.from("notes").update({is_archived:newVal}).eq("id",selected.id);
+    await supabase.from("notes").update({is_archived:newVal}).eq("id",selected.id).eq("user_id",uid ?? "");
     setNotes(p => p.map(n => n.id===selected.id ? {...n,is_archived:newVal} : n));
     setSelected(s => s ? {...s,is_archived:newVal} : s);
     showToast("success", newVal ? "Note archivée." : "Note désarchivée.");
@@ -1063,8 +1064,8 @@ export default function BlocNotesPage() {
                     <p className="text-xs text-white/22 mt-1">Créez votre premier cahier numérique</p>
                   </div>
                   <button onClick={() => setCreateNbOpen(true)}
-                    className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-[#0a0a0a]"
-                    style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>
+                    className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white"
+                    style={{background:`linear-gradient(135deg,#c9a55a,#b08d45)`}}>
                     <Plus size={11}/> Nouveau cahier
                   </button>
                 </div>
@@ -1147,30 +1148,38 @@ export default function BlocNotesPage() {
           <>
             {/* Header — premium zone */}
             <div className="relative overflow-hidden"
-              style={{background:"linear-gradient(180deg,rgba(245,158,11,0.05) 0%,transparent 100%)"}}>
-              {/* Ambient glow */}
-              <div className="pointer-events-none absolute -top-8 -left-6 h-28 w-28 rounded-full opacity-[0.13]"
-                style={{background:"radial-gradient(circle,#f59e0b,transparent 70%)"}}/>
-              {/* Top accent line */}
-              <div className="absolute top-0 left-0 right-0 h-[1px]"
-                style={{background:"linear-gradient(90deg,rgba(245,158,11,0.55),rgba(245,158,11,0.12),transparent)"}}/>
+              style={isDark ? {background:"linear-gradient(180deg,rgba(245,158,11,0.05) 0%,transparent 100%)"} : {}}>
+              {isDark && <>
+                {/* Ambient glow */}
+                <div className="pointer-events-none absolute -top-8 -left-6 h-28 w-28 rounded-full opacity-[0.13]"
+                  style={{background:"radial-gradient(circle,#f59e0b,transparent 70%)"}}/>
+                {/* Top accent line */}
+                <div className="absolute top-0 left-0 right-0 h-[1px]"
+                  style={{background:"linear-gradient(90deg,rgba(245,158,11,0.55),rgba(245,158,11,0.12),transparent)"}}/>
+              </>}
               <div className="relative flex items-center justify-between gap-3 px-4 py-3.5">
                 <div className="flex items-center gap-2.5">
                   {/* Section icon badge */}
-                  <div className="flex h-[1.9rem] w-[1.9rem] shrink-0 items-center justify-center rounded-xl"
-                    style={{background:"rgba(245,158,11,0.09)",border:"1px solid rgba(245,158,11,0.17)"}}>
-                    {section === "favorites"
-                      ? <Star size={13} style={{color:amber}}/>
-                      : section === "archived"
-                      ? <Archive size={13} className="text-white/45"/>
-                      : section === "vocal"
-                      ? <Mic size={13} style={{color:amber}}/>
-                      : section === "checklist"
-                      ? <ListChecks size={13} style={{color:amber}}/>
-                      : section.startsWith("folder:")
-                      ? <Folder size={13} style={{color:amber}}/>
-                      : <StickyNote size={13} style={{color:amber}}/>}
-                  </div>
+                  {section === "all" ? (
+                    <div className="h-[1.9rem] w-[1.9rem] shrink-0 overflow-hidden rounded-xl">
+                      {APP_ICONS["/client/bloc-notes"]}
+                    </div>
+                  ) : (
+                    <div className="flex h-[1.9rem] w-[1.9rem] shrink-0 items-center justify-center rounded-xl"
+                      style={{background:"rgba(245,158,11,0.09)",border:"1px solid rgba(245,158,11,0.17)"}}>
+                      {section === "favorites"
+                        ? <Star size={13} style={{color:amber}}/>
+                        : section === "archived"
+                        ? <Archive size={13} className="text-white/45"/>
+                        : section === "vocal"
+                        ? <Mic size={13} style={{color:amber}}/>
+                        : section === "checklist"
+                        ? <ListChecks size={13} style={{color:amber}}/>
+                        : section.startsWith("folder:")
+                        ? <Folder size={13} style={{color:amber}}/>
+                        : <StickyNote size={13} style={{color:amber}}/>}
+                    </div>
+                  )}
                   <div>
                     <p className="text-[0.82rem] font-black leading-tight text-white/88">
                       {section === "all" ? "Toutes les notes"
@@ -1306,7 +1315,7 @@ export default function BlocNotesPage() {
                         style={{borderBottom:"1px solid rgba(255,255,255,0.035)"}}>
                         {/* Type accent bar */}
                         <div className="absolute left-0 inset-y-0 w-[3px] rounded-r-sm transition-all duration-200"
-                          style={{background:isActive?`linear-gradient(180deg,${ti.color},${ti.color}50)`:`${ti.color}22`}}/>
+                          style={{background:isActive?`linear-gradient(180deg,${ti.color},${ti.color}50)`:`${ti.color}40`}}/>
                         <div className={`pl-5 pr-4 py-3.5 transition-colors duration-150 ${isActive?"bg-white/[0.052]":"hover:bg-white/[0.025]"}`}>
                           <div className="flex items-baseline justify-between gap-2 mb-1">
                             <p className={`flex-1 truncate text-[0.85rem] font-semibold leading-snug ${isActive?"text-white":"text-white/75 group-hover:text-white/90"}`}>
@@ -1319,7 +1328,7 @@ export default function BlocNotesPage() {
                           </p>
                           <div className="mt-2 flex items-center justify-between">
                             <div className="flex items-center gap-1 flex-wrap min-w-0">
-                              <span className="text-[0.56rem] font-bold uppercase tracking-wider shrink-0" style={{color:`${ti.color}68`}}>
+                              <span className="text-[0.56rem] font-bold uppercase tracking-wider shrink-0" style={{color:`${ti.color}90`}}>
                                 {ti.label}{getNoteType(n)==="checklist"&&total>0?` · ${done}/${total}`:""}
                               </span>
                               {tags.slice(0,2).map(tag => (
@@ -1356,6 +1365,19 @@ export default function BlocNotesPage() {
                     Charger plus de notes…
                   </button>
                 </div>
+              )}
+              {/* Soft "new note" CTA — anchors the empty space below list */}
+              {!hasMore && displayNotes.length > 0 && displayNotes.length < 12 && (
+                <button onClick={() => createNote("texte")}
+                  className="group flex w-full items-center gap-2 px-5 py-3.5 transition-all"
+                  style={{borderTop:`1px solid ${isDark?"rgba(255,255,255,0.03)":"rgba(12,24,100,0.04)"}`}}>
+                  <Plus size={11} style={{color:isDark?"rgba(255,255,255,0.13)":"rgba(12,18,50,0.20)"}}
+                    className="group-hover:opacity-75 transition-opacity"/>
+                  <span className="text-[0.7rem] font-semibold transition-opacity group-hover:opacity-75"
+                    style={{color:isDark?"rgba(255,255,255,0.13)":"rgba(12,18,50,0.20)"}}>
+                    Nouvelle note
+                  </span>
+                </button>
               )}
             </div>
           </>
@@ -1625,8 +1647,8 @@ export default function BlocNotesPage() {
                   <Trash2 size={12}/>
                 </button>
                 <button onClick={() => void handleSave()} disabled={isSaving||!isDirty}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.62rem] font-extrabold text-[#0a0a0a] transition hover:opacity-90 disabled:opacity-35"
-                  style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.62rem] font-extrabold text-white transition hover:opacity-90 disabled:opacity-35"
+                  style={{background:`linear-gradient(135deg,#c9a55a,#b08d45)`}}>
                   {isSaving ? <Loader2 size={10} className="animate-spin"/> : <Save size={10}/>}
                   {isSaving ? "Enreg…" : "Sauver"}
                 </button>
@@ -1841,8 +1863,8 @@ export default function BlocNotesPage() {
                             rows={3}
                             className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-white/80 placeholder:text-white/20 outline-none focus:border-amber-400/28"/>
                           <button onClick={() => void callAI("chat", chatPrompt)} disabled={aiLoading||!chatPrompt.trim()}
-                            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-[#0a0a0a] disabled:opacity-35"
-                            style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>
+                            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-white disabled:opacity-35"
+                            style={{background:`linear-gradient(135deg,#c9a55a,#b08d45)`}}>
                             {aiLoading ? <Loader2 size={11} className="animate-spin"/> : <MessageSquare size={11}/>} Envoyer
                           </button>
                         </div>
@@ -1862,8 +1884,8 @@ export default function BlocNotesPage() {
                           </div>
                           <div className="flex gap-2">
                             <button onClick={applyAiResult}
-                              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-extrabold text-[#0a0a0a]"
-                              style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>
+                              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-extrabold text-white"
+                              style={{background:`linear-gradient(135deg,#c9a55a,#b08d45)`}}>
                               <Check size={11}/> Appliquer
                             </button>
                             <button onClick={() => { setAiResult(""); setChatPrompt(""); }}
@@ -1998,8 +2020,8 @@ export default function BlocNotesPage() {
                 <button onClick={() => setFolderModal(false)}
                   className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/45">Annuler</button>
                 <button onClick={() => void handleCreateFolder()} disabled={!newFolderName.trim()}
-                  className="flex-1 rounded-xl py-2.5 text-sm font-extrabold text-[#0a0a0a] disabled:opacity-35"
-                  style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>Créer</button>
+                  className="flex-1 rounded-xl py-2.5 text-sm font-extrabold text-white disabled:opacity-35"
+                  style={{background:`linear-gradient(135deg,#c9a55a,#b08d45)`}}>Créer</button>
               </div>
             </motion.div>
           </>
@@ -2111,8 +2133,8 @@ export default function BlocNotesPage() {
                   Annuler
                 </button>
                 <button onClick={() => void createNotebook()} disabled={!nbName.trim()||nbCreating}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-[#0a0a0a] transition hover:opacity-90 disabled:opacity-38"
-                  style={{background:`linear-gradient(135deg,${amber},#d97706)`}}>
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white transition hover:opacity-90 disabled:opacity-38"
+                  style={{background:`linear-gradient(135deg,#c9a55a,#b08d45)`}}>
                   {nbCreating ? <Loader2 size={13} className="animate-spin"/> : <Plus size={13}/>}
                   Créer le cahier
                 </button>

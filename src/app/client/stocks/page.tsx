@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -19,6 +19,7 @@ import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { fmtDate, fmtEur } from "@/lib/format";
+import { useTheme } from "@/lib/theme-context";
 
 type MovementType = "entree" | "sortie" | "retour" | "perte" | "casse" | "transfert" | "ajustement";
 type OrderStatus  = "draft" | "sent" | "confirmed" | "received" | "cancelled";
@@ -124,11 +125,28 @@ function getStockState(p: Product): StockState {
   return "normal";
 }
 
-function inp(extra = "") {
-  return `w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors ${extra}`;
+const DarkCtx = createContext(true);
+const useDark = () => useContext(DarkCtx);
+
+function useInp() {
+  const isDark = useDark();
+  return (extra = "") => isDark
+    ? `w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.18] transition-colors ${extra}`
+    : `w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-colors ${extra}`;
 }
+
+function selStyle(isDark: boolean): React.CSSProperties {
+  return {
+    backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+    color: isDark ? "rgba(255,255,255,0.7)" : "#374151",
+    borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb",
+    colorScheme: isDark ? "dark" : "light",
+  };
+}
+
 function Label({ children }: { children: React.ReactNode }) {
-  return <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">{children}</label>;
+  const isDark = useDark();
+  return <label className={`mb-1.5 block text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>{children}</label>;
 }
 
 // ─────────────────────────── SCANNER OVERLAY ───────────────────────────
@@ -269,6 +287,8 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
   product: Partial<Product>; suppliers: Supplier[]; warehouses: Warehouse[];
   onSave: (p: Partial<Product>) => Promise<void>; onClose: () => void;
 }) {
+  const isDark = useDark();
+  const inp = useInp();
   const [form, setForm] = useState<Partial<Product>>(product);
   const [saving, setSaving] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -309,15 +329,15 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-2xl bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+        className={`w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: green + "18", border: `1px solid ${green}30` }}>
               <Package size={14} style={{ color: green }}/>
             </div>
-            <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier le produit" : "Nouveau produit"}</h3>
+            <h3 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{form.id ? "Modifier le produit" : "Nouveau produit"}</h3>
           </div>
-          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors"><X size={14}/></button>
+          <button onClick={onClose} className={`h-7 w-7 flex items-center justify-center rounded-lg border transition-colors ${isDark ? "border-white/10 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}><X size={14}/></button>
         </div>
         <div className="p-6 overflow-y-auto max-h-[75vh] space-y-4">
           {/* Image upload */}
@@ -325,12 +345,12 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
             <Label>Photo du produit</Label>
             <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden"/>
             {form.image_url ? (
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-white/[0.08] bg-white/[0.03]">
+              <div className={`flex items-center gap-3 p-3 rounded-xl border ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={form.image_url} alt="Produit" className="h-16 w-16 object-cover rounded-xl border border-white/[0.08] shrink-0"/>
+                <img src={form.image_url} alt="Produit" className={`h-16 w-16 object-cover rounded-xl border shrink-0 ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}/>
                 <div className="flex flex-col gap-2 flex-1">
                   <button onClick={() => imageInputRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white/60 transition-all">
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white/60" : "border-gray-200 bg-white hover:bg-gray-100 text-gray-600"}`}>
                     <Upload size={11}/> Changer
                   </button>
                   <button onClick={() => set("image_url", "")}
@@ -341,15 +361,15 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
               </div>
             ) : (
               <button onClick={() => imageInputRef.current?.click()}
-                className="w-full flex items-center gap-3 p-4 rounded-xl border border-dashed border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.22] transition-all">
+                className={`w-full flex items-center gap-3 p-4 rounded-xl border border-dashed transition-all ${isDark ? "border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.22]" : "border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400"}`}>
                 <div className="h-10 w-10 flex items-center justify-center rounded-xl shrink-0" style={{ background: gold + "15", border: `1px solid ${gold}30` }}>
                   <ImageIcon size={16} style={{ color: gold }}/>
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-semibold text-white/60">Ajouter une photo</p>
-                  <p className="text-[10px] text-white/30">JPG, PNG · Affiché dans l'inventaire</p>
+                  <p className={`text-xs font-semibold ${isDark ? "text-white/60" : "text-gray-600"}`}>Ajouter une photo</p>
+                  <p className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>JPG, PNG · Affiché dans l'inventaire</p>
                 </div>
-                <Upload size={13} className="ml-auto text-white/25 shrink-0"/>
+                <Upload size={13} className={`ml-auto shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
               </button>
             )}
           </div>
@@ -365,7 +385,7 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
               <div className="flex gap-2">
                 <input value={form.barcode ?? ""} onChange={(e) => set("barcode", e.target.value)} placeholder="EAN13, QR code…" className={inp()}/>
                 <button onClick={() => setShowScanner(true)} title="Scanner"
-                  className="h-[42px] px-3 shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white transition-all flex items-center gap-1.5">
+                  className={`h-[42px] px-3 shrink-0 rounded-xl border transition-all flex items-center gap-1.5 ${isDark ? "border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 bg-white hover:bg-gray-100 text-gray-500 hover:text-gray-700"}`}>
                   <ScanLine size={14}/>
                   <span className="text-xs font-semibold">Scan</span>
                 </button>
@@ -374,12 +394,12 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div><Label>Catégorie</Label>
-              <select value={form.category ?? "autre"} onChange={(e) => set("category", e.target.value)} className={inp("appearance-none")}>
+              <select value={form.category ?? "autre"} onChange={(e) => set("category", e.target.value)} className={inp("appearance-none")} style={selStyle(isDark)}>
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div><Label>Unité</Label>
-              <select value={form.unit ?? "pièce"} onChange={(e) => set("unit", e.target.value)} className={inp("appearance-none")}>
+              <select value={form.unit ?? "pièce"} onChange={(e) => set("unit", e.target.value)} className={inp("appearance-none")} style={selStyle(isDark)}>
                 {UNITS.map((u) => <option key={u}>{u}</option>)}
               </select>
             </div>
@@ -415,13 +435,13 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
                 const sup = suppliers.find((s) => s.id === e.target.value);
                 set("supplier_id", e.target.value || null);
                 set("supplier_name", sup?.name ?? "");
-              }} className={inp("appearance-none")}>
+              }} className={inp("appearance-none")} style={selStyle(isDark)}>
                 <option value="">Sans fournisseur</option>
                 {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
             <div><Label>Entrepôt</Label>
-              <select value={form.warehouse_id ?? ""} onChange={(e) => set("warehouse_id", e.target.value || null)} className={inp("appearance-none")}>
+              <select value={form.warehouse_id ?? ""} onChange={(e) => set("warehouse_id", e.target.value || null)} className={inp("appearance-none")} style={selStyle(isDark)}>
                 <option value="">Par défaut</option>
                 {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
@@ -435,7 +455,7 @@ function ProductModal({ product, suppliers, warehouses, onSave, onClose }: {
           </div>
         </div>
         <div className="flex gap-3 px-6 pb-6 pt-2">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
+          <button onClick={onClose} className={`px-4 py-2.5 rounded-xl text-sm border transition-colors ${isDark ? "text-white/50 border-white/10 hover:bg-white/[0.04]" : "text-gray-500 border-gray-200 hover:bg-gray-100"}`}>Annuler</button>
           <button onClick={save} disabled={saving || !form.name}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -467,6 +487,8 @@ function MovementModal({ products, warehouses, onSave, onClose }: {
   const [saving, setSaving] = useState(false);
   const set = (k: keyof Movement, v: string | number | null) => setForm((p) => ({ ...p, [k]: v }));
 
+  const isDark = useDark();
+  const inp = useInp();
   const movType = MOV_TYPES.find((m) => m.value === form.type) ?? MOV_TYPES[0];
 
   const save = async () => {
@@ -482,10 +504,10 @@ function MovementModal({ products, warehouses, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-sm font-semibold text-white/90">Nouveau mouvement de stock</h3>
-          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors"><X size={14}/></button>
+        className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
+          <h3 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>Nouveau mouvement de stock</h3>
+          <button onClick={onClose} className={`h-7 w-7 flex items-center justify-center rounded-lg border transition-colors ${isDark ? "border-white/10 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}><X size={14}/></button>
         </div>
         <div className="p-6 space-y-4">
           {/* Type buttons */}
@@ -494,7 +516,7 @@ function MovementModal({ products, warehouses, onSave, onClose }: {
             <div className="grid grid-cols-4 gap-1.5">
               {MOV_TYPES.map((m) => (
                 <button key={m.value} onClick={() => set("type", m.value)}
-                  className={`py-2 rounded-xl text-xs font-semibold border transition-all ${form.type === m.value ? "border-transparent" : "border-white/10 text-white/40 hover:border-white/20"}`}
+                  className={`py-2 rounded-xl text-xs font-semibold border transition-all ${form.type === m.value ? "border-transparent" : isDark ? "border-white/10 text-white/40 hover:border-white/20" : "border-gray-200 text-gray-400 hover:border-gray-300"}`}
                   style={form.type === m.value ? { background: m.color + "20", color: m.color, border: `1px solid ${m.color}40` } : {}}>
                   {m.label}
                 </button>
@@ -506,7 +528,7 @@ function MovementModal({ products, warehouses, onSave, onClose }: {
               const p = products.find((p) => p.id === e.target.value);
               set("product_id", e.target.value);
               set("product_name", p?.name ?? "");
-            }} className={inp("appearance-none")}>
+            }} className={inp("appearance-none")} style={selStyle(isDark)}>
               <option value="">Sélectionner un produit…</option>
               {products.map((p) => <option key={p.id} value={p.id}>{p.name} (stock: {p.stock_current} {p.unit})</option>)}
             </select>
@@ -522,13 +544,13 @@ function MovementModal({ products, warehouses, onSave, onClose }: {
           {form.type === "transfert" && (
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Entrepôt source</Label>
-                <select value={form.warehouse_id ?? ""} onChange={(e) => set("warehouse_id", e.target.value || null)} className={inp("appearance-none")}>
+                <select value={form.warehouse_id ?? ""} onChange={(e) => set("warehouse_id", e.target.value || null)} className={inp("appearance-none")} style={selStyle(isDark)}>
                   <option value="">Par défaut</option>
                   {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </select>
               </div>
               <div><Label>Entrepôt destination</Label>
-                <select value={form.to_warehouse_id ?? ""} onChange={(e) => set("to_warehouse_id", e.target.value || null)} className={inp("appearance-none")}>
+                <select value={form.to_warehouse_id ?? ""} onChange={(e) => set("to_warehouse_id", e.target.value || null)} className={inp("appearance-none")} style={selStyle(isDark)}>
                   <option value="">Par défaut</option>
                   {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </select>
@@ -548,7 +570,7 @@ function MovementModal({ products, warehouses, onSave, onClose }: {
           </div>
         </div>
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
+          <button onClick={onClose} className={`px-4 py-2.5 rounded-xl text-sm border transition-colors ${isDark ? "text-white/50 border-white/10 hover:bg-white/[0.04]" : "text-gray-500 border-gray-200 hover:bg-gray-100"}`}>Annuler</button>
           <button onClick={save} disabled={saving || !form.product_id || !form.quantity}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
             style={{ background: movType.color, color: "#07080e" }}>
@@ -568,6 +590,8 @@ function SupplierModal({ supplier, onSave, onClose }: {
 }) {
   const [form, setForm] = useState<Partial<Supplier>>(supplier);
   const [saving, setSaving] = useState(false);
+  const isDark = useDark();
+  const inp = useInp();
   const set = (k: keyof Supplier, v: string | number) => setForm((p) => ({ ...p, [k]: v }));
 
   return (
@@ -576,10 +600,10 @@ function SupplierModal({ supplier, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier fournisseur" : "Nouveau fournisseur"}</h3>
-          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
+        className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
+          <h3 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{form.id ? "Modifier fournisseur" : "Nouveau fournisseur"}</h3>
+          <button onClick={onClose} className={`h-7 w-7 flex items-center justify-center rounded-lg border transition-colors ${isDark ? "border-white/10 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}><X size={14}/></button>
         </div>
         <div className="p-6 space-y-3 overflow-y-auto max-h-[65vh]">
           <div><Label>Nom *</Label><input value={form.name ?? ""} onChange={(e) => set("name", e.target.value)} placeholder="Nom du fournisseur" className={inp()}/></div>
@@ -596,7 +620,7 @@ function SupplierModal({ supplier, onSave, onClose }: {
           <div><Label>Notes</Label><textarea value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} rows={2} className={inp("resize-none")}/></div>
         </div>
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
+          <button onClick={onClose} className={`px-4 py-2.5 rounded-xl text-sm border transition-colors ${isDark ? "text-white/50 border-white/10 hover:bg-white/[0.04]" : "text-gray-500 border-gray-200 hover:bg-gray-100"}`}>Annuler</button>
           <button onClick={async () => { if (!form.name) return; setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.name}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -639,6 +663,7 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
 
   // Last 8 movements
   const recentMov = movements.slice(0, 8);
+  const isDark = useDark();
 
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-6">
@@ -646,13 +671,13 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpis.map((k) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 flex flex-col gap-2">
+            className={`rounded-2xl border p-4 flex flex-col gap-2 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
             <div className={`h-8 w-8 flex items-center justify-center rounded-xl ${k.bg}`}>
               <k.icon size={15} style={{ color: k.color }}/>
             </div>
             <div>
-              <div className={`font-bold text-white/90 ${k.isStr ? "text-sm" : "text-xl"}`}>{k.value}</div>
-              <div className="text-[10px] text-white/35 mt-0.5">{k.label}</div>
+              <div className={`font-bold ${k.isStr ? "text-sm" : "text-xl"} ${isDark ? "text-white/90" : "text-gray-800"}`}>{k.value}</div>
+              <div className={`text-[10px] mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{k.label}</div>
             </div>
           </motion.div>
         ))}
@@ -661,12 +686,12 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
       {/* Alerts */}
       {(criticalStock.length > 0 || lowStock.length > 0 || outOfStock.length > 0) && (
         <div className="space-y-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 flex items-center gap-1.5"><AlertTriangle size={12} className="text-orange-400"/> Alertes stock</h3>
+          <h3 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-gray-400"}`}><AlertTriangle size={12} className="text-orange-400"/> Alertes stock</h3>
           <div className="space-y-1.5">
             {outOfStock.slice(0, 3).map((p) => (
               <div key={p.id} className="flex items-center justify-between bg-red-500/5 border border-red-500/15 rounded-xl px-4 py-2.5">
                 <div className="flex items-center gap-2"><AlertOctagon size={13} className="text-red-400 shrink-0"/>
-                  <span className="text-sm text-white/80">{p.name}</span>
+                  <span className={`text-sm ${isDark ? "text-white/80" : "text-gray-700"}`}>{p.name}</span>
                   <span className="text-xs text-red-400">{p.sku && `· ${p.sku}`}</span>
                 </div>
                 <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full" style={{ color:"#ef4444",background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)" }}>RUPTURE</span>
@@ -675,10 +700,10 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
             {criticalStock.slice(0, 3).map((p) => (
               <div key={p.id} className="flex items-center justify-between bg-orange-500/5 border border-orange-500/20 rounded-xl px-4 py-2.5">
                 <div className="flex items-center gap-2"><ShieldAlert size={13} className="text-orange-400 shrink-0"/>
-                  <span className="text-sm text-white/80">{p.name}</span>
+                  <span className={`text-sm ${isDark ? "text-white/80" : "text-gray-700"}`}>{p.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-white/40">{p.stock_current} / min. {p.stock_minimum} {p.unit}</span>
+                  <span className={`text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}>{p.stock_current} / min. {p.stock_minimum} {p.unit}</span>
                   <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full" style={{ color:"#f97316",background:"rgba(249,115,22,0.12)",border:"1px solid rgba(249,115,22,0.25)" }}>CRITIQUE</span>
                 </div>
               </div>
@@ -686,10 +711,10 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
             {lowStock.filter(p => getStockState(p) === "faible").slice(0, 3).map((p) => (
               <div key={p.id} className="flex items-center justify-between bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-2.5">
                 <div className="flex items-center gap-2"><AlertTriangle size={13} className="text-amber-400 shrink-0"/>
-                  <span className="text-sm text-white/80">{p.name}</span>
+                  <span className={`text-sm ${isDark ? "text-white/80" : "text-gray-700"}`}>{p.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-white/40">{p.stock_current} / min. {p.stock_minimum} {p.unit}</span>
+                  <span className={`text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}>{p.stock_current} / min. {p.stock_minimum} {p.unit}</span>
                   <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full" style={{ color:"#f59e0b",background:"rgba(245,158,11,0.12)",border:"1px solid rgba(245,158,11,0.25)" }}>FAIBLE</span>
                 </div>
               </div>
@@ -701,28 +726,28 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Top produits */}
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><Star size={12} style={{ color: gold }}/> Top produits par valeur</h3>
-          <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
+          <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-gray-400"}`}><Star size={12} style={{ color: gold }}/> Top produits par valeur</h3>
+          <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
             {topProducts.length === 0 ? (
-              <p className="text-center text-white/25 text-sm py-8">Aucun produit</p>
+              <p className={`text-center text-sm py-8 ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucun produit</p>
             ) : topProducts.map((p, i) => {
               const val = p.stock_current * p.purchase_price;
               const maxVal = topProducts[0] ? topProducts[0].stock_current * topProducts[0].purchase_price : 1;
               return (
-                <div key={p.id} className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0">
-                  <span className="text-xs font-semibold text-white/20 w-4 shrink-0">{i + 1}</span>
+                <div key={p.id} className={`flex items-center gap-3 px-4 py-3 border-b last:border-0 ${isDark ? "border-white/[0.04]" : "border-gray-100"}`}>
+                  <span className={`text-xs font-semibold w-4 shrink-0 ${isDark ? "text-white/20" : "text-gray-300"}`}>{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2 mb-1">
-                      <span className="text-sm font-semibold text-white/80 truncate">{p.name}</span>
-                      <span className="text-xs text-white/50 shrink-0">{fmtEur(val)}</span>
+                      <span className={`text-sm font-semibold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{p.name}</span>
+                      <span className={`text-xs shrink-0 ${isDark ? "text-white/50" : "text-gray-500"}`}>{fmtEur(val)}</span>
                     </div>
-                    <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                    <div className={`h-1 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                       <motion.div initial={{ width: 0 }} animate={{ width: `${(val / maxVal) * 100}%` }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
                         className="h-full rounded-full" style={{ background: green }}/>
                     </div>
                   </div>
-                  <span className="text-xs text-white/40 shrink-0">{p.stock_current} {p.unit}</span>
+                  <span className={`text-xs shrink-0 ${isDark ? "text-white/40" : "text-gray-400"}`}>{p.stock_current} {p.unit}</span>
                 </div>
               );
             })}
@@ -731,20 +756,20 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
 
         {/* Derniers mouvements */}
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5"><Activity size={12} className="text-blue-400"/> Derniers mouvements</h3>
-          <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
+          <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-gray-400"}`}><Activity size={12} className="text-blue-400"/> Derniers mouvements</h3>
+          <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
             {recentMov.length === 0 ? (
-              <p className="text-center text-white/25 text-sm py-8">Aucun mouvement</p>
+              <p className={`text-center text-sm py-8 ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucun mouvement</p>
             ) : recentMov.map((m) => {
               const mt = MOV_TYPES.find((t) => t.value === m.type) ?? MOV_TYPES[0];
               return (
-                <div key={m.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04] last:border-0">
+                <div key={m.id} className={`flex items-center gap-3 px-4 py-2.5 border-b last:border-0 ${isDark ? "border-white/[0.04]" : "border-gray-100"}`}>
                   <div className="h-7 w-7 flex items-center justify-center rounded-lg shrink-0" style={{ background: mt.color + "20" }}>
                     {mt.sign >= 0 ? <ArrowUpCircle size={13} style={{ color: mt.color }}/> : <ArrowDownCircle size={13} style={{ color: mt.color }}/>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-white/80 truncate">{m.product_name}</p>
-                    <p className="text-[10px] text-white/35">{mt.label} · {fmtDate(m.date)}</p>
+                    <p className={`text-xs font-semibold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{m.product_name}</p>
+                    <p className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{mt.label} · {fmtDate(m.date)}</p>
                   </div>
                   <span className="text-xs font-bold shrink-0" style={{ color: mt.color }}>
                     {mt.sign > 0 ? "+" : mt.sign < 0 ? "-" : ""}{m.quantity}
@@ -761,7 +786,7 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
           <div className="h-14 w-14 flex items-center justify-center rounded-2xl" style={{ background: green + "15", border: `1px solid ${green}30` }}>
             <Package size={24} style={{ color: green }}/>
           </div>
-          <p className="text-white/50 text-sm">Aucun produit — commencez par créer votre inventaire</p>
+          <p className={`text-sm ${isDark ? "text-white/50" : "text-gray-500"}`}>Aucun produit — commencez par créer votre inventaire</p>
           <button onClick={onNewProduct} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold" style={{ background: green + "20", color: green, border: `1px solid ${green}40` }}>
             <Plus size={13}/> Ajouter un produit
           </button>
@@ -781,6 +806,7 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
   const [catFilter, setCatFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState<"all" | StockState>("all");
   const [showScanner, setShowScanner] = useState(false);
+  const isDark = useDark();
 
   const filtered = products.filter((p) => {
     if (catFilter !== "all" && p.category !== catFilter) return false;
@@ -793,24 +819,26 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Filter bar */}
-      <div className="flex items-center gap-2 p-4 border-b border-white/[0.06] flex-wrap">
+      <div className={`flex items-center gap-2 p-4 border-b flex-wrap ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
         <div className="relative flex-1 min-w-[180px]">
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher produit, SKU, code-barres…"
-            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/[0.18] pl-8 transition-colors"/>
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"/>
+            className={`w-full rounded-xl px-3 py-2 text-sm focus:outline-none pl-8 transition-colors border ${isDark ? "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/25 focus:border-white/[0.18]" : "bg-white border-gray-200 text-gray-800 placeholder:text-gray-400 focus:border-gray-400"}`}/>
+          <Search size={13} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
         </div>
         <button onClick={() => setShowScanner(true)} title="Scanner un code-barres"
-          className="h-[38px] px-3 shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white transition-all flex items-center gap-1.5">
+          className={`h-[38px] px-3 shrink-0 rounded-xl border transition-all flex items-center gap-1.5 ${isDark ? "border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 bg-white hover:bg-gray-100 text-gray-500 hover:text-gray-700"}`}>
           <ScanLine size={14}/>
           <span className="text-xs font-semibold">Scan</span>
         </button>
         <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
-          className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+          className={`rounded-xl px-3 py-2 text-xs focus:outline-none appearance-none border ${isDark ? "bg-white/[0.05] border-white/[0.08] text-white/70" : "bg-white border-gray-200 text-gray-600"}`}
+          style={selStyle(isDark)}>
           <option value="all">Toutes catégories</option>
           {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
-          className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+          className={`rounded-xl px-3 py-2 text-xs focus:outline-none appearance-none border ${isDark ? "bg-white/[0.05] border-white/[0.08] text-white/70" : "bg-white border-gray-200 text-gray-600"}`}
+          style={selStyle(isDark)}>
           <option value="all">Tous états</option>
           <option value="rupture">🔴 Rupture</option>
           <option value="critique">🟠 Critique</option>
@@ -828,13 +856,13 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <Package size={28} className="text-white/20"/>
-            <p className="text-white/30 text-sm">Aucun produit trouvé</p>
+            <Package size={28} className={isDark ? "text-white/20" : "text-gray-300"}/>
+            <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucun produit trouvé</p>
           </div>
         ) : (
           <div className="p-4 space-y-2">
             {/* Column headers */}
-            <div className="grid grid-cols-12 gap-3 px-4 py-1.5 text-[10px] font-medium text-white/20">
+            <div className={`grid grid-cols-12 gap-3 px-4 py-1.5 text-[10px] font-medium ${isDark ? "text-white/20" : "text-gray-400"}`}>
               <span className="col-span-4">Produit</span>
               <span className="col-span-2">SKU / Catégorie</span>
               <span className="col-span-2 text-right">Prix achat</span>
@@ -844,24 +872,24 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
             <AnimatePresence>
               {filtered.map((p) => (
                 <motion.div key={p.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                  className="group grid grid-cols-12 gap-3 items-center bg-white/[0.025] border border-white/[0.06] rounded-2xl px-4 py-3 hover:border-white/[0.14] transition-all">
+                  className={`group grid grid-cols-12 gap-3 items-center rounded-2xl px-4 py-3 transition-all border ${isDark ? "bg-white/[0.025] border-white/[0.06] hover:border-white/[0.14]" : "bg-white border-gray-200 hover:border-gray-300"}`}>
                   <div className="col-span-4 flex items-center gap-3 min-w-0">
-                    <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-white/[0.05] overflow-hidden">
+                    <div className={`h-9 w-9 shrink-0 flex items-center justify-center rounded-xl overflow-hidden ${isDark ? "bg-white/[0.05]" : "bg-gray-100"}`}>
                       {p.image_url
                         ? <img src={p.image_url} alt={p.name} className="h-full w-full object-cover"/>
-                        : <Package size={14} className="text-white/40"/>}
+                        : <Package size={14} className={isDark ? "text-white/40" : "text-gray-400"}/>}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-white/85 truncate">{p.name}</p>
-                      {p.supplier_name && <p className="text-xs text-white/35 truncate">{p.supplier_name}</p>}
+                      <p className={`text-sm font-semibold truncate ${isDark ? "text-white/85" : "text-gray-800"}`}>{p.name}</p>
+                      {p.supplier_name && <p className={`text-xs truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>{p.supplier_name}</p>}
                     </div>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-xs text-white/50">{p.sku || "—"}</p>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.05] text-white/35">{p.category}</span>
+                    <p className={`text-xs ${isDark ? "text-white/50" : "text-gray-500"}`}>{p.sku || "—"}</p>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${isDark ? "bg-white/[0.05] text-white/35" : "bg-gray-100 text-gray-500"}`}>{p.category}</span>
                   </div>
                   <div className="col-span-2 text-right">
-                    <p className="text-sm font-semibold text-white/70">{fmtEur(p.purchase_price)}</p>
+                    <p className={`text-sm font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>{fmtEur(p.purchase_price)}</p>
                   </div>
                   <div className="col-span-2 text-right">
                     <p className="text-sm font-semibold" style={{ color: green }}>{fmtEur(p.sale_price)}</p>
@@ -869,7 +897,7 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
                   <div className="col-span-2 flex items-center justify-end gap-2">
                     <div className="text-right">
                       <div className="flex items-center justify-end gap-1.5 mb-0.5">
-                        <p className="text-sm font-bold text-white/85">{p.stock_current}</p>
+                        <p className={`text-sm font-bold ${isDark ? "text-white/85" : "text-gray-800"}`}>{p.stock_current}</p>
                         {(() => { const s = STOCK_STATES[getStockState(p)]; return (
                           <span className="text-[0.58rem] font-bold px-1.5 py-0.5 rounded-full"
                             style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
@@ -877,13 +905,13 @@ function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement }: {
                           </span>
                         ); })()}
                       </div>
-                      <p className="text-[10px] text-white/25">{p.unit} · min {p.stock_minimum}</p>
+                      <p className={`text-[10px] ${isDark ? "text-white/25" : "text-gray-400"}`}>{p.unit} · min {p.stock_minimum}</p>
                     </div>
                     {/* Actions */}
                     <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
-                      <button onClick={() => onAddMovement(p)} title="Mouvement" className="h-6 w-6 flex items-center justify-center rounded-lg hover:bg-white/[0.08] text-white/30 hover:text-emerald-400 transition-all"><Zap size={11}/></button>
-                      <button onClick={() => onEdit(p)} title="Modifier" className="h-6 w-6 flex items-center justify-center rounded-lg hover:bg-white/[0.08] text-white/30 hover:text-white/70 transition-all"><Edit2 size={11}/></button>
-                      <button onClick={() => onDelete(p.id)} title="Supprimer" className="h-6 w-6 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/30 hover:text-red-400 transition-all"><Trash2 size={11}/></button>
+                      <button onClick={() => onAddMovement(p)} title="Mouvement" className={`h-6 w-6 flex items-center justify-center rounded-lg transition-all hover:text-emerald-400 ${isDark ? "hover:bg-white/[0.08] text-white/30" : "hover:bg-gray-100 text-gray-400"}`}><Zap size={11}/></button>
+                      <button onClick={() => onEdit(p)} title="Modifier" className={`h-6 w-6 flex items-center justify-center rounded-lg transition-all ${isDark ? "hover:bg-white/[0.08] text-white/30 hover:text-white/70" : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"}`}><Edit2 size={11}/></button>
+                      <button onClick={() => onDelete(p.id)} title="Supprimer" className={`h-6 w-6 flex items-center justify-center rounded-lg transition-all hover:text-red-400 ${isDark ? "hover:bg-red-500/10 text-white/30" : "hover:bg-red-50 text-gray-400"}`}><Trash2 size={11}/></button>
                     </div>
                   </div>
                 </motion.div>
@@ -912,6 +940,8 @@ function MovementsView({ movements, products, warehouses, onNew }: {
   const [typeFilter, setTypeFilter] = useState<MovementType | "all">("all");
   const [productFilter, setProductFilter] = useState("all");
 
+  const isDark = useDark();
+
   const filtered = movements.filter((m) => {
     if (typeFilter !== "all" && m.type !== typeFilter) return false;
     if (productFilter !== "all" && m.product_id !== productFilter) return false;
@@ -920,14 +950,16 @@ function MovementsView({ movements, products, warehouses, onNew }: {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex items-center gap-2 p-4 border-b border-white/[0.06] flex-wrap">
+      <div className={`flex items-center gap-2 p-4 border-b flex-wrap ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as MovementType | "all")}
-          className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+          className={`rounded-xl px-3 py-2 text-xs focus:outline-none appearance-none border ${isDark ? "bg-white/[0.05] border-white/[0.08] text-white/70" : "bg-white border-gray-200 text-gray-600"}`}
+          style={selStyle(isDark)}>
           <option value="all">Tous types</option>
           {MOV_TYPES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
         <select value={productFilter} onChange={(e) => setProductFilter(e.target.value)}
-          className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark] max-w-xs">
+          className={`flex-1 rounded-xl px-3 py-2 text-xs focus:outline-none appearance-none border max-w-xs ${isDark ? "bg-white/[0.05] border-white/[0.08] text-white/70" : "bg-white border-gray-200 text-gray-600"}`}
+          style={selStyle(isDark)}>
           <option value="all">Tous produits</option>
           {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
@@ -937,23 +969,23 @@ function MovementsView({ movements, products, warehouses, onNew }: {
       </div>
       <div className="flex-1 overflow-y-auto p-4">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center"><Activity size={28} className="text-white/20"/><p className="text-white/30 text-sm">Aucun mouvement</p></div>
+          <div className="flex flex-col items-center gap-3 py-16 text-center"><Activity size={28} className={isDark ? "text-white/20" : "text-gray-300"}/><p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucun mouvement</p></div>
         ) : (
           <div className="space-y-1.5">
             {filtered.map((m) => {
               const mt = MOV_TYPES.find((t) => t.value === m.type) ?? MOV_TYPES[0];
               return (
                 <motion.div key={m.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-3 bg-white/[0.025] border border-white/[0.06] rounded-2xl px-4 py-3">
+                  className={`flex items-center gap-3 rounded-2xl px-4 py-3 border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
                   <div className="h-9 w-9 flex items-center justify-center rounded-xl shrink-0" style={{ background: mt.color + "18" }}>
                     {mt.sign > 0 ? <ArrowUpCircle size={16} style={{ color: mt.color }}/> : mt.sign < 0 ? <ArrowDownCircle size={16} style={{ color: mt.color }}/> : <RotateCcw size={16} style={{ color: mt.color }}/>}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2">
-                      <p className="text-sm font-semibold text-white/85 truncate">{m.product_name}</p>
+                      <p className={`text-sm font-semibold truncate ${isDark ? "text-white/85" : "text-gray-700"}`}>{m.product_name}</p>
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0" style={{ background: mt.color + "20", color: mt.color }}>{mt.label}</span>
                     </div>
-                    <p className="text-xs text-white/35">
+                    <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>
                       {fmtDate(m.date)}{m.reference ? ` · Réf: ${m.reference}` : ""}{m.reason ? ` · ${m.reason}` : ""}
                     </p>
                   </div>
@@ -961,7 +993,7 @@ function MovementsView({ movements, products, warehouses, onNew }: {
                     <p className="text-sm font-bold" style={{ color: mt.color }}>
                       {mt.sign > 0 ? "+" : mt.sign < 0 ? "-" : ""}{m.quantity}
                     </p>
-                    <p className="text-[10px] text-white/30">{m.before_qty} → {m.after_qty}</p>
+                    <p className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>{m.before_qty} → {m.after_qty}</p>
                   </div>
                 </motion.div>
               );
@@ -979,18 +1011,19 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
   suppliers: Supplier[]; products: Product[]; orders: SupplierOrder[];
   onNew: () => void; onEdit: (s: Supplier) => void; onDelete: (id: string) => void;
 }) {
+  const isDark = useDark();
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-white/60">{suppliers.length} fournisseur{suppliers.length > 1 ? "s" : ""}</h3>
+        <h3 className={`text-sm font-bold ${isDark ? "text-white/60" : "text-gray-500"}`}>{suppliers.length} fournisseur{suppliers.length > 1 ? "s" : ""}</h3>
         <button onClick={onNew} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
           <Plus size={13}/> Nouveau fournisseur
         </button>
       </div>
       {suppliers.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-16 text-center">
-          <Truck size={28} className="text-white/20"/>
-          <p className="text-white/30 text-sm">Aucun fournisseur</p>
+          <Truck size={28} className={isDark ? "text-white/20" : "text-gray-300"}/>
+          <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucun fournisseur</p>
           <button onClick={onNew} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold" style={{ background: "rgba(201,165,90,0.15)", color: gold, border: `1px solid rgba(201,165,90,0.3)` }}>
             <Plus size={13}/> Ajouter
           </button>
@@ -1001,24 +1034,24 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
             const prodCount = products.filter((p) => p.supplier_id === s.id).length;
             return (
               <motion.div key={s.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="group bg-white/[0.025] border border-white/[0.06] rounded-2xl p-5 hover:border-white/[0.14] transition-all">
+                className={`group rounded-2xl p-5 transition-all border ${isDark ? "bg-white/[0.025] border-white/[0.06] hover:border-white/[0.14]" : "bg-white border-gray-200 hover:border-gray-300"}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="h-10 w-10 flex items-center justify-center rounded-xl text-sm font-semibold" style={{ background: green + "18", color: green, border: `1px solid ${green}30` }}>
                     {s.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
-                    <button onClick={() => onEdit(s)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/[0.08] text-white/30 hover:text-white/70"><Edit2 size={12}/></button>
-                    <button onClick={() => onDelete(s.id)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/30 hover:text-red-400"><Trash2 size={12}/></button>
+                    <button onClick={() => onEdit(s)} className={`h-7 w-7 flex items-center justify-center rounded-lg transition-all ${isDark ? "hover:bg-white/[0.08] text-white/30 hover:text-white/70" : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"}`}><Edit2 size={12}/></button>
+                    <button onClick={() => onDelete(s.id)} className={`h-7 w-7 flex items-center justify-center rounded-lg transition-all hover:text-red-400 ${isDark ? "hover:bg-red-500/10 text-white/30" : "hover:bg-red-50 text-gray-400"}`}><Trash2 size={12}/></button>
                   </div>
                 </div>
-                <h4 className="text-sm font-semibold text-white/90 mb-1">{s.name}</h4>
-                {s.contact && <p className="text-xs text-white/45 mb-0.5">{s.contact}</p>}
-                {s.email && <p className="text-xs text-white/35 mb-0.5">{s.email}</p>}
-                {s.phone && <p className="text-xs text-white/35 mb-3">{s.phone}</p>}
-                <div className="flex items-center gap-3 pt-3 border-t border-white/[0.06]">
-                  <div className="flex items-center gap-1 text-[10px] text-white/30"><Package size={10}/> {prodCount} produit{prodCount > 1 ? "s" : ""}</div>
-                  <div className="flex items-center gap-1 text-[10px] text-white/30"><Truck size={10}/> {s.lead_time_days}j livraison</div>
-                  <div className="text-[10px] text-white/25 ml-auto">{s.payment_terms}</div>
+                <h4 className={`text-sm font-semibold mb-1 ${isDark ? "text-white/90" : "text-gray-800"}`}>{s.name}</h4>
+                {s.contact && <p className={`text-xs mb-0.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>{s.contact}</p>}
+                {s.email && <p className={`text-xs mb-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{s.email}</p>}
+                {s.phone && <p className={`text-xs mb-3 ${isDark ? "text-white/35" : "text-gray-400"}`}>{s.phone}</p>}
+                <div className={`flex items-center gap-3 pt-3 border-t ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
+                  <div className={`flex items-center gap-1 text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}><Package size={10}/> {prodCount} produit{prodCount > 1 ? "s" : ""}</div>
+                  <div className={`flex items-center gap-1 text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}><Truck size={10}/> {s.lead_time_days}j livraison</div>
+                  <div className={`text-[10px] ml-auto ${isDark ? "text-white/25" : "text-gray-400"}`}>{s.payment_terms}</div>
                 </div>
               </motion.div>
             );
@@ -1051,19 +1084,21 @@ function PrevisionsSubView({ products, movements }: { products: Product[]; movem
 
   const urgent = rows.filter(r => r.daysLeft !== null && r.daysLeft <= 14);
 
+  const isDark = useDark();
+
   return (
     <div className="space-y-4">
       {urgent.length > 0 && (
         <div className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
           <AlertTriangle size={14} className="text-red-400 shrink-0"/>
-          <p className="text-sm text-white/70">
+          <p className={`text-sm ${isDark ? "text-white/70" : "text-gray-600"}`}>
             <span className="font-bold text-red-400">{urgent.length} produit{urgent.length > 1 ? "s" : ""}</span> en rupture prévue dans moins de 14 jours.
           </p>
         </div>
       )}
 
-      <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/30">
+      <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`grid grid-cols-12 gap-2 px-4 py-2.5 border-b text-[10px] font-semibold uppercase tracking-wider ${isDark ? "border-white/[0.06] text-white/30" : "border-gray-200 text-gray-400"}`}>
           <span className="col-span-4">Produit</span>
           <span className="col-span-2 text-right">Stock</span>
           <span className="col-span-2 text-right">Sorties /30j</span>
@@ -1071,7 +1106,7 @@ function PrevisionsSubView({ products, movements }: { products: Product[]; movem
           <span className="col-span-2 text-right">Jours restants</span>
         </div>
         {rows.length === 0 ? (
-          <p className="text-center text-white/25 text-sm py-10">Aucun produit actif</p>
+          <p className={`text-center text-sm py-10 ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucun produit actif</p>
         ) : rows.map(({ product, out30, avgDaily, daysLeft }) => {
           const isUrgent = daysLeft !== null && daysLeft <= 7;
           const isWarn   = daysLeft !== null && daysLeft > 7 && daysLeft <= 30;
@@ -1079,24 +1114,24 @@ function PrevisionsSubView({ products, movements }: { products: Product[]; movem
           const daysLabel = daysLeft === null ? "Stable" : daysLeft === 0 ? "Rupture" : `${daysLeft}j`;
           return (
             <motion.div key={product.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="grid grid-cols-12 gap-2 items-center px-4 py-3 border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-colors">
+              className={`grid grid-cols-12 gap-2 items-center px-4 py-3 border-b last:border-0 transition-colors ${isDark ? "border-white/[0.03] hover:bg-white/[0.02]" : "border-gray-100 hover:bg-gray-50"}`}>
               <div className="col-span-4 flex items-center gap-2.5 min-w-0">
-                <div className="h-7 w-7 shrink-0 flex items-center justify-center rounded-lg overflow-hidden bg-white/[0.05]">
+                <div className={`h-7 w-7 shrink-0 flex items-center justify-center rounded-lg overflow-hidden ${isDark ? "bg-white/[0.05]" : "bg-gray-100"}`}>
                   {product.image_url
                     ? <img src={product.image_url} alt="" className="h-full w-full object-cover"/>
-                    : <Package size={12} className="text-white/40"/>}
+                    : <Package size={12} className={isDark ? "text-white/40" : "text-gray-400"}/>}
                 </div>
-                <span className="text-sm text-white/80 truncate">{product.name}</span>
+                <span className={`text-sm truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{product.name}</span>
               </div>
               <div className="col-span-2 text-right">
-                <span className="text-sm font-semibold text-white/70">{product.stock_current}</span>
-                <span className="text-[10px] text-white/30 ml-1">{product.unit}</span>
+                <span className={`text-sm font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>{product.stock_current}</span>
+                <span className={`text-[10px] ml-1 ${isDark ? "text-white/30" : "text-gray-400"}`}>{product.unit}</span>
               </div>
               <div className="col-span-2 text-right">
-                <span className="text-sm text-white/60">{out30 > 0 ? out30.toFixed(1) : "—"}</span>
+                <span className={`text-sm ${isDark ? "text-white/60" : "text-gray-500"}`}>{out30 > 0 ? out30.toFixed(1) : "—"}</span>
               </div>
               <div className="col-span-2 text-right">
-                <span className="text-sm text-white/60">{avgDaily > 0 ? avgDaily.toFixed(2) : "—"}</span>
+                <span className={`text-sm ${isDark ? "text-white/60" : "text-gray-500"}`}>{avgDaily > 0 ? avgDaily.toFixed(2) : "—"}</span>
               </div>
               <div className="col-span-2 text-right">
                 <span className="text-sm font-bold" style={{ color: daysColor }}>{daysLabel}</span>
@@ -1105,7 +1140,7 @@ function PrevisionsSubView({ products, movements }: { products: Product[]; movem
           );
         })}
       </div>
-      <p className="text-[10px] text-white/25 text-center">Basé sur les sorties des 30 derniers jours · Estimations indicatives</p>
+      <p className={`text-[10px] text-center ${isDark ? "text-white/25" : "text-gray-400"}`}>Basé sur les sorties des 30 derniers jours · Estimations indicatives</p>
     </div>
   );
 }
@@ -1160,6 +1195,8 @@ function ValuationSubView({ products, movements }: { products: Product[]; moveme
   const totalPur  = rows.reduce((s, r) => s + r.purchaseValue, 0);
   const diff      = totalSel - totalPur;
 
+  const isDark = useDark();
+
   return (
     <div className="space-y-4">
       {/* Method selector + total */}
@@ -1169,12 +1206,14 @@ function ValuationSubView({ products, movements }: { products: Product[]; moveme
             className="px-4 py-1.5 rounded-xl text-xs font-bold border transition-all"
             style={method === m
               ? { background: gold + "20", color: gold, border: `1px solid ${gold}40` }
-              : { border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.35)" }}>
+              : isDark
+                ? { border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.35)" }
+                : { border: "1px solid #e5e7eb", color: "#6b7280" }}>
             {m.toUpperCase()}
           </button>
         ))}
         <div className="ml-auto text-right">
-          <p className="text-[10px] text-white/40">Valeur totale ({method.toUpperCase()})</p>
+          <p className={`text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}>Valeur totale ({method.toUpperCase()})</p>
           <p className="text-lg font-bold" style={{ color: gold }}>{fmtEur(totalSel)}</p>
         </div>
       </div>
@@ -1182,15 +1221,15 @@ function ValuationSubView({ products, movements }: { products: Product[]; moveme
       {/* Delta vs prix achat */}
       <div className="flex items-center gap-3 rounded-xl px-4 py-2.5"
         style={{ background: diff >= 0 ? "rgba(16,185,129,0.06)" : "rgba(239,68,68,0.06)", border: `1px solid ${diff >= 0 ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}` }}>
-        <span className="text-xs text-white/50">vs. prix d'achat ({fmtEur(totalPur)}) :</span>
+        <span className={`text-xs ${isDark ? "text-white/50" : "text-gray-500"}`}>vs. prix d'achat ({fmtEur(totalPur)}) :</span>
         <span className="text-sm font-bold ml-auto" style={{ color: diff >= 0 ? green : "#ef4444" }}>
           {diff >= 0 ? "+" : ""}{fmtEur(diff)}{totalPur > 0 ? ` (${((diff / totalPur) * 100).toFixed(1)}%)` : ""}
         </span>
       </div>
 
       {/* Table */}
-      <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/30">
+      <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`grid grid-cols-12 gap-2 px-4 py-2.5 border-b text-[10px] font-semibold uppercase tracking-wider ${isDark ? "border-white/[0.06] text-white/30" : "border-gray-200 text-gray-400"}`}>
           <span className="col-span-4">Produit</span>
           <span className="col-span-2 text-right">Stock</span>
           <span className="col-span-2 text-right">P. achat</span>
@@ -1198,23 +1237,23 @@ function ValuationSubView({ products, movements }: { products: Product[]; moveme
           <span className="col-span-2 text-right">Valeur {method.toUpperCase()}</span>
         </div>
         {rows.length === 0 ? (
-          <p className="text-center text-white/25 text-sm py-10">Ajoutez des mouvements avec coût unitaire pour activer la valorisation</p>
+          <p className={`text-center text-sm py-10 ${isDark ? "text-white/25" : "text-gray-400"}`}>Ajoutez des mouvements avec coût unitaire pour activer la valorisation</p>
         ) : rows.map(r => (
-          <div key={r.product.id} className="grid grid-cols-12 gap-2 items-center px-4 py-3 border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-colors">
+          <div key={r.product.id} className={`grid grid-cols-12 gap-2 items-center px-4 py-3 border-b last:border-0 transition-colors ${isDark ? "border-white/[0.03] hover:bg-white/[0.02]" : "border-gray-100 hover:bg-gray-50"}`}>
             <div className="col-span-4 min-w-0">
-              <p className="text-sm text-white/80 truncate">{r.product.name}</p>
-              <p className="text-[10px] text-white/30">{r.product.sku || r.product.category}</p>
+              <p className={`text-sm truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{r.product.name}</p>
+              <p className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>{r.product.sku || r.product.category}</p>
             </div>
-            <div className="col-span-2 text-right text-sm text-white/60">{r.product.stock_current} <span className="text-[10px] text-white/30">{r.product.unit}</span></div>
-            <div className="col-span-2 text-right text-sm text-white/50">{fmtEur(r.product.purchase_price)}</div>
-            <div className="col-span-2 text-right text-sm text-white/70">{fmtEur(r.cmupUnit)}</div>
+            <div className={`col-span-2 text-right text-sm ${isDark ? "text-white/60" : "text-gray-500"}`}>{r.product.stock_current} <span className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>{r.product.unit}</span></div>
+            <div className={`col-span-2 text-right text-sm ${isDark ? "text-white/50" : "text-gray-400"}`}>{fmtEur(r.product.purchase_price)}</div>
+            <div className={`col-span-2 text-right text-sm ${isDark ? "text-white/70" : "text-gray-600"}`}>{fmtEur(r.cmupUnit)}</div>
             <div className="col-span-2 text-right">
               <span className="text-sm font-bold" style={{ color: gold }}>{fmtEur(selVal(r))}</span>
             </div>
           </div>
         ))}
       </div>
-      <p className="text-[10px] text-white/25 text-center">
+      <p className={`text-[10px] text-center ${isDark ? "text-white/25" : "text-gray-400"}`}>
         CMUP = Coût Moyen Unitaire Pondéré · FIFO = Premier entré, premier sorti · LIFO = Dernier entré, premier sorti
       </p>
     </div>
@@ -1315,11 +1354,13 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
     { label: "Total sorties",      value: totalOut,               sub: "Toutes périodes" },
   ];
 
+  const isDark = useDark();
+
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
       {/* ── Sub-view tabs ── */}
-      <div className="flex items-center gap-1 p-1 rounded-2xl w-fit" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="flex items-center gap-1 p-1 rounded-2xl w-fit" style={isDark ? { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" } : { background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
         {([
           { key: "inventaire",  label: "Inventaire",   icon: BarChart2 },
           { key: "previsions",  label: "Prévisions",   icon: CalendarClock },
@@ -1329,7 +1370,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
             className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-xl transition-all"
             style={subView === key
               ? { background: gold + "20", color: gold }
-              : { color: "rgba(255,255,255,0.35)" }}>
+              : isDark ? { color: "rgba(255,255,255,0.35)" } : { color: "#6b7280" }}>
             <Icon size={11}/>
             {label}
           </button>
@@ -1343,7 +1384,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
 
       {/* ── Header + bouton Analyse IA ── */}
       <div className="flex items-center justify-between">
-        <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/30">Rapport inventaire</p>
+        <p className={`text-[0.65rem] font-black uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Rapport inventaire</p>
         <button
           onClick={runRapportIA}
           disabled={rapportLoading}
@@ -1374,7 +1415,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
             <div className="flex items-start gap-5">
               <div className="shrink-0 flex flex-col items-center gap-1">
                 <svg width={72} height={72} viewBox="0 0 72 72">
-                  <circle cx={36} cy={36} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={5}/>
+                  <circle cx={36} cy={36} r={R} fill="none" stroke={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"} strokeWidth={5}/>
                   <circle
                     cx={36} cy={36} r={R} fill="none"
                     stroke={scoreColor} strokeWidth={5}
@@ -1386,11 +1427,11 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
                   />
                   <text x={36} y={40} textAnchor="middle" fill={scoreColor} fontSize={15} fontWeight={900} fontFamily="inherit">{score}</text>
                 </svg>
-                <p className="text-[0.55rem] font-bold uppercase tracking-wider text-white/30">Score</p>
+                <p className={`text-[0.55rem] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>Score</p>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[0.65rem] font-black uppercase tracking-widest mb-1.5" style={{ color: "#c9a55a" }}>Résumé exécutif</p>
-                <p className="text-[0.75rem] leading-relaxed text-white/70">{rapport.resume_executif}</p>
+                <p className={`text-[0.75rem] leading-relaxed ${isDark ? "text-white/70" : "text-gray-600"}`}>{rapport.resume_executif}</p>
               </div>
             </div>
 
@@ -1401,7 +1442,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
                   <p className="text-[0.6rem] font-black uppercase tracking-widest text-emerald-400/70 mb-2.5">Points forts</p>
                   <ul className="space-y-1.5">
                     {rapport.points_forts.map((pt, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[0.72rem] text-white/65">
+                      <li key={i} className={`flex items-start gap-2 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
                         <span className="mt-1 shrink-0 h-1.5 w-1.5 rounded-full bg-emerald-400"/>
                         {pt}
                       </li>
@@ -1414,7 +1455,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
                   <p className="text-[0.6rem] font-black uppercase tracking-widest text-red-400/70 mb-2.5">Alertes</p>
                   <ul className="space-y-1.5">
                     {rapport.alertes.map((al, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[0.72rem] text-white/65">
+                      <li key={i} className={`flex items-start gap-2 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
                         <AlertTriangle size={10} className="mt-0.5 shrink-0 text-red-400"/>
                         {al}
                       </li>
@@ -1430,7 +1471,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
                 <p className="text-[0.6rem] font-black uppercase tracking-widest mb-2.5" style={{ color: "rgba(201,165,90,0.7)" }}>Recommandations</p>
                 <ol className="space-y-2">
                   {rapport.recommandations.map((r, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-[0.72rem] text-white/65">
+                    <li key={i} className={`flex items-start gap-2.5 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
                       <span className="shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-[0.55rem] font-black"
                         style={{ background: "rgba(201,165,90,0.15)", color: "#c9a55a" }}>{i + 1}</span>
                       {r}
@@ -1443,25 +1484,25 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
             {/* Produits prioritaires */}
             {rapport.produits_prioritaires.length > 0 && (
               <div>
-                <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/30 mb-2.5">Produits prioritaires</p>
+                <p className={`text-[0.6rem] font-black uppercase tracking-widest mb-2.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>Produits prioritaires</p>
                 <div className="space-y-1.5">
                   {rapport.produits_prioritaires.map((p, i) => {
                     const stateColor = p.etat === "rupture" ? "#ef4444" : p.etat === "critique" ? "#f97316" : "#f59e0b";
                     return (
-                      <div key={i} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.04)" }}>
+                      <div key={i} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2" style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)" }}>
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="shrink-0 h-6 w-6 rounded-lg flex items-center justify-center"
                             style={{ background: `${stateColor}18`, border: `1px solid ${stateColor}30` }}>
                             <Package size={10} style={{ color: stateColor }}/>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[0.7rem] font-bold text-white/80 truncate">{p.nom}</p>
-                            {p.sku && <p className="text-[0.58rem] text-white/30">{p.sku}</p>}
+                            <p className={`text-[0.7rem] font-bold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{p.nom}</p>
+                            {p.sku && <p className={`text-[0.58rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{p.sku}</p>}
                           </div>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-[0.6rem] font-black uppercase" style={{ color: stateColor }}>{p.etat}</p>
-                          <p className="text-[0.62rem] text-white/40 max-w-[120px] text-right leading-snug">{p.action}</p>
+                          <p className={`text-[0.62rem] max-w-[120px] text-right leading-snug ${isDark ? "text-white/40" : "text-gray-400"}`}>{p.action}</p>
                         </div>
                       </div>
                     );
@@ -1477,7 +1518,7 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
                 <Activity size={12} className="shrink-0 mt-0.5" style={{ color: "#c9a55a" }}/>
                 <div>
                   <p className="text-[0.55rem] font-black uppercase tracking-widest mb-0.5" style={{ color: "rgba(201,165,90,0.6)" }}>Objectif de la semaine</p>
-                  <p className="text-[0.72rem] font-semibold text-white/70">{rapport.objectif_semaine}</p>
+                  <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>{rapport.objectif_semaine}</p>
                 </div>
               </div>
             )}
@@ -1488,10 +1529,10 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {kpis.map((k, i) => (
-          <div key={i} className="bg-white/[0.025] border border-white/[0.06] rounded-2xl p-4">
-            <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2">{k.label}</p>
-            <p className="text-xl font-bold text-white/90">{k.value}</p>
-            <p className="text-xs text-white/35 mt-1">{k.sub}</p>
+          <div key={i} className={`rounded-2xl border p-4 ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+            <p className={`text-[10px] uppercase tracking-wider mb-2 ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
+            <p className={`text-xl font-bold ${isDark ? "text-white/90" : "text-gray-800"}`}>{k.value}</p>
+            <p className={`text-xs mt-1 ${isDark ? "text-white/35" : "text-gray-400"}`}>{k.sub}</p>
           </div>
         ))}
       </div>
@@ -1499,20 +1540,20 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
       {/* ── Valeur par catégorie ── */}
       {catStats.length > 0 && (
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5">
+          <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>
             <BarChart2 size={12} style={{ color: green }}/> Valeur stock par catégorie
           </h3>
-          <div className="bg-white/[0.025] border border-white/[0.06] rounded-2xl p-4 space-y-3">
+          <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
             {catStats.map(({ cat, count, val }) => (
               <div key={cat}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-white/70 capitalize">{cat}</span>
+                  <span className={`text-xs font-semibold capitalize ${isDark ? "text-white/70" : "text-gray-600"}`}>{cat}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-white/35">{count} produit{count > 1 ? "s" : ""}</span>
-                    <span className="text-xs font-bold text-white/80">{fmtEur(val)}</span>
+                    <span className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{count} produit{count > 1 ? "s" : ""}</span>
+                    <span className={`text-xs font-bold ${isDark ? "text-white/80" : "text-gray-700"}`}>{fmtEur(val)}</span>
                   </div>
                 </div>
-                <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                   <motion.div initial={{ width: 0 }} animate={{ width: `${totalCatVal > 0 ? (val / totalCatVal) * 100 : 0}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="h-full rounded-full" style={{ background: green }}/>
@@ -1526,19 +1567,19 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
       {/* ── Produits en rupture ── */}
       {products.filter((p) => p.stock_current <= 0).length > 0 && (
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5">
+          <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>
             <AlertOctagon size={12} className="text-red-400"/> Produits en rupture
           </h3>
           <div className="space-y-1.5">
             {products.filter((p) => p.stock_current <= 0).map((p) => (
               <div key={p.id} className="flex items-center justify-between bg-red-500/5 border border-red-500/10 rounded-xl px-4 py-2.5">
                 <div>
-                  <span className="text-sm font-semibold text-white/80">{p.name}</span>
-                  {p.sku && <span className="text-xs text-white/35 ml-2">{p.sku}</span>}
+                  <span className={`text-sm font-semibold ${isDark ? "text-white/80" : "text-gray-700"}`}>{p.name}</span>
+                  {p.sku && <span className={`text-xs ml-2 ${isDark ? "text-white/35" : "text-gray-400"}`}>{p.sku}</span>}
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-bold text-red-400">RUPTURE</p>
-                  <p className="text-[10px] text-white/30">{p.supplier_name || "Sans fournisseur"}</p>
+                  <p className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>{p.supplier_name || "Sans fournisseur"}</p>
                 </div>
               </div>
             ))}
@@ -1557,6 +1598,8 @@ function ClientModal({ client, onSave, onClose }: {
 }) {
   const [form, setForm] = useState<Partial<LoyalClient>>(client);
   const [saving, setSaving] = useState(false);
+  const isDark = useDark();
+  const inp = useInp();
   const set = (k: keyof LoyalClient, v: string) => setForm((p) => ({ ...p, [k]: v }));
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -1564,15 +1607,15 @@ function ClientModal({ client, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-lg bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+        className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: "#6366f120", border: "1px solid #6366f130" }}>
               <Users size={14} style={{ color: "#818cf8" }}/>
             </div>
-            <h3 className="text-sm font-semibold text-white/90">{form.id ? "Modifier le client" : "Nouveau client fidèle"}</h3>
+            <h3 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{form.id ? "Modifier le client" : "Nouveau client fidèle"}</h3>
           </div>
-          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
+          <button onClick={onClose} className={`h-7 w-7 flex items-center justify-center rounded-lg border transition-colors ${isDark ? "border-white/10 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}><X size={14}/></button>
         </div>
         <div className="p-6 space-y-3 overflow-y-auto max-h-[65vh]">
           <div><Label>Nom *</Label><input value={form.name ?? ""} onChange={(e) => set("name", e.target.value)} placeholder="Nom du client" className={inp()}/></div>
@@ -1584,7 +1627,7 @@ function ClientModal({ client, onSave, onClose }: {
           <div><Label>Notes</Label><textarea value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} rows={2} className={inp("resize-none")}/></div>
         </div>
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
+          <button onClick={onClose} className={`px-4 py-2.5 rounded-xl text-sm border transition-colors ${isDark ? "text-white/50 border-white/10 hover:bg-white/[0.04]" : "text-gray-500 border-gray-200 hover:bg-gray-100"}`}>Annuler</button>
           <button onClick={async () => { if (!form.name) return; setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.name}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
             style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", color: "#fff" }}>
@@ -1602,6 +1645,8 @@ function DeliveryModal({ delivery, clients, products, onSave, onClose }: {
 }) {
   const [form, setForm] = useState<Partial<ClientDelivery>>(delivery);
   const [saving, setSaving] = useState(false);
+  const isDark = useDark();
+  const inp = useInp();
   const set = <K extends keyof ClientDelivery>(k: K, v: ClientDelivery[K]) => setForm((p) => ({ ...p, [k]: v }));
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -1609,15 +1654,15 @@ function DeliveryModal({ delivery, clients, products, onSave, onClose }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
         transition={{ duration: 0.35, ease }}
-        className="w-full max-w-md bg-white/[0.025] border border-white/[0.06] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+        className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: "#10b98120", border: "1px solid #10b98130" }}>
               <Truck size={14} style={{ color: green }}/>
             </div>
-            <h3 className="text-sm font-semibold text-white/90">Enregistrer une livraison</h3>
+            <h3 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>Enregistrer une livraison</h3>
           </div>
-          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70"><X size={14}/></button>
+          <button onClick={onClose} className={`h-7 w-7 flex items-center justify-center rounded-lg border transition-colors ${isDark ? "border-white/10 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}><X size={14}/></button>
         </div>
         <div className="p-6 space-y-3">
           <div>
@@ -1626,7 +1671,7 @@ function DeliveryModal({ delivery, clients, products, onSave, onClose }: {
               const c = clients.find(c => c.id === e.target.value);
               set("client_id", e.target.value || null as unknown as string);
               if (c) set("client_name", c.name);
-            }} className={inp() + " [color-scheme:dark]"}>
+            }} className={inp()} style={selStyle(isDark)}>
               <option value="">— Choisir un client —</option>
               {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -1637,7 +1682,7 @@ function DeliveryModal({ delivery, clients, products, onSave, onClose }: {
               const p = products.find(p => p.id === e.target.value);
               set("product_id", e.target.value || null as unknown as string);
               if (p) { set("product_name", p.name); set("unit", p.unit); }
-            }} className={inp() + " [color-scheme:dark]"}>
+            }} className={inp()} style={selStyle(isDark)}>
               <option value="">— Choisir un produit —</option>
               {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.stock_current} {p.unit})</option>)}
             </select>
@@ -1647,13 +1692,13 @@ function DeliveryModal({ delivery, clients, products, onSave, onClose }: {
               <input type="number" min={1} value={form.quantity ?? 1} onChange={(e) => set("quantity", parseFloat(e.target.value))} className={inp()}/>
             </div>
             <div><Label>Date de livraison</Label>
-              <input type="date" value={form.delivery_date ?? ""} onChange={(e) => set("delivery_date", e.target.value)} className={inp() + " [color-scheme:dark]"}/>
+              <input type="date" value={form.delivery_date ?? ""} onChange={(e) => set("delivery_date", e.target.value)} className={inp()}/>
             </div>
           </div>
           <div><Label>Notes</Label><input value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} placeholder="Référence commande…" className={inp()}/></div>
         </div>
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/[0.04] transition-colors">Annuler</button>
+          <button onClick={onClose} className={`px-4 py-2.5 rounded-xl text-sm border transition-colors ${isDark ? "text-white/50 border-white/10 hover:bg-white/[0.04]" : "text-gray-500 border-gray-200 hover:bg-gray-100"}`}>Annuler</button>
           <button onClick={async () => { if (!form.client_id || !form.product_id) return; setSaving(true); await onSave(form); setSaving(false); }}
             disabled={saving || !form.client_id || !form.product_id}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
@@ -1675,6 +1720,7 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
 }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const isDark = useDark();
 
   const filtered = clients.filter(c =>
     !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase())
@@ -1692,12 +1738,12 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* Left — client list */}
-      <div className="w-72 xl:w-80 shrink-0 flex flex-col border-r border-white/[0.06]">
-        <div className="p-4 border-b border-white/[0.06] space-y-3">
+      <div className={`w-72 xl:w-80 shrink-0 flex flex-col border-r ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
+        <div className={`p-4 border-b space-y-3 ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
           <div className="relative">
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un client…"
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none pl-8"/>
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"/>
+              className={`w-full rounded-xl px-3 py-2 text-sm focus:outline-none pl-8 border ${isDark ? "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/25" : "bg-white border-gray-200 text-gray-800 placeholder:text-gray-400"}`}/>
+            <Search size={13} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
           </div>
           <button onClick={onNewClient}
             className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
@@ -1709,9 +1755,9 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-12 text-center px-4">
-              <Users size={24} className="text-white/20"/>
-              <p className="text-white/30 text-sm">Aucun client fidèle</p>
-              <p className="text-white/20 text-xs">Ajoutez vos clients réguliers pour suivre leurs livraisons</p>
+              <Users size={24} className={isDark ? "text-white/20" : "text-gray-300"}/>
+              <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucun client fidèle</p>
+              <p className={`text-xs ${isDark ? "text-white/20" : "text-gray-400"}`}>Ajoutez vos clients réguliers pour suivre leurs livraisons</p>
             </div>
           ) : filtered.map(c => {
             const last = getLastDelivery(c.id);
@@ -1719,20 +1765,20 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
             const isSelected = selected === c.id;
             return (
               <button key={c.id} onClick={() => setSelected(isSelected ? null : c.id)}
-                className={`w-full text-left p-3 rounded-xl border transition-all ${isSelected ? "border-indigo-500/40" : "border-white/[0.05] hover:border-white/10"}`}
-                style={isSelected ? { background: "rgba(99,102,241,0.1)" } : { background: "rgba(255,255,255,0.02)" }}>
+                className={`w-full text-left p-3 rounded-xl border transition-all ${isSelected ? "border-indigo-500/40" : isDark ? "border-white/[0.05] hover:border-white/10" : "border-gray-100 hover:border-gray-200"}`}
+                style={isSelected ? { background: "rgba(99,102,241,0.1)" } : isDark ? { background: "rgba(255,255,255,0.02)" } : { background: "#f9fafb" }}>
                 <div className="flex items-center gap-2.5">
                   <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded-xl text-xs font-bold"
                     style={{ background: "#6366f118", color: "#818cf8", border: "1px solid #6366f128" }}>
                     {c.name.slice(0,2).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white/85 truncate">{c.name}</p>
-                    <p className="text-[10px] text-white/35 truncate">{c.email || c.phone || "Sans contact"}</p>
+                    <p className={`text-sm font-semibold truncate ${isDark ? "text-white/85" : "text-gray-800"}`}>{c.name}</p>
+                    <p className={`text-[10px] truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>{c.email || c.phone || "Sans contact"}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] font-bold text-white/50">{total} livr.</p>
-                    {last && <p className="text-[9px] text-white/25">{new Date(last.delivery_date).toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</p>}
+                    <p className={`text-[10px] font-bold ${isDark ? "text-white/50" : "text-gray-500"}`}>{total} livr.</p>
+                    {last && <p className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>{new Date(last.delivery_date).toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</p>}
                   </div>
                 </div>
               </button>
@@ -1749,8 +1795,8 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
               <Users size={24} style={{ color: "#818cf8" }}/>
             </div>
             <div>
-              <p className="text-white/50 text-sm font-medium">Sélectionnez un client</p>
-              <p className="text-white/25 text-xs mt-1">pour voir son historique de livraisons</p>
+              <p className={`text-sm font-medium ${isDark ? "text-white/50" : "text-gray-500"}`}>Sélectionnez un client</p>
+              <p className={`text-xs mt-1 ${isDark ? "text-white/25" : "text-gray-400"}`}>pour voir son historique de livraisons</p>
             </div>
             {clients.length === 0 && (
               <button onClick={onNewClient}
@@ -1770,11 +1816,11 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
                   {selectedClient.name.slice(0,2).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-white">{selectedClient.name}</h2>
+                  <h2 className={`text-base font-bold ${isDark ? "text-white" : "text-gray-800"}`}>{selectedClient.name}</h2>
                   <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                    {selectedClient.email && <span className="flex items-center gap-1 text-xs text-white/40"><Mail size={10}/>{selectedClient.email}</span>}
-                    {selectedClient.phone && <span className="flex items-center gap-1 text-xs text-white/40"><Phone size={10}/>{selectedClient.phone}</span>}
-                    {selectedClient.address && <span className="flex items-center gap-1 text-xs text-white/40"><MapPin size={10}/>{selectedClient.address}</span>}
+                    {selectedClient.email && <span className={`flex items-center gap-1 text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}><Mail size={10}/>{selectedClient.email}</span>}
+                    {selectedClient.phone && <span className={`flex items-center gap-1 text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}><Phone size={10}/>{selectedClient.phone}</span>}
+                    {selectedClient.address && <span className={`flex items-center gap-1 text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}><MapPin size={10}/>{selectedClient.address}</span>}
                   </div>
                 </div>
               </div>
@@ -1785,11 +1831,11 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
                   <Truck size={11}/> Livraison
                 </button>
                 <button onClick={() => onEditClient(selectedClient)}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white/70 transition-colors">
+                  className={`h-7 w-7 flex items-center justify-center rounded-lg border transition-colors ${isDark ? "border-white/10 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
                   <Edit2 size={11}/>
                 </button>
                 <button onClick={() => { onDeleteClient(selectedClient.id); setSelected(null); }}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 text-white/30 hover:text-red-400 hover:border-red-500/20 transition-colors">
+                  className={`h-7 w-7 flex items-center justify-center rounded-lg border transition-colors hover:text-red-400 hover:border-red-500/20 ${isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
                   <Trash2 size={11}/>
                 </button>
               </div>
@@ -1804,10 +1850,10 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
               ].map(kpi => {
                 const KpiIcon = kpi.icon;
                 return (
-                  <div key={kpi.label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+                  <div key={kpi.label} className={`rounded-xl border p-3 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
                     <KpiIcon size={13} style={{ color: kpi.color }} className="mb-2"/>
-                    <p className="text-sm font-bold text-white/85">{kpi.value}</p>
-                    <p className="text-[10px] text-white/30 mt-0.5">{kpi.label}</p>
+                    <p className={`text-sm font-bold ${isDark ? "text-white/85" : "text-gray-800"}`}>{kpi.value}</p>
+                    <p className={`text-[10px] mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>{kpi.label}</p>
                   </div>
                 );
               })}
@@ -1816,7 +1862,7 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
             {/* Deliveries list */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 flex items-center gap-1.5">
+                <h3 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>
                   <Truck size={11} style={{ color: green }}/> Historique des livraisons
                 </h3>
                 <button onClick={() => onNewDelivery(selectedClient)}
@@ -1826,9 +1872,9 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
                 </button>
               </div>
               {selectedDeliveries.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-10 text-center rounded-2xl border border-dashed border-white/[0.08]">
-                  <Truck size={20} className="text-white/20"/>
-                  <p className="text-white/30 text-sm">Aucune livraison enregistrée</p>
+                <div className={`flex flex-col items-center gap-3 py-10 text-center rounded-2xl border border-dashed ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}>
+                  <Truck size={20} className={isDark ? "text-white/20" : "text-gray-300"}/>
+                  <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucune livraison enregistrée</p>
                   <button onClick={() => onNewDelivery(selectedClient)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"
                     style={{ background: `${green}18`, color: green, border: `1px solid ${green}30` }}>
@@ -1838,17 +1884,17 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
               ) : (
                 <div className="space-y-2">
                   {selectedDeliveries.map(d => (
-                    <div key={d.id} className="flex items-center gap-3 bg-white/[0.025] border border-white/[0.05] rounded-xl px-4 py-3">
+                    <div key={d.id} className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${isDark ? "bg-white/[0.025] border-white/[0.05]" : "bg-white border-gray-200"}`}>
                       <div className="h-8 w-8 flex items-center justify-center rounded-xl shrink-0" style={{ background: `${green}18` }}>
                         <Package size={13} style={{ color: green }}/>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white/80 truncate">{d.product_name}</p>
-                        {d.notes && <p className="text-[10px] text-white/35 truncate">{d.notes}</p>}
+                        <p className={`text-sm font-semibold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{d.product_name}</p>
+                        {d.notes && <p className={`text-[10px] truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>{d.notes}</p>}
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold" style={{ color: green }}>{d.quantity} {d.unit}</p>
-                        <p className="text-[10px] text-white/30">{new Date(d.delivery_date).toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})}</p>
+                        <p className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>{new Date(d.delivery_date).toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})}</p>
                       </div>
                     </div>
                   ))}
@@ -1857,9 +1903,9 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
             </div>
 
             {selectedClient.notes && (
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                <p className="text-[10px] text-white/30 uppercase tracking-wide mb-1">Notes</p>
-                <p className="text-sm text-white/60 leading-relaxed">{selectedClient.notes}</p>
+              <div className={`rounded-xl border px-4 py-3 ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
+                <p className={`text-[10px] uppercase tracking-wide mb-1 ${isDark ? "text-white/30" : "text-gray-400"}`}>Notes</p>
+                <p className={`text-sm leading-relaxed ${isDark ? "text-white/60" : "text-gray-600"}`}>{selectedClient.notes}</p>
               </div>
             )}
           </div>
@@ -1873,6 +1919,7 @@ function ClientsView({ clients, deliveries, products, onNewClient, onEditClient,
 
 export default function StocksPage() {
   const { toasts, add: toast, remove: removeToast } = useToastStack();
+  const { isDark } = useTheme();
   const router = useRouter();
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -2072,11 +2119,12 @@ export default function StocksPage() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-[#07080e] text-white flex flex-col">
+    <DarkCtx.Provider value={isDark}>
+    <div className={`min-h-screen flex flex-col ${isDark ? "bg-[#07080e] text-white" : "bg-gray-50 text-gray-900"}`}>
       <ToastStack toasts={toasts} remove={removeToast}/>
 
       {/* Animated header */}
-      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#07080e)" }}>
+      <div className="relative overflow-hidden shrink-0 sticky top-0 z-10" style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#07080e)" : "linear-gradient(160deg,#ffffff,#f8fafc,#ffffff)", borderBottom: isDark ? undefined : "1px solid #e5e7eb" }}>
         {/* Orbs */}
         <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
         <div className="pointer-events-none absolute -bottom-10 right-20 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#10b981,transparent)" }}/>
@@ -2086,16 +2134,16 @@ export default function StocksPage() {
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
-                className="h-10 w-10 flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
+                className={`h-10 w-10 flex items-center justify-center rounded-xl border ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-gray-200 bg-white"}`}>
                 <Package size={18} style={{ color: gold }}/>
               </motion.div>
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
-                <h1 className="text-base font-bold text-white tracking-tight">Stocks & Inventaire</h1>
-                <p className="text-[0.62rem] text-white/35">Gestion · Mouvements · Alertes · Fournisseurs</p>
+                <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Stocks & Inventaire</h1>
+                <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Gestion · Mouvements · Alertes · Fournisseurs</p>
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={exportCSV} title="Exporter CSV" className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all">
+              <button onClick={exportCSV} title="Exporter CSV" className={`h-8 w-8 flex items-center justify-center rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}>
                 <Download size={14}/>
               </button>
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -2120,11 +2168,11 @@ export default function StocksPage() {
               const KpiIcon = kpi.icon;
               return (
                 <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.06] bg-white/[0.03]">
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
                   <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-white leading-none truncate">{kpi.value}</p>
-                    <p className="text-[0.58rem] text-white/35 uppercase tracking-wide mt-0.5">{kpi.label}</p>
+                    <p className={`text-sm font-bold leading-none truncate ${isDark ? "text-white" : "text-gray-800"}`}>{kpi.value}</p>
+                    <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                   </div>
                 </motion.div>
               );
@@ -2136,7 +2184,7 @@ export default function StocksPage() {
         <div className="relative px-5 sm:px-8 flex gap-0.5">
           {TABS.map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${tab === key ? "text-white" : "text-white/35 hover:text-white/60"}`}>
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${tab === key ? isDark ? "text-white" : "text-gray-800" : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
               <Icon size={12}/>
               {label}
               {tab === key && (
@@ -2155,7 +2203,7 @@ export default function StocksPage() {
       {/* Content */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
-          <RefreshCw size={22} className="animate-spin text-white/30"/>
+          <RefreshCw size={22} className={`animate-spin ${isDark ? "text-white/30" : "text-gray-300"}`}/>
         </div>
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -2207,5 +2255,6 @@ export default function StocksPage() {
         confirmLabel="Supprimer" loading={deleting}
         onConfirm={handleDeleteConfirm} onCancel={() => setConfirmDeleteId(null)}/>
     </div>
+    </DarkCtx.Provider>
   );
 }

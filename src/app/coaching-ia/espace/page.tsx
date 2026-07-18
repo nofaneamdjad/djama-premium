@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { COACHING_MODULES, getNextChapter, type Module, type Chapter } from "@/lib/coaching-content";
 import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
+import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const ACCENT = "#a78bfa";
@@ -55,6 +56,7 @@ type AiAction  = "summarize" | "simplify" | "quiz" | "action_plan" | "create_pro
    UTILITY — CopyButton
 ───────────────────────────────────────────────────────── */
 function CopyButton({ text, className = "" }: { text: string; className?: string }) {
+  const { isDark } = useTheme();
   const [copied, setCopied] = useState(false);
   function copy() {
     navigator.clipboard.writeText(text).then(() => {
@@ -62,14 +64,15 @@ function CopyButton({ text, className = "" }: { text: string; className?: string
       setTimeout(() => setCopied(false), 2000);
     });
   }
+  const idle = isDark
+    ? "border-white/[0.1] bg-white/[0.04] text-white/40 hover:border-white/[0.2] hover:text-white/70"
+    : "border-black/10 bg-black/[0.03] text-[#0e1420]/40 hover:border-black/20 hover:text-[#0e1420]/70";
   return (
     <button
       onClick={copy}
       title="Copier"
       className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[0.65rem] font-semibold transition-all ${
-        copied
-          ? "border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.1)] text-[#34d399]"
-          : "border-white/[0.1] bg-white/[0.04] text-white/40 hover:border-white/[0.2] hover:text-white/70"
+        copied ? "border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.1)] text-[#34d399]" : idle
       } ${className}`}
     >
       {copied ? <><Check size={10} /> Copié !</> : <><Copy size={10} /> Copier</>}
@@ -125,13 +128,15 @@ function bumpStreak() {
 /* ─────────────────────────────────────────────────────────
    VIDEO PLAYER
 ───────────────────────────────────────────────────────── */
-function VideoPlayer({ title, color }: { title: string; color: string }) {
+function VideoPlayer({ title, color, isDark = true }: { title: string; color: string; isDark?: boolean }) {
   const [playing, setPlaying] = useState(false);
+  const vidBg = isDark ? `linear-gradient(135deg, #07080e, ${color}18)` : `linear-gradient(135deg, #f0f2fb, ${color}22)`;
+  const borderCls = isDark ? "border-white/8" : "border-black/8";
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-      className="mb-7 relative aspect-video w-full overflow-hidden rounded-2xl border border-white/8 cursor-pointer"
-      style={{ background: `linear-gradient(135deg, #07080e, ${color}18)` }}
+      className={`mb-7 relative aspect-video w-full overflow-hidden rounded-2xl border cursor-pointer ${borderCls}`}
+      style={{ background: vidBg }}
       onClick={() => setPlaying(p => !p)}
     >
       <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 80% 60% at 50% 50%, ${color}10, transparent)` }} />
@@ -206,6 +211,7 @@ const MODULE_QUIZ: Record<string, { q: string; opts: string[]; correct: number }
 };
 
 function InlineModuleQuiz({ moduleId, onComplete }: { moduleId: string; onComplete: () => void }) {
+  const { isDark } = useTheme();
   const questions = MODULE_QUIZ[moduleId] ?? MODULE_QUIZ["1"]!;
   const [started,  setStarted]  = useState(false);
   const [qIdx,     setQIdx]     = useState(0);
@@ -231,13 +237,26 @@ function InlineModuleQuiz({ moduleId, onComplete }: { moduleId: string; onComple
 
   function reset() { setQIdx(0); setSelected(null); setAnswers([]); setDone(false); setStarted(false); }
 
+  const qBorderDiv = isDark ? "border-white/[0.07]" : "border-black/6";
+  const qTextSec   = isDark ? "text-white/35" : "text-[#0e1420]/40";
+  const qTextMut   = isDark ? "text-white/40" : "text-[#0e1420]/45";
+  const qTextPri   = isDark ? "text-white" : "text-[#0e1420]";
+  const qPipeDim   = isDark ? "bg-white/10" : "bg-black/8";
+  const qOptIdle   = isDark
+    ? "border-white/8 bg-white/4 text-white/65 hover:border-white/20 hover:text-white"
+    : "border-black/8 bg-black/[0.02] text-[#0e1420]/65 hover:border-black/20 hover:text-[#0e1420]";
+  const qOptDim    = isDark ? "border-white/4 bg-white/2 text-white/20" : "border-black/4 bg-black/[0.01] text-[#0e1420]/20";
+  const resetBtn   = isDark
+    ? "border-white/10 bg-white/5 text-white/60 hover:text-white"
+    : "border-black/10 bg-black/[0.03] text-[#0e1420]/60 hover:text-[#0e1420]";
+
   return (
     <div className="mb-8 overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.22)] bg-[rgba(167,139,250,0.05)]">
-      <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
+      <div className={`flex items-center gap-3 border-b px-5 py-4 ${qBorderDiv}`}>
         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.15)]"><Trophy size={14} className="text-[#a78bfa]" /></div>
         <div>
-          <p className="text-sm font-extrabold text-white">Quiz de validation</p>
-          <p className="text-[0.62rem] text-white/35">{questions.length} questions · Validé si ≥ {threshold}/{questions.length}</p>
+          <p className={`text-sm font-extrabold ${qTextPri}`}>Quiz de validation</p>
+          <p className={`text-[0.62rem] ${qTextSec}`}>{questions.length} questions · Validé si ≥ {threshold}/{questions.length}</p>
         </div>
       </div>
       <div className="p-5">
@@ -251,26 +270,26 @@ function InlineModuleQuiz({ moduleId, onComplete }: { moduleId: string; onComple
         ) : done ? (
           <div className="space-y-3 text-center py-2">
             <p className="text-3xl font-extrabold" style={{ color: score >= threshold ? "#34d399" : "#f59e0b" }}>{score}/{questions.length}</p>
-            <p className="text-xs text-white/40">{score >= threshold ? "Module validé ! Progression sauvegardée." : "Relisez le cours et réessayez."}</p>
+            <p className={`text-xs ${qTextMut}`}>{score >= threshold ? "Module validé ! Progression sauvegardée." : "Relisez le cours et réessayez."}</p>
             {score >= threshold && (
               <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                 className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.1)] px-3 py-1 text-xs font-bold text-[#34d399]">
                 <CheckCircle2 size={11} /> Quiz validé
               </motion.div>
             )}
-            <button onClick={reset} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white/60 hover:text-white transition-colors">
+            <button onClick={reset} className={`inline-flex items-center gap-2 rounded-xl border px-5 py-2 text-xs font-bold transition-colors ${resetBtn}`}>
               <RotateCcw size={11} /> Rejouer
             </button>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-white/40">Question {qIdx + 1}/{questions.length}</span>
-              <div className="flex gap-1">{questions.map((_, i) => <div key={i} className={`h-1.5 w-8 rounded-full transition-all ${i < qIdx ? "bg-[#a78bfa]" : i === qIdx ? "bg-[#a78bfa] opacity-50" : "bg-white/10"}`} />)}</div>
+              <span className={`text-xs ${qTextMut}`}>Question {qIdx + 1}/{questions.length}</span>
+              <div className="flex gap-1">{questions.map((_, i) => <div key={i} className={`h-1.5 w-8 rounded-full transition-all ${i < qIdx ? "bg-[#a78bfa]" : i === qIdx ? "bg-[#a78bfa] opacity-50" : qPipeDim}`} />)}</div>
             </div>
             <AnimatePresence mode="wait">
               <motion.div key={qIdx} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}>
-                <p className="text-sm font-bold text-white mb-3">{questions[qIdx]!.q}</p>
+                <p className={`text-sm font-bold mb-3 ${qTextPri}`}>{questions[qIdx]!.q}</p>
                 <div className="space-y-2">
                   {questions[qIdx]!.opts.map((opt, i) => {
                     const isCorrect = i === questions[qIdx]!.correct;
@@ -280,10 +299,10 @@ function InlineModuleQuiz({ moduleId, onComplete }: { moduleId: string; onComple
                       <motion.button key={i} whileHover={!rev ? { x: 3 } : {}}
                         onClick={() => handleAnswer(i)} disabled={rev}
                         className={`w-full rounded-xl border px-4 py-2.5 text-left text-xs font-semibold transition-all ${
-                          !rev ? "border-white/8 bg-white/4 text-white/65 hover:border-white/20 hover:text-white" :
+                          !rev ? qOptIdle :
                           isCorrect ? "border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.1)] text-[#34d399]" :
                           isSel ? "border-[rgba(248,113,113,0.4)] bg-[rgba(248,113,113,0.1)] text-[#f87171]" :
-                          "border-white/4 bg-white/2 text-white/20"
+                          qOptDim
                         }`}>
                         <span className="mr-2 font-black">{String.fromCharCode(65 + i)}.</span>{opt}
                         {rev && isCorrect && <CheckCircle2 size={12} className="inline ml-2 text-[#34d399]" />}
@@ -310,6 +329,7 @@ function AiToolsBar({
   module:          Module;
   onOpenAssistant: (q: string) => void;
 }) {
+  const { isDark } = useTheme();
   const [loading,     setLoading]     = useState(false);
   const [activeAction, setActiveAction] = useState<AiAction | null>(null);
   const [result,      setResult]      = useState<string | null>(null);
@@ -514,7 +534,11 @@ function AiToolsBar({
 
         <button
           onClick={handlePdf}
-          className="flex items-center gap-1.5 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3.5 py-2 text-[0.72rem] font-semibold text-white/40 transition-all hover:scale-[1.02] hover:border-white/[0.2] hover:text-white/65"
+          className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[0.72rem] font-semibold transition-all hover:scale-[1.02] ${
+            isDark
+              ? "border-white/[0.1] bg-white/[0.04] text-white/40 hover:border-white/[0.2] hover:text-white/65"
+              : "border-black/10 bg-black/[0.03] text-[#0e1420]/40 hover:border-black/20 hover:text-[#0e1420]/65"
+          }`}
         >
           <Download size={12} /> Télécharger PDF
         </button>
@@ -531,8 +555,7 @@ function AiToolsBar({
             className="overflow-hidden"
           >
             <div className="mt-3 overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.05)]">
-              {/* Result header */}
-              <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
+              <div className={`flex items-center justify-between border-b px-4 py-3 ${isDark ? "border-white/[0.07]" : "border-black/6"}`}>
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[rgba(167,139,250,0.15)]">
                     <Bot size={12} className="text-[#a78bfa]" />
@@ -549,17 +572,16 @@ function AiToolsBar({
                   {result && <CopyButton text={result} />}
                   <button
                     onClick={() => { setResult(null); setError(null); setActiveAction(null); }}
-                    className="rounded-lg p-1 text-white/30 transition hover:bg-white/[0.06] hover:text-white/60"
+                    className={`rounded-lg p-1 transition ${isDark ? "text-white/30 hover:bg-white/[0.06] hover:text-white/60" : "text-[#0e1420]/30 hover:bg-black/[0.05] hover:text-[#0e1420]/60"}`}
                   >
                     <X size={13} />
                   </button>
                 </div>
               </div>
-              {/* Result content */}
-              <div className="px-4 py-4 text-sm leading-[1.75] text-white/70" style={{ whiteSpace: "pre-wrap" }}>
+              <div className={`px-4 py-4 text-sm leading-[1.75] ${isDark ? "text-white/70" : "text-[#0e1420]/70"}`} style={{ whiteSpace: "pre-wrap" }}>
                 {loading
                   ? (
-                    <div className="flex items-center gap-3 text-white/40">
+                    <div className={`flex items-center gap-3 ${isDark ? "text-white/40" : "text-[#0e1420]/40"}`}>
                       <div className="flex gap-1">
                         {[0, 1, 2].map((i) => (
                           <div key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#a78bfa]"
@@ -599,7 +621,11 @@ function AiToolsBar({
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder={`Ex : "Je n'ai pas bien compris la partie sur ${chapter.keyPoints?.[0]?.title ?? chapter.title}…"`}
                   rows={2}
-                  className="flex-1 resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-[rgba(96,165,250,0.35)] transition-colors"
+                  className={`flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none focus:border-[rgba(96,165,250,0.35)] transition-colors ${
+                    isDark
+                      ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/25"
+                      : "border-black/10 bg-black/[0.03] text-[#0e1420] placeholder-[#0e1420]/30"
+                  }`}
                 />
                 <button
                   onClick={() => {
@@ -616,7 +642,7 @@ function AiToolsBar({
                   <Send size={13} /> Envoyer
                 </button>
               </div>
-              <p className="mt-2 text-[0.6rem] text-white/25">
+              <p className={`mt-2 text-[0.6rem] ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`}>
                 L&apos;assistant IA pédagogique vous répondra dans le panneau Assistant
               </p>
             </div>
@@ -643,18 +669,27 @@ function ModuleSidebarItem({
   selectedChapterId: string | null;
   favorites:         Set<string>;
 }) {
+  const { isDark } = useTheme();
   const pct          = total > 0 ? Math.round((completed / total) * 100) : 0;
   const isModuleDone = completed === total && total > 0;
+  const sHov  = isDark ? "hover:bg-white/[0.05]"  : "hover:bg-black/[0.04]";
+  const sName = isDark ? "text-white/80"           : "text-[#0e1420]/80";
+  const sPct  = isDark ? "text-white/25"           : "text-[#0e1420]/30";
+  const sBar  = isDark ? "bg-white/[0.08]"         : "bg-black/[0.07]";
+  const sArrow= isDark ? "text-white/30"           : "text-[#0e1420]/30";
+  const sBord = isDark ? "border-white/[0.07]"     : "border-black/8";
+  const sCirc = isDark ? "text-white/20"           : "text-[#0e1420]/20";
+  const sTypDim = isDark ? "text-white/20"         : "text-[#0e1420]/20";
 
   return (
     <div>
       <button
         onClick={onToggle}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all hover:bg-white/[0.05]"
+        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${sHov}`}
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <p className="truncate text-xs font-semibold text-white/80">
+            <p className={`truncate text-xs font-semibold ${sName}`}>
               M{module.id} · {module.title}
             </p>
             {isModuleDone && (
@@ -665,15 +700,15 @@ function ModuleSidebarItem({
             )}
           </div>
           <div className="mt-1 flex items-center gap-2">
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.08]">
+            <div className={`h-1 flex-1 overflow-hidden rounded-full ${sBar}`}>
               <div className="h-full rounded-full transition-all duration-500"
                 style={{ width: `${pct}%`, background: `rgb(${module.rgb})` }} />
             </div>
-            <span className="text-[0.55rem] text-white/25">{pct}%</span>
+            <span className={`text-[0.55rem] ${sPct}`}>{pct}%</span>
           </div>
         </div>
         <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronRight size={12} className="text-white/30" />
+          <ChevronRight size={12} className={sArrow} />
         </motion.div>
       </button>
 
@@ -686,7 +721,7 @@ function ModuleSidebarItem({
             transition={{ duration: 0.25, ease }}
             className="overflow-hidden"
           >
-            <div className="ml-3 mt-1 space-y-0.5 border-l border-white/[0.07] pl-3">
+            <div className={`ml-3 mt-1 space-y-0.5 border-l pl-3 ${sBord}`}>
               {module.chapters.map((ch) => {
                 const isDone   = completed > module.chapters.indexOf(ch);
                 const selected = selectedChapterId === ch.id;
@@ -695,13 +730,14 @@ function ModuleSidebarItem({
                   <button key={ch.id} onClick={() => onSelectChapter(ch.id)}
                     className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-all ${
                       selected
-                        ? "bg-white/[0.08] text-white"
-                        : "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
+                        ? isDark ? "bg-white/[0.08] text-white" : "bg-black/[0.06] text-[#0e1420]"
+                        : isDark ? "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
+                                 : "text-[#0e1420]/40 hover:bg-black/[0.03] hover:text-[#0e1420]/70"
                     }`}
                   >
                     {isDone
                       ? <CheckCircle2 size={11} style={{ color: `rgb(${module.rgb})`, flexShrink: 0 }} />
-                      : <Circle size={11} className="shrink-0 text-white/20" />
+                      : <Circle size={11} className={`shrink-0 ${sCirc}`} />
                     }
                     <span className="flex-1 truncate text-[0.68rem]">{ch.title}</span>
                     <div className="flex items-center gap-1 shrink-0">
@@ -709,7 +745,7 @@ function ModuleSidebarItem({
                       <span className={`text-[0.55rem] ${
                         ch.type === "exercise" ? "text-[#f9a826]"
                         : ch.type === "quiz"   ? "text-[#60a5fa]"
-                        : "text-white/20"
+                        : sTypDim
                       }`}>
                         {ch.type === "exercise" ? "Ex" : ch.type === "quiz" ? "Q" : ""}
                       </span>
@@ -741,6 +777,24 @@ function ChapterViewer({
   onToggleFavorite: () => void;
   onAskAssistant:   (q: string) => void;
 }) {
+  const { isDark } = useTheme();
+  const cPri   = isDark ? "text-white"     : "text-[#0e1420]";
+  const cSec   = isDark ? "text-white/65"  : "text-[#0e1420]/65";
+  const cMut   = isDark ? "text-white/55"  : "text-[#0e1420]/55";
+  const cFaint = isDark ? "text-white/25"  : "text-[#0e1420]/35";
+  const cCard  = isDark ? "border-white/[0.07] bg-white/[0.03] hover:border-white/[0.12] hover:bg-white/[0.05]"
+                        : "border-black/8 bg-white shadow-sm hover:border-black/12 hover:shadow-md";
+  const cIntro = isDark ? "border-white/[0.08] from-white/[0.04] to-white/[0.02]"
+                        : "border-black/8 from-white to-[#f7f7fb]";
+  const cDivider = isDark ? "border-white/[0.07]" : "border-black/6";
+  const cDurBadge = isDark ? "bg-white/[0.06] text-white/35" : "bg-black/[0.05] text-[#0e1420]/45";
+  const cHintRow  = isDark ? "bg-white/[0.04]" : "bg-black/[0.03]";
+  const cTplBord  = isDark ? "border-white/[0.06]" : "border-black/6";
+  const cTplPre   = isDark ? "text-white/55" : "text-[#0e1420]/60";
+  const cFavIdle  = isDark
+    ? "border-white/[0.08] text-white/25 hover:border-[rgba(249,168,38,0.3)] hover:text-[#f9a826]"
+    : "border-black/10 text-[#0e1420]/25 hover:border-[rgba(249,168,38,0.4)] hover:text-[#f9a826]";
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
 
@@ -751,7 +805,7 @@ function ChapterViewer({
             style={{ background: `rgba(${module.rgb},0.12)`, color: `rgb(${module.rgb})`, border: `1px solid rgba(${module.rgb},0.22)` }}>
             M{module.id} · {module.title}
           </span>
-          <span className="flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[0.6rem] text-white/35">
+          <span className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.6rem] ${cDurBadge}`}>
             <Clock size={9} /> {chapter.duration}
           </span>
           {chapter.type !== "lesson" && (
@@ -771,14 +825,14 @@ function ChapterViewer({
         </div>
 
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-[1.5rem] font-extrabold leading-snug text-white">{chapter.title}</h1>
+          <h1 className={`text-[1.5rem] font-extrabold leading-snug ${cPri}`}>{chapter.title}</h1>
           <button
             onClick={onToggleFavorite}
             title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
             className={`mt-0.5 shrink-0 rounded-xl border p-2 transition-all hover:scale-110 ${
               isFavorite
                 ? "border-[rgba(249,168,38,0.4)] bg-[rgba(249,168,38,0.12)] text-[#f9a826]"
-                : "border-white/[0.08] bg-transparent text-white/25 hover:border-[rgba(249,168,38,0.3)] hover:text-[#f9a826]"
+                : cFavIdle
             }`}
           >
             <Star size={14} className={isFavorite ? "fill-[#f9a826]" : ""} />
@@ -787,23 +841,23 @@ function ChapterViewer({
       </div>
 
       {/* ── Vidéo ── */}
-      <VideoPlayer title={chapter.title} color={`rgb(${module.rgb})`} />
+      <VideoPlayer title={chapter.title} color={`rgb(${module.rgb})`} isDark={isDark} />
 
       {/* ── AI Tools Bar ── */}
       <AiToolsBar chapter={chapter} module={module} onOpenAssistant={onAskAssistant} />
 
       {/* ── Introduction ── */}
-      <div className="mb-8 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.02] px-6 py-5">
-        <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/25 mb-3">
+      <div className={`mb-8 rounded-2xl border bg-gradient-to-br px-6 py-5 ${cIntro}`}>
+        <p className={`text-[0.65rem] font-bold uppercase tracking-widest mb-3 ${cFaint}`}>
           Introduction
         </p>
-        <p className="text-[0.95rem] leading-[1.85] text-white/65 italic">{chapter.intro}</p>
+        <p className={`text-[0.95rem] leading-[1.85] italic ${cSec}`}>{chapter.intro}</p>
       </div>
 
       {/* ── Points clés ── */}
       {chapter.keyPoints && chapter.keyPoints.length > 0 && (
         <div className="mb-8">
-          <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-white/25">
+          <p className={`mb-4 text-[0.65rem] font-bold uppercase tracking-widest ${cFaint}`}>
             Points clés
           </p>
           <div className="space-y-3">
@@ -813,16 +867,16 @@ function ChapterViewer({
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.35, ease, delay: i * 0.07 }}
-                className="group rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.05]"
+                className={`group rounded-2xl border p-5 transition-all duration-200 ${cCard}`}
               >
                 <div className="mb-2.5 flex items-center gap-3">
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black"
                     style={{ background: `rgba(${module.rgb},0.15)`, color: `rgb(${module.rgb})` }}>
                     {i + 1}
                   </div>
-                  <h3 className="text-sm font-bold text-white">{title}</h3>
+                  <h3 className={`text-sm font-bold ${cPri}`}>{title}</h3>
                 </div>
-                <p className="ml-10 text-sm leading-[1.75] text-white/55">{text}</p>
+                <p className={`ml-10 text-sm leading-[1.75] ${cMut}`}>{text}</p>
               </motion.div>
             ))}
           </div>
@@ -845,14 +899,14 @@ function ChapterViewer({
           <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-[#f9a826]">
             {chapter.type === "quiz" ? "Quiz" : "Exercice pratique"}
           </p>
-          <p className="mb-5 text-sm leading-[1.75] text-white/65">{chapter.exercise.prompt}</p>
+          <p className={`mb-5 text-sm leading-[1.75] ${cSec}`}>{chapter.exercise.prompt}</p>
           <div className="space-y-2">
             {chapter.exercise.hints.map((hint, i) => (
-              <div key={i} className="flex items-start gap-3 rounded-xl bg-white/[0.04] p-3">
+              <div key={i} className={`flex items-start gap-3 rounded-xl p-3 ${cHintRow}`}>
                 <span className="mt-0.5 text-[0.62rem] font-black text-[#f9a826]">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <p className="text-sm text-white/60">{hint}</p>
+                <p className={`text-sm ${isDark ? "text-white/60" : "text-[#0e1420]/60"}`}>{hint}</p>
               </div>
             ))}
           </div>
@@ -870,19 +924,19 @@ function ChapterViewer({
       {/* ── Templates à copier ── */}
       {chapter.templates && chapter.templates.length > 0 && (
         <div className="mb-8">
-          <p className="mb-4 text-[0.65rem] font-bold uppercase tracking-widest text-white/25">
+          <p className={`mb-4 text-[0.65rem] font-bold uppercase tracking-widest ${cFaint}`}>
             Templates prêts à copier
           </p>
           <div className="space-y-3">
             {chapter.templates.map((template, i) => (
               <div key={i} className="rounded-2xl border border-[rgba(96,165,250,0.18)] bg-[rgba(96,165,250,0.05)] overflow-hidden">
-                <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+                <div className={`flex items-center justify-between border-b px-4 py-2.5 ${cTplBord}`}>
                   <span className="text-[0.62rem] font-bold uppercase tracking-widest text-[#60a5fa]">
                     Template {i + 1}
                   </span>
                   <CopyButton text={template} />
                 </div>
-                <pre className="px-4 py-3 text-xs leading-[1.8] text-white/55 whitespace-pre-wrap break-words font-mono">
+                <pre className={`px-4 py-3 text-xs leading-[1.8] whitespace-pre-wrap break-words font-mono ${cTplPre}`}>
                   {template}
                 </pre>
               </div>
@@ -901,7 +955,7 @@ function ChapterViewer({
             {chapter.tips.map((tip, i) => (
               <li key={i} className="flex items-start gap-3">
                 <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#34d399]" />
-                <p className="text-sm leading-[1.7] text-white/60">{tip}</p>
+                <p className={`text-sm leading-[1.7] ${isDark ? "text-white/60" : "text-[#0e1420]/60"}`}>{tip}</p>
               </li>
             ))}
           </ul>
@@ -918,7 +972,7 @@ function ChapterViewer({
             {chapter.actions.map((action, i) => (
               <li key={i} className="flex items-start gap-3">
                 <Rocket size={14} className="mt-0.5 shrink-0 text-[#a78bfa]" />
-                <p className="text-sm leading-[1.7] text-white/65">{action}</p>
+                <p className={`text-sm leading-[1.7] ${cSec}`}>{action}</p>
               </li>
             ))}
           </ul>
@@ -931,7 +985,7 @@ function ChapterViewer({
       )}
 
       {/* ── Actions nav ── */}
-      <div className="flex flex-col gap-3 border-t border-white/[0.07] pt-6 sm:flex-row">
+      <div className={`flex flex-col gap-3 border-t pt-6 sm:flex-row ${cDivider}`}>
         {!isCompleted ? (
           <button onClick={onComplete}
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(167,139,250,0.25)] transition hover:shadow-[0_4px_36px_rgba(167,139,250,0.4)]"
@@ -962,6 +1016,7 @@ function AssistantPanel({
   initMessage?:    string;
   onInitConsumed:  () => void;
 }) {
+  const { isDark } = useTheme();
   const [messages, setMessages] = useState<Msg[]>([{
     role:    "assistant",
     content: "Bonjour ! Je suis votre assistant pédagogique IA. Posez-moi vos questions sur le programme, les concepts IA, ou demandez-moi de l'aide pour les exercices.",
@@ -1014,16 +1069,36 @@ function AssistantPanel({
     "Comment mesurer le ROI de l'IA dans mon business ?",
   ];
 
+  const aDivider  = isDark ? "border-white/[0.07]"  : "border-black/6";
+  const aTitleSec = isDark ? "text-white/30"         : "text-[#0e1420]/35";
+  const aSugBtn   = isDark
+    ? "border-white/[0.08] bg-white/[0.03] text-white/50 hover:border-white/[0.14] hover:text-white/80"
+    : "border-black/8 bg-black/[0.02] text-[#0e1420]/50 hover:border-black/14 hover:text-[#0e1420]/80";
+  const aMsgUser  = isDark ? "bg-[rgba(201,165,90,0.12)] text-white/80"
+                           : "bg-[rgba(201,165,90,0.12)] text-[#0e1420]/80";
+  const aMsgBot   = isDark
+    ? "border border-white/[0.07] bg-white/[0.04] text-white/70"
+    : "border border-black/8 bg-white shadow-sm text-[#0e1420]/70";
+  const aLoadBub  = isDark
+    ? "border border-white/[0.07] bg-white/[0.04]"
+    : "border border-black/8 bg-white shadow-sm";
+  const aInputWrap= isDark
+    ? "border-white/[0.09] bg-white/[0.04] focus-within:border-[rgba(167,139,250,0.4)]"
+    : "border-black/10 bg-white shadow-sm focus-within:border-[rgba(167,139,250,0.4)]";
+  const aInputTxt = isDark ? "text-white placeholder-white/25" : "text-[#0e1420] placeholder-[#0e1420]/30";
+  const aHintTxt  = isDark ? "text-white/15" : "text-[#0e1420]/20";
+  const aTitlePri = isDark ? "text-white" : "text-[#0e1420]";
+
   return (
     <div className="flex h-[calc(100vh-56px)] flex-col">
-      <div className="border-b border-white/[0.07] px-6 py-4">
+      <div className={`border-b px-6 py-4 ${aDivider}`}>
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.15)]">
             <Bot size={17} className="text-[#a78bfa]" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white">Assistant Pédagogique IA</h2>
-            <p className="text-[0.65rem] text-white/30">Spécialisé sur le programme Coaching IA DJAMA</p>
+            <h2 className={`text-sm font-bold ${aTitlePri}`}>Assistant Pédagogique IA</h2>
+            <p className={`text-[0.65rem] ${aTitleSec}`}>Spécialisé sur le programme Coaching IA DJAMA</p>
           </div>
           <div className="ml-auto h-2 w-2 rounded-full bg-[#34d399] shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
         </div>
@@ -1034,7 +1109,7 @@ function AssistantPanel({
           <div className="grid grid-cols-2 gap-2">
             {SUGGESTIONS.map((s) => (
               <button key={s} onClick={() => sendMessage(s)}
-                className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-left text-xs text-white/50 transition hover:border-white/[0.14] hover:text-white/80"
+                className={`rounded-xl border px-3 py-2.5 text-left text-xs transition ${aSugBtn}`}
               >
                 {s}
               </button>
@@ -1052,9 +1127,7 @@ function AssistantPanel({
               }
             </div>
             <div className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-              msg.role === "user"
-                ? "bg-[rgba(201,165,90,0.12)] text-white/80"
-                : "border border-white/[0.07] bg-white/[0.04] text-white/70"
+              msg.role === "user" ? aMsgUser : aMsgBot
             }`} style={{ whiteSpace: "pre-wrap" }}>
               {msg.content}
             </div>
@@ -1065,7 +1138,7 @@ function AssistantPanel({
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgba(167,139,250,0.15)]">
               <Bot size={13} className="text-[#a78bfa]" />
             </div>
-            <div className="flex items-center gap-1.5 rounded-2xl border border-white/[0.07] bg-white/[0.04] px-4 py-3">
+            <div className={`flex items-center gap-1.5 rounded-2xl px-4 py-3 ${aLoadBub}`}>
               {[0, 1, 2].map((i) => (
                 <div key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#a78bfa]"
                   style={{ animationDelay: `${i * 0.15}s` }} />
@@ -1076,15 +1149,15 @@ function AssistantPanel({
         <div ref={endRef} />
       </div>
 
-      <div className="border-t border-white/[0.07] px-4 py-3">
-        <div className="flex items-end gap-2 rounded-2xl border border-white/[0.09] bg-white/[0.04] px-4 py-3 focus-within:border-[rgba(167,139,250,0.4)] transition-colors">
+      <div className={`border-t px-4 py-3 ${aDivider}`}>
+        <div className={`flex items-end gap-2 rounded-2xl border px-4 py-3 transition-colors ${aInputWrap}`}>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
             placeholder="Posez votre question…"
             rows={1}
-            className="flex-1 resize-none bg-transparent text-sm text-white placeholder-white/25 outline-none"
+            className={`flex-1 resize-none bg-transparent text-sm outline-none ${aInputTxt}`}
             style={{ maxHeight: "120px" }}
           />
           <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
@@ -1092,7 +1165,7 @@ function AssistantPanel({
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
           </button>
         </div>
-        <p className="mt-1.5 text-center text-[0.6rem] text-white/15">
+        <p className={`mt-1.5 text-center text-[0.6rem] ${aHintTxt}`}>
           Entrée pour envoyer · Shift+Entrée pour nouvelle ligne
         </p>
       </div>
@@ -1109,21 +1182,32 @@ function FavoritesPanel({
   favorites:       Set<string>;
   onSelectChapter: (moduleId: string, chapterId: string) => void;
 }) {
+  const { isDark } = useTheme();
   const favChapters = COACHING_MODULES.flatMap((m) =>
     m.chapters
       .filter((c) => favorites.has(c.id))
       .map((c) => ({ module: m, chapter: c }))
   );
 
+  const fPri  = isDark ? "text-white"    : "text-[#0e1420]";
+  const fSec  = isDark ? "text-white/35" : "text-[#0e1420]/40";
+  const fMut  = isDark ? "text-white/30" : "text-[#0e1420]/35";
+  const fCard = isDark
+    ? "border-white/[0.07] bg-white/[0.03] hover:border-white/[0.12] hover:bg-white/[0.05]"
+    : "border-black/8 bg-white shadow-sm hover:border-black/12 hover:shadow-md";
+  const fIcon = isDark ? "text-white/20" : "text-[#0e1420]/20";
+  const fEmpty= isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/8 bg-white shadow-sm";
+  const fArrow= isDark ? "text-white/20 group-hover:text-white/50" : "text-[#0e1420]/20 group-hover:text-[#0e1420]/50";
+
   if (favChapters.length === 0) {
     return (
       <div className="flex h-[calc(100vh-56px)] flex-col items-center justify-center gap-4 text-center px-6">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03]">
-          <Star size={28} className="text-white/20" />
+        <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border ${fEmpty}`}>
+          <Star size={28} className={fIcon} />
         </div>
         <div>
-          <p className="text-sm font-semibold text-white/50">Aucun favori</p>
-          <p className="mt-1 text-xs text-white/25">
+          <p className={`text-sm font-semibold ${isDark ? "text-white/50" : "text-[#0e1420]/50"}`}>Aucun favori</p>
+          <p className={`mt-1 text-xs ${fMut}`}>
             Cliquez sur l&apos;étoile dans n&apos;importe quel cours pour le sauvegarder ici.
           </p>
         </div>
@@ -1137,8 +1221,8 @@ function FavoritesPanel({
         <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(249,168,38,0.25)] bg-[rgba(249,168,38,0.08)] px-3 py-1 text-xs font-bold text-[#f9a826]">
           <Star size={11} className="fill-[#f9a826]" /> {favChapters.length} favoris
         </div>
-        <h2 className="text-xl font-bold text-white">Vos cours mis en favoris</h2>
-        <p className="mt-1.5 text-sm text-white/35">Reprenez rapidement là où vous étiez.</p>
+        <h2 className={`text-xl font-bold ${fPri}`}>Vos cours mis en favoris</h2>
+        <p className={`mt-1.5 text-sm ${fSec}`}>Reprenez rapidement là où vous étiez.</p>
       </div>
 
       <div className="space-y-3">
@@ -1148,21 +1232,21 @@ function FavoritesPanel({
             onClick={() => onSelectChapter(module.id, chapter.id)}
             whileHover={{ x: 4 }}
             transition={{ duration: 0.18 }}
-            className="group flex w-full items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 text-left transition-all hover:border-white/[0.12] hover:bg-white/[0.05]"
+            className={`group flex w-full items-start gap-4 rounded-2xl border p-5 text-left transition-all ${fCard}`}
           >
             <div className="flex-1 min-w-0">
               <p className="mb-0.5 text-[0.62rem] font-bold uppercase tracking-widest"
                 style={{ color: module.color }}>
                 M{module.id} · {module.title}
               </p>
-              <p className="truncate font-semibold text-white">{chapter.title}</p>
-              <div className="mt-1 flex items-center gap-2 text-[0.6rem] text-white/30">
+              <p className={`truncate font-semibold ${fPri}`}>{chapter.title}</p>
+              <div className={`mt-1 flex items-center gap-2 text-[0.6rem] ${fMut}`}>
                 <Clock size={9} /> {chapter.duration}
                 <span>·</span>
                 <span>{chapter.type === "exercise" ? "Exercice" : chapter.type === "quiz" ? "Quiz" : "Cours"}</span>
               </div>
             </div>
-            <ArrowRight size={14} className="mt-1 shrink-0 text-white/20 transition-transform group-hover:translate-x-0.5 group-hover:text-white/50" />
+            <ArrowRight size={14} className={`mt-1 shrink-0 transition-transform group-hover:translate-x-0.5 ${fArrow}`} />
           </motion.button>
         ))}
       </div>
@@ -1174,6 +1258,7 @@ function FavoritesPanel({
    COMPOSANT — Booking Panel (inchangé)
 ───────────────────────────────────────────────────────── */
 function BookingPanel() {
+  const { isDark } = useTheme();
   const [name,         setName]         = useState("");
   const [email,        setEmail]        = useState("");
   const [availability, setAvailability] = useState("");
@@ -1209,6 +1294,24 @@ function BookingPanel() {
     { value: "flexible",           label: "Flexible — à définir ensemble" },
   ];
 
+  const bPri    = isDark ? "text-white"    : "text-[#0e1420]";
+  const bSec    = isDark ? "text-white/45" : "text-[#0e1420]/50";
+  const bBold   = isDark ? "text-white/70" : "text-[#0e1420]/75";
+  const bMut    = isDark ? "text-white/40" : "text-[#0e1420]/45";
+  const bLabel  = isDark ? "text-white/30" : "text-[#0e1420]/40";
+  const bHint   = isDark ? "text-white/25" : "text-[#0e1420]/30";
+  const bCard   = isDark ? "border-white/[0.06] bg-white/[0.02]"  : "border-black/6 bg-[#f7f7fb]";
+  const bInner  = isDark ? "border-white/[0.06] bg-white/[0.02]"  : "border-black/6 bg-white";
+  const bSummary= isDark ? "bg-white/[0.03]" : "bg-black/[0.03]";
+  const bStatCard=isDark ? "border-white/[0.07] bg-white/[0.03]"  : "border-black/8 bg-white shadow-sm";
+  const bStatTxt =isDark ? "text-white/50"   : "text-[#0e1420]/55";
+  const bInput   = isDark
+    ? "border-white/[0.08] bg-white/[0.03] text-white placeholder-white/20"
+    : "border-black/10 bg-white text-[#0e1420] placeholder-[#0e1420]/30";
+  const bIconMut = isDark ? "text-white/25"  : "text-[#0e1420]/30";
+  const bChevron = isDark ? "text-white/20"  : "text-[#0e1420]/25";
+  const bSentTxt = isDark ? "text-white/50"  : "text-[#0e1420]/55";
+
   return (
     <div className="mx-auto max-w-xl px-4 py-8">
       {/* Header */}
@@ -1216,9 +1319,9 @@ function BookingPanel() {
         <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.08)] px-3 py-1 text-xs font-bold text-[#a78bfa]">
           <Calendar size={11} /> Programme Expert IA — 6 mois
         </div>
-        <h2 className="mt-2 text-xl font-bold text-white">Coaching individuel avec un expert humain</h2>
-        <p className="mt-2 text-sm text-white/45">
-          1 séance par semaine pendant 6 mois = <span className="text-white/70 font-semibold">24 séances · 24h d&apos;accompagnement</span> avec un expert IA certifié DJAMA.
+        <h2 className={`mt-2 text-xl font-bold ${bPri}`}>Coaching individuel avec un expert humain</h2>
+        <p className={`mt-2 text-sm ${bSec}`}>
+          1 séance par semaine pendant 6 mois = <span className={`font-semibold ${bBold}`}>24 séances · 24h d&apos;accompagnement</span> avec un expert IA certifié DJAMA.
         </p>
       </div>
 
@@ -1231,17 +1334,17 @@ function BookingPanel() {
             { mois: "Mois 3–4",   label: "Automatisation & business",    detail: "8 séances — Workflows, agents, cas concrets",     color: "#a78bfa" },
             { mois: "Mois 5–6",   label: "Projet & certification",       detail: "8 séances — Projet final, déploiement, certification DJAMA", color: "#f59e0b" },
           ].map(({ mois, label, detail, color }) => (
-            <div key={mois} className="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+            <div key={mois} className={`flex items-start gap-3 rounded-xl border p-3 ${bCard}`}>
               <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
               <div>
-                <p className="text-xs font-bold text-white">{mois} — {label}</p>
-                <p className="text-[0.65rem] text-white/40">{detail}</p>
+                <p className={`text-xs font-bold ${bPri}`}>{mois} — {label}</p>
+                <p className={`text-[0.65rem] ${bMut}`}>{detail}</p>
               </div>
             </div>
           ))}
         </div>
-        <div className="mt-3 flex items-center justify-between rounded-xl bg-white/[0.03] px-3 py-2">
-          <span className="text-[0.65rem] text-white/40">Total accompagnement</span>
+        <div className={`mt-3 flex items-center justify-between rounded-xl px-3 py-2 ${bSummary}`}>
+          <span className={`text-[0.65rem] ${bMut}`}>Total accompagnement</span>
           <span className="text-sm font-bold text-[#f59e0b]">24 séances · 24h · 6 mois</span>
         </div>
       </div>
@@ -1253,9 +1356,9 @@ function BookingPanel() {
           { icon: TrendingUp, label: "Progression mesurée",   color: "#4ade80" },
           { icon: Award,      label: "Certification finale",   color: "#f59e0b" },
         ].map(({ icon: Icon, label, color }) => (
-          <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 text-center">
+          <div key={label} className={`rounded-xl border p-3 text-center ${bStatCard}`}>
             <Icon size={18} className="mx-auto mb-1.5" style={{ color }} />
-            <p className="text-[0.65rem] font-medium text-white/50">{label}</p>
+            <p className={`text-[0.65rem] font-medium ${bStatTxt}`}>{label}</p>
           </div>
         ))}
       </div>
@@ -1266,8 +1369,8 @@ function BookingPanel() {
           <motion.div key="sent" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
             className="rounded-2xl border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.06)] p-8 text-center">
             <CheckCircle2 size={40} className="mx-auto mb-4 text-[#34d399]" />
-            <h3 className="mb-2 text-lg font-bold text-white">Demande envoyée !</h3>
-            <p className="text-sm text-white/50">Un expert DJAMA vous contacte sous 24h pour planifier votre première séance et démarrer votre parcours de 6 mois.</p>
+            <h3 className={`mb-2 text-lg font-bold ${bPri}`}>Demande envoyée !</h3>
+            <p className={`text-sm ${bSentTxt}`}>Un expert DJAMA vous contacte sous 24h pour planifier votre première séance et démarrer votre parcours de 6 mois.</p>
           </motion.div>
         ) : (
           <motion.form key="form" onSubmit={handleSubmit} className="space-y-4">
@@ -1276,34 +1379,34 @@ function BookingPanel() {
               { label: "Email", icon: Mail, type: "email", value: email, setter: setEmail, placeholder: "votre@email.fr" },
             ].map(({ label, icon: Icon, type, value, setter, placeholder }) => (
               <div key={label}>
-                <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">{label}</label>
-                <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-                  <Icon size={14} className="text-white/25" />
+                <label className={`mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest ${bLabel}`}>{label}</label>
+                <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${bInner}`}>
+                  <Icon size={14} className={bIconMut} />
                   <input type={type} placeholder={placeholder} value={value}
                     onChange={(e) => setter(e.target.value)} required
-                    className="flex-1 bg-transparent text-sm text-white placeholder-white/20 outline-none" />
+                    className={`flex-1 bg-transparent text-sm outline-none ${bInput}`} />
                 </div>
               </div>
             ))}
             <div>
-              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">Créneau préféré (séances hebdomadaires)</label>
-              <div className="relative flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-                <Clock size={14} className="shrink-0 text-white/25" />
+              <label className={`mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest ${bLabel}`}>Créneau préféré (séances hebdomadaires)</label>
+              <div className={`relative flex items-center gap-3 rounded-2xl border px-4 py-3 ${bInner}`}>
+                <Clock size={14} className={`shrink-0 ${bIconMut}`} />
                 <select value={availability} onChange={(e) => setAvailability(e.target.value)} required
-                  style={{ color: availability ? "white" : "rgba(255,255,255,0.2)" }}
-                  className="flex-1 appearance-none bg-transparent text-sm outline-none [&>option]:bg-[#111113] [&>option]:text-white">
+                  style={{ color: availability ? (isDark ? "white" : "#0e1420") : (isDark ? "rgba(255,255,255,0.2)" : "rgba(14,20,32,0.3)") }}
+                  className={`flex-1 appearance-none bg-transparent text-sm outline-none ${isDark ? "[color-scheme:dark] [&>option]:bg-[#111113] [&>option]:text-white" : "[&>option]:bg-white [&>option]:text-[#0e1420]"}`}>
                   <option value="" disabled>Quand êtes-vous disponible chaque semaine ?</option>
                   {SLOTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
-                <ChevronDown size={12} className="pointer-events-none shrink-0 text-white/20" />
+                <ChevronDown size={12} className={`pointer-events-none shrink-0 ${bChevron}`} />
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest text-white/30">Votre objectif principal (optionnel)</label>
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+              <label className={`mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-widest ${bLabel}`}>Votre objectif principal (optionnel)</label>
+              <div className={`rounded-2xl border px-4 py-3 ${bInner}`}>
                 <textarea placeholder="Ex : automatiser mon marketing, former mon équipe à l'IA, créer un chatbot pour mes clients…"
                   value={goal} onChange={(e) => setGoal(e.target.value)} rows={3}
-                  className="w-full resize-none bg-transparent text-sm text-white placeholder-white/20 outline-none" />
+                  className={`w-full resize-none bg-transparent text-sm outline-none ${bInput}`} />
               </div>
             </div>
             <button type="submit" disabled={!name.trim() || !email.trim() || !availability || sending}
@@ -1311,7 +1414,7 @@ function BookingPanel() {
               {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               {sending ? "Envoi…" : "Démarrer mon parcours 6 mois"}
             </button>
-            <p className="text-center text-[0.6rem] text-white/25">1 séance/semaine · 24 séances · 24h avec un expert humain certifié</p>
+            <p className={`text-center text-[0.6rem] ${bHint}`}>1 séance/semaine · 24 séances · 24h avec un expert humain certifié</p>
           </motion.form>
         )}
       </AnimatePresence>
@@ -1329,14 +1432,31 @@ function PendingGate({
 }: {
   user: { id: string; email: string | undefined; name: string | undefined } | null;
 }) {
+  const { isDark } = useTheme();
   const STEPS = [
     { icon: Landmark,       color: "#60a5fa", label: "Vous avez effectué votre virement",          done: true  },
     { icon: Clock,          color: "#f9a826", label: "Nous vérifions la réception du paiement",    done: false },
     { icon: CheckCircle2,   color: "#34d399", label: "Activation de votre accès (24–48h ouvrés)",  done: false },
   ];
 
+  const pBg     = isDark ? "bg-[#07080e]"          : "bg-[#f0f2fb]";
+  const pPri    = isDark ? "text-white"              : "text-[#0e1420]";
+  const pSec    = isDark ? "text-white/45"           : "text-[#0e1420]/50";
+  const pMut    = isDark ? "text-white/30"           : "text-[#0e1420]/35";
+  const pFaint  = isDark ? "text-white/40"           : "text-[#0e1420]/45";
+  const pCard   = isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/8 bg-white shadow-sm";
+  const pInner  = isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-black/8 bg-white shadow-sm";
+  const pDivider= isDark ? "border-white/[0.06]"    : "border-black/5";
+  const pDivRow = isDark ? "divide-white/[0.05]"    : "divide-black/[0.04]";
+  const pEmailPill = isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/8 bg-white shadow-sm";
+  const pBadgeDot  = isDark ? "bg-[#07080e]" : "bg-[#f0f2fb]";
+  const pRefreshBtn= isDark
+    ? "border-white/[0.1] bg-white/[0.04] text-white/60 hover:border-white/[0.18] hover:text-white/90"
+    : "border-black/10 bg-white text-[#0e1420]/60 shadow-sm hover:border-black/18 hover:text-[#0e1420]/90";
+  const pBanner = isDark ? "border-white/[0.07] bg-white/[0.02]" : "border-black/6 bg-white shadow-sm";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#07080e] px-4 py-12">
+    <div className={`flex min-h-screen items-center justify-center px-4 py-12 ${pBg}`}>
       <div className="w-full max-w-md">
 
         {/* Icône centrale */}
@@ -1345,35 +1465,35 @@ function PendingGate({
             <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-[rgba(249,168,38,0.25)] bg-[rgba(249,168,38,0.08)]">
               <Clock size={36} style={{ color: "#f9a826" }} />
             </div>
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-[rgba(249,168,38,0.4)] bg-[#07080e]">
+            <span className={`absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-[rgba(249,168,38,0.4)] ${pBadgeDot}`}>
               <span className="h-2.5 w-2.5 rounded-full bg-[#f9a826]" />
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-white">Paiement en cours de vérification</h1>
-          <p className="mt-2.5 text-sm leading-relaxed text-white/45">
+          <h1 className={`text-2xl font-bold ${pPri}`}>Paiement en cours de vérification</h1>
+          <p className={`mt-2.5 text-sm leading-relaxed ${pSec}`}>
             Votre virement a bien été enregistré. Notre équipe l&apos;activera dès réception du paiement.
           </p>
           {user?.email && (
-            <div className="mt-3 flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5">
-              <Mail size={11} className="text-white/30" />
-              <span className="text-xs text-white/50">{user.email}</span>
+            <div className={`mt-3 flex items-center gap-2 rounded-full border px-4 py-1.5 ${pEmailPill}`}>
+              <Mail size={11} className={pMut} />
+              <span className={`text-xs ${pFaint}`}>{user.email}</span>
             </div>
           )}
         </div>
 
         {/* Étapes */}
-        <div className="mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03]">
-          <div className="border-b border-white/[0.06] px-5 py-3.5">
-            <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Statut de votre accès</p>
+        <div className={`mb-6 overflow-hidden rounded-2xl border ${pCard}`}>
+          <div className={`border-b px-5 py-3.5 ${pDivider}`}>
+            <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${pMut}`}>Statut de votre accès</p>
           </div>
-          <div className="divide-y divide-white/[0.05]">
+          <div className={`divide-y ${pDivRow}`}>
             {STEPS.map(({ icon: Icon, color, label, done }, i) => (
               <div key={i} className="flex items-center gap-4 px-5 py-4">
                 <div
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all"
                   style={{
                     background: done ? `rgba(52,211,153,0.12)` : `rgba(${color === "#f9a826" ? "249,168,38" : "96,165,250"},0.08)`,
-                    border:     done ? `1px solid rgba(52,211,153,0.25)` : `1px solid rgba(255,255,255,0.08)`,
+                    border:     done ? `1px solid rgba(52,211,153,0.25)` : `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
                   }}
                 >
                   {done
@@ -1381,7 +1501,7 @@ function PendingGate({
                     : <Icon size={15} style={{ color }} />
                   }
                 </div>
-                <p className={`text-sm ${done ? "font-semibold text-white/75" : "text-white/40"}`}>{label}</p>
+                <p className={`text-sm ${done ? `font-semibold ${isDark ? "text-white/75" : "text-[#0e1420]/75"}` : pFaint}`}>{label}</p>
                 {i === 1 && (
                   <span className="ml-auto flex items-center gap-1.5 rounded-full border border-[rgba(249,168,38,0.3)] bg-[rgba(249,168,38,0.08)] px-2.5 py-0.5 text-[0.6rem] font-bold text-[#f9a826]">
                     <span className="relative flex h-1.5 w-1.5">
@@ -1397,10 +1517,10 @@ function PendingGate({
         </div>
 
         {/* Coordonnées du virement (rappel) */}
-        <div className="mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
-          <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-3.5">
+        <div className={`mb-6 overflow-hidden rounded-2xl border ${pInner}`}>
+          <div className={`flex items-center gap-3 border-b px-5 py-3.5 ${pDivider}`}>
             <Landmark size={14} style={{ color: "#60a5fa" }} />
-            <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Rappel — coordonnées du virement</p>
+            <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${pMut}`}>Rappel — coordonnées du virement</p>
           </div>
           <div className="space-y-2.5 px-5 py-4 text-xs">
             {[
@@ -1411,21 +1531,21 @@ function PendingGate({
               { label: "Référence",    value: "COACHING-IA",                        mono: true  },
             ].map(({ label, value, mono }) => (
               <div key={label} className="flex items-center justify-between gap-3">
-                <span className="text-white/30">{label}</span>
-                <span className={`font-semibold text-white/65 ${mono ? "font-mono tracking-wide" : ""}`}>{value}</span>
+                <span className={pMut}>{label}</span>
+                <span className={`font-semibold ${isDark ? "text-white/65" : "text-[#0e1420]/70"} ${mono ? "font-mono tracking-wide" : ""}`}>{value}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Bandeau rassurant */}
-        <div className="mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+        <div className={`mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-xl border px-4 py-3 ${pBanner}`}>
           {[
             { icon: Shield,  label: "Accès sécurisé",       color: "#34d399" },
             { icon: Clock,   label: "Activation sous 24–48h", color: "#60a5fa" },
             { icon: Zap,     label: "Email de confirmation", color: "#a78bfa" },
           ].map(({ icon: Icon, label, color }) => (
-            <div key={label} className="flex items-center gap-1.5 text-[0.63rem] text-white/40">
+            <div key={label} className={`flex items-center gap-1.5 text-[0.63rem] ${pFaint}`}>
               <Icon size={9} style={{ color }} />
               <span>{label}</span>
             </div>
@@ -1436,7 +1556,7 @@ function PendingGate({
         <div className="flex flex-col gap-2.5">
           <button
             onClick={() => window.location.reload()}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.04] py-3 text-sm font-semibold text-white/60 transition hover:border-white/[0.18] hover:text-white/90"
+            className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition ${pRefreshBtn}`}
           >
             <RefreshCw size={14} /> Vérifier mon accès
           </button>
@@ -1448,7 +1568,7 @@ function PendingGate({
           </a>
         </div>
 
-        <p className="mt-6 text-center text-[0.65rem] text-white/20">
+        <p className={`mt-6 text-center text-[0.65rem] ${isDark ? "text-white/20" : "text-[#0e1420]/25"}`}>
           Une fois votre paiement confirmé, vous recevrez un email avec votre lien d&apos;accès.
         </p>
 
@@ -1465,6 +1585,7 @@ type PaymentTab = "carte" | "paypal" | "virement";
 function PreviewGate({ user }: {
   user: { id: string; email: string | undefined; name: string | undefined } | null;
 }) {
+  const { isDark } = useTheme();
   const [payTab,     setPayTab]     = useState<PaymentTab>("carte");
   const [loadingPay, setLoadingPay] = useState(false);
   const [virEmail,   setVirEmail]   = useState(user?.email ?? "");
@@ -1507,14 +1628,35 @@ function PreviewGate({ user }: {
     } finally { setVirSending(false); }
   }
 
+  const prBg     = isDark ? "bg-[#07080e]" : "bg-[#f0f2fb]";
+  const prPri    = isDark ? "text-white"   : "text-[#0e1420]";
+  const prSec    = isDark ? "text-white/45": "text-[#0e1420]/50";
+  const prMut    = isDark ? "text-white/35": "text-[#0e1420]/40";
+  const prFaint  = isDark ? "text-white/25": "text-[#0e1420]/30";
+  const prCard   = isDark ? "border-white/[0.09] bg-white/[0.03]" : "border-black/8 bg-white shadow-sm";
+  const prDiv    = isDark ? "border-white/[0.07]" : "border-black/6";
+  const prTabBar = isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/8 bg-[#f0f2fb]";
+  const prTabIdle= isDark ? "text-white/35 hover:text-white/65" : "text-[#0e1420]/35 hover:text-[#0e1420]/65";
+  const prInner  = isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/8 bg-[#f7f7fb]";
+  const prIco    = isDark ? "text-white/25" : "text-[#0e1420]/30";
+  const prInputTxt = isDark ? "text-white placeholder-white/20" : "text-[#0e1420] placeholder-[#0e1420]/30";
+  const prVirTxt = isDark ? "text-white/45 space-y-0.5" : "text-[#0e1420]/50 space-y-0.5";
+  const prVirBold= isDark ? "text-white/70" : "text-[#0e1420]/75";
+  const prVirMono= isDark ? "text-white/65" : "text-[#0e1420]/70";
+  const prSentTxt= isDark ? "text-white/45" : "text-[#0e1420]/50";
+  const prLockBg = isDark ? "bg-[#07080e]/60" : "bg-[#f0f2fb]/70";
+  const prLockIcon= isDark ? "border-white/[0.12] bg-white/[0.06] text-white/40" : "border-black/10 bg-black/[0.05] text-[#0e1420]/40";
+  const prLockTxt = isDark ? "text-white/35" : "text-[#0e1420]/40";
+  const prChipTxt = isDark ? "text-white/30" : "text-[#0e1420]/40";
+
   return (
-    <div className="min-h-screen bg-[#07080e] px-4 py-10 md:px-8">
+    <div className={`min-h-screen px-4 py-10 md:px-8 ${prBg}`}>
       <div className="mx-auto mb-10 max-w-5xl text-center">
         <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.07)] px-4 py-1.5 text-xs font-bold tracking-widest text-[#a78bfa] uppercase">
           <Lock size={11} /> Accès restreint
         </div>
-        <h1 className="mt-3 text-3xl font-bold text-white md:text-4xl">Coaching IA DJAMA</h1>
-        <p className="mt-3 text-sm text-white/45 max-w-md mx-auto">
+        <h1 className={`mt-3 text-3xl font-bold md:text-4xl ${prPri}`}>Coaching IA DJAMA</h1>
+        <p className={`mt-3 text-sm max-w-md mx-auto ${prSec}`}>
           Débloquez les {COACHING_MODULES.length} modules complets, l&apos;assistant pédagogique IA et les sessions de coaching individuel.
         </p>
       </div>
@@ -1522,47 +1664,47 @@ function PreviewGate({ user }: {
       <div className="mx-auto max-w-5xl flex flex-col gap-8 lg:flex-row lg:items-start">
         <div className="flex-1 min-w-0 space-y-4">
           {/* Free preview */}
-          <div className="rounded-2xl border border-[rgba(96,165,250,0.2)] bg-white/[0.03] overflow-hidden">
-            <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
+          <div className={`rounded-2xl border overflow-hidden ${prCard}`}>
+            <div className={`flex items-center gap-3 border-b px-5 py-4 ${prDiv}`}>
               <div className="flex-1 min-w-0">
                 <p className="text-[0.65rem] font-bold uppercase tracking-widest text-[#60a5fa]">Module 1 · {firstModule.title}</p>
-                <p className="truncate text-sm font-semibold text-white mt-0.5">{freeChapter.title}</p>
+                <p className={`truncate text-sm font-semibold mt-0.5 ${prPri}`}>{freeChapter.title}</p>
               </div>
               <span className="shrink-0 rounded-full border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.08)] px-2.5 py-1 text-[0.6rem] font-bold text-[#34d399]">Aperçu gratuit</span>
             </div>
             <div className="px-5 py-5">
-              <p className="text-sm leading-relaxed text-white/60 italic">{freeChapter.intro}</p>
-              <div className="mt-4 flex items-center gap-2 text-[0.65rem] text-white/25">
+              <p className={`text-sm leading-relaxed italic ${isDark ? "text-white/60" : "text-[#0e1420]/60"}`}>{freeChapter.intro}</p>
+              <div className={`mt-4 flex items-center gap-2 text-[0.65rem] ${prFaint}`}>
                 <Clock size={10} /> {freeChapter.duration}<span className="mx-1">·</span><BookOpen size={10} /> Leçon
               </div>
             </div>
           </div>
 
           {/* Locked modules */}
-          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/25 px-1">Modules inclus dans l&apos;accès complet</p>
+          <p className={`text-[0.65rem] font-bold uppercase tracking-widest px-1 ${prChipTxt}`}>Modules inclus dans l&apos;accès complet</p>
           {lockedModules.map((mod) => (
-            <div key={mod.id} className="relative rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[#07080e]/60 backdrop-blur-[2px]">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.06]">
-                  <Lock size={14} className="text-white/40" />
+            <div key={mod.id} className={`relative rounded-2xl border overflow-hidden ${isDark ? "border-white/[0.07] bg-white/[0.02]" : "border-black/8 bg-white"}`}>
+              <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 backdrop-blur-[2px] ${prLockBg}`}>
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full border ${prLockIcon}`}>
+                  <Lock size={14} />
                 </div>
-                <span className="text-[0.65rem] font-semibold text-white/35">Accès complet requis</span>
+                <span className={`text-[0.65rem] font-semibold ${prLockTxt}`}>Accès complet requis</span>
               </div>
               <div className="pointer-events-none select-none opacity-40 blur-[2px] px-5 py-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div>
                     <p className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: mod.color }}>Module {mod.id}</p>
-                    <p className="text-sm font-semibold text-white">{mod.title}</p>
+                    <p className={`text-sm font-semibold ${prPri}`}>{mod.title}</p>
                   </div>
-                  <span className="ml-auto text-[0.6rem] text-white/30">{mod.duration}</span>
+                  <span className={`ml-auto text-[0.6rem] ${prMut}`}>{mod.duration}</span>
                 </div>
-                <p className="text-xs text-white/40 leading-relaxed">{mod.tagline}</p>
+                <p className={`text-xs leading-relaxed ${prMut}`}>{mod.tagline}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {mod.chapters.slice(0, 3).map((ch) => (
-                    <span key={ch.id} className="rounded-lg bg-white/[0.04] px-2.5 py-1 text-[0.6rem] text-white/30">{ch.title}</span>
+                    <span key={ch.id} className={`rounded-lg px-2.5 py-1 text-[0.6rem] ${isDark ? "bg-white/[0.04] text-white/30" : "bg-black/[0.04] text-[#0e1420]/35"}`}>{ch.title}</span>
                   ))}
                   {mod.chapters.length > 3 && (
-                    <span className="rounded-lg bg-white/[0.04] px-2.5 py-1 text-[0.6rem] text-white/25">+{mod.chapters.length - 3} chapitres</span>
+                    <span className={`rounded-lg px-2.5 py-1 text-[0.6rem] ${isDark ? "bg-white/[0.04] text-white/25" : "bg-black/[0.04] text-[#0e1420]/30"}`}>+{mod.chapters.length - 3} chapitres</span>
                   )}
                 </div>
               </div>
@@ -1572,15 +1714,15 @@ function PreviewGate({ user }: {
 
         {/* Payment panel */}
         <div className="lg:sticky lg:top-10 lg:w-[340px] shrink-0">
-          <div className="rounded-2xl border border-white/[0.09] bg-white/[0.03] overflow-hidden">
-            <div className="border-b border-white/[0.07] px-6 py-5">
+          <div className={`rounded-2xl border overflow-hidden ${prCard}`}>
+            <div className={`border-b px-6 py-5 ${prDiv}`}>
               <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.07)] px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-widest text-[#a78bfa]">
                 <Sparkles size={9} /> Accès complet
               </div>
-              <h2 className="mt-2 text-lg font-bold text-white">Débloquer l&apos;accès complet</h2>
+              <h2 className={`mt-2 text-lg font-bold ${prPri}`}>Débloquer l&apos;accès complet</h2>
               <div className="mt-3 flex items-end gap-2">
-                <span className="text-4xl font-extrabold text-white">190€</span>
-                <span className="mb-1 text-xs text-white/35">paiement unique · 3 mois</span>
+                <span className={`text-4xl font-extrabold ${prPri}`}>190€</span>
+                <span className={`mb-1 text-xs ${prMut}`}>paiement unique · 3 mois</span>
               </div>
               <ul className="mt-4 space-y-1.5">
                 {[
@@ -1590,14 +1732,14 @@ function PreviewGate({ user }: {
                   "Sessions de coaching individuel",
                   "Accès 3 mois + mises à jour",
                 ].map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-xs text-white/55">
+                  <li key={item} className={`flex items-center gap-2 text-xs ${isDark ? "text-white/55" : "text-[#0e1420]/60"}`}>
                     <CheckCircle2 size={11} className="shrink-0 text-[#34d399]" /> {item}
                   </li>
                 ))}
               </ul>
             </div>
             <div className="px-6 pt-5">
-              <div className="mb-4 flex gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
+              <div className={`mb-4 flex gap-1.5 rounded-xl border p-1 ${prTabBar}`}>
                 {([
                   { key: "carte",    icon: <CreditCard size={12} />, label: "Carte"    },
                   { key: "paypal",   icon: <span className="text-[0.65rem] font-extrabold text-[#0070BA]">PP</span>, label: "PayPal" },
@@ -1607,7 +1749,7 @@ function PreviewGate({ user }: {
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[0.65rem] font-semibold transition-all ${
                       payTab === key
                         ? "bg-[rgba(167,139,250,0.15)] text-[#a78bfa] border border-[rgba(167,139,250,0.25)]"
-                        : "text-white/35 hover:text-white/65"
+                        : prTabIdle
                     }`}>
                     {icon} {label}
                   </button>
@@ -1616,7 +1758,7 @@ function PreviewGate({ user }: {
 
               {payTab === "carte" && (
                 <div className="pb-6">
-                  <p className="mb-4 text-xs text-white/40 leading-relaxed">Paiement sécurisé via Stripe. Vos données ne nous parviennent jamais.</p>
+                  <p className={`mb-4 text-xs leading-relaxed ${prMut}`}>Paiement sécurisé via Stripe. Vos données ne nous parviennent jamais.</p>
                   <button onClick={handleStripe} disabled={loadingPay}
                     className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(167,139,250,0.25)] transition hover:shadow-[0_4px_32px_rgba(167,139,250,0.4)] disabled:opacity-60">
                     {loadingPay ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
@@ -1626,7 +1768,7 @@ function PreviewGate({ user }: {
               )}
               {payTab === "paypal" && (
                 <div className="pb-6">
-                  <p className="mb-4 text-xs text-white/40 leading-relaxed">Vous serez redirigé vers PayPal pour finaliser votre paiement.</p>
+                  <p className={`mb-4 text-xs leading-relaxed ${prMut}`}>Vous serez redirigé vers PayPal pour finaliser votre paiement.</p>
                   <button onClick={handlePayPal} disabled={loadingPay}
                     className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0070BA] py-3.5 text-sm font-bold text-white transition hover:bg-[#005ea6] disabled:opacity-60">
                     {loadingPay ? <Loader2 size={15} className="animate-spin" /> : <span className="text-base font-black leading-none">PayPal</span>}
@@ -1641,16 +1783,16 @@ function PreviewGate({ user }: {
                       <motion.div key="sent" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
                         className="rounded-2xl border border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.06)] px-5 py-6 text-center">
                         <CheckCircle2 size={32} className="mx-auto mb-3 text-[#34d399]" />
-                        <p className="text-sm font-semibold text-white">Demande enregistrée</p>
-                        <p className="mt-1.5 text-xs leading-relaxed text-white/45">Accès activé sous 24h à réception.</p>
+                        <p className={`text-sm font-semibold ${prPri}`}>Demande enregistrée</p>
+                        <p className={`mt-1.5 text-xs leading-relaxed ${prSentTxt}`}>Accès activé sous 24h à réception.</p>
                       </motion.div>
                     ) : (
                       <motion.form key="form" onSubmit={handleVirement} className="space-y-3">
-                        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[0.65rem] text-white/45 space-y-0.5">
-                          <p>Bénéficiaire : <span className="font-semibold text-white/70">EI AMDJAD Nofane</span></p>
-                          <p>IBAN : <span className="font-mono text-white/65">FR76 4061 8804 5900 0406 3964 945</span></p>
-                          <p>BIC : <span className="font-mono text-white/65">BOUSFRPPXXX</span></p>
-                          <p>Montant : <span className="font-bold text-white/70">190,00 €</span></p>
+                        <div className={`rounded-xl border px-4 py-3 text-[0.65rem] ${prVirTxt} ${prInner}`}>
+                          <p>Bénéficiaire : <span className={`font-semibold ${prVirBold}`}>EI AMDJAD Nofane</span></p>
+                          <p>IBAN : <span className={`font-mono ${prVirMono}`}>FR76 4061 8804 5900 0406 3964 945</span></p>
+                          <p>BIC : <span className={`font-mono ${prVirMono}`}>BOUSFRPPXXX</span></p>
+                          <p>Montant : <span className={`font-bold ${prVirBold}`}>190,00 €</span></p>
                           <p>Référence : <span className="font-semibold text-[#a78bfa]">COACHING-IA</span></p>
                         </div>
                         {[
@@ -1658,12 +1800,12 @@ function PreviewGate({ user }: {
                           { label: "Nom complet", type: "text", value: virName, setter: setVirName, placeholder: "Prénom Nom", icon: User },
                         ].map(({ label, type, value, setter, placeholder, icon: Icon }) => (
                           <div key={label}>
-                            <label className="mb-1 block text-[0.6rem] font-semibold uppercase tracking-widest text-white/30">{label}</label>
-                            <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
-                              <Icon size={12} className="text-white/25" />
+                            <label className={`mb-1 block text-[0.6rem] font-semibold uppercase tracking-widest ${prMut}`}>{label}</label>
+                            <div className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${prInner}`}>
+                              <Icon size={12} className={prIco} />
                               <input type={type} required placeholder={placeholder} value={value}
                                 onChange={(e) => setter(e.target.value)}
-                                className="flex-1 bg-transparent text-xs text-white placeholder-white/20 outline-none" />
+                                className={`flex-1 bg-transparent text-xs outline-none ${prInputTxt}`} />
                             </div>
                           </div>
                         ))}
@@ -1722,6 +1864,7 @@ const VF_Q = [
 ];
 
 function JeuxPanel() {
+  const { isDark } = useTheme();
   const LEVELS = [
     { emoji: "🧠", title: "Les Bases",    color: "#22c55e" },
     { emoji: "⚡", title: "Les Modèles",  color: "#06b6d4" },
@@ -1743,8 +1886,8 @@ function JeuxPanel() {
           <Gamepad2 size={15} className="text-[#a78bfa]" />
         </div>
         <div>
-          <h2 className="text-base font-extrabold text-white">Jeux IA — 10 Niveaux</h2>
-          <p className="text-xs text-white/35">100 étapes · 300 questions · Animations épiques</p>
+          <h2 className={`text-base font-extrabold ${isDark ? "text-white" : "text-[#0e1420]"}`}>Jeux IA — 10 Niveaux</h2>
+          <p className={`text-xs ${isDark ? "text-white/35" : "text-[#0e1420]/40"}`}>100 étapes · 300 questions · Animations épiques</p>
         </div>
       </div>
 
@@ -1765,8 +1908,8 @@ function JeuxPanel() {
           <div className="relative flex items-center justify-between gap-4">
             <div>
               <p className="text-[0.58rem] font-black uppercase tracking-widest text-violet-400/70 mb-1">Nouveau · Exclusif</p>
-              <p className="text-lg font-black text-white">Lancer les Jeux IA</p>
-              <p className="mt-0.5 text-xs text-white/45">Progressez niveau par niveau, gagnez des XP</p>
+              <p className={`text-lg font-black ${isDark ? "text-white" : "text-[#0e1420]"}`}>Lancer les Jeux IA</p>
+              <p className={`mt-0.5 text-xs ${isDark ? "text-white/45" : "text-[#0e1420]/50"}`}>Progressez niveau par niveau, gagnez des XP</p>
             </div>
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
@@ -1797,7 +1940,7 @@ function JeuxPanel() {
               <div className="absolute inset-x-0 top-0 h-px"
                 style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }} />
               <p className="text-2xl mb-1">{emoji}</p>
-              <p className="text-[0.55rem] font-black text-white/60 leading-tight">{title}</p>
+              <p className={`text-[0.55rem] font-black leading-tight ${isDark ? "text-white/60" : "text-[#0e1420]/60"}`}>{title}</p>
               <p className="text-[0.45rem] mt-0.5 font-bold" style={{ color }}>Niv. {i + 1}</p>
             </motion.div>
           </a>
@@ -1819,6 +1962,7 @@ function DashboardPanel({
   onSetView:       (v: View) => void;
   userName?:       string;
 }) {
+  const { isDark } = useTheme();
   const totalChapters  = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
   const completedCount = completed.size;
   const overallPct     = Math.round((completedCount / totalChapters) * 100);
@@ -1857,30 +2001,45 @@ function DashboardPanel({
     { label: "Restant",           value: String(totalChapters - completedCount), sub: "chapitres à faire", color: "#60a5fa", icon: Target },
   ];
 
+  const dPri    = isDark ? "text-white"    : "text-[#0e1420]";
+  const dSec    = isDark ? "text-white/40" : "text-[#0e1420]/45";
+  const dMut    = isDark ? "text-white/30" : "text-[#0e1420]/35";
+  const dFaint  = isDark ? "text-white/25" : "text-[#0e1420]/30";
+  const dCard   = isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/8 bg-white shadow-sm";
+  const dBar    = isDark ? "bg-white/[0.07]" : "bg-black/[0.07]";
+  const dModBtn = isDark
+    ? "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
+    : "border-black/8 bg-white shadow-sm hover:border-black/12 hover:shadow-md";
+  const dQkBtn  = isDark
+    ? "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
+    : "border-black/8 bg-white shadow-sm hover:border-black/12 hover:shadow-md";
+  const dQkLbl  = isDark ? "text-white/50 group-hover:text-white/80" : "text-[#0e1420]/50 group-hover:text-[#0e1420]/80";
+  const dBadge  = isDark ? "border-white/[0.05] bg-white/[0.02]" : "border-black/5 bg-white/60";
+
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-8">
 
       {/* ── En-tête ── */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Tableau de bord</p>
-          <h1 className="mt-1 text-2xl font-extrabold text-white">
+          <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${dMut}`}>Tableau de bord</p>
+          <h1 className={`mt-1 text-2xl font-extrabold ${dPri}`}>
             {userName ? `Bonjour, ${userName.split(" ")[0]}` : "Bienvenue dans votre espace"}
           </h1>
-          <p className="mt-1 text-sm text-white/40">Votre progression Coaching IA DJAMA</p>
+          <p className={`mt-1 text-sm ${dSec}`}>Votre progression Coaching IA DJAMA</p>
         </div>
         {/* Streak */}
         <div className="flex items-center gap-2 rounded-2xl border border-[rgba(249,168,38,0.25)] bg-[rgba(249,168,38,0.07)] px-4 py-2.5">
           <span className="text-xl">🔥</span>
           <div>
             <p className="text-sm font-extrabold text-[#f9a826]">{streak} jour{streak !== 1 ? "s" : ""}</p>
-            <p className="text-[0.58rem] text-white/30">Série en cours</p>
+            <p className={`text-[0.58rem] ${dMut}`}>Série en cours</p>
           </div>
         </div>
       </div>
 
       {/* ── Niveau XP ── */}
-      <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-5">
+      <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01]" : "border-black/8 bg-white shadow-sm"}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
@@ -1888,30 +2047,30 @@ function DashboardPanel({
               {levelInfo.name === "Novice" ? "🌱" : levelInfo.name === "Apprenti" ? "📚" : levelInfo.name === "Praticien" ? "⚡" : levelInfo.name === "Expert IA" ? "🧠" : "🎓"}
             </div>
             <div>
-              <p className="text-sm font-extrabold text-white">{levelInfo.name}</p>
-              <p className="text-[0.6rem] text-white/35">{xp} XP total</p>
+              <p className={`text-sm font-extrabold ${dPri}`}>{levelInfo.name}</p>
+              <p className={`text-[0.6rem] ${dMut}`}>{xp} XP total</p>
             </div>
           </div>
           {levelInfo.nextName && (
             <div className="text-right">
-              <p className="text-[0.58rem] text-white/30">Prochain niveau</p>
+              <p className={`text-[0.58rem] ${dMut}`}>Prochain niveau</p>
               <p className="text-xs font-bold" style={{ color: levelInfo.color }}>{levelInfo.xpNext} XP → {levelInfo.nextName}</p>
             </div>
           )}
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-white/[0.07]">
+        <div className={`h-2 overflow-hidden rounded-full ${dBar}`}>
           <motion.div className="h-full rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${levelInfo.pct}%` }}
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
             style={{ background: `linear-gradient(90deg, ${levelInfo.color}aa, ${levelInfo.color})` }} />
         </div>
-        <p className="mt-1.5 text-[0.58rem] text-white/25">{levelInfo.pct}% vers {levelInfo.nextName ?? "niveau maximum"}</p>
+        <p className={`mt-1.5 text-[0.58rem] ${dFaint}`}>{levelInfo.pct}% vers {levelInfo.nextName ?? "niveau maximum"}</p>
       </div>
 
       {/* ── Badges ── */}
       <div>
-        <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Badges & Récompenses</p>
+        <p className={`mb-3 text-[0.65rem] font-bold uppercase tracking-widest ${dMut}`}>Badges & Récompenses</p>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
           {BADGES.map((b) => (
             <motion.div key={b.id}
@@ -1919,11 +2078,11 @@ function DashboardPanel({
               className={`flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all ${
                 b.earned
                   ? "border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.08)]"
-                  : "border-white/[0.05] bg-white/[0.02] opacity-40 grayscale"
+                  : `opacity-40 grayscale ${dBadge}`
               }`}>
               <span className="text-2xl">{b.icon}</span>
-              <p className="text-[0.6rem] font-bold text-white leading-tight">{b.label}</p>
-              <p className="text-[0.52rem] text-white/30 leading-snug">{b.desc}</p>
+              <p className={`text-[0.6rem] font-bold leading-tight ${dPri}`}>{b.label}</p>
+              <p className={`text-[0.52rem] leading-snug ${dMut}`}>{b.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -1933,9 +2092,9 @@ function DashboardPanel({
       <div className="rounded-2xl border border-[rgba(167,139,250,0.2)] bg-gradient-to-br from-[rgba(167,139,250,0.08)] to-[rgba(167,139,250,0.03)] p-5">
         <div className="flex items-center justify-between mb-3">
           <span className="text-[0.65rem] font-bold uppercase tracking-widest text-[#a78bfa]">Progression globale</span>
-          <span className="text-2xl font-extrabold text-white">{overallPct}%</span>
+          <span className={`text-2xl font-extrabold ${dPri}`}>{overallPct}%</span>
         </div>
-        <div className="h-2.5 overflow-hidden rounded-full bg-white/[0.07]">
+        <div className={`h-2.5 overflow-hidden rounded-full ${dBar}`}>
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd]"
             initial={{ width: 0 }}
@@ -1943,7 +2102,7 @@ function DashboardPanel({
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           />
         </div>
-        <p className="mt-2 text-[0.65rem] text-white/30">{completedCount} chapitres terminés sur {totalChapters} · {totalModules} modules</p>
+        <p className={`mt-2 text-[0.65rem] ${dMut}`}>{completedCount} chapitres terminés sur {totalChapters} · {totalModules} modules</p>
       </div>
 
       {/* ── Stats ── */}
@@ -1952,15 +2111,15 @@ function DashboardPanel({
           <motion.div
             key={label}
             whileHover={{ y: -2 }}
-            className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4"
+            className={`rounded-2xl border p-4 ${dCard}`}
           >
             <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl"
               style={{ background: `rgba(${color === "#a78bfa" ? "167,139,250" : color === "#34d399" ? "52,211,153" : color === "#f9a826" ? "249,168,38" : "96,165,250"},0.12)` }}>
               <Icon size={15} style={{ color }} />
             </div>
-            <p className="text-xl font-extrabold text-white">{value}</p>
-            <p className="mt-0.5 text-[0.62rem] font-semibold text-white/50">{label}</p>
-            <p className="text-[0.6rem] text-white/25">{sub}</p>
+            <p className={`text-xl font-extrabold ${dPri}`}>{value}</p>
+            <p className={`mt-0.5 text-[0.62rem] font-semibold ${isDark ? "text-white/50" : "text-[#0e1420]/55"}`}>{label}</p>
+            <p className={`text-[0.6rem] ${dFaint}`}>{sub}</p>
           </motion.div>
         ))}
       </div>
@@ -1968,7 +2127,7 @@ function DashboardPanel({
       {/* ── Continuer ── */}
       {nextChapter && nextModule && (
         <div>
-          <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Continuer là où vous étiez</p>
+          <p className={`mb-3 text-[0.65rem] font-bold uppercase tracking-widest ${dMut}`}>Continuer là où vous étiez</p>
           <motion.button
             whileHover={{ x: 4 }}
             onClick={() => { onSelectChapter(nextModule!.id, nextChapter!.id); onSetView("chapter"); }}
@@ -1982,14 +2141,14 @@ function DashboardPanel({
               <p className="text-[0.62rem] font-bold uppercase tracking-widest" style={{ color: `rgb(${nextModule.rgb})` }}>
                 M{nextModule.id} · {nextModule.title}
               </p>
-              <p className="mt-0.5 truncate text-sm font-bold text-white">{nextChapter.title}</p>
-              <div className="mt-1 flex items-center gap-2 text-[0.6rem] text-white/30">
+              <p className={`mt-0.5 truncate text-sm font-bold ${dPri}`}>{nextChapter.title}</p>
+              <div className={`mt-1 flex items-center gap-2 text-[0.6rem] ${dMut}`}>
                 <Clock size={9} /> {nextChapter.duration}
                 <span>·</span>
                 <span>{nextChapter.type === "exercise" ? "Exercice" : nextChapter.type === "quiz" ? "Quiz" : "Cours"}</span>
               </div>
             </div>
-            <ArrowRight size={18} className="shrink-0 text-white/20 transition-transform group-hover:translate-x-1 group-hover:text-[#a78bfa]" />
+            <ArrowRight size={18} className={`shrink-0 transition-transform group-hover:translate-x-1 group-hover:text-[#a78bfa] ${isDark ? "text-white/20" : "text-[#0e1420]/20"}`} />
           </motion.button>
         </div>
       )}
@@ -2001,18 +2160,12 @@ function DashboardPanel({
             <Award size={40} className="text-[#34d399]" />
           </div>
           <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#34d399] mb-2">Certificat de réussite</p>
-          <h3 className="text-xl font-extrabold text-white">Formation Coaching IA DJAMA</h3>
-          <p className="mt-2 text-sm text-white/40">Complétée le {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</p>
+          <h3 className={`text-xl font-extrabold ${dPri}`}>Formation Coaching IA DJAMA</h3>
+          <p className={`mt-2 text-sm ${dSec}`}>Complétée le {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</p>
           <div className="mx-auto mt-5 flex w-fit flex-wrap justify-center gap-3">
-            <div className="rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.06)] px-4 py-2 text-xs font-bold text-[#34d399]">
-              {totalChapters} chapitres validés
-            </div>
-            <div className="rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.06)] px-4 py-2 text-xs font-bold text-[#34d399]">
-              {xp} XP obtenu
-            </div>
-            <div className="rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.06)] px-4 py-2 text-xs font-bold text-[#34d399]">
-              Maître IA 🎓
-            </div>
+            {[`${totalChapters} chapitres validés`, `${xp} XP obtenu`, "Maître IA 🎓"].map((t) => (
+              <div key={t} className="rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.06)] px-4 py-2 text-xs font-bold text-[#34d399]">{t}</div>
+            ))}
           </div>
           <button
             onClick={() => {
@@ -2028,7 +2181,7 @@ function DashboardPanel({
 
       {/* ── Modules ── */}
       <div>
-        <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Tous les modules</p>
+        <p className={`mb-3 text-[0.65rem] font-bold uppercase tracking-widest ${dMut}`}>Tous les modules</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {COACHING_MODULES.map((m) => {
             const done = m.chapters.filter((c) => completed.has(c.id)).length;
@@ -2043,21 +2196,21 @@ function DashboardPanel({
                   onSelectChapter(m.id, target.id);
                   onSetView("chapter");
                 }}
-                className="group rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 text-left transition-all hover:border-white/[0.12] hover:bg-white/[0.04]"
+                className={`group rounded-2xl border p-4 text-left transition-all ${dModBtn}`}
               >
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: m.color }}>
                     Module {m.id}
                   </span>
-                  <span className="text-[0.62rem] font-bold text-white/40">{pct}%</span>
+                  <span className={`text-[0.62rem] font-bold ${dSec}`}>{pct}%</span>
                 </div>
-                <p className="mb-1 text-sm font-bold text-white">{m.title}</p>
-                <p className="mb-3 text-[0.65rem] leading-relaxed text-white/35">{m.tagline}</p>
-                <div className="h-1 overflow-hidden rounded-full bg-white/[0.07]">
+                <p className={`mb-1 text-sm font-bold ${dPri}`}>{m.title}</p>
+                <p className={`mb-3 text-[0.65rem] leading-relaxed ${dMut}`}>{m.tagline}</p>
+                <div className={`h-1 overflow-hidden rounded-full ${dBar}`}>
                   <div className="h-full rounded-full transition-all duration-500"
                     style={{ width: `${pct}%`, background: m.color }} />
                 </div>
-                <p className="mt-1.5 text-[0.58rem] text-white/20">{done}/{m.chapters.length} chapitres · {m.duration}</p>
+                <p className={`mt-1.5 text-[0.58rem] ${dFaint}`}>{done}/{m.chapters.length} chapitres · {m.duration}</p>
               </motion.button>
             );
           })}
@@ -2072,9 +2225,9 @@ function DashboardPanel({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[0.62rem] font-bold uppercase tracking-widest text-[#a78bfa]">Coaching individuel</p>
-            <h3 className="mt-0.5 text-base font-extrabold text-white">Réserver un appel vidéo avec un expert IA</h3>
-            <p className="mt-1 text-sm text-white/40">1 séance par semaine · 6 mois · Expert certifié DJAMA</p>
-            <div className="mt-3 flex flex-wrap gap-2 text-[0.62rem] text-white/35">
+            <h3 className={`mt-0.5 text-base font-extrabold ${dPri}`}>Réserver un appel vidéo avec un expert IA</h3>
+            <p className={`mt-1 text-sm ${dSec}`}>1 séance par semaine · 6 mois · Expert certifié DJAMA</p>
+            <div className={`mt-3 flex flex-wrap gap-2 text-[0.62rem] ${dMut}`}>
               {["Google Meet / Zoom", "Enregistrement fourni", "Compte-rendu après séance", "Accès 6 mois"].map((item) => (
                 <span key={item} className="flex items-center gap-1">
                   <CheckCircle2 size={9} className="text-[#34d399]" /> {item}
@@ -2093,7 +2246,7 @@ function DashboardPanel({
 
       {/* ── Accès rapide ── */}
       <div>
-        <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-white/30">Accès rapide</p>
+        <p className={`mb-3 text-[0.65rem] font-bold uppercase tracking-widest ${dMut}`}>Accès rapide</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { label: "Assistant IA",  icon: Bot,     color: "#a78bfa", view: "assistant" as View },
@@ -2102,7 +2255,7 @@ function DashboardPanel({
             { label: "Réserver",      icon: Calendar,color: "#34d399", view: "booking"   as View },
           ].map(({ label, icon: Icon, color, view: v, badge }) => (
             <button key={label} onClick={() => onSetView(v)}
-              className="group flex flex-col items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 transition-all hover:border-white/[0.12] hover:bg-white/[0.04]">
+              className={`group flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all ${dQkBtn}`}>
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl"
                 style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
                 <Icon size={18} style={{ color }} />
@@ -2112,7 +2265,7 @@ function DashboardPanel({
                   </span>
                 )}
               </div>
-              <span className="text-[0.65rem] font-semibold text-white/50 group-hover:text-white/80">{label}</span>
+              <span className={`text-[0.65rem] font-semibold ${dQkLbl}`}>{label}</span>
             </button>
           ))}
         </div>
@@ -2127,6 +2280,7 @@ function DashboardPanel({
 ───────────────────────────────────────────────────────── */
 export default function EspaceCoachingIA() {
   const { access, user } = useCoachingIAAccess();
+  const { isDark } = useTheme();
 
   /* ── State ─────────────────────────────────────────────── */
   const [completed,         setCompleted]         = useState<Set<string>>(new Set());
@@ -2204,16 +2358,35 @@ export default function EspaceCoachingIA() {
     : undefined;
 
   /* ── Access gate ──────────────────────────────────────── */
+  const eBg   = isDark ? "bg-[#07080e]" : "bg-[#f0f2fb]";
+  const eSbBg = isDark ? "bg-[#07080e] border-white/[0.06]" : "bg-white border-black/8";
+  const eSbTxt= isDark ? "text-white/30" : "text-[#0e1420]/35";
+  const eSbFaint = isDark ? "text-white/20" : "text-[#0e1420]/25";
+  const eSbBar   = isDark ? "bg-white/[0.07]" : "bg-black/[0.07]";
+  const eTbBord  = isDark ? "border-white/[0.06]" : "border-black/8";
+  const eTbBtn   = isDark ? "text-white/30 hover:bg-white/[0.05] hover:text-white/70" : "text-[#0e1420]/30 hover:bg-black/[0.04] hover:text-[#0e1420]/70";
+  const eTbDiv   = isDark ? "bg-white/[0.08]" : "bg-black/[0.08]";
+  const eTabIdle = isDark ? "text-white/35 hover:bg-white/[0.04] hover:text-white/65" : "text-[#0e1420]/40 hover:bg-black/[0.04] hover:text-[#0e1420]/70";
+  const eBreadcrumb = isDark ? "text-white/20" : "text-[#0e1420]/25";
+  const eFocusIdle  = isDark ? "border-white/[0.08] text-white/30 hover:border-white/[0.15] hover:text-white/60" : "border-black/8 text-[#0e1420]/30 hover:border-black/15 hover:text-[#0e1420]/60";
+
+  const eSbShortcutAssistant = view === "assistant"
+    ? "bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
+    : isDark ? "text-white/40 hover:bg-white/[0.04] hover:text-white/70" : "text-[#0e1420]/40 hover:bg-black/[0.04] hover:text-[#0e1420]/70";
+  const eSbShortcutFavorites = view === "favorites"
+    ? "bg-[rgba(249,168,38,0.1)] text-[#f9a826]"
+    : isDark ? "text-white/40 hover:bg-white/[0.04] hover:text-white/70" : "text-[#0e1420]/40 hover:bg-black/[0.04] hover:text-[#0e1420]/70";
+
   if (access === "loading") return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[#07080e]">
+    <div className={`flex min-h-screen flex-col items-center justify-center gap-5 ${eBg}`}>
       <div className="relative flex h-16 w-16 items-center justify-center">
         <div className="absolute inset-0 animate-ping rounded-full bg-[rgba(167,139,250,0.15)]" />
-        <div className="absolute inset-2 animate-spin rounded-full border-2 border-transparent border-t-[#a78bfa]" />
+        <div className={`absolute inset-2 animate-spin rounded-full border-2 border-transparent border-t-[#a78bfa] ${isDark ? "" : "border-[#f0f2fb]"}`} />
         <Brain size={22} className="relative text-[#a78bfa]" />
       </div>
       <div className="text-center">
-        <p className="text-sm font-semibold text-white/60">Vérification de votre accès…</p>
-        <p className="mt-1 text-xs text-white/25">Authentification en cours</p>
+        <p className={`text-sm font-semibold ${isDark ? "text-white/60" : "text-[#0e1420]/60"}`}>Vérification de votre accès…</p>
+        <p className={`mt-1 text-xs ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`}>Authentification en cours</p>
       </div>
     </div>
   );
@@ -2232,7 +2405,7 @@ export default function EspaceCoachingIA() {
   ];
 
   return (
-    <div className={`flex overflow-hidden bg-[#07080e] transition-all duration-300 ${focusMode ? "h-screen" : "h-[calc(100vh-56px)]"}`}>
+    <div className={`flex overflow-hidden transition-all duration-300 ${eBg} ${focusMode ? "h-screen" : "h-[calc(100vh-56px)]"}`}>
 
       {/* ── SIDEBAR ─────────────────────────────────────────── */}
       <AnimatePresence>
@@ -2242,18 +2415,18 @@ export default function EspaceCoachingIA() {
             animate={{ width: 248, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease }}
-            className="flex shrink-0 flex-col overflow-hidden border-r border-white/[0.06] bg-[#07080e]"
+            className={`flex shrink-0 flex-col overflow-hidden border-r ${eSbBg}`}
             style={{ width: 248 }}
           >
             {/* Progress global */}
-            <div className="border-b border-white/[0.06] px-4 py-4">
+            <div className={`border-b px-4 py-4 ${isDark ? "border-white/[0.06]" : "border-black/8"}`}>
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-[0.62rem] font-semibold uppercase tracking-widest text-white/30">
+                <span className={`text-[0.62rem] font-semibold uppercase tracking-widest ${eSbTxt}`}>
                   Progression globale
                 </span>
                 <span className="text-[0.65rem] font-bold text-[#a78bfa]">{overallPct}%</span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+              <div className={`h-1.5 overflow-hidden rounded-full ${eSbBar}`}>
                 <motion.div
                   className="h-full rounded-full bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd]"
                   initial={{ width: 0 }}
@@ -2261,7 +2434,7 @@ export default function EspaceCoachingIA() {
                   transition={{ duration: 0.6, ease }}
                 />
               </div>
-              <p className="mt-1.5 text-[0.58rem] text-white/20">
+              <p className={`mt-1.5 text-[0.58rem] ${eSbFaint}`}>
                 {completedCount}/{totalChapters} chapitres · {COACHING_MODULES.length} modules
               </p>
             </div>
@@ -2287,21 +2460,13 @@ export default function EspaceCoachingIA() {
             </div>
 
             {/* Sidebar bottom shortcuts */}
-            <div className="border-t border-white/[0.06] space-y-1 px-2 py-3">
+            <div className={`border-t space-y-1 px-2 py-3 ${isDark ? "border-white/[0.06]" : "border-black/8"}`}>
               <button onClick={() => setView("assistant")}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
-                  view === "assistant"
-                    ? "bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
-                    : "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
-                }`}>
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${eSbShortcutAssistant}`}>
                 <Bot size={14} /> Assistant IA
               </button>
               <button onClick={() => setView("favorites")}
-                className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
-                  view === "favorites"
-                    ? "bg-[rgba(249,168,38,0.1)] text-[#f9a826]"
-                    : "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
-                }`}>
+                className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${eSbShortcutFavorites}`}>
                 <span className="flex items-center gap-3"><Star size={14} /> Favoris</span>
                 {favCount > 0 && (
                   <span className="rounded-full bg-[rgba(249,168,38,0.15)] px-1.5 py-0.5 text-[0.55rem] font-bold text-[#f9a826]">
@@ -2318,13 +2483,13 @@ export default function EspaceCoachingIA() {
       <main className="flex flex-1 flex-col overflow-hidden">
 
         {/* Toolbar */}
-        <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2">
+        <div className={`flex items-center gap-2 border-b px-3 py-2 ${eTbBord} ${isDark ? "bg-[#07080e]" : "bg-white"}`}>
 
           {/* Toggle sidebar / focus mode */}
           <button
             onClick={() => focusMode ? setFocusMode(false) : setSidebarOpen((p) => !p)}
             title={focusMode ? "Quitter le mode focus" : sidebarOpen ? "Masquer le menu" : "Afficher le menu"}
-            className="rounded-lg p-1.5 text-white/30 transition hover:bg-white/[0.05] hover:text-white/70"
+            className={`rounded-lg p-1.5 transition ${eTbBtn}`}
           >
             {focusMode
               ? <Minimize2 size={15} />
@@ -2332,7 +2497,7 @@ export default function EspaceCoachingIA() {
             }
           </button>
 
-          <div className="h-4 w-px bg-white/[0.08]" />
+          <div className={`h-4 w-px ${eTbDiv}`} />
 
           {/* Tabs */}
           {TAB_ITEMS.map(({ key, icon: Icon, label, badge }) => (
@@ -2342,7 +2507,7 @@ export default function EspaceCoachingIA() {
               className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                 view === key
                   ? "border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
-                  : "text-white/35 hover:bg-white/[0.04] hover:text-white/65"
+                  : eTabIdle
               }`}
             >
               <Icon size={13} /> {label}
@@ -2359,7 +2524,7 @@ export default function EspaceCoachingIA() {
 
           {/* Current chapter breadcrumb */}
           {view === "chapter" && currentChapter && !focusMode && (
-            <span className="hidden truncate text-[0.62rem] text-white/20 sm:block max-w-[200px]">
+            <span className={`hidden truncate text-[0.62rem] sm:block max-w-[200px] ${eBreadcrumb}`}>
               {currentChapter.title}
             </span>
           )}
@@ -2372,7 +2537,7 @@ export default function EspaceCoachingIA() {
               className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[0.65rem] font-medium transition-all ${
                 focusMode
                   ? "border-[rgba(96,165,250,0.35)] bg-[rgba(96,165,250,0.1)] text-[#60a5fa]"
-                  : "border-white/[0.08] text-white/30 hover:border-white/[0.15] hover:text-white/60"
+                  : eFocusIdle
               }`}
             >
               <Maximize2 size={12} />
@@ -2382,7 +2547,7 @@ export default function EspaceCoachingIA() {
         </div>
 
         {/* Vue principale */}
-        <div className={`flex-1 overflow-y-auto ${focusMode ? "bg-[#07080e]" : ""}`}>
+        <div className={`flex-1 overflow-y-auto ${focusMode ? eBg : ""}`}>
           <AnimatePresence mode="wait">
 
             {view === "dashboard" && (

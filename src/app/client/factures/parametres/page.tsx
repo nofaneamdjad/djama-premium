@@ -1,10 +1,11 @@
 "use client";
 /**
  * Paramètres Factures & Devis — Interface à 4 onglets + aperçu live.
- * Enregistre dans site_settings (clés brand.*).
+ * Enregistre dans user_settings (clés brand.*, isolé par user_id).
  */
 
 import { useState, useEffect, useRef } from "react";
+import { useTheme } from "@/lib/theme-context";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Save, Check, Building2, Mail, Phone, Globe,
@@ -244,6 +245,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 // ─── Page principale ─────────────────────────────────────────────────────────
 
 export default function ParametresFacturesPage() {
+  const { isDark } = useTheme();
   const [tab,           setTab]           = useState<TabId>("entetes");
   const [s,             setS]             = useState<AllSettings>(DEFAULTS);
   const [loading,       setLoading]       = useState(true);
@@ -258,10 +260,10 @@ export default function ParametresFacturesPage() {
   const upd = (key: SettingKey) => (val: string) =>
     setS(prev => ({ ...prev, [key]: val }));
 
-  /** Charge depuis site_settings */
+  /** Charge depuis user_settings (isolé par user_id via RLS) */
   useEffect(() => {
     supabase
-      .from("site_settings")
+      .from("user_settings")
       .select("key, value")
       .like("key", "brand.%")
       .then(({ data }) => {
@@ -275,7 +277,6 @@ export default function ParametresFacturesPage() {
             }
             return next;
           });
-          // Logo transform (JSON séparé)
           if (map["brand.logo_transform"]) {
             try { setLogoTransform(JSON.parse(map["brand.logo_transform"])); }
             catch { /* ignore */ }
@@ -285,40 +286,28 @@ export default function ParametresFacturesPage() {
       });
   }, []);
 
-  /** Sauvegarde vers site_settings */
+  /** Sauvegarde vers user_settings (chaque client a ses propres clés) */
   async function handleSave() {
     setSaving(true); setSaved(false); setSaveErr("");
 
-    // 1. Supprimer les anciennes clés brand.* (RLS protège par user_id)
-    const { error: delErr } = await supabase
-      .from("site_settings")
-      .delete()
-      .like("key", "brand.%");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSaveErr("Non authentifié."); setSaving(false); return; }
 
-    if (delErr) {
-      setSaveErr("Erreur lors de la mise à jour (delete).");
-      setSaving(false); return;
-    }
-
-    // 2. Insérer les nouvelles valeurs
     const rows = [
       ...Object.entries(KEY_MAP).map(([local, dbKey]) => ({
-        key:   dbKey,
-        value: s[local as SettingKey] ?? "",
+        user_id: user.id,
+        key:     dbKey,
+        value:   s[local as SettingKey] ?? "",
       })),
-      { key: "brand.logo_transform", value: JSON.stringify(logoTransform) },
+      { user_id: user.id, key: "brand.logo_transform", value: JSON.stringify(logoTransform) },
     ];
 
-    const { error: insErr } = await supabase.from("site_settings").insert(rows);
+    const { error } = await supabase
+      .from("user_settings")
+      .upsert(rows, { onConflict: "user_id,key" });
 
     setSaving(false);
-    if (insErr) {
-      // Fallback : upsert si l'insert échoue (clé déjà présente)
-      const { error: upsErr } = await supabase
-        .from("site_settings")
-        .upsert(rows, { onConflict: "key" });
-      if (upsErr) { setSaveErr("Erreur lors de la sauvegarde."); return; }
-    }
+    if (error) { setSaveErr("Erreur lors de la sauvegarde."); return; }
 
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -361,14 +350,48 @@ export default function ParametresFacturesPage() {
   // ── Chargement ────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0f1117]">
+      <div className={`flex min-h-screen items-center justify-center ${isDark ? "bg-[#0f1117]" : "bg-gray-50"}`}>
         <Loader2 size={22} className="animate-spin text-[#c9a55a]" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#0f1117]">
+    <div className={`flex h-screen flex-col overflow-hidden ${isDark ? "bg-[#0f1117] params-dark" : "bg-gray-50 params-light"}`}>
+      <style>{`
+        /* ── Light mode overrides ── */
+        .params-light [class*="bg-[#0f1117]"]  { background-color: #f8fafc !important; }
+        .params-light [class*="bg-[#090c12]"]  { background-color: #f1f5fb !important; }
+        .params-light [class*="bg-[#181c28]"]  { background-color: #f1f5f9 !important; }
+        .params-light [class*="border-white/[0.07]"] { border-color: rgba(0,0,0,0.08) !important; }
+        .params-light [class*="border-white/[0.09]"] { border-color: rgba(0,0,0,0.10) !important; }
+        .params-light [class*="border-white/[0.1]"]  { border-color: rgba(0,0,0,0.10) !important; }
+        .params-light [class*="border-white/[0.05]"] { border-color: rgba(0,0,0,0.06) !important; }
+        .params-light [class*="bg-white/[0.09]"] { background-color: rgba(0,0,0,0.06) !important; }
+        .params-light [class*="bg-white/[0.07]"] { background-color: rgba(0,0,0,0.05) !important; }
+        .params-light [class*="bg-white/[0.05]"] { background-color: rgba(0,0,0,0.04) !important; }
+        .params-light [class*="bg-white/[0.04]"] { background-color: #ffffff !important; }
+        .params-light [class*="bg-white/[0.03]"] { background-color: rgba(0,0,0,0.025) !important; }
+        .params-light [class*="bg-white/[0.02]"] { background-color: rgba(0,0,0,0.018) !important; }
+        .params-light [class*="hover:bg-white/"]:hover { background-color: rgba(0,0,0,0.04) !important; }
+        .params-light .text-white { color: #111827 !important; }
+        .params-light .text-white\\/45, .params-light .text-white\\/40 { color: #6b7280 !important; }
+        .params-light .text-white\\/35, .params-light .text-white\\/30 { color: #9ca3af !important; }
+        .params-light .text-white\\/25, .params-light .text-white\\/20 { color: #d1d5db !important; }
+        .params-light .text-white\\/18, .params-light .text-white\\/12 { color: #e5e7eb !important; }
+        .params-light [class*="text-white/"] { color: #6b7280 !important; }
+        .params-light [class*="placeholder:text-white"]::placeholder { color: #d1d5db !important; }
+        .params-light [class*="hover:text-white/"]:hover { color: #374151 !important; }
+        .params-light select option { background: #ffffff !important; color: #111827 !important; }
+        .params-light input, .params-light select, .params-light textarea {
+          color: #111827 !important;
+          background-color: #ffffff !important;
+          border-color: #e5e7eb !important;
+        }
+        .params-light input:focus, .params-light select:focus, .params-light textarea:focus {
+          border-color: rgba(201,165,90,0.5) !important;
+        }
+      `}</style>
 
       {/* ── Barre supérieure ─────────────────────────────────────── */}
       <div className="flex shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#0f1117]/98 px-5 py-3 backdrop-blur">

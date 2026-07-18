@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import fs from "fs";
 import path from "path";
 
@@ -9,7 +10,10 @@ export async function GET() {
   return NextResponse.json(JSON.parse(data));
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
+
   const body = await req.json();
   fs.writeFileSync(filePath, JSON.stringify(body, null, 2));
   return NextResponse.json({ success: true });

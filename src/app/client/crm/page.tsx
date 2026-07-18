@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,6 +20,8 @@ import { usePagination } from "@/hooks/usePagination";
 import { GridSkeleton } from "@/components/client/Skeleton";
 import EmptyState from "@/components/client/EmptyState";
 import { validate, ContactSchema } from "@/lib/schemas/client";
+import { useTheme } from "@/lib/theme-context";
+import { AppModuleIcon } from "@/components/AppIcons";
 
 type ContactType    = "prospect" | "client" | "partenaire" | "fournisseur";
 type ContactStatus  = "prospect" | "actif" | "inactif" | "perdu";
@@ -136,6 +138,9 @@ const TICKET_STATUSES: Record<TicketStatus, { label: string; color: string }> = 
   fermé:     { label: "Fermé",     color: "#94a3b8" },
 };
 
+const DarkCtx = createContext(true);
+const useDark = () => useContext(DarkCtx);
+
 const fmtDate = (d: string | null | undefined) => {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
@@ -187,31 +192,35 @@ function Avatar({ name, color = "#60a5fa", size = 36 }: { name: string; color?: 
 }
 
 function Input({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
+  const isDark = useDark();
   return (
     <div className="space-y-1">
-      {label && <label className="block text-[0.62rem] font-bold uppercase tracking-widest text-white/30">{label}</label>}
+      {label && <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</label>}
       <input {...props}
-        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors" />
+        className={`w-full rounded-xl border px-3 py-2 text-[0.8rem] outline-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`} />
     </div>
   );
 }
 
 function Textarea({ label, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string }) {
+  const isDark = useDark();
   return (
     <div className="space-y-1">
-      {label && <label className="block text-[0.62rem] font-bold uppercase tracking-widest text-white/30">{label}</label>}
+      {label && <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</label>}
       <textarea {...props} rows={3}
-        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 resize-none transition-colors" />
+        className={`w-full rounded-xl border px-3 py-2 text-[0.8rem] outline-none resize-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`} />
     </div>
   );
 }
 
 function Select({ label, children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string }) {
+  const isDark = useDark();
   return (
     <div className="space-y-1">
-      {label && <label className="block text-[0.62rem] font-bold uppercase tracking-widest text-white/30">{label}</label>}
+      {label && <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</label>}
       <select {...props}
-        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.8rem] text-white outline-none focus:border-white/[0.15] transition-colors appearance-none [color-scheme:dark]">
+        className="w-full rounded-xl border px-3 py-2 text-[0.8rem] outline-none transition-colors appearance-none"
+        style={{ backgroundColor: isDark ? "#0d1117" : "#f9fafb", color: isDark ? "#ffffff" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
         {children}
       </select>
     </div>
@@ -233,6 +242,7 @@ function PipelineView({
   const [form, setForm]             = useState<Partial<Opportunity>>({});
   const [draggedId, setDraggedId]   = useState<string | null>(null);
   const [dragOver, setDragOver]     = useState<OppStage | null>(null);
+  const isDark = useDark();
 
   const stageKeys = Object.keys(STAGES) as OppStage[];
   const byStage = useMemo(() => {
@@ -273,11 +283,11 @@ function PipelineView({
           const total = totalByStage(stage);
           const count = byStage[stage].length;
           return (
-            <div key={stage} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 text-center">
+            <div key={stage} className={`rounded-2xl border p-3 text-center ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
               <div className="text-[0.58rem] font-bold uppercase tracking-widest mb-1"
                 style={{ color: STAGES[stage].color }}>{STAGES[stage].label}</div>
-              <div className="text-base font-black text-white">{count}</div>
-              {total > 0 && <div className="text-[0.6rem] text-white/40 mt-0.5">{fmtEur(total)}</div>}
+              <div className={`text-base font-black ${isDark ? "text-white" : "text-gray-900"}`}>{count}</div>
+              {total > 0 && <div className={`text-[0.6rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{fmtEur(total)}</div>}
             </div>
           );
         })}
@@ -288,8 +298,8 @@ function PipelineView({
           <div key={stage}
           className="shrink-0 w-64 rounded-2xl border flex flex-col transition-colors"
           style={{
-            background: dragOver === stage ? `${STAGES[stage].color}08` : "rgba(255,255,255,0.02)",
-            borderColor: dragOver === stage ? `${STAGES[stage].color}50` : "rgba(255,255,255,0.06)",
+            background: dragOver === stage ? `${STAGES[stage].color}08` : isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.9)",
+            borderColor: dragOver === stage ? `${STAGES[stage].color}50` : isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)",
           }}
           onDragOver={e => { e.preventDefault(); setDragOver(stage); }}
           onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
@@ -300,15 +310,15 @@ function PipelineView({
             if (opp && opp.stage !== stage) await onUpdate(draggedId, { stage, probability: STAGES[stage].prob });
             setDraggedId(null);
           }}>
-                        <div className="flex items-center justify-between p-3 border-b border-white/[0.05]">
+                        <div className={`flex items-center justify-between p-3 border-b ${isDark ? "border-white/[0.05]" : "border-gray-100"}`}>
               <div>
                 <span className="text-[0.65rem] font-black uppercase tracking-widest"
                   style={{ color: STAGES[stage].color }}>{STAGES[stage].label}</span>
-                <span className="ml-1.5 text-[0.6rem] text-white/25">({byStage[stage].length})</span>
+                <span className={`ml-1.5 text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>({byStage[stage].length})</span>
               </div>
               {stage !== "gagné" && stage !== "perdu" && (
                 <button onClick={() => openAdd(stage)}
-                  className="h-5 w-5 rounded-full bg-white/[0.05] flex items-center justify-center hover:bg-white/10 transition-colors text-white/40 hover:text-white">
+                  className={`h-5 w-5 rounded-full flex items-center justify-center transition-colors ${isDark ? "bg-white/[0.05] hover:bg-white/10 text-white/40 hover:text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-700"}`}>
                   <Plus size={10}/>
                 </button>
               )}
@@ -319,20 +329,20 @@ function PipelineView({
                   draggable
                   onDragStart={e => { e.stopPropagation(); setDraggedId(opp.id); }}
                   onDragEnd={() => setDraggedId(null)}
-                  className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 cursor-grab active:cursor-grabbing hover:border-white/10 transition-all group"
+                  className={`rounded-xl border p-3 cursor-grab active:cursor-grabbing transition-all group ${isDark ? "border-white/[0.06] bg-white/[0.03] hover:border-white/10" : "border-gray-200 bg-white hover:border-gray-300"}`}
                   style={draggedId === opp.id ? { opacity: 0.45 } : {}}
                   onClick={() => openEdit(opp)}>
                   <div className="flex items-start justify-between gap-1">
-                    <p className="text-[0.72rem] font-semibold text-white leading-tight">{opp.title}</p>
+                    <p className={`text-[0.72rem] font-semibold leading-tight ${isDark ? "text-white" : "text-gray-900"}`}>{opp.title}</p>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                       <button onClick={e => { e.stopPropagation(); onDelete(opp.id); }}
-                        className="text-white/20 hover:text-red-400 transition-colors">
+                        className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400 transition-colors`}>
                         <Trash2 size={10}/>
                       </button>
                     </div>
                   </div>
                   {opp.contact && (
-                    <p className="text-[0.62rem] text-white/40 mt-1">
+                    <p className={`text-[0.62rem] mt-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
                       {opp.contact.name}{opp.contact.company ? ` · ${opp.contact.company}` : ""}
                     </p>
                   )}
@@ -343,11 +353,11 @@ function PipelineView({
                       </span>
                     )}
                     {opp.close_date && (
-                      <span className="text-[0.6rem] text-white/30 ml-auto">{fmtDate(opp.close_date)}</span>
+                      <span className={`text-[0.6rem] ml-auto ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(opp.close_date)}</span>
                     )}
                   </div>
                   {opp.probability > 0 && opp.stage !== "gagné" && (
-                    <div className="mt-2 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div className={`mt-2 h-1 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                       <div className="h-full rounded-full transition-all"
                         style={{ width: `${opp.probability}%`, backgroundColor: STAGES[stage].color }}/>
                     </div>
@@ -366,12 +376,12 @@ function PipelineView({
             onClick={() => { setAddModal(null); setEditOpp(null); setForm({}); }}>
             <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-md rounded-3xl border border-white/[0.08] bg-white/[0.03] p-6 space-y-4"
+              className={`w-full max-w-md rounded-3xl border p-6 space-y-4 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="font-black text-white text-sm">{editOpp ? "Modifier l'opportunité" : "Nouvelle opportunité"}</h3>
+                <h3 className={`font-black text-sm ${isDark ? "text-white" : "text-gray-900"}`}>{editOpp ? "Modifier l'opportunité" : "Nouvelle opportunité"}</h3>
                 <button onClick={() => { setAddModal(null); setEditOpp(null); setForm({}); }}
-                  className="text-white/30 hover:text-white transition-colors"><X size={16}/></button>
+                  className={`${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"} transition-colors`}><X size={16}/></button>
               </div>
               <Input label="Titre *" placeholder="Ex: Mission conseil Q2" value={form.title ?? ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}/>
               <div className="grid grid-cols-2 gap-3">
@@ -392,7 +402,7 @@ function PipelineView({
               <Textarea label="Notes" placeholder="Contexte, conditions…" value={form.notes ?? ""} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}/>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => { setAddModal(null); setEditOpp(null); setForm({}); }}
-                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white transition-colors">Annuler</button>
+                  className={`flex-1 rounded-xl border py-2.5 text-sm transition-colors ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
                 <button onClick={save} disabled={!form.title}
                   className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
                   style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -421,6 +431,7 @@ function TachesView({
   const [addModal, setAddModal] = useState(false);
   const [form, setForm]       = useState<Partial<CrmTask>>({ priority: "normal", type: "action" });
   const today = new Date().toISOString().split("T")[0];
+  const isDark = useDark();
 
   const filtered = useMemo(() => tasks.filter(t => {
     if (filter === "done")  return t.done;
@@ -453,10 +464,10 @@ function TachesView({
         <div className="flex gap-1.5 flex-wrap">
           {(["all","today","late","done"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${filter === f ? "bg-white/10 text-white" : "text-white/30 hover:text-white/60"}`}>
+              className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${filter === f ? (isDark ? "bg-white/10 text-white" : "bg-black/[0.06] text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-700")}`}>
               {f === "all" ? "En cours" : f === "today" ? "Aujourd'hui" : f === "late" ? "En retard" : "Terminées"}
               {counts[f] > 0 && <span className={`ml-1.5 rounded-full px-1.5 text-[0.6rem] ${
-                f === "late" ? "bg-red-500/20 text-red-400" : "bg-white/10 text-white/50"}`}>{counts[f]}</span>}
+                f === "late" ? "bg-red-500/20 text-red-400" : (isDark ? "bg-white/10 text-white/50" : "bg-black/[0.06] text-gray-500")}`}>{counts[f]}</span>}
             </button>
           ))}
         </div>
@@ -481,14 +492,14 @@ function TachesView({
               return (
                 <motion.div key={task.id} layout initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3.5 group">
+                  className={`flex items-start gap-3 rounded-2xl border p-3.5 group ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
                   <button onClick={() => onToggle(task.id, !task.done)} className="mt-0.5 shrink-0 transition-colors"
-                    style={{ color: task.done ? "#34d399" : "rgba(255,255,255,0.2)" }}>
+                    style={{ color: task.done ? "#34d399" : isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)" }}>
                     {task.done ? <CheckSquare size={16}/> : <Square size={16}/>}
                   </button>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-[0.78rem] font-semibold ${task.done ? "line-through text-white/30" : "text-white"}`}>
+                      <span className={`text-[0.78rem] font-semibold ${task.done ? (isDark ? "line-through text-white/30" : "line-through text-gray-400") : (isDark ? "text-white" : "text-gray-900")}`}>
                         {task.title}
                       </span>
                       <div className="flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-wider"
@@ -498,12 +509,12 @@ function TachesView({
                     </div>
                     <div className="flex items-center gap-3 mt-1 flex-wrap">
                       {task.contact && (
-                        <span className="text-[0.65rem] text-white/35">
+                        <span className={`text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
                           {task.contact.name}{task.contact.company ? ` · ${task.contact.company}` : ""}
                         </span>
                       )}
                       {task.due_date && (
-                        <span className={`text-[0.65rem] flex items-center gap-0.5 ${isLate ? "text-red-400" : "text-white/30"}`}>
+                        <span className={`text-[0.65rem] flex items-center gap-0.5 ${isLate ? "text-red-400" : (isDark ? "text-white/30" : "text-gray-400")}`}>
                           <Calendar size={9}/>{fmtDate(task.due_date)}
                           {isLate && " · En retard"}
                         </span>
@@ -511,7 +522,7 @@ function TachesView({
                     </div>
                   </div>
                   <button onClick={() => onDelete(task.id)}
-                    className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all shrink-0 mt-0.5">
+                    className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all shrink-0 mt-0.5 ${isDark ? "text-white/20" : "text-gray-300"}`}>
                     <Trash2 size={12}/>
                   </button>
                 </motion.div>
@@ -528,11 +539,11 @@ function TachesView({
             onClick={() => setAddModal(false)}>
             <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-md rounded-3xl border border-white/[0.08] bg-white/[0.03] p-6 space-y-4"
+              className={`w-full max-w-md rounded-3xl border p-6 space-y-4 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="font-black text-white text-sm">Nouvelle tâche</h3>
-                <button onClick={() => setAddModal(false)} className="text-white/30 hover:text-white"><X size={16}/></button>
+                <h3 className={`font-black text-sm ${isDark ? "text-white" : "text-gray-900"}`}>Nouvelle tâche</h3>
+                <button onClick={() => setAddModal(false)} className={isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}><X size={16}/></button>
               </div>
               <Input label="Titre *" placeholder="Intitulé de la tâche" value={form.title ?? ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}/>
               <div className="grid grid-cols-2 gap-3">
@@ -552,7 +563,7 @@ function TachesView({
               <Textarea label="Description" placeholder="Détails…" value={form.description ?? ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}/>
               <div className="flex gap-2">
                 <button onClick={() => setAddModal(false)}
-                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white">Annuler</button>
+                  className={`flex-1 rounded-xl border py-2.5 text-sm transition-colors ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
                 <button onClick={saveTask} disabled={!form.title}
                   className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
                   style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -591,6 +602,7 @@ function RapportView({
   const [rapport, setRapport]             = useState<CrmRapport | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportOpen, setRapportOpen]     = useState(false);
+  const isDark = useDark();
 
   const stats = useMemo(() => {
     const actifs     = contacts.filter(c => c.status === "actif").length;
@@ -713,7 +725,7 @@ function RapportView({
 
       {/* ── Header + bouton Analyse IA ── */}
       <div className="flex items-center justify-between">
-        <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/30">Synthèse CRM</p>
+        <p className={`text-[0.65rem] font-black uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Synthèse CRM</p>
         <button
           onClick={runRapportIA}
           disabled={rapportLoading}
@@ -745,7 +757,7 @@ function RapportView({
               {/* Gauge */}
               <div className="shrink-0 flex flex-col items-center gap-1">
                 <svg width={72} height={72} viewBox="0 0 72 72">
-                  <circle cx={36} cy={36} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={5}/>
+                  <circle cx={36} cy={36} r={R} fill="none" stroke={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"} strokeWidth={5}/>
                   <circle
                     cx={36} cy={36} r={R} fill="none"
                     stroke={scoreColor} strokeWidth={5}
@@ -757,13 +769,13 @@ function RapportView({
                   />
                   <text x={36} y={40} textAnchor="middle" fill={scoreColor} fontSize={15} fontWeight={900} fontFamily="inherit">{score}</text>
                 </svg>
-                <p className="text-[0.55rem] font-bold uppercase tracking-wider text-white/30">Score</p>
+                <p className={`text-[0.55rem] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>Score</p>
               </div>
 
               {/* Résumé */}
               <div className="flex-1 min-w-0">
                 <p className="text-[0.65rem] font-black uppercase tracking-widest mb-1.5" style={{ color: "#c9a55a" }}>Résumé exécutif</p>
-                <p className="text-[0.75rem] leading-relaxed text-white/70">{rapport.resume_executif}</p>
+                <p className={`text-[0.75rem] leading-relaxed ${isDark ? "text-white/70" : "text-gray-700"}`}>{rapport.resume_executif}</p>
               </div>
             </div>
 
@@ -774,7 +786,7 @@ function RapportView({
                   <p className="text-[0.6rem] font-black uppercase tracking-widest text-emerald-400/70 mb-2.5">Points forts</p>
                   <ul className="space-y-1.5">
                     {rapport.points_forts.map((pt, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[0.72rem] text-white/65">
+                      <li key={i} className={`flex items-start gap-2 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
                         <span className="mt-1 shrink-0 h-1.5 w-1.5 rounded-full bg-emerald-400"/>
                         {pt}
                       </li>
@@ -787,7 +799,7 @@ function RapportView({
                   <p className="text-[0.6rem] font-black uppercase tracking-widest text-red-400/70 mb-2.5">Alertes</p>
                   <ul className="space-y-1.5">
                     {rapport.alertes.map((al, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[0.72rem] text-white/65">
+                      <li key={i} className={`flex items-start gap-2 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
                         <AlertCircle size={10} className="mt-0.5 shrink-0 text-red-400"/>
                         {al}
                       </li>
@@ -803,7 +815,7 @@ function RapportView({
                 <p className="text-[0.6rem] font-black uppercase tracking-widest mb-2.5" style={{ color: "rgba(201,165,90,0.7)" }}>Recommandations</p>
                 <ol className="space-y-2">
                   {rapport.recommandations.map((r, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-[0.72rem] text-white/65">
+                    <li key={i} className={`flex items-start gap-2.5 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
                       <span className="shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-[0.55rem] font-black"
                         style={{ background: "rgba(201,165,90,0.15)", color: "#c9a55a" }}>{i + 1}</span>
                       {r}
@@ -816,21 +828,21 @@ function RapportView({
             {/* Contacts à relancer */}
             {rapport.contacts_a_relancer.length > 0 && (
               <div>
-                <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/30 mb-2.5">Contacts à relancer</p>
+                <p className={`text-[0.6rem] font-black uppercase tracking-widest mb-2.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>Contacts à relancer</p>
                 <div className="space-y-1.5">
                   {rapport.contacts_a_relancer.map((c, i) => (
-                    <div key={i} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.04)" }}>
+                    <div key={i} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2" style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)" }}>
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-[0.6rem] font-black"
                           style={{ background: "rgba(201,165,90,0.15)", color: "#c9a55a" }}>
                           {c.nom.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[0.7rem] font-bold text-white/80 truncate">{c.nom}</p>
-                          {c.societe && <p className="text-[0.6rem] text-white/35 truncate">{c.societe}</p>}
+                          <p className={`text-[0.7rem] font-bold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>{c.nom}</p>
+                          {c.societe && <p className={`text-[0.6rem] truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>{c.societe}</p>}
                         </div>
                       </div>
-                      <p className="text-[0.65rem] text-white/40 shrink-0 text-right max-w-[45%] leading-snug">{c.raison}</p>
+                      <p className={`text-[0.65rem] shrink-0 text-right max-w-[45%] leading-snug ${isDark ? "text-white/40" : "text-gray-500"}`}>{c.raison}</p>
                     </div>
                   ))}
                 </div>
@@ -844,7 +856,7 @@ function RapportView({
                 <Flag size={12} className="shrink-0 mt-0.5" style={{ color: "#c9a55a" }}/>
                 <div>
                   <p className="text-[0.55rem] font-black uppercase tracking-widest mb-0.5" style={{ color: "rgba(201,165,90,0.6)" }}>Objectif de la semaine</p>
-                  <p className="text-[0.72rem] font-semibold text-white/70">{rapport.objectif_semaine}</p>
+                  <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{rapport.objectif_semaine}</p>
                 </div>
               </div>
             )}
@@ -855,20 +867,20 @@ function RapportView({
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {kpis.map(k => (
-          <div key={k.label} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+          <div key={k.label} className={`rounded-2xl border p-4 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">{k.label}</p>
+              <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
               <k.icon size={13} style={{ color: k.color }}/>
             </div>
-            <p className={`font-black text-white ${k.big ? "text-base" : "text-xl"}`}>{k.value}</p>
+            <p className={`font-black ${isDark ? "text-white" : "text-gray-900"} ${k.big ? "text-base" : "text-xl"}`}>{k.value}</p>
           </div>
         ))}
       </div>
 
       {/* ── Pipeline + répartition contacts ── */}
       <div className="grid sm:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
-          <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-white/40 mb-4">Pipeline commercial</h3>
+        <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Pipeline commercial</h3>
           <div className="space-y-2.5">
             {(Object.keys(STAGES) as OppStage[]).map(stage => {
               const { count, amount } = stats.byStage[stage];
@@ -876,13 +888,13 @@ function RapportView({
               return (
                 <div key={stage} className="flex items-center gap-3">
                   <span className="text-[0.62rem] w-20 shrink-0" style={{ color: STAGES[stage].color }}>{STAGES[stage].label}</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                     <div className="h-full rounded-full transition-all"
                       style={{ width: `${(count / maxCount) * 100}%`, backgroundColor: STAGES[stage].color }}/>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-[0.6rem] text-white/40">{count} opp.</span>
-                    {amount > 0 && <span className="text-[0.6rem] text-white/25 ml-1">· {fmtEur(amount)}</span>}
+                    <span className={`text-[0.6rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>{count} opp.</span>
+                    {amount > 0 && <span className={`text-[0.6rem] ml-1 ${isDark ? "text-white/25" : "text-gray-400"}`}>· {fmtEur(amount)}</span>}
                   </div>
                 </div>
               );
@@ -890,8 +902,8 @@ function RapportView({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
-          <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-white/40 mb-4">Répartition contacts</h3>
+        <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Répartition contacts</h3>
           <div className="space-y-3">
             {(Object.keys(CONTACT_TYPES) as ContactType[]).map(type => {
               const count = stats.byType[type] ?? 0;
@@ -899,10 +911,10 @@ function RapportView({
               return (
                 <div key={type} className="flex items-center gap-3">
                   <span className="text-[0.62rem] w-20 shrink-0" style={{ color: CONTACT_TYPES[type].color }}>{CONTACT_TYPES[type].label}</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                     <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: CONTACT_TYPES[type].color }}/>
                   </div>
-                  <span className="text-[0.62rem] text-white/40 shrink-0 w-8 text-right">{count}</span>
+                  <span className={`text-[0.62rem] shrink-0 w-8 text-right ${isDark ? "text-white/40" : "text-gray-500"}`}>{count}</span>
                 </div>
               );
             })}
@@ -910,12 +922,12 @@ function RapportView({
 
           {stats.topSectors.length > 0 && (
             <>
-              <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-white/40 mb-3 mt-5">Top secteurs</h3>
+              <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-3 mt-5 ${isDark ? "text-white/40" : "text-gray-400"}`}>Top secteurs</h3>
               <div className="space-y-1.5">
                 {stats.topSectors.map(([sector, count]) => (
                   <div key={sector} className="flex items-center justify-between">
-                    <span className="text-[0.7rem] text-white/50 truncate">{sector}</span>
-                    <span className="text-[0.65rem] font-bold text-white/30 shrink-0 ml-2">{count}</span>
+                    <span className={`text-[0.7rem] truncate ${isDark ? "text-white/50" : "text-gray-600"}`}>{sector}</span>
+                    <span className={`text-[0.65rem] font-bold shrink-0 ml-2 ${isDark ? "text-white/30" : "text-gray-400"}`}>{count}</span>
                   </div>
                 ))}
               </div>
@@ -939,6 +951,7 @@ function TicketsGlobalView({
   const [filter, setFilter] = useState<TicketStatus | "tous">("tous");
   const [addModal, setAddModal] = useState(false);
   const [form, setForm] = useState<Partial<SupportTicket>>({ status: "ouvert", priority: "normale" });
+  const isDark = useDark();
 
   const filtered = useMemo(() =>
     filter === "tous" ? tickets : tickets.filter(t => t.status === filter),
@@ -970,7 +983,7 @@ function TicketsGlobalView({
           {(["tous","ouvert","en_cours","résolu","fermé"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className="rounded-full px-3 py-1 text-xs font-bold transition-all"
-              style={{ background: filter===f ? "rgba(201,165,90,0.15)" : "transparent", color: filter===f ? "#c9a55a" : "rgba(255,255,255,0.3)" }}>
+              style={{ background: filter===f ? "rgba(201,165,90,0.15)" : "transparent", color: filter===f ? "#c9a55a" : isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)" }}>
               {f === "tous" ? "Tous" : f === "en_cours" ? "En cours" : f.charAt(0).toUpperCase()+f.slice(1)}
               {counts[f] > 0 && <span className="ml-1.5 text-[0.6rem] opacity-70">{counts[f]}</span>}
             </button>
@@ -984,7 +997,7 @@ function TicketsGlobalView({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="py-16 text-center text-white/20 text-sm">
+        <div className={`py-16 text-center text-sm ${isDark ? "text-white/20" : "text-gray-300"}`}>
           <Ticket size={36} className="mx-auto mb-4 opacity-20"/>
           Aucun ticket {filter !== "tous" ? `"${filter}"` : ""}
         </div>
@@ -993,15 +1006,15 @@ function TicketsGlobalView({
           <AnimatePresence initial={false}>
             {filtered.map(ticket => (
               <motion.div key={ticket.id} layout initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, height:0 }}
-                className="rounded-2xl border border-white/[0.06] p-4 group"
-                style={{ background: "rgba(7,8,14,0.8)" }}>
+                className={`rounded-2xl border p-4 group ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}
+                style={{ background: isDark ? "rgba(7,8,14,0.8)" : "rgba(255,255,255,0.95)" }}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[0.78rem] font-bold text-white">{ticket.title}</p>
+                    <p className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{ticket.title}</p>
                     {ticket.contact && (
-                      <p className="text-[0.62rem] text-white/40 mt-0.5">{ticket.contact.name}{ticket.contact.company ? ` · ${ticket.contact.company}` : ""}</p>
+                      <p className={`text-[0.62rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{ticket.contact.name}{ticket.contact.company ? ` · ${ticket.contact.company}` : ""}</p>
                     )}
-                    {ticket.description && <p className="text-[0.65rem] text-white/35 mt-1 leading-relaxed">{ticket.description}</p>}
+                    {ticket.description && <p className={`text-[0.65rem] mt-1 leading-relaxed ${isDark ? "text-white/35" : "text-gray-400"}`}>{ticket.description}</p>}
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Badge label={TICKET_STATUSES[ticket.status].label} color={TICKET_STATUSES[ticket.status].color}/>
@@ -1010,7 +1023,7 @@ function TicketsGlobalView({
                       {ticket.priority}
                     </span>
                     <button onClick={() => onDelete(ticket.id)}
-                      className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all ml-1">
+                      className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ml-1 ${isDark ? "text-white/20" : "text-gray-300"}`}>
                       <Trash2 size={11}/>
                     </button>
                   </div>
@@ -1040,12 +1053,12 @@ function TicketsGlobalView({
             onClick={() => setAddModal(false)}>
             <motion.div initial={{ y:40, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:40, opacity:0 }}
               transition={{ type:"spring", stiffness:300, damping:30 }}
-              className="w-full max-w-md rounded-3xl border border-white/[0.08] p-6 space-y-4"
-              style={{ background: "rgba(7,8,14,0.98)" }}
+              className={`w-full max-w-md rounded-3xl border p-6 space-y-4 ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}
+              style={{ background: isDark ? "rgba(7,8,14,0.98)" : "rgba(255,255,255,0.98)" }}
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="font-black text-white text-sm">Nouveau ticket</h3>
-                <button onClick={() => setAddModal(false)} className="text-white/30 hover:text-white"><X size={16}/></button>
+                <h3 className={`font-black text-sm ${isDark ? "text-white" : "text-gray-900"}`}>Nouveau ticket</h3>
+                <button onClick={() => setAddModal(false)} className={isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}><X size={16}/></button>
               </div>
               <Input label="Objet *" placeholder="Décrire le problème…" value={form.title ?? ""} onChange={e => setForm(f=>({...f, title: e.target.value}))}/>
               <div className="grid grid-cols-2 gap-3">
@@ -1060,7 +1073,7 @@ function TicketsGlobalView({
               <Textarea label="Description" placeholder="Détails du ticket…" value={form.description ?? ""} onChange={e => setForm(f=>({...f, description: e.target.value}))}/>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setAddModal(false)}
-                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white transition-colors">Annuler</button>
+                  className={`flex-1 rounded-xl border py-2.5 text-sm transition-colors ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
                 <button onClick={save} disabled={!form.title}
                   className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
                   style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -1112,6 +1125,7 @@ function ContactDetail({
   const [newTicket, setNewTicket] = useState<Partial<SupportTicket> | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);
   const today = new Date().toISOString().split("T")[0];
+  const isDark = useDark();
 
   const typeColor = CONTACT_TYPES[contact.type ?? "prospect"]?.color ?? "#60a5fa";
 
@@ -1134,32 +1148,32 @@ function ContactDetail({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: "100%", opacity: 0 }}
       transition={{ type: "spring", stiffness: 280, damping: 30 }}
-      className="fixed inset-y-0 right-0 z-40 flex flex-col w-full sm:w-[520px] border-l border-white/[0.06] bg-white/[0.02] shadow-2xl overflow-hidden">
+      className={`fixed inset-y-0 right-0 z-40 flex flex-col w-full sm:w-[520px] border-l shadow-2xl overflow-hidden ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-200 bg-white"}`}>
 
-            <div className="shrink-0 p-5 border-b border-white/[0.06]">
+            <div className={`shrink-0 p-5 border-b ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
         <div className="flex items-start gap-3">
           <Avatar name={contact.name} color={typeColor} size={44}/>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base font-black text-white">{contact.name}</h2>
+              <h2 className={`text-base font-black ${isDark ? "text-white" : "text-gray-900"}`}>{contact.name}</h2>
               <Badge label={CONTACT_TYPES[contact.type ?? "prospect"]?.label ?? "Prospect"}
                 color={typeColor}/>
               <Badge label={STATUSES[contact.status].label}
                 color={STATUSES[contact.status].color} bg={STATUSES[contact.status].bg}/>
             </div>
-            {contact.company && <p className="text-[0.72rem] text-white/40 mt-0.5">{contact.company}</p>}
+            {contact.company && <p className={`text-[0.72rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{contact.company}</p>}
             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-              {contact.email  && <a href={`mailto:${contact.email}`}  className="flex items-center gap-1 text-[0.65rem] text-white/30 hover:text-white/60 transition-colors"><Mail  size={10}/>{contact.email}</a>}
-              {contact.phone  && <a href={`tel:${contact.phone}`}     className="flex items-center gap-1 text-[0.65rem] text-white/30 hover:text-white/60 transition-colors"><Phone size={10}/>{contact.phone}</a>}
+              {contact.email  && <a href={`mailto:${contact.email}`}  className={`flex items-center gap-1 text-[0.65rem] transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}><Mail  size={10}/>{contact.email}</a>}
+              {contact.phone  && <a href={`tel:${contact.phone}`}     className={`flex items-center gap-1 text-[0.65rem] transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}><Phone size={10}/>{contact.phone}</a>}
             </div>
           </div>
           <div className="flex gap-1.5 shrink-0">
             <button onClick={() => setEditing(!editing)}
-              className="h-8 w-8 rounded-xl bg-white/[0.04] flex items-center justify-center text-white/30 hover:text-white hover:bg-white/[0.08] transition-all">
+              className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${isDark ? "bg-white/[0.04] text-white/30 hover:text-white hover:bg-white/[0.08]" : "bg-gray-100 text-gray-400 hover:text-gray-700 hover:bg-gray-200"}`}>
               <Pencil size={13}/>
             </button>
             <button onClick={onClose}
-              className="h-8 w-8 rounded-xl bg-white/[0.04] flex items-center justify-center text-white/30 hover:text-white hover:bg-white/[0.08] transition-all">
+              className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${isDark ? "bg-white/[0.04] text-white/30 hover:text-white hover:bg-white/[0.08]" : "bg-gray-100 text-gray-400 hover:text-gray-700 hover:bg-gray-200"}`}>
               <X size={13}/>
             </button>
           </div>
@@ -1171,19 +1185,19 @@ function ContactDetail({
             { label: "Tâches",       value: tasks.filter(t => !t.done).length, color: "#f59e0b" },
             { label: "Tickets",      value: tickets.filter(t => t.status !== "fermé").length, color: "#60a5fa" },
           ].map(s => (
-            <div key={s.label} className="rounded-xl bg-white/[0.03] p-2 text-center">
+            <div key={s.label} className={`rounded-xl p-2 text-center ${isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
               <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
-              <div className="text-[0.58rem] text-white/25">{s.label}</div>
+              <div className={`text-[0.58rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-            <div className="shrink-0 flex border-b border-white/[0.06] overflow-x-auto">
+            <div className={`shrink-0 flex border-b overflow-x-auto ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-4 py-3 text-[0.65rem] font-bold uppercase tracking-wider whitespace-nowrap transition-colors border-b-2 ${
-              tab === t.id ? "border-white text-white" : "border-transparent text-white/30 hover:text-white/60"}`}>
+              tab === t.id ? (isDark ? "border-white text-white" : "border-gray-900 text-gray-900") : (isDark ? "border-transparent text-white/30 hover:text-white/60" : "border-transparent text-gray-400 hover:text-gray-600")}`}>
             <t.icon size={10}/>{t.label}
           </button>
         ))}
@@ -1233,11 +1247,11 @@ function ContactDetail({
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="Budget estimé (€)" type="number" value={form.budget ?? ""} onChange={e => setForm(f => ({ ...f, budget: +e.target.value }))}/>
                   <div className="space-y-1">
-                    <label className="block text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Intérêt (0-5)</label>
+                    <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Intérêt (0-5)</label>
                     <div className="flex gap-1 mt-1.5">
                       {[1,2,3,4,5].map(n => (
                         <button key={n} onClick={() => setForm(f => ({ ...f, interest_level: n }))}
-                          className="transition-colors" style={{ color: (form.interest_level ?? 0) >= n ? "#f59e0b" : "rgba(255,255,255,0.15)" }}>
+                          className="transition-colors" style={{ color: (form.interest_level ?? 0) >= n ? "#f59e0b" : isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)" }}>
                           <Star size={16} fill={(form.interest_level ?? 0) >= n ? "#f59e0b" : "none"}/>
                         </button>
                       ))}
@@ -1249,7 +1263,7 @@ function ContactDetail({
                 <Textarea label="Notes" value={form.notes ?? ""} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}/>
                 <div className="flex gap-2">
                   <button onClick={() => { setEditing(false); setForm({ ...contact }); }}
-                    className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white">Annuler</button>
+                    className={`flex-1 rounded-xl border py-2.5 text-sm transition-colors ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
                   <button onClick={saveEdit}
                     className="flex-1 rounded-xl py-2.5 text-sm font-bold transition-all hover:brightness-110"
                     style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -1269,10 +1283,10 @@ function ContactDetail({
                     { icon: Linkedin,   label: "LinkedIn", value: contact.linkedin },
                   ].filter(i => i.value).map(item => (
                     <div key={item.label} className="flex items-start gap-2">
-                      <item.icon size={11} className="mt-0.5 shrink-0 text-white/25"/>
+                      <item.icon size={11} className={`mt-0.5 shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
                       <div>
-                        <p className="text-[0.58rem] text-white/25 uppercase tracking-wider">{item.label}</p>
-                        <p className="text-[0.72rem] text-white/70 break-all">{item.value}</p>
+                        <p className={`text-[0.58rem] uppercase tracking-wider ${isDark ? "text-white/25" : "text-gray-400"}`}>{item.label}</p>
+                        <p className={`text-[0.72rem] break-all ${isDark ? "text-white/70" : "text-gray-700"}`}>{item.value}</p>
                       </div>
                     </div>
                   ))}
@@ -1280,22 +1294,22 @@ function ContactDetail({
 
                                 <div className="flex gap-3 flex-wrap">
                   {contact.budget && contact.budget > 0 && (
-                    <div className="rounded-xl bg-white/[0.04] px-3 py-2">
-                      <p className="text-[0.58rem] text-white/25 mb-0.5">Budget</p>
-                      <p className="text-sm font-black text-white">{fmtEur(contact.budget)}</p>
+                    <div className={`rounded-xl px-3 py-2 ${isDark ? "bg-white/[0.04]" : "bg-gray-50"}`}>
+                      <p className={`text-[0.58rem] mb-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}>Budget</p>
+                      <p className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>{fmtEur(contact.budget)}</p>
                     </div>
                   )}
                   {contact.priority && contact.priority !== "normal" && (
-                    <div className="rounded-xl bg-white/[0.04] px-3 py-2">
-                      <p className="text-[0.58rem] text-white/25 mb-0.5">Priorité</p>
+                    <div className={`rounded-xl px-3 py-2 ${isDark ? "bg-white/[0.04]" : "bg-gray-50"}`}>
+                      <p className={`text-[0.58rem] mb-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}>Priorité</p>
                       <p className="text-sm font-bold" style={{ color: PRIORITIES[contact.priority].color }}>
                         {PRIORITIES[contact.priority].label}
                       </p>
                     </div>
                   )}
                   {contact.interest_level && contact.interest_level > 0 && (
-                    <div className="rounded-xl bg-white/[0.04] px-3 py-2">
-                      <p className="text-[0.58rem] text-white/25 mb-1">Intérêt</p>
+                    <div className={`rounded-xl px-3 py-2 ${isDark ? "bg-white/[0.04]" : "bg-gray-50"}`}>
+                      <p className={`text-[0.58rem] mb-1 ${isDark ? "text-white/25" : "text-gray-400"}`}>Intérêt</p>
                       <div className="flex gap-0.5">
                         {[1,2,3,4,5].map(n => (
                           <Star key={n} size={12} fill={n <= (contact.interest_level ?? 0) ? "#f59e0b" : "none"}
@@ -1307,23 +1321,23 @@ function ContactDetail({
                 </div>
 
                 {contact.notes && (
-                  <div className="rounded-xl bg-white/[0.03] p-3">
-                    <p className="text-[0.58rem] text-white/25 uppercase tracking-wider mb-1">Notes</p>
-                    <p className="text-[0.72rem] text-white/60 leading-relaxed whitespace-pre-line">{contact.notes}</p>
+                  <div className={`rounded-xl p-3 ${isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
+                    <p className={`text-[0.58rem] uppercase tracking-wider mb-1 ${isDark ? "text-white/25" : "text-gray-400"}`}>Notes</p>
+                    <p className={`text-[0.72rem] leading-relaxed whitespace-pre-line ${isDark ? "text-white/60" : "text-gray-600"}`}>{contact.notes}</p>
                   </div>
                 )}
 
                                 {contact.tags && contact.tags.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap">
                     {contact.tags.map(tag => (
-                      <span key={tag} className="flex items-center gap-1 rounded-full bg-white/[0.05] px-2.5 py-1 text-[0.62rem] text-white/40">
+                      <span key={tag} className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.62rem] ${isDark ? "bg-white/[0.05] text-white/40" : "bg-gray-100 text-gray-500"}`}>
                         <Hash size={8}/>{tag}
                       </span>
                     ))}
                   </div>
                 )}
 
-                                <div className="pt-2 border-t border-white/[0.04]">
+                                <div className={`pt-2 border-t ${isDark ? "border-white/[0.04]" : "border-gray-100"}`}>
                   {!confirmDel ? (
                     <button onClick={() => setConfirmDel(true)}
                       className="text-[0.65rem] text-red-400/50 hover:text-red-400 transition-colors flex items-center gap-1">
@@ -1333,7 +1347,7 @@ function ContactDetail({
                     <div className="flex items-center gap-2">
                       <span className="text-[0.65rem] text-red-400">Confirmer la suppression ?</span>
                       <button onClick={onDeleteContact} className="text-[0.65rem] font-bold text-red-400 hover:text-red-300">Oui</button>
-                      <button onClick={() => setConfirmDel(false)} className="text-[0.65rem] text-white/30 hover:text-white">Non</button>
+                      <button onClick={() => setConfirmDel(false)} className={`text-[0.65rem] ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>Non</button>
                     </div>
                   )}
                 </div>
@@ -1345,12 +1359,12 @@ function ContactDetail({
                 {tab === "activites" && (
           <div className="space-y-4">
             <button onClick={() => setNewAct({ type: "note", activity_date: new Date().toISOString().split("T")[0] })}
-              className="flex items-center gap-2 text-[0.72rem] font-bold text-white/40 hover:text-white transition-colors">
+              className={`flex items-center gap-2 text-[0.72rem] font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
               <Plus size={13}/> Ajouter une activité
             </button>
 
             {newAct !== null && (
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
+              <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
                 <div className="grid grid-cols-2 gap-3">
                   <Select label="Type" value={newAct.type ?? "note"} onChange={e => setNewAct(a => ({ ...a, type: e.target.value as ActivityType }))}>
                     {(["note","call","email","meeting","document","rdv"] as ActivityType[]).map(t =>
@@ -1364,7 +1378,7 @@ function ContactDetail({
                 <Textarea label="Détails" placeholder="Résumé, points abordés…" value={newAct.description ?? ""}
                   onChange={e => setNewAct(a => ({ ...a, description: e.target.value }))}/>
                 <div className="flex gap-2">
-                  <button onClick={() => setNewAct(null)} className="flex-1 rounded-xl border border-white/[0.08] py-2 text-xs text-white/50 hover:text-white">Annuler</button>
+                  <button onClick={() => setNewAct(null)} className={`flex-1 rounded-xl border py-2 text-xs transition-colors ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
                   <button disabled={!newAct.title}
                     onClick={async () => { await onAddActivity(newAct); setNewAct(null); }}
                     className="flex-1 rounded-xl py-2 text-xs font-bold disabled:opacity-40 transition-all hover:brightness-110"
@@ -1376,31 +1390,31 @@ function ContactDetail({
             )}
 
             {activities.length === 0 && !newAct && (
-              <p className="text-center text-white/20 text-sm py-6">Aucune activité enregistrée</p>
+              <p className={`text-center text-sm py-6 ${isDark ? "text-white/20" : "text-gray-300"}`}>Aucune activité enregistrée</p>
             )}
 
                         <div className="relative space-y-0">
-              <div className="absolute left-[14px] top-0 bottom-0 w-px bg-white/[0.05]"/>
+              <div className={`absolute left-[14px] top-0 bottom-0 w-px ${isDark ? "bg-white/[0.05]" : "bg-gray-200"}`}/>
               {activities.sort((a, b) => b.activity_date.localeCompare(a.activity_date)).map(act => {
                 const Icon = ACTIVITY_ICONS[act.type];
                 const color = ACTIVITY_COLORS[act.type];
                 return (
                   <div key={act.id} className="flex gap-3 pb-5 group relative">
-                    <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center z-10 border border-white/[0.08]"
+                    <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center z-10 border ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}
                       style={{ backgroundColor: `${color}22` }}>
                       <Icon size={11} style={{ color }}/>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-[0.72rem] font-semibold text-white">{act.title}</p>
+                        <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{act.title}</p>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                          <button onClick={() => onDeleteActivity(act.id)} className="text-white/20 hover:text-red-400">
+                          <button onClick={() => onDeleteActivity(act.id)} className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400`}>
                             <Trash2 size={10}/>
                           </button>
                         </div>
                       </div>
-                      <p className="text-[0.6rem] text-white/30 mt-0.5">{fmtDate(act.activity_date)}</p>
-                      {act.description && <p className="text-[0.68rem] text-white/40 mt-1 leading-relaxed">{act.description}</p>}
+                      <p className={`text-[0.6rem] mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(act.activity_date)}</p>
+                      {act.description && <p className={`text-[0.68rem] mt-1 leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>{act.description}</p>}
                     </div>
                   </div>
                 );
@@ -1412,12 +1426,12 @@ function ContactDetail({
                 {tab === "opps" && (
           <div className="space-y-3">
             <button onClick={() => setNewOpp({ stage: "nouveau", amount: 0, probability: 20, contact_id: contact.id })}
-              className="flex items-center gap-2 text-[0.72rem] font-bold text-white/40 hover:text-white transition-colors">
+              className={`flex items-center gap-2 text-[0.72rem] font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
               <Plus size={13}/> Nouvelle opportunité
             </button>
 
             {newOpp !== null && (
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
+              <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
                 <Input label="Titre *" placeholder="Ex: Contrat annuel SaaS" value={newOpp.title ?? ""}
                   onChange={e => setNewOpp(o => ({ ...o, title: e.target.value }))}/>
                 <div className="grid grid-cols-2 gap-3">
@@ -1435,7 +1449,7 @@ function ContactDetail({
                     onChange={e => setNewOpp(o => ({ ...o, close_date: e.target.value || null }))}/>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setNewOpp(null)} className="flex-1 rounded-xl border border-white/[0.08] py-2 text-xs text-white/50 hover:text-white">Annuler</button>
+                  <button onClick={() => setNewOpp(null)} className={`flex-1 rounded-xl border py-2 text-xs transition-colors ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
                   <button disabled={!newOpp.title}
                     onClick={async () => { await onAddOpportunity(newOpp); setNewOpp(null); }}
                     className="flex-1 rounded-xl py-2 text-xs font-bold disabled:opacity-40 transition-all hover:brightness-110"
@@ -1445,21 +1459,21 @@ function ContactDetail({
             )}
 
             {opportunities.length === 0 && !newOpp && (
-              <p className="text-center text-white/20 text-sm py-6">Aucune opportunité</p>
+              <p className={`text-center text-sm py-6 ${isDark ? "text-white/20" : "text-gray-300"}`}>Aucune opportunité</p>
             )}
             {opportunities.map(opp => (
-              <div key={opp.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+              <div key={opp.id} className={`rounded-2xl border p-4 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-[0.78rem] font-bold text-white">{opp.title}</p>
-                    {opp.product_service && <p className="text-[0.62rem] text-white/35 mt-0.5">{opp.product_service}</p>}
+                    <p className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{opp.title}</p>
+                    {opp.product_service && <p className={`text-[0.62rem] mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{opp.product_service}</p>}
                   </div>
                   <Badge label={STAGES[opp.stage].label} color={STAGES[opp.stage].color}/>
                 </div>
                 <div className="flex items-center gap-3 mt-3 flex-wrap">
                   {opp.amount > 0 && <span className="text-sm font-black" style={{ color: STAGES[opp.stage].color }}>{fmtEur(opp.amount)}</span>}
-                  {opp.probability > 0 && <span className="text-[0.62rem] text-white/30">{opp.probability}% proba.</span>}
-                  {opp.close_date && <span className="text-[0.62rem] text-white/30"><Calendar size={9} className="inline mr-0.5"/>{fmtDate(opp.close_date)}</span>}
+                  {opp.probability > 0 && <span className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{opp.probability}% proba.</span>}
+                  {opp.close_date && <span className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}><Calendar size={9} className="inline mr-0.5"/>{fmtDate(opp.close_date)}</span>}
                 </div>
               </div>
             ))}
@@ -1469,12 +1483,12 @@ function ContactDetail({
                 {tab === "taches" && (
           <div className="space-y-3">
             <button onClick={() => setNewTask({ type: "action", priority: "normal", contact_id: contact.id })}
-              className="flex items-center gap-2 text-[0.72rem] font-bold text-white/40 hover:text-white transition-colors">
+              className={`flex items-center gap-2 text-[0.72rem] font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
               <Plus size={13}/> Nouvelle tâche
             </button>
 
             {newTask !== null && (
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
+              <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
                 <Input label="Titre *" value={newTask.title ?? ""} onChange={e => setNewTask(t => ({ ...t, title: e.target.value }))}/>
                 <div className="grid grid-cols-2 gap-3">
                   <Select label="Type" value={newTask.type ?? "action"} onChange={e => setNewTask(t => ({ ...t, type: e.target.value as TaskType }))}>
@@ -1483,7 +1497,7 @@ function ContactDetail({
                   <Input label="Échéance" type="date" value={newTask.due_date ?? ""} onChange={e => setNewTask(t => ({ ...t, due_date: e.target.value || null }))}/>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setNewTask(null)} className="flex-1 rounded-xl border border-white/[0.08] py-2 text-xs text-white/50 hover:text-white">Annuler</button>
+                  <button onClick={() => setNewTask(null)} className={`flex-1 rounded-xl border py-2 text-xs transition-colors ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
                   <button disabled={!newTask.title}
                     onClick={async () => { await onAddTask(newTask); setNewTask(null); }}
                     className="flex-1 rounded-xl py-2 text-xs font-bold disabled:opacity-40 transition-all hover:brightness-110"
@@ -1495,19 +1509,19 @@ function ContactDetail({
             {tasks.map(task => {
               const isLate = !task.done && task.due_date && task.due_date < today;
               return (
-                <div key={task.id} className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 group">
-                  <button onClick={() => onToggleTask(task.id, !task.done)} style={{ color: task.done ? "#34d399" : "rgba(255,255,255,0.2)" }}>
+                <div key={task.id} className={`flex items-start gap-3 rounded-2xl border p-3 group ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+                  <button onClick={() => onToggleTask(task.id, !task.done)} style={{ color: task.done ? "#34d399" : isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)" }}>
                     {task.done ? <CheckSquare size={15}/> : <Square size={15}/>}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[0.72rem] font-semibold ${task.done ? "line-through text-white/30" : "text-white"}`}>{task.title}</p>
+                    <p className={`text-[0.72rem] font-semibold ${task.done ? (isDark ? "line-through text-white/30" : "line-through text-gray-400") : (isDark ? "text-white" : "text-gray-900")}`}>{task.title}</p>
                     {task.due_date && (
-                      <p className={`text-[0.62rem] mt-0.5 flex items-center gap-1 ${isLate ? "text-red-400" : "text-white/30"}`}>
+                      <p className={`text-[0.62rem] mt-0.5 flex items-center gap-1 ${isLate ? "text-red-400" : (isDark ? "text-white/30" : "text-gray-400")}`}>
                         <Calendar size={9}/>{fmtDate(task.due_date)}
                       </p>
                     )}
                   </div>
-                  <button onClick={() => onDeleteTask(task.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all">
+                  <button onClick={() => onDeleteTask(task.id)} className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ${isDark ? "text-white/20" : "text-gray-300"}`}>
                     <Trash2 size={11}/>
                   </button>
                 </div>
@@ -1519,12 +1533,12 @@ function ContactDetail({
                 {tab === "tickets" && (
           <div className="space-y-3">
             <button onClick={() => setNewTicket({ status: "ouvert", priority: "normale", contact_id: contact.id })}
-              className="flex items-center gap-2 text-[0.72rem] font-bold text-white/40 hover:text-white transition-colors">
+              className={`flex items-center gap-2 text-[0.72rem] font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
               <Plus size={13}/> Nouveau ticket
             </button>
 
             {newTicket !== null && (
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
+              <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
                 <Input label="Objet *" value={newTicket.title ?? ""} onChange={e => setNewTicket(t => ({ ...t, title: e.target.value }))}/>
                 <div className="grid grid-cols-2 gap-3">
                   <Select label="Priorité" value={newTicket.priority ?? "normale"} onChange={e => setNewTicket(t => ({ ...t, priority: e.target.value as TicketPriority }))}>
@@ -1536,7 +1550,7 @@ function ContactDetail({
                 </div>
                 <Textarea label="Description" value={newTicket.description ?? ""} onChange={e => setNewTicket(t => ({ ...t, description: e.target.value }))}/>
                 <div className="flex gap-2">
-                  <button onClick={() => setNewTicket(null)} className="flex-1 rounded-xl border border-white/[0.08] py-2 text-xs text-white/50 hover:text-white">Annuler</button>
+                  <button onClick={() => setNewTicket(null)} className={`flex-1 rounded-xl border py-2 text-xs transition-colors ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
                   <button disabled={!newTicket.title}
                     onClick={async () => { await onAddTicket(newTicket); setNewTicket(null); }}
                     className="flex-1 rounded-xl py-2 text-xs font-bold disabled:opacity-40 transition-all hover:brightness-110"
@@ -1546,24 +1560,24 @@ function ContactDetail({
             )}
 
             {tickets.map(ticket => (
-              <div key={ticket.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 group">
+              <div key={ticket.id} className={`rounded-2xl border p-4 group ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[0.72rem] font-semibold text-white">{ticket.title}</p>
+                  <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{ticket.title}</p>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Badge label={TICKET_STATUSES[ticket.status].label} color={TICKET_STATUSES[ticket.status].color}/>
-                    <button onClick={() => onDeleteTicket(ticket.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all">
+                    <button onClick={() => onDeleteTicket(ticket.id)} className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ${isDark ? "text-white/20" : "text-gray-300"}`}>
                       <Trash2 size={10}/>
                     </button>
                   </div>
                 </div>
-                {ticket.description && <p className="text-[0.65rem] text-white/35 mt-1.5">{ticket.description}</p>}
+                {ticket.description && <p className={`text-[0.65rem] mt-1.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{ticket.description}</p>}
                 <div className="flex items-center gap-2 mt-2">
                   <Select value={ticket.status} onChange={e => onUpdateTicket(ticket.id, { status: e.target.value as TicketStatus })}
                     className="text-[0.6rem] !py-1 !px-2 rounded-lg">
                     {(["ouvert","en_cours","résolu","fermé"] as TicketStatus[]).map(s =>
                       <option key={s} value={s}>{TICKET_STATUSES[s].label}</option>)}
                   </Select>
-                  <p className="text-[0.6rem] text-white/25 ml-auto">{fmtDate(ticket.created_at)}</p>
+                  <p className={`text-[0.6rem] ml-auto ${isDark ? "text-white/25" : "text-gray-400"}`}>{fmtDate(ticket.created_at)}</p>
                 </div>
               </div>
             ))}
@@ -1582,6 +1596,7 @@ function EmailComposeModal({ contact, onClose, onSent }: {
   const [subject, setSubject] = useState("");
   const [body,    setBody]    = useState("");
   const [sending, setSending] = useState(false);
+  const isDark = useDark();
 
   const fill = (tmpl: typeof EMAIL_TEMPLATES[number]) => {
     const r = (s: string) => s
@@ -1605,8 +1620,8 @@ function EmailComposeModal({ contact, onClose, onSent }: {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full max-w-lg rounded-3xl border border-white/[0.08] p-6 space-y-4 max-h-[92vh] overflow-y-auto"
-        style={{ background: "rgba(7,8,14,0.98)" }}
+        className={`w-full max-w-lg rounded-3xl border p-6 space-y-4 max-h-[92vh] overflow-y-auto ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}
+        style={{ background: isDark ? "rgba(7,8,14,0.98)" : "rgba(255,255,255,0.98)" }}
         onClick={e => e.stopPropagation()}>
 
         <div className="flex items-center justify-between">
@@ -1615,19 +1630,19 @@ function EmailComposeModal({ contact, onClose, onSent }: {
               <Mail size={14} style={{ color: "#60a5fa" }}/>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">Composer un email</h3>
-              <p className="text-[0.62rem] text-white/40">{contact.email || "Aucun email enregistré"}</p>
+              <h3 className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Composer un email</h3>
+              <p className={`text-[0.62rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>{contact.email || "Aucun email enregistré"}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors"><X size={16}/></button>
+          <button onClick={onClose} className={`transition-colors ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}><X size={16}/></button>
         </div>
 
         <div>
-          <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25 mb-2">Templates</p>
+          <p className={`text-[0.6rem] font-bold uppercase tracking-widest mb-2 ${isDark ? "text-white/25" : "text-gray-400"}`}>Templates</p>
           <div className="flex flex-wrap gap-1.5">
             {EMAIL_TEMPLATES.map(tmpl => (
               <button key={tmpl.id} onClick={() => fill(tmpl)}
-                className="px-2.5 py-1 rounded-lg text-[0.65rem] font-semibold border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-white/60 hover:text-white transition-all">
+                className={`px-2.5 py-1 rounded-lg text-[0.65rem] font-semibold border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-white/60 hover:text-white" : "border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300 text-gray-500 hover:text-gray-700"}`}>
                 {tmpl.label}
               </button>
             ))}
@@ -1637,13 +1652,13 @@ function EmailComposeModal({ contact, onClose, onSent }: {
         <Input label="Objet" placeholder="Objet de l'email…" value={subject} onChange={e => setSubject(e.target.value)}/>
 
         <div className="space-y-1">
-          <label className="block text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Message</label>
+          <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Message</label>
           <textarea value={body} onChange={e => setBody(e.target.value)} rows={8} placeholder="Votre message…"
-            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 resize-none transition-colors"/>
+            className={`w-full rounded-xl border px-3 py-2.5 text-[0.8rem] outline-none resize-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
         </div>
 
         <div className="flex gap-2 pt-1">
-          <button onClick={onClose} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white transition-colors">Annuler</button>
+          <button onClick={onClose} className={`flex-1 rounded-xl border py-2.5 text-sm transition-colors ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
           <button onClick={send} disabled={sending || !subject.trim() || !body.trim() || !contact.email}
             className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)", color: "#fff" }}>
@@ -1682,6 +1697,7 @@ export default function CRMPage() {
   const [saveError,     setSaveError]     = useState("");
   const [userId,        setUserId]        = useState<string | null>(null);
   const { toasts, add: toast, remove: removeToast } = useToastStack();
+  const { isDark } = useTheme();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -1993,23 +2009,22 @@ export default function CRMPage() {
   }
 
     return (
-    <div className="relative flex h-full flex-col gap-0 bg-[#07080e]">
+    <DarkCtx.Provider value={isDark}>
+    <div className={`relative flex h-full flex-col gap-0 ${isDark ? "bg-[#07080e]" : "bg-[#f0f2f5]"}`}>
       <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* ── HEADER ── */}
-      <div className="relative overflow-hidden shrink-0" style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#07080e)" }}>
+      <div className="relative overflow-hidden shrink-0" style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#07080e)" : "linear-gradient(160deg,#f0f2f5,#f5f7fa,#f0f2f5)" }}>
         <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
         <div className="pointer-events-none absolute -bottom-8 right-10 h-32 w-32 rounded-full opacity-[0.04]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
         <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.3),transparent)" }}/>
         <div className="relative px-4 sm:px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl shrink-0" style={{ background: "rgba(201,165,90,0.12)", border: "1px solid rgba(201,165,90,0.25)" }}>
-                <Users size={20} style={{ color: "#c9a55a" }}/>
-              </div>
+              <AppModuleIcon href="/client/crm" size={40} hideBackground />
               <div>
-                <h1 className="text-xl font-black text-white tracking-tight">CRM</h1>
-                <p className="text-[0.65rem] text-white/40 mt-0.5">
+                <h1 className={`text-xl font-black tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>CRM</h1>
+                <p className={`text-[0.65rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
                   {contacts.length} contacts · {opportunities.filter(o => o.stage !== "perdu").length} opportunités actives
                 </p>
               </div>
@@ -2017,14 +2032,14 @@ export default function CRMPage() {
             <div className="flex gap-2 shrink-0">
               <label title="Importer CSV"
                 className="h-9 w-9 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:brightness-110"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <Upload size={14} className="text-white/50"/>
+                style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
+                <Upload size={14} className={isDark ? "text-white/50" : "text-gray-500"}/>
                 <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV}/>
               </label>
               <button onClick={exportCSV} title="Exporter CSV"
                 className="h-9 w-9 rounded-xl flex items-center justify-center transition-all hover:brightness-110"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <Download size={14} className="text-white/50"/>
+                style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
+                <Download size={14} className={isDark ? "text-white/50" : "text-gray-500"}/>
               </button>
               <button onClick={() => { setForm({ status: "prospect", type: "prospect" }); setEditContact(null); setAddModal(true); }}
                 className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
@@ -2044,13 +2059,13 @@ export default function CRMPage() {
               <motion.button key={k.label} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ type:"spring", stiffness:300, damping:30 }}
                 onClick={k.onClick}
                 className="rounded-xl p-3 flex items-center gap-2.5 text-left transition-all hover:brightness-110 active:scale-[0.98]"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.8)", border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.08)" }}>
                 <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${k.color}18` }}>
                   <k.icon size={13} style={{ color: k.color }}/>
                 </div>
                 <div>
-                  <p className="text-[0.6rem] text-white/35">{k.label}</p>
-                  <p className="text-sm font-black text-white">{k.value}</p>
+                  <p className={`text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-500"}`}>{k.label}</p>
+                  <p className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>{k.value}</p>
                 </div>
               </motion.button>
             ))}
@@ -2059,15 +2074,15 @@ export default function CRMPage() {
       </div>
 
       {/* ── TABS ── */}
-      <div className="relative shrink-0 flex overflow-x-auto" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.25)" }}>
+      <div className="relative shrink-0 flex overflow-x-auto" style={{ borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.08)", background: isDark ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.8)" }}>
         {MAIN_TABS.map(t => (
           <button key={t.id} onClick={() => setMainTab(t.id)}
             className="relative flex items-center gap-1.5 px-4 py-3.5 text-[0.67rem] font-bold uppercase tracking-wider whitespace-nowrap transition-colors"
-            style={{ color: mainTab === t.id ? "#ffffff" : "rgba(255,255,255,0.3)" }}>
+            style={{ color: mainTab === t.id ? (isDark ? "#ffffff" : "#111827") : (isDark ? "rgba(255,255,255,0.3)" : "rgba(17,24,39,0.4)") }}>
             <t.icon size={11}/>{t.label}
             {t.badge > 0 && (
               <span className="rounded-full px-1.5 text-[0.58rem]"
-                style={{ background: mainTab===t.id ? "rgba(201,165,90,0.2)" : "rgba(255,255,255,0.06)", color: mainTab===t.id ? "#c9a55a" : "rgba(255,255,255,0.3)" }}>
+                style={{ background: mainTab===t.id ? "rgba(201,165,90,0.2)" : (isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"), color: mainTab===t.id ? "#c9a55a" : (isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)") }}>
                 {t.badge}
               </span>
             )}
@@ -2083,7 +2098,7 @@ export default function CRMPage() {
 
           {loading ? (
             <div className="flex h-full items-center justify-center py-20">
-              <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]"/>
+              <div className={`h-7 w-7 animate-spin rounded-full border-2 border-t-[#c9a55a] ${isDark ? "border-white/10" : "border-black/10"}`}/>
             </div>
           ) : (
 
@@ -2124,24 +2139,27 @@ export default function CRMPage() {
 
                                     <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
-                      <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25"/>
+                      <Search size={13} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
                       <input value={query} onChange={e => setQuery(e.target.value)}
                         placeholder="Rechercher un contact, une société…"
-                        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-9 pr-4 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/15"/>
+                        className={`w-full rounded-xl border pl-9 pr-4 py-2.5 text-[0.8rem] outline-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/15" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
                     </div>
                     <div className="flex gap-2 flex-wrap">
                       <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value as ContactStatus | "tous"); setPage(1); }}
-                        className="rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+                        className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
+                        style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="tous">Tous statuts</option>
                         {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
                       <select value={filterType} onChange={e => { setFilterType(e.target.value as ContactType | "tous"); setPage(1); }}
-                        className="rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+                        className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
+                        style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="tous">Tous types</option>
                         {Object.entries(CONTACT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
                       <select value={sortBy} onChange={e => { setSortBy(e.target.value as "date" | "name" | "budget" | "relance" | "score"); setPage(1); }}
-                        className="rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 text-[0.75rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
+                        className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
+                        style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="date">Plus récent</option>
                         <option value="name">Nom A→Z</option>
                         <option value="budget">Budget ↓</option>
@@ -2164,12 +2182,12 @@ export default function CRMPage() {
                       ) : null;
                     })}
                     {filtered.length !== contacts.length && (
-                      <span className="text-[0.6rem] text-white/20">{filtered.length} résultat{filtered.length > 1 ? "s" : ""}</span>
+                      <span className={`text-[0.6rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>{filtered.length} résultat{filtered.length > 1 ? "s" : ""}</span>
                     )}
                   </div>
 
                                     {filtered.length === 0 ? (
-                    <div className="text-center py-16 text-white/20">
+                    <div className={`text-center py-16 ${isDark ? "text-white/20" : "text-gray-400"}`}>
                       <Users size={36} className="mx-auto mb-4 opacity-20"/>
                       <p className="text-sm">{contacts.length === 0 ? "Aucun contact — ajoutez votre premier !" : "Aucun résultat"}</p>
                     </div>
@@ -2188,11 +2206,13 @@ export default function CRMPage() {
                               exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                               onClick={() => setSelected(isSelected ? null : c)}
                               className={`flex items-center gap-3 rounded-2xl border p-3.5 cursor-pointer transition-all group ${
-                                isSelected ? "border-white/15 bg-white/[0.06]" : "border-white/[0.05] bg-white/[0.03] hover:border-white/10 hover:bg-white/[0.03]"}`}>
+                                isSelected
+                                  ? isDark ? "border-white/15 bg-white/[0.06]" : "border-gray-300 bg-gray-100"
+                                  : isDark ? "border-white/[0.05] bg-white/[0.03] hover:border-white/10 hover:bg-white/[0.03]" : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"}`}>
                               <Avatar name={c.name} color={typeColor} size={38}/>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-[0.82rem] font-bold text-white truncate">{c.name}</span>
+                                  <span className={`text-[0.82rem] font-bold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{c.name}</span>
                                   <Badge label={STATUSES[c.status].label} color={STATUSES[c.status].color} bg={STATUSES[c.status].bg}/>
                                   <span className="text-[0.58rem] font-black px-1.5 py-0.5 rounded-full hidden sm:inline-flex items-center gap-0.5"
                                     style={{ color: scoreColor, background: `${scoreColor}18`, border: `1px solid ${scoreColor}30` }}>
@@ -2202,12 +2222,12 @@ export default function CRMPage() {
                                   {c.priority === "urgent" && <Flag size={10} className="text-red-400"/>}
                                 </div>
                                 <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                                  {c.company && <span className="text-[0.65rem] text-white/40 truncate">{c.company}</span>}
-                                  {c.sector  && <span className="text-[0.6rem] text-white/25 truncate">{c.sector}</span>}
+                                  {c.company && <span className={`text-[0.65rem] truncate ${isDark ? "text-white/40" : "text-gray-500"}`}>{c.company}</span>}
+                                  {c.sector  && <span className={`text-[0.6rem] truncate ${isDark ? "text-white/25" : "text-gray-400"}`}>{c.sector}</span>}
                                 </div>
                                 <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                  {c.email && <span className="text-[0.62rem] text-white/25 truncate flex items-center gap-0.5"><Mail size={8}/>{c.email}</span>}
-                                  {c.phone && <span className="text-[0.62rem] text-white/25 flex items-center gap-0.5"><Phone size={8}/>{c.phone}</span>}
+                                  {c.email && <span className={`text-[0.62rem] truncate flex items-center gap-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}><Mail size={8}/>{c.email}</span>}
+                                  {c.phone && <span className={`text-[0.62rem] flex items-center gap-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}><Phone size={8}/>{c.phone}</span>}
                                   {c.next_relance && (
                                     <span className="text-[0.58rem] flex items-center gap-0.5"
                                       style={{ color: c.next_relance < new Date().toISOString().split("T")[0] ? "#f87171" : "#f59e0b" }}>
@@ -2220,25 +2240,25 @@ export default function CRMPage() {
                                 {cOpps > 0 && (
                                   <div className="text-center hidden sm:block">
                                     <div className="text-xs font-black" style={{ color: "#a78bfa" }}>{cOpps}</div>
-                                    <div className="text-[0.52rem] text-white/20">opp.</div>
+                                    <div className={`text-[0.52rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>opp.</div>
                                   </div>
                                 )}
                                 {c.budget && c.budget > 0 && (
                                   <div className="text-right hidden lg:block">
-                                    <div className="text-[0.7rem] font-black text-white/60">{fmtEur(c.budget)}</div>
-                                    <div className="text-[0.52rem] text-white/20">budget</div>
+                                    <div className={`text-[0.7rem] font-black ${isDark ? "text-white/60" : "text-gray-600"}`}>{fmtEur(c.budget)}</div>
+                                    <div className={`text-[0.52rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>budget</div>
                                   </div>
                                 )}
                                 <div className="flex gap-1">
                                   {c.email && (
                                     <button onClick={e => { e.stopPropagation(); setEmailContact(c); }} title={`Email : ${c.email}`}
-                                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/20 hover:text-blue-400 hover:bg-blue-400/10 transition-all">
+                                      className={`h-7 w-7 rounded-lg flex items-center justify-center hover:text-blue-400 hover:bg-blue-400/10 transition-all ${isDark ? "text-white/20" : "text-gray-400"}`}>
                                       <Mail size={11}/>
                                     </button>
                                   )}
                                   {c.phone && (
                                     <a href={`tel:${c.phone}`} onClick={e => e.stopPropagation()} title={c.phone}
-                                      className="h-7 w-7 rounded-lg flex items-center justify-center text-white/20 hover:text-green-400 hover:bg-green-400/10 transition-all">
+                                      className={`h-7 w-7 rounded-lg flex items-center justify-center hover:text-green-400 hover:bg-green-400/10 transition-all ${isDark ? "text-white/20" : "text-gray-400"}`}>
                                       <Phone size={11}/>
                                     </a>
                                   )}
@@ -2248,15 +2268,15 @@ export default function CRMPage() {
                                     void updateContact(c.id, { next_relance: d.toISOString().split("T")[0] });
                                     toast("Relance planifiée dans 7 jours", "success");
                                   }} title="Planifier relance +7j"
-                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/20 hover:text-orange-400 hover:bg-orange-400/10 transition-all">
+                                    className={`h-7 w-7 rounded-lg flex items-center justify-center hover:text-orange-400 hover:bg-orange-400/10 transition-all ${isDark ? "text-white/20" : "text-gray-400"}`}>
                                     <Bell size={11}/>
                                   </button>
                                   <button onClick={e => { e.stopPropagation(); setForm({ ...c }); setEditContact(c); setAddModal(true); }}
-                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 transition-all">
+                                    className={`h-7 w-7 rounded-lg flex items-center justify-center hover:text-white hover:bg-white/10 transition-all ${isDark ? "text-white/20" : "text-gray-400"}`}>
                                     <Pencil size={11}/>
                                   </button>
                                 </div>
-                                <ChevronRight size={13} className={`text-white/20 transition-transform ${isSelected ? "rotate-90" : ""}`}/>
+                                <ChevronRight size={13} className={`transition-transform ${isDark ? "text-white/20" : "text-gray-400"} ${isSelected ? "rotate-90" : ""}`}/>
                               </div>
                             </motion.div>
                           );
@@ -2349,13 +2369,13 @@ export default function CRMPage() {
             onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); setSaveError(""); }}>
             <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-lg rounded-3xl border border-white/[0.08] p-6 space-y-4 max-h-[90vh] overflow-y-auto"
-              style={{ background: "rgba(7,8,14,0.98)" }}
+              className={`w-full max-w-lg rounded-3xl border p-6 space-y-4 max-h-[90vh] overflow-y-auto ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}
+              style={{ background: isDark ? "rgba(7,8,14,0.98)" : "rgba(255,255,255,0.98)" }}
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="font-black text-white">{editContact ? "Modifier le contact" : "Nouveau contact"}</h3>
+                <h3 className={`font-black ${isDark ? "text-white" : "text-gray-900"}`}>{editContact ? "Modifier le contact" : "Nouveau contact"}</h3>
                 <button onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); setSaveError(""); }}
-                  className="text-white/30 hover:text-white"><X size={16}/></button>
+                  className={`${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}><X size={16}/></button>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -2396,17 +2416,17 @@ export default function CRMPage() {
 
               {/* Tags */}
               <div className="space-y-1">
-                <label className="block text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Tags</label>
-                <div className="flex flex-wrap gap-1.5 min-h-[36px] rounded-xl border border-white/[0.08] bg-white/[0.04] p-2">
+                <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Tags</label>
+                <div className={`flex flex-wrap gap-1.5 min-h-[36px] rounded-xl border p-2 ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-gray-200 bg-gray-50"}`}>
                   {(form.tags ?? []).map(tag => (
-                    <span key={tag} className="flex items-center gap-1 rounded-full bg-white/[0.08] px-2.5 py-0.5 text-[0.65rem] text-white/70">
+                    <span key={tag} className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.65rem] ${isDark ? "bg-white/[0.08] text-white/70" : "bg-gray-200 text-gray-700"}`}>
                       {tag}
                       <button type="button" onClick={() => setForm(f => ({ ...f, tags: (f.tags ?? []).filter(t => t !== tag) }))}
-                        className="text-white/30 hover:text-white/70 ml-0.5"><X size={9}/></button>
+                        className={`ml-0.5 ${isDark ? "text-white/30 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}><X size={9}/></button>
                     </span>
                   ))}
                   <input placeholder="Ajouter un tag…"
-                    className="bg-transparent text-[0.72rem] text-white placeholder-white/20 outline-none flex-1 min-w-[80px]"
+                    className={`bg-transparent text-[0.72rem] outline-none flex-1 min-w-[80px] ${isDark ? "text-white placeholder-white/20" : "text-gray-900 placeholder-gray-400"}`}
                     onKeyDown={e => {
                       if ((e.key === "Enter" || e.key === ",") && e.currentTarget.value.trim()) {
                         e.preventDefault();
@@ -2417,7 +2437,7 @@ export default function CRMPage() {
                     }}
                   />
                 </div>
-                <p className="text-[0.58rem] text-white/20">Entrée ou virgule pour ajouter</p>
+                <p className={`text-[0.58rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Entrée ou virgule pour ajouter</p>
               </div>
 
               {saveError && (
@@ -2428,7 +2448,7 @@ export default function CRMPage() {
 
               <div className="flex gap-2 pt-1">
                 <button onClick={() => { setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); setSaveError(""); }}
-                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm text-white/50 hover:text-white transition-colors">Annuler</button>
+                  className={`flex-1 rounded-xl border py-2.5 text-sm transition-colors ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-800"}`}>Annuler</button>
                 <button onClick={saveContact} disabled={!form.name}
                   className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
                   style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -2460,5 +2480,6 @@ export default function CRMPage() {
         )}
       </AnimatePresence>
     </div>
+    </DarkCtx.Provider>
   );
 }

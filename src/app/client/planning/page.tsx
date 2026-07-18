@@ -1,8 +1,9 @@
 "use client";
 
 import React, {
-  useState, useEffect, useCallback, useMemo, useRef,
+  useState, useEffect, useCallback, useMemo, useRef, createContext, useContext,
 } from "react";
+import { useTheme } from "@/lib/theme-context";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
@@ -198,6 +199,9 @@ function getConflicts(evs: PlanEvent[]): Set<string> {
   return ids;
 }
 
+const DarkCtx = createContext(true);
+const useDark = () => useContext(DarkCtx);
+
 function EventChip({ ev, onClick, small = false }: {
   ev: PlanEvent; onClick: () => void; small?: boolean
 }) {
@@ -216,6 +220,7 @@ function EventChip({ ev, onClick, small = false }: {
 function TaskRow({ task, onToggle, onDelete }: {
   task: PlanTask; onToggle: () => void; onDelete: () => void;
 }) {
+  const isDark = useDark();
   const done = task.status === "done";
   const late = task.status === "late";
   return (
@@ -228,11 +233,11 @@ function TaskRow({ task, onToggle, onDelete }: {
           : <Circle size={14} style={{ color: PRIO_COL[task.priority] }} />
         }
       </button>
-      <span className={`flex-1 text-xs truncate ${done ? "line-through text-white/25" : "text-white/70"}`}>
+      <span className={`flex-1 text-xs truncate ${done ? `line-through ${isDark ? "text-white/25" : "text-gray-400"}` : isDark ? "text-white/70" : "text-gray-700"}`}>
         {task.title}
       </span>
       <button onClick={onDelete}
-        className="opacity-0 group-hover:opacity-100 p-0.5 text-white/20 hover:text-red-400 transition-all">
+        className={`opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-400 transition-all ${isDark ? "text-white/20" : "text-gray-400"}`}>
         <X size={11} />
       </button>
     </div>
@@ -241,7 +246,8 @@ function TaskRow({ task, onToggle, onDelete }: {
 
 export default function PlanningPage() {
   const router = useRouter();
-    const [view,          setView]          = useState<CalView>("week");
+  const { isDark } = useTheme();
+  const [view,          setView]          = useState<CalView>("week");
   const [current,       setCurrent]       = useState(new Date());
   const [events,        setEvents]        = useState<PlanEvent[]>([]);
   const [tasks,         setTasks]         = useState<PlanTask[]>([]);
@@ -567,64 +573,71 @@ export default function PlanningPage() {
     const GOLD = "#c9a55a";
     const bookingUrl = bkToken ? `${typeof window !== "undefined" ? window.location.origin : ""}/booking/${bkToken}` : null;
     const DAY_NAMES = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+    const inputCls = isDark
+      ? "w-full rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/20"
+      : "w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-300";
+    const selectCls = isDark
+      ? "w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white focus:outline-none"
+      : "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:outline-none";
+    const labelCls = `block text-[10px] font-bold uppercase tracking-widest mb-1 ${isDark ? "text-white/30" : "text-gray-400"}`;
 
     if (bkLoading) return (
       <div className="flex items-center justify-center flex-1 py-20">
-        <Loader2 size={24} className="animate-spin text-white/20"/>
+        <Loader2 size={24} className={`animate-spin ${isDark ? "text-white/20" : "text-gray-300"}`}/>
       </div>
     );
 
     return (
       <div className="flex-1 overflow-y-auto p-5 max-w-lg mx-auto w-full space-y-5">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-white/30 mb-0.5">Page de réservation</p>
-          <p className="text-sm text-white/50">Partagez un lien permettant à vos clients de prendre rendez-vous directement dans votre agenda.</p>
+          <p className={`text-xs font-bold uppercase tracking-widest mb-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>Page de réservation</p>
+          <p className={`text-sm ${isDark ? "text-white/50" : "text-gray-500"}`}>Partagez un lien permettant à vos clients de prendre rendez-vous directement dans votre agenda.</p>
         </div>
 
         {/* Config form */}
         <div className="space-y-3">
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Titre</label>
+            <label className={labelCls}>Titre</label>
             <input value={bkTitle} onChange={e => setBkTitle(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/20"
-              placeholder="Prendre un rendez-vous"/>
+              className={inputCls} placeholder="Prendre un rendez-vous"/>
           </div>
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Description</label>
+            <label className={labelCls}>Description</label>
             <textarea value={bkDesc} onChange={e => setBkDesc(e.target.value)} rows={2}
-              className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 resize-none"
+              className={inputCls + " resize-none"}
               placeholder="Décrivez le type de rendez-vous…"/>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Durée (min)</label>
-              <select value={bkDur} onChange={e => setBkDur(Number(e.target.value))}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white focus:outline-none">
+              <label className={labelCls}>Durée (min)</label>
+              <select value={bkDur} onChange={e => setBkDur(Number(e.target.value))} className={selectCls}>
                 {[15,20,30,45,60,90,120].map(v => <option key={v} value={v}>{v} min</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Début</label>
-              <select value={bkStart} onChange={e => setBkStart(Number(e.target.value))}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white focus:outline-none">
+              <label className={labelCls}>Début</label>
+              <select value={bkStart} onChange={e => setBkStart(Number(e.target.value))} className={selectCls}>
                 {Array.from({length:13},(_,i)=>i+7).map(h => <option key={h} value={h}>{String(h).padStart(2,"0")}:00</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Fin</label>
-              <select value={bkEnd} onChange={e => setBkEnd(Number(e.target.value))}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white focus:outline-none">
+              <label className={labelCls}>Fin</label>
+              <select value={bkEnd} onChange={e => setBkEnd(Number(e.target.value))} className={selectCls}>
                 {Array.from({length:13},(_,i)=>i+12).map(h => <option key={h} value={h}>{String(h).padStart(2,"0")}:00</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Jours disponibles</label>
+            <label className={labelCls + " mb-2"}>Jours disponibles</label>
             <div className="flex gap-2 flex-wrap">
               {DAY_NAMES.map((d, i) => (
                 <button key={i} onClick={() => setBkDays(prev => prev.includes(i) ? prev.filter(x=>x!==i) : [...prev, i].sort())}
                   className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border"
-                  style={bkDays.includes(i) ? { background:`${GOLD}20`, color:GOLD, borderColor:`${GOLD}40` } : { background:"rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.35)", borderColor:"rgba(255,255,255,0.08)" }}>
+                  style={bkDays.includes(i)
+                    ? { background:`${GOLD}20`, color:GOLD, borderColor:`${GOLD}40` }
+                    : isDark
+                      ? { background:"rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.35)", borderColor:"rgba(255,255,255,0.08)" }
+                      : { background:"rgba(0,0,0,0.03)", color:"rgba(0,0,0,0.45)", borderColor:"rgba(0,0,0,0.10)" }}>
                   {d}
                 </button>
               ))}
@@ -641,11 +654,11 @@ export default function PlanningPage() {
 
         {/* Share link */}
         {bookingUrl && (
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 space-y-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-white/30">Lien de réservation</p>
+          <div className={`rounded-2xl border p-4 space-y-2 ${isDark ? "border-white/8 bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
+            <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Lien de réservation</p>
             <div className="flex items-center gap-2">
               <input readOnly value={bookingUrl}
-                className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/60 focus:outline-none truncate"/>
+                className={`flex-1 rounded-xl border px-3 py-2 text-xs focus:outline-none truncate ${isDark ? "border-white/10 bg-white/[0.04] text-white/60" : "border-gray-200 bg-white text-gray-600"}`}/>
               <button onClick={() => { void navigator.clipboard.writeText(bookingUrl); setBkCopied(true); setTimeout(()=>setBkCopied(false), 2000); }}
                 className="shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all"
                 style={{ background:`${GOLD}18`, color:GOLD, border:`1px solid ${GOLD}30` }}>
@@ -654,7 +667,7 @@ export default function PlanningPage() {
               </button>
             </div>
             <a href={bookingUrl} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition">
+              className={`flex items-center gap-1.5 text-xs transition ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
               <ExternalLink size={11}/> Aperçu de la page publique
             </a>
           </div>
@@ -667,16 +680,16 @@ export default function PlanningPage() {
     const grid = getMonthGrid(current.getFullYear(), current.getMonth());
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-                <div className="grid grid-cols-7 border-b border-white/6">
+        <div className={`grid grid-cols-7 border-b ${isDark ? "border-white/6" : "border-gray-200"}`}>
           {DAYS_FR.map(d => (
-            <div key={d} className="py-2 text-center text-[11px] font-semibold text-white/30 uppercase tracking-wide">
+            <div key={d} className={`py-2 text-center text-[11px] font-semibold uppercase tracking-wide ${isDark ? "text-white/30" : "text-gray-400"}`}>
               {d}
             </div>
           ))}
         </div>
-                <div className="flex-1 grid" style={{ gridTemplateRows: `repeat(${grid.length}, 1fr)` }}>
+        <div className="flex-1 grid" style={{ gridTemplateRows: `repeat(${grid.length}, 1fr)` }}>
           {grid.map((week, wi) => (
-            <div key={wi} className="grid grid-cols-7 border-b border-white/4">
+            <div key={wi} className={`grid grid-cols-7 border-b ${isDark ? "border-white/4" : "border-gray-100"}`}>
               {week.map((day, di) => {
                 const isCurrentMonth = day.getMonth() === current.getMonth();
                 const dayEvs = eventsOnDate(day).slice(0, 3);
@@ -684,11 +697,9 @@ export default function PlanningPage() {
                 return (
                   <div key={di}
                     onClick={() => openCreate(day)}
-                    className={`border-r border-white/4 p-1.5 min-h-[90px] cursor-pointer transition-colors hover:bg-white/4 ${!isCurrentMonth ? "opacity-35" : ""}`}>
+                    className={`border-r p-1.5 min-h-[90px] cursor-pointer transition-colors ${isDark ? "border-white/4 hover:bg-white/4" : "border-gray-100 hover:bg-gray-50"} ${!isCurrentMonth ? "opacity-35" : ""}`}>
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-0.5 text-[11px] font-bold mx-auto transition-colors
-                      ${isToday(day)
-                        ? "text-white"
-                        : "text-white/55 hover:text-white"}`}
+                      ${isToday(day) ? "text-white" : isDark ? "text-white/55 hover:text-white" : "text-gray-600 hover:text-gray-900"}`}
                       style={isToday(day) ? { background: INDIGO } : {}}>
                       {day.getDate()}
                     </div>
@@ -702,7 +713,7 @@ export default function PlanningPage() {
                         <EventChip key={ev.id} ev={ev} small onClick={() => openEdit(ev)} />
                       ))}
                       {overflow > 0 && (
-                        <p className="text-[9px] text-white/30 pl-1">+{overflow} autres</p>
+                        <p className={`text-[9px] pl-1 ${isDark ? "text-white/30" : "text-gray-400"}`}>+{overflow} autres</p>
                       )}
                     </div>
                   </div>
@@ -721,12 +732,12 @@ export default function PlanningPage() {
 
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-                <div className="grid border-b border-white/6" style={{ gridTemplateColumns:"50px repeat(7,1fr)" }}>
+        <div className={`grid border-b ${isDark ? "border-white/6" : "border-gray-200"}`} style={{ gridTemplateColumns:"50px repeat(7,1fr)" }}>
           <div />
           {days.map(d => (
-            <div key={d.toString()} className="py-1.5 text-center border-l border-white/4">
-              <p className="text-[10px] text-white/30 uppercase tracking-wide">{DAYS_FR[(d.getDay()+6)%7]}</p>
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold mx-auto mt-0.5 ${isToday(d) ? "text-white" : "text-white/60"}`}
+            <div key={d.toString()} className={`py-1.5 text-center border-l ${isDark ? "border-white/4" : "border-gray-100"}`}>
+              <p className={`text-[10px] uppercase tracking-wide ${isDark ? "text-white/30" : "text-gray-400"}`}>{DAYS_FR[(d.getDay()+6)%7]}</p>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold mx-auto mt-0.5 ${isToday(d) ? "text-white" : isDark ? "text-white/60" : "text-gray-700"}`}
                 style={isToday(d) ? { background: INDIGO } : {}}>
                 {d.getDate()}
               </div>
@@ -739,30 +750,32 @@ export default function PlanningPage() {
           ))}
         </div>
 
-                <div className="flex flex-1 overflow-y-auto">
-                    <div className="w-[50px] shrink-0 relative" style={{ height: HOURS.length * CELL_H }}>
+        <div className="flex flex-1 overflow-y-auto">
+          <div className="w-[50px] shrink-0 relative" style={{ height: HOURS.length * CELL_H }}>
             {HOURS.map(h => (
-              <div key={h} className="absolute w-full flex items-start justify-end pr-2 text-[9px] text-white/20"
+              <div key={h} className={`absolute w-full flex items-start justify-end pr-2 text-[9px] ${isDark ? "text-white/20" : "text-gray-400"}`}
                 style={{ top: (h - START_H) * CELL_H - 7, height: CELL_H }}>
                 {h}:00
               </div>
             ))}
           </div>
 
-                    <div className="flex-1 grid" style={{ gridTemplateColumns:"repeat(7,1fr)", height: HOURS.length * CELL_H }}>
+          <div className="flex-1 grid" style={{ gridTemplateColumns:"repeat(7,1fr)", height: HOURS.length * CELL_H }}>
             {days.map(d => {
               const dayEvs = eventsOnDate(d).filter(e => !e.is_all_day);
               return (
-                <div key={d.toString()} className="relative border-l border-white/4">
-                                    {HOURS.map(h => {
+                <div key={d.toString()} className={`relative border-l ${isDark ? "border-white/4" : "border-gray-100"}`}>
+                  {HOURS.map(h => {
                     const slotKey = `${fmtDate(d)}-${h}`;
                     return (
                       <div key={h}
                         style={{ top: (h - START_H) * CELL_H, height: CELL_H }}
-                        className={`absolute inset-x-0 border-b border-white/4 transition-colors ${
+                        className={`absolute inset-x-0 border-b transition-colors ${
                           dragOverKey === slotKey
                             ? "bg-indigo-500/20 border-indigo-500/40"
-                            : dragEvId ? "cursor-copy hover:bg-white/6" : "cursor-pointer hover:bg-white/4"
+                            : dragEvId
+                              ? `cursor-copy ${isDark ? "border-white/4 hover:bg-white/6" : "border-gray-100 hover:bg-gray-50"}`
+                              : `cursor-pointer ${isDark ? "border-white/4 hover:bg-white/4" : "border-gray-100 hover:bg-gray-50"}`
                         }`}
                         onDragOver={(e) => { e.preventDefault(); setDragOverKey(slotKey); }}
                         onDragLeave={() => setDragOverKey(null)}
@@ -778,11 +791,11 @@ export default function PlanningPage() {
                       />
                     );
                   })}
-                                    {isToday(d) && (
+                  {isToday(d) && (
                     <div className="absolute inset-0 pointer-events-none"
-                      style={{ background:`${INDIGO}06` }} />
+                      style={{ background: isDark ? `${INDIGO}06` : `${INDIGO}08` }} />
                   )}
-                                    {dayEvs.map(ev => {
+                  {dayEvs.map(ev => {
                     const s  = new Date(ev.start_at);
                     const e  = new Date(ev.end_at);
                     const sh = s.getHours() + s.getMinutes() / 60;
@@ -818,7 +831,7 @@ export default function PlanningPage() {
                           {ev.title}
                         </p>
                         {height > 28 && (
-                          <p className="text-[9px] text-white/40 leading-none">{hhmm}</p>
+                          <p className={`text-[9px] leading-none ${isDark ? "text-white/40" : "text-gray-600"}`}>{hhmm}</p>
                         )}
                       </button>
                     );
@@ -838,8 +851,8 @@ export default function PlanningPage() {
     if (withEvents.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 gap-4 py-20">
-          <Calendar size={32} className="text-white/15" />
-          <p className="text-white/30 text-sm">Aucun événement dans les 30 prochains jours</p>
+          <Calendar size={32} className={isDark ? "text-white/15" : "text-gray-300"} />
+          <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-500"}`}>Aucun événement dans les 30 prochains jours</p>
           <button onClick={() => openCreate()} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
             style={{ background:`${INDIGO}18`, border:`1px solid ${INDIGO}35`, color:INDIGO }}>
             <Plus size={15}/>Créer un événement
@@ -852,12 +865,12 @@ export default function PlanningPage() {
         {withEvents.map(day => (
           <div key={fmtDate(day)}>
             <div className="flex items-center gap-3 mb-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${isToday(day) ? "text-white" : "text-white/60"}`}
-                style={isToday(day) ? { background: INDIGO } : { background:"rgba(255,255,255,.06)" }}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${isToday(day) ? "text-white" : isDark ? "text-white/60" : "text-gray-600"}`}
+                style={isToday(day) ? { background: INDIGO } : { background: isDark ? "rgba(255,255,255,.06)" : "rgba(0,0,0,.06)" }}>
                 {day.getDate()}
               </div>
               <div>
-                <p className={`text-sm font-semibold ${isToday(day) ? "text-white" : "text-white/50"}`}>
+                <p className={`text-sm font-semibold ${isToday(day) ? isDark ? "text-white" : "text-gray-900" : isDark ? "text-white/50" : "text-gray-600"}`}>
                   {DAYS_FR[(day.getDay()+6)%7]} {day.getDate()} {MONTHS_FR[day.getMonth()]}
                   {isToday(day) && <span className="ml-2 text-xs px-2 py-0.5 rounded-full" style={{ background:`${INDIGO}20`, color:INDIGO }}>Aujourd&apos;hui</span>}
                 </p>
@@ -874,17 +887,17 @@ export default function PlanningPage() {
                 const EvIcon = EvType?.icon ?? Calendar;
                 return (
                   <button key={ev.id} onClick={() => openEdit(ev)}
-                    className="w-full text-left flex items-start gap-3 p-3 rounded-xl border transition-all hover:border-white/15"
+                    className={`w-full text-left flex items-start gap-3 p-3 rounded-xl border transition-all ${isDark ? "hover:border-white/15" : "hover:border-gray-300"}`}
                     style={{ background:`${ev.color}0d`, borderColor:`${ev.color}25` }}>
-                    <EvIcon size={14} className="text-white/40 mt-0.5 shrink-0"/>
+                    <EvIcon size={14} className={`mt-0.5 shrink-0 ${isDark ? "text-white/40" : "text-gray-500"}`}/>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{ev.title}</p>
+                      <p className={`text-sm font-semibold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{ev.title}</p>
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
-                        <span className="flex items-center gap-1 text-[11px] text-white/40">
+                        <span className={`flex items-center gap-1 text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
                           <Clock size={10}/>{ev.is_all_day ? "Toute la journée" : `${hhmm} · ${durS}`}
                         </span>
                         {ev.location && (
-                          <span className="flex items-center gap-1 text-[11px] text-white/35">
+                          <span className={`flex items-center gap-1 text-[11px] ${isDark ? "text-white/35" : "text-gray-400"}`}>
                             <MapPin size={10}/>{ev.location}
                           </span>
                         )}
@@ -908,31 +921,34 @@ export default function PlanningPage() {
   }
 
     return (
-    <div className="flex h-[calc(100vh-56px)] bg-[#07080e] overflow-hidden text-white">
+    <DarkCtx.Provider value={isDark}>
+    <div className={`flex h-[calc(100vh-56px)] overflow-hidden ${isDark ? "bg-[#07080e] text-white" : "bg-gray-50 text-gray-900"}`}>
       <ToastStack toasts={toasts} remove={removeToast} />
 
-            <div className="hidden lg:flex w-64 xl:w-72 flex-col shrink-0 border-r border-white/6 bg-white/4 overflow-y-auto">
+      {/* ── Sidebar ── */}
+      <div className={`hidden lg:flex w-64 xl:w-72 flex-col shrink-0 border-r overflow-y-auto ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
 
-                <div className="p-4 border-b border-white/6">
+        {/* Mini calendar */}
+        <div className={`p-4 border-b ${isDark ? "border-white/6" : "border-gray-200"}`}>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-white/60">
+            <p className={`text-xs font-bold ${isDark ? "text-white/60" : "text-gray-600"}`}>
               {MONTHS_FR[current.getMonth()].slice(0,3)} {current.getFullYear()}
             </p>
             <div className="flex gap-1">
-              <button onClick={() => navigate(-1)} className="p-1 rounded hover:bg-white/10 text-white/30 hover:text-white transition-all">
+              <button onClick={() => navigate(-1)} className={`p-1 rounded transition-all ${isDark ? "hover:bg-white/10 text-white/30 hover:text-white" : "hover:bg-gray-100 text-gray-400 hover:text-gray-700"}`}>
                 <ChevronLeft size={12}/>
               </button>
-              <button onClick={() => navigate(1)} className="p-1 rounded hover:bg-white/10 text-white/30 hover:text-white transition-all">
+              <button onClick={() => navigate(1)} className={`p-1 rounded transition-all ${isDark ? "hover:bg-white/10 text-white/30 hover:text-white" : "hover:bg-gray-100 text-gray-400 hover:text-gray-700"}`}>
                 <ChevronRight size={12}/>
               </button>
             </div>
           </div>
-                    <div className="grid grid-cols-7 mb-1">
+          <div className="grid grid-cols-7 mb-1">
             {DAYS_FR.map(d => (
-              <div key={d} className="text-center text-[9px] text-white/25 font-semibold">{d[0]}</div>
+              <div key={d} className={`text-center text-[9px] font-semibold ${isDark ? "text-white/25" : "text-gray-400"}`}>{d[0]}</div>
             ))}
           </div>
-                    {getMonthGrid(current.getFullYear(), current.getMonth()).map((week, wi) => (
+          {getMonthGrid(current.getFullYear(), current.getMonth()).map((week, wi) => (
             <div key={wi} className="grid grid-cols-7">
               {week.map((day, di) => {
                 const hasEv = eventsOnDate(day).length > 0;
@@ -941,7 +957,7 @@ export default function PlanningPage() {
                   <button key={di}
                     onClick={() => { setCurrent(day); if (view !== "month") setView("week"); }}
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium transition-all mx-auto my-0.5
-                      ${isCur ? "text-white" : isToday(day) ? "font-bold" : day.getMonth()===current.getMonth() ? "text-white/50 hover:text-white hover:bg-white/10" : "text-white/15"}`}
+                      ${isCur ? "text-white" : isToday(day) ? "font-bold" : day.getMonth()===current.getMonth() ? isDark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100" : isDark ? "text-white/15" : "text-gray-300"}`}
                     style={{
                       background: isCur ? INDIGO : isToday(day) && !isCur ? `${INDIGO}30` : undefined,
                       color: isToday(day) && !isCur ? INDIGO : undefined,
@@ -957,17 +973,18 @@ export default function PlanningPage() {
           ))}
         </div>
 
-                <div className="p-4 border-b border-white/6">
+        {/* Tasks */}
+        <div className={`p-4 border-b ${isDark ? "border-white/6" : "border-gray-200"}`}>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold text-white/50 flex items-center gap-1.5">
+            <p className={`text-xs font-bold flex items-center gap-1.5 ${isDark ? "text-white/50" : "text-gray-600"}`}>
               <CheckCircle2 size={12}/>Tâches du jour
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/8 text-white/35">
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8 text-white/35" : "bg-gray-100 text-gray-500"}`}>
                 {doneTasks.length}/{todayTasks.length}
               </span>
             </p>
           </div>
-                    {todayTasks.length > 0 && (
-            <div className="h-1 bg-white/8 rounded-full mb-3 overflow-hidden">
+          {todayTasks.length > 0 && (
+            <div className={`h-1 rounded-full mb-3 overflow-hidden ${isDark ? "bg-white/8" : "bg-gray-100"}`}>
               <div className="h-full rounded-full transition-all"
                 style={{ width:`${todayTasks.length ? Math.round(doneTasks.length/todayTasks.length*100) : 0}%`, background:INDIGO }} />
             </div>
@@ -977,14 +994,14 @@ export default function PlanningPage() {
               <TaskRow key={t.id} task={t} onToggle={() => toggleTask(t)} onDelete={() => deleteTask(t.id)} />
             ))}
             {todayTasks.length === 0 && (
-              <p className="text-[10px] text-white/20 py-1">Aucune tâche pour aujourd&apos;hui</p>
+              <p className={`text-[10px] py-1 ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune tâche pour aujourd&apos;hui</p>
             )}
           </div>
-                    <div className="flex items-center gap-1.5 mt-2">
+          <div className="flex items-center gap-1.5 mt-2">
             <input value={newTask} onChange={e => setNewTask(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") createTask(); }}
               placeholder="+ Ajouter une tâche…"
-              className="flex-1 bg-transparent text-[11px] text-white/55 placeholder:text-white/20 focus:outline-none" />
+              className={`flex-1 bg-transparent text-[11px] focus:outline-none ${isDark ? "text-white/55 placeholder:text-white/20" : "text-gray-600 placeholder:text-gray-400"}`} />
             {newTask && (
               <button onClick={createTask} disabled={addingTask}
                 className="p-1 rounded-lg transition-all"
@@ -995,9 +1012,10 @@ export default function PlanningPage() {
           </div>
         </div>
 
-                <div className="p-4 flex-1">
+        {/* Goals */}
+        <div className="p-4 flex-1">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-white/50 flex items-center gap-1.5">
+            <p className={`text-xs font-bold flex items-center gap-1.5 ${isDark ? "text-white/50" : "text-gray-600"}`}>
               <Target size={12}/>Objectifs semaine
             </p>
           </div>
@@ -1005,18 +1023,18 @@ export default function PlanningPage() {
             {goals.filter(g => g.period === "week" && g.status !== "abandoned").map(g => (
               <div key={g.id} className="group">
                 <div className="flex items-center justify-between mb-1">
-                  <p className={`text-xs truncate ${g.status==="done" ? "line-through text-white/25" : "text-white/65"}`}>
+                  <p className={`text-xs truncate ${g.status==="done" ? `line-through ${isDark ? "text-white/25" : "text-gray-400"}` : isDark ? "text-white/65" : "text-gray-700"}`}>
                     {g.title}
                   </p>
                   <div className="flex items-center gap-1">
-                    <span className="text-[9px] text-white/25">{g.progress}%</span>
+                    <span className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>{g.progress}%</span>
                     <button onClick={() => deleteGoal(g.id)}
-                      className="opacity-0 group-hover:opacity-100 text-white/15 hover:text-red-400 transition-all">
+                      className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ${isDark ? "text-white/15" : "text-gray-300"}`}>
                       <X size={10}/>
                     </button>
                   </div>
                 </div>
-                <div className="h-1.5 bg-white/8 rounded-full overflow-hidden cursor-pointer"
+                <div className={`h-1.5 rounded-full overflow-hidden cursor-pointer ${isDark ? "bg-white/8" : "bg-gray-100"}`}
                   onClick={e => {
                     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                     const pct  = Math.round(((e.clientX - rect.left) / rect.width) * 100);
@@ -1028,14 +1046,14 @@ export default function PlanningPage() {
               </div>
             ))}
             {goals.filter(g=>g.period==="week"&&g.status!=="abandoned").length === 0 && (
-              <p className="text-[10px] text-white/20">Aucun objectif cette semaine</p>
+              <p className={`text-[10px] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucun objectif cette semaine</p>
             )}
           </div>
-                    <div className="flex items-center gap-1.5 mt-3">
+          <div className="flex items-center gap-1.5 mt-3">
             <input value={newGoal} onChange={e => setNewGoal(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") createGoal(); }}
               placeholder="+ Ajouter un objectif…"
-              className="flex-1 bg-transparent text-[11px] text-white/55 placeholder:text-white/20 focus:outline-none" />
+              className={`flex-1 bg-transparent text-[11px] focus:outline-none ${isDark ? "text-white/55 placeholder:text-white/20" : "text-gray-600 placeholder:text-gray-400"}`} />
             {newGoal && (
               <button onClick={createGoal} disabled={addingGoal}
                 className="p-1 rounded-lg" style={{ background:`${INDIGO}20`, color:INDIGO }}>
@@ -1049,33 +1067,36 @@ export default function PlanningPage() {
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
         {/* Animated header */}
-        <div className="relative overflow-hidden shrink-0 bg-[#07080e] border-b border-white/6">
-          {/* Orbs */}
-          <div className="pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
-          <div className="pointer-events-none absolute -bottom-8 right-16 h-24 w-24 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#6366f1,transparent)" }}/>
+        <div className={`relative overflow-hidden shrink-0 border-b ${isDark ? "bg-[#07080e] border-white/6" : "bg-white border-gray-200"}`}>
+          {isDark && (
+            <div className="pointer-events-none">
+              <div className="absolute -top-12 -left-12 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
+              <div className="absolute -bottom-8 right-16 h-24 w-24 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#6366f1,transparent)" }}/>
+            </div>
+          )}
 
           {/* Main row */}
           <div className="relative flex items-center gap-2 px-4 pt-3 pb-2">
             <div className="flex items-center gap-0.5">
-              <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all">
+              <button onClick={() => navigate(-1)} className={`p-1.5 rounded-lg transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}>
                 <ChevronLeft size={15}/>
               </button>
-              <button onClick={() => setCurrent(new Date())} className="px-2 py-1 rounded-lg text-xs font-medium text-white/40 hover:text-white hover:bg-white/8 transition-all">
+              <button onClick={() => setCurrent(new Date())} className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>
                 Aujourd&apos;hui
               </button>
-              <button onClick={() => navigate(1)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all">
+              <button onClick={() => navigate(1)} className={`p-1.5 rounded-lg transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}>
                 <ChevronRight size={15}/>
               </button>
             </div>
-            <h2 className="text-sm font-bold text-white mr-auto">{headerLabel}</h2>
+            <h2 className={`text-sm font-bold mr-auto ${isDark ? "text-white" : "text-gray-900"}`}>{headerLabel}</h2>
             <button onClick={exportICS} title="Exporter ICS (Google Calendar / Outlook)"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border border-white/8 text-white/40 hover:text-white/70 hover:border-white/20 transition-all">
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all ${isDark ? "border-white/8 text-white/40 hover:text-white/70 hover:border-white/20" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
               <Download size={12}/> ICS
             </button>
             <button onClick={() => setShowAI(p => !p)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${showAI
                 ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
-                : "border-white/8 text-white/50 hover:border-violet-500/30 hover:text-violet-300"}`}>
+                : isDark ? "border-white/8 text-white/50 hover:border-violet-500/30 hover:text-violet-300" : "border-gray-200 text-gray-500 hover:border-violet-400 hover:text-violet-600"}`}>
               <Sparkles size={12}/> IA Planning
             </button>
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -1099,11 +1120,11 @@ export default function PlanningPage() {
                 const KpiIcon = kpi.icon;
                 return (
                   <motion.div key={kpi.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border border-white/6 bg-white/4">
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
                     <KpiIcon size={11} style={{ color: kpi.accent }} className="shrink-0"/>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-white leading-none">{kpi.value}</p>
-                      <p className="text-[0.55rem] text-white/35 uppercase tracking-wide mt-0.5 truncate">{kpi.label}</p>
+                      <p className={`text-xs font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
+                      <p className={`text-[0.55rem] uppercase tracking-wide mt-0.5 truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                     </div>
                   </motion.div>
                 );
@@ -1115,7 +1136,7 @@ export default function PlanningPage() {
           <div className="relative px-4 flex gap-0.5">
             {(["month", "week", "agenda", "booking"] as CalView[]).map((v) => (
               <button key={v} onClick={() => { setView(v); if (v === "booking" && !bkLoading) void loadBookingConfig(); }}
-                className={`relative px-3 py-2 text-xs font-semibold transition-all ${view === v ? "text-white" : "text-white/35 hover:text-white/60"}`}>
+                className={`relative px-3 py-2 text-xs font-semibold transition-all ${view === v ? isDark ? "text-white" : "text-gray-900" : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
                 {v === "month" ? "Mois" : v === "week" ? "Semaine" : v === "agenda" ? "Agenda" : "Réservation"}
                 {view === v && (
                   <motion.div layoutId="plan-tab-indicator"
@@ -1130,11 +1151,11 @@ export default function PlanningPage() {
           <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
         </div>
 
-                <AnimatePresence>
+        <AnimatePresence>
           {showAI && (
             <motion.div
               initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }} exit={{ height:0, opacity:0 }}
-              className="border-b border-white/6 bg-[#07080e] overflow-hidden shrink-0">
+              className={`border-b overflow-hidden shrink-0 ${isDark ? "border-white/6 bg-[#07080e]" : "border-gray-200 bg-white"}`}>
               <div className="px-5 py-3 space-y-2">
                 <div className="flex flex-wrap gap-2">
                   {([
@@ -1144,25 +1165,25 @@ export default function PlanningPage() {
                     { Icon:BarChart2, l:"Analyse semaine",     p:"Analyse mon planning de la semaine. Suis-je sur la bonne voie pour mes objectifs ? Quels ajustements suggères-tu ?" },
                   ] as {Icon:LucideIcon;l:string;p:string}[]).map(a => (
                     <button key={a.l} onClick={() => runAI(a.p)} disabled={aiLoading}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50 border border-white/8 hover:border-white/20 text-white/55 hover:text-white">
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50 border ${isDark ? "border-white/8 hover:border-white/20 text-white/55 hover:text-white" : "border-gray-200 hover:border-gray-300 text-gray-500 hover:text-gray-800"}`}>
                       {aiLoading ? <Loader2 size={11} className="animate-spin"/> : <a.Icon size={11}/>}
                       {a.l}
                     </button>
                   ))}
                 </div>
                 {aiLoading && (
-                  <div className="flex items-center gap-2 text-xs text-white/30">
+                  <div className={`flex items-center gap-2 text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>
                     <Loader2 size={12} className="animate-spin"/> Analyse en cours…
                   </div>
                 )}
                 {aiResult && (
-                  <div className="rounded-xl border border-white/10 p-3 text-xs text-white/65 whitespace-pre-line leading-relaxed max-h-40 overflow-y-auto"
+                  <div className={`rounded-xl border p-3 text-xs whitespace-pre-line leading-relaxed max-h-40 overflow-y-auto ${isDark ? "border-white/10 text-white/65" : "border-indigo-200 text-gray-700"}`}
                     style={{ background:`${INDIGO}08` }}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="font-semibold text-xs flex items-center gap-1" style={{ color:INDIGO }}>
                         <Zap size={11}/>Suggestion IA
                       </span>
-                      <button onClick={() => setAiResult("")} className="text-white/25 hover:text-white">
+                      <button onClick={() => setAiResult("")} className={isDark ? "text-white/25 hover:text-white" : "text-gray-400 hover:text-gray-700"}>
                         <X size={11}/>
                       </button>
                     </div>
@@ -1174,9 +1195,9 @@ export default function PlanningPage() {
           )}
         </AnimatePresence>
 
-                {loading ? (
+        {loading ? (
           <div className="flex items-center justify-center flex-1">
-            <Loader2 size={24} className="animate-spin text-white/20"/>
+            <Loader2 size={24} className={`animate-spin ${isDark ? "text-white/20" : "text-gray-300"}`}/>
           </div>
         ) : (
           <div className="flex flex-col flex-1 overflow-hidden">
@@ -1199,18 +1220,18 @@ export default function PlanningPage() {
               initial={{opacity:0, scale:0.95, y:12}}
               animate={{opacity:1, scale:1, y:0}}
               exit={{opacity:0, scale:0.95, y:12}}
-              className="fixed inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-50 rounded-3xl border border-white/8 bg-[#0e1420] shadow-2xl flex flex-col overflow-hidden"
+              className={`fixed inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-50 rounded-3xl border shadow-2xl flex flex-col overflow-hidden ${isDark ? "border-white/8 bg-[#0e1420]" : "border-gray-200 bg-white"}`}
               onClick={e => e.stopPropagation()}>
 
-                            <div className="flex items-center gap-3 px-5 pt-5 pb-3 shrink-0">
-                                <div className="relative">
+              <div className="flex items-center gap-3 px-5 pt-5 pb-3 shrink-0">
+                <div className="relative">
                   <button onClick={() => setShowColPal(p => !p)}
-                    className="w-8 h-8 rounded-xl border-2 border-white/10 transition-all hover:scale-110"
+                    className={`w-8 h-8 rounded-xl border-2 transition-all hover:scale-110 ${isDark ? "border-white/10" : "border-gray-200"}`}
                     style={{ background: form.color ?? INDIGO }} />
                   <AnimatePresence>
                     {showColPal && (
                       <motion.div initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} exit={{opacity:0}}
-                        className="absolute top-10 left-0 flex flex-wrap gap-1.5 p-2 rounded-xl border border-white/10 bg-[#0e1420] shadow-2xl z-10 w-32">
+                        className={`absolute top-10 left-0 flex flex-wrap gap-1.5 p-2 rounded-xl border shadow-2xl z-10 w-32 ${isDark ? "border-white/10 bg-[#0e1420]" : "border-gray-200 bg-white"}`}>
                         {EV_COLORS.map(c => (
                           <button key={c}
                             onClick={() => { setForm(p => ({...p, color:c})); setShowColPal(false); }}
@@ -1222,15 +1243,15 @@ export default function PlanningPage() {
                   </AnimatePresence>
                 </div>
 
-                                <div className="flex gap-1 flex-wrap flex-1">
+                <div className="flex gap-1 flex-wrap flex-1">
                   {EV_TYPES.map(t => {
                     const TIcon = t.icon;
                     return (
                       <button key={t.v} onClick={() => setForm(p => ({...p, event_type:t.v}))}
                         className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all"
                         style={{
-                          background: form.event_type===t.v ? `${form.color ?? INDIGO}22` : "rgba(255,255,255,.05)",
-                          color:      form.event_type===t.v ? (form.color ?? INDIGO) : "rgba(255,255,255,.4)",
+                          background: form.event_type===t.v ? `${form.color ?? INDIGO}22` : isDark ? "rgba(255,255,255,.05)" : "rgba(0,0,0,.04)",
+                          color:      form.event_type===t.v ? (form.color ?? INDIGO) : isDark ? "rgba(255,255,255,.4)" : "rgba(0,0,0,.45)",
                           border:     `1px solid ${form.event_type===t.v ? `${form.color ?? INDIGO}35` : "transparent"}`,
                         }}>
                         <TIcon size={10}/>{t.l}
@@ -1240,36 +1261,36 @@ export default function PlanningPage() {
                 </div>
 
                 <button onClick={() => setShowModal(false)}
-                  className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all ml-auto">
+                  className={`p-1.5 rounded-lg transition-all ml-auto ${isDark ? "text-white/30 hover:text-white hover:bg-white/10" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}>
                   <X size={16}/>
                 </button>
               </div>
 
-                            <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-4">
-                                <input value={form.title ?? ""} onChange={e => setForm(p => ({...p, title:e.target.value}))}
+              <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-4">
+                <input value={form.title ?? ""} onChange={e => setForm(p => ({...p, title:e.target.value}))}
                   placeholder="Titre de l'événement *"
-                  className="w-full bg-transparent text-lg font-bold text-white placeholder:text-white/20 focus:outline-none border-b border-white/6 pb-2" />
+                  className={`w-full bg-transparent text-lg font-bold focus:outline-none border-b pb-2 ${isDark ? "text-white placeholder:text-white/20 border-white/6" : "text-gray-900 placeholder:text-gray-300 border-gray-200"}`} />
 
-                                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <button onClick={() => setForm(p => ({...p, is_all_day:!p.is_all_day}))}
-                    className={`w-9 h-5 rounded-full transition-all ${form.is_all_day ? "" : "bg-white/10"}`}
+                    className={`w-9 h-5 rounded-full transition-all ${form.is_all_day ? "" : isDark ? "bg-white/10" : "bg-gray-200"}`}
                     style={form.is_all_day ? { background:form.color ?? INDIGO } : {}}>
                     <div className={`w-3.5 h-3.5 rounded-full bg-white transition-all mx-0.5 ${form.is_all_day ? "translate-x-4" : "translate-x-0"}`}/>
                   </button>
-                  <span className="text-xs text-white/45">Toute la journée</span>
+                  <span className={`text-xs ${isDark ? "text-white/45" : "text-gray-500"}`}>Toute la journée</span>
                 </div>
 
-                                {form.is_all_day ? (
+                {form.is_all_day ? (
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { label:"Début", key:"start_at" as const },
                       { label:"Fin",   key:"end_at"   as const },
                     ].map(({ label, key }) => (
                       <div key={key} className="space-y-1">
-                        <label className="text-[10px] text-white/35 uppercase tracking-wide">{label}</label>
+                        <label className={`text-[10px] uppercase tracking-wide ${isDark ? "text-white/35" : "text-gray-400"}`}>{label}</label>
                         <input type="date" value={(form[key] ?? "").slice(0,10)}
                           onChange={e => setForm(p => ({...p, [key]: e.target.value}))}
-                          className="w-full bg-white/6 border border-white/8 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-white/20 appearance-none [color-scheme:dark]"/>
+                          className={`w-full border rounded-xl px-3 py-2 text-sm outline-none appearance-none ${isDark ? "bg-white/6 border-white/8 text-white focus:border-white/20 [color-scheme:dark]" : "bg-white border-gray-200 text-gray-900 focus:border-gray-300 [color-scheme:light]"}`}/>
                       </div>
                     ))}
                   </div>
@@ -1280,62 +1301,60 @@ export default function PlanningPage() {
                       { label:"Fin",   key:"end_at"   as const },
                     ].map(({ label, key }) => (
                       <div key={key} className="space-y-1">
-                        <label className="text-[10px] text-white/35 uppercase tracking-wide">{label}</label>
+                        <label className={`text-[10px] uppercase tracking-wide ${isDark ? "text-white/35" : "text-gray-400"}`}>{label}</label>
                         <input type="datetime-local" value={form[key] ?? ""}
                           onChange={e => setForm(p => ({...p, [key]: e.target.value}))}
-                          className="w-full bg-white/6 border border-white/8 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-white/20 [color-scheme:dark]"/>
+                          className={`w-full border rounded-xl px-3 py-2 text-sm outline-none ${isDark ? "bg-white/6 border-white/8 text-white focus:border-white/20 [color-scheme:dark]" : "bg-white border-gray-200 text-gray-900 focus:border-gray-300 [color-scheme:light]"}`}/>
                       </div>
                     ))}
                   </div>
                 )}
 
-                                <div className="flex items-center gap-2 bg-white/4 border border-white/6 rounded-xl px-3 py-2">
-                  <MapPin size={13} className="text-white/25 shrink-0"/>
-                  <input value={form.location ?? ""} onChange={e => setForm(p => ({...p, location:e.target.value}))}
-                    placeholder="Lieu (optionnel)"
-                    className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none"/>
-                </div>
+                {[
+                  { icon: MapPin,    key: "location"   as const, placeholder: "Lieu (optionnel)" },
+                  { icon: Video,     key: "meet_link"  as const, placeholder: "Lien visioconférence (optionnel)" },
+                ].map(({ icon: Icon, key, placeholder }) => (
+                  <div key={key} className={`flex items-center gap-2 border rounded-xl px-3 py-2 ${isDark ? "bg-white/4 border-white/6" : "bg-gray-50 border-gray-200"}`}>
+                    <Icon size={13} className={`shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
+                    <input value={(form[key] ?? "") as string} onChange={e => setForm(p => ({...p, [key]: e.target.value}))}
+                      placeholder={placeholder}
+                      className={`flex-1 bg-transparent text-sm focus:outline-none ${isDark ? "text-white/70 placeholder:text-white/20" : "text-gray-700 placeholder:text-gray-400"}`}/>
+                  </div>
+                ))}
 
-                                <div className="flex items-center gap-2 bg-white/4 border border-white/6 rounded-xl px-3 py-2">
-                  <Video size={13} className="text-white/25 shrink-0"/>
-                  <input value={form.meet_link ?? ""} onChange={e => setForm(p => ({...p, meet_link:e.target.value}))}
-                    placeholder="Lien visioconférence (optionnel)"
-                    className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none"/>
-                </div>
-
-                                <div className="flex items-start gap-2 bg-white/4 border border-white/6 rounded-xl px-3 py-2">
-                  <AlignLeft size={13} className="text-white/25 shrink-0 mt-0.5"/>
+                <div className={`flex items-start gap-2 border rounded-xl px-3 py-2 ${isDark ? "bg-white/4 border-white/6" : "bg-gray-50 border-gray-200"}`}>
+                  <AlignLeft size={13} className={`shrink-0 mt-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
                   <textarea value={form.description ?? ""} onChange={e => setForm(p => ({...p, description:e.target.value}))}
                     placeholder="Description (optionnel)" rows={3}
-                    className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none resize-none leading-relaxed"/>
+                    className={`flex-1 bg-transparent text-sm focus:outline-none resize-none leading-relaxed ${isDark ? "text-white/70 placeholder:text-white/20" : "text-gray-700 placeholder:text-gray-400"}`}/>
                 </div>
 
-                                <div className="flex items-center gap-2 bg-white/4 border border-white/6 rounded-xl px-3 py-2">
-                  <Tag size={13} className="text-white/25 shrink-0"/>
+                <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 ${isDark ? "bg-white/4 border-white/6" : "bg-gray-50 border-gray-200"}`}>
+                  <Tag size={13} className={`shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
                   <input
                     value={(form.participants ?? []).join(", ")}
                     onChange={e => setForm(p => ({...p, participants:e.target.value.split(",").map(s=>s.trim()).filter(Boolean)}))}
                     placeholder="Participants (séparés par virgule)"
-                    className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 focus:outline-none"/>
+                    className={`flex-1 bg-transparent text-sm focus:outline-none ${isDark ? "text-white/70 placeholder:text-white/20" : "text-gray-700 placeholder:text-gray-400"}`}/>
                 </div>
 
-                                <div className="flex items-center gap-2">
-                  <Bell size={13} className="text-white/25"/>
-                  <span className="text-xs text-white/35">Rappel</span>
+                <div className="flex items-center gap-2">
+                  <Bell size={13} className={isDark ? "text-white/25" : "text-gray-400"}/>
+                  <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-500"}`}>Rappel</span>
                   <select value={form.reminder_minutes ?? 30}
                     onChange={e => setForm(p => ({...p, reminder_minutes: Number(e.target.value)}))}
-                    className="ml-auto cursor-pointer rounded-xl border border-white/8 bg-[#0e1420] px-3 py-1.5 text-xs text-white/55 outline-none appearance-none">
-                    <option value={0} className="bg-[#0e1420]">Aucun</option>
-                    <option value={5} className="bg-[#0e1420]">5 min avant</option>
-                    <option value={15} className="bg-[#0e1420]">15 min avant</option>
-                    <option value={30} className="bg-[#0e1420]">30 min avant</option>
-                    <option value={60} className="bg-[#0e1420]">1 h avant</option>
-                    <option value={1440} className="bg-[#0e1420]">1 jour avant</option>
+                    className={`ml-auto cursor-pointer rounded-xl border px-3 py-1.5 text-xs outline-none appearance-none ${isDark ? "border-white/8 bg-[#0e1420] text-white/55" : "border-gray-200 bg-white text-gray-600"}`}>
+                    <option value={0}>Aucun</option>
+                    <option value={5}>5 min avant</option>
+                    <option value={15}>15 min avant</option>
+                    <option value={30}>30 min avant</option>
+                    <option value={60}>1 h avant</option>
+                    <option value={1440}>1 jour avant</option>
                   </select>
                 </div>
               </div>
 
-                            <div className="flex items-center gap-2 px-5 py-4 border-t border-white/6 shrink-0">
+              <div className={`flex items-center gap-2 px-5 py-4 border-t shrink-0 ${isDark ? "border-white/6" : "border-gray-200"}`}>
                 {editEvent && (
                   <button onClick={() => deleteEvent(editEvent.id)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all">
@@ -1350,13 +1369,13 @@ export default function PlanningPage() {
                     + (editEvent.description ? `&details=${encodeURIComponent(editEvent.description)}` : "");
                   return (
                     <a href={gcalUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-white/40 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all">
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs hover:text-indigo-400 hover:bg-indigo-500/10 transition-all ${isDark ? "text-white/40" : "text-gray-400"}`}>
                       <ExternalLink size={12}/>Google Cal
                     </a>
                   );
                 })()}
                 <button onClick={() => setShowModal(false)}
-                  className="ml-auto px-4 py-2 rounded-xl text-xs text-white/40 hover:text-white hover:bg-white/8 transition-all">
+                  className={`ml-auto px-4 py-2 rounded-xl text-xs transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"}`}>
                   Annuler
                 </button>
                 <button onClick={saveEvent} disabled={saving || !form.title?.trim()}
@@ -1371,5 +1390,6 @@ export default function PlanningPage() {
         )}
       </AnimatePresence>
     </div>
+    </DarkCtx.Provider>
   );
 }

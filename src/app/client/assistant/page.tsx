@@ -6,11 +6,15 @@ import {
   AlertTriangle, PenLine, Loader2, RefreshCw,
   Copy, Sparkles, Clock, CreditCard, Receipt, ListTodo,
   UserCheck, ChevronRight, Menu, X, Send,
-  Download, Volume2, VolumeX, BookMarked,
+  Download, Volume2, VolumeX, BookMarked, FileText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
+import { useTheme } from "@/lib/theme-context";
+import { APP_ICONS } from "@/components/AppIcons";
+import { generatePdf, type PdfData } from "@/lib/pdf/generatePdf";
+import { fetchCompanySettings } from "@/lib/pdf/companySettings";
 
 const CYAN   = "#22d3ee";
 const VIOLET = "#8b5cf6";
@@ -23,15 +27,15 @@ const ACTIONS: { icon: LucideIcon; label: string; color: string; prompt: string 
   { icon: Calendar,      label: "Ma journée",           color: "#3b82f6", prompt: "Organise ma journée idéale en tenant compte de mes tâches prioritaires, réunions prévues et objectifs." },
   { icon: BarChart2,     label: "Rapport business",     color: CYAN,      prompt: "Génère un rapport business complet : revenus, dépenses, tâches terminées, clients actifs, alertes importantes." },
   { icon: AlertTriangle, label: "Risques & alertes",    color: "#f97316", prompt: "Détecte tous les risques business : retards de paiement, stock bas, surcharge équipe, projets en retard." },
-  { icon: PenLine,       label: "Créer un document",    color: "#a78bfa", prompt: "Quels documents puis-je générer depuis DJAMA ? Guide-moi pour créer une facture, un contrat, un devis ou une note." },
+  { icon: PenLine,       label: "Créer une facture",    color: "#a78bfa", prompt: "Crée une facture pour un client, prestation de service, montant 500€ HT, TVA 20%." },
 ];
 
 const SUGGESTIONS = [
-  "Montre les contrats du mois",
-  "Quels fournisseurs coûtent le plus cher ?",
-  "Résume mes réunions de la semaine",
+  "Crée une facture pour Jean Martin, mission de conseil 1200€ HT",
+  "Génère un devis pour Sophie Dupont, développement site web 3500€",
   "Quel est mon chiffre d'affaires ce mois-ci ?",
   "Qui sont mes clients les plus actifs ?",
+  "Quels fournisseurs coûtent le plus cher ?",
   "Combien de tâches j'ai en retard ?",
 ];
 
@@ -41,6 +45,43 @@ interface Msg {
   content: string;
   modules?: string[];
   loading?: boolean;
+  pdfData?: PdfData;
+  pdfGenerating?: boolean;
+}
+
+function isDocRequest(text: string): boolean {
+  return /facture|invoice|devis|quote|proposition commerciale|bon de commande/i.test(text);
+}
+
+function DocDownloadButton({ pdfData, isDark }: { pdfData: PdfData; isDark: boolean }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleDownload() {
+    setLoading(true);
+    try {
+      const co = await fetchCompanySettings();
+      await generatePdf({ ...pdfData, company: co });
+    } catch {
+      // silently fail — generatePdf triggers browser download
+    }
+    setLoading(false);
+  }
+
+  return (
+    <button
+      onClick={handleDownload}
+      disabled={loading}
+      className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.65rem] font-semibold transition active:scale-95 disabled:opacity-60"
+      style={{
+        background: isDark ? "rgba(34,211,238,0.12)" : "rgba(34,211,238,0.10)",
+        border: "1px solid rgba(34,211,238,0.35)",
+        color: isDark ? "#22d3ee" : "#0891b2",
+      }}
+    >
+      {loading ? <Loader2 size={10} className="animate-spin" /> : <FileText size={10} />}
+      {loading ? "Génération…" : `Télécharger ${pdfData.type === "invoice" ? "Facture" : "Devis"} PDF`}
+    </button>
+  );
 }
 
 interface Conv {
@@ -432,6 +473,7 @@ function InsightsInner({
 }
 
 export default function AssistantPage() {
+  const { isDark } = useTheme();
   const [convs,        setConvs]        = useState<Conv[]>([]);
   const [activeConv,   setActiveConv]   = useState<string | null>(null);
   const [msgs,         setMsgs]         = useState<Msg[]>([]);
@@ -576,9 +618,11 @@ export default function AssistantPage() {
   }, [msgs]);
 
   const newConv = useCallback(async (): Promise<string> => {
+    const uid = userId || (await supabase.auth.getUser()).data.user?.id || "";
+    if (!uid) return "";
     const { data, error } = await supabase
       .from("ai_conversations")
-      .insert({ title: "Nouvelle conversation" })
+      .insert({ title: "Nouvelle conversation", user_id: uid })
       .select("id,title,created_at")
       .single();
     if (error || !data) return "";
@@ -588,7 +632,7 @@ export default function AssistantPage() {
     setMsgs([]);
     setShowActions(true);
     return conv.id;
-  }, []);
+  }, [userId]);
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -646,6 +690,32 @@ export default function AssistantPage() {
         conversation_id: convId, role: "assistant", content: reply, modules_used: modules,
       });
 
+      // Si l'utilisateur demande un document, extraire les données PDF
+      if (isDocRequest(trimmed)) {
+        setMsgs(ms => ms.map(m => m.id === aId ? { ...m, pdfGenerating: true } : m));
+        try {
+          const docRes = await fetch("/api/assistant/generate-doc", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: trimmed }),
+          });
+          if (docRes.ok) {
+            const docJson = await docRes.json() as { docData?: PdfData };
+            if (docJson.docData) {
+              setMsgs(ms => ms.map(m =>
+                m.id === aId ? { ...m, pdfData: docJson.docData as PdfData, pdfGenerating: false } : m
+              ));
+            } else {
+              setMsgs(ms => ms.map(m => m.id === aId ? { ...m, pdfGenerating: false } : m));
+            }
+          } else {
+            setMsgs(ms => ms.map(m => m.id === aId ? { ...m, pdfGenerating: false } : m));
+          }
+        } catch {
+          setMsgs(ms => ms.map(m => m.id === aId ? { ...m, pdfGenerating: false } : m));
+        }
+      }
+
       if (msgs.length === 0) {
         const title = trimmed.length > 50 ? trimmed.slice(0, 50) + "…" : trimmed;
         await supabase.from("ai_conversations").update({ title }).eq("id", convId);
@@ -685,7 +755,28 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-56px)] bg-[#07080e] text-white overflow-hidden">
+    <div className={`flex h-[calc(100dvh-56px)] overflow-hidden ${isDark ? "bg-[#07080e] text-white" : "bg-[#f0f2fb] text-gray-900 ai-light"}`}>
+      {!isDark && (
+        <style>{`
+          .ai-light [class*="border-white/"] { border-color: rgba(12,24,100,0.09) !important; }
+          .ai-light [class*="bg-white/[0.0"] { background-color: rgba(12,24,100,0.03) !important; }
+          .ai-light [class*="hover:bg-white/"]:hover { background-color: rgba(12,24,100,0.05) !important; }
+          .ai-light .text-white { color: #111827 !important; }
+          .ai-light [class*="text-white/9"] { color: rgba(12,18,50,0.90) !important; }
+          .ai-light [class*="text-white/8"] { color: rgba(12,18,50,0.82) !important; }
+          .ai-light [class*="text-white/7"] { color: rgba(12,18,50,0.65) !important; }
+          .ai-light [class*="text-white/6"] { color: rgba(12,18,50,0.58) !important; }
+          .ai-light [class*="text-white/5"] { color: rgba(12,18,50,0.52) !important; }
+          .ai-light [class*="text-white/4"] { color: rgba(12,18,50,0.45) !important; }
+          .ai-light [class*="text-white/3"] { color: rgba(12,18,50,0.38) !important; }
+          .ai-light [class*="text-white/2"] { color: rgba(12,18,50,0.28) !important; }
+          .ai-light [class*="text-white/1"] { color: rgba(12,18,50,0.18) !important; }
+          .ai-light [class*="hover:text-white/"]:hover { color: rgba(12,18,50,0.75) !important; }
+          .ai-light textarea { color: #111827 !important; }
+          .ai-light textarea::placeholder { color: rgba(12,18,50,0.30) !important; }
+          .ai-light input::placeholder { color: rgba(12,18,50,0.30) !important; }
+        `}</style>
+      )}
 
             <AnimatePresence>
         {showSidebar && (
@@ -698,7 +789,7 @@ export default function AssistantPage() {
             <motion.div
               initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="fixed left-0 top-0 bottom-0 w-[300px] z-50 bg-white/[0.025] border-r border-white/[0.06] flex flex-col lg:hidden overflow-hidden"
+              className={`fixed left-0 top-0 bottom-0 w-[300px] z-50 flex flex-col lg:hidden overflow-hidden border-r ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-[rgba(12,24,100,0.09)]"}`}
             >
               <SidebarInner
                 convs={convs}
@@ -715,7 +806,7 @@ export default function AssistantPage() {
         )}
       </AnimatePresence>
 
-            <div className="hidden lg:flex w-[260px] shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.025]">
+            <div className={`hidden lg:flex w-[260px] shrink-0 flex-col border-r ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-[rgba(12,24,100,0.09)] bg-white"}`}>
         <SidebarInner
           convs={convs}
           activeConv={activeConv}
@@ -784,9 +875,13 @@ export default function AssistantPage() {
                 exit={{ opacity: 0 }} className="space-y-5 md:space-y-7">
 
                                 <div className="text-center pt-4 pb-2">
-                  <div className="mx-auto mb-4 h-14 w-14 rounded-2xl flex items-center justify-center"
-                    style={{ background: `linear-gradient(135deg, ${CYAN}20, ${VIOLET}20)`, border: `1px solid ${CYAN}30` }}>
-                    <Sparkles size={24} style={{ color: CYAN }} />
+                  <div className="mx-auto mb-4 h-14 w-14 overflow-hidden rounded-2xl"
+                    style={isDark ? {} : {
+                      background: "rgba(34,211,238,0.09)",
+                      border: "1px solid rgba(34,211,238,0.22)",
+                      boxShadow: "0 4px 18px rgba(34,211,238,0.12), 0 2px 8px rgba(12,24,100,0.07)",
+                    }}>
+                    {APP_ICONS["/client/assistant"]}
                   </div>
                   <h2 className="text-xl font-bold text-white/90 mb-2">Bonjour</h2>
                   <p className="text-sm text-white/45 max-w-sm mx-auto leading-relaxed px-2">
@@ -799,7 +894,8 @@ export default function AssistantPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {ACTIONS.map(a => (
                       <button key={a.label} onClick={() => send(a.prompt)}
-                        className="flex flex-col items-center gap-1.5 rounded-xl border border-white/[0.05] bg-white/[0.02] px-2 py-3.5 text-center transition hover:border-white/10 hover:bg-white/[0.05] active:scale-95">
+                        className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-3.5 text-center transition active:scale-95"
+                        style={{ background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.85)", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.09)"}`, boxShadow: isDark ? "none" : "0 1px 3px rgba(12,24,100,0.06)" }}>
                         <a.icon size={22} style={{ color: a.color }} />
                         <span className="text-[0.65rem] text-white/55 leading-snug">{a.label}</span>
                       </button>
@@ -812,7 +908,7 @@ export default function AssistantPage() {
                   <div className="flex flex-wrap gap-2 justify-center">
                     {SUGGESTIONS.map(s => (
                       <button key={s} onClick={() => send(s)}
-                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-2 text-xs text-white/55 transition hover:border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10 active:scale-95">
+                        className={`rounded-full px-3.5 py-2 text-xs transition active:scale-95 ${isDark ? "border border-white/[0.08] bg-white/[0.03] text-white/55 hover:border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10" : "border border-[rgba(12,24,100,0.12)] bg-white/80 text-[rgba(12,18,50,0.55)] hover:border-[rgba(201,165,90,0.45)] hover:text-[#8a6a28] hover:bg-[rgba(201,165,90,0.08)]"}`}>
                         {s}
                       </button>
                     ))}
@@ -829,17 +925,21 @@ export default function AssistantPage() {
                 className={`flex gap-2 md:gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
 
                                 <div className={`shrink-0 h-8 w-8 rounded-xl flex items-center justify-center text-sm font-bold ${m.role === "user"
-                  ? "bg-violet-500/20 text-violet-300 border border-violet-500/30"
-                  : "text-cyan-300 border border-cyan-500/30"}`}
-                  style={m.role === "assistant" ? { background: CYAN + "15" } : {}}>
+                  ? "bg-violet-500/20 border border-violet-500/30"
+                  : "border border-cyan-500/30"}`}
+                  style={m.role === "assistant"
+                    ? { background: CYAN + "15", color: "#22d3ee" }
+                    : { color: isDark ? "#c4b5fd" : "#6d28d9" }}>
                   {m.role === "user" ? "U" : <Sparkles size={13} style={{ color: CYAN }} />}
                 </div>
 
                                 <div className={`max-w-[84%] md:max-w-[76%] space-y-2 ${m.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
                   <div className={`rounded-2xl px-3.5 md:px-4 py-3 ${m.role === "user"
-                    ? "rounded-tr-sm bg-violet-600/25 border border-violet-500/20"
-                    : "rounded-tl-sm bg-white/[0.025] border border-white/[0.07]"}`}
-                    style={m.role === "assistant" ? { borderLeft: `2px solid ${CYAN}40` } : {}}>
+                    ? "rounded-tr-sm border border-violet-500/20"
+                    : "rounded-tl-sm border border-white/[0.07]"}`}
+                    style={m.role === "user"
+                      ? { background: isDark ? "rgba(124,58,237,0.18)" : "rgba(109,40,217,0.07)" }
+                      : { background: isDark ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.85)", borderLeft: `2px solid ${CYAN}40` }}>
 
                     {m.loading ? (
                       <div className="flex items-center gap-1.5 py-1">
@@ -873,6 +973,14 @@ export default function AssistantPage() {
                         {speakingId === m.id ? <VolumeX size={9} /> : <Volume2 size={9} />}
                         {speakingId === m.id ? "Stop" : "Écouter"}
                       </button>
+                      {m.pdfGenerating && (
+                        <span className="flex items-center gap-1 rounded-full border border-cyan-500/20 px-2.5 py-1 text-[0.62rem] text-cyan-300/60">
+                          <Loader2 size={9} className="animate-spin" /> Préparation doc…
+                        </span>
+                      )}
+                      {m.pdfData && !m.pdfGenerating && (
+                        <DocDownloadButton pdfData={m.pdfData} isDark={isDark} />
+                      )}
                     </div>
                   )}
                 </div>

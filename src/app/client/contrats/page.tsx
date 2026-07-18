@@ -571,30 +571,34 @@ function AIModal({ contract, onClose }: { contract: Contract; onClose: () => voi
   );
 }
 
-function ContractCard({ contract, isSelected, onSelect, onDelete }: {
-  contract: Contract; isSelected: boolean; onSelect: () => void; onDelete: (id: string) => void;
+function ContractCard({ contract, isSelected, onSelect, onDelete, isDark }: {
+  contract: Contract; isSelected: boolean; onSelect: () => void; onDelete: (id: string) => void; isDark: boolean;
 }) {
   const t = CONTRACT_TYPES.find((x) => x.value === contract.contract_type);
   return (
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease }} onClick={onSelect}
-      className={`group relative flex flex-col gap-2 rounded-2xl border cursor-pointer transition-all duration-200 overflow-hidden
-        ${isSelected ? "border-white/[0.14] bg-white/[0.025]" : "border-white/[0.06] bg-white/[0.025] hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]"}`}>
+      className={`group relative flex flex-col gap-2 rounded-2xl border cursor-pointer transition-all duration-200 overflow-hidden ${
+        isSelected
+          ? isDark ? "border-white/[0.14] bg-white/[0.025]" : "border-gray-300 bg-white"
+          : isDark ? "border-white/[0.06] bg-white/[0.025] hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+                   : "border-gray-200 bg-white hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+      }`}>
       <div className="h-[2px] w-full" style={{ background: isSelected ? `linear-gradient(90deg, ${gold}80, transparent)` : "transparent" }}/>
       <div className="px-4 pb-4 pt-2">
         {isSelected && <div className="absolute left-0 top-6 bottom-3 w-[2px] rounded-full" style={{ backgroundColor: gold }}/>}
         <div className="flex items-start justify-between gap-2 mb-1.5">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white/90 truncate">{contract.title}</p>
-            <p className="text-xs text-white/45 truncate">{contract.client_name}{contract.client_company ? ` · ${contract.client_company}` : ""}</p>
+            <p className={`text-sm font-bold truncate ${isDark ? "text-white/90" : "text-gray-900"}`}>{contract.title}</p>
+            <p className={`text-xs truncate ${isDark ? "text-white/45" : "text-gray-500"}`}>{contract.client_name}{contract.client_company ? ` · ${contract.client_company}` : ""}</p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <StatusBadge status={contract.status}/>
             <button onClick={(e) => { e.stopPropagation(); onDelete(contract.id); }}
-              className="opacity-0 group-hover:opacity-100 h-6 w-6 flex items-center justify-center rounded-md hover:bg-red-500/10 text-white/30 hover:text-red-400 transition-all">
+              className={`opacity-0 group-hover:opacity-100 h-6 w-6 flex items-center justify-center rounded-md hover:bg-red-500/10 hover:text-red-400 transition-all ${isDark ? "text-white/30" : "text-gray-400"}`}>
               <Trash2 size={11}/>
             </button>
-            <ChevronRight size={13} className="text-white/20"/>
+            <ChevronRight size={13} className={isDark ? "text-white/20" : "text-gray-400"}/>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -603,9 +607,9 @@ function ContractCard({ contract, isSelected, onSelect, onDelete }: {
             {t?.label ?? contract.contract_type}
           </span>
           {contract.amount != null && (
-            <span className="text-xs text-white/35">{fmtEur(contract.amount)}</span>
+            <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-500"}`}>{fmtEur(contract.amount)}</span>
           )}
-          <span className="text-xs text-white/20 ml-auto">
+          <span className={`text-xs ml-auto ${isDark ? "text-white/20" : "text-gray-400"}`}>
             {new Date(contract.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
           </span>
         </div>
@@ -1710,19 +1714,19 @@ export default function ContratsPage() {
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
-                className="h-10 w-10 flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
+                className={`h-10 w-10 flex items-center justify-center rounded-xl border ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-gray-200 bg-white/70"}`}>
                 <FileText size={18} style={{ color: gold }}/>
               </motion.div>
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
-                <h1 className="text-base font-bold text-white tracking-tight">Contrats IA</h1>
-                <p className="text-[0.62rem] text-white/35">Génération · Signature · Suivi juridique</p>
+                <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Contrats IA</h1>
+                <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-500"}`}>Génération · Signature · Suivi juridique</p>
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex rounded-xl border border-white/[0.07] overflow-hidden">
+              <div className={`flex rounded-xl border overflow-hidden ${isDark ? "border-white/[0.07]" : "border-gray-200"}`}>
                 {(["list", "dashboard"] as const).map((v) => (
                   <button key={v} onClick={() => setView(v)}
-                    className={`px-3 py-1.5 text-xs font-semibold transition-all ${view === v ? "text-[#0a0a0a]" : "text-white/40 hover:text-white/60"}`}
+                    className={`px-3 py-1.5 text-xs font-semibold transition-all ${view === v ? "text-[#0a0a0a]" : isDark ? "text-white/40 hover:text-white/60" : "text-gray-500 hover:text-gray-700"}`}
                     style={view === v ? { background: gold } : {}}>
                     {v === "list" ? "Liste" : "Dashboard"}
                   </button>
@@ -1730,12 +1734,12 @@ export default function ContratsPage() {
               </div>
               {templates.length > 0 && (
                 <button onClick={() => setTmplModal(true)}
-                  className="h-8 flex items-center gap-1.5 px-3 rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all text-xs font-medium"
+                  className={`h-8 flex items-center gap-1.5 px-3 rounded-xl border transition-all text-xs font-medium ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
                   title="Mes modèles">
                   <BookMarked size={13}/> {templates.length}
                 </button>
               )}
-              <button onClick={exportCSV} className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all" title="Exporter CSV">
+              <button onClick={exportCSV} className={`h-8 w-8 flex items-center justify-center rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`} title="Exporter CSV">
                 <Download size={14}/>
               </button>
               <motion.button onClick={() => setShowModal(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -1758,12 +1762,12 @@ export default function ContratsPage() {
             ].map((kpi, i) => {
               const KpiIcon = kpi.icon;
               return (
-                <motion.button key={kpi.label} onClick={kpi.onClick} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.05)" }} whileTap={{ scale: 0.97 }}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.06] bg-white/[0.03] cursor-pointer transition-all text-left">
+                <motion.button key={kpi.label} onClick={kpi.onClick} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2 border cursor-pointer transition-all text-left ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white/60"}`}>
                   <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-white leading-none truncate">{kpi.value}</p>
-                    <p className="text-[0.58rem] text-white/35 uppercase tracking-wide mt-0.5">{kpi.label}</p>
+                    <p className={`text-sm font-bold leading-none truncate ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
+                    <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                   </div>
                 </motion.button>
               );
@@ -1781,28 +1785,31 @@ export default function ContratsPage() {
       ) : (
         <div className="flex h-[calc(100vh-140px)]">
           {/* Left: list */}
-          <div className={`flex flex-col border-r border-white/[0.06] overflow-hidden ${selected ? "hidden md:flex md:w-[340px] lg:w-[380px]" : "flex w-full md:w-[340px] lg:w-[380px]"}`}>
+          <div className={`flex flex-col overflow-hidden ${isDark ? "border-r border-white/[0.06]" : "border-r border-gray-200"} ${selected ? "hidden md:flex md:w-[340px] lg:w-[380px]" : "flex w-full md:w-[340px] lg:w-[380px]"}`}>
             {/* Filters */}
-            <div className="p-3 border-b border-white/[0.06] space-y-2">
+            <div className={`p-3 space-y-2 ${isDark ? "border-b border-white/[0.06]" : "border-b border-gray-200"}`}>
               <div className="relative">
                 <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher…"
-                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/[0.18] transition-colors pl-8"/>
-                <Eye size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"/>
+                  className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none transition-colors pl-8 ${isDark ? "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/25 focus:border-white/[0.18]" : "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-300"}`}/>
+                <Eye size={13} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
               </div>
               <div className="flex gap-2">
                 <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as ContractStatus | "all")}
-                  className="flex-1 bg-[#131c30] border border-white/[0.08] rounded-xl px-2 py-1.5 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+                  className="flex-1 rounded-xl border px-2 py-1.5 text-xs focus:outline-none appearance-none"
+                  style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.7)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                   <option value="all">Tous statuts</option>
                   {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
                 <select value={filterType} onChange={(e) => setFilterType(e.target.value as ContractType | "all")}
-                  className="flex-1 bg-[#131c30] border border-white/[0.08] rounded-xl px-2 py-1.5 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+                  className="flex-1 rounded-xl border px-2 py-1.5 text-xs focus:outline-none appearance-none"
+                  style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.7)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                   <option value="all">Tous types</option>
                   {CONTRACT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value as "date" | "amount" | "client")}
-                className="w-full bg-[#131c30] border border-white/[0.08] rounded-xl px-2 py-1.5 text-xs text-white/70 focus:outline-none appearance-none [color-scheme:dark]">
+                className="w-full rounded-xl border px-2 py-1.5 text-xs focus:outline-none appearance-none"
+                style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.7)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                 <option value="date">Plus récent</option>
                 <option value="amount">Montant ↓</option>
                 <option value="client">Client A→Z</option>
@@ -1812,15 +1819,15 @@ export default function ContratsPage() {
             {/* List */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {loading ? (
-                <div className="flex items-center justify-center h-32"><RefreshCw size={20} className="animate-spin text-white/30"/></div>
+                <div className="flex items-center justify-center h-32"><RefreshCw size={20} className={`animate-spin ${isDark ? "text-white/30" : "text-gray-400"}`}/></div>
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center gap-4 py-16 text-center">
                   <div className="h-16 w-16 flex items-center justify-center rounded-2xl" style={{ background: gold + "15", border: `1px solid ${gold}30` }}>
                     <FileText size={28} style={{ color: gold }}/>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white/80">Aucun contrat</p>
-                    <p className="text-xs text-white/35 mt-1.5 max-w-[200px] leading-relaxed">Créez votre premier contrat et laissez l'IA le rédiger en quelques secondes.</p>
+                    <p className={`text-sm font-semibold ${isDark ? "text-white/80" : "text-gray-700"}`}>Aucun contrat</p>
+                    <p className={`text-xs mt-1.5 max-w-[200px] leading-relaxed ${isDark ? "text-white/35" : "text-gray-400"}`}>Créez votre premier contrat et laissez l'IA le rédiger en quelques secondes.</p>
                   </div>
                   <button onClick={() => setShowModal(true)}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all"
@@ -1832,7 +1839,7 @@ export default function ContratsPage() {
                 <AnimatePresence>
                   {filtered.map((c) => (
                     <ContractCard key={c.id} contract={c} isSelected={selected?.id === c.id}
-                      onSelect={() => selectContract(c)} onDelete={handleDelete}/>
+                      onSelect={() => selectContract(c)} onDelete={handleDelete} isDark={isDark}/>
                   ))}
                 </AnimatePresence>
               )}
@@ -1864,7 +1871,7 @@ export default function ContratsPage() {
                   <div className="h-12 w-12 flex items-center justify-center rounded-2xl" style={{ background: gold + "0f", border: `1px solid ${gold}20` }}>
                     <Edit2 size={18} style={{ color: gold + "80" }}/>
                   </div>
-                  <p className="text-sm font-semibold text-white/25">Sélectionnez un contrat</p>
+                  <p className={`text-sm font-semibold ${isDark ? "text-white/25" : "text-gray-400"}`}>Sélectionnez un contrat</p>
                 </div>
               )
             )}

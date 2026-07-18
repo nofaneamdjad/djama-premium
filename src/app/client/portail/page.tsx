@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useToastStack, ToastStack } from "@/components/ui/ToastStack";
 import { useTheme } from "@/lib/theme-context";
+import { AppModuleIcon } from "@/components/AppIcons";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -273,38 +274,51 @@ export default function PortailClientPage() {
 
   /* ══════════════════════════════════════════════════════════════════ */
   return (
-    <div className={`relative min-h-screen ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-gray-900"}`}>
+    <div className={`relative flex flex-col min-h-screen ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
       <ToastStack toasts={toasts} remove={remove} />
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-
-        {/* ── HEADER ── */}
-        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">CRM Client</p>
-            <h1 className={`text-2xl font-black sm:text-3xl ${isDark ? "text-white" : "text-gray-900"}`}>Portail Client</h1>
+      {/* ── HEADER ── */}
+      <div className="relative overflow-hidden shrink-0" style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#07080e)" : "linear-gradient(160deg,#f0f2f5,#f5f7fa,#f0f2f5)" }}>
+        <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
+        <div className="pointer-events-none absolute -bottom-8 right-10 h-32 w-32 rounded-full opacity-[0.04]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.3),transparent)" }}/>
+        <div className="relative px-4 sm:px-6 pt-5 pb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AppModuleIcon href="/client/portail" size={40} hideBackground />
+              <div>
+                <h1 className={`text-xl font-black tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Portail Client</h1>
+                <p className={`text-[0.65rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                  {clients.length} clients · {clients.filter(c => c.statut === "actif").length} actifs
+                </p>
+              </div>
+            </div>
+            <button onClick={() => setShowForm(true)}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+              <Plus size={13}/> Nouveau client
+            </button>
           </div>
-          <button onClick={() => setShowForm(true)}
-            className="group flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#07080e] shadow-lg shadow-white/10 transition hover:scale-[1.02] hover:shadow-white/20 active:scale-[0.98]">
-            <Plus size={16} /> Nouveau client
-            <ArrowUpRight size={13} className="ml-0.5 opacity-40 transition group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </button>
         </div>
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 w-full">
+
 
         {/* ── STATS ── */}
         <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: "Total",     value: counts.all      ?? 0, color: "#ffffff", icon: Users       },
-            { label: "Actifs",    value: counts.actif    ?? 0, color: "#10b981", icon: CheckCircle2 },
-            { label: "Prospects", value: counts.prospect ?? 0, color: "#f59e0b", icon: Star         },
-            { label: "Pause",     value: counts.pause    ?? 0, color: "#6366f1", icon: Pause        },
+            { label: "Total",     value: counts.all      ?? 0, color: isDark ? "#ffffff" : "#0e1420", icon: Users       },
+            { label: "Actifs",    value: counts.actif    ?? 0, color: "#10b981",                      icon: CheckCircle2 },
+            { label: "Prospects", value: counts.prospect ?? 0, color: "#f59e0b",                      icon: Star         },
+            { label: "Pause",     value: counts.pause    ?? 0, color: "#6366f1",                      icon: Pause        },
           ].map(({ label, value, color, icon: Icon }) => (
-            <div key={label} className="relative overflow-hidden rounded-2xl border border-white/6 bg-white/4 p-5 backdrop-blur-sm">
+            <div key={label} className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm ${isDark ? "border-white/6 bg-white/4" : "border-black/8 bg-white shadow-sm"}`}>
               <div className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rounded-full opacity-10 blur-2xl" style={{ background: color }} />
               <p className="mb-2 text-2xl font-black" style={{ color }}>{value}</p>
               <div className="flex items-center gap-1.5">
                 <Icon size={11} style={{ color }} className="opacity-70" />
-                <p className="text-[0.65rem] font-semibold text-white/40">{label}</p>
+                <p className={`text-[0.65rem] font-semibold ${isDark ? "text-white/40" : "text-[#0e1420]/50"}`}>{label}</p>
               </div>
             </div>
           ))}
@@ -312,11 +326,11 @@ export default function PortailClientPage() {
 
         {/* ── TOOLBAR ── */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex flex-1 items-center gap-2.5 rounded-2xl border border-white/8 bg-white/4 px-4 py-3 backdrop-blur-sm">
-            <Search size={14} className="text-white/30" />
+          <div className={`flex flex-1 items-center gap-2.5 rounded-2xl border px-4 py-3 backdrop-blur-sm ${isDark ? "border-white/8 bg-white/4" : "border-black/8 bg-white shadow-sm"}`}>
+            <Search size={14} className={isDark ? "text-white/30" : "text-[#0e1420]/30"} />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un client, une entreprise…"
-              className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none" />
-            {search && <button onClick={() => setSearch("")} className="text-white/30 transition hover:text-white/60"><X size={13} /></button>}
+              className={`flex-1 bg-transparent text-sm outline-none ${isDark ? "text-white placeholder-white/25" : "text-[#0e1420] placeholder-[#0e1420]/30"}`} />
+            {search && <button onClick={() => setSearch("")} className={`transition ${isDark ? "text-white/30 hover:text-white/60" : "text-[#0e1420]/30 hover:text-[#0e1420]/60"}`}><X size={13} /></button>}
           </div>
           <div className="flex gap-1.5 overflow-x-auto">
             {(["all", "prospect", "actif", "pause", "termine"] as const).map(k => {
@@ -325,13 +339,15 @@ export default function PortailClientPage() {
               return (
                 <button key={k} onClick={() => setFilter(k)}
                   className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-[0.68rem] font-bold transition-all ${
-                    active ? "text-white" : "border border-white/8 bg-white/4 text-white/40 hover:text-white/70"
+                    active ? "text-white" : isDark
+                      ? "border border-white/8 bg-white/4 text-white/40 hover:text-white/70"
+                      : "border border-black/8 bg-white text-[#0e1420]/40 hover:text-[#0e1420]/70 shadow-sm"
                   }`}
                   style={active && s ? { background: s.bg, border: `1px solid ${s.border}`, color: s.color }
                     : active ? { background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" } : {}}>
                   {k === "all" ? "Tous" : s!.label}
                   <span className="rounded-full px-1.5 py-0.5 text-[0.55rem]"
-                    style={active ? { background: "rgba(0,0,0,0.2)" } : { background: "rgba(255,255,255,0.07)" }}>
+                    style={active ? { background: "rgba(0,0,0,0.2)" } : { background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
                     {counts[k] ?? 0}
                   </span>
                 </button>
@@ -342,18 +358,18 @@ export default function PortailClientPage() {
 
         {/* ── GRILLE ── */}
         {loading ? (
-          <div className="flex items-center justify-center py-24"><Loader2 size={24} className="animate-spin text-white/20" /></div>
+          <div className="flex items-center justify-center py-24"><Loader2 size={24} className={`animate-spin ${isDark ? "text-white/20" : "text-[#0e1420]/20"}`} /></div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-white/8 bg-white/4">
-              <Users size={24} className="text-white/20" />
+            <div className={`flex h-16 w-16 items-center justify-center rounded-3xl border ${isDark ? "border-white/8 bg-white/4" : "border-black/8 bg-white shadow-sm"}`}>
+              <Users size={24} className={isDark ? "text-white/20" : "text-[#0e1420]/20"} />
             </div>
             <div>
-              <p className="font-bold text-white/50">{search ? "Aucun résultat" : "Aucun client pour l'instant"}</p>
-              <p className="mt-1 text-sm text-white/25">{search ? "Essaie un autre mot-clé" : "Crée ta première fiche client"}</p>
+              <p className={`font-bold ${isDark ? "text-white/50" : "text-[#0e1420]/50"}`}>{search ? "Aucun résultat" : "Aucun client pour l'instant"}</p>
+              <p className={`mt-1 text-sm ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`}>{search ? "Essaie un autre mot-clé" : "Crée ta première fiche client"}</p>
             </div>
             {!search && (
-              <button onClick={() => setShowForm(true)} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-white/15">
+              <button onClick={() => setShowForm(true)} className={`flex items-center gap-2 rounded-2xl border px-5 py-2.5 text-sm font-bold transition ${isDark ? "border-white/10 bg-white/10 text-white hover:bg-white/15" : "border-black/10 bg-white text-[#0e1420] shadow-sm hover:shadow-md"}`}>
                 <Plus size={14} /> Créer une fiche
               </button>
             )}
@@ -362,13 +378,12 @@ export default function PortailClientPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((c, i) => {
               const s = STATUT[c.statut] ?? STATUT.actif;
-              const Icon = s.icon;
               return (
                 <motion.div key={c.id}
                   initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05, duration: 0.3, ease }}
                   onClick={() => setDrawer(c)}
-                  className="group relative cursor-pointer overflow-hidden rounded-3xl border border-white/6 bg-white/4 p-6 backdrop-blur-sm transition-all duration-200 hover:border-white/12 hover:bg-white/7 hover:shadow-xl hover:shadow-black/30 hover:-translate-y-0.5">
+                  className={`group relative cursor-pointer overflow-hidden rounded-3xl border p-6 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 ${isDark ? "border-white/6 bg-white/4 hover:border-white/12 hover:bg-white/7 hover:shadow-xl hover:shadow-black/30" : "border-black/8 bg-white shadow-sm hover:border-black/12 hover:shadow-md"}`}>
 
                   <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-30" style={{ background: s.glow }} />
 
@@ -382,31 +397,31 @@ export default function PortailClientPage() {
                     </div>
                   </div>
 
-                  <p className="mb-0.5 text-base font-bold text-white">{c.nom}</p>
+                  <p className={`mb-0.5 text-base font-bold ${isDark ? "text-white" : "text-[#0e1420]"}`}>{c.nom}</p>
                   {c.entreprise && (
-                    <p className="mb-3 flex items-center gap-1.5 text-xs text-white/40"><Building2 size={10} /> {c.entreprise}</p>
+                    <p className={`mb-3 flex items-center gap-1.5 text-xs ${isDark ? "text-white/40" : "text-[#0e1420]/45"}`}><Building2 size={10} /> {c.entreprise}</p>
                   )}
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     {c.email && (
                       <a onClick={e => e.stopPropagation()} href={`mailto:${c.email}`}
-                        className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-2.5 py-1.5 text-[0.62rem] font-semibold text-white/50 transition hover:border-white/15 hover:text-white/80">
+                        className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[0.62rem] font-semibold transition ${isDark ? "border-white/8 bg-white/5 text-white/50 hover:border-white/15 hover:text-white/80" : "border-black/8 bg-[#f4f5f9] text-[#0e1420]/50 hover:border-black/15 hover:text-[#0e1420]/80"}`}>
                         <Mail size={10} /> {c.email.length > 22 ? c.email.slice(0, 22) + "…" : c.email}
                       </a>
                     )}
                     {c.phone && (
                       <a onClick={e => e.stopPropagation()} href={`tel:${c.phone}`}
-                        className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-2.5 py-1.5 text-[0.62rem] font-semibold text-white/50 transition hover:border-white/15 hover:text-white/80">
+                        className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[0.62rem] font-semibold transition ${isDark ? "border-white/8 bg-white/5 text-white/50 hover:border-white/15 hover:text-white/80" : "border-black/8 bg-[#f4f5f9] text-[#0e1420]/50 hover:border-black/15 hover:text-[#0e1420]/80"}`}>
                         <Phone size={10} /> {c.phone}
                       </a>
                     )}
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
-                    <p className="text-[0.6rem] text-white/25">
+                  <div className={`mt-4 flex items-center justify-between border-t pt-3 ${isDark ? "border-white/5" : "border-black/5"}`}>
+                    <p className={`text-[0.6rem] ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`}>
                       Ajouté le {new Date(c.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                     </p>
-                    <div className="flex items-center gap-1 text-[0.6rem] font-semibold text-white/25 transition group-hover:text-white/50">
+                    <div className={`flex items-center gap-1 text-[0.6rem] font-semibold transition ${isDark ? "text-white/25 group-hover:text-white/50" : "text-[#0e1420]/25 group-hover:text-[#0e1420]/50"}`}>
                       Voir la fiche <ArrowUpRight size={10} />
                     </div>
                   </div>

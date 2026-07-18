@@ -1,16 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 import { motion } from "framer-motion";
 import {
-  BookMarked, TrendingUp, TrendingDown, Euro,
+  TrendingUp, TrendingDown, Euro,
   Download, ChevronRight, ArrowUpRight, ArrowDownRight,
   Percent, Calendar, FileText, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
+import { useTheme } from "@/lib/theme-context";
+import { AppModuleIcon } from "@/components/AppIcons";
 
 const ease = [0.22, 1, 0.36, 1] as const;
+
+const DarkCtx = createContext(true);
+const useDark = () => useContext(DarkCtx);
 
 interface JournalLine {
   date: string;
@@ -28,6 +33,7 @@ interface TVARow {
 }
 
 export default function ComptabilitePage() {
+  const { isDark } = useTheme();
   const [loading, setLoading]     = useState(true);
   const [period,  setPeriod]      = useState<"month" | "quarter" | "year">("month");
 
@@ -95,7 +101,6 @@ export default function ComptabilitePage() {
       setTvaDeductible(totalExp * 0.2);
       setCharges(totalExp);
 
-      /* Journal comptable */
       const lines: JournalLine[] = [
         ...facs.slice(0, 8).map(f => ({
           date: f.date_emission,
@@ -117,7 +122,6 @@ export default function ComptabilitePage() {
 
       setJournal(lines);
 
-      /* TVA par taux */
       const tva20 = facs.filter(f => {
         const ht  = f.montant_ht ?? 0;
         const tva = f.montant_tva ?? 0;
@@ -135,6 +139,7 @@ export default function ComptabilitePage() {
 
       setLoading(false);
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
   const resultat     = caHT - charges;
@@ -142,17 +147,23 @@ export default function ComptabilitePage() {
   const { label: periodLabel } = getPeriodRange(period);
 
   const kpis = [
-    { label: "CA HT",     value: caHT,    color: "#4ade80", icon: TrendingUp,   bg: "rgba(34,197,94,0.08)",   border: "rgba(34,197,94,0.18)" },
-    { label: "Charges",   value: charges, color: "#f87171", icon: TrendingDown, bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.18)" },
-    { label: "Résultat",  value: resultat,color: resultat >= 0 ? "#4ade80" : "#f87171", icon: Euro, bg: "rgba(99,102,241,0.08)", border: "rgba(99,102,241,0.18)" },
+    { label: "CA HT",    value: caHT,    color: "#16a34a", icon: TrendingUp,   bgD: "rgba(34,197,94,0.08)",   bgL: "rgba(34,197,94,0.10)",   borderD: "rgba(34,197,94,0.18)",   borderL: "rgba(34,197,94,0.25)" },
+    { label: "Charges",  value: charges, color: "#dc2626", icon: TrendingDown, bgD: "rgba(248,113,113,0.08)", bgL: "rgba(248,113,113,0.10)", borderD: "rgba(248,113,113,0.18)", borderL: "rgba(248,113,113,0.25)" },
+    { label: "Résultat", value: resultat,color: resultat >= 0 ? "#16a34a" : "#dc2626", icon: Euro, bgD: "rgba(99,102,241,0.08)", bgL: "rgba(99,102,241,0.08)", borderD: "rgba(99,102,241,0.18)", borderL: "rgba(99,102,241,0.22)" },
   ];
 
   return (
-    <div className="min-h-full bg-[#07080e] pb-20">
+    <DarkCtx.Provider value={isDark}>
+    <div className={`min-h-full pb-20 ${isDark ? "bg-[#07080e]" : "bg-[#f0f2f5]"}`}>
 
       {/* Header */}
       <div className="sticky top-0 z-10 px-4 pt-5 pb-3"
-        style={{ background: "linear-gradient(to bottom, #07080e 85%, transparent)", backdropFilter: "blur(8px)" }}>
+        style={{
+          background: isDark
+            ? "linear-gradient(to bottom, #07080e 85%, transparent)"
+            : "linear-gradient(to bottom, #f0f2f5 85%, transparent)",
+          backdropFilter: "blur(8px)"
+        }}>
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -160,18 +171,18 @@ export default function ComptabilitePage() {
           className="flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl"
-              style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)" }}>
-              <BookMarked size={18} color="white" />
-            </div>
+            <AppModuleIcon href="/client/comptabilite" size={40} hideBackground />
             <div>
-              <h1 className="text-[17px] font-black text-white">Comptabilité</h1>
-              <p className="text-[10px] text-white/35">{periodLabel}</p>
+              <h1 className={`text-[17px] font-black ${isDark ? "text-white" : "text-gray-900"}`}>Comptabilité</h1>
+              <p className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{periodLabel}</p>
             </div>
           </div>
           <button
-            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-semibold text-white/60 transition hover:text-white/80"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-semibold transition ${isDark ? "text-white/60 hover:text-white/80" : "text-gray-500 hover:text-gray-700"}`}
+            style={{
+              background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+              border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)"
+            }}
           >
             <Download size={12} /> Exporter
           </button>
@@ -185,8 +196,10 @@ export default function ComptabilitePage() {
               onClick={() => setPeriod(p)}
               className="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all"
               style={period === p
-                ? { background: "rgba(14,165,233,0.15)", border: "1px solid rgba(14,165,233,0.35)", color: "#38bdf8" }
-                : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.4)" }
+                ? { background: "rgba(14,165,233,0.15)", border: "1px solid rgba(14,165,233,0.35)", color: "#0ea5e9" }
+                : isDark
+                  ? { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.4)" }
+                  : { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)", color: "rgba(0,0,0,0.4)" }
               }
             >
               {p === "month" ? "Mois" : p === "quarter" ? "Trimestre" : "Année"}
@@ -208,17 +221,18 @@ export default function ComptabilitePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.06, ease }}
                 className="rounded-2xl p-3.5"
-                style={{ background: k.bg, border: `1px solid ${k.border}` }}
+                style={{ background: isDark ? k.bgD : k.bgL, border: `1px solid ${isDark ? k.borderD : k.borderL}` }}
               >
                 <Icon size={14} style={{ color: k.color }} className="mb-2" />
                 {loading ? (
-                  <div className="h-5 w-16 rounded animate-pulse mb-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+                  <div className="h-5 w-16 rounded animate-pulse mb-1"
+                    style={{ background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)" }} />
                 ) : (
                   <p className="text-[15px] font-black tabular-nums leading-tight" style={{ color: k.color }}>
                     {fmtEurInt(k.value)}
                   </p>
                 )}
-                <p className="text-[9px] font-semibold text-white/30 mt-0.5 uppercase tracking-wide">{k.label}</p>
+                <p className={`text-[9px] font-semibold mt-0.5 uppercase tracking-wide ${isDark ? "text-white/30" : "text-gray-500"}`}>{k.label}</p>
               </motion.div>
             );
           })}
@@ -230,18 +244,21 @@ export default function ComptabilitePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.32, delay: 0.15, ease }}
           className="rounded-2xl overflow-hidden"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+          style={{
+            background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.9)",
+            border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)"
+          }}
         >
           <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-            <Percent size={13} style={{ color: "#38bdf8" }} />
-            <h2 className="text-[12px] font-bold text-white/70">Déclaration TVA</h2>
+            <Percent size={13} style={{ color: "#0ea5e9" }} />
+            <h2 className={`text-[12px] font-bold ${isDark ? "text-white/70" : "text-gray-700"}`}>Déclaration TVA</h2>
           </div>
 
-          {/* Lignes TVA collectée */}
           {loading ? (
             <div className="px-4 pb-4 space-y-2">
               {[0, 1].map(i => (
-                <div key={i} className="h-8 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.05)" }} />
+                <div key={i} className="h-8 rounded-xl animate-pulse"
+                  style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }} />
               ))}
             </div>
           ) : (
@@ -249,28 +266,34 @@ export default function ComptabilitePage() {
               <div className="px-4 pb-2 space-y-1.5">
                 {tvaRows.length > 0 ? tvaRows.map(row => (
                   <div key={row.label} className="flex items-center justify-between rounded-xl px-3 py-2.5"
-                    style={{ background: "rgba(56,189,248,0.06)", border: "1px solid rgba(56,189,248,0.12)" }}>
+                    style={{
+                      background: isDark ? "rgba(14,165,233,0.06)" : "rgba(14,165,233,0.07)",
+                      border: isDark ? "1px solid rgba(14,165,233,0.12)" : "1px solid rgba(14,165,233,0.18)"
+                    }}>
                     <div>
-                      <p className="text-[11px] font-semibold text-white/70">{row.label}</p>
-                      <p className="text-[9.5px] text-white/30">Base {fmtEurInt(row.base)}</p>
+                      <p className={`text-[11px] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{row.label}</p>
+                      <p className={`text-[9.5px] ${isDark ? "text-white/30" : "text-gray-400"}`}>Base {fmtEurInt(row.base)}</p>
                     </div>
-                    <p className="text-[13px] font-black" style={{ color: "#38bdf8" }}>{fmtEurInt(row.tva)}</p>
+                    <p className="text-[13px] font-black" style={{ color: "#0ea5e9" }}>{fmtEurInt(row.tva)}</p>
                   </div>
                 )) : (
-                  <p className="text-[11px] text-white/25 text-center py-3">Aucune facture sur la période</p>
+                  <p className={`text-[11px] text-center py-3 ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune facture sur la période</p>
                 )}
               </div>
 
               {/* Solde TVA */}
               <div className="mx-4 mb-4 mt-1 rounded-xl px-4 py-3 flex items-center justify-between"
-                style={{ background: tvaSolde >= 0 ? "rgba(239,68,68,0.07)" : "rgba(34,197,94,0.07)", border: `1px solid ${tvaSolde >= 0 ? "rgba(239,68,68,0.18)" : "rgba(34,197,94,0.18)"}` }}>
+                style={{
+                  background: tvaSolde >= 0 ? "rgba(239,68,68,0.07)" : "rgba(34,197,94,0.07)",
+                  border: `1px solid ${tvaSolde >= 0 ? "rgba(239,68,68,0.18)" : "rgba(34,197,94,0.18)"}`
+                }}>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: tvaSolde >= 0 ? "#f87171" : "#4ade80" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: tvaSolde >= 0 ? "#dc2626" : "#16a34a" }}>
                     {tvaSolde >= 0 ? "TVA à payer" : "Crédit de TVA"}
                   </p>
-                  <p className="text-[9px] text-white/25">Collectée {fmtEurInt(tvaCollectee)} − Déductible {fmtEurInt(tvaDeductible)}</p>
+                  <p className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>Collectée {fmtEurInt(tvaCollectee)} − Déductible {fmtEurInt(tvaDeductible)}</p>
                 </div>
-                <p className="text-[16px] font-black tabular-nums" style={{ color: tvaSolde >= 0 ? "#f87171" : "#4ade80" }}>
+                <p className="text-[16px] font-black tabular-nums" style={{ color: tvaSolde >= 0 ? "#dc2626" : "#16a34a" }}>
                   {fmtEurInt(Math.abs(tvaSolde))}
                 </p>
               </div>
@@ -284,21 +307,24 @@ export default function ComptabilitePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.32, delay: 0.2, ease }}
           className="rounded-2xl overflow-hidden"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+          style={{
+            background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.9)",
+            border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)"
+          }}
         >
           <div className="flex items-center gap-2 px-4 pt-4 pb-2">
             <FileText size={13} style={{ color: "#a78bfa" }} />
-            <h2 className="text-[12px] font-bold text-white/70">Compte de résultat</h2>
+            <h2 className={`text-[12px] font-bold ${isDark ? "text-white/70" : "text-gray-700"}`}>Compte de résultat</h2>
           </div>
 
           {[
-            { label: "Chiffre d'affaires HT", value: caHT,    sign: "+", color: "#4ade80" },
-            { label: "Charges déductibles",   value: charges, sign: "−", color: "#f87171" },
+            { label: "Chiffre d'affaires HT", value: caHT,    sign: "+", color: "#16a34a" },
+            { label: "Charges déductibles",   value: charges, sign: "−", color: "#dc2626" },
           ].map((row, i) => (
             <div key={row.label}
               className="flex items-center justify-between px-4 py-3"
-              style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : undefined }}>
-              <p className="text-[11.5px] text-white/55">{row.label}</p>
+              style={{ borderTop: i > 0 ? isDark ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)" : undefined }}>
+              <p className={`text-[11.5px] ${isDark ? "text-white/55" : "text-gray-500"}`}>{row.label}</p>
               <p className="text-[13px] font-bold tabular-nums" style={{ color: row.color }}>
                 {loading ? "—" : `${row.sign} ${fmtEurInt(row.value)}`}
               </p>
@@ -310,8 +336,8 @@ export default function ComptabilitePage() {
               background: resultat >= 0 ? "rgba(34,197,94,0.08)" : "rgba(248,113,113,0.08)",
               border: `1px solid ${resultat >= 0 ? "rgba(34,197,94,0.20)" : "rgba(248,113,113,0.20)"}`,
             }}>
-            <p className="text-[12px] font-black text-white/80">Résultat net</p>
-            <p className="text-[17px] font-black tabular-nums" style={{ color: resultat >= 0 ? "#4ade80" : "#f87171" }}>
+            <p className={`text-[12px] font-black ${isDark ? "text-white/80" : "text-gray-800"}`}>Résultat net</p>
+            <p className="text-[17px] font-black tabular-nums" style={{ color: resultat >= 0 ? "#16a34a" : "#dc2626" }}>
               {loading ? "—" : fmtEurInt(resultat)}
             </p>
           </div>
@@ -323,63 +349,65 @@ export default function ComptabilitePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.32, delay: 0.25, ease }}
           className="rounded-2xl overflow-hidden"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+          style={{
+            background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.9)",
+            border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)"
+          }}
         >
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
             <div className="flex items-center gap-2">
               <Calendar size={13} style={{ color: "#fbbf24" }} />
-              <h2 className="text-[12px] font-bold text-white/70">Journal des opérations</h2>
+              <h2 className={`text-[12px] font-bold ${isDark ? "text-white/70" : "text-gray-700"}`}>Journal des opérations</h2>
             </div>
-            <span className="text-[9.5px] font-bold text-white/20 tabular-nums">{journal.length}</span>
+            <span className={`text-[9.5px] font-bold tabular-nums ${isDark ? "text-white/20" : "text-gray-300"}`}>{journal.length}</span>
           </div>
 
           {loading ? (
             <div className="px-4 pb-4 space-y-2">
               {[0, 1, 2, 3].map(i => (
-                <div key={i} className="h-10 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.05)" }} />
+                <div key={i} className="h-10 rounded-xl animate-pulse"
+                  style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }} />
               ))}
             </div>
           ) : journal.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-10">
-              <RefreshCw size={22} className="text-white/15" />
-              <p className="text-[11px] text-white/25">Aucune opération sur la période</p>
+              <RefreshCw size={22} className={isDark ? "text-white/15" : "text-gray-300"} />
+              <p className={`text-[11px] ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune opération sur la période</p>
             </div>
           ) : (
             <div className="pb-2">
               {journal.map((line, i) => (
                 <div key={i}
                   className="flex items-center gap-3 px-4 py-2.5"
-                  style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : undefined }}>
-                  {/* Compte */}
+                  style={{ borderTop: i > 0 ? isDark ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)" : undefined }}>
                   <div className="shrink-0 w-9 text-center rounded-lg py-1"
-                    style={{ background: "rgba(255,255,255,0.05)" }}>
-                    <p className="text-[8.5px] font-bold text-white/35">{line.compte}</p>
+                    style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }}>
+                    <p className={`text-[8.5px] font-bold ${isDark ? "text-white/35" : "text-gray-400"}`}>{line.compte}</p>
                   </div>
-                  {/* Libellé + date */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold text-white/70 truncate">{line.libelle}</p>
-                    <p className="text-[9px] text-white/25">
+                    <p className={`text-[11px] font-semibold truncate ${isDark ? "text-white/70" : "text-gray-700"}`}>{line.libelle}</p>
+                    <p className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>
                       {new Date(line.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                     </p>
                   </div>
-                  {/* Débit / Crédit */}
                   {line.credit > 0 ? (
                     <div className="flex items-center gap-1 shrink-0">
-                      <ArrowUpRight size={11} className="text-emerald-400" />
-                      <span className="text-[11px] font-bold text-emerald-400 tabular-nums">{fmtEurInt(line.credit)}</span>
+                      <ArrowUpRight size={11} className="text-emerald-500" />
+                      <span className="text-[11px] font-bold text-emerald-500 tabular-nums">{fmtEurInt(line.credit)}</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1 shrink-0">
-                      <ArrowDownRight size={11} className="text-red-400" />
-                      <span className="text-[11px] font-bold text-red-400 tabular-nums">{fmtEurInt(line.debit)}</span>
+                      <ArrowDownRight size={11} className="text-red-500" />
+                      <span className="text-[11px] font-bold text-red-500 tabular-nums">{fmtEurInt(line.debit)}</span>
                     </div>
                   )}
                 </div>
               ))}
 
               <div className="px-4 pt-1 pb-1">
-                <button className="flex w-full items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-semibold text-white/35 transition hover:text-white/55"
-                  style={{ border: "1px dashed rgba(255,255,255,0.08)" }}>
+                <button
+                  className={`flex w-full items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-semibold transition ${isDark ? "text-white/35 hover:text-white/55" : "text-gray-400 hover:text-gray-600"}`}
+                  style={{ border: isDark ? "1px dashed rgba(255,255,255,0.08)" : "1px dashed rgba(0,0,0,0.12)" }}>
                   Voir tout <ChevronRight size={11} />
                 </button>
               </div>
@@ -389,5 +417,6 @@ export default function ComptabilitePage() {
 
       </div>
     </div>
+    </DarkCtx.Provider>
   );
 }

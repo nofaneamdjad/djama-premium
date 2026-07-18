@@ -21,6 +21,7 @@ import type { ChartOptions, TooltipItem } from "chart.js";
 import { supabase } from "@/lib/supabase";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
+import { useTheme } from "@/lib/theme-context";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler);
 
@@ -76,44 +77,50 @@ const RESPONSE_TEMPLATES: Record<TemplateTab, { id: string; label: string; text:
   ],
 };
 
-const CHART_OPTIONS: ChartOptions<"line"> = {
-  responsive: true,
-  maintainAspectRatio: false,
-  scales: {
-    y: {
-      min: 0,
-      max: 5,
-      grid: { color: "rgba(255,255,255,0.05)" },
-      ticks: { color: "rgba(255,255,255,0.3)", stepSize: 1, font: { size: 10 } },
-    },
-    x: {
-      grid: { display: false },
-      ticks: { color: "rgba(255,255,255,0.3)", font: { size: 10 } },
-    },
-  },
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      backgroundColor: "rgba(14,20,32,0.95)",
-      borderColor: "rgba(255,255,255,0.1)",
-      borderWidth: 1,
-      callbacks: {
-        label: (ctx: TooltipItem<"line">) =>
-          ctx.parsed.y != null ? `★ ${ctx.parsed.y.toFixed(1)}/5` : "Aucun avis",
+function getChartOptions(isDark: boolean): ChartOptions<"line"> {
+  const tick  = isDark ? "rgba(255,255,255,0.3)"  : "rgba(14,20,32,0.35)";
+  const grid  = isDark ? "rgba(255,255,255,0.05)" : "rgba(14,20,32,0.06)";
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        min: 0, max: 5,
+        grid: { color: grid },
+        ticks: { color: tick, stepSize: 1, font: { size: 10 } },
+      },
+      x: {
+        grid: { display: false },
+        ticks: { color: tick, font: { size: 10 } },
       },
     },
-  },
-};
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: isDark ? "rgba(14,20,32,0.95)" : "rgba(255,255,255,0.97)",
+        borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(14,20,32,0.1)",
+        titleColor: isDark ? "rgba(255,255,255,0.8)" : "rgba(14,20,32,0.8)",
+        bodyColor:  isDark ? "rgba(255,255,255,0.6)" : "rgba(14,20,32,0.6)",
+        borderWidth: 1,
+        callbacks: {
+          label: (ctx: TooltipItem<"line">) =>
+            ctx.parsed.y != null ? `★ ${ctx.parsed.y.toFixed(1)}/5` : "Aucun avis",
+        },
+      },
+    },
+  };
+}
 
 /* ────────────────────────────── helpers ────────────────────────────── */
-function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function StarRating({ value, onChange, isDark }: { value: number; onChange: (v: number) => void; isDark: boolean }) {
   const [hover, setHover] = useState(0);
+  const empty = isDark ? "text-white/15" : "text-[#0e1420]/15";
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((i) => (
         <button key={i} type="button" aria-label={`${i} étoile${i > 1 ? "s" : ""}`}
           onClick={() => onChange(i)} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(0)}
-          className={`transition-all ${i <= (hover || value) ? "text-amber-400 scale-110" : "text-white/15"}`}>
+          className={`transition-all ${i <= (hover || value) ? "text-amber-400 scale-110" : empty}`}>
           <Star size={22} fill="currentColor" strokeWidth={1} />
         </button>
       ))}
@@ -121,12 +128,13 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
-function StarDisplay({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
+function StarDisplay({ rating, size = "sm", isDark }: { rating: number; size?: "sm" | "md"; isDark: boolean }) {
+  const empty = isDark ? "text-white/12" : "text-[#0e1420]/12";
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
         <Star key={i} size={size === "sm" ? 12 : 15} fill="currentColor" strokeWidth={1}
-          className={i <= rating ? "text-amber-400" : "text-white/12"} />
+          className={i <= rating ? "text-amber-400" : empty} />
       ))}
     </div>
   );
@@ -154,8 +162,18 @@ function exportReviewsCSV(reviews: Review[]) {
    PAGE PRINCIPALE
 ═══════════════════════════════════════════════════ */
 export default function ReputationPage() {
+  const { isDark } = useTheme();
   const { toasts, add: toast, remove: removeToast } = useToastStack();
   const templatesRef = useRef<HTMLDivElement>(null);
+
+  // ── Theme vars ──────────────────────────────────────────
+  const pri   = isDark ? "text-white"              : "text-[#0e1420]";
+  const sec   = isDark ? "text-white/70"           : "text-[#0e1420]/70";
+  const mut   = isDark ? "text-white/40"           : "text-[#0e1420]/45";
+  const faint = isDark ? "text-white/25"           : "text-[#0e1420]/30";
+  const card  = isDark ? "border-white/[0.07] bg-white/[0.025]" : "border-black/[0.08] bg-white shadow-sm";
+  const div5  = isDark ? "divide-white/[0.05]"     : "divide-black/[0.05]";
+  const bar   = isDark ? "bg-white/[0.05]"         : "bg-black/[0.06]";
 
   const [reviews,         setReviews]         = useState<Review[]>([]);
   const [loading,         setLoading]         = useState(true);
@@ -282,11 +300,11 @@ export default function ReputationPage() {
 
   /* ═══════════════ RENDER ═══════════════ */
   return (
-    <div className="min-h-screen bg-[#07080e] text-white">
+    <div className={`min-h-screen ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-[#0e1420]"}`}>
       <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* ── Header ── */}
-      <div className="border-b border-white/6 bg-[#07080e]/95 px-5 py-4 backdrop-blur-xl sm:px-8">
+      <div className={`border-b px-5 py-4 backdrop-blur-xl sm:px-8 ${isDark ? "border-white/[0.06] bg-[#07080e]/95" : "border-black/[0.08] bg-[#f4f5f9]/95 shadow-sm"}`}>
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border"
@@ -294,22 +312,22 @@ export default function ReputationPage() {
               <Star size={18} style={{ color: GOLD }} />
             </div>
             <div>
-              <h1 className="text-base font-extrabold text-white">Réputation</h1>
-              <p className="text-[0.65rem] text-white/30">{reviews.length} avis · image de marque</p>
+              <h1 className={`text-base font-extrabold ${pri}`}>Réputation</h1>
+              <p className={`text-[0.65rem] ${faint}`}>{reviews.length} avis · image de marque</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button onClick={() => setShowCollect(v => !v)}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${showCollect ? "border-cyan-500/30 bg-cyan-500/12 text-cyan-400" : "border-white/[0.08] bg-white/[0.04] text-white/60 hover:bg-white/[0.08]"}`}>
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${showCollect ? "border-cyan-500/30 bg-cyan-500/12 text-cyan-400" : isDark ? "border-white/[0.08] bg-white/[0.04] text-white/60 hover:bg-white/[0.08]" : "border-black/[0.08] bg-white text-[#0e1420]/60 hover:bg-black/[0.05]"}`}>
               <Link2 size={12} /> Lien collecte
             </button>
             <button onClick={() => setShowTemplates(v => !v)}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${showTemplates ? "border-violet-500/30 bg-violet-500/12 text-violet-400" : "border-white/[0.08] bg-white/[0.04] text-white/60 hover:bg-white/[0.08]"}`}>
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${showTemplates ? "border-violet-500/30 bg-violet-500/12 text-violet-400" : isDark ? "border-white/[0.08] bg-white/[0.04] text-white/60 hover:bg-white/[0.08]" : "border-black/[0.08] bg-white text-[#0e1420]/60 hover:bg-black/[0.05]"}`}>
               <MessageSquare size={12} /> Templates
             </button>
             {reviews.length > 0 && (
               <button onClick={() => exportReviewsCSV(reviews)}
-                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08]">
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white/60 hover:bg-white/[0.08]" : "border-black/[0.08] bg-white text-[#0e1420]/60 hover:bg-black/[0.05]"}`}>
                 <Download size={12} /> Export CSV
               </button>
             )}
@@ -329,36 +347,36 @@ export default function ReputationPage() {
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
           className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+          <div className={`relative overflow-hidden rounded-2xl border p-4 ${card}`}>
             <div className="absolute right-3 top-3 opacity-10"><Star size={28} style={{ color: GOLD }} /></div>
-            <p className="mb-1 text-[0.65rem] font-medium text-white/35">Note moyenne</p>
+            <p className={`mb-1 text-[0.65rem] font-medium ${mut}`}>Note moyenne</p>
             <p className="text-[2rem] font-bold leading-none" style={{ color: GOLD }}>
               {totalReviews > 0 ? avgRating.toFixed(1) : "—"}
             </p>
-            <div className="mt-1.5"><StarDisplay rating={Math.round(avgRating)} size="sm" /></div>
+            <div className="mt-1.5"><StarDisplay rating={Math.round(avgRating)} size="sm" isDark={isDark} /></div>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+          <div className={`relative overflow-hidden rounded-2xl border p-4 ${card}`}>
             <div className="absolute right-3 top-3 opacity-10"><Award size={28} className="text-blue-400" /></div>
-            <p className="mb-1 text-[0.65rem] font-medium text-white/35">Total avis</p>
+            <p className={`mb-1 text-[0.65rem] font-medium ${mut}`}>Total avis</p>
             <p className="text-[2rem] font-bold leading-none text-blue-400">{totalReviews}</p>
-            <p className="mt-1.5 text-[10px] text-white/30">collectés</p>
+            <p className={`mt-1.5 text-[10px] ${faint}`}>collectés</p>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+          <div className={`relative overflow-hidden rounded-2xl border p-4 ${card}`}>
             <div className="absolute right-3 top-3 opacity-10"><TrendingUp size={28} className="text-emerald-400" /></div>
-            <p className="mb-1 text-[0.65rem] font-medium text-white/35">Satisfaits</p>
+            <p className={`mb-1 text-[0.65rem] font-medium ${mut}`}>Satisfaits</p>
             <p className="text-[2rem] font-bold leading-none text-emerald-400">{positiveRate}%</p>
-            <p className="mt-1.5 text-[10px] text-white/30">≥ 4 étoiles</p>
+            <p className={`mt-1.5 text-[10px] ${faint}`}>≥ 4 étoiles</p>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+          <div className={`relative overflow-hidden rounded-2xl border p-4 ${card}`}>
             <div className="absolute right-2 top-2 text-[10px] font-extrabold opacity-15" style={{ color: npsColor }}>NPS</div>
-            <p className="mb-1 text-[0.65rem] font-medium text-white/35">Score NPS</p>
+            <p className={`mb-1 text-[0.65rem] font-medium ${mut}`}>Score NPS</p>
             <p className="text-[2rem] font-bold leading-none" style={{ color: npsColor }}>
               {totalReviews > 0 ? (nps >= 0 ? `+${nps}` : String(nps)) : "—"}
             </p>
-            <p className="mt-1.5 text-[10px] text-white/30">
+            <p className={`mt-1.5 text-[10px] ${faint}`}>
               {nps >= 50 ? "Excellent" : nps >= 0 ? "Bon" : "À améliorer"}
             </p>
           </div>
@@ -369,20 +387,20 @@ export default function ReputationPage() {
           {showCollect && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease }} className="overflow-hidden">
-              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-5">
+              <div className={`rounded-2xl border border-cyan-500/20 p-5 ${isDark ? "bg-cyan-500/[0.04]" : "bg-cyan-500/[0.03] shadow-sm"}`}>
                 <div className="mb-2 flex items-center gap-2">
                   <Link2 size={14} className="text-cyan-400" />
-                  <h3 className="text-[13px] font-extrabold text-white/85">Lien de collecte d&apos;avis</h3>
+                  <h3 className={`text-[13px] font-extrabold ${sec}`}>Lien de collecte d&apos;avis</h3>
                 </div>
-                <p className="mb-4 text-[11.5px] text-white/40">
+                <p className={`mb-4 text-[11.5px] ${mut}`}>
                   Partagez ce lien à vos clients pour collecter leurs avis directement sur votre espace DJAMA.
                 </p>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 overflow-hidden truncate rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 font-mono text-[11px] text-cyan-300">
+                  <div className={`flex-1 overflow-hidden truncate rounded-xl border px-3.5 py-2.5 font-mono text-[11px] text-cyan-500 ${isDark ? "border-white/10 bg-white/[0.04]" : "border-black/[0.08] bg-white"}`}>
                     {collectLink || "Chargement…"}
                   </div>
                   <button onClick={handleCopyLink} disabled={!collectLink}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-[11px] font-semibold transition-all ${copiedLink ? "border-emerald-500/30 bg-emerald-500/12 text-emerald-400" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08]"}`}>
+                    className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-[11px] font-semibold transition-all ${copiedLink ? "border-emerald-500/30 bg-emerald-500/12 text-emerald-400" : isDark ? "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08]" : "border-black/[0.08] bg-white text-[#0e1420]/60 hover:bg-black/[0.05]"}`}>
                     {copiedLink ? <Check size={11} /> : <Copy size={11} />}
                     {copiedLink ? "Copié !" : "Copier"}
                   </button>
@@ -397,11 +415,11 @@ export default function ReputationPage() {
           {showTemplates && (
             <motion.div ref={templatesRef} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.35, ease }} className="overflow-hidden">
-              <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] p-5">
+              <div className={`rounded-2xl border border-violet-500/20 p-5 ${isDark ? "bg-violet-500/[0.04]" : "bg-violet-500/[0.03] shadow-sm"}`}>
                 <div className="mb-4 flex items-center gap-2">
                   <MessageSquare size={14} className="text-violet-400" />
-                  <h3 className="text-[13px] font-extrabold text-white/85">Templates de réponse</h3>
-                  <p className="ml-auto text-[11px] text-white/30">Copiez et collez sur Google, LinkedIn…</p>
+                  <h3 className={`text-[13px] font-extrabold ${sec}`}>Templates de réponse</h3>
+                  <p className={`ml-auto text-[11px] ${faint}`}>Copiez et collez sur Google, LinkedIn…</p>
                 </div>
 
                 {/* Tabs */}
@@ -423,16 +441,16 @@ export default function ReputationPage() {
 
                 <div className="flex flex-col gap-3">
                   {RESPONSE_TEMPLATES[templateTab].map(t => (
-                    <div key={t.id} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                    <div key={t.id} className={`rounded-xl border p-4 ${isDark ? "border-white/[0.06] bg-black/20" : "border-black/[0.08] bg-black/[0.03]"}`}>
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-white/60">{t.label}</span>
+                        <span className={`text-[11px] font-bold ${mut}`}>{t.label}</span>
                         <button onClick={() => handleCopyTemplate(t.id, t.text)}
-                          className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10.5px] font-semibold transition-all ${copiedTemplate === t.id ? "bg-emerald-500/15 text-emerald-400" : "bg-white/[0.06] text-white/45 hover:bg-white/[0.12] hover:text-white/75"}`}>
+                          className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10.5px] font-semibold transition-all ${copiedTemplate === t.id ? "bg-emerald-500/15 text-emerald-400" : isDark ? "bg-white/[0.06] text-white/45 hover:bg-white/[0.12] hover:text-white/75" : "bg-black/[0.05] text-[#0e1420]/45 hover:bg-black/[0.10] hover:text-[#0e1420]/75"}`}>
                           {copiedTemplate === t.id ? <Check size={10} /> : <Copy size={10} />}
                           {copiedTemplate === t.id ? "Copié !" : "Copier"}
                         </button>
                       </div>
-                      <p className="text-[12px] leading-relaxed text-white/45">{t.text}</p>
+                      <p className={`text-[12px] leading-relaxed ${mut}`}>{t.text}</p>
                     </div>
                   ))}
                 </div>
@@ -447,34 +465,34 @@ export default function ReputationPage() {
             transition={{ duration: 0.4, ease, delay: 0.05 }} className="grid gap-4 sm:grid-cols-2">
 
             {/* Chart.js line chart */}
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
-              <p className="mb-4 text-[0.65rem] font-medium text-white/35">Évolution — 6 derniers mois</p>
+            <div className={`rounded-2xl border p-5 ${card}`}>
+              <p className={`mb-4 text-[0.65rem] font-medium ${mut}`}>Évolution — 6 derniers mois</p>
               <div style={{ position: "relative", height: 92 }}>
-                <Line data={chartData} options={CHART_OPTIONS} />
+                <Line data={chartData} options={getChartOptions(isDark)} />
               </div>
             </div>
 
             {/* Distribution */}
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
-              <p className="mb-4 text-[0.65rem] font-medium text-white/35">Distribution des notes</p>
+            <div className={`rounded-2xl border p-5 ${card}`}>
+              <p className={`mb-4 text-[0.65rem] font-medium ${mut}`}>Distribution des notes</p>
               <div className="flex flex-col gap-2.5">
                 {breakdown.map(({ star, count, pct }) => (
                   <div key={star} className="flex items-center gap-3">
                     <div className="flex w-12 shrink-0 items-center justify-end gap-1">
-                      <span className="text-[11px] font-bold text-white/50">{star}</span>
+                      <span className={`text-[11px] font-bold ${mut}`}>{star}</span>
                       <Star size={10} fill="currentColor" strokeWidth={1} className="text-amber-400" />
                     </div>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.05]">
+                    <div className={`h-2 flex-1 overflow-hidden rounded-full ${bar}`}>
                       <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
                         transition={{ duration: 0.7, ease, delay: (5 - star) * 0.06 }}
                         className="h-full rounded-full"
                         style={{ background: star >= 4 ? "#4ade80" : star === 3 ? "#fbbf24" : "#f87171" }} />
                     </div>
-                    <span className="w-6 shrink-0 text-right text-[10px] font-semibold text-white/30">{count}</span>
+                    <span className={`w-6 shrink-0 text-right text-[10px] font-semibold ${faint}`}>{count}</span>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 flex items-center gap-3 border-t border-white/[0.05] pt-3">
+              <div className={`mt-4 flex items-center gap-3 border-t pt-3 ${isDark ? "border-white/[0.05]" : "border-black/[0.05]"}`}>
                 <div className="flex items-center gap-1.5 text-[9.5px] font-semibold text-emerald-400">
                   <span className="h-2 w-2 rounded-full bg-emerald-400" />Excellent (4-5)
                 </div>
@@ -494,43 +512,48 @@ export default function ReputationPage() {
           {showForm && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.35, ease }} className="overflow-hidden">
-              <div className="flex flex-col gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
+              <div className={`flex flex-col gap-4 rounded-2xl border p-6 ${card}`}>
                 <div className="mb-1 flex items-center gap-2">
                   <Star size={14} style={{ color: GOLD }} />
-                  <h3 className="text-[13px] font-extrabold text-white/85">Nouvel avis client</h3>
+                  <h3 className={`text-[13px] font-extrabold ${sec}`}>Nouvel avis client</h3>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">Nom du client *</label>
+                  <label className={`mb-1.5 block text-[0.65rem] font-medium ${mut}`}>Nom du client *</label>
                   <input value={form.client_name} onChange={e => setForm(p => ({ ...p, client_name: e.target.value }))}
                     placeholder="Jean Dupont / Acme SAS"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-white/22 transition-all" />
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${isDark ? "border-white/10 bg-white/[0.04] text-white placeholder:text-white/22" : "border-black/[0.08] bg-black/[0.03] text-[#0e1420] placeholder:text-[#0e1420]/25"}`} />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">Note *</label>
-                  <StarRating value={form.rating} onChange={v => setForm(p => ({ ...p, rating: v }))} />
+                  <label className={`mb-1.5 block text-[0.65rem] font-medium ${mut}`}>Note *</label>
+                  <StarRating value={form.rating} onChange={v => setForm(p => ({ ...p, rating: v }))} isDark={isDark} />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">Message</label>
+                  <label className={`mb-1.5 block text-[0.65rem] font-medium ${mut}`}>Message</label>
                   <textarea value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
                     placeholder="Ce que le client a dit…" rows={3}
-                    className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-white/22 transition-all" />
+                    className={`w-full resize-none rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${isDark ? "border-white/10 bg-white/[0.04] text-white placeholder:text-white/22" : "border-black/[0.08] bg-black/[0.03] text-[#0e1420] placeholder:text-[#0e1420]/25"}`} />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">Source</label>
+                  <label className={`mb-1.5 block text-[0.65rem] font-medium ${mut}`}>Source</label>
                   <div className="flex flex-wrap gap-2">
-                    {(Object.entries(SOURCE_STYLES) as [ReviewSource, typeof SOURCE_STYLES[ReviewSource]][]).map(([key, s]) => (
-                      <button key={key} type="button" onClick={() => setForm(p => ({ ...p, source: key }))}
-                        className={`rounded-lg border px-3 py-1.5 text-[11.5px] font-semibold transition-all ${form.source === key ? `${s.text} ${s.bg} ${s.border}` : "border-white/10 text-white/35 hover:border-white/20 hover:text-white/60"}`}>
-                        {s.label}
-                      </button>
-                    ))}
+                    {(Object.entries(SOURCE_STYLES) as [ReviewSource, typeof SOURCE_STYLES[ReviewSource]][]).map(([key, s]) => {
+                      const isActive = form.source === key;
+                      const srcTxt = key === "autre" ? (isDark ? "text-white/50" : "text-[#0e1420]/50") : s.text;
+                      const srcBg  = key === "autre" ? (isDark ? "bg-white/[0.05]" : "bg-black/[0.04]") : s.bg;
+                      return (
+                        <button key={key} type="button" onClick={() => setForm(p => ({ ...p, source: key }))}
+                          className={`rounded-lg border px-3 py-1.5 text-[11.5px] font-semibold transition-all ${isActive ? `${srcTxt} ${srcBg} ${s.border}` : isDark ? "border-white/10 text-white/35 hover:border-white/20 hover:text-white/60" : "border-black/[0.08] text-[#0e1420]/35 hover:border-black/20 hover:text-[#0e1420]/60"}`}>
+                          {s.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">Projet (optionnel)</label>
+                  <label className={`mb-1.5 block text-[0.65rem] font-medium ${mut}`}>Projet (optionnel)</label>
                   <input value={form.project} onChange={e => setForm(p => ({ ...p, project: e.target.value }))}
                     placeholder="Nom de la mission"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-white/22 transition-all" />
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${isDark ? "border-white/10 bg-white/[0.04] text-white placeholder:text-white/22" : "border-black/[0.08] bg-black/[0.03] text-[#0e1420] placeholder:text-[#0e1420]/25"}`} />
                 </div>
                 <div className="flex gap-3 pt-1">
                   <button onClick={handleSubmit} disabled={submitting}
@@ -543,7 +566,7 @@ export default function ReputationPage() {
                     Enregistrer
                   </button>
                   <button type="button" onClick={() => { setForm(EMPTY_FORM()); setShowForm(false); }}
-                    className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white/60 transition hover:bg-white/[0.08]">
+                    className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white/60 hover:bg-white/[0.08]" : "border-black/[0.08] bg-black/[0.04] text-[#0e1420]/60 hover:bg-black/[0.07]"}`}>
                     Annuler
                   </button>
                 </div>
@@ -576,15 +599,15 @@ export default function ReputationPage() {
         {/* ── Filtres source ── */}
         {reviews.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-[0.65rem] font-medium text-white/35">Filtrer :</span>
+            <span className={`mr-1 text-[0.65rem] font-medium ${mut}`}>Filtrer :</span>
             {([["all", "Tous", reviews.length], ...Object.entries(SOURCE_STYLES).map(([k, s]) => [k, s.label, reviews.filter(r => r.source === k).length])] as [string, string, number][]).map(([key, label, count]) => {
               const active = activeSource === key;
               const style  = key !== "all" ? SOURCE_STYLES[key as ReviewSource] : null;
               return (
                 <button key={key} onClick={() => setActiveSource(key as ReviewSource | "all")}
-                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold transition-all ${active ? style ? `${style.text} ${style.bg} ${style.border}` : "border-amber-500/30 bg-amber-500/12 text-amber-400" : "border-white/10 text-white/35 hover:border-white/20 hover:text-white/55"}`}>
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold transition-all ${active ? style ? `${style.text} ${style.bg} ${style.border}` : "border-amber-500/30 bg-amber-500/12 text-amber-400" : isDark ? "border-white/10 text-white/35 hover:border-white/20 hover:text-white/55" : "border-black/[0.08] text-[#0e1420]/35 hover:border-black/20 hover:text-[#0e1420]/55"}`}>
                   {label}
-                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${active ? "bg-white/15" : "bg-white/[0.06]"}`}>{count}</span>
+                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${active ? isDark ? "bg-white/15" : "bg-black/[0.08]" : isDark ? "bg-white/[0.06]" : "bg-black/[0.05]"}`}>{count}</span>
                 </button>
               );
             })}
@@ -595,20 +618,20 @@ export default function ReputationPage() {
         {loading ? (
           <div className="flex justify-center py-12">
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-              className="h-6 w-6 rounded-full border-2 border-white/15 border-t-amber-400" />
+              className={`h-6 w-6 rounded-full border-2 border-t-amber-400 ${isDark ? "border-white/15" : "border-black/10"}`} />
           </div>
         ) : reviews.length === 0 ? (
-          <EmptyState onAdd={() => setShowForm(true)} />
+          <EmptyState onAdd={() => setShowForm(true)} isDark={isDark} />
         ) : (
           <div className="flex flex-col gap-3">
-            <p className="px-1 text-[0.65rem] font-medium text-white/35">
+            <p className={`px-1 text-[0.65rem] font-medium ${mut}`}>
               {filteredReviews.length} avis{activeSource !== "all" ? ` · ${SOURCE_STYLES[activeSource as ReviewSource].label}` : " · tous les canaux"}
             </p>
             <AnimatePresence mode="popLayout">
               {filteredReviews.map((review, i) => (
                 <ReviewCard key={review.id} review={review} index={i}
                   onDelete={() => setConfirmDeleteId(review.id)}
-                  onReply={openTemplates} />
+                  onReply={openTemplates} isDark={isDark} />
               ))}
             </AnimatePresence>
           </div>
@@ -626,8 +649,8 @@ export default function ReputationPage() {
 /* ═══════════════════════════════════════
    REVIEW CARD
 ═══════════════════════════════════════ */
-function ReviewCard({ review, index, onDelete, onReply }: {
-  review: Review; index: number; onDelete: () => void; onReply: (rating: number) => void;
+function ReviewCard({ review, index, onDelete, onReply, isDark }: {
+  review: Review; index: number; onDelete: () => void; onReply: (rating: number) => void; isDark: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const src           = SOURCE_STYLES[review.source];
@@ -637,11 +660,35 @@ function ReviewCard({ review, index, onDelete, onReply }: {
   const ratingColor   = review.rating >= 4 ? "#4ade80" : review.rating >= 3 ? "#fbbf24" : "#f87171";
   const isNegative    = review.rating <= 2;
 
+  const cardBase  = isDark
+    ? `bg-white/[0.025] ${isNegative ? "border-red-500/25 hover:border-red-500/40" : "border-white/[0.07] hover:border-white/[0.14]"} hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]`
+    : `bg-white shadow-sm ${isNegative ? "border-red-500/25 hover:border-red-500/40" : "border-black/[0.08] hover:border-black/[0.16]"} hover:shadow-md hover:shadow-black/10`;
+  const nameCls   = isDark ? "text-white/90" : "text-[#0e1420]/90";
+  const projCls   = isDark ? "text-white/30"  : "text-[#0e1420]/35";
+  const dateCls   = isDark ? "text-white/22"  : "text-[#0e1420]/30";
+  const msgIcon   = isDark ? "text-white/18"  : "text-[#0e1420]/20";
+  const msgTxt    = isDark ? "text-white/52"  : "text-[#0e1420]/55";
+  const moreCls   = isDark ? "text-white/30 hover:text-white/55" : "text-[#0e1420]/30 hover:text-[#0e1420]/55";
+  const actCls    = isDark ? "text-white/20 hover:bg-violet-500/10 hover:text-violet-400"
+                           : "text-[#0e1420]/20 hover:bg-violet-500/10 hover:text-violet-400";
+  const delCls    = isDark ? "text-white/20 hover:bg-red-500/10 hover:text-red-400"
+                           : "text-[#0e1420]/20 hover:bg-red-500/10 hover:text-red-400";
+
+  const srcText   = review.source === "autre"
+    ? (isDark ? "text-white/50" : "text-[#0e1420]/50")
+    : src.text;
+  const srcBg     = review.source === "autre"
+    ? (isDark ? "bg-white/[0.05]" : "bg-black/[0.04]")
+    : src.bg;
+  const srcBorder = review.source === "autre"
+    ? (isDark ? "border-white/10" : "border-black/10")
+    : src.border;
+
   return (
     <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: index * 0.03 }}
-      className={`group relative overflow-hidden rounded-2xl border bg-white/[0.025] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] ${isNegative ? "border-red-500/25 hover:border-red-500/40" : "border-white/[0.07] hover:border-white/[0.14]"}`}>
+      className={`group relative overflow-hidden rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-0.5 ${cardBase}`}>
 
       <div className="absolute inset-x-0 top-0 h-[2px]"
         style={{ background: `linear-gradient(90deg, transparent, ${ratingColor}55, transparent)` }} />
@@ -661,23 +708,23 @@ function ReviewCard({ review, index, onDelete, onReply }: {
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-[13px] font-bold text-white/90">{review.client_name}</p>
+              <p className={`text-[13px] font-bold ${nameCls}`}>{review.client_name}</p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
-                <StarDisplay rating={review.rating} size="sm" />
-                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${src.text} ${src.bg} ${src.border}`}>{src.label}</span>
-                {review.project && <span className="max-w-[140px] truncate text-[10px] text-white/30">· {review.project}</span>}
+                <StarDisplay rating={review.rating} size="sm" isDark={isDark} />
+                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${srcText} ${srcBg} ${srcBorder}`}>{src.label}</span>
+                {review.project && <span className={`max-w-[140px] truncate text-[10px] ${projCls}`}>· {review.project}</span>}
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              <span className="text-[10px] text-white/22">
+              <span className={`text-[10px] ${dateCls}`}>
                 {new Date(review.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
               </span>
               <button onClick={() => onReply(review.rating)} aria-label="Répondre avec un template"
-                className="rounded-lg p-1.5 text-white/20 opacity-0 transition-all hover:bg-violet-500/10 hover:text-violet-400 group-hover:opacity-100">
+                className={`rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 ${actCls}`}>
                 <MessageSquare size={12} />
               </button>
               <button onClick={onDelete} aria-label="Supprimer cet avis"
-                className="rounded-lg p-1.5 text-white/20 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100">
+                className={`rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 ${delCls}`}>
                 <Trash2 size={12} />
               </button>
             </div>
@@ -685,12 +732,12 @@ function ReviewCard({ review, index, onDelete, onReply }: {
           {review.message && (
             <div className="mt-3">
               <div className="flex items-start gap-2">
-                <MessageCircle size={12} className="mt-0.5 shrink-0 text-white/18" />
-                <p className="text-[12.5px] leading-relaxed text-white/52">{displayMsg}</p>
+                <MessageCircle size={12} className={`mt-0.5 shrink-0 ${msgIcon}`} />
+                <p className={`text-[12.5px] leading-relaxed ${msgTxt}`}>{displayMsg}</p>
               </div>
               {needsTruncate && (
                 <button type="button" onClick={() => setExpanded(v => !v)}
-                  className="ml-5 mt-2 flex items-center gap-1 text-[10.5px] text-white/30 transition-colors hover:text-white/55">
+                  className={`ml-5 mt-2 flex items-center gap-1 text-[10.5px] transition-colors ${moreCls}`}>
                   {expanded ? <><ChevronUp size={11} />Réduire</> : <><ChevronDown size={11} />Voir plus</>}
                 </button>
               )}
@@ -705,15 +752,17 @@ function ReviewCard({ review, index, onDelete, onReply }: {
 /* ═══════════════════════════════════════
    EMPTY STATE
 ═══════════════════════════════════════ */
-function EmptyState({ onAdd }: { onAdd: () => void }) {
+function EmptyState({ onAdd, isDark }: { onAdd: () => void; isDark: boolean }) {
+  const pri   = isDark ? "text-white/75"  : "text-[#0e1420]/80";
+  const sub   = isDark ? "text-white/35"  : "text-[#0e1420]/45";
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-16 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/25 bg-amber-500/12">
         <Star size={28} style={{ color: GOLD }} />
       </div>
       <div>
-        <p className="text-[15px] font-extrabold text-white/75">Aucun avis pour le moment</p>
-        <p className="mx-auto mt-2 max-w-xs text-[12.5px] leading-relaxed text-white/35">
+        <p className={`text-[15px] font-extrabold ${pri}`}>Aucun avis pour le moment</p>
+        <p className={`mx-auto mt-2 max-w-xs text-[12.5px] leading-relaxed ${sub}`}>
           Collectez les retours de vos clients pour renforcer votre crédibilité et améliorer vos services.
         </p>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext } from "react";
+import { useTheme } from "@/lib/theme-context";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -90,6 +91,10 @@ const BLANK: Partial<Expense> = {
   receipt_url: "", invoice_number: "", project: "", cost_center: "", notes: "",
 };
 
+// ── Theme context (partagé entre tous les sous-composants sans prop drilling) ──
+const DarkCtx = createContext(true);
+const useDark = () => useContext(DarkCtx);
+
 const fmtCur = (n: number, c = "EUR") =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: c, minimumFractionDigits: 2 }).format(n);
 
@@ -125,16 +130,20 @@ function StBadge({ st }: { st: ExpStatus }) {
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const isDark = useDark();
   return (
     <div className="space-y-1">
-      <label className="text-[0.65rem] font-medium text-white/35">{label}</label>
+      <label className={`text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>{label}</label>
       {children}
     </div>
   );
 }
 
-const inp = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all";
-const sel = "w-full rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2.5 pr-8 text-[0.8rem] text-white outline-none appearance-none [color-scheme:dark] focus:border-white/[0.15] transition-all";
+// Calculés localement dans chaque composant via useDark()
+const INP_DARK = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all";
+const INP_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[0.8rem] text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300 focus:bg-gray-50 transition-all";
+const SEL_DARK = "w-full rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2.5 pr-8 text-[0.8rem] text-white outline-none appearance-none [color-scheme:dark] focus:border-white/[0.15] transition-all";
+const SEL_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 pr-8 text-[0.8rem] text-gray-900 outline-none appearance-none focus:border-gray-300 transition-all";
 
 function ExpenseModal({
   expense, reports, userId, onSave, onClose,
@@ -145,6 +154,9 @@ function ExpenseModal({
   onSave: (e: Expense) => void;
   onClose: () => void;
 }) {
+  const isDark   = useDark();
+  const inp      = isDark ? INP_DARK : INP_LITE;
+  const sel      = isDark ? SEL_DARK : SEL_LITE;
   const supabase = supabaseClient;
   const fileRef  = useRef<HTMLInputElement>(null);
   const [form,      setForm]      = useState<Partial<Expense>>(expense ?? { ...BLANK });
@@ -209,7 +221,7 @@ function ExpenseModal({
       vat_amount: Number(form.vat_amount ?? 0),
     };
     if (expense?.id) {
-      const { data, error } = await supabase.from("expenses").update(payload).eq("id", expense.id).select().single();
+      const { data, error } = await supabase.from("expenses").update(payload).eq("id", expense.id).eq("user_id", userId).select().single();
       if (error) { setSaveError(error.message); setSaving(false); return; }
       if (data) onSave(data as Expense);
     } else {
@@ -227,14 +239,14 @@ function ExpenseModal({
       <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 space-y-4"
+        className={`relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl border p-5 space-y-4 ${isDark ? "border-white/[0.08] bg-[#0e1117]" : "border-gray-200 bg-white"}`}
         onClick={e => e.stopPropagation()}>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white">
+          <h2 className={`text-base font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
             {expense?.id ? "Modifier la dépense" : "Nouvelle dépense"}
           </h2>
-          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X size={18} /></button>
+          <button onClick={onClose} className={`transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}><X size={18} /></button>
         </div>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -250,7 +262,7 @@ function ExpenseModal({
               <select value={form.currency ?? "EUR"} onChange={e => set("currency", e.target.value)} className={sel}>
                 {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
             </div>
           </Field>
         </div>
@@ -267,8 +279,8 @@ function ExpenseModal({
                 className="flex flex-col items-center gap-1 rounded-xl p-2 text-[0.58rem] font-medium border transition-all"
                 style={{
                   backgroundColor: form.category === v ? c + "2a" : "transparent",
-                  borderColor:     form.category === v ? c + "55" : "rgba(255,255,255,0.06)",
-                  color:           form.category === v ? c : "rgba(255,255,255,0.35)",
+                  borderColor:     form.category === v ? c + "55" : (isDark ? "rgba(255,255,255,0.06)" : "#e5e7eb"),
+                  color:           form.category === v ? c : (isDark ? "rgba(255,255,255,0.35)" : "#9ca3af"),
                 }}>
                 <I size={13} />
                 <span className="truncate w-full text-center leading-tight">{l}</span>
@@ -283,7 +295,7 @@ function ExpenseModal({
               <select value={form.payment_method ?? "carte_pro"} onChange={e => set("payment_method", e.target.value)} className={sel}>
                 {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
               </select>
-              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
             </div>
           </Field>
           <Field label="Statut">
@@ -291,7 +303,7 @@ function ExpenseModal({
               <select value={form.status ?? "draft"} onChange={e => set("status", e.target.value)} className={sel}>
                 {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
               </select>
-              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
             </div>
           </Field>
         </div>
@@ -306,7 +318,7 @@ function ExpenseModal({
               className={`h-[42px] w-full rounded-xl border flex items-center gap-2 px-3 text-[0.78rem] font-medium transition-all ${
                 form.vat_recoverable
                   ? "border-green-500/30 bg-green-500/10 text-green-400"
-                  : "border-white/[0.08] bg-white/[0.04] text-white/30"
+                  : isDark ? "border-white/[0.08] bg-white/[0.04] text-white/30" : "border-gray-200 bg-gray-50 text-gray-400"
               }`}>
               {form.vat_recoverable ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
               {form.vat_recoverable ? "Récupérable" : "Non récupérable"}
@@ -336,7 +348,7 @@ function ExpenseModal({
                 <option value="">— Sans note de frais —</option>
                 {reports.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
               </select>
-              <ChevronDown size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
             </div>
           </Field>
         )}
@@ -347,9 +359,9 @@ function ExpenseModal({
             className={`${inp} resize-none`} />
         </Field>
 
-                <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 space-y-2.5">
+                <div className={`rounded-xl border p-3 space-y-2.5 ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
           <div className="flex items-center justify-between">
-            <span className="text-[0.65rem] font-medium text-white/35">Justificatif</span>
+            <span className={`text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>Justificatif</span>
             <button type="button" onClick={() => fileRef.current?.click()} disabled={ocring || uploading}
               className="flex items-center gap-1.5 text-[0.65rem] text-purple-400/60 hover:text-purple-400 transition-colors disabled:opacity-40">
               {ocring
@@ -370,25 +382,25 @@ function ExpenseModal({
               <div className="flex-1 min-w-0">
                 {/\.(jpe?g|png|webp)$/i.test(form.receipt_url) ? (
                   <a href={form.receipt_url} target="_blank" rel="noreferrer"
-                    className="block overflow-hidden rounded-xl border border-white/[0.08]">
+                    className={`block overflow-hidden rounded-xl border ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}>
                                         <img src={form.receipt_url} alt="Justificatif" className="w-full max-h-36 object-cover" />
                   </a>
                 ) : (
                   <a href={form.receipt_url} target="_blank" rel="noreferrer"
-                    className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-[0.72rem] text-blue-400 hover:text-blue-300 transition-colors">
+                    className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-[0.72rem] text-blue-400 hover:text-blue-500 transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
                     <FileCheck size={14} /> Voir le justificatif (PDF)
                   </a>
                 )}
               </div>
               <button type="button" onClick={() => set("receipt_url", "")}
-                className="shrink-0 rounded-lg p-1.5 text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                className={`shrink-0 rounded-lg p-1.5 hover:text-red-400 hover:bg-red-500/10 transition-all ${isDark ? "text-white/20" : "text-gray-300"}`}>
                 <X size={13} />
               </button>
             </div>
           ) : (
-            <label className={`flex flex-col items-center gap-2 cursor-pointer rounded-xl border border-dashed border-white/[0.10] bg-white/[0.02] py-5 hover:border-white/20 hover:bg-white/[0.04] transition-all ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
-              <Upload size={18} className="text-white/20" />
-              <span className="px-4 text-center text-[0.68rem] text-white/25">
+            <label className={`flex flex-col items-center gap-2 cursor-pointer rounded-xl border border-dashed py-5 transition-all ${uploading ? "opacity-50 pointer-events-none" : ""} ${isDark ? "border-white/[0.10] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]" : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"}`}>
+              <Upload size={18} className={isDark ? "text-white/20" : "text-gray-400"} />
+              <span className={`px-4 text-center text-[0.68rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>
                 {uploading ? "Envoi en cours…" : "Cliquez pour uploader · JPG, PNG, PDF · max 10 Mo"}
               </span>
               <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
@@ -409,7 +421,7 @@ function ExpenseModal({
 
                 <div className="flex gap-2 pt-1">
           <button type="button" onClick={onClose}
-            className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40 hover:text-white/60 transition-colors">
+            className={`flex-1 rounded-xl border py-2.5 text-[0.78rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>
             Annuler
           </button>
           <button type="button" onClick={handleSave} disabled={saving || uploading}
@@ -430,6 +442,9 @@ function ReportModal({
   onSave: (f: Partial<ExpenseReport>) => void;
   onClose: () => void;
 }) {
+  const isDark = useDark();
+  const inp    = isDark ? INP_DARK : INP_LITE;
+  const sel    = isDark ? SEL_DARK : SEL_LITE;
   const [form, setForm] = useState<Partial<ExpenseReport>>(
     report ?? { title: "", status: "draft", notes: "" }
   );
@@ -442,13 +457,13 @@ function ReportModal({
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 space-y-4"
+        className={`w-full max-w-sm rounded-2xl border p-5 space-y-4 ${isDark ? "border-white/[0.08] bg-[#0e1117]" : "border-gray-200 bg-white"}`}
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white">
+          <h2 className={`text-base font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
             {report ? "Modifier la note" : "Nouvelle note de frais"}
           </h2>
-          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X size={18} /></button>
+          <button onClick={onClose} className={`transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}><X size={18} /></button>
         </div>
         <Field label="Titre">
           <input className={inp} placeholder="Ex: Frais déplacement Mars 2025"
@@ -478,7 +493,7 @@ function ReportModal({
         </Field>
         <div className="flex gap-2">
           <button onClick={onClose}
-            className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-[0.78rem] text-white/40 hover:text-white/60 transition-colors">
+            className={`flex-1 rounded-xl border py-2.5 text-[0.78rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>
             Annuler
           </button>
           <button onClick={() => onSave(form)} disabled={!form.title?.trim()}
@@ -493,6 +508,7 @@ function ReportModal({
 }
 
 function BudgetInput({ value, onSave, color }: { value: number; onSave: (v: number) => void; color: string }) {
+  const isDark = useDark();
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(value));
 
@@ -500,15 +516,15 @@ function BudgetInput({ value, onSave, color }: { value: number; onSave: (v: numb
 
   if (!editing) return (
     <button onClick={() => { setVal(String(value)); setEditing(true); }}
-      className="min-w-[72px] text-right text-[0.72rem] text-white/50 hover:text-white transition-colors">
-      {value > 0 ? fmtCur(value) : <span className="text-white/25">+ Budget</span>}
+      className={`min-w-[72px] text-right text-[0.72rem] transition-colors ${isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-900"}`}>
+      {value > 0 ? fmtCur(value) : <span className={isDark ? "text-white/25" : "text-gray-400"}>+ Budget</span>}
     </button>
   );
   return (
     <input autoFocus type="number" value={val} onChange={e => setVal(e.target.value)}
       onBlur={commit}
       onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
-      className="w-20 rounded-lg border bg-white/[0.06] px-2 py-0.5 text-right text-[0.72rem] text-white outline-none"
+      className={`w-20 rounded-lg border px-2 py-0.5 text-right text-[0.72rem] outline-none ${isDark ? "bg-white/[0.06] text-white" : "bg-gray-50 text-gray-900"}`}
       style={{ borderColor: color + "44" }} />
   );
 }
@@ -537,13 +553,14 @@ function BudgetView({
     return result;
   }, [expenses, month]);
 
+  const isDark = useDark();
   const getBudget = (cat: string) =>
     budgets.find(b => b.category === cat && b.period === "monthly" && b.year === year && b.month === mo)?.amount ?? 0;
 
   async function saveBudget(cat: string, amount: number) {
     const existing = budgets.find(b => b.category === cat && b.period === "monthly" && b.year === year && b.month === mo);
     if (existing) {
-      const { data } = await supabase.from("expense_budgets").update({ amount }).eq("id", existing.id).select().single();
+      const { data } = await supabase.from("expense_budgets").update({ amount }).eq("id", existing.id).eq("user_id", userId).select().single();
       if (data) onBudgetsChange(budgets.map(b => b.id === existing.id ? data as ExpenseBudget : b));
     } else {
       const { data } = await supabase.from("expense_budgets").insert({
@@ -560,16 +577,16 @@ function BudgetView({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-          <Calendar size={13} className="shrink-0 text-white/30" />
+        <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <Calendar size={13} className={`shrink-0 ${isDark ? "text-white/30" : "text-gray-400"}`} />
           <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-            className="[color-scheme:dark] bg-transparent text-[0.78rem] text-white outline-none" />
+            className={`bg-transparent text-[0.78rem] outline-none ${isDark ? "[color-scheme:dark] text-white" : "text-gray-900"}`} />
         </div>
-        <p className="text-[0.72rem] text-white/40">
-          Budget total : <span className="font-semibold text-white">{fmtCur(totalBudget)}</span>
+        <p className={`text-[0.72rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>
+          Budget total : <span className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(totalBudget)}</span>
           {" · "}Dépensé : <span className={`font-semibold ${over ? "text-red-400" : "text-green-400"}`}>{fmtCur(totalSpent)}</span>
           {totalBudget > 0 && (
-            <span className={`ml-1 ${over ? "text-red-400" : "text-white/30"}`}>
+            <span className={`ml-1 ${over ? "text-red-400" : isDark ? "text-white/30" : "text-gray-400"}`}>
               ({over ? "+" : ""}{fmtCur(totalSpent - totalBudget)})
             </span>
           )}
@@ -599,20 +616,20 @@ function BudgetView({
           const pct  = budget > 0 ? Math.min((s / budget) * 100, 100) : 0;
           const catOver = budget > 0 && s > budget;
           return (
-            <div key={v} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 space-y-2">
+            <div key={v} className={`rounded-xl border p-3 space-y-2 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
               <div className="flex items-center gap-3">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
                   style={{ backgroundColor: c + "22" }}>
                   <I size={13} style={{ color: c }} />
                 </div>
-                <span className="flex-1 text-[0.78rem] font-medium text-white/80">{l}</span>
-                <span className="text-[0.72rem] text-white/50">{fmtCur(s)}</span>
-                <span className="text-[0.6rem] text-white/20">/</span>
+                <span className={`flex-1 text-[0.78rem] font-medium ${isDark ? "text-white/80" : "text-gray-800"}`}>{l}</span>
+                <span className={`text-[0.72rem] ${isDark ? "text-white/50" : "text-gray-500"}`}>{fmtCur(s)}</span>
+                <span className={`text-[0.6rem] ${isDark ? "text-white/20" : "text-gray-300"}`}>/</span>
                 <BudgetInput value={budget} onSave={v2 => saveBudget(v, v2)} color={c} />
                 {catOver && <AlertTriangle size={13} className="shrink-0 text-red-400" />}
               </div>
               {budget > 0 && (
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+                <div className={`h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.05]" : "bg-gray-100"}`}>
                   <motion.div className="h-full rounded-full"
                     initial={{ width: 0 }} animate={{ width: `${pct}%` }}
                     transition={{ duration: 0.6, ease: "easeOut" }}
@@ -716,6 +733,7 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
 
   }), [valid]);
 
+  const isDark   = useDark();
   const maxTrend = Math.max(...trend.map(t => t.total), 1);
   const maxCat   = byCat[0]?.[1] ?? 1;
   const allTotal = valid.reduce((a, e) => a + e.amount, 0) || 1;
@@ -734,40 +752,40 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
     <div className="space-y-5">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {KPI.map(({ l, v, sub, c }) => (
-          <div key={l} className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-1">
-            <p className="text-[0.65rem] font-medium text-white/35">{l}</p>
-            <p className="text-xl font-bold leading-none text-white">{v}</p>
+          <div key={l} className={`rounded-2xl border p-4 space-y-1 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
+            <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>{l}</p>
+            <p className={`text-xl font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{v}</p>
             <p className="text-[0.62rem] leading-tight" style={{ color: c }}>{sub}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
-          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Tendance 6 mois</h3>
+                <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Tendance 6 mois</h3>
           <div className="flex items-end gap-2" style={{ height: "100px" }}>
             {trend.map(({ label, key, total }) => (
               <div key={key} className="flex flex-1 flex-col items-center gap-1.5">
                 {total > 0 && (
-                  <span className="text-[0.5rem] text-white/30">
+                  <span className={`text-[0.5rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
                     {total >= 1000 ? `${(total / 1000).toFixed(0)}k` : `${Math.round(total)}`}
                   </span>
                 )}
                 <div className="w-full rounded-t-md transition-all duration-500"
                   style={{
                     height: `${Math.max((total / maxTrend) * 72, 4)}px`,
-                    backgroundColor: key === thisMonth ? "#c9a55a" : "rgba(255,255,255,0.08)",
+                    backgroundColor: key === thisMonth ? "#c9a55a" : (isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb"),
                   }} />
-                <span className="text-[0.55rem] text-white/30">{label}</span>
+                <span className={`text-[0.55rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</span>
               </div>
             ))}
           </div>
         </div>
 
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
-          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Par catégorie</h3>
+                <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Par catégorie</h3>
           {byCat.length === 0
-            ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
+            ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune dépense</p>
             : (
               <div className="space-y-2.5">
                 {byCat.slice(0, 7).map(([cat, total]) => {
@@ -776,14 +794,14 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
                   return (
                     <div key={cat} className="flex items-center gap-2">
                       <Icon size={11} style={{ color: info.c }} className="shrink-0" />
-                      <span className="w-20 shrink-0 truncate text-[0.65rem] text-white/50">{info.l}</span>
-                      <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+                      <span className={`w-20 shrink-0 truncate text-[0.65rem] ${isDark ? "text-white/50" : "text-gray-500"}`}>{info.l}</span>
+                      <div className={`flex-1 h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.05]" : "bg-gray-200"}`}>
                         <motion.div className="h-full rounded-full"
                           initial={{ width: 0 }} animate={{ width: `${(total / maxCat) * 100}%` }}
                           transition={{ duration: 0.7, ease: "easeOut" }}
                           style={{ backgroundColor: info.c }} />
                       </div>
-                      <span className="w-16 shrink-0 text-right text-[0.65rem] font-semibold text-white/60">{fmtCur(total)}</span>
+                      <span className={`w-16 shrink-0 text-right text-[0.65rem] font-semibold ${isDark ? "text-white/60" : "text-gray-700"}`}>{fmtCur(total)}</span>
                     </div>
                   );
                 })}
@@ -793,10 +811,10 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
-          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Par moyen de paiement</h3>
+                <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Par moyen de paiement</h3>
           {byPay.length === 0
-            ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
+            ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune dépense</p>
             : (
               <div className="space-y-3">
                 {byPay.map(([pay, total]) => {
@@ -805,19 +823,19 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
                   const share = (total / allTotal) * 100;
                   return (
                     <div key={pay} className="flex items-center gap-3">
-                      <Icon size={13} className="shrink-0 text-white/30" />
+                      <Icon size={13} className={`shrink-0 ${isDark ? "text-white/30" : "text-gray-400"}`} />
                       <div className="flex-1 space-y-1">
                         <div className="flex justify-between">
-                          <span className="text-[0.68rem] text-white/60">{info?.l ?? pay}</span>
-                          <span className="text-[0.68rem] font-semibold text-white/70">{fmtCur(total)}</span>
+                          <span className={`text-[0.68rem] ${isDark ? "text-white/60" : "text-gray-600"}`}>{info?.l ?? pay}</span>
+                          <span className={`text-[0.68rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{fmtCur(total)}</span>
                         </div>
-                        <div className="h-1 overflow-hidden rounded-full bg-white/[0.06]">
-                          <motion.div className="h-full rounded-full bg-white/25"
+                        <div className={`h-1 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
+                          <motion.div className={`h-full rounded-full ${isDark ? "bg-white/25" : "bg-gray-400"}`}
                             initial={{ width: 0 }} animate={{ width: `${share}%` }}
                             transition={{ duration: 0.6, ease: "easeOut" }} />
                         </div>
                       </div>
-                      <span className="shrink-0 text-[0.62rem] text-white/25">{share.toFixed(0)}%</span>
+                      <span className={`shrink-0 text-[0.62rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>{share.toFixed(0)}%</span>
                     </div>
                   );
                 })}
@@ -825,20 +843,20 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
             )}
         </div>
 
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 space-y-3">
-          <h3 className="text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Top dépenses</h3>
+                <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Top dépenses</h3>
           {top5.length === 0
-            ? <p className="py-6 text-center text-[0.72rem] text-white/20">Aucune dépense</p>
+            ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune dépense</p>
             : (
               <div className="space-y-1.5">
                 {top5.map((e, i) => (
-                  <div key={e.id} className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/[0.02] transition-colors">
-                    <span className="w-4 text-[0.6rem] font-semibold text-white/20">#{i + 1}</span>
+                  <div key={e.id} className={`flex items-center gap-3 rounded-xl px-2 py-2 transition-colors ${isDark ? "hover:bg-white/[0.02]" : "hover:bg-gray-50"}`}>
+                    <span className={`w-4 text-[0.6rem] font-semibold ${isDark ? "text-white/20" : "text-gray-400"}`}>#{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-[0.75rem] font-semibold text-white/80">{e.description}</p>
-                      <p className="text-[0.6rem] text-white/30">{fmtDate(e.date)} · {getCat(e.category).l}</p>
+                      <p className={`truncate text-[0.75rem] font-semibold ${isDark ? "text-white/80" : "text-gray-800"}`}>{e.description}</p>
+                      <p className={`text-[0.6rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(e.date)} · {getCat(e.category).l}</p>
                     </div>
-                    <span className="shrink-0 text-[0.8rem] font-bold text-white">{fmtCur(e.amount, e.currency)}</span>
+                    <span className={`shrink-0 text-[0.8rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(e.amount, e.currency)}</span>
                   </div>
                 ))}
               </div>
@@ -873,20 +891,21 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
     setTxs(prev => prev.map(t => t.id === txId ? { ...t, matchedId: t.matchedId === expId ? null : expId } : t));
   }
 
+  const isDark         = useDark();
   const matchedCount   = txs.filter(t => t.matchedId !== null).length;
   const unmatchedCount = txs.filter(t => t.matchedId === null).length;
 
   if (txs.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/[0.10] py-12 bg-white/[0.01]">
+        <div className={`flex flex-col items-center gap-4 rounded-2xl border border-dashed py-12 ${isDark ? "border-white/[0.10] bg-white/[0.01]" : "border-gray-300 bg-gray-50"}`}>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl"
             style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
             <Landmark size={24} style={{ color: "#c9a55a66" }} />
           </div>
           <div className="text-center space-y-1">
-            <p className="text-[0.85rem] font-semibold text-white/70">Rapprochement bancaire</p>
-            <p className="text-[0.7rem] text-white/30 max-w-xs">Importez un relevé CSV de votre banque pour rapprocher automatiquement vos transactions avec vos dépenses enregistrées.</p>
+            <p className={`text-[0.85rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>Rapprochement bancaire</p>
+            <p className={`text-[0.7rem] max-w-xs ${isDark ? "text-white/30" : "text-gray-500"}`}>Importez un relevé CSV de votre banque pour rapprocher automatiquement vos transactions avec vos dépenses enregistrées.</p>
           </div>
           <div className="flex gap-2">
             <button onClick={() => fileRef2.current?.click()}
@@ -895,7 +914,7 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
               <Upload size={13} /> Importer CSV
             </button>
             <button onClick={() => setShowPaste(true)}
-              className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-4 py-2 text-[0.72rem] text-white/40 hover:text-white transition-colors">
+              className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-[0.72rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-900"}`}>
               Coller CSV
             </button>
           </div>
@@ -906,9 +925,9 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
           <div className="space-y-2">
             <textarea rows={6} value={pasteText} onChange={e => setPasteText(e.target.value)}
               placeholder={"Collez votre relevé bancaire CSV…\n\nEx: Date;Libellé;Montant\n15/01/2025;Déjeuner client;-45.50"}
-              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[0.75rem] text-white/70 placeholder-white/20 outline-none focus:border-white/20 resize-none font-mono" />
+              className={`w-full rounded-xl border px-3 py-2.5 text-[0.75rem] outline-none resize-none font-mono transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] text-white/70 placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:border-gray-300"}`} />
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowPaste(false)} className="rounded-xl border border-white/[0.08] px-3 py-1.5 text-[0.7rem] text-white/30 hover:text-white/60 transition-colors">Annuler</button>
+              <button onClick={() => setShowPaste(false)} className={`rounded-xl border px-3 py-1.5 text-[0.7rem] transition-colors ${isDark ? "border-white/[0.08] text-white/30 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
               <button onClick={handlePaste} disabled={!pasteText.trim()}
                 className="rounded-xl px-4 py-1.5 text-[0.72rem] font-bold transition-all hover:brightness-110 disabled:opacity-40"
                 style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -918,9 +937,9 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
           </div>
         )}
 
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-          <p className="text-[0.65rem] font-semibold text-white/30 mb-1.5">Formats supportés</p>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[0.62rem] text-white/25">
+        <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
+          <p className={`text-[0.65rem] font-semibold mb-1.5 ${isDark ? "text-white/30" : "text-gray-500"}`}>Formats supportés</p>
+          <div className={`grid grid-cols-2 gap-x-4 gap-y-1 text-[0.62rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>
             <span>· Date;Libellé;Montant</span>
             <span>· Date;Description;Débit;Crédit</span>
             <span>· Date;Motif;Montant</span>
@@ -935,8 +954,8 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex gap-2 flex-1 flex-wrap">
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2 text-[0.72rem]">
-            <span className="text-white/30">Total : </span><span className="font-bold text-white">{txs.length} transactions</span>
+          <div className={`rounded-xl border px-3 py-2 text-[0.72rem] ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
+            <span className={isDark ? "text-white/30" : "text-gray-500"}>Total : </span><span className={`font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{txs.length} transactions</span>
           </div>
           <div className="rounded-xl border border-green-500/20 bg-green-500/10 px-3 py-2 text-[0.72rem]">
             <span className="text-green-400/60">Rapprochées : </span><span className="font-bold text-green-400">{matchedCount}</span>
@@ -946,7 +965,7 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
           </div>
         </div>
         <button onClick={() => setTxs([])}
-          className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.7rem] text-white/30 hover:text-red-400 hover:border-red-500/20 transition-all">
+          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[0.7rem] hover:text-red-400 hover:border-red-500/20 transition-all ${isDark ? "border-white/[0.08] text-white/30" : "border-gray-200 text-gray-500"}`}>
           <Trash2 size={12} /> Réinitialiser
         </button>
       </div>
@@ -964,20 +983,20 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
             <div key={tx.id} className={`rounded-xl border transition-all ${
               tx.matchedId !== null
                 ? "border-green-500/20 bg-green-500/[0.04]"
-                : "border-white/[0.06] bg-white/[0.025]"
+                : isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"
             }`}>
               <div className="flex items-center gap-3 p-3 cursor-pointer"
                 onClick={() => setExpandedId(isExpanded ? null : tx.id)}>
                 <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                  tx.matchedId !== null ? "bg-green-500/20" : "bg-white/[0.05]"
+                  tx.matchedId !== null ? "bg-green-500/20" : isDark ? "bg-white/[0.05]" : "bg-gray-100"
                 }`}>
                   {tx.matchedId !== null
                     ? <CheckCircle2 size={14} className="text-green-400" />
-                    : <ArrowLeftRight size={12} className="text-white/25" />}
+                    : <ArrowLeftRight size={12} className={isDark ? "text-white/25" : "text-gray-400"} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-[0.75rem] font-medium text-white/80">{tx.desc || "—"}</p>
-                  <p className="text-[0.62rem] text-white/30">{fmtDate(tx.date)}</p>
+                  <p className={`truncate text-[0.75rem] font-medium ${isDark ? "text-white/80" : "text-gray-800"}`}>{tx.desc || "—"}</p>
+                  <p className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(tx.date)}</p>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className={`text-[0.82rem] font-bold ${tx.amount < 0 ? "text-red-400" : "text-green-400"}`}>
@@ -987,11 +1006,11 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
                     <p className="text-[0.58rem] text-green-400/60 truncate max-w-[120px]">{matchedExp.description}</p>
                   )}
                 </div>
-                <ChevronDown size={12} className={`shrink-0 text-white/20 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                <ChevronDown size={12} className={`shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""} ${isDark ? "text-white/20" : "text-gray-400"}`} />
               </div>
 
               {isExpanded && (
-                <div className="border-t border-white/[0.04] px-3 pb-3 pt-2 space-y-2">
+                <div className={`border-t px-3 pb-3 pt-2 space-y-2 ${isDark ? "border-white/[0.04]" : "border-gray-100"}`}>
                   {matchedExp ? (
                     <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-2.5 py-2">
                       <CheckCircle2 size={12} className="shrink-0 text-green-400" />
@@ -1000,26 +1019,26 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
                         <p className="text-[0.6rem] text-green-400/60">{fmtDate(matchedExp.date)} · {fmtCur(matchedExp.amount)}</p>
                       </div>
                       <button onClick={e => { e.stopPropagation(); toggleMatch(tx.id, matchedExp.id); }}
-                        className="shrink-0 rounded-lg p-1 text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                        className={`shrink-0 rounded-lg p-1 hover:text-red-400 hover:bg-red-500/10 transition-all ${isDark ? "text-white/20" : "text-gray-400"}`}>
                         <X size={11} />
                       </button>
                     </div>
                   ) : suggestions.length > 0 ? (
                     <div className="space-y-1.5">
-                      <p className="text-[0.62rem] text-white/25">Correspondances possibles :</p>
+                      <p className={`text-[0.62rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>Correspondances possibles :</p>
                       {suggestions.map(e => (
                         <button key={e.id} onClick={ev => { ev.stopPropagation(); toggleMatch(tx.id, e.id); }}
-                          className="w-full flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2 text-left hover:border-[#c9a55a44] hover:bg-white/[0.04] transition-all">
+                          className={`w-full flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left hover:border-[#c9a55a44] transition-all ${isDark ? "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
                           <div className="flex-1 min-w-0">
-                            <p className="truncate text-[0.7rem] font-medium text-white/70">{e.description}</p>
-                            <p className="text-[0.6rem] text-white/30">{fmtDate(e.date)} · {getCat(e.category).l}</p>
+                            <p className={`truncate text-[0.7rem] font-medium ${isDark ? "text-white/70" : "text-gray-700"}`}>{e.description}</p>
+                            <p className={`text-[0.6rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(e.date)} · {getCat(e.category).l}</p>
                           </div>
-                          <span className="shrink-0 text-[0.7rem] font-bold text-white/60">{fmtCur(e.amount, e.currency)}</span>
+                          <span className={`shrink-0 text-[0.7rem] font-bold ${isDark ? "text-white/60" : "text-gray-600"}`}>{fmtCur(e.amount, e.currency)}</span>
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <p className="py-1 text-[0.65rem] text-white/20">Aucune correspondance trouvée (±7 jours, ±10 %)</p>
+                    <p className={`py-1 text-[0.65rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune correspondance trouvée (±7 jours, ±10 %)</p>
                   )}
                 </div>
               )}
@@ -1034,6 +1053,7 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
 export default function DepensesPage() {
   const supabase = supabaseClient;
   const router   = useRouter();
+  const { isDark } = useTheme();
   const [userId,  setUserId]  = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast,   setToast]   = useState<ToastData | null>(null);
@@ -1109,7 +1129,7 @@ export default function DepensesPage() {
   }
 
   async function updateStatus(id: string, status: ExpStatus) {
-    const { error } = await supabase.from("expenses").update({ status }).eq("id", id);
+    const { error } = await supabase.from("expenses").update({ status }).eq("id", id).eq("user_id", userId ?? "");
     if (error) return toast$("Erreur", "error");
     setExpenses(es => es.map(e => e.id === id ? { ...e, status } : e));
     toast$("Statut mis à jour");
@@ -1118,7 +1138,7 @@ export default function DepensesPage() {
     async function saveReport(form: Partial<ExpenseReport>) {
     if (!form.title?.trim() || !userId) return;
     if (editReport) {
-      const { data, error } = await supabase.from("expense_reports").update(form).eq("id", editReport.id).select().single();
+      const { data, error } = await supabase.from("expense_reports").update(form).eq("id", editReport.id).eq("user_id", userId ?? "").select().single();
       if (error) return toast$("Erreur", "error");
       setReports(rs => rs.map(r => r.id === editReport.id ? data as ExpenseReport : r));
       toast$("Note mise à jour");
@@ -1237,20 +1257,21 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
   const grandTotal = expenses.filter(e => e.status !== "rejected").reduce((a, e) => a + e.amount, 0);
 
   if (loading) return (
-    <div className="flex h-full items-center justify-center" style={{ background:"#07080e" }}>
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]" />
+    <div className="flex h-full items-center justify-center" style={{ background: isDark ? "#07080e" : "#f8f9fa" }}>
+      <div className={`h-8 w-8 animate-spin rounded-full border-2 border-t-[#c9a55a] ${isDark ? "border-white/10" : "border-gray-200"}`} />
     </div>
   );
 
   return (
-    <div className="flex h-full flex-col overflow-hidden" style={{ background: "#07080e" }}>
+    <DarkCtx.Provider value={isDark}>
+    <div className="flex h-full flex-col overflow-hidden" style={{ background: isDark ? "#07080e" : "#f0f2f5" }}>
       <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       </AnimatePresence>
 
       {/* ── Animated header ── */}
       <div className="relative shrink-0 overflow-hidden px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6"
-        style={{ background: "linear-gradient(160deg,#07080e,#0d1117,#09080e)" }}>
+        style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#09080e)" : "linear-gradient(160deg,#ffffff,#f8f9fa,#f0f2f5)" }}>
 
         {/* Gold top line */}
         <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, ease: "easeOut" }}
@@ -1274,8 +1295,8 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
               <Receipt size={18} style={{ color: "#c9a55a" }} />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold tracking-tight text-white">Dépenses</h1>
-              <p className="mt-0.5 text-[0.65rem] text-white/30">
+              <h1 className={`text-xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Dépenses</h1>
+              <p className={`mt-0.5 text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
                 {expenses.length} dépense{expenses.length !== 1 ? "s" : ""} · {fmtCur(grandTotal)} total
               </p>
             </div>
@@ -1283,20 +1304,20 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
           <div className="flex items-center gap-2 shrink-0">
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.18 }} onClick={() => void exportPDF()} title="Exporter PDF"
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition-all hover:text-red-400"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all hover:text-red-400 ${isDark ? "text-white/30" : "text-gray-400"}`}
+              style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
               <FileCheck size={14} />
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }} onClick={exportCSV} title="Exporter CSV"
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition-all hover:text-white"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}
+              style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
               <Download size={14} />
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.22 }} onClick={exportXLSX} title="Exporter Excel"
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition-all hover:text-green-400"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${isDark ? "text-white/30 hover:text-green-400" : "text-gray-400 hover:text-green-600"}`}
+              style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
               <Table2 size={14} />
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -1320,11 +1341,11 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
             <motion.div key={l} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay, type: "spring", stiffness: 260, damping: 22 }}
               className="relative overflow-hidden rounded-2xl p-3.5"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)" }}>
               <div className="pointer-events-none absolute -top-4 -right-4 h-16 w-16 rounded-full opacity-[0.15]"
                 style={{ background: `radial-gradient(circle,${c},transparent 70%)` }} />
               <p className="text-[0.58rem] font-bold uppercase tracking-widest" style={{ color: c + "aa" }}>{l}</p>
-              <p className="mt-1.5 text-[1.1rem] font-black leading-tight text-white">{v}</p>
+              <p className={`mt-1.5 text-[1.1rem] font-black leading-tight ${isDark ? "text-white" : "text-gray-900"}`}>{v}</p>
               <p className="mt-0.5 text-[0.58rem]" style={{ color: c + "77" }}>{sub}</p>
               <div className="mt-2.5 h-0.5 rounded-full" style={{ background: `linear-gradient(90deg,${c}55,transparent)` }} />
             </motion.div>
@@ -1333,12 +1354,12 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
       </div>
 
       {/* ── Tab bar ── */}
-      <div className="relative shrink-0 flex border-b border-white/[0.07] px-4 sm:px-8"
-        style={{ background: "rgba(7,8,14,0.8)" }}>
+      <div className={`relative shrink-0 flex px-4 sm:px-8 border-b ${isDark ? "border-white/[0.07]" : "border-gray-200"}`}
+        style={{ background: isDark ? "rgba(7,8,14,0.8)" : "rgba(255,255,255,0.9)" }}>
         {TABS.map(({ id, l, I, badge }) => (
           <button key={id} onClick={() => setTab(id as typeof tab)}
             className={`relative flex items-center gap-2 whitespace-nowrap px-4 py-3 text-[0.72rem] font-semibold transition-colors ${
-              tab === id ? "text-white" : "text-white/30 hover:text-white/60"
+              tab === id ? (isDark ? "text-white" : "text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600")
             }`}>
             <I size={13} />{l}
             {badge > 0 && (
@@ -1367,40 +1388,40 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
 
                 {/* Filters */}
                 <div className="flex flex-wrap gap-2">
-                  <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                    <Search size={13} className="shrink-0 text-white/25" />
+                  <div className={`flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+                    <Search size={13} className={`shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`} />
                     <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
-                      className="flex-1 bg-transparent text-[0.78rem] text-white placeholder-white/20 outline-none" />
+                      className={`flex-1 bg-transparent text-[0.78rem] outline-none ${isDark ? "text-white placeholder-white/20" : "text-gray-900 placeholder-gray-400"}`} />
                   </div>
                   <div className="relative">
                     <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
+                      className={`appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/50" : "border-gray-200 bg-white text-gray-500"}`}>
                       <option value="">Toutes catégories</option>
                       {CATS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
                     </select>
-                    <ChevronDown size={11} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25" />
+                    <ChevronDown size={11} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/25" : "text-gray-400"}`} />
                   </div>
                   <div className="relative">
                     <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
-                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
+                      className={`appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/50" : "border-gray-200 bg-white text-gray-500"}`}>
                       <option value="">Tous statuts</option>
                       {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                     </select>
-                    <ChevronDown size={11} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25" />
+                    <ChevronDown size={11} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/25" : "text-gray-400"}`} />
                   </div>
                   <div className="relative">
                     <select value={filterPay} onChange={e => setFilterPay(e.target.value)}
-                      className="appearance-none [color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2 pr-7 text-[0.75rem] text-white/50 outline-none">
+                      className={`appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/50" : "border-gray-200 bg-white text-gray-500"}`}>
                       <option value="">Tous paiements</option>
                       {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
                     </select>
-                    <ChevronDown size={11} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25" />
+                    <ChevronDown size={11} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/25" : "text-gray-400"}`} />
                   </div>
                   <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
-                    className="[color-scheme:dark] rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2 text-[0.75rem] text-white/50 outline-none" />
+                    className={`rounded-xl border px-3 py-2 text-[0.75rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/50" : "border-gray-200 bg-white text-gray-500"}`} />
                   {hasFilters && (
                     <button onClick={() => { setSearch(""); setFilterCat(""); setFilterSt(""); setFilterMonth(""); setFilterPay(""); }}
-                      className="flex items-center gap-1 rounded-xl border border-white/[0.08] px-3 py-2 text-[0.72rem] text-white/30 hover:text-white/60 transition-colors">
+                      className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-[0.72rem] transition-colors ${isDark ? "border-white/[0.08] text-white/30 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
                       <X size={12} /> Effacer
                     </button>
                   )}
@@ -1413,13 +1434,13 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                       style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
                       <Receipt size={24} style={{ color: "#c9a55a66" }} />
                     </div>
-                    <p className="text-[0.78rem] text-white/30">
+                    <p className={`text-[0.78rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
                       {hasFilters ? "Aucune dépense ne correspond aux filtres" : "Aucune dépense enregistrée"}
                     </p>
                     {!hasFilters && (
                       <button onClick={() => { setEditExpense(null); setShowModal(true); }}
-                        className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] text-white/50 hover:text-white transition-all"
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                        className={`flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] transition-all ${isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
+                        style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
                         <Plus size={13} /> Ajouter votre première dépense
                       </button>
                     )}
@@ -1433,7 +1454,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                         return (
                           <motion.div key={e.id} layout
                             initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
-                            className="group flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 hover:bg-white/[0.05] transition-all">
+                            className={`group flex items-center gap-3 rounded-2xl border p-3 transition-all ${isDark ? "border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.05]" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
 
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                               style={{ backgroundColor: ci.c + "22" }}>
@@ -1442,16 +1463,16 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="truncate text-[0.78rem] font-semibold text-white/90">{e.description}</p>
+                                <p className={`truncate text-[0.78rem] font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{e.description}</p>
                                 {e.receipt_url && (
                                   <a href={e.receipt_url} target="_blank" rel="noreferrer"
                                     className="shrink-0 text-[0.6rem] text-blue-400/60 hover:text-blue-400 transition-colors" title="Justificatif">📎</a>
                                 )}
                               </div>
                               <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                                <span className="text-[0.62rem] text-white/30">{fmtDate(e.date)}</span>
-                                {e.project && <span className="rounded-full bg-white/[0.05] px-1.5 py-0.5 text-[0.58rem] text-white/30">{e.project}</span>}
-                                {e.invoice_number && <span className="text-[0.58rem] text-white/20">{e.invoice_number}</span>}
+                                <span className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(e.date)}</span>
+                                {e.project && <span className={`rounded-full px-1.5 py-0.5 text-[0.58rem] ${isDark ? "bg-white/[0.05] text-white/30" : "bg-gray-100 text-gray-500"}`}>{e.project}</span>}
+                                {e.invoice_number && <span className={`text-[0.58rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>{e.invoice_number}</span>}
                               </div>
                             </div>
 
@@ -1461,7 +1482,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                             </div>
 
                             <div className="shrink-0 text-right">
-                              <p className="text-[0.88rem] font-bold text-white">{fmtCur(e.amount, e.currency)}</p>
+                              <p className={`text-[0.88rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(e.amount, e.currency)}</p>
                               {e.vat_recoverable && e.vat_amount > 0 && (
                                 <p className="text-[0.58rem] text-green-400/60">TVA {fmtCur(e.vat_amount)}</p>
                               )}
@@ -1475,18 +1496,18 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                                     <Trash2 size={10} /> Oui
                                   </button>
                                   <button onClick={() => setConfirmDeleteExpenseId(null)}
-                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white/60 transition-all">
+                                    className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all ${isDark ? "text-white/25 hover:bg-white/[0.08] hover:text-white/60" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"}`}>
                                     <X size={10} />
                                   </button>
                                 </>
                               ) : (
                                 <>
                                   <button onClick={() => { setEditExpense(e); setShowModal(true); }}
-                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white transition-all">
+                                    className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all ${isDark ? "text-white/25 hover:bg-white/[0.08] hover:text-white" : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"}`}>
                                     <Edit2 size={12} />
                                   </button>
                                   <button onClick={() => setConfirmDeleteExpenseId(e.id)}
-                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400 transition-all">
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-all">
                                     <Trash2 size={12} />
                                   </button>
                                 </>
@@ -1494,7 +1515,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                             </div>
 
                             <select value={e.status} onChange={ev => updateStatus(e.id, ev.target.value as ExpStatus)}
-                              className="shrink-0 cursor-pointer appearance-none [color-scheme:dark] rounded-lg border border-white/[0.05] bg-[#0e1420] px-2 py-1 text-[0.6rem] text-white/30 outline-none opacity-0 hover:border-white/15 group-hover:opacity-100 transition-all"
+                              className={`shrink-0 cursor-pointer appearance-none rounded-lg border px-2 py-1 text-[0.6rem] outline-none opacity-0 group-hover:opacity-100 transition-all ${isDark ? "[color-scheme:dark] border-white/[0.05] bg-[#0e1420] text-white/30 hover:border-white/15" : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"}`}
                               style={{ minWidth: "90px" }}>
                               {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                             </select>
@@ -1503,10 +1524,10 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                       })}
                     </AnimatePresence>
 
-                    <div className="flex flex-wrap items-center justify-end gap-4 rounded-2xl border border-white/[0.04] bg-white/[0.01] px-4 py-2.5 text-[0.72rem]">
-                      <span className="text-white/30">{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</span>
-                      <span className="text-white/50">TVA rép. : <span className="font-semibold text-green-400">{fmtCur(filteredVAT)}</span></span>
-                      <span className="font-bold text-white">Total : {fmtCur(filteredTotal)}</span>
+                    <div className={`flex flex-wrap items-center justify-end gap-4 rounded-2xl border px-4 py-2.5 text-[0.72rem] ${isDark ? "border-white/[0.04] bg-white/[0.01]" : "border-gray-200 bg-white"}`}>
+                      <span className={isDark ? "text-white/30" : "text-gray-400"}>{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</span>
+                      <span className={isDark ? "text-white/50" : "text-gray-500"}>TVA rép. : <span className="font-semibold text-green-500">{fmtCur(filteredVAT)}</span></span>
+                      <span className={`font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Total : {fmtCur(filteredTotal)}</span>
                     </div>
                   </div>
                 )}
@@ -1530,10 +1551,10 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                       style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
                       <FileText size={24} style={{ color: "#c9a55a66" }} />
                     </div>
-                    <p className="text-[0.78rem] text-white/30">Aucune note de frais</p>
+                    <p className={`text-[0.78rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucune note de frais</p>
                     <button onClick={() => { setEditReport(null); setShowReportModal(true); }}
-                      className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] text-white/50 hover:text-white transition-all"
-                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      className={`flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] transition-all ${isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
+                      style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
                       <Plus size={13} /> Créer une note de frais
                     </button>
                   </div>
@@ -1544,24 +1565,24 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                       const total  = linked.reduce((a, e) => a + e.amount, 0);
                       const vatRec = linked.filter(e => e.vat_recoverable).reduce((a, e) => a + e.vat_amount, 0);
                       return (
-                        <div key={r.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-3">
+                        <div key={r.id} className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
                           <div className="flex items-start gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="text-[0.85rem] font-bold text-white">{r.title}</h3>
+                                <h3 className={`text-[0.85rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{r.title}</h3>
                                 <StBadge st={r.status} />
                               </div>
-                              <div className="mt-1 flex flex-wrap items-center gap-3 text-[0.65rem] text-white/30">
+                              <div className={`mt-1 flex flex-wrap items-center gap-3 text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
                                 <span>{linked.length} dépense{linked.length !== 1 ? "s" : ""}</span>
                                 {r.period_start && (
                                   <span>{fmtDate(r.period_start)} → {r.period_end ? fmtDate(r.period_end) : "en cours"}</span>
                                 )}
                               </div>
-                              {r.notes && <p className="mt-1 text-[0.65rem] italic text-white/25 truncate">{r.notes}</p>}
+                              {r.notes && <p className={`mt-1 text-[0.65rem] italic truncate ${isDark ? "text-white/25" : "text-gray-400"}`}>{r.notes}</p>}
                             </div>
                             <div className="shrink-0 text-right">
-                              <p className="text-[0.95rem] font-semibold text-white">{fmtCur(total)}</p>
-                              {vatRec > 0 && <p className="text-[0.6rem] text-green-400/60">TVA {fmtCur(vatRec)}</p>}
+                              <p className={`text-[0.95rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(total)}</p>
+                              {vatRec > 0 && <p className="text-[0.6rem] text-green-500/70">TVA {fmtCur(vatRec)}</p>}
                             </div>
                             <div className="shrink-0 flex gap-1">
                               {confirmDeleteReportId === r.id ? (
@@ -1571,18 +1592,18 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                                     <Trash2 size={10} /> Oui
                                   </button>
                                   <button onClick={() => setConfirmDeleteReportId(null)}
-                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white/60 transition-all">
+                                    className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all ${isDark ? "text-white/25 hover:bg-white/[0.08] hover:text-white/60" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"}`}>
                                     <X size={10} />
                                   </button>
                                 </>
                               ) : (
                                 <>
                                   <button onClick={() => { setEditReport(r); setShowReportModal(true); }}
-                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-white/[0.08] hover:text-white transition-all">
+                                    className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all ${isDark ? "text-white/25 hover:bg-white/[0.08] hover:text-white" : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"}`}>
                                     <Edit2 size={12} />
                                   </button>
                                   <button onClick={() => setConfirmDeleteReportId(r.id)}
-                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-white/25 hover:bg-red-500/10 hover:text-red-400 transition-all">
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-all">
                                     <Trash2 size={12} />
                                   </button>
                                 </>
@@ -1591,22 +1612,22 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                           </div>
 
                           {linked.length > 0 ? (
-                            <div className="space-y-1 border-t border-white/[0.04] pt-3">
+                            <div className={`space-y-1 border-t pt-3 ${isDark ? "border-white/[0.04]" : "border-gray-100"}`}>
                               {linked.map(e => {
                                 const ci = getCat(e.category);
                                 const CI = ci.I;
                                 return (
-                                  <div key={e.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-white/[0.02] transition-colors">
+                                  <div key={e.id} className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors ${isDark ? "hover:bg-white/[0.02]" : "hover:bg-gray-50"}`}>
                                     <CI size={11} style={{ color: ci.c }} className="shrink-0" />
-                                    <span className="flex-1 truncate text-[0.68rem] text-white/50">{e.description}</span>
-                                    <span className="shrink-0 text-[0.62rem] text-white/30">{fmtDate(e.date)}</span>
-                                    <span className="shrink-0 text-[0.7rem] font-semibold text-white/70">{fmtCur(e.amount, e.currency)}</span>
+                                    <span className={`flex-1 truncate text-[0.68rem] ${isDark ? "text-white/50" : "text-gray-600"}`}>{e.description}</span>
+                                    <span className={`shrink-0 text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(e.date)}</span>
+                                    <span className={`shrink-0 text-[0.7rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{fmtCur(e.amount, e.currency)}</span>
                                   </div>
                                 );
                               })}
                             </div>
                           ) : (
-                            <p className="py-2 text-center text-[0.68rem] text-white/20">
+                            <p className={`py-2 text-center text-[0.68rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>
                               Associez des dépenses à cette note via le formulaire de dépense.
                             </p>
                           )}
@@ -1677,7 +1698,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                 setExpenses(prev => {
                   const linked = prev.filter(e => e.expense_report_id === saved.expense_report_id && e.id !== saved.id);
                   const total  = [...linked, saved].filter(e => e.status !== "rejected").reduce((a,e) => a+e.amount, 0);
-                  void supabaseClient.from("expense_reports").update({ total_amount: total }).eq("id", saved.expense_report_id!);
+                  void supabaseClient.from("expense_reports").update({ total_amount: total }).eq("id", saved.expense_report_id!).eq("user_id", userId ?? "");
                   setReports(rs => rs.map(r => r.id === saved.expense_report_id ? { ...r, total_amount: total } : r));
                   return prev;
                 });
@@ -1700,5 +1721,6 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
         )}
       </AnimatePresence>
     </div>
+    </DarkCtx.Provider>
   );
 }

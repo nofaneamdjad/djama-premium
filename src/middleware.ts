@@ -13,14 +13,20 @@ import { verifyAdminToken }              from "@/lib/admin-token";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Admin protection ──────────────────────────────────────────────────────
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+  // ── Admin protection (pages + API routes) ────────────────────────────────
+  const isAdminPage = pathname.startsWith("/admin") && pathname !== "/admin/login";
+  const isAdminApi  = pathname.startsWith("/api/admin") && pathname !== "/api/admin/auth";
+
+  if (isAdminPage || isAdminApi) {
     const ADMIN_PASS = process.env.ADMIN_PASS;
     const tok = request.cookies.get("djama_admin_tok")?.value;
     const valid =
       ADMIN_PASS && tok ? await verifyAdminToken(tok, ADMIN_PASS) : false;
 
     if (!valid) {
+      if (isAdminApi) {
+        return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+      }
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
     return NextResponse.next();
@@ -90,5 +96,6 @@ export const config = {
     "/planning-agenda",
     "/planning-agenda/:path*",
     "/admin/:path*",
+    "/api/admin/:path*",
   ],
 };
