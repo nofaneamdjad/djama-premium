@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
 
   const isClientRoute = clientRoutes.some(
     (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
-  );
+  ) && pathname !== "/membre/login";
 
   if (isClientRoute) {
     let response = NextResponse.next({ request });
