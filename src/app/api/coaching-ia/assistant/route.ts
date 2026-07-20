@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("coaching-ia/assistant");
@@ -44,6 +46,15 @@ const SYSTEM_PROMPT = `Tu es l'Assistant Pédagogique IA du Coaching DJAMA — u
 - Ne fournis pas de code complet sauf si c'est directement lié à l'exercice`;
 
 export async function POST(req: NextRequest) {
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
+  );
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+
   try {
     const { messages, context } = await req.json() as {
       messages: { role: string; content: string }[];

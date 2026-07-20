@@ -14,6 +14,8 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("coaching-ia/ai-tools");
@@ -26,6 +28,15 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 type AiAction = "summarize" | "simplify" | "quiz" | "action_plan" | "create_prompt";
 
 export async function POST(req: NextRequest) {
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
+  );
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: "API non configurée." }, { status: 503 });
   }
