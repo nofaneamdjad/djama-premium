@@ -144,6 +144,23 @@ export default function ScannerPage() {
     return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   }
 
+  function downloadDoc() {
+    if (!active) return;
+    if (active.preview) {
+      const ext = active.preview.startsWith("data:image/png") ? "png" : "jpg";
+      const a = document.createElement("a");
+      a.href = active.preview;
+      a.download = `${active.title}.${ext}`;
+      a.click();
+    } else if (active.text) {
+      const blob = new Blob([active.text], { type: "text/plain;charset=utf-8;" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url; a.download = `${active.title}.txt`;
+      a.click(); URL.revokeObjectURL(url);
+    }
+  }
+
   return (
     <div className="flex h-[calc(100vh-56px)] bg-[#07080e]">
 
@@ -276,7 +293,10 @@ export default function ScannerPage() {
                 <p className="text-[9.5px] text-white/30">{fmtDate(active.created_at)}</p>
               </div>
               <div className="flex items-center gap-1.5">
-                <button className="flex h-8 w-8 items-center justify-center rounded-full text-white/40 transition hover:text-white/70"
+                <button
+                  onClick={downloadDoc}
+                  disabled={!active.preview && !active.text}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-white/40 transition hover:text-white/70 disabled:opacity-25"
                   style={{ background: "rgba(255,255,255,0.06)" }}>
                   <Download size={13} />
                 </button>

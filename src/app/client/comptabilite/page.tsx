@@ -4,13 +4,13 @@ import { useState, useEffect, createContext, useContext } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Euro,
-  Download, ChevronRight, ArrowUpRight, ArrowDownRight,
-  Percent, Calendar, FileText, RefreshCw,
+  Download, ChevronRight, ChevronUp, ArrowUpRight, ArrowDownRight,
+  Percent, Calendar, FileText, RefreshCw, BookMarked, Info,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
 import { useTheme } from "@/lib/theme-context";
-import { AppModuleIcon } from "@/components/AppIcons";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -44,6 +44,7 @@ export default function ComptabilitePage() {
   const [tvaDeductible, setTvaDeductible] = useState(0);
   const [journal, setJournal]     = useState<JournalLine[]>([]);
   const [tvaRows, setTvaRows]     = useState<TVARow[]>([]);
+  const [showAll, setShowAll]     = useState(false);
 
   function getPeriodRange(p: "month" | "quarter" | "year") {
     const now = new Date();
@@ -98,18 +99,18 @@ export default function ComptabilitePage() {
       setCaHT(totalHT);
       setCaTTC(totalTTC);
       setTvaCollectee(totalTVA);
-      setTvaDeductible(totalExp * 0.2);
+      setTvaDeductible(0);
       setCharges(totalExp);
 
       const lines: JournalLine[] = [
-        ...facs.slice(0, 8).map(f => ({
+        ...facs.map(f => ({
           date: f.date_emission,
           libelle: `Facture ${f.numero ?? ""} — ${f.client_nom ?? "Client"}`,
           debit: 0,
           credit: f.montant_ht ?? 0,
           compte: "706",
         })),
-        ...exps.slice(0, 6).map(e => ({
+        ...exps.map(e => ({
           date: e.date,
           libelle: e.description ?? e.category ?? "Charge",
           debit: e.amount ?? 0,
@@ -117,8 +118,7 @@ export default function ComptabilitePage() {
           compte: "60x",
         })),
       ]
-        .sort((a, b) => b.date.localeCompare(a.date))
-        .slice(0, 12);
+        .sort((a, b) => b.date.localeCompare(a.date));
 
       setJournal(lines);
 
@@ -146,6 +146,19 @@ export default function ComptabilitePage() {
   const tvaSolde     = tvaCollectee - tvaDeductible;
   const { label: periodLabel } = getPeriodRange(period);
 
+  function exportCSV() {
+    const rows = [
+      ["Date", "Compte", "Libellé", "Débit (€)", "Crédit (€)"],
+      ...journal.map(l => [l.date, l.compte, l.libelle, l.debit || "", l.credit || ""]),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `journal-comptable-${periodLabel.replace(/ /g, "-")}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
   const kpis = [
     { label: "CA HT",    value: caHT,    color: "#16a34a", icon: TrendingUp,   bgD: "rgba(34,197,94,0.08)",   bgL: "rgba(34,197,94,0.10)",   borderD: "rgba(34,197,94,0.18)",   borderL: "rgba(34,197,94,0.25)" },
     { label: "Charges",  value: charges, color: "#dc2626", icon: TrendingDown, bgD: "rgba(248,113,113,0.08)", bgL: "rgba(248,113,113,0.10)", borderD: "rgba(248,113,113,0.18)", borderL: "rgba(248,113,113,0.25)" },
@@ -171,14 +184,16 @@ export default function ComptabilitePage() {
           className="flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
-            <AppModuleIcon href="/client/comptabilite" size={40} hideBackground />
+            <ModuleHeaderIcon icon={BookMarked} color="#0891b2" />
             <div>
               <h1 className={`text-[17px] font-black ${isDark ? "text-white" : "text-gray-900"}`}>Comptabilité</h1>
               <p className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{periodLabel}</p>
             </div>
           </div>
           <button
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-semibold transition ${isDark ? "text-white/60 hover:text-white/80" : "text-gray-500 hover:text-gray-700"}`}
+            onClick={exportCSV}
+            disabled={journal.length === 0}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-semibold transition ${isDark ? "text-white/60 hover:text-white/80 disabled:opacity-30" : "text-gray-500 hover:text-gray-700 disabled:opacity-30"}`}
             style={{
               background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
               border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)"
@@ -292,6 +307,9 @@ export default function ComptabilitePage() {
                     {tvaSolde >= 0 ? "TVA à payer" : "Crédit de TVA"}
                   </p>
                   <p className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>Collectée {fmtEurInt(tvaCollectee)} − Déductible {fmtEurInt(tvaDeductible)}</p>
+                  {tvaDeductible === 0 && tvaCollectee > 0 && (
+                    <p className={`text-[8.5px] flex items-center gap-0.5 mt-0.5 ${isDark ? "text-white/18" : "text-gray-300"}`}><Info size={8} />TVA déductible non encore renseignée</p>
+                  )}
                 </div>
                 <p className="text-[16px] font-black tabular-nums" style={{ color: tvaSolde >= 0 ? "#dc2626" : "#16a34a" }}>
                   {fmtEurInt(Math.abs(tvaSolde))}
@@ -376,7 +394,7 @@ export default function ComptabilitePage() {
             </div>
           ) : (
             <div className="pb-2">
-              {journal.map((line, i) => (
+              {(showAll ? journal : journal.slice(0, 5)).map((line, i) => (
                 <div key={i}
                   className="flex items-center gap-3 px-4 py-2.5"
                   style={{ borderTop: i > 0 ? isDark ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)" : undefined }}>
@@ -404,13 +422,16 @@ export default function ComptabilitePage() {
                 </div>
               ))}
 
-              <div className="px-4 pt-1 pb-1">
-                <button
-                  className={`flex w-full items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-semibold transition ${isDark ? "text-white/35 hover:text-white/55" : "text-gray-400 hover:text-gray-600"}`}
-                  style={{ border: isDark ? "1px dashed rgba(255,255,255,0.08)" : "1px dashed rgba(0,0,0,0.12)" }}>
-                  Voir tout <ChevronRight size={11} />
-                </button>
-              </div>
+              {journal.length > 5 && (
+                <div className="px-4 pt-1 pb-1">
+                  <button
+                    onClick={() => setShowAll(v => !v)}
+                    className={`flex w-full items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-semibold transition ${isDark ? "text-white/35 hover:text-white/55" : "text-gray-400 hover:text-gray-600"}`}
+                    style={{ border: isDark ? "1px dashed rgba(255,255,255,0.08)" : "1px dashed rgba(0,0,0,0.12)" }}>
+                    {showAll ? <>Réduire <ChevronUp size={11} /></> : <>Voir tout ({journal.length}) <ChevronRight size={11} /></>}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </motion.div>

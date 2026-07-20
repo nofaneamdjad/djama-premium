@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import { useTheme } from "@/lib/theme-context";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 /* ── Types ── */
 type Platform   = "instagram" | "facebook" | "linkedin" | "tiktok";
@@ -542,10 +543,12 @@ export default function ReseauxSociauxPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <p className={`text-xs font-semibold uppercase tracking-widest ${textMut}`}>GESTION</p>
-          <h1 className={`text-2xl font-extrabold ${textPri}`}>Réseaux Sociaux</h1>
-          <p className={`text-sm ${textSec}`}>Créez, planifiez et analysez vos publications</p>
+        <div className="flex items-center gap-3">
+          <ModuleHeaderIcon icon={Share2} color="#e1306c" />
+          <div>
+            <h1 className={`text-[17px] font-black ${textPri}`}>Réseaux Sociaux</h1>
+            <p className={`text-[11px] ${textSec}`}>Créez, planifiez et analysez vos publications</p>
+          </div>
         </div>
         {(() => {
           const next = posts.filter(p=>p.status==="planifié"&&p.scheduled_at).sort((a,b)=>a.scheduled_at!.localeCompare(b.scheduled_at!))[0];
@@ -747,6 +750,12 @@ export default function ReseauxSociauxPage() {
           {/* ── Flux ── */}
           {activeTab==="flux" && (
             <>
+              {posts.some(p=>p.status==="publié"&&postStats[p.id]) && (
+                <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${isDark?"border-amber-400/20 bg-amber-400/6 text-amber-400/70":"border-amber-200 bg-amber-50 text-amber-700/80"}`}>
+                  <span className="shrink-0 rounded bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-amber-500">Simulé</span>
+                  Les statistiques affichées sont estimées — elles ne proviennent pas de vos vrais comptes.
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
                 <button onClick={()=>setFilter("tous")} className="rounded-xl border px-4 py-1.5 text-xs font-semibold transition"
                   style={filter==="tous"?{background:VIOLET,borderColor:VIOLET,color:"#fff"}:{borderColor:isDark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.1)",color:isDark?"rgba(255,255,255,0.35)":"rgba(14,20,32,0.4)"}}>
@@ -805,7 +814,7 @@ export default function ReseauxSociauxPage() {
                                 {icon}<span className={`font-semibold ${textSec}`}>{fmtNum(val)}</span>
                               </div>
                             ))}
-                            <span className="ml-auto rounded px-1 py-0.5 text-[8px] font-bold uppercase tracking-widest bg-amber-400/10 text-amber-500/60">sim.</span>
+                            <span className="ml-auto rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-400/12 text-amber-500 border border-amber-400/20">Simulé</span>
                           </div>
                         )}
                       </motion.div>
