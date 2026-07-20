@@ -45,8 +45,8 @@ function avatarGradient(id: string) {
   return AVATAR_GRADIENTS[n % AVATAR_GRADIENTS.length];
 }
 
-const calcNet     = (b: number) => Math.round(b * 0.78);
-const calcCharges = (b: number) => Math.round(b * 0.42);
+const calcNet     = (b: number) => Math.round(b * 0.7897); // 1 - 21.03% cotisations salariales (COT_SAL)
+const calcCharges = (b: number) => Math.round(b * 0.3358); // 33.58% cotisations patronales (COT_PAT)
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 const fmt2 = (n: number) =>
@@ -205,7 +205,7 @@ export default function PaieRHPage() {
     const monthKey = new Date().toISOString().slice(0, 7);
     setBulletinHist(prev => ({ ...prev, [e.id]: [...new Set([...(prev[e.id] ?? []), monthKey])] }));
     if (userId) {
-      try { await supabase.from("payslips").upsert({ user_id: userId, employee_id: e.id, month_key: monthKey, html_content: monthKey }, { onConflict: "user_id,employee_id,month_key" }); } catch {}
+      try { await supabase.from("payslips").upsert({ user_id: userId, employee_id: e.id, month_key: monthKey, html_content: monthKey }, { onConflict: "user_id,employee_id,month_key" }); } catch (err) { console.error("[paie/bulletin]", err); }
     }
     generateBulletin(e);
     add(`Bulletin ${e.nom} généré`, "success");
@@ -251,7 +251,7 @@ export default function PaieRHPage() {
     const next = { ...cur, [field]: Math.max(0, cur[field] + delta) };
     setAbsencesMap(prev => ({ ...prev, [empId]: next }));
     if (userId) {
-      try { await supabase.from("employe_absences").upsert({ user_id: userId, employee_id: empId, ...next }, { onConflict: "user_id,employee_id" }); } catch {}
+      try { await supabase.from("employe_absences").upsert({ user_id: userId, employee_id: empId, ...next }, { onConflict: "user_id,employee_id" }); } catch (err) { console.error("[paie/absences]", err); }
     }
   }
 

@@ -1609,7 +1609,12 @@ function EmailComposeModal({ contact, onClose, onSent }: {
   const send = async () => {
     if (!subject.trim() || !body.trim()) return;
     setSending(true);
-    await new Promise(res => setTimeout(res, 600));
+    if (contact.email) {
+      window.open(
+        `mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+        "_blank",
+      );
+    }
     onSent(subject, body);
     setSending(false);
   };
@@ -2473,7 +2478,7 @@ export default function CRMPage() {
                 activity_date: new Date().toISOString().split("T")[0],
                 duration_min: 0,
               });
-              toast(`Email envoyé à ${emailContact.email}`, "success");
+              toast(`Activité enregistrée · votre client email s'est ouvert`, "success");
               setEmailContact(null);
             }}
           />

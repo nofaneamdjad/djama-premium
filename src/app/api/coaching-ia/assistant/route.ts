@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("coaching-ia/assistant");
@@ -54,6 +55,8 @@ export async function POST(req: NextRequest) {
   );
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+  const { allowed } = checkRateLimit(user.id, 30, 60 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "Trop de requêtes. Réessayez dans une heure." }, { status: 429 });
 
   try {
     const { messages, context } = await req.json() as {

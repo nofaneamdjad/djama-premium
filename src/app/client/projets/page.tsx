@@ -502,7 +502,12 @@ function CahierDesChargesModal({ onClose, isDark, initialName, initialDesc }: {
   async function handleDownloadPdf() {
     if (!cdc) return;
     setDlPdf(true);
-    try { await downloadCdcPdf(cdc); } catch {}
+    try {
+      await downloadCdcPdf(cdc);
+    } catch (err) {
+      console.error("[projets/pdf]", err);
+      setError("Erreur lors du téléchargement du PDF.");
+    }
     setDlPdf(false);
   }
 

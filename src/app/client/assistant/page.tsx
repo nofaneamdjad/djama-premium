@@ -606,7 +606,9 @@ export default function AssistantPage() {
         unpaidTotal: unpaid.reduce((s, i) => s + Number(i.montant_ttc ?? 0), 0),
         lowStock: low, pendingLeaves: pLeaves, todayEvents: todayEv,
       });
-    } catch {  }
+    } catch (err) {
+      console.error("[assistant/insights]", err);
+    }
     setInsLoading(false);
 
   }, []);

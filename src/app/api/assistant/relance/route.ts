@@ -15,6 +15,7 @@ import Anthropic               from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 import type {
   RelanceRequest,
@@ -51,6 +52,8 @@ export async function POST(
   );
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+  const { allowed } = checkRateLimit(user.id, 20, 60 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "Trop de requêtes. Réessayez dans une heure." }, { status: 429 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
