@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 type Horizon   = "quarter" | "year" | "3years";
 type PlanStatus = "active" | "completed" | "paused";
@@ -191,7 +192,7 @@ export default function PlanificationPage() {
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.replace("/login"); return; }
+    if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
     setUserId(user.id);
     const { data } = await supabase.from("strategic_plans").select("*")
       .eq("user_id", user.id).order("created_at", { ascending: false });
@@ -260,10 +261,7 @@ export default function PlanificationPage() {
       <div className={`border-b px-5 py-4 backdrop-blur-xl sm:px-8 sticky top-0 z-20 ${isDark ? "border-white/[0.06] bg-[#07080e]/95" : "border-black/[0.08] bg-[#f4f5f9]/95 shadow-sm"}`}>
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border"
-              style={{ background: `${GOLD}14`, borderColor: `${GOLD}28` }}>
-              <Target size={17} style={{ color: GOLD }} />
-            </div>
+            <ModuleHeaderIcon icon={Target} color="#075985" />
             <div>
               <h1 className={`text-base font-extrabold ${pri}`}>Planification Stratégique</h1>
               <p className={`text-[0.65rem] ${faint}`}>{activeCount} plan{activeCount !== 1 ? "s" : ""} actif{activeCount !== 1 ? "s" : ""} · {allObjs.length} objectifs</p>

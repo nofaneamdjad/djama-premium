@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -341,7 +341,7 @@ function ProfilPage() {
         <div className="relative h-8 w-8">
           <div className="absolute inset-0 rounded-full" style={{ border: "2px solid rgba(201,165,90,0.2)" }} />
           <motion.div className="absolute inset-0 rounded-full"
-            style={{ border: "2px solid transparent", borderTopColor: GOLD }}
+            style={{ borderWidth: "2px", borderStyle: "solid", borderTopColor: GOLD, borderRightColor: "transparent", borderBottomColor: "transparent", borderLeftColor: "transparent" }}
             animate={{ rotate: 360 }} transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }} />
         </div>
       </div>

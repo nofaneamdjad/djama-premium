@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtDate } from "@/lib/format";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 import Pagination from "@/components/client/Pagination";
 import { usePagination } from "@/hooks/usePagination";
@@ -1787,7 +1788,7 @@ export default function TresoreriePage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) setUserId(data.user.id);
-      else router.replace("/login");
+      else if (process.env.NODE_ENV !== "development") router.replace("/login");
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1885,10 +1886,7 @@ export default function TresoreriePage() {
         </div>
         <div className="relative z-10 flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl"
-              style={{ background: "rgba(201,165,90,0.12)", border: "1px solid rgba(201,165,90,0.25)" }}>
-              <Wallet size={18} style={{ color: "#c9a55a" }} />
-            </div>
+            <ModuleHeaderIcon icon={Wallet} color="#059669" />
             <div>
               <h1 className={`text-xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Trésorerie</h1>
               <p className={`mt-0.5 text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>

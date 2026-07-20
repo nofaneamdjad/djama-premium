@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { useTheme } from "@/lib/theme-context";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 const VIOLET = "#8b5cf6";
 
@@ -532,7 +533,7 @@ export default function ProductivitePage() {
     (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { router.replace("/login"); return; }
+        if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
         setUserId(user.id);
         await load(user.id);
       } catch {
@@ -745,9 +746,8 @@ export default function ProductivitePage() {
         <div className="relative px-5 pt-4 pb-3 sm:px-8">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
-                className={`h-10 w-10 flex items-center justify-center rounded-xl border ${isDark ? "border-white/8 bg-white/6" : "border-gray-200 bg-gray-100"}`}>
-                <Zap size={18} style={{ color: "#c9a55a" }}/>
+              <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
+                <ModuleHeaderIcon icon={Zap} color="#be185d" />
               </motion.div>
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Productivité</h1>

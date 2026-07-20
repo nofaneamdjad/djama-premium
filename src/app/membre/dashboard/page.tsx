@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   MessageSquare, CheckSquare, Clock, AlertTriangle, ArrowRight,
-  CheckCircle2, Calendar, TrendingUp, Zap, Circle,
+  CheckCircle2, Calendar, TrendingUp, Zap, Circle, Megaphone,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -50,35 +50,46 @@ function colorFor(name: string) {
 }
 
 export default function MembreDashboard() {
-  const [name, setName]       = useState("");
-  const [teamId, setTeamId]   = useState("");
-  const [tasks, setTasks]     = useState<Task[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [name, setName]             = useState("");
+  const [teamId, setTeamId]         = useState("");
+  const [tasks, setTasks]           = useState<Task[]>([]);
+  const [messages, setMessages]     = useState<Message[]>([]);
+  const [meetings, setMeetings]     = useState<Meeting[]>([]);
+  const [announces, setAnnounces]   = useState<Message[]>([]);
+  const [loading, setLoading]       = useState(true);
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const meta = user.user_metadata;
+      if (!user) { setLoading(false); return; }
+      const meta   = user.user_metadata;
+      const tid    = meta?.team_id ?? user.id;
+      const mid    = meta?.member_id ?? null;
+      const sid    = meta?.space_id ?? null;
       setName(meta?.name ?? user.email ?? "");
-      setTeamId(meta?.team_id ?? "");
+      setTeamId(tid);
 
-      const [tR, mR, mrR] = await Promise.all([
-        supabase.from("team_tasks").select("id,title,status,priority,due_date,project")
-          .eq("user_id", meta.team_id).eq("assigned_to", meta.member_id)
-          .order("due_date", { ascending: true }).limit(20),
-        supabase.from("team_messages").select("id,sender_name,content,channel,created_at")
-          .eq("user_id", meta.team_id).order("created_at", { ascending: false }).limit(8),
-        supabase.from("team_meetings").select("id,title,date_at,duration_minutes,location,meet_link")
-          .eq("user_id", meta.team_id).eq("status", "planned")
-          .gt("date_at", new Date().toISOString())
-          .order("date_at").limit(3),
+      const taskBase = supabase.from("team_tasks").select("id,title,status,priority,due_date,project")
+        .eq("user_id", tid).order("due_date", { ascending: true }).limit(20);
+      const taskQ = mid ? taskBase.eq("assigned_to", mid) : taskBase;
+
+      const msgBase  = supabase.from("team_messages").select("id,sender_name,content,channel,created_at")
+        .eq("user_id", tid).neq("channel", "annonces").order("created_at", { ascending: false }).limit(8);
+      const meetBase = supabase.from("team_meetings").select("id,title,date_at,duration_minutes,location,meet_link")
+        .eq("user_id", tid).eq("status", "planned").gt("date_at", new Date().toISOString()).order("date_at").limit(3);
+      const annBase  = supabase.from("team_messages").select("id,sender_name,content,channel,created_at")
+        .eq("user_id", tid).eq("channel", "annonces").order("created_at", { ascending: false }).limit(5);
+
+      const [tR, mR, mrR, anR] = await Promise.all([
+        sid ? taskQ.eq("space_id", sid) : taskQ,
+        sid ? msgBase.eq("space_id", sid) : msgBase,
+        sid ? meetBase.eq("space_id", sid) : meetBase,
+        sid ? annBase.eq("space_id", sid) : annBase,
       ]);
       setTasks((tR.data ?? []) as Task[]);
       setMessages((mR.data ?? []) as Message[]);
       setMeetings((mrR.data ?? []) as Meeting[]);
+      setAnnounces((anR.data ?? []) as Message[]);
       setLoading(false);
     })();
   }, []);
@@ -110,19 +121,25 @@ export default function MembreDashboard() {
         </div>
         <div className="relative flex items-center gap-4">
           <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-extrabold shrink-0"
-            style={{ background: `${GOLD}15`, color: GOLD, border: `2px solid ${GOLD}25` }}>
-            {name.charAt(0).toUpperCase()}
+            className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-extrabold shrink-0"
+            style={{ background: `linear-gradient(135deg,${GOLD}22,${GOLD}0a)`, color: GOLD, border: `2px solid ${GOLD}35` }}>
+            {name ? name.charAt(0).toUpperCase() : "?"}
+            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#0c1222] bg-emerald-400" />
           </motion.div>
           <motion.div initial={{ x: -8, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.06 }}>
-            <p className="text-sm text-white/40">{greet()},</p>
-            <h1 className="text-xl font-extrabold text-white leading-tight">{name}</h1>
-            <p className="text-[12px] text-white/30 mt-0.5">
-              {pending.length === 0
-                ? "Aucune tâche en attente — bonne journée !"
-                : `${pending.length} tâche${pending.length > 1 ? "s" : ""} en attente`}
+            <p className="text-[11px] text-white/35 uppercase tracking-widest font-medium">{greet()}</p>
+            <h1 className="text-xl font-extrabold text-white leading-tight">{name || "Membre"}</h1>
+            <p className="text-[11px] text-white/30 mt-0.5">
+              {now.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
             </p>
           </motion.div>
+          <div className="ml-auto shrink-0 text-right hidden sm:block">
+            <p className="text-[10px] text-white/25 uppercase tracking-widest">Statut</p>
+            <div className="flex items-center gap-1.5 mt-1 justify-end">
+              <div className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-xs font-bold text-emerald-400">Actif</span>
+            </div>
+          </div>
         </div>
 
         {/* Progress bar */}
@@ -149,23 +166,63 @@ export default function MembreDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {[
             { label: "À faire",      value: pending.length, color: GOLD,      icon: CheckSquare,   href: "/membre/taches" },
-            { label: "Pour auj.",    value: today,          color: "#60a5fa", icon: Clock,         href: "/membre/taches" },
+            { label: "Aujourd'hui",  value: today,          color: "#60a5fa", icon: Clock,         href: "/membre/taches" },
             { label: "En retard",    value: late,           color: "#f87171", icon: AlertTriangle, href: "/membre/taches" },
             { label: "Messages",     value: messages.length,color: "#10b981", icon: MessageSquare, href: "/membre/chat"   },
           ].map((s, i) => (
             <Link key={s.label} href={s.href}>
               <motion.div whileHover={{ y: -2 }} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3.5 cursor-pointer hover:border-white/15 hover:bg-white/[0.045] transition-all">
+                className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3.5 cursor-pointer hover:border-white/15 hover:bg-white/[0.04] transition-all"
+                style={{ borderLeft: `2px solid ${s.color}40` }}>
                 <div className="w-7 h-7 rounded-xl flex items-center justify-center mb-2.5" style={{ background: `${s.color}12` }}>
                   <s.icon size={13} style={{ color: s.color }} />
                 </div>
-                <p className="text-2xl font-extrabold leading-none" style={{ color: s.color }}>{s.value}</p>
-                <p className="text-[10px] text-white/30 mt-1">{s.label}</p>
+                <p className="text-2xl font-extrabold leading-none text-white/90">{s.value}</p>
+                <p className="text-[10px] mt-1" style={{ color: `${s.color}99` }}>{s.label}</p>
               </motion.div>
             </Link>
           ))}
         </div>
+
+        {/* ── Annonces ── */}
+        {announces.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Megaphone size={13} style={{ color: GOLD }} />
+                <p className="text-xs font-bold text-white/60 uppercase tracking-wider">Annonces</p>
+              </div>
+              <Link href="/membre/chat" className="text-[11px] flex items-center gap-1 hover:opacity-80 transition-all" style={{ color: GOLD }}>
+                Voir tout <ArrowRight size={11} />
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {announces.map((a, i) => (
+                <motion.div key={a.id}
+                  initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.04 }}
+                  className="rounded-2xl p-4 border"
+                  style={{
+                    background: `linear-gradient(135deg,${GOLD}08,${GOLD}03)`,
+                    borderColor: `${GOLD}20`,
+                    borderLeft: `3px solid ${GOLD}60`,
+                  }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+                      style={{ background: `${GOLD}20`, color: GOLD }}>
+                      {a.sender_name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-[11px] font-bold" style={{ color: GOLD }}>{a.sender_name}</span>
+                    <span className="ml-auto text-[10px] text-white/20">
+                      {new Date(a.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-white/70 leading-relaxed">{a.content}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* ── Prochaine réunion ── */}
         {meetings.length > 0 && (
@@ -227,8 +284,17 @@ export default function MembreDashboard() {
           <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
             {pending.length === 0 ? (
               <div className="flex flex-col items-center py-10 gap-3">
-                <CheckCircle2 size={28} className="text-emerald-400/50" />
-                <p className="text-white/30 text-sm">Toutes les tâches sont terminées 🎉</p>
+                {total === 0 ? (
+                  <>
+                    <CheckSquare size={28} className="text-white/10" />
+                    <p className="text-white/25 text-sm">Aucune tâche assignée</p>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={28} className="text-emerald-400/60" />
+                    <p className="text-white/35 text-sm">Toutes les tâches sont terminées</p>
+                  </>
+                )}
               </div>
             ) : (
               <div className="divide-y divide-white/[0.04]">

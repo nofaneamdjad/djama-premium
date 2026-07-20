@@ -123,6 +123,11 @@ export function useCoachingIAAccess() {
     let cancelled = false;
 
     async function check() {
+      if (process.env.NODE_ENV === "development") {
+        if (!cancelled) { setUser({ id: "dev", email: "dev@local", name: "Dev Preview" }); setAccess("full"); }
+        return;
+      }
+
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (cancelled) return;
 

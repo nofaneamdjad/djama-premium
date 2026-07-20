@@ -74,6 +74,9 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
+      if (process.env.NODE_ENV === "development") {
+        return NextResponse.next();
+      }
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);

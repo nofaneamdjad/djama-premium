@@ -15,6 +15,9 @@ create table if not exists public.client_requests (
 
 alter table public.client_requests enable row level security;
 
+drop policy if exists "owner_read" on public.client_requests;
+drop policy if exists "public_insert" on public.client_requests;
+
 create policy "owner_read" on public.client_requests
   for select using (auth.uid() = user_id);
 

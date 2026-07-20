@@ -38,6 +38,7 @@ function colorFor(name: string) {
 
 export default function MembreChat() {
   const [teamId, setTeamId]     = useState("");
+  const [spaceId, setSpaceId]   = useState<string | null>(null);
   const [myName, setMyName]     = useState("");
   const [channel, setChannel]   = useState("général");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -51,14 +52,17 @@ export default function MembreChat() {
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setLoading(false); return; }
       const meta = user.user_metadata;
-      const tid  = meta?.team_id ?? "";
+      const tid  = meta?.team_id ?? user.id;
+      const sid  = meta?.space_id ?? null;
       setTeamId(tid);
+      setSpaceId(sid);
       setMyName(meta?.name ?? user.email ?? "Membre");
 
-      const { data } = await supabase.from("team_messages").select("*")
-        .eq("user_id", tid).order("created_at").limit(400);
+      let q = supabase.from("team_messages").select("*").eq("user_id", tid);
+      if (sid) q = q.eq("space_id", sid);
+      const { data } = await q.order("created_at").limit(400);
       setMessages((data ?? []) as Message[]);
       setLoading(false);
     })();
@@ -68,12 +72,13 @@ export default function MembreChat() {
   useEffect(() => {
     if (!teamId) return;
     const sub = supabase
-      .channel(`membre-chat-${teamId}`)
+      .channel(`membre-chat-${teamId}${spaceId ? `-${spaceId}` : ""}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "team_messages",
         filter: `user_id=eq.${teamId}`,
       }, payload => {
-        const msg = payload.new as Message;
+        const msg = payload.new as (Message & { space_id?: string | null });
+        if (spaceId && msg.space_id !== spaceId) return;
         setMessages(p => {
           if (p.some(m => m.id === msg.id)) return p;
           return [...p, msg];
@@ -84,7 +89,7 @@ export default function MembreChat() {
       })
       .subscribe();
     return () => { void supabase.removeChannel(sub); };
-  }, [teamId, channel, myName]);
+  }, [teamId, spaceId, channel, myName]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
@@ -115,7 +120,8 @@ export default function MembreChat() {
   async function send() {
     if (!input.trim() || !teamId) return;
     setSending(true);
-    const payload = { user_id: teamId, sender_name: myName, content: input.trim(), channel, mentions: [] };
+    const payload: Record<string, unknown> = { user_id: teamId, sender_name: myName, content: input.trim(), channel, mentions: [] };
+    if (spaceId) payload.space_id = spaceId;
     const { data } = await supabase.from("team_messages").insert(payload).select().single();
     if (data) setMessages(p => p.some(m => m.id === (data as Message).id) ? p : [...p, data as Message]);
     setInput("");

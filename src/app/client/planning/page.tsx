@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, {
   useState, useEffect, useCallback, useMemo, useRef, createContext, useContext,
@@ -303,7 +303,7 @@ export default function PlanningPage() {
     const load = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace("/login"); return; }
+      if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
       const [evR, tkR, goR] = await Promise.all([
         supabase.from("planning_events").select("*").eq("user_id", user.id).order("start_at").limit(500),
         supabase.from("planning_tasks").select("*").eq("user_id", user.id).order("due_date").order("created_at").limit(500),

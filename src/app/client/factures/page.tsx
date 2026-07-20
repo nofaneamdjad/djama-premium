@@ -13,6 +13,7 @@ import {
   Repeat2, PenLine, Upload, BellRing, Share2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 import { fmtEur, fmtDate } from "@/lib/format";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 import type { TemplateType } from "@/lib/pdf/types";
@@ -1588,9 +1589,7 @@ export default function FacturesPage() {
       <div className={`shrink-0 border-b px-5 py-4 backdrop-blur-xl sm:px-8 ${headerCls}`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`h-9 w-9 flex items-center justify-center rounded-lg border ${tbd1} ${tbg1}`}>
-              <ReceiptText size={16} style={{ color:"#c9a55a" }}/>
-            </div>
+            <ModuleHeaderIcon icon={ReceiptText} color="#2563eb" />
             <div>
               <h1 className={`text-base font-extrabold ${tw1}`}>Factures & Devis</h1>
               <p className={`text-[0.65rem] ${tw4}`}>{documents.length} document{documents.length !== 1 ? "s" : ""}</p>

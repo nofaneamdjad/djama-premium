@@ -40,11 +40,15 @@ export default function MembreTaches() {
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setLoading(false); return; }
       const meta = user.user_metadata;
-      const { data } = await supabase.from("team_tasks").select("*")
-        .eq("user_id", meta.team_id).eq("assigned_to", meta.member_id)
-        .order("due_date", { ascending: true });
+      const teamId   = meta?.team_id ?? user.id;
+      const memberId = meta?.member_id ?? null;
+      const spaceId  = meta?.space_id ?? null;
+      let q = supabase.from("team_tasks").select("*").eq("user_id", teamId);
+      if (memberId) q = q.eq("assigned_to", memberId);
+      if (spaceId)  q = q.eq("space_id", spaceId);
+      const { data } = await q.order("due_date", { ascending: true });
       setTasks((data ?? []) as Task[]);
       setLoading(false);
     })();

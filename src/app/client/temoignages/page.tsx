@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 interface Testimonial {
   id: string;
@@ -171,7 +172,7 @@ export default function TemoignagesPage() {
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.replace("/login"); return; }
+    if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
     setUserId(user.id);
     const { data } = await supabase
       .from("testimonials")
@@ -278,9 +279,7 @@ export default function TemoignagesPage() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="p-2 rounded-xl bg-amber-500/10 shrink-0">
-                <MessageSquare size={16} style={{ color: GOLD }} />
-              </div>
+              <ModuleHeaderIcon icon={MessageSquare} color="#9a3412" />
               <h1 className="text-xl font-bold text-white">Témoignages</h1>
             </div>
             <p className="text-sm text-white/30 ml-10">Gérez les avis clients et votre réputation</p>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { fmtDate, fmtEur } from "@/lib/format";
 import { useTheme } from "@/lib/theme-context";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 type OrderStatus   = "draft"|"sent"|"confirmed"|"in_delivery"|"received"|"partial"|"cancelled";
 type InvoiceStatus = "unpaid"|"partial"|"paid"|"overdue"|"disputed";
@@ -1006,7 +1007,7 @@ export default function FournisseursPage() {
     (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { router.replace("/login"); return; }
+        if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
         setUserId(user.id);
         const [fRes, oRes, iRes] = await Promise.all([
           supabase.from("fournisseurs").select("*").eq("user_id", user.id).order("company_name").limit(500),
@@ -1148,9 +1149,8 @@ export default function FournisseursPage() {
         <div className="relative px-5 pt-4 pb-3 sm:px-8">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
-                className={`h-10 w-10 flex items-center justify-center rounded-xl border ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-gray-200 bg-white"}`}>
-                <Truck size={18} style={{ color: gold }}/>
+              <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
+                <ModuleHeaderIcon icon={Truck} color="#166534" />
               </motion.div>
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Fournisseurs</h1>

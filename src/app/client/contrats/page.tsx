@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import { fmtDate, fmtEur } from "@/lib/format";
 import { useTheme } from "@/lib/theme-context";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 type ContractType = "prestation" | "freelance" | "nda" | "partenariat" | "vente" | "saas" | "location" | "cdi" | "cdd" | "devis" | "autre";
 type ContractStatus = "brouillon" | "validation" | "envoyé" | "vu" | "signé" | "refusé" | "expiré" | "actif";
@@ -1344,7 +1345,7 @@ export default function ContratsPage() {
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace("/login"); return; }
+      if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
       setUserId(user.id);
       setUserEmail(user.email ?? undefined);
       const meta = user.user_metadata as Record<string, string> | undefined;
@@ -1713,9 +1714,8 @@ export default function ContratsPage() {
         <div className="relative px-5 pt-4 pb-3 sm:px-8">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
-                className={`h-10 w-10 flex items-center justify-center rounded-xl border ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-gray-200 bg-white/70"}`}>
-                <FileText size={18} style={{ color: gold }}/>
+              <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
+                <ModuleHeaderIcon icon={FileText} color="#b45309" />
               </motion.div>
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Contrats IA</h1>

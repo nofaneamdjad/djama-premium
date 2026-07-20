@@ -4,8 +4,8 @@ import Image from "next/image";
 import { Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight, Shield, Key } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -35,7 +35,7 @@ function Field({
         <input
           type={type} value={value} onChange={e => onChange(e.target.value)}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-          placeholder={placeholder} required
+          placeholder={placeholder}
           className="w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-12 text-sm text-white placeholder:text-white/25 outline-none transition-colors hover:border-white/20"
         />
         {right && <div className="absolute right-4 top-1/2 -translate-y-1/2">{right}</div>}
@@ -45,14 +45,24 @@ function Field({
 }
 
 function MembreLoginInner() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPwd, setShowPwd] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const codeParam = searchParams.get("code") ?? "";
 
-  useEffect(() => { supabase.auth.signOut(); }, []);
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [code, setCode]         = useState(codeParam.toUpperCase());
+  const [showPwd, setShowPwd]   = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const role = user?.user_metadata?.role;
+      if (role === "member" || role === "chef") {
+        window.location.href = "/membre/dashboard";
+      }
+    });
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -70,11 +80,43 @@ function MembreLoginInner() {
         return;
       }
 
-      const role = data.session.user.user_metadata?.role;
+      const user = data.session.user;
+      const role = user.user_metadata?.role;
+
       if (role !== "member") {
         await supabase.auth.signOut();
         setError("Cet espace est réservé aux membres d'équipe. Utilisez /login pour l'espace chef.");
         return;
+      }
+
+      const teamId = user.user_metadata?.team_id ?? user.id;
+
+      if (code.trim()) {
+        const { data: spaceData } = await supabase
+          .from("private_spaces")
+          .select("id, name, is_active")
+          .eq("user_id", teamId)
+          .eq("access_code", code.trim().toUpperCase())
+          .single();
+
+        if (!spaceData) {
+          setError("Code d'accès invalide ou espace introuvable.");
+          return;
+        }
+
+        if (!spaceData.is_active) {
+          setError("Cet espace privé est désactivé. Contactez votre chef d'équipe.");
+          return;
+        }
+
+        await Promise.all([
+          supabase.auth.updateUser({ data: { space_id: spaceData.id } }),
+          supabase
+            .from("team_members")
+            .update({ space_id: spaceData.id })
+            .eq("user_id", teamId)
+            .eq("id", user.user_metadata?.member_id ?? ""),
+        ]);
       }
 
       window.location.href = "/membre/dashboard";
@@ -106,6 +148,7 @@ function MembreLoginInner() {
         <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-[rgba(201,165,90,0.12)] to-transparent opacity-70 blur-sm" />
 
         <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f1117]/90 p-8 shadow-[0_32px_80px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -116,9 +159,15 @@ function MembreLoginInner() {
               <Image src="/logo.png" alt="DJAMA" width={38} height={38} className="object-contain" style={{ filter: "brightness(0) invert(1)" }} />
             </div>
             <div className="text-center">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(14,165,233,0.3)] bg-[rgba(14,165,233,0.08)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-sky-400">
-                <Lock size={9} />Espace Équipe
-              </span>
+              {codeParam ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.35)] bg-[rgba(201,165,90,0.1)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-[#c9a55a]">
+                  <Shield size={9} />Espace Privé
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(14,165,233,0.3)] bg-[rgba(14,165,233,0.08)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-sky-400">
+                  <Lock size={9} />Espace Équipe
+                </span>
+              )}
               <h1 className="mt-3 text-2xl font-extrabold text-white">Bienvenue</h1>
               <p className="mt-1 text-sm text-white/35">Connectez-vous à votre espace membre</p>
             </div>
@@ -140,6 +189,31 @@ function MembreLoginInner() {
                 </button>
               }
             />
+
+            {/* Code d'accès espace privé */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold uppercase tracking-widest text-white/40">
+                Code d&apos;accès <span className="normal-case font-normal text-white/25">(optionnel)</span>
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+                  <Key size={15} style={{ color: code ? GOLD : "rgba(255,255,255,0.25)" }} />
+                </div>
+                <input
+                  type="text" value={code}
+                  onChange={e => setCode(e.target.value.toUpperCase())}
+                  placeholder="XXXXXXXX"
+                  maxLength={12}
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-4 text-sm font-mono tracking-widest text-white placeholder:text-white/25 outline-none transition-colors hover:border-white/20"
+                  style={{ borderColor: code ? "rgba(201,165,90,0.35)" : undefined }}
+                />
+              </div>
+              {code && (
+                <p className="text-[10px] text-[#c9a55a]/70">
+                  Vous rejoindrez l&apos;espace privé associé à ce code.
+                </p>
+              )}
+            </div>
 
             <AnimatePresence>
               {error && (

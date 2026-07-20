@@ -297,7 +297,7 @@ export default function FloatingAIAssistant() {
         {messages.length > 0 && !open && (
           <span
             className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full"
-            style={{ background: GOLD, border: "1.5px solid", borderColor: isDark ? "#111318" : "#fff" }}
+            style={{ background: GOLD, borderWidth: "1.5px", borderStyle: "solid", borderColor: isDark ? "#111318" : "#fff" }}
           />
         )}
       </button>

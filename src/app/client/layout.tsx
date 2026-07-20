@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
@@ -91,10 +91,11 @@ const PREMIUM_GROUPS = [
   {
     label: "Opérations",
     items: [
-      { href: "/client/productivite", label: "Tâches",   icon: ListTodo,      exact: false },
-      { href: "/client/planning",     label: "Planning",  icon: Calendar,      exact: false },
-      { href: "/client/equipe",       label: "Équipe",    icon: CalendarRange, exact: false },
-      { href: "/client/chrono",       label: "Chrono",    icon: Timer,         exact: false },
+      { href: "/client/productivite", label: "Tâches",          icon: ListTodo,      exact: false },
+      { href: "/client/planning",     label: "Planning",         icon: Calendar,      exact: false },
+      { href: "/client/equipe",       label: "Équipe",           icon: CalendarRange, exact: false },
+      { href: "/client/espaces",      label: "Espaces Privés",   icon: Lock,          exact: false },
+      { href: "/client/chrono",       label: "Chrono",           icon: Timer,         exact: false },
     ],
   },
   {
@@ -797,7 +798,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
                   <div className="relative h-4 w-4 shrink-0">
                     <div className="absolute inset-0 rounded-full" style={{ border: "1.5px solid rgba(201,165,90,0.18)" }} />
                     <motion.div className="absolute inset-0 rounded-full"
-                      style={{ border: "1.5px solid transparent", borderTopColor: GOLD }}
+                      style={{ borderWidth: "1.5px", borderStyle: "solid", borderTopColor: GOLD, borderRightColor: "transparent", borderBottomColor: "transparent", borderLeftColor: "transparent" }}
                       animate={{ rotate: 360 }} transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }} />
                   </div>
                 ) : (
@@ -1051,7 +1052,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
             style={{ border: "2px solid rgba(201,165,90,0.18)" }} />
           <motion.div
             className="absolute inset-0 rounded-full"
-            style={{ border: "2px solid transparent", borderTopColor: GOLD }}
+            style={{ borderWidth: "2px", borderStyle: "solid", borderTopColor: GOLD, borderRightColor: "transparent", borderBottomColor: "transparent", borderLeftColor: "transparent" }}
             animate={{ rotate: 360 }}
             transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
           />

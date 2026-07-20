@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -981,7 +981,7 @@ export default function ProjetsPage() {
   const load = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace("/login"); return; }
+      if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
       setUserId(user.id);
       const [projRes, tasksRes, milesRes, teamRes] = await Promise.all([
         supabase.from("projects").select("*").eq("user_id", user.id).order("created_at",{ascending:false}).limit(500),

@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, MessageSquare, CheckSquare, User, LogOut, Menu, X,
+  LayoutDashboard, MessageSquare, CheckSquare, User, LogOut, Menu, X, CalendarDays,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
@@ -13,29 +13,100 @@ import Image from "next/image";
 const GOLD = "#c9a55a";
 
 const NAV = [
-  { href: "/membre/dashboard", label: "Accueil",   icon: LayoutDashboard },
-  { href: "/membre/chat",      label: "Chat",       icon: MessageSquare   },
-  { href: "/membre/taches",    label: "Mes tâches", icon: CheckSquare     },
-  { href: "/membre/profil",    label: "Mon profil", icon: User            },
+  { href: "/membre/dashboard", label: "Accueil",    icon: LayoutDashboard, badge: null         },
+  { href: "/membre/chat",      label: "Chat",        icon: MessageSquare,   badge: "chat"       },
+  { href: "/membre/reunions",  label: "Réunions",    icon: CalendarDays,    badge: "reunions"   },
+  { href: "/membre/taches",    label: "Mes tâches",  icon: CheckSquare,     badge: "taches"     },
+  { href: "/membre/profil",    label: "Mon profil",  icon: User,            badge: null         },
 ];
+
+function Badge({ count }: { count: number }) {
+  if (count === 0) return null;
+  return (
+    <motion.span
+      initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+      className="ml-auto flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+      {count > 9 ? "9+" : count}
+    </motion.span>
+  );
+}
 
 export default function MembreLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
-  const [checking, setChecking]   = useState(true);
+  const [checking, setChecking]     = useState(true);
   const [memberName, setMemberName] = useState("");
-  const [sideOpen, setSideOpen]   = useState(false);
+  const [sideOpen, setSideOpen]     = useState(false);
+  const [badges, setBadges]         = useState<Record<string, number>>({ chat: 0, reunions: 0, taches: 0 });
+  const [teamId, setTeamId]         = useState("");
+  const [memberId, setMemberId]     = useState<string | null>(null);
+  const [spaceId, setSpaceId]       = useState<string | null>(null);
+
+  const loadBadges = useCallback(async (tid: string, mid: string | null, sid: string | null) => {
+    const now     = new Date();
+    const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+    const todayEnd   = new Date(now); todayEnd.setHours(23, 59, 59, 999);
+    const lastChatSeen = localStorage.getItem(`membre_last_chat_${tid}`) ?? "1970-01-01";
+
+    const chatQ = supabase.from("team_messages").select("id", { count: "exact", head: true })
+      .eq("user_id", tid).neq("channel", "annonces").gt("created_at", lastChatSeen);
+    const reunQ = supabase.from("team_meetings").select("id", { count: "exact", head: true })
+      .eq("user_id", tid).eq("status", "planned")
+      .gte("date_at", todayStart.toISOString()).lte("date_at", todayEnd.toISOString());
+    const taskQ = mid
+      ? supabase.from("team_tasks").select("id", { count: "exact", head: true })
+          .eq("user_id", tid).eq("assigned_to", mid).neq("status", "done")
+      : supabase.from("team_tasks").select("id", { count: "exact", head: true })
+          .eq("user_id", tid).neq("status", "done");
+
+    const [chatR, reunR, tacheR] = await Promise.all([
+      sid ? chatQ.eq("space_id", sid) : chatQ,
+      sid ? reunQ.eq("space_id", sid) : reunQ,
+      sid ? taskQ.eq("space_id", sid) : taskQ,
+    ]);
+
+    setBadges({
+      chat:     chatR.count    ?? 0,
+      reunions: reunR.count    ?? 0,
+      taches:   tacheR.count   ?? 0,
+    });
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user || user.user_metadata?.role !== "member") {
-        router.replace("/membre/login");
+      const role = user?.user_metadata?.role;
+      if (!user || (role !== "member" && role !== "chef")) {
+        if (process.env.NODE_ENV === "development") {
+          setMemberName("Aperçu Dev");
+          setChecking(false);
+        } else {
+          router.replace("/membre/login");
+        }
       } else {
-        setMemberName(user.user_metadata?.name ?? user.email ?? "Membre");
+        const name = user.user_metadata?.name ?? user.email ?? "Membre";
+        const tid  = user.user_metadata?.team_id ?? user.id;
+        const mid  = user.user_metadata?.member_id ?? null;
+        const sid  = user.user_metadata?.space_id ?? null;
+        setMemberName(name);
+        setTeamId(tid);
+        setMemberId(mid);
+        setSpaceId(sid);
         setChecking(false);
+        void loadBadges(tid, mid, sid);
       }
     });
-  }, [router]);
+  }, [router, loadBadges]);
+
+  /* Clear badge when navigating to the page */
+  useEffect(() => {
+    if (!teamId) return;
+    if (pathname.startsWith("/membre/chat")) {
+      localStorage.setItem(`membre_last_chat_${teamId}`, new Date().toISOString());
+      setBadges(b => ({ ...b, chat: 0 }));
+    }
+    if (pathname.startsWith("/membre/reunions")) setBadges(b => ({ ...b, reunions: 0 }));
+    if (pathname.startsWith("/membre/taches"))   setBadges(b => ({ ...b, taches: 0 }));
+  }, [pathname, teamId]);
 
   if (pathname === "/membre/login") return <>{children}</>;
   if (checking) {
@@ -51,13 +122,46 @@ export default function MembreLayout({ children }: { children: React.ReactNode }
     router.replace("/membre/login");
   }
 
+  const totalBadges = Object.values(badges).reduce((a, b) => a + b, 0);
+
+  function NavItems({ onClick }: { onClick?: () => void }) {
+    return (
+      <>
+        {NAV.map(item => {
+          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          const count  = item.badge ? (badges[item.badge] ?? 0) : 0;
+          return (
+            <Link key={item.href} href={item.href} onClick={onClick}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all"
+              style={{
+                background: active ? `rgba(201,165,90,0.1)` : "transparent",
+                color: active ? GOLD : "rgba(255,255,255,0.45)",
+                fontWeight: active ? 600 : 400,
+              }}>
+              <item.icon size={16} />
+              {item.label}
+              <AnimatePresence>
+                {count > 0 && !active
+                  ? <Badge key="badge" count={count} />
+                  : active
+                    ? <motion.div key="dot" layoutId="membre-nav-indicator"
+                        className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: GOLD }} />
+                    : null
+                }
+              </AnimatePresence>
+            </Link>
+          );
+        })}
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#080a0f] text-white flex">
 
       {/* Sidebar desktop */}
       <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-white/[0.06]"
         style={{ background: "linear-gradient(180deg,#0b101c,#080c16)" }}>
-        {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/[0.06]">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "rgba(201,165,90,0.1)" }}>
             <Image src="/logo.png" alt="DJAMA" width={18} height={18} style={{ filter: "brightness(0) invert(1)" }} />
@@ -68,30 +172,20 @@ export default function MembreLayout({ children }: { children: React.ReactNode }
           </div>
         </div>
 
-        {/* Membre info */}
         <div className="px-4 py-3 mx-3 mt-4 rounded-2xl" style={{ background: "rgba(201,165,90,0.06)", border: "1px solid rgba(201,165,90,0.12)" }}>
-          <p className="text-[10px] text-[#c9a55a] font-bold uppercase tracking-widest mb-0.5">Membre</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-[#c9a55a] font-bold uppercase tracking-widest mb-0.5">Membre</p>
+            {totalBadges > 0 && (
+              <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                {totalBadges > 9 ? "9+" : totalBadges}
+              </span>
+            )}
+          </div>
           <p className="text-sm font-semibold text-white truncate">{memberName}</p>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {NAV.map(item => {
-            const active = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link key={item.href} href={item.href}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all"
-                style={{
-                  background: active ? `rgba(201,165,90,0.1)` : "transparent",
-                  color: active ? GOLD : "rgba(255,255,255,0.45)",
-                  fontWeight: active ? 600 : 400,
-                }}>
-                <item.icon size={16} />
-                {item.label}
-                {active && <motion.div layoutId="membre-nav-indicator" className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: GOLD }} />}
-              </Link>
-            );
-          })}
+          <NavItems />
         </nav>
 
         <button onClick={logout}
@@ -103,8 +197,12 @@ export default function MembreLayout({ children }: { children: React.ReactNode }
       {/* Mobile top bar */}
       <div className="md:hidden fixed top-0 inset-x-0 z-30 flex items-center gap-3 px-4 py-3 border-b border-white/[0.06]"
         style={{ background: "#0b101c" }}>
-        <button onClick={() => setSideOpen(true)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all">
+        <button onClick={() => setSideOpen(true)}
+          className="relative p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all">
           <Menu size={18} />
+          {totalBadges > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500" />
+          )}
         </button>
         <span className="text-sm font-bold text-white">Espace Équipe</span>
         <span className="ml-auto text-xs text-white/30 truncate max-w-[140px]">{memberName}</span>
@@ -126,16 +224,7 @@ export default function MembreLayout({ children }: { children: React.ReactNode }
                 <button onClick={() => setSideOpen(false)} className="p-1 text-white/40 hover:text-white"><X size={16} /></button>
               </div>
               <nav className="flex-1 px-3 py-4 space-y-0.5">
-                {NAV.map(item => {
-                  const active = pathname === item.href;
-                  return (
-                    <Link key={item.href} href={item.href} onClick={() => setSideOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all"
-                      style={{ background: active ? `rgba(201,165,90,0.1)` : "transparent", color: active ? GOLD : "rgba(255,255,255,0.45)" }}>
-                      <item.icon size={16} />{item.label}
-                    </Link>
-                  );
-                })}
+                <NavItems onClick={() => setSideOpen(false)} />
               </nav>
               <button onClick={logout} className="flex items-center gap-2 px-5 py-4 text-sm text-white/30 hover:text-red-400 border-t border-white/[0.06] transition-all">
                 <LogOut size={14} />Déconnexion
@@ -145,7 +234,6 @@ export default function MembreLayout({ children }: { children: React.ReactNode }
         )}
       </AnimatePresence>
 
-      {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0 pt-[52px] md:pt-0">
         {children}
       </main>

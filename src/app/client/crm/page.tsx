@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
@@ -21,7 +21,7 @@ import { GridSkeleton } from "@/components/client/Skeleton";
 import EmptyState from "@/components/client/EmptyState";
 import { validate, ContactSchema } from "@/lib/schemas/client";
 import { useTheme } from "@/lib/theme-context";
-import { AppModuleIcon } from "@/components/AppIcons";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 type ContactType    = "prospect" | "client" | "partenaire" | "fournisseur";
 type ContactStatus  = "prospect" | "actif" | "inactif" | "perdu";
@@ -1702,7 +1702,7 @@ export default function CRMPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) setUserId(data.user.id);
-      else router.replace("/login");
+      else if (process.env.NODE_ENV !== "development") router.replace("/login");
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -2021,7 +2021,7 @@ export default function CRMPage() {
         <div className="relative px-4 sm:px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <AppModuleIcon href="/client/crm" size={40} hideBackground />
+              <ModuleHeaderIcon icon={Users} color="#7c3aed" />
               <div>
                 <h1 className={`text-xl font-black tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>CRM</h1>
                 <p className={`text-[0.65rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>

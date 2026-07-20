@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 type ArticleStatus = "draft" | "published";
 
@@ -94,7 +95,7 @@ export default function BlogPage() {
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.replace("/login"); return; }
+    if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
     setUserId(user.id);
     const { data } = await supabase
       .from("blog_articles")
@@ -247,10 +248,7 @@ export default function BlogPage() {
         <div className={`p-5 border-b ${divider}`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border"
-                style={{ background: `${GOLD}18`, borderColor: `${GOLD}35` }}>
-                <BookOpen size={15} style={{ color: GOLD }} />
-              </div>
+              <ModuleHeaderIcon icon={BookOpen} color="#0369a1" />
               <div>
                 <h1 className={`text-sm font-black ${pri}`}>Blog</h1>
                 <p className={`text-[10px] ${mut}`}>{publishedCount} publié · {draftCount} brouillon</p>

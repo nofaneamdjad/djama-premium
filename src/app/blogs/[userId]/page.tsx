@@ -127,7 +127,7 @@ export default function PublicBlogPage({ params }: { params: Promise<{ userId: s
               <button key={t} onClick={() => setTag(tag === t ? "" : t)}
                 className="rounded-xl px-3 py-1.5 text-[0.72rem] font-semibold transition-all"
                 style={tag === t
-                  ? { background: `${GOLD}22`, borderColor: `${GOLD}40`, color: GOLD, border: `1px solid ${GOLD}40` }
+                  ? { background: `${GOLD}22`, borderWidth: "1px", borderStyle: "solid", borderColor: `${GOLD}40`, color: GOLD }
                   : { background: "rgba(0,0,0,0.05)", color: "rgba(14,20,32,0.45)" }}>
                 #{t}
               </button>

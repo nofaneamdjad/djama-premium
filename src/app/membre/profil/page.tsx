@@ -41,15 +41,16 @@ export default function MembreProfil() {
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setLoading(false); return; }
       const meta = user.user_metadata;
       setName(meta?.name ?? "");
       setEmail(user.email ?? "");
 
-      if (meta?.member_id && meta?.team_id) {
+      const teamId = meta?.team_id ?? user.id;
+      if (meta?.member_id) {
         const { data } = await supabase.from("team_members")
           .select("position,department,entry_date,phone,role,status")
-          .eq("id", meta.member_id).eq("user_id", meta.team_id).single();
+          .eq("id", meta.member_id).eq("user_id", teamId).single();
         if (data) setInfo(data as MemberInfo);
       }
       setLoading(false);

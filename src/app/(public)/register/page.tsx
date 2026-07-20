@@ -491,7 +491,7 @@ export default function RegisterPage() {
               animate={{ rotate: 360 }}
               transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
               className="inline-block h-5 w-5 rounded-full"
-              style={{ border: "2px solid rgba(255,255,255,0.15)", borderTopColor: "rgba(255,255,255,0.7)" }}
+              style={{ borderWidth: "2px", borderStyle: "solid", borderTopColor: "rgba(255,255,255,0.7)", borderRightColor: "rgba(255,255,255,0.15)", borderBottomColor: "rgba(255,255,255,0.15)", borderLeftColor: "rgba(255,255,255,0.15)" }}
             />
           ) : <GoogleIcon />}
           {googleLoading ? "Connexion…" : "Continuer avec Google"}

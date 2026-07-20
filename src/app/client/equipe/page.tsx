@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import React, {
   useState, useEffect, useCallback, useMemo, useRef,
 } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Plus, X, Check, Loader2, MessageSquare,
@@ -276,7 +277,7 @@ export default function EquipePage() {
     const load = useCallback(async () => {
     try {
       const { data:{ user } } = await supabase.auth.getUser();
-      if (!user) { router.replace("/login"); return; }
+      if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
       const uid = user.id;
       setUid(uid);
       const [mR,tkR,msgR,lR,mrR,evR,tsR] = await Promise.all([
@@ -1374,9 +1375,8 @@ export default function EquipePage() {
 
         {/* Main row */}
         <div className="relative flex items-center gap-3 px-5 pt-4 pb-3 flex-wrap gap-y-2">
-          <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}
-            className={`h-10 w-10 flex items-center justify-center rounded-xl border shrink-0 ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-gray-200 bg-gray-100"}`}>
-            <Users size={17} style={{ color: "#c9a55a" }}/>
+          <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
+            <ModuleHeaderIcon icon={Users} color="#0891b2" />
           </motion.div>
           <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }} className="mr-auto">
             <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Équipe</h1>

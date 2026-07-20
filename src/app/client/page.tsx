@@ -25,6 +25,20 @@ import { useTheme } from "@/lib/theme-context";
 const ease = [0.22, 1, 0.36, 1] as const;
 const GOLD = "#c9a55a";
 
+/* Éclaircit un hex vers le blanc */
+function lighten(hex: string, t = 0.32): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const f = (n: number) => Math.min(255, Math.round(n + (255 - n) * t)).toString(16).padStart(2, "0");
+  return `#${f(r)}${f(g)}${f(b)}`;
+}
+
+/* Table de lookup href → module (icon + color) */
+const MODULE_BY_HREF = Object.fromEntries(
+  MODULE_GROUPS.flatMap(g => g.modules.map(m => [m.href, m]))
+);
+
 /* ── Quick Actions ── */
 interface QuickAction { href: string; iconKey: string; label: string }
 
@@ -454,8 +468,11 @@ export default function CockpitPage() {
             className="rounded-3xl p-5 mb-4"
             style={{
               background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.96)",
-              border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+              borderWidth: "1px", borderStyle: "solid",
               borderTopColor: "rgba(201,165,90,0.40)",
+              borderRightColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+              borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+              borderLeftColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
               backdropFilter: "blur(20px)",
               boxShadow: isDark
                 ? "0 0 40px rgba(201,165,90,0.06), inset 0 1px 0 rgba(255,255,255,0.05)"
@@ -635,18 +652,37 @@ export default function CockpitPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ type: "spring", stiffness: 380, damping: 22, delay: 0.28 + i * 0.045 }}
                   >
-                    <Link href={isLocked ? "/client/abonnements" : a.href} className="relative flex flex-col items-center gap-1.5 p-1.5 transition active:scale-95">
-                      <div className="relative h-[52px] w-[52px] sm:h-[56px] sm:w-[56px] overflow-hidden rounded-[14px] sm:rounded-[16px] [&_.icon-card-bg]:fill-transparent"
-                        style={{ opacity: isLocked ? 0.68 : 1 }}>
-                        {APP_ICONS[a.iconKey]}
-                      </div>
-                      <span className={`text-[9.5px] font-semibold tracking-wide text-center leading-tight ${isDark ? "text-white/70" : "text-gray-600"}`}>{a.label}</span>
-                      {isLocked && (
-                        <div className="absolute top-1.5 right-1.5 flex h-[16px] w-[16px] items-center justify-center rounded-full shadow"
-                          style={{ background: GOLD, border: "1.5px solid rgba(255,255,255,0.5)" }}>
-                          <Lock size={7} color="white" strokeWidth={3} />
-                        </div>
-                      )}
+                    <Link href={isLocked ? "/client/abonnements" : a.href} className="relative flex flex-col items-center gap-[6px] py-1 px-0.5 transition">
+                      {(() => {
+                        const mod = MODULE_BY_HREF[a.href];
+                        const Icon = mod?.icon;
+                        const color = mod?.color ?? GOLD;
+                        const light = lighten(color, 0.35);
+                        return (
+                          <div className="relative">
+                            <div
+                              className="relative flex items-center justify-center overflow-hidden"
+                              style={{
+                                width: 52, height: 52,
+                                borderRadius: 14,
+                                background: `linear-gradient(150deg, ${light} 0%, ${color} 100%)`,
+                                boxShadow: isLocked ? "none" : `0 4px 14px ${color}40, 0 1px 4px rgba(0,0,0,0.18)`,
+                                opacity: isLocked ? 0.38 : 1,
+                              }}
+                            >
+                              <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.04) 45%, transparent 100%)" }} />
+                              {Icon && <Icon size={24} color="white" strokeWidth={1.7} />}
+                            </div>
+                            {isLocked && (
+                              <div className="absolute -bottom-1 -right-1 flex h-[16px] w-[16px] items-center justify-center rounded-full"
+                                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, border: "1.5px solid rgba(0,0,0,0.4)" }}>
+                                <Lock size={7} color="white" strokeWidth={2.5} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                      <span className={`text-[9.5px] font-medium text-center leading-tight ${isDark ? "text-white/65" : "text-gray-600"}`}>{a.label}</span>
                     </Link>
                   </motion.div>
                 );
@@ -816,9 +852,10 @@ export default function CockpitPage() {
                   style={{ background: "rgba(190,24,93,0.12)" }} />
 
                 <div className="relative flex items-start justify-between mb-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl"
-                    style={{ background: "rgba(190,24,93,0.10)", border: "1px solid rgba(190,24,93,0.18)" }}>
-                    <ListTodo size={15} style={{ color: "#e879a0" }} />
+                  <div className="relative flex items-center justify-center overflow-hidden"
+                    style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(150deg, ${lighten("#be185d", 0.42)} 0%, #be185d 100%)`, boxShadow: "0 4px 14px rgba(190,24,93,0.38)" }}>
+                    <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.04) 45%, transparent 100%)" }} />
+                    <ListTodo size={20} color="white" strokeWidth={1.7} />
                   </div>
                   {!todayLoading && (
                     <span className="text-[24px] font-black tabular-nums leading-none"
@@ -884,9 +921,10 @@ export default function CockpitPage() {
                   style={{ background: "rgba(79,70,229,0.12)" }} />
 
                 <div className="relative flex items-start justify-between mb-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl"
-                    style={{ background: "rgba(79,70,229,0.10)", border: "1px solid rgba(79,70,229,0.18)" }}>
-                    <Calendar size={15} style={{ color: "#818cf8" }} />
+                  <div className="relative flex items-center justify-center overflow-hidden"
+                    style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(150deg, ${lighten("#4f46e5", 0.42)} 0%, #4f46e5 100%)`, boxShadow: "0 4px 14px rgba(79,70,229,0.38)" }}>
+                    <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.04) 45%, transparent 100%)" }} />
+                    <Calendar size={20} color="white" strokeWidth={1.7} />
                   </div>
                   {!todayLoading && nextEvent && (
                     <span className="text-[24px] font-black tabular-nums leading-none"
