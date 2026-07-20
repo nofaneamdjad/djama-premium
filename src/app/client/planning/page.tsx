@@ -11,7 +11,7 @@ import {
   ChevronLeft, ChevronRight, Plus, X, Check, Loader2,
   MapPin, Bell, Trash2, Clock, Target, Sparkles,
   CheckCircle2, Circle, AlertCircle, Zap, Video,
-  Tag, AlignLeft, Calendar, Users, BarChart2, Menu,
+  Tag, AlignLeft, Calendar, Users, BarChart2,
   Download, ExternalLink, AlertTriangle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -253,7 +253,6 @@ export default function PlanningPage() {
   const [tasks,         setTasks]         = useState<PlanTask[]>([]);
   const [goals,         setGoals]         = useState<PlanGoal[]>([]);
   const [loading,       setLoading]       = useState(true);
-  const [showSidePanel, setShowSidePanel] = useState(false);
 
   const { toasts, add: addToast, remove: removeToast } = useToastStack();
 
@@ -372,7 +371,14 @@ export default function PlanningPage() {
   }
 
   async function saveEvent() {
-    if (!form.title?.trim()) return;
+    const errors = validate(EventSchema, {
+      title:      form.title ?? "",
+      start_at:   form.start_at ?? "",
+      end_at:     form.end_at ?? "",
+      event_type: form.event_type,
+    });
+    if (errors) { setFormErrors(errors); return; }
+    setFormErrors({});
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
@@ -1269,7 +1275,8 @@ export default function PlanningPage() {
               <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-4">
                 <input value={form.title ?? ""} onChange={e => setForm(p => ({...p, title:e.target.value}))}
                   placeholder="Titre de l'événement *"
-                  className={`w-full bg-transparent text-lg font-bold focus:outline-none border-b pb-2 ${isDark ? "text-white placeholder:text-white/20 border-white/6" : "text-gray-900 placeholder:text-gray-300 border-gray-200"}`} />
+                  className={`w-full bg-transparent text-lg font-bold focus:outline-none border-b pb-2 ${formErrors.title ? "border-red-400" : isDark ? "border-white/6" : "border-gray-200"} ${isDark ? "text-white placeholder:text-white/20" : "text-gray-900 placeholder:text-gray-300"}`} />
+                {formErrors.title && <p className="text-[10px] text-red-400 mt-0.5">{formErrors.title}</p>}
 
                 <div className="flex items-center gap-2">
                   <button onClick={() => setForm(p => ({...p, is_all_day:!p.is_all_day}))}
@@ -1304,7 +1311,10 @@ export default function PlanningPage() {
                         <label className={`text-[10px] uppercase tracking-wide ${isDark ? "text-white/35" : "text-gray-400"}`}>{label}</label>
                         <input type="datetime-local" value={form[key] ?? ""}
                           onChange={e => setForm(p => ({...p, [key]: e.target.value}))}
-                          className={`w-full border rounded-xl px-3 py-2 text-sm outline-none ${isDark ? "bg-white/6 border-white/8 text-white focus:border-white/20 [color-scheme:dark]" : "bg-white border-gray-200 text-gray-900 focus:border-gray-300 [color-scheme:light]"}`}/>
+                          className={`w-full border rounded-xl px-3 py-2 text-sm outline-none ${key === "end_at" && formErrors.end_at ? "border-red-400" : isDark ? "border-white/8" : "border-gray-200"} ${isDark ? "bg-white/6 text-white focus:border-white/20 [color-scheme:dark]" : "bg-white text-gray-900 focus:border-gray-300 [color-scheme:light]"}`}/>
+                        {key === "end_at" && formErrors.end_at && (
+                          <p className="text-[10px] text-red-400">{formErrors.end_at}</p>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1378,7 +1388,7 @@ export default function PlanningPage() {
                   className={`ml-auto px-4 py-2 rounded-xl text-xs transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"}`}>
                   Annuler
                 </button>
-                <button onClick={saveEvent} disabled={saving || !form.title?.trim()}
+                <button onClick={saveEvent} disabled={saving}
                   className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
                   style={{ background: form.color ?? INDIGO, color:"#fff" }}>
                   {saving ? <Loader2 size={12} className="animate-spin"/> : <Check size={12}/>}
