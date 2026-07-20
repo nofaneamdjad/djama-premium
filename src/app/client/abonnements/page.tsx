@@ -138,7 +138,7 @@ function invoiceStatusLabel(status: string): { label: string; color: string; bg:
 }
 
 export default function AbonnementsPage() {
-  const { level, isPremium, email: userEmail, userId } = useSubscription();
+  const { level, userId } = useSubscription();
 
   const loading = level === "loading";
   const isPaid  = level === "premium";
@@ -378,14 +378,16 @@ export default function AbonnementsPage() {
                     <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
                     <p className="text-xs font-bold text-emerald-400">Actif</p>
                   </div>
-                  <a
-                    href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL ?? "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[0.6rem] text-white/30 transition hover:text-white/60"
-                  >
-                    Gérer <ExternalLink size={9} /> <RefreshCw size={9} />
-                  </a>
+                  {process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL && (
+                    <a
+                      href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[0.6rem] text-white/30 transition hover:text-white/60"
+                    >
+                      Gérer <ExternalLink size={9} /> <RefreshCw size={9} />
+                    </a>
+                  )}
                 </div>
                 {/* Renewal date */}
                 {renewalDate && (
@@ -595,15 +597,20 @@ export default function AbonnementsPage() {
           </div>
 
           <p className="mt-2 text-right text-[0.62rem] text-white/20">
-            Factures générées par Stripe ·{" "}
-            <a
-              href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL ?? "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline transition hover:text-white/40"
-            >
-              Portail Stripe <ExternalLink size={8} className="inline" />
-            </a>
+            Factures générées par Stripe
+            {process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL && (
+              <>
+                {" · "}
+                <a
+                  href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline transition hover:text-white/40"
+                >
+                  Portail Stripe <ExternalLink size={8} className="inline" />
+                </a>
+              </>
+            )}
           </p>
         </motion.div>
       )}
