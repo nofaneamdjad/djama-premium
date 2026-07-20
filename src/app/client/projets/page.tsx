@@ -14,6 +14,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import { useTheme } from "@/lib/theme-context";
+import { fetchCompanySettings } from "@/lib/pdf/companySettings";
 
 /* ── Types ── */
 type Status = "en_cours" | "terminé" | "en_attente" | "annulé";
@@ -1151,6 +1152,7 @@ export default function ProjetsPage() {
     try {
       const uid = userId;
       if (!uid) { toast("Non connecté.","error"); return; }
+      const co     = await fetchCompanySettings();
       const amount = project.budget > 0 ? project.budget : 0;
       const tva20  = Math.round(amount * 0.2 * 100) / 100;
       const year   = new Date().getFullYear();
@@ -1161,20 +1163,24 @@ export default function ProjetsPage() {
         sujet: `Projet — ${project.title}`, client_nom: project.client || "",
         client_societe: "", date_document: today, devise: "EUR",
         total_ht: amount, total_tva: tva20, total_ttc: Math.round((amount + tva20) * 100) / 100,
-        emetteur_nom: "", emetteur_email: "", emetteur_adresse: "", emetteur_ville: "",
-        emetteur_code_postal: "", emetteur_pays: "", emetteur_siret: "", emetteur_tva: "",
-        emetteur_logo: "", rib_titulaire: "", rib_iban: "", rib_bic: "", rib_banque: "",
+        emetteur_nom:         co.name,       emetteur_email:        co.email,
+        emetteur_adresse:     co.address,    emetteur_ville:        co.city,
+        emetteur_code_postal: co.postal_code, emetteur_pays:        co.country,
+        emetteur_siret:       co.siret,      emetteur_tva:          co.vat_number,
+        emetteur_logo:        co.logoUrl ?? "", rib_titulaire:       co.name,
+        rib_iban: co.iban, rib_bic: co.bic, rib_banque: "",
         client_email: "", client_telephone: "", client_adresse: "", client_ville: "",
         client_code_postal: "", client_pays: "", client_tva: "",
         remise_pct: 0, acompte: 0, notes: "", conditions: "", mentions_legales: "",
-        couleur: "#c9a55a", template: "modern",
+        couleur: co.color, template: co.template,
       }).select("id").single();
       if (docErr || !doc) { toast(docErr?.message ?? "Erreur création","error"); return; }
-      await supabase.from("document_items").insert({
+      const { error: itemErr } = await supabase.from("document_items").insert({
         document_id: doc.id, position: 0,
         description: project.title + (project.description ? `\n${project.description}` : ""),
         unit: "forfait", quantity: 1, unit_price: amount, vat_rate: 20, remise_pct: 0,
       });
+      if (itemErr) { toast("Facture créée mais la ligne article n'a pas pu être ajoutée.","error"); return; }
       toast(`Facture ${numero} créée — redirection…`,"success");
       setTimeout(() => router.push("/client/factures"), 1200);
     } finally { setCreatingInv(null); }
