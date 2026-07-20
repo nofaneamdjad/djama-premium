@@ -1717,18 +1717,18 @@ export default function ContratsPage() {
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
                 <ModuleHeaderIcon icon={FileText} color="#b45309" />
               </motion.div>
-              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
+              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }} className="min-w-0">
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Contrats IA</h1>
-                <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-500"}`}>Génération · Signature · Suivi juridique</p>
+                <p className={`text-[0.62rem] truncate ${isDark ? "text-white/35" : "text-gray-500"}`}>Génération · Signature · Suivi juridique</p>
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
               <div className={`flex rounded-xl border overflow-hidden ${isDark ? "border-white/[0.07]" : "border-gray-200"}`}>
                 {(["list", "dashboard"] as const).map((v) => (
                   <button key={v} onClick={() => setView(v)}
-                    className={`px-3 py-1.5 text-xs font-semibold transition-all ${view === v ? "text-[#0a0a0a]" : isDark ? "text-white/40 hover:text-white/60" : "text-gray-500 hover:text-gray-700"}`}
+                    className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all ${view === v ? "text-[#0a0a0a]" : isDark ? "text-white/40 hover:text-white/60" : "text-gray-500 hover:text-gray-700"}`}
                     style={view === v ? { background: gold } : {}}>
-                    {v === "list" ? "Liste" : "Dashboard"}
+                    {v === "list" ? "Liste" : <><span className="hidden sm:inline">Dashboard</span><span className="sm:hidden">Stats</span></>}
                   </button>
                 ))}
               </div>
@@ -1753,7 +1753,7 @@ export default function ContratsPage() {
 
         {/* KPI strip */}
         <div className="relative px-5 pb-4 sm:px-8">
-          <div className="mx-auto max-w-7xl grid grid-cols-4 gap-2">
+          <div className="mx-auto max-w-7xl flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
             {[
               { label: "Total", value: contracts.length, icon: FileText, onClick: () => { setView("list"); setFilterStatus("all"); setFilterType("all"); setSearch(""); setSortBy("date"); } },
               { label: "Signés", value: contracts.filter((c) => c.status === "signé").length, icon: CheckCircle, onClick: () => { setView("list"); setFilterStatus("signé"); setFilterType("all"); setSearch(""); } },
@@ -1763,11 +1763,11 @@ export default function ContratsPage() {
               const KpiIcon = kpi.icon;
               return (
                 <motion.button key={kpi.label} onClick={kpi.onClick} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2 border cursor-pointer transition-all text-left ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white/60"}`}>
+                  className={`shrink-0 flex items-center gap-2 rounded-xl px-3 py-2 border cursor-pointer transition-all text-left ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white/60"}`}>
                   <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
-                  <div className="min-w-0">
-                    <p className={`text-sm font-bold leading-none truncate ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
-                    <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
+                  <div>
+                    <p className={`text-sm font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
+                    <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                   </div>
                 </motion.button>
               );

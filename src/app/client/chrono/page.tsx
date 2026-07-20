@@ -777,16 +777,16 @@ export default function ChronoPage() {
               <Target size={15}/>
             </button>
             <button onClick={()=>{setManualDraft(emptyManual());setManualOpen(true)}}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
+              className="flex items-center gap-1.5 rounded-xl px-2.5 sm:px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
               style={{background:violet,boxShadow:`0 4px 16px ${violet}40`}}>
-              <Plus size={13}/> Ajout manuel
+              <Plus size={13}/><span className="hidden sm:inline"> Ajout manuel</span>
             </button>
           </div>
         </div>
       </div>
 
             <div className={`relative z-10 border-b px-5 sm:px-8 ${isDark ? "border-white/6 bg-[#07080e]/60" : "border-gray-200 bg-white/80"}`}>
-        <div className="mx-auto flex max-w-5xl">
+        <div className="mx-auto flex max-w-5xl overflow-x-auto scrollbar-none">
           {TABS.map(t=>(
             <button key={t.value} onClick={()=>setTab(t.value)}
               className={`relative flex items-center gap-1.5 px-4 py-3 text-xs font-bold transition ${tab===t.value ? (isDark ? "text-white" : "text-gray-900") : (isDark ? "text-white/40 hover:text-white/60" : "text-gray-400 hover:text-gray-600")}`}>

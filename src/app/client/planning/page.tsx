@@ -1094,28 +1094,28 @@ export default function PlanningPage() {
                 <ChevronRight size={15}/>
               </button>
             </div>
-            <h2 className={`text-sm font-bold mr-auto ${isDark ? "text-white" : "text-gray-900"}`}>{headerLabel}</h2>
+            <h2 className={`text-[10px] sm:text-sm font-bold mr-auto whitespace-nowrap overflow-hidden text-ellipsis min-w-0 ${isDark ? "text-white" : "text-gray-900"}`}>{headerLabel}</h2>
             <button onClick={exportICS} title="Exporter ICS (Google Calendar / Outlook)"
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all ${isDark ? "border-white/8 text-white/40 hover:text-white/70 hover:border-white/20" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all ${isDark ? "border-white/8 text-white/40 hover:text-white/70 hover:border-white/20" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
               <Download size={12}/> ICS
             </button>
             <button onClick={() => setShowAI(p => !p)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${showAI
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${showAI
                 ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
                 : isDark ? "border-white/8 text-white/50 hover:border-violet-500/30 hover:text-violet-300" : "border-gray-200 text-gray-500 hover:border-violet-400 hover:text-violet-600"}`}>
-              <Sparkles size={12}/> IA Planning
+              <Sparkles size={12}/><span className="hidden sm:inline"> IA</span><span className="sm:hidden">IA</span><span className="hidden sm:inline"> Planning</span>
             </button>
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               onClick={() => openCreate()}
-              className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all"
               style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a", boxShadow: "0 2px 12px rgba(201,165,90,0.28)" }}>
-              <Plus size={13}/> Événement
+              <Plus size={13}/><span className="hidden sm:inline"> Événement</span>
             </motion.button>
           </div>
 
           {/* KPI strip */}
           <div className="relative px-4 pb-2">
-            <div className="grid grid-cols-5 gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
               {[
                 { label: "Total",       value: events.length,                                                                                                                                     icon: Calendar,      accent: "#c9a55a" },
                 { label: "Aujourd'hui", value: events.filter(e => fmtDate(new Date(e.start_at)) === today).length,                                                                                icon: Clock,         accent: "#c9a55a" },
@@ -1126,11 +1126,11 @@ export default function PlanningPage() {
                 const KpiIcon = kpi.icon;
                 return (
                   <motion.div key={kpi.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                    className={`shrink-0 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
                     <KpiIcon size={11} style={{ color: kpi.accent }} className="shrink-0"/>
-                    <div className="min-w-0">
+                    <div>
                       <p className={`text-xs font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
-                      <p className={`text-[0.55rem] uppercase tracking-wide mt-0.5 truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
+                      <p className={`text-[0.55rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                     </div>
                   </motion.div>
                 );

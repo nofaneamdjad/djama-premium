@@ -1411,7 +1411,7 @@ export default function EquipePage() {
 
         {/* KPI strip */}
         <div className="relative px-5 pb-2">
-          <div className="grid grid-cols-4 gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
             {[
               { label: "Actifs",    value: stats.active,  icon: Users        },
               { label: "En cours",  value: stats.inProg,  icon: CheckSquare  },
@@ -1421,11 +1421,11 @@ export default function EquipePage() {
               const KpiIcon = kpi.icon;
               return (
                 <motion.div key={kpi.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                  className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 border ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+                  className={`shrink-0 flex items-center gap-2 rounded-lg px-2.5 py-1.5 border ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
                   <KpiIcon size={11} style={{ color: "#c9a55a" }} className="shrink-0"/>
-                  <div className="min-w-0">
+                  <div>
                     <p className={`text-xs font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
-                    <p className={`text-[0.55rem] uppercase tracking-wide mt-0.5 truncate ${isDark ? "text-white/35" : "text-gray-500"}`}>{kpi.label}</p>
+                    <p className={`text-[0.55rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-500"}`}>{kpi.label}</p>
                   </div>
                 </motion.div>
               );

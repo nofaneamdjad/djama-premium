@@ -2137,9 +2137,9 @@ export default function StocksPage() {
               <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
                 <ModuleHeaderIcon icon={Package} color="#0d9488" />
               </motion.div>
-              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
+              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }} className="min-w-0">
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Stocks & Inventaire</h1>
-                <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Gestion · Mouvements · Alertes · Fournisseurs</p>
+                <p className={`text-[0.62rem] truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>Gestion · Mouvements · Alertes · Fournisseurs</p>
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
@@ -2148,9 +2148,9 @@ export default function StocksPage() {
               </button>
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={() => { setEditProduct(EMPTY_PRODUCT()); setShowProductModal(true); }}
-                className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all"
+                className="flex items-center gap-1.5 rounded-xl px-2.5 sm:px-4 py-2 text-xs font-bold transition-all"
                 style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a", boxShadow: "0 4px 16px rgba(201,165,90,0.35)" }}>
-                <Plus size={13}/> Nouveau produit
+                <Plus size={13}/><span className="hidden sm:inline"> Nouveau produit</span>
               </motion.button>
             </div>
           </div>
@@ -2158,7 +2158,7 @@ export default function StocksPage() {
 
         {/* KPI strip */}
         <div className="relative px-5 pb-3 sm:px-8">
-          <div className="mx-auto max-w-7xl grid grid-cols-4 gap-2">
+          <div className="mx-auto max-w-7xl flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
             {[
               { label: "Produits",  value: products.length,                                                              icon: Package },
               { label: "Ruptures",  value: products.filter((p) => p.stock_current <= 0).length,                         icon: AlertOctagon },
@@ -2168,11 +2168,11 @@ export default function StocksPage() {
               const KpiIcon = kpi.icon;
               return (
                 <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+                  className={`shrink-0 flex items-center gap-2 rounded-xl px-3 py-2 border ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
                   <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
-                  <div className="min-w-0">
-                    <p className={`text-sm font-bold leading-none truncate ${isDark ? "text-white" : "text-gray-800"}`}>{kpi.value}</p>
-                    <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
+                  <div>
+                    <p className={`text-sm font-bold leading-none ${isDark ? "text-white" : "text-gray-800"}`}>{kpi.value}</p>
+                    <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                   </div>
                 </motion.div>
               );
@@ -2181,10 +2181,10 @@ export default function StocksPage() {
         </div>
 
         {/* Tabs */}
-        <div className="relative px-5 sm:px-8 flex gap-0.5">
+        <div className="relative px-5 sm:px-8 flex gap-0.5 overflow-x-auto scrollbar-none">
           {TABS.map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${tab === key ? isDark ? "text-white" : "text-gray-800" : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
+              className={`shrink-0 relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${tab === key ? isDark ? "text-white" : "text-gray-800" : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
               <Icon size={12}/>
               {label}
               {tab === key && (
