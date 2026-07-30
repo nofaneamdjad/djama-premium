@@ -3,6 +3,7 @@ import "./globals.css";
 import SplashScreen    from "@/components/SplashScreen";
 import { WebViewBanner } from "@/components/WebViewBanner";
 import PWAManager from "@/components/PWAManager";
+import CookieBanner from "@/components/CookieBanner";
 
 const BASE_URL = "https://djama.space";
 
@@ -248,6 +249,7 @@ export default function RootLayout({
         {children}
         <WebViewBanner />
         <PWAManager />
+        <CookieBanner />
       </body>
     </html>
   );

@@ -2,35 +2,49 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff, Lock, ShieldCheck } from "lucide-react";
 
 export default function AdminLogin() {
   const router = useRouter();
-  const [password, setPassword] = useState("");
-  const [show,     setShow]     = useState(false);
-  const [error,    setError]    = useState(false);
-  const [loading,  setLoading]  = useState(false);
+  const [password,  setPassword]  = useState("");
+  const [totpCode,  setTotpCode]  = useState("");
+  const [show,      setShow]      = useState(false);
+  const [error,     setError]     = useState("");
+  const [loading,   setLoading]   = useState(false);
+  const [need2FA,   setNeed2FA]   = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError(false);
+    setError("");
     try {
+      const body: Record<string, string> = { password };
+      if (need2FA) body.totpCode = totpCode;
+
       const res = await fetch("/api/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify(body),
       });
+
       if (res.ok) {
         router.replace("/admin");
-      } else {
-        setError(true);
-        setTimeout(() => setError(false), 2500);
-        setLoading(false);
+        return;
       }
+
+      const data = await res.json() as { error?: string; require2fa?: boolean };
+
+      if (data.require2fa) {
+        setNeed2FA(true);
+        setError(need2FA ? "Code 2FA invalide ou expiré." : "");
+      } else {
+        setError(data.error ?? "Erreur inconnue");
+      }
+      setTimeout(() => setError(""), 3000);
     } catch {
-      setError(true);
-      setTimeout(() => setError(false), 2500);
+      setError("Erreur réseau");
+      setTimeout(() => setError(""), 3000);
+    } finally {
       setLoading(false);
     }
   }
@@ -49,44 +63,82 @@ export default function AdminLogin() {
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-7 shadow-[0_8px_40px_rgba(0,0,0,0.08)]">
           <div className="mb-6 flex justify-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(201,165,90,0.1)] border border-[rgba(201,165,90,0.2)]">
-              <Lock size={19} className="text-[#c9a55a]" />
+              {need2FA ? <ShieldCheck size={19} className="text-[#c9a55a]" /> : <Lock size={19} className="text-[#c9a55a]" />}
             </div>
           </div>
-          <h1 className="mb-1 text-center text-[1rem] font-bold text-gray-900">Connexion administrateur</h1>
-          <p className="mb-7 text-center text-[0.77rem] text-gray-400">Accès réservé aux administrateurs DJAMA</p>
+
+          <h1 className="mb-1 text-center text-[1rem] font-bold text-gray-900">
+            {need2FA ? "Vérification 2FA" : "Connexion administrateur"}
+          </h1>
+          <p className="mb-7 text-center text-[0.77rem] text-gray-400">
+            {need2FA ? "Saisissez le code de votre application d'authentification" : "Accès réservé aux administrateurs DJAMA"}
+          </p>
 
           <form onSubmit={submit} className="space-y-3">
-            <div className="relative">
-              <input
-                type={show ? "text" : "password"}
-                value={password}
-                onChange={e => { setPassword(e.target.value); setError(false); }}
-                placeholder="Mot de passe"
-                autoFocus
-                className={`w-full rounded-xl border bg-gray-50 px-4 py-3 pr-11 text-[0.85rem] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white ${
-                  error ? "border-red-300" : "border-gray-200"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShow(!show)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {show ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            </div>
+            {/* Champ mot de passe — masqué en mode 2FA */}
+            {!need2FA && (
+              <div className="relative">
+                <input
+                  type={show ? "text" : "password"}
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setError(""); }}
+                  placeholder="Mot de passe"
+                  autoFocus
+                  className={`w-full rounded-xl border bg-gray-50 px-4 py-3 pr-11 text-[0.85rem] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white ${
+                    error ? "border-red-300" : "border-gray-200"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShow(!show)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {show ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            )}
+
+            {/* Champ code TOTP — affiché après le mot de passe */}
+            {need2FA && (
+              <div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  value={totpCode}
+                  onChange={e => { setTotpCode(e.target.value.replace(/\D/g, "")); setError(""); }}
+                  placeholder="Code à 6 chiffres"
+                  autoFocus
+                  autoComplete="one-time-code"
+                  className={`w-full rounded-xl border bg-gray-50 px-4 py-3 text-center text-[1.1rem] font-mono tracking-[0.3em] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white ${
+                    error ? "border-red-300" : "border-gray-200"
+                  }`}
+                />
+              </div>
+            )}
 
             {error && (
-              <p className="text-center text-[0.77rem] text-red-500">Mot de passe incorrect.</p>
+              <p className="text-center text-[0.77rem] text-red-500">{error}</p>
             )}
 
             <button
               type="submit"
-              disabled={loading || !password}
+              disabled={loading || (!need2FA && !password) || (need2FA && totpCode.length < 6)}
               className="w-full rounded-xl bg-[#c9a55a] py-3 text-[0.88rem] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {loading ? "Connexion…" : "Accéder à l'administration"}
+              {loading ? "Vérification…" : need2FA ? "Valider le code" : "Accéder à l'administration"}
             </button>
+
+            {need2FA && (
+              <button
+                type="button"
+                onClick={() => { setNeed2FA(false); setTotpCode(""); setError(""); }}
+                className="w-full text-center text-[0.75rem] text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                ← Retour
+              </button>
+            )}
           </form>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   // ── Turbopack — évite l'avertissement de workspace root ─────────
@@ -46,6 +47,29 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
+          // Content Security Policy — bloque injections XSS et ressources non autorisées
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              // Next.js inline scripts (anti-flash, JSON-LD) + Stripe.js
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' js.stripe.com",
+              // Styles Tailwind inline
+              "style-src 'self' 'unsafe-inline'",
+              // Images Supabase Storage + data URIs (aperçus inline)
+              "img-src 'self' data: blob: *.supabase.co *.supabase.in",
+              // Fonts locales uniquement
+              "font-src 'self'",
+              // API calls autorisées
+              "connect-src 'self' *.supabase.co *.supabase.in wss://*.supabase.co api.stripe.com api-m.paypal.com api-m.sandbox.paypal.com",
+              // iframes Stripe (paiement sécurisé)
+              "frame-src 'self' js.stripe.com hooks.stripe.com",
+              // Interdit l'inclusion dans des iframes tierces
+              "frame-ancestors 'self'",
+              "form-action 'self'",
+              "base-uri 'self'",
+            ].join("; "),
+          },
           // Empêche le site d'être embarqué dans une iframe tierce (clickjacking)
           { key: "X-Frame-Options",           value: "SAMEORIGIN" },
           // Empêche le navigateur de sniffer le Content-Type
@@ -88,4 +112,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Désactive le bundling Sentry si DSN absent (dev sans config Sentry)
+  silent: !process.env.NEXT_PUBLIC_SENTRY_DSN,
+  // Upload des sourcemaps vers Sentry (nécessite SENTRY_AUTH_TOKEN dans CI)
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+  org:     process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+});

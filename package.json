@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.81.0",
+    "@sentry/nextjs": "^10.69.0",
     "@stripe/stripe-js": "^9.0.0",
     "@supabase/ssr": "^0.9.0",
     "@types/qrcode": "^1.5.6",

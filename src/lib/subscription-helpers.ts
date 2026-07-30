@@ -23,8 +23,29 @@ export function getSupabaseAdmin(): SupabaseClient {
 /* ── Trouver un utilisateur par email ─────────────────────── */
 export async function findUserByEmail(email: string) {
   const supabase = getSupabaseAdmin();
-  const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-  return users.find((u) => u.email === email) ?? null;
+
+  // Chemin rapide : clients table indexée (O(1) au lieu d'un scan auth.users)
+  const { data: row } = await supabase
+    .from("clients")
+    .select("user_id")
+    .eq("email", email)
+    .maybeSingle();
+  if (row?.user_id) {
+    const { data: { user } } = await supabase.auth.admin.getUserById(row.user_id);
+    if (user) return user;
+  }
+
+  // Chemin fallback : nouveau client pas encore dans clients (premier achat)
+  // Utilise le filtre REST Supabase pour ne pas charger toute la liste
+  const supaUrl   = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const svcKey    = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const res = await fetch(
+    `${supaUrl}/auth/v1/admin/users?filter=${encodeURIComponent(email)}&per_page=5`,
+    { headers: { Authorization: `Bearer ${svcKey}`, apikey: svcKey }, cache: "no-store" },
+  );
+  if (!res.ok) return null;
+  const body = await res.json() as { users?: { id: string; email?: string; user_metadata?: Record<string, unknown> }[] };
+  return body.users?.find((u) => u.email === email) ?? null;
 }
 
 /* ── Trouver un utilisateur par son userId ────────────────── */
@@ -37,10 +58,14 @@ export async function findUserById(userId: string) {
 /* ── Trouver un utilisateur par paypal_subscription_id ───── */
 export async function findUserByPayPalSubId(paypalSubId: string) {
   const supabase = getSupabaseAdmin();
-  const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-  return (
-    users.find((u) => u.user_metadata?.paypal_subscription_id === paypalSubId) ?? null
-  );
+  const { data, error } = await supabase
+    .from("clients")
+    .select("user_id")
+    .eq("paypal_subscription_id", paypalSubId)
+    .maybeSingle();
+  if (error || !data?.user_id) return null;
+  const { data: { user } } = await supabase.auth.admin.getUserById(data.user_id);
+  return user ?? null;
 }
 
 /* ── Upsert table clients ─────────────────────────────────── */

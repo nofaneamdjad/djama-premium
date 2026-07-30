@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { sendWelcomeEmail, sendPaymentReceivedEmail, sendCoachingIAEmail } from "@/lib/email";
+import {
+  sendWelcomeEmail,
+  sendPaymentReceivedEmail,
+  sendCoachingIAEmail,
+  sendPaymentFailedEmail,
+} from "@/lib/email";
 import { createLogger } from "@/lib/logger";
 import { syncSubscriptionAccess } from "@/lib/subscription-helpers";
 
@@ -51,16 +56,38 @@ const SITE_URL =
 
 async function findUserByEmail(email: string) {
   const supabase = getSupabaseAdmin();
-  const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-  return users.find((u) => u.email === email) ?? null;
+
+  const { data: row } = await supabase
+    .from("clients")
+    .select("user_id")
+    .eq("email", email)
+    .maybeSingle();
+  if (row?.user_id) {
+    const { data: { user } } = await supabase.auth.admin.getUserById(row.user_id);
+    if (user) return user;
+  }
+
+  const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const svcKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const res = await fetch(
+    `${supaUrl}/auth/v1/admin/users?filter=${encodeURIComponent(email)}&per_page=5`,
+    { headers: { Authorization: `Bearer ${svcKey}`, apikey: svcKey }, cache: "no-store" },
+  );
+  if (!res.ok) return null;
+  const body = await res.json() as { users?: { id: string; email?: string; user_metadata?: Record<string, unknown> }[] };
+  return body.users?.find((u) => u.email === email) ?? null;
 }
 
 async function findUserByStripeCustomerId(stripeCustomerId: string) {
   const supabase = getSupabaseAdmin();
-  const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-  return (
-    users.find((u) => u.user_metadata?.stripe_customer_id === stripeCustomerId) ?? null
-  );
+  const { data, error } = await supabase
+    .from("clients")
+    .select("user_id")
+    .eq("stripe_customer_id", stripeCustomerId)
+    .maybeSingle();
+  if (error || !data?.user_id) return null;
+  const { data: { user } } = await supabase.auth.admin.getUserById(data.user_id);
+  return user ?? null;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -440,12 +467,6 @@ async function syncSubscriptionStatus(
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Idempotence — cache en mémoire des events déjà traités
-   (évite doublons si Stripe re-envoie le même event)
-───────────────────────────────────────────────────────────── */
-const processedEvents = new Set<string>();
-
-/* ─────────────────────────────────────────────────────────────
    Handler principal
 ───────────────────────────────────────────────────────────── */
 export async function POST(req: Request) {
@@ -465,16 +486,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  // ── Idempotence : ignorer les events déjà traités ────────────
-  if (processedEvents.has(event.id)) {
+  // ── Idempotence : vérification via Supabase (multi-instance safe) ──
+  const supabaseIdempotent = getSupabaseAdmin();
+  const { data: alreadyProcessed } = await supabaseIdempotent
+    .from("stripe_webhook_events")
+    .select("id")
+    .eq("id", event.id)
+    .maybeSingle();
+
+  if (alreadyProcessed) {
     log.info("Event déjà traité, ignoré");
     return NextResponse.json({ received: true, skipped: true });
   }
-  processedEvents.add(event.id);
-  // Limiter la taille du cache en mémoire (~500 events max)
-  if (processedEvents.size > 500) {
-    const oldest = processedEvents.values().next().value;
-    if (oldest) processedEvents.delete(oldest);
+
+  try {
+    await supabaseIdempotent
+      .from("stripe_webhook_events")
+      .insert({ id: event.id });
+  } catch {
+    // Race condition : un autre worker a inséré en parallèle — OK
   }
 
   log.info(`Event reçu: ${event.type}`);
@@ -519,6 +549,47 @@ export async function POST(req: Request) {
     const sub = event.data.object as Stripe.Subscription;
     await deactivateSubscription(sub.customer as string);
     log.info("Subscription deleted");
+  }
+
+  /* ── invoice.payment_failed — paiement de renouvellement échoué ── */
+  if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object as Stripe.Invoice;
+    const user = await findUserByStripeCustomerId(invoice.customer as string);
+    if (user?.email) {
+      await sendPaymentFailedEmail({
+        email:    user.email,
+        fullName: user.user_metadata?.full_name ?? null,
+      });
+      log.info("Email paiement échoué envoyé → " + user.email);
+    }
+  }
+
+  /* ── payment_intent.succeeded — paiement direct (lien de paiement) ── */
+  if (event.type === "payment_intent.succeeded") {
+    const pi   = event.data.object as Stripe.PaymentIntent;
+    const meta = pi.metadata ?? {};
+    if (meta.document_id) {
+      await markDocumentPaid(meta.document_id);
+    } else if (meta.reference) {
+      const supabase = getSupabaseAdmin();
+      await supabase.from("documents").update({ statut: "payé" }).eq("numero", meta.reference);
+      log.info(`payment_intent.succeeded → document ${meta.reference} → payé`);
+    }
+  }
+
+  /* ── payment_intent.payment_failed — lien de paiement échoué ── */
+  if (event.type === "payment_intent.payment_failed") {
+    const pi   = event.data.object as Stripe.PaymentIntent;
+    const meta = pi.metadata ?? {};
+    if (meta.document_id) {
+      const supabase = getSupabaseAdmin();
+      await supabase.from("documents").update({ statut: "en_retard" }).eq("id", meta.document_id);
+      log.info(`payment_intent.payment_failed → document ${meta.document_id} → en_retard`);
+    } else if (meta.reference) {
+      const supabase = getSupabaseAdmin();
+      await supabase.from("documents").update({ statut: "en_retard" }).eq("numero", meta.reference);
+      log.info(`payment_intent.payment_failed → document ${meta.reference} → en_retard`);
+    }
   }
 
   return NextResponse.json({ received: true });

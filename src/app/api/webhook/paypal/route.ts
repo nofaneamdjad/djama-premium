@@ -80,9 +80,24 @@ export async function POST(req: Request) {
       : null;
 
     if (email) {
-      const supabase   = getSupabaseAdmin();
-      const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-      let user = users.find((u) => u.email === email) ?? null;
+      const supabase  = getSupabaseAdmin();
+      const supaUrl   = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const svcKey    = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+      const { data: row } = await supabase.from("clients").select("user_id").eq("email", email).maybeSingle();
+      let user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null = null;
+      if (row?.user_id) {
+        const { data: { user: found } } = await supabase.auth.admin.getUserById(row.user_id);
+        user = found ?? null;
+      } else {
+        const res = await fetch(
+          `${supaUrl}/auth/v1/admin/users?filter=${encodeURIComponent(email)}&per_page=5`,
+          { headers: { Authorization: `Bearer ${svcKey}`, apikey: svcKey }, cache: "no-store" },
+        );
+        if (res.ok) {
+          const body = await res.json() as { users?: { id: string; email?: string; user_metadata?: Record<string, unknown> }[] };
+          user = body.users?.find((u) => u.email === email) ?? null;
+        }
+      }
       let isNewUser = false;
       const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
