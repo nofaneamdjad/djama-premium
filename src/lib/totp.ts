@@ -56,6 +56,16 @@ async function hotp(secret: Uint8Array, counter: number): Promise<string> {
 }
 
 /**
+ * Génère le code TOTP courant pour un secret donné.
+ * Utile pour les tests et l'affichage en setup admin.
+ */
+export async function generateTOTPCode(secret: string): Promise<string> {
+  const keyBytes = decodeBase32(secret);
+  const step     = Math.floor(Date.now() / 30_000);
+  return hotp(keyBytes, step);
+}
+
+/**
  * Vérifie un code TOTP 6 chiffres.
  * Accepte le pas courant ±1 (60 secondes de tolérance d'horloge).
  */

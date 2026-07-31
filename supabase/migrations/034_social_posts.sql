@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS social_posts (
 
 ALTER TABLE social_posts ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "social_posts_own" ON social_posts;
 CREATE POLICY "social_posts_own" ON social_posts
   USING  (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);

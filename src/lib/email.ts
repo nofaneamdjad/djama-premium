@@ -1046,6 +1046,208 @@ export async function sendPaymentFailedEmail(
   }
 }
 
+/* ═══════════════════════════════════════════════════════════
+   EMAIL RENOUVELLEMENT — envoyé automatiquement à chaque cycle Stripe/PayPal
+═══════════════════════════════════════════════════════════ */
+
+function buildRenewalHtml(opts: { firstName: string }): string {
+  const { firstName } = opts;
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Renouvellement DJAMA</title>
+</head>
+<body style="margin:0;padding:0;background:${BG};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:48px 16px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0"
+      style="background:${CARD};border-radius:16px;border:1px solid rgba(255,255,255,0.07);overflow:hidden;max-width:100%;">
+      <tr>
+        <td style="background:linear-gradient(135deg,#0f0f11 0%,#1a1505 100%);padding:40px 40px 32px;border-bottom:1px solid rgba(201,165,90,0.15);">
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td><span style="font-size:22px;font-weight:800;letter-spacing:0.15em;color:${GOLD};">DJAMA</span>
+              <span style="display:inline-block;margin-left:8px;font-size:9px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:2px 6px;">Pro</span>
+            </td>
+            <td align="right"><span style="font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:0.05em;">Abonnement renouvelé</span></td>
+          </tr></table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:40px 40px 32px;">
+          <div style="display:inline-block;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);border-radius:100px;padding:6px 14px;margin-bottom:24px;">
+            <span style="font-size:11px;font-weight:700;color:#4ade80;letter-spacing:0.08em;">✓ Paiement confirmé</span>
+          </div>
+          <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#fff;line-height:1.3;">
+            Bonjour ${firstName}, votre abonnement est renouvelé
+          </h1>
+          <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:${MUTED};">
+            Votre abonnement DJAMA PRO a été renouvelé avec succès. Votre accès à tous vos outils reste actif pour le mois à venir.
+          </p>
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="border-radius:10px;background:${GOLD};">
+                <a href="${getSite()}/client"
+                  style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:700;color:#09090b;text-decoration:none;letter-spacing:0.03em;border-radius:10px;">
+                  Accéder à mon espace →
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:28px 40px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+          <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.15);">
+            Questions ? <a href="mailto:contact@djama.space" style="color:${GOLD};text-decoration:none;">contact@djama.space</a>
+            &nbsp;·&nbsp;
+            <a href="${getSite()}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${getSite()}</a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+}
+
+export interface RenewalEmailOptions {
+  email:    string;
+  fullName: string | null;
+}
+
+export async function sendRenewalEmail(opts: RenewalEmailOptions): Promise<boolean> {
+  const key = sanitizeKey(process.env.RESEND_API_KEY);
+  if (!key) {
+    console.warn("[Email Renewal] ⚠️ RESEND_API_KEY manquant.");
+    return false;
+  }
+  const firstName = opts.fullName?.split(" ")[0] ?? opts.email.split("@")[0];
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from:    getFrom(),
+        to:      opts.email,
+        subject: "DJAMA — Votre abonnement a été renouvelé ✓",
+        html:    buildRenewalHtml({ firstName }),
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.json() as { message?: string };
+      console.error("[Email Renewal] ❌ Resend error:", body.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[Email Renewal] ❌ Exception:", err);
+    return false;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EMAIL ANNULATION — envoyé quand l'abonnement est résilié
+═══════════════════════════════════════════════════════════ */
+
+function buildCancellationHtml(opts: { firstName: string }): string {
+  const { firstName } = opts;
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Résiliation DJAMA</title>
+</head>
+<body style="margin:0;padding:0;background:${BG};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:48px 16px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0"
+      style="background:${CARD};border-radius:16px;border:1px solid rgba(255,255,255,0.07);overflow:hidden;max-width:100%;">
+      <tr>
+        <td style="background:linear-gradient(135deg,#0f0f11 0%,#151515 100%);padding:40px 40px 32px;border-bottom:1px solid rgba(255,255,255,0.08);">
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td><span style="font-size:22px;font-weight:800;letter-spacing:0.15em;color:${GOLD};">DJAMA</span></td>
+            <td align="right"><span style="font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:0.05em;">Confirmation de résiliation</span></td>
+          </tr></table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:40px 40px 32px;">
+          <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#fff;line-height:1.3;">
+            Bonjour ${firstName}, votre abonnement a été résilié
+          </h1>
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:${MUTED};">
+            Votre abonnement DJAMA PRO a bien été résilié. Nous espérons vous avoir été utile.
+          </p>
+          <p style="margin:0 0 28px;font-size:14px;line-height:1.6;color:${MUTED};">
+            Votre compte reste accessible. Vous pouvez réactiver votre abonnement à tout moment depuis votre espace client.
+          </p>
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="border-radius:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);">
+                <a href="${getSite()}/client/abonnements"
+                  style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:700;color:#fff;text-decoration:none;letter-spacing:0.03em;border-radius:10px;">
+                  Réactiver mon abonnement →
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:28px 40px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+          <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.2);">
+            Questions ? <a href="mailto:contact@djama.space" style="color:${GOLD};text-decoration:none;">contact@djama.space</a>
+            &nbsp;·&nbsp;
+            <a href="${getSite()}" style="color:rgba(255,255,255,0.2);text-decoration:none;">${getSite()}</a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+}
+
+export interface CancellationEmailOptions {
+  email:    string;
+  fullName: string | null;
+}
+
+export async function sendCancellationEmail(opts: CancellationEmailOptions): Promise<boolean> {
+  const key = sanitizeKey(process.env.RESEND_API_KEY);
+  if (!key) {
+    console.warn("[Email Cancellation] ⚠️ RESEND_API_KEY manquant.");
+    return false;
+  }
+  const firstName = opts.fullName?.split(" ")[0] ?? opts.email.split("@")[0];
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from:    getFrom(),
+        to:      opts.email,
+        subject: "DJAMA — Votre abonnement a été résilié",
+        html:    buildCancellationHtml({ firstName }),
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.json() as { message?: string };
+      console.error("[Email Cancellation] ❌ Resend error:", body.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[Email Cancellation] ❌ Exception:", err);
+    return false;
+  }
+}
+
 export interface AccessActivatedEmailOptions {
   email:      string;
   fullName:   string | null;

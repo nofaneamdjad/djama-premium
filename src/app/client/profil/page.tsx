@@ -8,6 +8,7 @@ import {
   LogOut, ArrowRight, Sparkles, Lock, Eye, EyeOff,
   AlertCircle, FileText, Camera, Bell, Key,
   RefreshCw, Clock, Globe, Smartphone, Copy,
+  Download, Trash2, Shield,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSubscription } from "@/lib/use-require-subscription";
@@ -181,6 +182,12 @@ function ProfilPage() {
   /* ── Activité ── */
   const [recentActivity, setRecentActivity] = useState<ActivityEntry[]>([]);
 
+  /* ── RGPD ── */
+  const [exportingData,    setExportingData]    = useState(false);
+  const [confirmDelete,    setConfirmDelete]    = useState(false);
+  const [deletingAccount,  setDeletingAccount]  = useState(false);
+  const [deleteError,      setDeleteError]      = useState("");
+
   /* Load all client data */
   useEffect(() => {
     if (!userId) return;
@@ -333,6 +340,47 @@ function ProfilPage() {
   async function handleLogout() {
     await supabase.auth.signOut();
     window.location.href = "/login";
+  }
+
+  async function handleExportData() {
+    setExportingData(true);
+    try {
+      const res = await fetch("/api/user/export-data");
+      if (!res.ok) throw new Error("Erreur export");
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `djama-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Erreur lors de l'export. Réessayez.");
+    } finally {
+      setExportingData(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeletingAccount(true);
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/user/delete-account", {
+        method:  "DELETE",
+        headers: { "x-confirm-delete": "DELETE_MY_ACCOUNT" },
+      });
+      if (!res.ok) {
+        const body = await res.json() as { error?: string };
+        setDeleteError(body.error ?? "Erreur lors de la suppression.");
+        setDeletingAccount(false);
+        return;
+      }
+      await supabase.auth.signOut();
+      window.location.href = "/?account_deleted=1";
+    } catch {
+      setDeleteError("Erreur réseau. Réessayez.");
+      setDeletingAccount(false);
+    }
   }
 
   if (level === "loading") {
@@ -745,6 +793,82 @@ function ProfilPage() {
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* ── Confidentialité & RGPD ── */}
+          <div className="rounded-2xl border border-white/6 bg-white/4 p-5 backdrop-blur-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <Shield size={14} className="text-white/40" />
+              <h2 className="text-sm font-bold text-white">Confidentialité & données</h2>
+            </div>
+            <p className="mb-4 text-xs text-white/40">
+              Conformément au RGPD, vous avez le droit d'accéder à vos données et de les supprimer.
+            </p>
+            <div className="space-y-3">
+              {/* Export */}
+              <button
+                type="button"
+                onClick={handleExportData}
+                disabled={exportingData}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/8 bg-white/6 py-3 text-sm font-semibold text-white/60 transition hover:bg-white/12 hover:text-white disabled:opacity-50"
+              >
+                {exportingData ? (
+                  <><motion.div className="h-4 w-4 rounded-full border-2 border-white/20 border-t-white/60"
+                    animate={{ rotate: 360 }} transition={{ duration: 0.75, repeat: Infinity, ease: "linear" }} /> Export en cours…</>
+                ) : (
+                  <><Download size={14} /> Exporter mes données (JSON)</>
+                )}
+              </button>
+
+              {/* Suppression */}
+              <AnimatePresence>
+                {confirmDelete ? (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="rounded-xl border border-red-500/30 bg-red-500/8 p-4">
+                      <p className="mb-3 text-sm font-semibold text-red-400">
+                        Cette action est irréversible. Toutes vos données seront définitivement supprimées.
+                      </p>
+                      {deleteError && (
+                        <p className="mb-3 text-xs text-red-400">{deleteError}</p>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleDeleteAccount}
+                          disabled={deletingAccount}
+                          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500/20 py-2 text-sm font-bold text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
+                        >
+                          {deletingAccount ? (
+                            <><motion.div className="h-3.5 w-3.5 rounded-full border-2 border-red-400/30 border-t-red-400"
+                              animate={{ rotate: 360 }} transition={{ duration: 0.75, repeat: Infinity, ease: "linear" }} /> Suppression…</>
+                          ) : (
+                            <><Trash2 size={13} /> Supprimer définitivement</>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setConfirmDelete(false); setDeleteError(""); }}
+                          className="rounded-lg border border-white/10 px-4 py-2 text-sm text-white/40 transition hover:text-white/60"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(true)}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/15 py-3 text-sm font-semibold text-red-400/70 transition hover:border-red-500/30 hover:text-red-400"
+                  >
+                    <Trash2 size={14} /> Supprimer mon compte et mes données
+                  </button>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* ── Déconnexion ── */}

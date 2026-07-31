@@ -11,9 +11,9 @@ export const metadata: Metadata = {
     url: "https://djama.space/offres",
     images: [
       {
-        url: "https://djama.space/og-image.png",
-        width: 1200,
-        height: 630,
+        url: "https://djama.space/logo.png",
+        width: 512,
+        height: 512,
         alt: "Offres & Tarifs DJAMA",
       },
     ],
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     title: "Offres & Tarifs DJAMA — Indépendant, PME, Créatif",
     description:
       "16 services, 3 profils, des prix annoncés. Site vitrine dès 490 €, coaching IA dès 190 €, SaaS pro à 11,90 €/mois.",
-    images: ["https://djama.space/og-image.png"],
+    images: ["https://djama.space/logo.png"],
   },
 };
 

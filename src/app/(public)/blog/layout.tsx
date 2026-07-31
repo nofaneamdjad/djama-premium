@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Blog & Actualités — DJAMA",
+  title: "Blog & Actualités",
   description: "Conseils, guides et actualités pour entrepreneurs. Développez votre activité avec le digital et l'IA.",
   openGraph: {
     title: "Blog DJAMA — Ressources pour entrepreneurs",

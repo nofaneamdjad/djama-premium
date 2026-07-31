@@ -6,7 +6,7 @@
  */
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendCancellationEmail } from "@/lib/email";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -206,6 +206,13 @@ export async function deactivateUserByPayPalSubId(paypalSubId: string) {
     subscriptionId: paypalSubId,
     userData:       user.user_metadata,
   });
+
+  if (user.email) {
+    await sendCancellationEmail({
+      email:    user.email,
+      fullName: (user.user_metadata?.full_name as string | null) ?? null,
+    });
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────

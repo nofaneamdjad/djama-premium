@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Coaching IA DJAMA — Votre assistant business personnel",
+  title: "Coaching IA — Maîtrisez l'IA pour votre business",
   description:
     "Accédez à votre espace Coaching IA DJAMA : analyses business, relances clients, optimisation planning. Un coach intelligent disponible 24h/24 pour freelances et TPE.",
   openGraph: {
-    title: "Coaching IA DJAMA — Votre assistant business personnel",
+    title: "Coaching IA DJAMA — Maîtrisez l'IA pour votre business",
     description:
       "Un coach business alimenté par l'IA pour booster votre activité freelance ou TPE.",
     type: "website",

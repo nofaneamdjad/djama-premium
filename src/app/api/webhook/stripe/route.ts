@@ -6,6 +6,8 @@ import {
   sendPaymentReceivedEmail,
   sendCoachingIAEmail,
   sendPaymentFailedEmail,
+  sendRenewalEmail,
+  sendCancellationEmail,
 } from "@/lib/email";
 import { createLogger } from "@/lib/logger";
 import { syncSubscriptionAccess } from "@/lib/subscription-helpers";
@@ -446,6 +448,10 @@ async function deactivateSubscription(stripeCustomerId: string) {
     provider: "stripe",
     userData: user.user_metadata,
   });
+  await sendCancellationEmail({
+    email:    user.email,
+    fullName: (user.user_metadata?.full_name as string | null) ?? null,
+  });
   log.info("Abonnement désactivé → " + user.email);
 }
 
@@ -532,6 +538,17 @@ export async function POST(req: Request) {
 
     if (isSubscriptionInvoice) {
       await confirmSubscriptionActive(invoice.customer as string);
+      // Email de renouvellement uniquement pour les cycles récurrents (pas le 1er paiement)
+      if (invoice.billing_reason === "subscription_cycle") {
+        const renewUser = await findUserByStripeCustomerId(invoice.customer as string);
+        if (renewUser?.email) {
+          await sendRenewalEmail({
+            email:    renewUser.email,
+            fullName: (renewUser.user_metadata?.full_name as string | null) ?? null,
+          });
+          log.info("Email renouvellement envoyé → " + renewUser.email);
+        }
+      }
     } else {
       log.info(`invoice.paid ignoré (billing_reason: ${invoice.billing_reason})`);
     }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Portfolio DJAMA — Nos réalisations et projets",
+  title: "Portfolio — Nos réalisations et projets",
   description:
     "Découvrez le portfolio DJAMA : sites web, applications mobiles, visuels publicitaires, montages vidéo et bien plus. Nos réalisations pour des freelances et TPE.",
   openGraph: {

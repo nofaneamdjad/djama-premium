@@ -16,11 +16,19 @@ export const metadata: Metadata = {
 
   // ── Description ───────────────────────────────────────────────────
   description:
-    "Présence digitale, outils de gestion, accompagnement expert et IA réunis en un seul écosystème. Rejoignez 50+ entrepreneurs qui font grandir leur activité avec DJAMA.",
+    "Agence digitale internationale : création de sites web, applications mobiles, coaching IA et outils de gestion pros. DJAMA accompagne les entrepreneurs partout dans le monde.",
 
   // ── Canonical & robots ────────────────────────────────────────────
   metadataBase: new URL(BASE_URL),
-  alternates: { canonical: "/" },
+  alternates: {
+    canonical: "/",
+    languages: {
+      "fr":    BASE_URL,
+      "en":    BASE_URL,
+      "ar":    BASE_URL,
+      "x-default": BASE_URL,
+    },
+  },
   robots: {
     index: true,
     follow: true,
@@ -35,7 +43,7 @@ export const metadata: Metadata = {
     siteName: "DJAMA",
     title: "DJAMA — L'écosystème digital pour entrepreneurs",
     description:
-      "Présence digitale, outils de gestion, accompagnement expert et IA réunis en un seul écosystème. 50+ entrepreneurs accompagnés depuis 2022.",
+      "Agence digitale internationale : sites web, apps, coaching IA et outils pros réunis en un seul écosystème. DJAMA accompagne les entrepreneurs partout dans le monde.",
     images: [
       {
         url: "/logo.png",
@@ -65,10 +73,15 @@ export const metadata: Metadata = {
     "outils gestion entreprise", "factures en ligne", "espace client",
     "soutien scolaire", "accompagnement administratif", "auto-entrepreneur URSSAF",
     "recherche fournisseurs", "marchés publics", "freelance",
-    // Localisation
-    "La Réunion", "Comores", "France", "Belgique",
-    "agence digitale La Réunion", "création site web La Réunion",
-    "coaching IA Réunion", "développement web Réunion",
+    // Portée internationale
+    "agence digitale internationale", "agence digitale mondiale",
+    "digital agency", "web agency", "freelance developer",
+    "création site web international", "coaching IA international",
+    // Marchés francophones
+    "France", "Belgique", "Suisse", "Canada", "Québec",
+    "Maroc", "Tunisie", "Algérie", "Sénégal", "Côte d'Ivoire",
+    "La Réunion", "Comores", "Mayotte", "Madagascar", "Maurice",
+    "agence digitale francophone", "développement web francophone",
   ],
   authors: [{ name: "DJAMA", url: BASE_URL }],
   creator: "DJAMA",
@@ -148,13 +161,8 @@ const jsonLd = {
       ],
       foundingDate: "2022",
       description:
-        "Écosystème digital pour entrepreneurs : création de sites web, outils de gestion, accompagnement administratif et coaching IA.",
-      areaServed: [
-        { "@type": "Place", name: "La Réunion" },
-        { "@type": "Place", name: "Comores" },
-        { "@type": "Place", name: "France" },
-        { "@type": "Place", name: "Belgique" },
-      ],
+        "Agence digitale internationale : création de sites web, applications mobiles, outils de gestion professionnels, coaching IA et accompagnement business pour entrepreneurs du monde entier.",
+      areaServed: { "@type": "Place", name: "Worldwide" },
       hasOfferCatalog: {
         "@type": "OfferCatalog",
         name: "Services DJAMA",
