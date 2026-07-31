@@ -369,7 +369,7 @@ a:focus:not(:focus-visible)      { outline: none; }
 .hero-btn {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg,#6366f1 0%,#8b5cf6 40%,#a855f7 70%,#6366f1 100%);
+  background: linear-gradient(135deg,#c9a55a 0%,#e0c07a 40%,#c9a55a 70%,#a8864a 100%);
   background-size: 250% 250%;
   animation: btnGradientShift 5s ease infinite;
 }

@@ -8,6 +8,7 @@ import {
   Mail, Phone,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import type { Lang } from "@/lib/language-context";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import type { SocialPlatform } from "@/types/db";
 
@@ -51,6 +52,7 @@ const COLUMNS: Column[] = [
       { label: "Mentions légales",         labelEn: "Legal notice",     href: "/legal/mentions-legales" },
       { label: "Confidentialité",          labelEn: "Privacy policy",   href: "/legal/confidentialite"  },
       { label: "Conditions d'utilisation", labelEn: "Terms of service", href: "/legal/cgu"              },
+      { label: "Conditions de vente",      labelEn: "Sales terms",      href: "/legal/cgv"              },
       { label: "Cookies",                  labelEn: "Cookies",          href: "/legal/cookies"          },
       { label: "Sécurité",                 labelEn: "Security",         href: "/legal/securite"         },
     ],
@@ -158,23 +160,27 @@ export default function Footer() {
         {/* ── Bloc brand (4e colonne) ── */}
         <motion.div variants={itemVariants} className="col-span-2 md:col-span-1">
           {/* Langue */}
-          <div className="mb-6 flex items-center gap-1">
-            <span className="mr-1 text-base">🇫🇷</span>
+          <div className="mb-6">
             <div
-              className="flex items-center gap-0.5 rounded-full p-0.5"
+              className="inline-flex items-center gap-0.5 rounded-full p-0.5"
               style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)" }}
             >
-              {(["fr", "en"] as const).map((l) => (
+              {([
+                { code: "fr", flag: "🇫🇷", label: "FR" },
+                { code: "en", flag: "🇬🇧", label: "EN" },
+                { code: "ar", flag: "🇸🇦", label: "AR" },
+              ] as { code: Lang; flag: string; label: string }[]).map((l) => (
                 <button
-                  key={l}
-                  onClick={() => setLang(l)}
-                  className="rounded-full px-3 py-1 text-[0.6rem] font-black uppercase tracking-widest transition-all duration-200"
+                  key={l.code}
+                  onClick={() => setLang(l.code)}
+                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-widest transition-all duration-200"
                   style={{
-                    background: lang === l ? GOLD : "transparent",
-                    color:      lang === l ? "#fff" : "rgba(255,255,255,0.38)",
+                    background: lang === l.code ? GOLD : "transparent",
+                    color:      lang === l.code ? "#fff" : "rgba(255,255,255,0.38)",
                   }}
                 >
-                  {l}
+                  <span>{l.flag}</span>
+                  <span>{l.label}</span>
                 </button>
               ))}
             </div>
@@ -196,6 +202,8 @@ export default function Footer() {
           >
             {lang === "en"
               ? "The professional platform for entrepreneurs: invoices, CRM, AI tools and more."
+              : lang === "ar"
+              ? "المنصة المهنية لرواد الأعمال : الفواتير، CRM، أدوات الذكاء الاصطناعي والمزيد."
               : "La plateforme pro pour entrepreneurs : facturation, CRM, outils IA et bien plus."}
           </p>
 
@@ -282,7 +290,7 @@ export default function Footer() {
           © {new Date().getFullYear()}{" "}
           <span style={{ color: "rgba(255,255,255,0.40)" }}>DJAMA.space</span>
           {" "}—{" "}
-          {lang === "en" ? "All rights reserved" : "Tous droits réservés"}
+          {lang === "en" ? "All rights reserved" : lang === "ar" ? "جميع الحقوق محفوظة" : "Tous droits réservés"}
         </p>
       </div>
     </footer>

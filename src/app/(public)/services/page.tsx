@@ -684,6 +684,7 @@ export default function ServicesPage() {
           <motion.div variants={fadeIn} className="mt-9 flex flex-col gap-3">
             <Link href="/contact"
               className="hero-btn w-full rounded-2xl py-4 text-center text-[1rem] font-bold text-white shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-[1.015] active:scale-[.98]"
+              style={{ background: "linear-gradient(135deg,#c9a55a 0%,#e0c07a 40%,#c9a55a 70%,#a8864a 100%)" }}
             >
               {lang === "fr" ? "Démarrer un projet →" : "Start a project →"}
             </Link>

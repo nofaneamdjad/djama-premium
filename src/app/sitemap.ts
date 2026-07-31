@@ -194,6 +194,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // ── Pages légales ───────────────────────────────────────────────
     {
+      url: `${BASE}/legal/cgv`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    {
       url: `${BASE}/legal/mentions-legales`,
       lastModified: now,
       changeFrequency: "yearly",
