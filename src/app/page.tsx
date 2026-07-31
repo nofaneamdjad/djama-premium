@@ -680,336 +680,136 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* ── Services ticker ────────────────────────────────── */}
-      <section className="overflow-hidden bg-white pb-14 pt-20 sm:pb-20 sm:pt-28">
-
-        {/* Header */}
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={staggerContainer}
-          className="mx-auto mb-10 max-w-xl px-6 text-center"
-        >
-          <motion.div
-            variants={fadeIn}
-            className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(99,102,241,.25)] bg-[rgba(99,102,241,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
-            style={{ color: "#6366f1" }}
-          >
-            <Sparkles size={11} /> Nos services
-          </motion.div>
-          <motion.h2
-            variants={fadeIn}
-            className="text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.4rem]"
-          >
-            Tout ce que DJAMA peut faire{" "}
-            <span style={{ color: "#6366f1" }}>pour vous</span>.
-          </motion.h2>
-          <motion.p variants={fadeIn} className="mt-3 text-[0.9rem] text-gray-500">
-            Création digitale, outils pros, coaching IA et accompagnement — tout en un seul endroit.
-          </motion.p>
-        </motion.div>
-
-        {/* ── Grand écran / App Showcase ── */}
-        <div className="relative mx-auto mb-14 max-w-5xl px-4 sm:px-6">
-          {/* Halo glow derrière l'écran */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-10 -bottom-6 h-24 rounded-full blur-[40px] opacity-40"
-            style={{ background: "linear-gradient(90deg,#6366f1,#a855f7,#6366f1)" }}
-          />
-
-          {/* Cadre écran */}
-          <div
-            className="relative overflow-hidden rounded-[2rem] shadow-[0_24px_80px_rgba(0,0,0,.16)]"
-            style={{
-              background: "linear-gradient(135deg,#eef0ff 0%,#f3f0ff 50%,#e8ecff 100%)",
-              border: "1.5px solid rgba(255,255,255,0.9)",
-            }}
-          >
-            {/* Reflet haut */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 h-32"
-              style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.55) 0%,transparent 100%)" }}
-            />
-
-            {/* Barre navigateur */}
-            <div className="relative z-10 flex items-center gap-2 border-b border-white/60 bg-white/60 px-5 py-3 backdrop-blur-md">
-              <div className="flex gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-                <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
-                <div className="h-3 w-3 rounded-full bg-[#28c840]" />
-              </div>
-              <div className="ml-3 flex-1 rounded-full bg-white/80 px-4 py-1.5 text-[0.62rem] text-gray-400 backdrop-blur-sm">
-                🔒 djama.space — Tous nos services
-              </div>
-              <div className="hidden items-center gap-2 sm:flex">
-                <div className="h-3 w-3 rounded-full bg-gray-200" />
-                <div className="h-3 w-3 rounded-full bg-gray-200" />
-              </div>
-            </div>
-
-            {/* Grille des services */}
-            <div className="relative z-10 p-5 sm:p-8">
-              <div className="grid grid-cols-4 gap-3 sm:grid-cols-6 md:gap-4 lg:grid-cols-8">
-                {([
-                  { Icon: Globe,         color: "#60a5fa", label: "Site Vitrine",             href: "/services/site-vitrine"               },
-                  { Icon: CreditCard,    color: "#4ade80", label: "E-Commerce",               href: "/services/site-ecommerce"             },
-                  { Icon: Code2,         color: "#a78bfa", label: "App Mobile",               href: "/services/application-mobile"         },
-                  { Icon: BarChart3,     color: "#6366f1", label: "Plateforme Web",           href: "/services/plateforme-web-sur-mesure"  },
-                  { Icon: Gem,           color: "#22d3ee", label: "Solutions\nDigitales",     href: "/services/solutions-digitales"        },
-                  { Icon: Brain,         color: GOLD,      label: "Automatisation\nIA",       href: "/services/automatisation-ia"          },
-                  { Icon: Star,          color: "#f59e0b", label: "Montage\nVidéo",           href: "/services/montage-video"              },
-                  { Icon: Sparkles,      color: "#f472b6", label: "Retouche\nPhoto",          href: "/services/retouche-photo"             },
-                  { Icon: Sparkles,      color: "#ec4899", label: "Visuels\nPublicitaires",   href: "/services/visuels-publicitaires"      },
-                  { Icon: Brain,         color: "#a78bfa", label: "Coaching IA",              href: "/services/coaching-ia"                },
-                  { Icon: Users2,        color: "#60a5fa", label: "Soutien\nScolaire",        href: "/services/soutien-scolaire"           },
-                  { Icon: HeartHandshake,color: "#34d399", label: "Assistance\nAdmin",        href: "/services/assistance-administrative"  },
-                  { Icon: Briefcase,     color: GOLD,      label: "Auto-\nEntrepreneur",      href: "/services/creation-auto-entrepreneur" },
-                  { Icon: Receipt,       color: "#6366f1", label: "Déclarations\nURSSAF",     href: "/services/declarations-urssaf"        },
-                  { Icon: Globe,         color: "#22d3ee", label: "Marchés\nPublics",         href: "/services/marches-publics"            },
-                  { Icon: Shield,        color: "#f97316", label: "Recherche\nFournisseurs",  href: "/services/recherche-fournisseurs"     },
-                ] as const).map(({ Icon, color, label, href }, i) => (
-                  <motion.div
-                    key={label}
-                    initial={{ opacity: 0, scale: 0.75, y: 20 }}
-                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-40px" }}
-                    transition={{ delay: i * 0.045, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                    whileHover={{ scale: 1.08, y: -5, transition: { duration: 0.2 } }}
-                    whileTap={{ scale: 0.94 }}
-                  >
-                    <Link
-                      href={href}
-                      className="flex flex-col items-center gap-2 rounded-2xl p-2 transition-colors duration-200 hover:bg-white/40"
-                    >
-                      {/* Tuile icône */}
-                      <div
-                        className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,.10)] transition-shadow duration-200 hover:shadow-[0_8px_24px_rgba(0,0,0,.18)] sm:h-16 sm:w-16"
-                        style={{ background: "#ffffff" }}
-                      >
-                        <div
-                          className="flex h-10 w-10 items-center justify-center rounded-xl sm:h-11 sm:w-11"
-                          style={{ background: `${color}18` }}
-                        >
-                          <Icon size={22} style={{ color }} strokeWidth={1.7} />
-                        </div>
-                      </div>
-                      {/* Label */}
-                      <span
-                        className="text-center text-[0.58rem] font-semibold leading-tight text-gray-500 sm:text-[0.62rem]"
-                        style={{ whiteSpace: "pre-line" }}
-                      >
-                        {label}
-                      </span>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Barre du bas — status bar */}
-              <div className="mt-6 flex items-center justify-between border-t border-white/60 pt-4">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{ background: "#4ade80", boxShadow: "0 0 6px #4ade80" }}
-                  />
-                  <span className="text-[0.6rem] font-semibold text-gray-400">16 services disponibles</span>
-                </div>
-                <Link
-                  href="/services"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-[0.6rem] font-bold text-[#6366f1] backdrop-blur-sm transition hover:bg-white"
-                >
-                  Voir tout <ArrowRight size={9} />
-                </Link>
-              </div>
-            </div>
-
-            {/* Reflet bas */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
-              style={{ background: "linear-gradient(0deg,rgba(255,255,255,0.3) 0%,transparent 100%)" }}
-            />
-          </div>
-
-          {/* "Pied" de l'écran */}
-          <div className="mx-auto mt-1 h-2 w-32 rounded-b-lg bg-gray-200/80" />
-          <div className="mx-auto h-1.5 w-20 rounded-b-xl bg-gray-300/60" />
-        </div>
-
-        {/* ── CTA mid-page ── */}
-        <div
-          className="relative overflow-hidden px-6 py-14 sm:py-20"
-          style={{ background: "linear-gradient(160deg, #1e0d42 0%, #0d1829 55%, #071525 100%)" }}
-        >
-          {/* Orbes */}
-          <div className="pointer-events-none absolute -left-24 -top-20 h-64 w-64 rounded-full opacity-30" style={{ background: "radial-gradient(circle, rgba(201,165,90,0.35) 0%, transparent 70%)", filter: "blur(40px)" }} />
-          <div className="pointer-events-none absolute -right-16 bottom-0 h-56 w-56 rounded-full opacity-20" style={{ background: "radial-gradient(circle, rgba(167,139,250,0.45) 0%, transparent 70%)", filter: "blur(50px)" }} />
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
-            transition={{ duration: 0.6, ease }}
-            className="relative z-10 mx-auto max-w-2xl text-center"
-          >
-            {/* Badge */}
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.62rem] font-black uppercase tracking-[.22em]"
-              style={{ borderColor: `rgba(${GOLDR},.3)`, background: `rgba(${GOLDR},.08)`, color: GOLD }}>
-              <Sparkles size={9} /> Rejoignez DJAMA Pro
-            </div>
-
-            {/* Headline */}
-            <p className="leading-[1.05] text-[3.2rem] sm:text-[4.5rem]"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 900, color: "#fff" }}>
-              Libérez votre
-            </p>
-            <p className="leading-[1.05] text-[3.2rem] sm:text-[4.5rem]"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 900, color: GOLD }}>
-              potentiel de croissance
-            </p>
-
-            {/* Sous-titre */}
-            <p className="mx-auto mt-5 max-w-lg text-[0.9rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
-              20 outils pros + formation IA + accompagnement — tout ce qu&apos;il faut pour faire décoller votre activité.
-            </p>
-
-            {/* Stats */}
-            <div className="mt-8 flex justify-center gap-10 sm:gap-16">
-              {([
-                { val: "20",     label: "outils inclus"      },
-                { val: "11,90€", label: "par mois seulement" },
-              ] as const).map(({ val, label }) => (
-                <div key={label} className="text-center">
-                  <p className="text-[1.8rem] font-black leading-none sm:text-[2.2rem]" style={{ color: GOLD }}>{val}</p>
-                  <p className="mt-1 text-[0.62rem] font-medium" style={{ color: "rgba(255,255,255,0.35)" }}>{label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* CTA */}
-            <div className="mt-10 flex flex-col items-center gap-3">
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2.5 rounded-2xl px-10 py-4 text-[1rem] font-black text-white transition-all duration-200 hover:opacity-90 active:scale-[.97]"
-                style={{ background: `linear-gradient(135deg, ${GOLD} 0%, #e2ba70 50%, #b08d45 100%)`, boxShadow: `0 8px 32px rgba(${GOLDR},.45)`, color: "#1a1000" }}
-              >
-                Commencer gratuitement <ArrowRight size={15} />
-              </Link>
-              <p className="text-[0.65rem] font-medium" style={{ color: "rgba(255,255,255,0.28)" }}>
-                ✓ Sans engagement &nbsp;·&nbsp; ✓ Accès immédiat &nbsp;·&nbsp; ✓ Stripe sécurisé
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-
       <PartnerLogosSection />
       <TestimonialsSection dynamic />
 
-      {/* ── Formation IA — compact ──────────────────────────── */}
-      <section className="bg-[#f0f2f5] py-10 sm:py-14">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport} transition={{ duration: 0.5, ease }}
-          className="mx-auto max-w-4xl px-5"
-        >
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_4px_24px_rgba(0,0,0,.08)]">
-            <div className="h-1 w-full bg-gradient-to-r from-[#a78bfa] via-[#7c5cbf] to-[#6366f1]" />
+      {/* ══════════════════════════════════════════════════════
+           COACHING IA — style Odoo : blanc, Caveat, animations
+      ══════════════════════════════════════════════════════ */}
+      <section className="overflow-hidden bg-[#f7f8fa] py-16 sm:py-24">
+        <div className="mx-auto max-w-5xl px-6">
 
-            <div className="grid gap-0 sm:grid-cols-2">
+          {/* Badge */}
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.5, ease }}
+            className="mb-6 flex justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.65rem] font-black uppercase tracking-[0.20em]"
+              style={{ borderColor: "rgba(167,139,250,0.35)", background: "rgba(167,139,250,0.08)", color: "#a78bfa" }}>
+              <Brain size={10} /> Coaching IA DJAMA
+            </span>
+          </motion.div>
 
-              {/* Gauche — image + infos */}
-              <div className="flex flex-col justify-center gap-4 p-6 sm:border-r sm:border-gray-100">
-                {/* Image de présentation */}
-                <div className="relative overflow-hidden rounded-xl" style={{ height: "160px" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=700&q=80&auto=format&fit=crop"
-                    alt="Formation IA — Coaching DJAMA"
-                    className="h-full w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[rgba(124,92,191,0.6)] to-transparent" />
-                  <div className="absolute bottom-3 left-3">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,.35)] bg-[rgba(167,139,250,.12)] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[.18em] backdrop-blur-sm" style={{ color: "#d8b4fe" }}>
-                      <Brain size={9} /> Formation IA
-                    </div>
-                  </div>
+          {/* Headline Caveat Odoo */}
+          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.6, ease }}
+            className="mb-14 text-center">
+            <h2 className="text-[2.8rem] leading-[1.1] text-gray-900 sm:text-[4rem]"
+              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
+              Maîtrisez l&apos;IA,{" "}
+              <span style={{ background: "linear-gradient(180deg,transparent 58%,rgba(167,139,250,0.40) 58%)", padding: "0 6px" }}>
+                transformez
+              </span>{" "}
+              votre activité.
+            </h2>
+            <p className="mt-4 text-[0.95rem] text-gray-500">
+              20 cours vidéo · Quiz &amp; activités · Jeux IA · Accès 3 mois · Valeur réelle 190€
+            </p>
+          </motion.div>
+
+          {/* 4 modules — stagger Odoo */}
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.09 } } }}
+            className="mb-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {([
+              { color: "#a78bfa", bg: "rgba(167,139,250,0.08)", icon: Brain,      title: "Prompt Engineering",    desc: "Maîtrisez ChatGPT & Claude comme un expert" },
+              { color: "#60a5fa", bg: "rgba(96,165,250,0.08)",  icon: Zap,        title: "Automatisation IA",     desc: "Gagnez 5 à 15h par semaine sans effort" },
+              { color: "#4ade80", bg: "rgba(74,222,128,0.08)",  icon: Sparkles,   title: "Contenu & Images IA",   desc: "Créez textes, visuels et agents autonomes" },
+              { color: GOLD,      bg: `rgba(${GOLDR},0.08)`,    icon: BarChart3,  title: "Business en ligne",     desc: "Marketing, projets réels et revenus IA" },
+            ] as const).map(({ color, bg, icon: Icon, title, desc }) => (
+              <motion.div key={title}
+                variants={{ hidden: { opacity: 0, y: 22 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
+                className="group rounded-2xl bg-white p-5 shadow-sm transition-all duration-300"
+                style={{ border: "1px solid rgba(0,0,0,0.06)" }}
+                whileHover={{ y: -6, boxShadow: `0 16px 40px rgba(0,0,0,0.10)`, borderColor: color + "44" }}
+                transition={{ duration: 0.25 }}>
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: bg, border: `1px solid ${color}28` }}>
+                  <Icon size={20} style={{ color }} strokeWidth={1.7} />
                 </div>
-                <div>
-                  <h2 className="text-[1.45rem] font-extrabold leading-tight text-gray-900">
-                    Maîtrisez l&apos;IA,{" "}
-                    <span style={{ color: "#a78bfa" }}>transformez votre activité</span>.
-                  </h2>
-                  <p className="mt-1.5 text-[0.78rem] text-gray-400">20 cours vidéo · Quiz &amp; activités · Jeux IA · Accès 3 mois</p>
+                <p className="font-bold text-gray-900">{title}</p>
+                <p className="mt-1.5 text-[0.78rem] leading-relaxed text-gray-400">{desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* CTA centrale — 2 colonnes */}
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.55, ease, delay: 0.1 }}
+            className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm sm:grid sm:grid-cols-2">
+
+            {/* Gauche — offre Pro */}
+            <div className="flex flex-col justify-center gap-5 p-8 sm:border-r sm:border-gray-100">
+              <div className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.62rem] font-black uppercase tracking-wider text-white"
+                style={{ background: "linear-gradient(135deg,#a78bfa,#7c5cbf)" }}>
+                <Sparkles size={9} /> Abonnés DJAMA Pro
+              </div>
+              <div>
+                <div className="flex items-end gap-2">
+                  <span className="text-[3rem] font-black leading-none" style={{ color: "#a78bfa" }}>GRATUIT</span>
+                  <span className="mb-1.5 text-[0.8rem] text-gray-400 line-through">190€</span>
                 </div>
-                <ul className="space-y-2">
-                  {([
-                    { color: "#a78bfa", text: "Prompt engineering & maîtrise ChatGPT / Claude" },
-                    { color: "#60a5fa", text: "Automatisation — gagner 5 à 15h par semaine" },
-                    { color: "#4ade80", text: "Contenu, images IA & agents autonomes" },
-                    { color: "#f9a826", text: "Marketing, business en ligne & projets réels" },
-                  ] as const).map(({ color, text }) => (
-                    <li key={text} className="flex items-center gap-2 text-[0.76rem] text-gray-600">
-                      <CheckCircle2 size={13} style={{ color }} className="shrink-0" />
-                      {text}
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex items-center gap-2 rounded-xl border border-[rgba(74,222,128,.25)] bg-[rgba(74,222,128,.07)] px-3 py-2">
-                  <Shield size={10} style={{ color: "#4ade80" }} />
-                  <span className="text-[0.65rem] font-semibold text-emerald-600">Satisfait ou remboursé — 7 jours</span>
-                </div>
-                <Link
-                  href="/services/coaching-ia"
-                  className="inline-flex items-center gap-1.5 text-[0.72rem] font-bold transition-colors"
-                  style={{ color: "#a78bfa" }}
-                >
-                  Voir la présentation complète <ArrowRight size={11} />
+                <p className="mt-2 text-[0.88rem] text-gray-500">
+                  Inclus avec <strong className="text-gray-900">DJAMA Pro</strong> à{" "}
+                  <strong style={{ color: GOLD }}>11,90€/mois</strong> seulement
+                </p>
+              </div>
+              <ul className="space-y-2.5">
+                {([
+                  { color: "#a78bfa", text: "20 cours vidéo + quiz interactifs" },
+                  { color: "#60a5fa", text: "Jeux IA & mises en situation réelles" },
+                  { color: "#4ade80", text: "Accès 3 mois · Certificat de complétion" },
+                ] as const).map(({ color, text }) => (
+                  <li key={text} className="flex items-center gap-2.5 text-[0.82rem] text-gray-600">
+                    <CheckCircle2 size={14} style={{ color }} className="shrink-0" />
+                    {text}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2"
+                style={{ background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.25)" }}>
+                <Shield size={11} style={{ color: "#4ade80" }} />
+                <span className="text-[0.68rem] font-semibold text-emerald-700">Satisfait ou remboursé — 7 jours</span>
+              </div>
+              <motion.div className="relative" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
+                <Link href="/espace-client"
+                  className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-[0.95rem] font-black text-white transition hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg,#a78bfa,#7c5cbf)", boxShadow: "0 8px 24px rgba(167,139,250,0.40)" }}>
+                  S&apos;abonner — Formation offerte <ArrowRight size={14} />
                 </Link>
-              </div>
-
-              {/* Droite — tarifs */}
-              <div className="flex flex-col gap-3 p-6">
-                {/* Abonné */}
-                <div className="rounded-2xl p-4" style={{ background: "linear-gradient(135deg,rgba(167,139,250,0.10),rgba(99,102,241,0.08))", border: "1.5px solid rgba(167,139,250,.4)" }}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="inline-flex items-center gap-1 rounded-full bg-[#a78bfa] px-2.5 py-1 text-[0.58rem] font-black uppercase text-white"><Sparkles size={8} /> Abonnés DJAMA Pro</div>
-                    <span className="text-[0.6rem] font-bold text-[#4ade80]">✓ Accès immédiat</span>
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <span className="text-[2rem] font-black leading-none" style={{ color: "#a78bfa" }}>GRATUIT</span>
-                    <span className="mb-1 text-[0.68rem] text-gray-400 line-through">190€</span>
-                  </div>
-                  <p className="mt-1 text-[0.72rem] text-gray-500">Inclus avec <strong>DJAMA Pro</strong> à <span className="font-bold" style={{ color: GOLD }}>11,90€/mois</span></p>
-                  <Link href="/espace-client" className="mt-3 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.85rem] font-bold text-white transition hover:opacity-90" style={{ background: "linear-gradient(135deg,#a78bfa,#7c5cbf)" }}>
-                    S&apos;abonner — Formation offerte <ArrowRight size={13} />
-                  </Link>
-                </div>
-
-                {/* Séparateur */}
-                <div className="flex items-center gap-2">
-                  <div className="h-px flex-1 bg-gray-100" />
-                  <span className="text-[0.58rem] font-bold uppercase tracking-wide text-gray-300">ou</span>
-                  <div className="h-px flex-1 bg-gray-100" />
-                </div>
-
-                {/* Individuel */}
-                <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                  <div>
-                    <p className="text-[0.62rem] font-bold uppercase text-gray-400">Achat individuel</p>
-                    <div className="flex items-end gap-1.5">
-                      <span className="text-[1.4rem] font-extrabold text-gray-800">190€</span>
-                      <span className="mb-0.5 text-[0.6rem] text-gray-400 line-through">350€</span>
-                    </div>
-                  </div>
-                  <CoachingPayButton />
-                </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
-        </motion.div>
+
+            {/* Droite — ou achat direct */}
+            <div className="flex flex-col justify-center gap-5 bg-[#fafafa] p-8">
+              <p className="text-[0.72rem] font-bold uppercase tracking-[0.15em] text-gray-400">Ou accès individuel</p>
+              <div className="flex items-end gap-2">
+                <span className="text-[2.8rem] font-black leading-none text-gray-900">190€</span>
+                <span className="mb-1.5 text-[0.8rem] text-gray-400 line-through">350€</span>
+                <span className="mb-1.5 rounded-full bg-red-100 px-2 py-0.5 text-[0.58rem] font-black uppercase text-red-600">−46%</span>
+              </div>
+              <p className="text-[0.85rem] text-gray-500">Paiement unique · Accès 3 mois complet</p>
+              <CoachingPayButton />
+              <Link href="/services/coaching-ia"
+                className="inline-flex items-center gap-1.5 text-[0.8rem] font-bold transition-colors"
+                style={{ color: "#a78bfa" }}
+                onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = "#7c5cbf"}
+                onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.color = "#a78bfa"}>
+                Voir le programme complet <ArrowRight size={13} />
+              </Link>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
       {/* ── Tarifs — Découverte / Pro ───────────────────────── */}
