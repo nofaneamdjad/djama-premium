@@ -173,7 +173,7 @@ function CardVisual({ icon: Icon, config }: {
 /* ─────────────────────────────────────────────────────────
    SERVICE CARD — light glassmorphism
 ───────────────────────────────────────────────────────── */
-function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en" }) {
+function ServiceCard({ service, lang }: { service: ServiceRow; lang: "fr" | "en" | "ar" }) {
   const config  = CAT_CONFIG[service.category as CatKey];
   const isOutil = service.category === "Documents & Outils";
   const Icon    = CAT_ICONS[service.category] ?? Code2;
