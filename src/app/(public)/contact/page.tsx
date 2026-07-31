@@ -277,9 +277,14 @@ function ContactPageContent() {
     },
   ];
 
+  const exploreServices = isAR ? "خدماتنا" : isEN ? "Our services" : "Nos services";
+  const exploreServicesSub = isAR ? "مواقع، تطبيقات، ذكاء اصطناعي…" : isEN ? "Sites, apps, AI coaching…" : "Sites, apps, coaching IA…";
+  const explorePortfolio = isAR ? "أعمالنا" : isEN ? "Our portfolio" : "Nos réalisations";
+  const explorePortfolioSub = isAR ? "WEWE، Mondouka، Clamac…" : "WEWE, Mondouka, Clamac…";
+
   const EXPLORE = [
-    { href: "/services",     icon: Layers,   label: isAR ? "خدماتنا" : isEN ? "Our services"  : "Nos services",     sub: isAR ? "مواقع، تطبيقات، ذكاء اصطناعي…" : isEN ? "Sites, apps, AI coaching…" : "Sites, apps, coaching IA…"  },
-    { href: "/realisations", icon: FileText, label: isAR ? "أعمالنا" : isEN ? "Our portfolio" : "Nos réalisations",  sub: isAR ? "WEWE، Mondouka، Clamac…"         : "WEWE, Mondouka, Clamac…"                                          },
+    { href: "/services",     icon: Layers,   label: exploreServices,  sub: exploreServicesSub  },
+    { href: "/realisations", icon: FileText, label: explorePortfolio, sub: explorePortfolioSub },
   ];
 
   const BG_MAIN = "linear-gradient(160deg, #0b0f1a 0%, #0d1829 55%, #071525 100%)";
