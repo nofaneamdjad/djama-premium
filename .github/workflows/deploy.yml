@@ -2,13 +2,36 @@ name: CI / Deploy to Vercel
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
+  pull_request:
+    branches: [master]
 
 jobs:
-  deploy:
-    name: Deploy
+  check:
+    name: Typecheck & Tests
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: TypeScript — vérification des types
+        run: npx tsc --noEmit
+
+      - name: Vitest — suite de tests
+        run: npm test
+
+  deploy:
+    name: Deploy to Vercel
+    needs: check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
     steps:
       - name: Trigger Vercel Deploy Hook
         run: curl -fsSL -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"

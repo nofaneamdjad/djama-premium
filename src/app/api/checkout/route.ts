@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { z } from "zod";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("checkout");
@@ -54,7 +54,7 @@ function getStripe() {
 export async function POST(req: Request) {
   // ── Rate limiting : 10 tentatives / 15 min par IP ────────────
   const ip = getClientIp(req);
-  const { allowed, resetAt } = checkRateLimit(ip, 10, 15 * 60 * 1000);
+  const { allowed, resetAt } = await checkRateLimit(ip, 10, 15 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(
       { error: "Trop de tentatives. Réessayez dans quelques minutes." },

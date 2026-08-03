@@ -1,6 +1,6 @@
 import { NextResponse }              from "next/server";
 import { createPayPalSubscription }  from "@/lib/paypal";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createLogger }              from "@/lib/logger";
 
 const log = createLogger("paypal/create-subscription");
@@ -19,7 +19,7 @@ const log = createLogger("paypal/create-subscription");
 export async function POST(req: Request) {
   // Rate limiting : 10 tentatives / 15 min par IP
   const ip = getClientIp(req);
-  const rl = checkRateLimit(ip, 10, 15 * 60 * 1000);
+  const rl = await checkRateLimit(ip, 10, 15 * 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Trop de tentatives. Veuillez réessayer dans quelques minutes." },

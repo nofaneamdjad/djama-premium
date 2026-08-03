@@ -16,7 +16,7 @@ import { NextRequest, NextResponse }    from "next/server";
 import { Resend }                       from "resend";
 import { z }                            from "zod";
 import { createSupabaseAdmin }          from "@/lib/supabase-server";
-import { checkRateLimit, getClientIp }  from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createLogger }                 from "@/lib/logger";
 
 const log = createLogger("contact");
@@ -188,7 +188,7 @@ function confirmEmail(d: { name: string; subject: string }) {
 export async function POST(req: NextRequest) {
   // ── Rate limiting : 5 messages / 10 minutes par IP ──────────
   const ip = getClientIp(req);
-  const { allowed, resetAt } = checkRateLimit(ip, 5, 10 * 60 * 1000);
+  const { allowed, resetAt } = await checkRateLimit(ip, 5, 10 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(
       { error: "Trop de messages envoyés. Réessayez dans quelques minutes." },

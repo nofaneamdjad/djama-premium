@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
 // POST /api/booking  → create appointment { token, date, time, name, email, message }
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  const { allowed } = checkRateLimit(ip, 5, 10 * 60 * 1000);
+  const { allowed } = await checkRateLimit(ip, 5, 10 * 60 * 1000);
   if (!allowed) return NextResponse.json({ error: "Trop de demandes" }, { status: 429 });
 
   let body: Record<string, string>;

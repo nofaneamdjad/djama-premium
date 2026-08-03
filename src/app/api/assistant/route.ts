@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createLogger } from "@/lib/logger";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const log = createLogger("assistant");
 
@@ -69,7 +69,7 @@ DJAMA est une plateforme qui combine création digitale, outils professionnels e
 export async function POST(req: NextRequest) {
   // ── Rate limiting : 30 messages / 5 min par IP ───────────────
   const ip = getClientIp(req);
-  const { allowed } = checkRateLimit(ip, 30, 5 * 60 * 1000);
+  const { allowed } = await checkRateLimit(ip, 30, 5 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(
       { error: "Trop de messages. Patientez quelques minutes." },

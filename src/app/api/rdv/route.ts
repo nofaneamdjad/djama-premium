@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
 import { createLogger } from "@/lib/logger";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const log = createLogger("rdv");
 
@@ -148,7 +148,7 @@ function buildConfirmEmail(d: RdvPayload): string {
 export async function POST(req: Request) {
   // ── Rate limiting : 5 demandes / 10 min par IP ──────────────
   const ip = getClientIp(req);
-  const { allowed } = checkRateLimit(ip, 5, 10 * 60 * 1000);
+  const { allowed } = await checkRateLimit(ip, 5, 10 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(
       { error: "Trop de demandes. Réessayez dans quelques minutes." },

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateAdminToken } from "@/lib/admin-token";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { verifyTOTP, isTOTPEnabled } from "@/lib/totp";
 
 export async function POST(req: NextRequest) {
   // ── Rate limiting : 10 tentatives / 15 min par IP ───────────
   const ip = getClientIp(req);
-  const { allowed } = checkRateLimit(ip, 10, 15 * 60 * 1000);
+  const { allowed } = await checkRateLimit(ip, 10, 15 * 60 * 1000);
   if (!allowed) {
     await new Promise((r) => setTimeout(r, 1000));
     return NextResponse.json(
