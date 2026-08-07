@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Sparkles, Globe, Eye, CheckCircle2,
-  AlertCircle, Loader2, Settings2,
+  AlertCircle, Loader2, Settings2, ExternalLink,
 } from "lucide-react";
 import { TEMPLATES, COLOR_PRESETS, emptySections, toSlug } from "@/lib/site-builder";
 import type { TemplateId, SiteSections } from "@/lib/site-builder";
@@ -63,7 +63,8 @@ export default function SiteWebPage() {
   const [publishing,  setPublishing] = useState(false);
   const [published,   setPublished]  = useState(false);
   const [error,       setError]      = useState<string|null>(null);
-  const [editLoading, setEditLoading] = useState(false);
+  const [editLoading,  setEditLoading]  = useState(false);
+  const [previewing,   setPreviewing]   = useState(false);
 
   /* ── Load existing site if ?id= param present ── */
   useEffect(() => {
@@ -163,6 +164,24 @@ export default function SiteWebPage() {
       if (!res.ok) throw new Error(data.error);
       setSiteId(data.id); setSlug(data.slug); setStep(3);
     } catch (e) { setError((e as Error).message); } finally { setSaving(false); }
+  };
+
+  const handlePreview = async () => {
+    setPreviewing(true);
+    try {
+      const config = { template, ...form, sections };
+      const s = toSlug(form.businessName) || "preview";
+      const res = await fetch("/api/site-builder/preview", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config, slug: s }),
+      });
+      if (!res.ok) { setError("Impossible de générer l'aperçu."); return; }
+      const html = await res.text();
+      const blob = new Blob([html], { type: "text/html" });
+      const url  = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch { setError("Erreur réseau."); }
+    finally { setPreviewing(false); }
   };
 
   const handlePublish = async () => {
@@ -416,13 +435,22 @@ export default function SiteWebPage() {
                     </SectionCard>
                   </div>
 
-                  <button onClick={handleSaveDraft} disabled={saving}
-                    className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-lg
-                      bg-gradient-to-r from-violet-500 to-blue-500 hover:opacity-90 disabled:opacity-40 mt-6 transition-all"
-                  >
-                    {saving ? <Loader2 size={20} className="animate-spin"/> : <Eye size={20}/>}
-                    {saving ? "Sauvegarde…" : "Aperçu & Publication →"}
-                  </button>
+                  <div className="flex gap-3 mt-6">
+                    <button onClick={handlePreview} disabled={previewing}
+                      className="flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-semibold text-sm
+                        bg-white/5 border border-white/15 hover:bg-white/10 disabled:opacity-40 transition-all whitespace-nowrap"
+                    >
+                      {previewing ? <Loader2 size={16} className="animate-spin"/> : <ExternalLink size={16}/>}
+                      {previewing ? "Chargement…" : "Aperçu"}
+                    </button>
+                    <button onClick={handleSaveDraft} disabled={saving}
+                      className="flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-lg
+                        bg-gradient-to-r from-violet-500 to-blue-500 hover:opacity-90 disabled:opacity-40 transition-all"
+                    >
+                      {saving ? <Loader2 size={20} className="animate-spin"/> : <Eye size={20}/>}
+                      {saving ? "Sauvegarde…" : "Aperçu & Publication →"}
+                    </button>
+                  </div>
                 </>
               )}
             </motion.div>

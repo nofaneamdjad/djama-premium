@@ -135,10 +135,9 @@ export function renderSiteHTML(config: SiteConfig, slug: string, domain?: string
   const waNum = waRaw.replace(/[^+\d]/g, "");
   const waLink = waNum.length >= 9 ? `https://wa.me/${waNum.startsWith("+") ? waNum.slice(1) : waNum}` : null;
 
-  // og:image — SVG data URI (600×315 for Twitter/OG)
-  const ogSvgText = config.businessName.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").slice(0, 38);
-  const ogSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#080c14"/><circle cx="1050" cy="120" r="460" fill="${color}" opacity=".1"/><rect x="80" y="270" width="7" height="90" fill="${color}" rx="3"/><text x="108" y="334" font-family="system-ui,Arial,sans-serif" font-size="52" font-weight="800" fill="white">${ogSvgText}</text><text x="108" y="390" font-family="system-ui,Arial,sans-serif" font-size="24" fill="rgba(255,255,255,0.45)">${esc(tpl.sector)}</text><text x="80" y="580" font-family="system-ui,Arial,sans-serif" font-size="18" fill="rgba(255,255,255,0.22)">djama.pro/s/${slug}</text></svg>`;
-  const ogImg  = `data:image/svg+xml,${encodeURIComponent(ogSvg)}`;
+  // og:image — URL absolue vers /api/og (acceptée par Facebook, Twitter, LinkedIn)
+  const origin = (() => { try { return new URL(_url).origin; } catch { return "https://djama.pro"; } })();
+  const ogImg  = `${origin}/api/og?t=${encodeURIComponent(config.businessName.slice(0, 38))}&s=${encodeURIComponent(tpl.sector)}&c=${color.replace("#", "")}`;
 
   // JSON-LD LocalBusiness schema
   const jsonLd: Record<string, unknown> = {
