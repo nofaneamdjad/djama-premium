@@ -456,7 +456,8 @@ nm&&nm.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>nm.classL
 function faqT(b){const fi=b.closest('.fi'),bd=b.nextElementSibling,isOpen=fi.classList.contains('open');document.querySelectorAll('.fi.open').forEach(el=>{el.classList.remove('open');el.querySelector('.fa').classList.remove('open')});if(!isOpen){fi.classList.add('open');bd.classList.add('open')}}
 const obs=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&(e.target.classList.add('in'),obs.unobserve(e.target))),{threshold:.06,rootMargin:'0px 0px -40px 0px'});
 document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
-const SITE_SLUG='${esc(slug)}';
+const SITE_SLUG='${slug}';
+(function(){const k='djv_'+SITE_SLUG,n=Date.now(),l=+localStorage.getItem(k)||0;if(n-l<1800000)return;localStorage.setItem(k,n);fetch('/api/site-builder/track',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"s":"'+SITE_SLUG+'"}',keepalive:true}).catch(()=>{})})();
 const cf=document.getElementById('cform'),cs=document.getElementById('csuc');
 cf&&cf.addEventListener('submit',async e=>{e.preventDefault();const sb=cf.querySelector('.csb');const ins=[...cf.querySelectorAll('input,textarea')];const body=JSON.stringify({slug:SITE_SLUG,name:ins[0]?.value,email:ins[1]?.value,phone:ins[2]?.value,message:ins[3]?.value});sb.disabled=true;sb.textContent='Envoi en cours…';try{const r=await fetch('/api/site-builder/contact',{method:'POST',headers:{'Content-Type':'application/json'},body});if(r.ok){sb.style.display='none';cs.hidden=false}else{sb.disabled=false;sb.textContent='Envoyer le message →'}}catch(err){console.error(err);sb.disabled=false;sb.textContent='Envoyer le message →'}});`;
 

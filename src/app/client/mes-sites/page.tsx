@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Globe, Eye, Edit3, Trash2, Plus, ExternalLink,
-  Loader2, AlertCircle, CheckCircle2, Clock, Settings2,
+  Loader2, AlertCircle, CheckCircle2, Clock, Settings2, TrendingUp,
 } from "lucide-react";
 import { TEMPLATES } from "@/lib/site-builder";
 import type { SiteConfig } from "@/lib/site-builder";
@@ -26,16 +26,21 @@ export default function MesSitesPage() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [confirm,  setConfirm]  = useState<string | null>(null);
+  const [stats,    setStats]    = useState<Record<string, { v7: number; v30: number }>>({});
 
   useEffect(() => { fetchSites(); }, []);
 
   async function fetchSites() {
     setLoading(true); setError(null);
     try {
-      const res  = await fetch("/api/site-builder/list");
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setSites(data.sites);
+      const [listRes, statsRes] = await Promise.all([
+        fetch("/api/site-builder/list"),
+        fetch("/api/site-builder/stats"),
+      ]);
+      const listData  = await listRes.json();
+      if (!listRes.ok) throw new Error(listData.error);
+      setSites(listData.sites);
+      if (statsRes.ok) setStats(await statsRes.json());
     } catch (e) { setError((e as Error).message); }
     finally     { setLoading(false); }
   }
@@ -144,11 +149,20 @@ export default function MesSitesPage() {
                         )}
                       </div>
                       <p className="text-xs text-white/35 font-mono mb-1">djama.pro/s/{site.slug}</p>
-                      <div className="flex items-center gap-3 text-[11px] text-white/30">
+                      <div className="flex items-center gap-3 text-[11px] text-white/30 flex-wrap">
                         <span style={{ color: tpl.color }}>{tpl.label}</span>
                         <span>·</span>
                         <span>Modifié le {fmt(site.updated_at)}</span>
                         {site.config.city && <><span>·</span><span>{site.config.city}</span></>}
+                        {(stats[site.id]?.v7 ?? 0) > 0 && (
+                          <>
+                            <span>·</span>
+                            <span className="flex items-center gap-1 text-violet-400 font-semibold">
+                              <TrendingUp size={10} />
+                              {stats[site.id].v7.toLocaleString("fr-FR")} vues / 7j
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
 
