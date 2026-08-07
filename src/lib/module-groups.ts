@@ -9,7 +9,7 @@ import {
   ListTodo, Calendar, CalendarRange, Timer,
   StickyNote, CheckSquare, ScanLine, Network,
   Search, Zap, Star, Share2, Brain, FolderOpen,
-  Building2, Banknote, BookOpen, MessageSquare, Target,
+  Building2, Banknote, BookOpen, MessageSquare, Target, Globe,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -97,6 +97,8 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
       { href: "/client/blog",          label: "Blog",            sub: "Rédigez et gérez vos articles",   icon: BookOpen,     color: "#0369a1", bg: "#f0f9ff" },
       { href: "/client/temoignages",   label: "Témoignages",     sub: "Avis clients et réputation",      icon: MessageSquare,color: "#9a3412", bg: "#ffedd5" },
       { href: "/client/planification", label: "Planification",   sub: "OKRs et stratégie long terme",    icon: Target,       color: "#075985", bg: "#cffafe" },
+      { href: "/client/site-web",      label: "Créateur de site", sub: "Site vitrine généré par l'IA",    icon: Globe,        color: "#7c3aed", bg: "#ede9fe" },
+      { href: "/client/mes-sites",    label: "Mes sites",        sub: "Gérer et publier vos sites",       icon: Globe,        color: "#059669", bg: "#d1fae5" },
     ],
   },
 ] as const;

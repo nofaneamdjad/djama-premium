@@ -53,6 +53,8 @@ export const PREMIUM_TOOLS: string[] = [
   "/coaching-ia/espace",
   "/client/portail",
   "/client/paie",
+  "/client/site-web",
+  "/client/mes-sites",
 ];
 
 export function getToolTier(pathname: string): PlanTier {
