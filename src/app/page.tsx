@@ -714,56 +714,86 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           VALUE PROP — style Odoo : blanc, grand Caveat
+           WHY DJAMA — style Odoo : stats + 3 feature columns
       ══════════════════════════════════════════════════════ */}
-      <section className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-4xl px-6">
+      <section className="bg-white py-20 sm:py-28">
+        <div className="mx-auto max-w-5xl px-6">
+
+          {/* Headline style Odoo — sans-serif bold, pas cursive */}
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.6, ease }}
-            className="grid gap-10 sm:grid-cols-2 sm:gap-16 sm:items-center">
-            <div>
-              <h2 className="text-[2.4rem] leading-[1.1] text-gray-900 sm:text-[3.2rem]"
-                style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
-                Imaginez{" "}
-                <span style={{ color: GOLD, textDecoration: "underline", textDecorationColor: `rgba(${GOLDR},0.40)`, textUnderlineOffset: "5px" }}>
-                  48 outils pro
-                </span>{" "}
-                à votre disposition.
-              </h2>
-              <p className="mt-5 text-[0.95rem] leading-relaxed text-gray-500">
-                Vous avez quelque chose à améliorer dans votre business ? Il existe un outil pour ça. Factures, CRM, IA, planning, trésorerie, contrats… Tout est intégré, tout communique.
-              </p>
-              <p className="mt-4 text-[0.95rem] leading-relaxed text-gray-500">
-                Chaque outil simplifie un processus et permet à davantage d&apos;entrepreneurs d&apos;agir vite et efficacement — pour{" "}
-                <strong style={{ color: GOLD }}>11,90€/mois seulement.</strong>
-              </p>
-              <Link href="/espace-client"
-                className="mt-6 inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-colors"
-                style={{ color: GOLD }}
-                onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = "#a8854a"}
-                onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.color = GOLD}>
-                Découvrir la plateforme <ArrowRight size={14} />
-              </Link>
-            </div>
-            {/* Mini feature list */}
-            <div className="grid grid-cols-2 gap-3">
-              {([
-                { icon: Receipt,    color: GOLD,      title: "Factures & devis" },
-                { icon: Users2,     color: "#22d3ee", title: "CRM Client" },
-                { icon: Brain,      color: "#a78bfa", title: "Coach IA" },
-                { icon: Wallet,     color: "#34d399", title: "Trésorerie" },
-                { icon: CalendarRange, color: "#60a5fa", title: "Planning" },
-                { icon: ShieldCheck, color: "#eab308", title: "Contrats IA" },
-              ] as const).map(({ icon: Icon, color, title }) => (
-                <div key={title} className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 transition-all hover:border-gray-200 hover:bg-white hover:shadow-sm">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                    style={{ background: `${color}15` }}>
-                    <Icon size={15} style={{ color }} strokeWidth={1.8} />
-                  </div>
-                  <span className="text-[0.75rem] font-semibold text-gray-700">{title}</span>
+            viewport={viewport} transition={{ duration: 0.5, ease }}
+            className="mb-16 text-center">
+            <h2 className="text-[2rem] font-black leading-tight text-gray-900 sm:text-[2.8rem]">
+              Pourquoi choisir DJAMA ?
+            </h2>
+            <p className="mt-4 text-[1rem] text-gray-500 max-w-xl mx-auto">
+              Une seule plateforme. 48 outils connectés. Zéro friction.
+            </p>
+          </motion.div>
+
+          {/* Stats row — style Odoo chiffres clés */}
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
+            className="mb-16 grid grid-cols-2 gap-6 sm:grid-cols-4">
+            {([
+              { value: "48",      label: "Outils intégrés",       color: GOLD },
+              { value: "1 200+",  label: "Entrepreneurs actifs",   color: "#7c3aed" },
+              { value: "11,90€",  label: "Par mois tout compris",  color: "#059669" },
+              { value: "< 5 min", label: "Pour démarrer",          color: "#0891b2" },
+            ] as const).map(({ value, label, color }, i) => (
+              <motion.div key={label}
+                variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease } } }}
+                className="text-center">
+                <p className="text-[2.4rem] font-black leading-none sm:text-[3rem]" style={{ color }}>{value}</p>
+                <p className="mt-2 text-[0.78rem] font-medium text-gray-500">{label}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* 3 pilliers — style Odoo feature columns */}
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.10 } } }}
+            className="grid gap-8 sm:grid-cols-3">
+            {([
+              {
+                color: "#7c3aed", bg: "#ede9fe",
+                icon: Zap,
+                title: "Tout est connecté",
+                desc: "Factures, CRM, trésorerie, IA — chaque outil communique avec les autres. Pas de double saisie, pas de perte de données.",
+              },
+              {
+                color: "#059669", bg: "#d1fae5",
+                icon: Brain,
+                title: "L'IA travaille pour vous",
+                desc: "Générez des devis, répondez aux avis, créez vos checklists, analysez vos finances — tout en quelques secondes grâce à Claude IA.",
+              },
+              {
+                color: GOLD, bg: `rgba(${GOLDR},0.12)`,
+                icon: Gem,
+                title: "Un prix juste et fixe",
+                desc: "11,90€/mois pour 48 outils, sans limite d'usage. Résiliable à tout moment. Aucune surprise sur votre facture.",
+              },
+            ] as const).map(({ color, bg, icon: Icon, title, desc }) => (
+              <motion.div key={title}
+                variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
+                className="group flex flex-col gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:-translate-y-1"
+                  style={{ background: bg }}>
+                  <Icon size={26} style={{ color }} strokeWidth={1.6} />
                 </div>
-              ))}
-            </div>
+                <h3 className="text-[1.05rem] font-black text-gray-900">{title}</h3>
+                <p className="text-[0.88rem] leading-relaxed text-gray-500">{desc}</p>
+                <Link href="/espace-client"
+                  className="mt-auto inline-flex items-center gap-1 text-[0.82rem] font-bold transition-colors"
+                  style={{ color }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.75"}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}>
+                  En savoir plus <ArrowRight size={12} />
+                </Link>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>
