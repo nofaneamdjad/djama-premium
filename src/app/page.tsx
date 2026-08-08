@@ -631,48 +631,60 @@ function HomeContent() {
             </p>
           </motion.div>
 
-          {/* Grille des 8 groupes */}
-          <motion.div
-            initial="hidden" whileInView="visible" viewport={viewport}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {TOOL_GROUPS_LANDING.map((group) => {
+          {/* Grille style Odoo — icônes individuelles par catégorie */}
+          <div className="space-y-8">
+            {TOOL_GROUPS_LANDING.map((group, gi) => {
               const GroupIcon = group.icon;
               return (
                 <motion.div key={group.label}
-                  variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease } } }}
-                  className="group rounded-2xl border border-gray-200 bg-white p-5 transition-all duration-300 hover:shadow-md"
-                  whileHover={{ y: -4 }}>
-                  {/* En-tête groupe */}
-                  <div className="mb-4 flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                      style={{ background: group.bg, border: `1px solid ${group.color}22` }}>
-                      <GroupIcon size={16} style={{ color: group.color }} strokeWidth={1.8} />
+                  initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={viewport} transition={{ duration: 0.4, ease, delay: gi * 0.05 }}>
+                  {/* Label catégorie */}
+                  <div className="mb-4 flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg"
+                      style={{ background: group.bg }}>
+                      <GroupIcon size={12} style={{ color: group.color }} strokeWidth={2} />
                     </div>
-                    <span className="text-[0.82rem] font-black text-gray-800">{group.label}</span>
+                    <span className="text-[0.72rem] font-black uppercase tracking-[0.14em]"
+                      style={{ color: group.color }}>
+                      {group.label}
+                    </span>
+                    <div className="flex-1 border-t" style={{ borderColor: `${group.color}22` }} />
                   </div>
-                  {/* Liste des outils */}
-                  <ul className="space-y-1.5">
-                    {group.tools.map((tool) => {
+                  {/* Icônes des outils */}
+                  <div className="grid grid-cols-5 gap-3 sm:grid-cols-7 lg:grid-cols-9">
+                    {group.tools.map((tool, ti) => {
                       const ToolIcon = tool.icon;
                       return (
-                        <li key={tool.label} className="flex items-center gap-2">
-                          <ToolIcon size={11} style={{ color: group.color }} strokeWidth={2} className="shrink-0" />
-                          <span className="text-[0.73rem] text-gray-500">{tool.label}</span>
-                        </li>
+                        <motion.div key={tool.label}
+                          initial={{ opacity: 0, scale: 0.85 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          viewport={viewport}
+                          transition={{ duration: 0.3, ease, delay: gi * 0.04 + ti * 0.03 }}>
+                          <Link href="/espace-client" className="group flex flex-col items-center gap-1.5">
+                            <motion.div
+                              whileHover={{ scale: 1.10, y: -4, boxShadow: `0 10px 24px ${group.color}30` }}
+                              whileTap={{ scale: 0.93 }}
+                              transition={{ duration: 0.18 }}
+                              className="flex h-[62px] w-[62px] items-center justify-center rounded-[18px] sm:h-[68px] sm:w-[68px]"
+                              style={{
+                                background: `linear-gradient(140deg, ${group.color}ee 0%, ${group.color}bb 100%)`,
+                                boxShadow: `0 4px 12px ${group.color}30`,
+                              }}>
+                              <ToolIcon size={24} color="white" strokeWidth={1.6} />
+                            </motion.div>
+                            <p className="max-w-[72px] text-center text-[0.58rem] font-semibold leading-tight text-gray-500 group-hover:text-gray-800 transition-colors">
+                              {tool.label}
+                            </p>
+                          </Link>
+                        </motion.div>
                       );
                     })}
-                  </ul>
-                  {/* Lien */}
-                  <Link href="/espace-client"
-                    className="mt-4 flex items-center gap-1 text-[0.70rem] font-bold opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                    style={{ color: group.color }}>
-                    Accéder <ArrowRight size={10} />
-                  </Link>
+                  </div>
                 </motion.div>
               );
             })}
-          </motion.div>
+          </div>
 
           {/* Voir tous + CTA prix */}
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
