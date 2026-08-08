@@ -15,6 +15,9 @@ import {
   Code2, BarChart3, Briefcase,
   Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem, Star,
   Truck, Package, ListTodo, Zap, Wallet, Building2, Banknote,
+  Network, FolderOpen, Share2, ShoppingBag, Bot, BarChart2,
+  Store, Contact2, CalendarPlus, QrCode, PenLine, ShoppingCart,
+  Landmark, FileCheck2, BookOpen, Target,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import {
@@ -73,27 +76,87 @@ const TICKER_ITEMS = [
   "E-commerce", "Outils métiers", "IA", "Design", "SEO",
 ] as const;
 
-const ESPACE_TOOLS = [
-  { icon: Receipt,       color: GOLD,       title: "Factures & devis",       desc: "Documents pro en quelques clics." },
-  { icon: CalendarRange, color: "#60a5fa",  title: "Agenda & Planification",  desc: "Rendez-vous, équipes et tâches." },
-  { icon: StickyNote,    color: "#4ade80",  title: "Bloc-notes pro",          desc: "Idées et mémos centralisés." },
-  { icon: Brain,         color: "#a78bfa",  title: "Coach Business IA",       desc: "Conseils précis et actionnables." },
-  { icon: Users2,        color: "#22d3ee",  title: "CRM Client",              desc: "Contacts, prospects et historique." },
-  { icon: Timer,         color: "#fb923c",  title: "Chrono Pro",              desc: "Temps par projet et rentabilité." },
-  { icon: CreditCard,    color: "#f43f5e",  title: "Dépenses Pro",            desc: "Frais pro par catégorie." },
-  { icon: Wallet,        color: "#34d399",  title: "Trésorerie",              desc: "Flux, solde et finances." },
-  { icon: ShieldCheck,   color: "#eab308",  title: "Contrats IA",             desc: "Contrats personnalisés en secondes." },
-  { icon: Globe,         color: "#f59e0b",  title: "Sourcing IA",             desc: "Fournisseurs et marchés publics." },
-  { icon: Truck,         color: "#16a34a",  title: "Fournisseurs",            desc: "Catalogue et commandes." },
-  { icon: Package,       color: "#0d9488",  title: "Stocks",                  desc: "Inventaire en temps réel." },
-  { icon: ListTodo,      color: "#be185d",  title: "Tâches",                  desc: "To-do, projets et suivi." },
-  { icon: Users2,        color: "#0891b2",  title: "Équipe",                  desc: "Membres et planification RH." },
-  { icon: StickyNote,    color: "#92400e",  title: "Notes IA",                desc: "Prise de notes intelligente." },
-  { icon: Zap,           color: "#0369a1",  title: "Assistant IA",            desc: "Relances auto et conseils." },
-  { icon: Star,          color: "#b91c1c",  title: "Réputation",              desc: "Avis et e-réputation." },
-  { icon: Zap,           color: "#e1306c",  title: "Réseaux Sociaux IA",      desc: "Planifiez et créez du contenu." },
-  { icon: Building2,     color: "#3b82f6",  title: "Portail Client",           desc: "Espace dédié à chaque client." },
-  { icon: Banknote,      color: "#10b981",  title: "Paie & RH",                desc: "Fiches de paie et cotisations." },
+const TOOL_GROUPS_LANDING = [
+  {
+    label: "Finance", color: "#059669", bg: "#d1fae5", icon: Wallet,
+    tools: [
+      { icon: Receipt,      label: "Factures & Devis" },
+      { icon: CreditCard,   label: "Dépenses" },
+      { icon: Wallet,       label: "Trésorerie" },
+      { icon: BarChart2,    label: "Comptabilité IA" },
+      { icon: Landmark,     label: "Connexion bancaire" },
+      { icon: FileCheck2,   label: "Déclarations" },
+    ],
+  },
+  {
+    label: "Commercial", color: "#7c3aed", bg: "#ede9fe", icon: Users2,
+    tools: [
+      { icon: Users2,    label: "CRM Clients" },
+      { icon: ShieldCheck, label: "Contrats IA" },
+      { icon: Truck,     label: "Fournisseurs" },
+      { icon: Package,   label: "Stocks" },
+    ],
+  },
+  {
+    label: "Opérations", color: "#4f46e5", bg: "#e0e7ff", icon: CalendarRange,
+    tools: [
+      { icon: ListTodo,      label: "Tâches" },
+      { icon: CalendarRange, label: "Planning" },
+      { icon: Users2,        label: "Équipe" },
+      { icon: Timer,         label: "Chrono" },
+    ],
+  },
+  {
+    label: "Notes & Docs", color: "#92400e", bg: "#fef3c7", icon: StickyNote,
+    tools: [
+      { icon: StickyNote,  label: "Notes IA" },
+      { icon: CheckCircle2, label: "Checklists" },
+      { icon: Globe,       label: "Scanner" },
+      { icon: Network,     label: "Mind Map" },
+    ],
+  },
+  {
+    label: "Intelligence IA", color: "#6d28d9", bg: "#f3e8ff", icon: Brain,
+    tools: [
+      { icon: Globe,       label: "Sourcing IA" },
+      { icon: Zap,         label: "Assistant IA" },
+      { icon: FolderOpen,  label: "Projets" },
+      { icon: Share2,      label: "Réseaux Sociaux IA" },
+      { icon: Brain,       label: "Coaching IA" },
+    ],
+  },
+  {
+    label: "Ventes", color: "#ec4899", bg: "#fce7f3", icon: ShoppingBag,
+    tools: [
+      { icon: CalendarPlus, label: "Rendez-vous" },
+      { icon: QrCode,       label: "Liens paiement" },
+      { icon: PenLine,      label: "Signature" },
+      { icon: ShoppingBag,  label: "Boutique" },
+      { icon: ShoppingCart, label: "Caisse POS" },
+    ],
+  },
+  {
+    label: "Digital", color: "#0891b2", bg: "#e0f2fe", icon: BarChart2,
+    tools: [
+      { icon: Mail,       label: "Email Marketing" },
+      { icon: Bot,        label: "Chatbot IA" },
+      { icon: BarChart2,  label: "Analytics" },
+      { icon: Store,      label: "Marketplace" },
+      { icon: Contact2,   label: "Carte de visite" },
+    ],
+  },
+  {
+    label: "Gestion", color: "#3b82f6", bg: "#dbeafe", icon: Building2,
+    tools: [
+      { icon: Building2,   label: "Portail Client" },
+      { icon: Banknote,    label: "Paie & RH" },
+      { icon: Star,        label: "Réputation" },
+      { icon: BookOpen,    label: "Blog" },
+      { icon: Globe,       label: "Créateur de site IA" },
+      { icon: Target,      label: "Planification OKR" },
+      { icon: Briefcase,   label: "Agences" },
+    ],
+  },
 ] as const;
 
 const PUBLIC_APP_ICONS = [
@@ -416,6 +479,9 @@ function HomeContent() {
   const { lang }              = useLanguage();
   const { settings, get }     = useSiteSettings();
   const [parAn, setParAn]     = useState(false);
+  const [payMode, setPayMode] = useState<"card" | "paypal" | "virement">("card");
+  const [virEmail, setVirEmail] = useState("");
+  const [virSent, setVirSent]   = useState(false);
 
 
   return (
@@ -453,7 +519,7 @@ function HomeContent() {
                   منصة واحدة.
                 </span>
                 <br />
-                <span style={{ color: GOLD }}>11,90€/شهر</span> فقط !
+                <span style={{ color: GOLD }}>48 أداة</span> — <span style={{ color: GOLD }}>11,90€/شهر</span> فقط !
               </>
             ) : lang === "en" ? (
               <>
@@ -462,7 +528,7 @@ function HomeContent() {
                   one platform.
                 </span>
                 <br />
-                <span style={{ color: GOLD }}>11.90€/month</span> only!
+                <span style={{ color: GOLD }}>48 tools</span> — <span style={{ color: GOLD }}>11.90€/month</span> only!
               </>
             ) : (
               <>
@@ -471,6 +537,7 @@ function HomeContent() {
                   une plateforme.
                 </span>
                 <br />
+                <span style={{ color: GOLD }}>48 outils pro</span> —{" "}
                 <span style={{
                   color: GOLD,
                   textDecoration: "underline",
@@ -487,10 +554,10 @@ function HomeContent() {
           {/* Sous-titre */}
           <motion.p variants={fadeIn} className="mt-5 text-[1rem] leading-relaxed text-gray-500">
             {lang === "ar"
-              ? "20 أداة احترافية · وكالة رقمية · ذكاء اصطناعي · بدون التزام"
+              ? "48 أداة احترافية · وكالة رقمية · ذكاء اصطناعي · بدون التزام"
               : lang === "en"
-              ? "20 pro tools · Digital agency · AI · No commitment"
-              : "20 outils pro · Agence digitale · IA intégrée · Sans engagement"}
+              ? "48 pro tools · Digital agency · AI · No commitment"
+              : "48 outils pro · Agence digitale · IA intégrée · Sans engagement"}
           </motion.p>
 
           {/* CTAs — Odoo : bouton plein + bouton outline */}
@@ -539,15 +606,19 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           APP GRID — style Odoo : fond gris clair, cartes blanches
+           48 OUTILS — groupes par catégorie
       ══════════════════════════════════════════════════════ */}
       <section id="outils" className="bg-[#f7f8fa] pb-20 pt-16">
-        <div className="mx-auto max-w-5xl px-6">
+        <div className="mx-auto max-w-6xl px-6">
 
-          {/* Headline Caveat Odoo */}
+          {/* Headline */}
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport} transition={{ duration: 0.55, ease }}
-            className="mb-12 text-center">
+            className="mb-4 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.20em] mb-5"
+              style={{ borderColor: `rgba(${GOLDR},0.28)`, background: `rgba(${GOLDR},0.08)`, color: GOLD }}>
+              <Sparkles size={10} /> 48 outils professionnels
+            </span>
             <h2 className="text-[2.6rem] leading-[1.1] text-gray-900 sm:text-[3.8rem]"
               style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
               Tout ce dont vous avez besoin,{" "}
@@ -556,50 +627,55 @@ function HomeContent() {
               </span>
             </h2>
             <p className="mt-4 text-[0.95rem] text-gray-500">
-              Vous avez quelque chose à améliorer ? Il existe un outil pour ça. Aucune complexité, un seul abonnement.
+              8 catégories · 48 outils · Un seul abonnement à 11,90€/mois.
             </p>
           </motion.div>
 
-          {/* Grille des 20 apps — cartes blanches style Odoo */}
+          {/* Grille des 8 groupes */}
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
-            className="grid grid-cols-4 gap-4 sm:grid-cols-5">
-            {ESPACE_TOOLS.map(({ title }, i) => (
-              <motion.div key={title}
-                variants={{ hidden: { opacity: 0, scale: 0.85, y: 10 }, visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.35, ease } } }}
-                className="flex flex-col items-center gap-2.5">
-                <Link href="/espace-client" className="block">
-                  <motion.div
-                    whileHover={{ scale: 1.08, y: -5, boxShadow: "0 10px 30px rgba(0,0,0,0.14)" }}
-                    whileTap={{ scale: 0.93 }}
-                    transition={{ duration: 0.2 }}
-                    className="h-[68px] w-[68px] overflow-hidden rounded-[22px] bg-white sm:h-[78px] sm:w-[78px]"
-                    style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.09)", border: "1px solid rgba(0,0,0,0.05)" }}>
-                    {PUBLIC_APP_ICONS[i]}
-                  </motion.div>
-                </Link>
-                <p className="max-w-[80px] text-center text-[0.62rem] font-semibold leading-tight text-gray-500">
-                  {title}
-                </p>
-              </motion.div>
-            ))}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {TOOL_GROUPS_LANDING.map((group) => {
+              const GroupIcon = group.icon;
+              return (
+                <motion.div key={group.label}
+                  variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease } } }}
+                  className="group rounded-2xl border border-gray-200 bg-white p-5 transition-all duration-300 hover:shadow-md"
+                  whileHover={{ y: -4 }}>
+                  {/* En-tête groupe */}
+                  <div className="mb-4 flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: group.bg, border: `1px solid ${group.color}22` }}>
+                      <GroupIcon size={16} style={{ color: group.color }} strokeWidth={1.8} />
+                    </div>
+                    <span className="text-[0.82rem] font-black text-gray-800">{group.label}</span>
+                  </div>
+                  {/* Liste des outils */}
+                  <ul className="space-y-1.5">
+                    {group.tools.map((tool) => {
+                      const ToolIcon = tool.icon;
+                      return (
+                        <li key={tool.label} className="flex items-center gap-2">
+                          <ToolIcon size={11} style={{ color: group.color }} strokeWidth={2} className="shrink-0" />
+                          <span className="text-[0.73rem] text-gray-500">{tool.label}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {/* Lien */}
+                  <Link href="/espace-client"
+                    className="mt-4 flex items-center gap-1 text-[0.70rem] font-bold opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                    style={{ color: group.color }}>
+                    Accéder <ArrowRight size={10} />
+                  </Link>
+                </motion.div>
+              );
+            })}
           </motion.div>
 
-          {/* "Voir tous les outils →" — style Odoo */}
-          <div className="mt-10 flex justify-end">
-            <Link href="/espace-client"
-              className="inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-colors"
-              style={{ color: GOLD }}
-              onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = "#a8854a"}
-              onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.color = GOLD}>
-              Voir tous les outils <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          {/* Bloc prix — Odoo style : fond blanc, simple */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
+          {/* Voir tous + CTA prix */}
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport} transition={{ duration: 0.5, ease, delay: 0.1 }}
             className="mt-10 flex flex-col items-center gap-5 rounded-3xl border border-gray-200 bg-white px-8 py-8 text-center shadow-sm sm:flex-row sm:justify-between sm:text-left">
             <div>
@@ -608,7 +684,7 @@ function HomeContent() {
                 11,90€ <span className="text-[1rem] font-medium text-gray-400">/mois</span>
               </p>
               <p className="mt-1.5 text-[0.8rem] text-gray-500">
-                20 outils · Formation IA offerte · Support prioritaire · Sans engagement
+                48 outils · Formation IA offerte · Support prioritaire · Sans engagement
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:items-end">
@@ -619,7 +695,7 @@ function HomeContent() {
                   <Gem size={14} /> Commencer maintenant <ArrowRight size={13} />
                 </Link>
               </motion.div>
-              <p className="text-[0.62rem] text-gray-400">✓ Sans engagement &nbsp;·&nbsp; ✓ Stripe sécurisé &nbsp;·&nbsp; ✓ Accès immédiat</p>
+              <p className="text-[0.62rem] text-gray-400">✓ Sans engagement &nbsp;·&nbsp; ✓ Paiement sécurisé &nbsp;·&nbsp; ✓ Accès immédiat</p>
             </div>
           </motion.div>
         </div>
@@ -638,7 +714,7 @@ function HomeContent() {
                 style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
                 Imaginez{" "}
                 <span style={{ color: GOLD, textDecoration: "underline", textDecorationColor: `rgba(${GOLDR},0.40)`, textUnderlineOffset: "5px" }}>
-                  20 outils pro
+                  48 outils pro
                 </span>{" "}
                 à votre disposition.
               </h2>
@@ -908,7 +984,7 @@ function HomeContent() {
                 <p className="mb-6 mt-1 text-xs text-white/40">Facturation mensuelle · Résiliable à tout moment</p>
               )}
               <ul className="mb-7 flex-1 space-y-3">
-                {["Tout le plan Gratuit", "20 outils professionnels", "IA Business & Coaching", "Création de comptes employés", "Gestion des rôles et permissions", "Support prioritaire"].map((f) => (
+                {["Tout le plan Gratuit", "48 outils professionnels", "IA Business & Coaching", "Création de comptes employés", "Gestion des rôles et permissions", "Support prioritaire"].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-[0.82rem] text-white/88">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(201,165,90,0.22)", border: "1px solid rgba(201,165,90,0.4)" }}>
                       <Check size={11} style={{ color: GOLD }} strokeWidth={2.5} />
@@ -917,12 +993,82 @@ function HomeContent() {
                   </li>
                 ))}
               </ul>
-              <StripeButton
-                billing={parAn ? "yearly" : "monthly"}
-                label={parAn ? "Commencer — 9,90€/mois →" : "Commencer — 11,90€/mois →"}
-                className="rounded-xl py-3 text-sm font-black"
-              />
-              <p className="mt-3 text-center text-[0.6rem] text-white/30">Paiement sécurisé · Accès immédiat</p>
+              {/* Sélecteur mode de paiement */}
+              <div className="mb-4 flex gap-1.5">
+                {([
+                  { id: "card",     label: "💳 CB" },
+                  { id: "paypal",   label: "🅿 PayPal" },
+                  { id: "virement", label: "🏦 Virement" },
+                ] as const).map(({ id, label }) => (
+                  <button key={id} onClick={() => setPayMode(id)}
+                    className="flex-1 rounded-xl py-2 text-[0.7rem] font-bold transition-all"
+                    style={payMode === id
+                      ? { background: `rgba(${GOLDR},0.22)`, color: GOLD, border: `1px solid rgba(${GOLDR},0.45)` }
+                      : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Paiement CB via Stripe */}
+              {payMode === "card" && (
+                <StripeButton
+                  billing={parAn ? "yearly" : "monthly"}
+                  label={parAn ? "Commencer — 9,90€/mois →" : "Commencer — 11,90€/mois →"}
+                  className="rounded-xl py-3 text-sm font-black"
+                />
+              )}
+
+              {/* Paiement PayPal */}
+              {payMode === "paypal" && (
+                <motion.a
+                  href="/api/checkout/coaching-ia/paypal"
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-black text-white"
+                  style={{ background: "linear-gradient(135deg,#003087,#009cde)", boxShadow: "0 4px 14px rgba(0,48,135,0.45)" }}>
+                  Payer avec PayPal →
+                </motion.a>
+              )}
+
+              {/* Paiement Virement */}
+              {payMode === "virement" && (
+                <div className="space-y-2">
+                  {virSent ? (
+                    <div className="flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-green-400"
+                      style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)" }}>
+                      <Check size={15} /> Demande envoyée — on vous recontacte !
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        type="email"
+                        value={virEmail}
+                        onChange={e => setVirEmail(e.target.value)}
+                        placeholder="Votre email pro"
+                        className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+                        style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", color: "white" }}
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!virEmail.trim()) return;
+                          try {
+                            await fetch("/api/checkout/coaching-ia/virement", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ email: virEmail, fullName: "Prospect DJAMA Pro" }),
+                            });
+                            setVirSent(true);
+                          } catch { /* silent */ }
+                        }}
+                        className="w-full rounded-xl py-3 text-sm font-black text-white transition-all"
+                        style={{ background: "linear-gradient(135deg,#1e3a5f,#2563eb)", boxShadow: "0 4px 14px rgba(37,99,235,0.35)" }}>
+                        Demander les coordonnées bancaires →
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+              <p className="mt-3 text-center text-[0.6rem] text-white/30">✓ Sécurisé · ✓ Accès immédiat · ✓ Sans engagement</p>
             </motion.div>
 
           </div>
