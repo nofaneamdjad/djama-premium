@@ -7,7 +7,7 @@ import { LanguageProvider } from "@/lib/language-context";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Mail, Users2, Shield, ShieldCheck,
   CheckCircle2, Sparkles, HeartHandshake,
@@ -443,6 +443,144 @@ const PUBLIC_APP_ICONS = [
   </svg>,
 ];
 
+/* ─── Kanban CRM animé (style Odoo vidéo) ─────────────────────────────── */
+function AnimatedKanban() {
+  const [phase, setPhase] = useState(0);
+
+  useEffect(() => {
+    let t1: ReturnType<typeof setTimeout>;
+    let t2: ReturnType<typeof setTimeout>;
+    let t3: ReturnType<typeof setTimeout>;
+    function runCycle() {
+      t1 = setTimeout(() => setPhase(1), 2200);
+      t2 = setTimeout(() => setPhase(2), 3800);
+      t3 = setTimeout(() => setPhase(3), 5400);
+    }
+    runCycle();
+    const iv = setInterval(() => { setPhase(0); runCycle(); }, 8800);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearInterval(iv); };
+  }, []);
+
+  const B = "#3b82f6", A = "#f59e0b", G = "#059669";
+  const prospects = [
+    { name: "Karima B.",  val: "1 200 €", tag: "Devis envoyé", moving: false },
+    { name: "Riad SARL",  val: "4 800 €", tag: "1er contact",  moving: false },
+    ...(phase < 2
+      ? [{ name: "Imane T.", val: "900 €", tag: "À relancer", moving: phase === 1 }]
+      : []),
+  ];
+  const enCours = [
+    { name: "BTP Malik",    val: "8 500 €", tag: "Contrat signé", isNew: false },
+    { name: "Studio Nova",  val: "2 300 €", tag: "Négociation",   isNew: false },
+    ...(phase >= 2
+      ? [{ name: "Imane T.", val: "900 €", tag: "Qualifié ✓", isNew: true }]
+      : []),
+  ];
+  const gagnes = [
+    { name: "Tech & Co",    val: "12 000 €", tag: "✓ Payé" },
+    { name: "Sarl Dupont",  val: "3 400 €",  tag: "✓ Payé" },
+  ];
+  const total = phase >= 3 ? "34 000 €" : "33 100 €";
+  const pct   = phase >= 3 ? "+27% ce mois" : "+24% ce mois";
+
+  return (
+    <>
+      {/* Barre fenêtre */}
+      <div className="flex items-center gap-2 border-b border-gray-100 bg-white px-4 py-3">
+        <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
+        <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+        <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
+        <span className="ml-2 text-[0.7rem] font-medium text-gray-400">djama.pro · CRM Pipeline</span>
+        <AnimatePresence>
+          {phase >= 3 && (
+            <motion.span key="badge"
+              initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              className="ml-auto rounded-full bg-green-50 px-2 py-0.5 text-[0.58rem] font-bold text-green-600">
+              🎉 Nouveau deal qualifié !
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </div>
+      {/* Kanban */}
+      <div className="p-4">
+        <div className="grid grid-cols-3 gap-2">
+          {/* Prospects */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[0.65rem] font-black uppercase tracking-wide" style={{ color: B }}>Prospects</span>
+              <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[0.58rem] font-bold text-blue-500">{prospects.length}</span>
+            </div>
+            <div className="space-y-1.5">
+              <AnimatePresence>
+                {prospects.map(c => (
+                  <motion.div key={c.name} layout
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0, scale: c.moving ? 1.04 : 1 }}
+                    exit={{ opacity: 0, x: 40, transition: { duration: 0.35 } }}
+                    transition={{ duration: 0.38 }}
+                    className={`rounded-xl bg-white p-2.5 shadow-sm border transition-shadow ${c.moving ? "border-amber-400 shadow-amber-100 shadow-md ring-1 ring-amber-300" : "border-gray-100"}`}>
+                    <p className="text-[0.68rem] font-bold text-gray-800">{c.name}</p>
+                    <p className="mt-0.5 text-[0.72rem] font-black" style={{ color: B }}>{c.val}</p>
+                    <span className="mt-1 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-[0.55rem] font-semibold text-blue-500">{c.tag}</span>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+          {/* En cours */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[0.65rem] font-black uppercase tracking-wide" style={{ color: A }}>En cours</span>
+              <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[0.58rem] font-bold text-amber-500">{enCours.length}</span>
+            </div>
+            <div className="space-y-1.5">
+              <AnimatePresence>
+                {enCours.map(c => (
+                  <motion.div key={c.name} layout
+                    initial={c.isNew ? { opacity: 0, x: -24, scale: 0.88 } : { opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.45, type: c.isNew ? "spring" : "tween", stiffness: 320, damping: 22 }}
+                    className={`rounded-xl bg-white p-2.5 shadow-sm border border-gray-100 ${c.isNew ? "ring-1 ring-amber-300" : ""}`}>
+                    <p className="text-[0.68rem] font-bold text-gray-800">{c.name}</p>
+                    <p className="mt-0.5 text-[0.72rem] font-black" style={{ color: A }}>{c.val}</p>
+                    <span className="mt-1 inline-block rounded-full bg-amber-50 px-1.5 py-0.5 text-[0.55rem] font-semibold text-amber-500">{c.tag}</span>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+          {/* Gagnés */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[0.65rem] font-black uppercase tracking-wide" style={{ color: G }}>Gagnés</span>
+              <span className="rounded-full bg-green-50 px-1.5 py-0.5 text-[0.58rem] font-bold text-green-600">4</span>
+            </div>
+            <div className="space-y-1.5">
+              {gagnes.map(c => (
+                <div key={c.name} className="rounded-xl bg-white p-2.5 shadow-sm border border-gray-100">
+                  <p className="text-[0.68rem] font-bold text-gray-800">{c.name}</p>
+                  <p className="mt-0.5 text-[0.72rem] font-black text-green-600">{c.val}</p>
+                  <span className="mt-1 inline-block rounded-full bg-green-50 px-1.5 py-0.5 text-[0.55rem] font-semibold text-green-600">{c.tag}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Total pipeline */}
+        <div className="mt-3 flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm">
+          <span className="text-[0.62rem] text-gray-500">Total pipeline</span>
+          <motion.span key={total} initial={{ opacity: 0.5, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }}
+            className="text-[0.88rem] font-black text-gray-900">{total}</motion.span>
+          <motion.span key={pct} initial={{ opacity: 0.5 }} animate={{ opacity: 1 }}
+            className="text-[0.62rem] font-bold text-green-600">↑ {pct}</motion.span>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function Page() {
   return (
     <LanguageProvider>
@@ -716,57 +854,7 @@ function HomeContent() {
             <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }}
               viewport={viewport} transition={{ duration: 0.55, ease, delay: 0.1 }}
               className="overflow-hidden rounded-2xl border border-gray-100 bg-[#f8f9fb] shadow-lg">
-              {/* Barre titre */}
-              <div className="flex items-center gap-2 border-b border-gray-100 bg-white px-4 py-3">
-                <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
-                <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-                <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-                <span className="ml-2 text-[0.7rem] font-medium text-gray-400">djama.pro · CRM Pipeline</span>
-              </div>
-              {/* Pipeline Kanban */}
-              <div className="p-4">
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: "Prospects", color: "#3b82f6", bg: "#eff6ff", count: 3, cards: [
-                      { name: "Karima B.", val: "1 200 €", tag: "Devis envoyé" },
-                      { name: "Riad SARL", val: "4 800 €", tag: "1er contact" },
-                      { name: "Imane T.", val: "900 €", tag: "À relancer" },
-                    ]},
-                    { label: "En cours", color: "#f59e0b", bg: "#fffbeb", count: 2, cards: [
-                      { name: "BTP Malik", val: "8 500 €", tag: "Contrat signé" },
-                      { name: "Studio Nova", val: "2 300 €", tag: "Négociation" },
-                    ]},
-                    { label: "Gagnés", color: "#059669", bg: "#ecfdf5", count: 4, cards: [
-                      { name: "Tech & Co", val: "12 000 €", tag: "✓ Payé" },
-                      { name: "Sarl Dupont", val: "3 400 €", tag: "✓ Payé" },
-                    ]},
-                  ].map(col => (
-                    <div key={col.label}>
-                      {/* En-tête colonne */}
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[0.65rem] font-black uppercase tracking-wide" style={{ color: col.color }}>{col.label}</span>
-                        <span className="rounded-full px-1.5 py-0.5 text-[0.58rem] font-bold" style={{ background: col.bg, color: col.color }}>{col.count}</span>
-                      </div>
-                      {/* Cards */}
-                      <div className="space-y-1.5">
-                        {col.cards.map(c => (
-                          <div key={c.name} className="rounded-xl bg-white p-2.5 shadow-sm border border-gray-100">
-                            <p className="text-[0.68rem] font-bold text-gray-800">{c.name}</p>
-                            <p className="text-[0.72rem] font-black mt-0.5" style={{ color: col.color }}>{c.val}</p>
-                            <span className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[0.55rem] font-semibold" style={{ background: col.bg, color: col.color }}>{c.tag}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {/* Barre totaux */}
-                <div className="mt-3 flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm">
-                  <span className="text-[0.62rem] text-gray-500">Total pipeline</span>
-                  <span className="text-[0.88rem] font-black text-gray-900">33 100 €</span>
-                  <span className="text-[0.62rem] font-bold text-green-600">↑ +24% ce mois</span>
-                </div>
-              </div>
+              <AnimatedKanban />
             </motion.div>
           </div>
         </div>
